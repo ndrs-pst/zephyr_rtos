@@ -554,14 +554,13 @@ class BinaryHandler(Handler):
                 t.join()
             proc.wait()
             self.returncode = proc.returncode
+            self.try_kill_process_by_pid()
 
         handler_time = time.time() - start_time
 
         if self.coverage:
             subprocess.call(["GCOV_PREFIX=" + self.build_dir,
                              "gcov", self.sourcedir, "-b", "-s", self.build_dir], shell=True)
-
-        self.try_kill_process_by_pid()
 
         # FIXME: This is needed when killing the simulator, the console is
         # garbled and needs to be reset. Did not find a better way to do that.
@@ -2580,7 +2579,7 @@ class TestSuite(DisablePyTestCollectionMixin):
 
     def check_zephyr_version(self):
         try:
-            subproc = subprocess.run(["git", "describe"],
+            subproc = subprocess.run(["git", "describe", "--abbrev=12"],
                                      stdout=subprocess.PIPE,
                                      universal_newlines=True,
                                      cwd=ZEPHYR_BASE)
@@ -2989,9 +2988,15 @@ class TestSuite(DisablePyTestCollectionMixin):
         logger.info("Building initial testcase list...")
 
         for tc_name, tc in self.testcases.items():
+
+            if tc.build_on_all and not platform_filter:
+                platform_scope = self.platforms
+            else:
+                platform_scope = platforms
+
             # list of instances per testcase, aka configurations.
             instance_list = []
-            for plat in platforms:
+            for plat in platform_scope:
                 instance = TestInstance(tc, plat, self.outdir)
                 if runnable:
                     tfilter = 'runnable'
@@ -3028,9 +3033,6 @@ class TestSuite(DisablePyTestCollectionMixin):
 
                 if tc.skip:
                     discards[instance] = discards.get(instance, "Skip filter")
-
-                if tc.build_on_all and not platform_filter:
-                    platform_filter = []
 
                 if tag_filter and not tc.tags.intersection(tag_filter):
                     discards[instance] = discards.get(instance, "Command line testcase tag filter")

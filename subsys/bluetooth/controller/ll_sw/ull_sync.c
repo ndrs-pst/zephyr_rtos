@@ -142,6 +142,13 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	/* Initialize sync context */
 	sync->timeout_reload = 0U;
 	sync->timeout_expire = 0U;
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	/* Reset Broadcast Isochronous Group Sync Establishment */
+	sync->sync_iso = NULL;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
+
+	/* Initialize sync LLL context */
 	lll_sync = &sync->lll;
 	lll_sync->skip_prepare = 0U;
 	lll_sync->skip_event = 0U;
@@ -150,7 +157,7 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	lll_sync->window_widening_event_us = 0U;
 
 	/* Reporting initially enabled/disabled */
-	lll_sync->is_enabled = options & BIT(1);
+	lll_sync->is_rx_enabled = options & BIT(1);
 
 	/* sync_lost node_rx */
 	sync->node_rx_lost.hdr.link = link_sync_lost;

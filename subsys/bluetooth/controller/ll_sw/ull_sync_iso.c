@@ -42,14 +42,14 @@
 #include "ull_sync_internal.h"
 #include "ull_sync_iso_internal.h"
 
-static struct ll_sync_iso ll_sync_iso_pool[CONFIG_BT_CTLR_SCAN_SYNC_ISO_MAX];
-static void *sync_iso_free;
-
 static int init_reset(void);
 static inline struct ll_sync_iso *sync_iso_acquire(void);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, void *param);
 static void ticker_op_cb(uint32_t status, void *param);
+
+static struct ll_sync_iso ll_sync_iso_pool[CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET];
+static void *sync_iso_free;
 
 uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 			   uint8_t encryption, uint8_t *bcode, uint8_t mse,
@@ -92,7 +92,6 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 	/* Initialise ULL and LLL headers */
 	ull_hdr_init(&sync_iso->ull);
 	lll_hdr_init(lll_sync, sync);
-	lll_sync->is_enabled = true;
 
 	return BT_HCI_ERR_SUCCESS;
 }
@@ -109,11 +108,6 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle)
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
 
-	if (!sync_iso->lll.is_enabled) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
-
-	/* TODO: Stop ticker */
 	err = ull_ticker_stop_with_mark(
 		TICKER_ID_SCAN_SYNC_ISO_BASE + big_handle,
 		sync_iso, &sync_iso->lll);
@@ -128,7 +122,6 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle)
 	big_sync_estab = sync_iso->node_rx_estab.link;
 	ll_rx_link_release(big_sync_estab);
 
-	sync_iso->lll.is_enabled = false;
 	ull_sync_iso_release(sync_iso);
 
 	return BT_HCI_ERR_SUCCESS;
@@ -160,7 +153,7 @@ int ull_sync_iso_reset(void)
 
 struct ll_sync_iso *ull_sync_iso_get(uint8_t handle)
 {
-	if (handle >= CONFIG_BT_CTLR_SCAN_SYNC_ISO_MAX) {
+	if (handle >= CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET) {
 		return NULL;
 	}
 

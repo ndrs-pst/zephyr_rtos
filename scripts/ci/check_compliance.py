@@ -213,11 +213,7 @@ class CheckPatch(ComplianceTest):
 
         except subprocess.CalledProcessError as ex:
             output = ex.output.decode("utf-8")
-            if re.search("[1-9][0-9]* errors,", output):
-                self.add_failure(output)
-            else:
-                # No errors found, but warnings. Show them.
-                self.add_info(output)
+            self.add_failure(output)
 
 
 class KconfigCheck(ComplianceTest):
@@ -1086,7 +1082,8 @@ def main():
     except BaseException:
         # Catch BaseException instead of Exception to include stuff like
         # SystemExit (raised by sys.exit())
-        print(format(__file__, traceback.format_exc()))
+        print("Python exception in `{}`:\n\n"
+              "```\n{}\n```".format(__file__, traceback.format_exc()))
 
         raise
 

@@ -26,7 +26,7 @@
 #define NRF_GPIO_PA     NRF_P1
 #define NRF_GPIO_PA_PIN ((CONFIG_BT_CTLR_GPIO_PA_PIN) - 32)
 #else
-#define NRF_GPIO_PA     NRF_GPIO
+#define NRF_GPIO_PA     NRF_P0
 #define NRF_GPIO_PA_PIN CONFIG_BT_CTLR_GPIO_PA_PIN
 #endif
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
@@ -36,7 +36,7 @@
 #define NRF_GPIO_LNA     NRF_P1
 #define NRF_GPIO_LNA_PIN ((CONFIG_BT_CTLR_GPIO_LNA_PIN) - 32)
 #else
-#define NRF_GPIO_LNA     NRF_GPIO
+#define NRF_GPIO_LNA     NRF_P0
 #define NRF_GPIO_LNA_PIN CONFIG_BT_CTLR_GPIO_LNA_PIN
 #endif
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
@@ -117,6 +117,10 @@ void radio_reset(void)
 
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 	hal_radio_sw_switch_ppi_group_setup();
+#endif
+
+#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN) || defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+	hal_palna_ppi_setup();
 #endif
 }
 
@@ -1023,9 +1027,6 @@ void radio_gpio_lna_off(void)
 void radio_gpio_pa_lna_enable(uint32_t trx_us)
 {
 	nrf_timer_cc_set(EVENT_TIMER, 2, trx_us);
-
-	hal_enable_palna_ppi_config();
-	hal_disable_palna_ppi_config();
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_ENABLE_PALNA_PPI) |
 				BIT(HAL_DISABLE_PALNA_PPI));
 }
@@ -1034,6 +1035,7 @@ void radio_gpio_pa_lna_disable(void)
 {
 	hal_radio_nrf_ppi_channels_disable(BIT(HAL_ENABLE_PALNA_PPI) |
 				 BIT(HAL_DISABLE_PALNA_PPI));
+	NRF_GPIOTE->CONFIG[CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN] = 0;
 }
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN || CONFIG_BT_CTLR_GPIO_LNA_PIN */
 

@@ -19,12 +19,14 @@
 #define MT_DEVICE_GRE		2U
 #define MT_NORMAL_NC		3U
 #define MT_NORMAL		4U
+#define MT_NORMAL_WT		5U
 
 #define MEMORY_ATTRIBUTES	((0x00 << (MT_DEVICE_nGnRnE * 8)) |	\
 				(0x04 << (MT_DEVICE_nGnRE * 8))   |	\
 				(0x0c << (MT_DEVICE_GRE * 8))     |	\
 				(0x44 << (MT_NORMAL_NC * 8))      |	\
-				(0xffUL << (MT_NORMAL * 8)))
+				(0xffUL << (MT_NORMAL * 8))	  |	\
+				(0xbbUL << (MT_NORMAL_WT * 8)))
 
 /* More flags from user's perpective are supported using remaining bits
  * of "attrs" field, i.e. attrs[31:3], underlying code will take care
@@ -139,23 +141,28 @@
 /* Region definition data structure */
 struct arm_mmu_region {
 	/* Region Base Physical Address */
-	uint64_t base_pa;
+	uintptr_t base_pa;
 	/* Region Base Virtual Address */
-	uint64_t base_va;
+	uintptr_t base_va;
 	/* Region size */
-	uint64_t size;
+	size_t size;
 	/* Region Name */
 	const char *name;
 	/* Region Attributes */
-	unsigned int attrs;
+	uint32_t attrs;
 };
 
 /* MMU configuration data structure */
 struct arm_mmu_config {
 	/* Number of regions */
-	uint32_t num_regions;
+	unsigned int num_regions;
 	/* Regions */
 	const struct arm_mmu_region *mmu_regions;
+};
+
+struct arm_mmu_ptables {
+	uint64_t *xlat_tables;
+	unsigned int next_table;
 };
 
 /* Convenience macros to represent the ARMv8-A-specific

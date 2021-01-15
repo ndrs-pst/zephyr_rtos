@@ -75,7 +75,10 @@ static inline void uart_stm32_set_baudrate(const struct device *dev,
 				      baud_rate);
 	} else {
 #endif /* HAS_LPUART_1 */
-
+#ifdef USART_CR1_OVER8
+		LL_USART_SetOverSampling(UartInstance,
+					 LL_USART_OVERSAMPLING_16);
+#endif
 		LL_USART_SetBaudRate(UartInstance,
 				     clock_rate,
 #ifdef USART_PRESC_PRESCALER
@@ -533,7 +536,8 @@ static int uart_stm32_irq_tx_ready(const struct device *dev)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
-	return LL_USART_IsActiveFlag_TXE(UartInstance);
+	return LL_USART_IsActiveFlag_TXE(UartInstance) &&
+		LL_USART_IsEnabledIT_TC(UartInstance);
 }
 
 static int uart_stm32_irq_tx_complete(const struct device *dev)
@@ -561,7 +565,8 @@ static int uart_stm32_irq_rx_ready(const struct device *dev)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
-	return LL_USART_IsActiveFlag_RXNE(UartInstance);
+	return LL_USART_IsActiveFlag_RXNE(UartInstance) &&
+		LL_USART_IsEnabledIT_RXNE(UartInstance);
 }
 
 static void uart_stm32_irq_err_enable(const struct device *dev)

@@ -177,6 +177,8 @@ int lll_init(void)
 	irq_enable(HAL_SWI_JOB_IRQ);
 #endif
 
+	radio_setup();
+
 	return 0;
 }
 
@@ -462,8 +464,8 @@ void lll_isr_tx_status_reset(void)
 	radio_status_reset();
 	radio_tmr_status_reset();
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_GPIO_PA_PIN) ||
-	    IS_ENABLED(CONFIG_BT_CTLR_GPIO_LNA_PIN)) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_GPIO_PA) ||
+	    IS_ENABLED(CONFIG_BT_CTLR_GPIO_LNA)) {
 		radio_gpio_pa_lna_disable();
 	}
 }
@@ -474,8 +476,8 @@ void lll_isr_rx_status_reset(void)
 	radio_tmr_status_reset();
 	radio_rssi_status_reset();
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_GPIO_PA_PIN) ||
-	    IS_ENABLED(CONFIG_BT_CTLR_GPIO_LNA_PIN)) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_GPIO_PA) ||
+	    IS_ENABLED(CONFIG_BT_CTLR_GPIO_LNA)) {
 		radio_gpio_pa_lna_disable();
 	}
 }
@@ -488,8 +490,8 @@ void lll_isr_status_reset(void)
 	radio_ar_status_reset();
 	radio_rssi_status_reset();
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_GPIO_PA_PIN) ||
-	    IS_ENABLED(CONFIG_BT_CTLR_GPIO_LNA_PIN)) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_GPIO_PA) ||
+	    IS_ENABLED(CONFIG_BT_CTLR_GPIO_LNA)) {
 		radio_gpio_pa_lna_disable();
 	}
 }
