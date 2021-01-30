@@ -1502,6 +1502,11 @@ static void le_set_scan_enable(struct net_buf *buf, struct net_buf **evt)
 	status = ll_scan_enable(cmd->enable);
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
+	if (!IS_ENABLED(CONFIG_BT_CTLR_SCAN_ENABLE_STRICT) &&
+	    (status == BT_HCI_ERR_CMD_DISALLOWED)) {
+		status = BT_HCI_ERR_SUCCESS;
+	}
+
 	*evt = cmd_complete_status(status);
 }
 
@@ -1524,12 +1529,13 @@ static void le_big_create_sync(struct net_buf *buf, struct net_buf **evt)
 }
 
 
-static void le_big_terminate_sync(struct net_buf *buf, struct net_buf **evt)
+static void le_big_terminate_sync(struct net_buf *buf, struct net_buf **evt,
+				  void **node_rx)
 {
 	struct bt_hci_cp_le_big_terminate_sync *cmd = (void *)buf->data;
 	uint8_t status;
 
-	status = ll_big_sync_terminate(cmd->big_handle);
+	status = ll_big_sync_terminate(cmd->big_handle, node_rx);
 
 	*evt = cmd_complete_status(status);
 }
@@ -2972,6 +2978,11 @@ static void le_set_ext_scan_enable(struct net_buf *buf, struct net_buf **evt)
 
 	status = ll_scan_enable(cmd->enable, cmd->duration, cmd->period);
 
+	if (!IS_ENABLED(CONFIG_BT_CTLR_SCAN_ENABLE_STRICT) &&
+	    (status == BT_HCI_ERR_CMD_DISALLOWED)) {
+		status = BT_HCI_ERR_SUCCESS;
+	}
+
 	*evt = cmd_complete_status(status);
 }
 
@@ -3243,7 +3254,7 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_BIG_TERMINATE_SYNC):
-		le_big_terminate_sync(cmd, evt);
+		le_big_terminate_sync(cmd, evt, node_rx);
 		break;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_OBSERVER */

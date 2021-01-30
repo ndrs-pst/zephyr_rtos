@@ -38,6 +38,7 @@
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
 #include "lll_conn.h"
+#include "lll_df.h"
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
 #include "ull_sync_types.h"
@@ -62,6 +63,10 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
+#if !defined(TICKER_USER_LLL_VENDOR_OPS)
+#define TICKER_USER_LLL_VENDOR_OPS 0
+#endif /* TICKER_USER_LLL_VENDOR_OPS */
+
 #if !defined(TICKER_USER_ULL_HIGH_VENDOR_OPS)
 #define TICKER_USER_ULL_HIGH_VENDOR_OPS 0
 #endif /* TICKER_USER_ULL_HIGH_VENDOR_OPS */
@@ -73,9 +78,9 @@
 /* Define ticker nodes and user operations */
 #if defined(CONFIG_BT_CTLR_LOW_LAT) && \
 	(CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
-#define TICKER_USER_LLL_OPS      (3 + 1)
+#define TICKER_USER_LLL_OPS      (3 + TICKER_USER_LLL_VENDOR_OPS + 1)
 #else
-#define TICKER_USER_LLL_OPS      (2 + 1)
+#define TICKER_USER_LLL_OPS      (2 + TICKER_USER_LLL_VENDOR_OPS + 1)
 #endif /* CONFIG_BT_CTLR_LOW_LAT */
 
 #define TICKER_USER_ULL_HIGH_OPS (3 + TICKER_USER_ULL_HIGH_VENDOR_OPS + 1)
@@ -457,6 +462,13 @@ int ll_init(struct k_sem *sem_rx)
 		return err;
 	}
 #endif /* CONFIG_BT_CONN */
+
+#if IS_ENABLED(CONFIG_BT_CTLR_DF)
+	err = lll_df_init();
+	if (err) {
+		return err;
+	}
+#endif
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
 	err = ull_user_init();
@@ -1661,6 +1673,11 @@ static void perform_lll_reset(void *param)
 	err = lll_conn_reset();
 	LL_ASSERT(!err);
 #endif /* CONFIG_BT_CONN */
+
+#if IS_ENABLED(CONFIG_BT_CTLR_DF)
+	err = lll_df_reset();
+	LL_ASSERT(!err);
+#endif /* CONFIG_BT_CTLR_DF */
 
 #if !defined(CONFIG_BT_CTLR_ZLI)
 	k_sem_give(param);

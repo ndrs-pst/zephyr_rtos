@@ -518,10 +518,22 @@ struct bt_le_adv_param {
 	/** Bit-field of advertising options */
 	uint32_t options;
 
-	/** Minimum Advertising Interval (N * 0.625) */
+	/** Minimum Advertising Interval (N * 0.625 milliseconds)
+	 * Minimum Advertising Interval shall be less than or equal to the
+	 * Maximum Advertising Interval. The Minimum Advertising Interval and
+	 * Maximum Advertising Interval should not be the same value (as stated
+	 * in Bluetooth Core Spec 5.2, section 7.8.5)
+	 * Range: 0x0020 to 0x4000
+	 */
 	uint32_t interval_min;
 
-	/** Maximum Advertising Interval (N * 0.625) */
+	/** Maximum Advertising Interval (N * 0.625 milliseconds)
+	 * Minimum Advertising Interval shall be less than or equal to the
+	 * Maximum Advertising Interval. The Minimum Advertising Interval and
+	 * Maximum Advertising Interval should not be the same value (as stated
+	 * in Bluetooth Core Spec 5.2, section 7.8.5)
+	 * Range: 0x0020 to 0x4000
+	 */
 	uint32_t interval_max;
 
 	/**
@@ -1477,11 +1489,6 @@ enum {
 	 * @note Requires @ref BT_LE_SCAN_OPT_CODED.
 	 */
 	BT_LE_SCAN_OPT_NO_1M = BIT(3),
-
-	BT_LE_SCAN_FILTER_DUPLICATE __deprecated =
-		BT_LE_SCAN_OPT_FILTER_DUPLICATE,
-	BT_LE_SCAN_FILTER_WHITELIST __deprecated =
-		BT_LE_SCAN_OPT_FILTER_WHITELIST,
 };
 
 enum {
@@ -1497,13 +1504,8 @@ struct bt_le_scan_param {
 	/** Scan type (BT_LE_SCAN_TYPE_ACTIVE or BT_LE_SCAN_TYPE_PASSIVE) */
 	uint8_t  type;
 
-	union {
-		/** Bit-field of scanning filter options. */
-		uint32_t filter_dup __deprecated;
-
-		/** Bit-field of scanning options. */
-		uint32_t options;
-	};
+	/** Bit-field of scanning options. */
+	uint32_t options;
 
 	/** Scan interval (N * 0.625 ms) */
 	uint16_t interval;

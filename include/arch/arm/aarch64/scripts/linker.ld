@@ -104,6 +104,14 @@ SECTIONS
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
     {
         _image_text_start = .;
+#ifndef CONFIG_XIP
+        z_mapped_start = .;
+#endif
+
+#ifdef CONFIG_AARCH64_IMAGE_HEADER
+        KEEP(*(.image_header))
+        KEEP(*(".image_header.*"))
+#endif
 
         _vector_start = .;
         KEEP(*(.exc_vector_table))
@@ -163,7 +171,7 @@ SECTIONS
 
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
     {
-        KEEP(*(_IRQ_VECTOR_TABLE_SECTION_NAME))
+        KEEP(*(_IRQ_VECTOR_TABLE_SECTION_SYMS))
 
         KEEP(*(.openocd_dbg))
         KEEP(*(".openocd_dbg.*"))
@@ -210,6 +218,9 @@ SECTIONS
      */
     . = ALIGN(_region_min_align);
     _image_ram_start = .;
+#ifdef CONFIG_XIP
+    z_mapped_start = .;
+#endif
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
@@ -285,6 +296,8 @@ SECTIONS
 
     _image_ram_end = .;
     _end = .; /* end of image */
+    z_mapped_end = .;
+    z_mapped_size = z_mapped_end - z_mapped_start;
 
     __kernel_ram_end = RAM_ADDR + RAM_SIZE;
     __kernel_ram_size = __kernel_ram_end - __kernel_ram_start;

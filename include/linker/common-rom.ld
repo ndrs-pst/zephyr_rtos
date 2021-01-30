@@ -26,7 +26,7 @@
 		 * instruction.  See include/sw_isr_table.h.
 		 */
 		. = ALIGN(CONFIG_ARCH_SW_ISR_TABLE_ALIGN);
-		*(_SW_ISR_TABLE_SECTION_NAME)
+		*(_SW_ISR_TABLE_SECTION_SYMS)
 	} GROUP_LINK_IN(ROMABLE_REGION)
 #endif
 
@@ -124,6 +124,8 @@
 #if defined(CONFIG_SETTINGS)
 	Z_ITERABLE_SECTION_ROM(settings_handler_static, 4)
 #endif
+
+	Z_ITERABLE_SECTION_ROM(k_p4wq_initparam, 4)
 
 #if defined(CONFIG_EMUL)
 	SECTION_DATA_PROLOGUE(emulators_section,,)

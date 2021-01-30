@@ -92,6 +92,7 @@
 			#gpio-cells = <2>;
 			label = "GPIO_0";
 			status = "disabled";
+			port = <0>;
 		};
 
 		i2c0: i2c@40003000 {
@@ -218,6 +219,18 @@
 			interrupts = <16 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
 			label = "WDT";
+		};
+
+		ficr: ficr@10000000 {
+			compatible = "nordic,nrf-ficr";
+			reg = <0x10000000 0x1000>;
+			status = "okay";
+		};
+
+		uicr: uicr@10001000 {
+			compatible = "nordic,nrf-uicr";
+			reg = <0x10001000 0x1000>;
+			status = "okay";
 		};
 	};
 

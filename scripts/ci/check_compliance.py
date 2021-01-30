@@ -225,13 +225,14 @@ class KconfigCheck(ComplianceTest):
     doc = "See https://docs.zephyrproject.org/latest/guides/kconfig/index.html for more details."
     path_hint = ZEPHYR_BASE
 
-    def run(self):
+    def run(self, full=True):
         kconf = self.parse_kconfig()
 
         self.check_top_menu_not_too_long(kconf)
         self.check_no_pointless_menuconfigs(kconf)
         self.check_no_undef_within_kconfig(kconf)
-        self.check_no_undef_outside_kconfig(kconf)
+        if full:
+            self.check_no_undef_outside_kconfig(kconf)
 
     def get_modules(self, modules_file):
         """
@@ -251,6 +252,21 @@ class KconfigCheck(ComplianceTest):
             _ = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as ex:
             self.error(ex.output)
+
+        modules_dir = ZEPHYR_BASE + '/modules'
+        modules = [name for name in os.listdir(modules_dir) if
+                   os.path.exists(os.path.join(modules_dir, name, 'Kconfig'))]
+
+        with open(modules_file, 'r') as fp_module_file:
+            content = fp_module_file.read()
+
+        with open(modules_file, 'w') as fp_module_file:
+            for module in modules:
+                fp_module_file.write("ZEPHYR_{}_KCONFIG = {}\n".format(
+                    re.sub('[^a-zA-Z0-9]', '_', module).upper(),
+                    modules_dir + '/' + module + '/Kconfig'
+                ))
+            fp_module_file.write(content)
 
     def write_kconfig_soc(self):
         """
@@ -438,7 +454,7 @@ https://docs.zephyrproject.org/latest/guides/kconfig/tips.html#menuconfig-symbol
         # Skip doc/releases, which often references removed symbols
         grep_stdout = git("grep", "--line-number", "-I", "--null",
                           "--perl-regexp", regex, "--", ":!/doc/releases",
-                          cwd=ZEPHYR_BASE)
+                          cwd=Path(GIT_TOP))
 
         # splitlines() supports various line terminators
         for grep_line in grep_stdout.splitlines():
@@ -553,6 +569,20 @@ UNDEF_KCONFIG_WHITELIST = {
     "USE_STDC_",
     "WHATEVER",
 }
+
+class KconfigBasicCheck(KconfigCheck, ComplianceTest):
+    """
+    Checks is we are introducing any new warnings/errors with Kconfig,
+    for example using undefiend Kconfig variables.
+    This runs the basic Kconfig test, which is checking only for undefined
+    references inside the Kconfig tree.
+    """
+    name = "KconfigBasic"
+    doc = "See https://docs.zephyrproject.org/latest/guides/kconfig/index.html for more details."
+    path_hint = ZEPHYR_BASE
+
+    def run(self):
+        super().run(full=False)
 
 
 class Codeowners(ComplianceTest):

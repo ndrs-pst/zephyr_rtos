@@ -166,6 +166,13 @@ elseif(DEFINED ENV{ZEPHYR_EXTRA_MODULES})
   set(ZEPHYR_EXTRA_MODULES $ENV{ZEPHYR_EXTRA_MODULES})
 endif()
 
+# 'MODULE_EXT_ROOT' is a prioritized list of directories where module glue code
+# may be found. It always includes ${ZEPHYR_BASE} at the lowest priority.
+# For module roots, later entries may overrule module settings already defined
+# by processed module roots, hence first in list means lowest priority.
+zephyr_file(APPLICATION_ROOT MODULE_EXT_ROOT)
+list(INSERT MODULE_EXT_ROOT 0 ${ZEPHYR_BASE})
+
 #
 # Find Zephyr modules.
 # Those may contain additional DTS, BOARD, SOC, ARCH ROOTs.
@@ -183,12 +190,17 @@ endif()
 
 add_custom_target(
   pristine
-  COMMAND ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/pristine.cmake
+  COMMAND ${CMAKE_COMMAND} -DBINARY_DIR=${APPLICATION_BINARY_DIR}
+          -DSOURCE_DIR=${APPLICATION_SOURCE_DIR}
+          -P ${ZEPHYR_BASE}/cmake/pristine.cmake
   # Equivalent to rm -rf build/*
   )
 
 # Dummy add to generate files.
 zephyr_linker_sources(SECTIONS)
+
+zephyr_file(APPLICATION_ROOT BOARD_ROOT)
+list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
 
 # 'BOARD_ROOT' is a prioritized list of directories where boards may
 # be found. It always includes ${ZEPHYR_BASE} at the lowest priority.
@@ -357,19 +369,37 @@ foreach(root ${BOARD_ROOT})
 endforeach()
 
 if(NOT BOARD_DIR)
-  message("No board named '${BOARD}' found")
-  print_usage()
+  message("No board named '${BOARD}' found.
+
+Please choose one of the following boards:
+")
+  execute_process(
+    COMMAND
+    ${CMAKE_COMMAND}
+    -DZEPHYR_BASE=${ZEPHYR_BASE}
+    -DBOARD_ROOT=${BOARD_ROOT}
+    -DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}
+    -P ${ZEPHYR_BASE}/cmake/boards.cmake
+    )
   unset(CACHED_BOARD CACHE)
-  message(FATAL_ERROR "Invalid usage")
+  message(FATAL_ERROR "Invalid BOARD; see above.")
 endif()
 
 if(DEFINED SHIELD AND NOT (SHIELD-NOTFOUND STREQUAL ""))
   foreach (s ${SHIELD-NOTFOUND})
     message("No shield named '${s}' found")
   endforeach()
-  print_usage()
+  message("Please choose from among the following shields:")
+  string(REPLACE ";" "\\;" SHIELD_LIST_ESCAPED "${SHIELD_LIST}")
+  execute_process(
+    COMMAND
+    ${CMAKE_COMMAND}
+    -DZEPHYR_BASE=${ZEPHYR_BASE}
+    -DSHIELD_LIST=${SHIELD_LIST_ESCAPED}
+    -P ${ZEPHYR_BASE}/cmake/shields.cmake
+    )
   unset(CACHED_SHIELD CACHE)
-  message(FATAL_ERROR "Invalid usage")
+  message(FATAL_ERROR "Invalid SHIELD; see above.")
 endif()
 
 get_filename_component(BOARD_ARCH_DIR ${BOARD_DIR}      DIRECTORY)

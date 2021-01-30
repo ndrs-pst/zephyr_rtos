@@ -11,6 +11,10 @@
 #include <stdbool.h>
 #include <arch/cpu.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct z_spinlock_key {
 	int key;
 };
@@ -61,7 +65,7 @@ struct k_spinlock {
 bool z_spin_lock_valid(struct k_spinlock *l);
 bool z_spin_unlock_valid(struct k_spinlock *l);
 void z_spin_lock_set_owner(struct k_spinlock *l);
-BUILD_ASSERT(CONFIG_MP_NUM_CPUS < 4, "Too many CPUs for mask");
+BUILD_ASSERT(CONFIG_MP_NUM_CPUS <= 4, "Too many CPUs for mask");
 #endif /* CONFIG_SPIN_VALIDATE */
 
 /**
@@ -190,5 +194,8 @@ static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
 #endif
 }
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_SPINLOCK_H_ */

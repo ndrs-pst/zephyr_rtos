@@ -40,17 +40,13 @@ unsigned char pm_idle_exit_notify;
 /* LCOV_EXCL_START
  * These are almost certainly overidden and in any event do nothing
  */
-#if defined(CONFIG_PM_SLEEP_STATES)
 void __attribute__((weak)) pm_system_resume(void)
 {
 }
-#endif
 
-#if defined(CONFIG_PM_DEEP_SLEEP_STATES)
 void __attribute__((weak)) pm_system_resume_from_deep_sleep(void)
 {
 }
-#endif
 /* LCOV_EXCL_STOP */
 
 #endif /* CONFIG_PM */
@@ -67,12 +63,9 @@ void __attribute__((weak)) pm_system_resume_from_deep_sleep(void)
  * @return N/A
  */
 #if !SMP_FALLBACK && CONFIG_PM
-static enum power_states pm_save_idle(int32_t ticks)
+static enum pm_state pm_save_idle(int32_t ticks)
 {
-	static enum power_states pm_state = POWER_STATE_ACTIVE;
-
-#if (defined(CONFIG_PM_SLEEP_STATES) || \
-	defined(CONFIG_PM_DEEP_SLEEP_STATES))
+	static enum pm_state idle_state = PM_STATE_ACTIVE;
 
 	pm_idle_exit_notify = 1U;
 
@@ -89,12 +82,12 @@ static enum power_states pm_save_idle(int32_t ticks)
 	 * idle processing re-enables interrupts which is essential for
 	 * the kernel's scheduling logic.
 	 */
-	pm_state = pm_system_suspend(ticks);
-	if (pm_state == POWER_STATE_ACTIVE) {
+	idle_state = pm_system_suspend(ticks);
+	if (idle_state == PM_STATE_ACTIVE) {
 		pm_idle_exit_notify = 0U;
 	}
-#endif
-	return pm_state;
+
+	return idle_state;
 
 }
 #endif /* !SMP_FALLBACK */
@@ -102,7 +95,7 @@ static enum power_states pm_save_idle(int32_t ticks)
 
 void z_pm_save_idle_exit(int32_t ticks)
 {
-#if defined(CONFIG_PM_SLEEP_STATES)
+#ifdef CONFIG_PM
 	/* Some CPU low power states require notification at the ISR
 	 * to allow any operations that needs to be done before kernel
 	 * switches task or processes nested interrupts. This can be
@@ -112,8 +105,7 @@ void z_pm_save_idle_exit(int32_t ticks)
 	if (pm_idle_exit_notify) {
 		pm_system_resume();
 	}
-#endif
-
+#endif	/* CONFIG_PM */
 	z_clock_idle_exit();
 }
 
@@ -194,7 +186,7 @@ void idle(void *p1, void *unused2, void *unused3)
 		/* Check power policy and decide if we are going to sleep or
 		 * just idle.
 		 */
-		if (pm_save_idle(ticks) == POWER_STATE_ACTIVE) {
+		if (pm_save_idle(ticks) == PM_STATE_ACTIVE) {
 			k_cpu_idle();
 		}
 #else /* CONFIG_PM */

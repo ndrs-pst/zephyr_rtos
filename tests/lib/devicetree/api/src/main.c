@@ -1538,6 +1538,19 @@ static void test_dep_ord(void)
 	}
 }
 
+static void test_path(void)
+{
+	zassert_true(!strcmp(DT_NODE_PATH(DT_ROOT), "/"), "");
+	zassert_true(!strcmp(DT_NODE_PATH(TEST_DEADBEEF),
+			     "/test/gpio@deadbeef"), "");
+}
+
+static void test_same_node(void)
+{
+	zassert_true(DT_SAME_NODE(TEST_DEADBEEF, TEST_DEADBEEF), "");
+	zassert_false(DT_SAME_NODE(TEST_DEADBEEF, TEST_ABCD1234), "");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(devicetree_api,
@@ -1571,7 +1584,9 @@ void test_main(void)
 			 ztest_unit_test(test_parent),
 			 ztest_unit_test(test_child_nodes_list),
 			 ztest_unit_test(test_great_grandchild),
-			 ztest_unit_test(test_dep_ord)
+			 ztest_unit_test(test_dep_ord),
+			 ztest_unit_test(test_path),
+			 ztest_unit_test(test_same_node)
 		);
 	ztest_run_test_suite(devicetree_api);
 }

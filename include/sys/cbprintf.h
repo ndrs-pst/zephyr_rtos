@@ -11,6 +11,10 @@
 #include <stddef.h>
 #include <toolchain.h>
 
+#ifdef CONFIG_CBPRINTF_LIBC_SUBSTS
+#include <stdio.h>
+#endif /* CONFIG_CBPRINTF_LIBC_SUBSTS */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -51,7 +55,7 @@ typedef int (*cbprintf_cb)(/* int c, void *ctx */);
  * the functionality is enabled.
  *
  * @note The functionality of this function is significantly reduced
- * when `CONFIG_CBPRINTF_NANO` is selected.
+ * when @option{CONFIG_CBPRINTF_NANO} is selected.
  *
  * @param out the function used to emit each generated character.
  *
@@ -76,11 +80,11 @@ int cbprintf(cbprintf_cb out, void *ctx, const char *format, ...);
  * formatting text of unbounded length without incurring the cost of a
  * temporary buffer.
  *
- * @note This function is available only when `CONFIG_CBPRINTF_LIBC_SUBSTS` is
- * selected.
+ * @note This function is available only when
+ * @option{CONFIG_CBPRINTF_LIBC_SUBSTS} is selected.
  *
  * @note The functionality of this function is significantly reduced when
- * `CONFIG_CBPRINTF_NANO` is selected.
+ * @option{CONFIG_CBPRINTF_NANO} is selected.
  *
  * @param out the function used to emit each generated character.
  *
@@ -96,10 +100,91 @@ int cbprintf(cbprintf_cb out, void *ctx, const char *format, ...);
  */
 int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap);
 
-/** @brief snprintf using Zephyrs cbprintf infrastructure.
+#ifdef CONFIG_CBPRINTF_LIBC_SUBSTS
+
+/** @brief fprintf using Zephyrs cbprintf infrastructure.
+ *
+ * @note This function is available only when
+ * @option{CONFIG_CBPRINTF_LIBC_SUBSTS} is selected.
  *
  * @note The functionality of this function is significantly reduced
- * when `CONFIG_CBPRINTF_NANO` is selected.
+ * when @option{CONFIG_CBPRINTF_NANO} is selected.
+ *
+ * @param stream the stream to which the output should be written.
+ *
+ * @param format a standard ISO C format string with characters and
+ * conversion specifications.
+ *
+ * @param ... arguments corresponding to the conversion specifications found
+ * within @p format.
+ *
+ * return The number of characters printed.
+ */
+__printf_like(2, 3)
+int fprintfcb(FILE * stream, const char *format, ...);
+
+/** @brief vfprintf using Zephyrs cbprintf infrastructure.
+ *
+ * @note This function is available only when
+ * @option{CONFIG_CBPRINTF_LIBC_SUBSTS} is selected.
+ *
+ * @note The functionality of this function is significantly reduced when
+ * @option{CONFIG_CBPRINTF_NANO} is selected.
+ *
+ * @param stream the stream to which the output should be written.
+ *
+ * @param format a standard ISO C format string with characters and conversion
+ * specifications.
+ *
+ * @param ap a reference to the values to be converted.
+ *
+ * @return The number of characters printed.
+ */
+int vfprintfcb(FILE *stream, const char *format, va_list ap);
+
+/** @brief printf using Zephyrs cbprintf infrastructure.
+ *
+ * @note This function is available only when
+ * @option{CONFIG_CBPRINTF_LIBC_SUBSTS} is selected.
+ *
+ * @note The functionality of this function is significantly reduced
+ * when @option{CONFIG_CBPRINTF_NANO} is selected.
+ *
+ * @param format a standard ISO C format string with characters and
+ * conversion specifications.
+ *
+ * @param ... arguments corresponding to the conversion specifications found
+ * within @p format.
+ *
+ * @return The number of characters printed.
+ */
+__printf_like(1, 2)
+int printfcb(const char *format, ...);
+
+/** @brief vprintf using Zephyrs cbprintf infrastructure.
+ *
+ * @note This function is available only when
+ * @option{CONFIG_CBPRINTF_LIBC_SUBSTS} is selected.
+ *
+ * @note The functionality of this function is significantly reduced when
+ * @option{CONFIG_CBPRINTF_NANO} is selected.
+ *
+ * @param format a standard ISO C format string with characters and conversion
+ * specifications.
+ *
+ * @param ap a reference to the values to be converted.
+ *
+ * @return The number of characters printed.
+ */
+int vprintfcb(const char *format, va_list ap);
+
+/** @brief snprintf using Zephyrs cbprintf infrastructure.
+ *
+ * @note This function is available only when
+ * @option{CONFIG_CBPRINTF_LIBC_SUBSTS} is selected.
+ *
+ * @note The functionality of this function is significantly reduced
+ * when @option{CONFIG_CBPRINTF_NANO} is selected.
  *
  * @param str where the formatted content should be written
  *
@@ -112,7 +197,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap);
  * @param ... arguments corresponding to the conversion specifications found
  * within @p format.
  *
- * return The number of characters that would have been written to @p
+ * @return The number of characters that would have been written to @p
  * str, excluding the terminating null byte.  This is greater than the
  * number actually written if @p size is too small.
  */
@@ -121,11 +206,11 @@ int snprintfcb(char *str, size_t size, const char *format, ...);
 
 /** @brief vsnprintf using Zephyrs cbprintf infrastructure.
  *
- * @note This function is available only when `CONFIG_CBPRINTF_LIBC_SUBSTS` is
- * selected.
+ * @note This function is available only when
+ * @option{CONFIG_CBPRINTF_LIBC_SUBSTS} is selected.
  *
  * @note The functionality of this function is significantly reduced when
- * `CONFIG_CBPRINTF_NANO` is selected.
+ * @option{CONFIG_CBPRINTF_NANO} is selected.
  *
  * @param str where the formatted content should be written
  *
@@ -135,16 +220,15 @@ int snprintfcb(char *str, size_t size, const char *format, ...);
  * @param format a standard ISO C format string with characters and conversion
  * specifications.
  *
- * @param ... arguments corresponding to the conversion specifications found
- * within @p format.
- *
  * @param ap a reference to the values to be converted.
  *
- * return The number of characters that would have been written to @p
+ * @return The number of characters that would have been written to @p
  * str, excluding the terminating null byte.  This is greater than the
  * number actually written if @p size is too small.
  */
 int vsnprintfcb(char *str, size_t size, const char *format, va_list ap);
+
+#endif /* CONFIG_CBPRINTF_LIBC_SUBSTS */
 
 /**
  * @}

@@ -345,7 +345,7 @@ static int fuse_fs_access_truncate(const char *path, off_t size)
 	int err;
 	static struct fs_file_t file;
 
-	err = fs_open(&file, path);
+	err = fs_open(&file, path, FS_O_CREATE | FS_O_WRITE);
 	if (err != 0) {
 		return err;
 	}
@@ -468,6 +468,12 @@ static void fuse_fs_access_init(void)
 {
 	int err;
 	struct stat st;
+	size_t i = 0;
+
+	while (i < ARRAY_SIZE(files)) {
+		fs_file_t_init(&files[i]);
+		++i;
+	}
 
 	if (fuse_mountpoint == NULL) {
 		fuse_mountpoint = default_fuse_mountpoint;

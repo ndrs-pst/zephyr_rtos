@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Tobias Svehagen
+ * Copyright (c) 2020 Grinn
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -75,6 +76,15 @@ static inline uint8_t esp_mode_from_flags(struct esp_data *data)
 
 	if (flags & EDF_AP_ENABLED) {
 		mode |= ESP_MODE_AP;
+	}
+
+	/*
+	 * ESP AT 1.7 does not allow to disable radio, so enter STA mode
+	 * instead.
+	 */
+	if (IS_ENABLED(CONFIG_WIFI_ESP_AT_VERSION_1_7) &&
+	    mode == ESP_MODE_NONE) {
+		mode = ESP_MODE_STA;
 	}
 
 	return mode;
@@ -357,10 +367,13 @@ MODEM_CMD_DEFINE(on_cmd_connect)
 	link_id = data->match_buf[0] - '0';
 
 	dev = CONTAINER_OF(data, struct esp_data, cmd_handler_data);
-	sock = esp_socket_from_link_id(dev, link_id);
-	if (sock == NULL) {
+	sock = esp_socket_ref_from_link_id(dev, link_id);
+	if (!sock) {
 		LOG_ERR("No socket for link %d", link_id);
+		return 0;
 	}
+
+	esp_socket_unref(sock);
 
 	return 0;
 }
@@ -370,23 +383,31 @@ MODEM_CMD_DEFINE(on_cmd_closed)
 	struct esp_socket *sock;
 	struct esp_data *dev;
 	uint8_t link_id;
+	atomic_val_t old_flags;
 
 	link_id = data->match_buf[0] - '0';
 
 	dev = CONTAINER_OF(data, struct esp_data, cmd_handler_data);
-	sock = esp_socket_from_link_id(dev, link_id);
-	if (sock == NULL) {
+	sock = esp_socket_ref_from_link_id(dev, link_id);
+	if (!sock) {
 		LOG_ERR("No socket for link %d", link_id);
 		return 0;
 	}
 
-	if (!esp_socket_connected(sock)) {
+	old_flags = esp_socket_flags_clear_and_set(sock,
+				ESP_SOCK_CONNECTED, ESP_SOCK_CLOSE_PENDING);
+
+	if (!(old_flags & ESP_SOCK_CONNECTED)) {
 		LOG_WRN("Link %d already closed", link_id);
-		return 0;
+		goto socket_unref;
 	}
 
-	sock->flags &= ~(ESP_SOCK_CONNECTED);
-	k_work_submit_to_queue(&dev->workq, &sock->recv_work);
+	if (!(old_flags & ESP_SOCK_CLOSE_PENDING)) {
+		esp_socket_work_submit(sock, &sock->close_work);
+	}
+
+socket_unref:
+	esp_socket_unref(sock);
 
 	return 0;
 }
@@ -446,7 +467,7 @@ static int cmd_ipd_check_hdr_end(struct esp_socket *sock, char actual)
 	char expected;
 
 	/* When using passive mode, the +IPD command ends with \r\n */
-	if (ESP_PROTO_PASSIVE(sock->ip_proto)) {
+	if (ESP_PROTO_PASSIVE(esp_socket_ip_proto(sock))) {
 		expected = '\r';
 	} else {
 		expected = ':';
@@ -470,6 +491,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd)
 	uint8_t link_id;
 	char cmd_end;
 	int err;
+	int ret;
 
 	err = cmd_ipd_parse_hdr(data->rx_buf, len, &link_id, &data_offset,
 				&data_len, &cmd_end);
@@ -481,7 +503,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd)
 		return len;
 	}
 
-	sock = esp_socket_from_link_id(dev, link_id);
+	sock = esp_socket_ref_from_link_id(dev, link_id);
 	if (!sock) {
 		LOG_ERR("No socket for link %d", link_id);
 		return len;
@@ -489,27 +511,34 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd)
 
 	err = cmd_ipd_check_hdr_end(sock, cmd_end);
 	if (err) {
-		return len;
+		ret = len;
+		goto socket_unref;
 	}
 
 	/*
 	 * When using passive TCP, the data itself is not included in the +IPD
 	 * command but must be polled with AT+CIPRECVDATA.
 	 */
-	if (ESP_PROTO_PASSIVE(sock->ip_proto)) {
-		sock->bytes_avail = data_len;
-		k_work_submit_to_queue(&dev->workq, &sock->recvdata_work);
-		return data_offset;
+	if (ESP_PROTO_PASSIVE(esp_socket_ip_proto(sock))) {
+		esp_socket_work_submit(sock, &sock->recvdata_work);
+		ret = data_offset;
+		goto socket_unref;
 	}
 
 	/* Do we have the whole message? */
 	if (data_offset + data_len > net_buf_frags_len(data->rx_buf)) {
-		return -EAGAIN;
+		ret = -EAGAIN;
+		goto socket_unref;
 	}
 
 	esp_socket_rx(sock, data->rx_buf, data_offset, data_len);
 
-	return data_offset + data_len;
+	ret = data_offset + data_len;
+
+socket_unref:
+	esp_socket_unref(sock);
+
+	return ret;
 }
 
 MODEM_CMD_DEFINE(on_cmd_busy_sending)
@@ -786,6 +815,9 @@ static void esp_init_work(struct k_work *work)
 	static const struct setup_cmd setup_cmds_target_baudrate[] = {
 		SETUP_CMD_NOHANDLE("AT"),
 #endif
+#if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
+		SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(STA)),
+#endif
 #if defined(CONFIG_WIFI_ESP_IP_STATIC)
 		/* enable Static IP Config */
 		SETUP_CMD_NOHANDLE(ESP_CMD_DHCP_ENABLE(STATION, 0)),
@@ -803,8 +835,8 @@ static void esp_init_work(struct k_work *work)
 #if defined(CONFIG_WIFI_ESP_AT_VERSION_2_0)
 		SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(STA)),
 		SETUP_CMD_NOHANDLE("AT+CWAUTOCONN=0"),
-#endif
 		SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(NONE)),
+#endif
 #if defined(CONFIG_WIFI_ESP_PASSIVE_MODE)
 		SETUP_CMD_NOHANDLE("AT+CIPRECVMODE=1"),
 #endif

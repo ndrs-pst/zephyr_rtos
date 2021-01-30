@@ -10,12 +10,11 @@ For additional detail on paging and x86 memory management, please
 consult the IA Architecture SW Developer Manual, volume 3a, chapter 4.
 
 This script produces the initial page tables installed into the CPU
-at early boot. These pages will have an identity mapping at
-CONFIG_SRAM_BASE_ADDRESS of size CONFIG_SRAM_SIZE. The script takes
-the 'zephyr_prebuilt.elf' as input to obtain region sizes, certain
-memory addresses, and configuration values.
+at early boot. These pages will have an identity mapping of the kernel
+image. The script takes the 'zephyr_prebuilt.elf' as input to obtain region
+sizes, certain memory addresses, and configuration values.
 
-If CONFIG_SRAM_REGION_PERMISSIONS is not enabled, all RAM will be
+If CONFIG_SRAM_REGION_PERMISSIONS is not enabled, the kernel image will be
 mapped with the Present and Write bits set. The linker scripts shouldn't
 add page alignment padding between sections.
 
@@ -297,7 +296,17 @@ class PtableSet(object):
         some kind of leaf page table class (Pt or PtXd)"""
         raise NotImplementedError()
 
-    def map_page(self, virt_addr, phys_addr, flags):
+    def new_child_table(self, table, virt_addr, depth):
+        new_table_addr = self.get_new_mmutable_addr()
+        new_table = self.levels[depth]()
+        debug("new %s at physical addr 0x%x"
+                      % (self.levels[depth].__name__, new_table_addr))
+        self.tables[new_table_addr] = new_table
+        table.map(virt_addr, new_table_addr, INT_FLAGS)
+
+        return new_table
+
+    def map_page(self, virt_addr, phys_addr, flags, reserve):
         """Map a virtual address to a physical address in the page tables,
         with provided access flags"""
         table = self.toplevel
@@ -306,18 +315,29 @@ class PtableSet(object):
         for depth in range(1, len(self.levels)):
             # Create child table if needed
             if not table.has_entry(virt_addr):
-                new_table_addr = self.get_new_mmutable_addr()
-                new_table = self.levels[depth]()
-                debug("new %s at physical addr 0x%x"
-                      % (self.levels[depth].__name__, new_table_addr))
-                self.tables[new_table_addr] = new_table
-                table.map(virt_addr, new_table_addr, INT_FLAGS)
-                table = new_table
+                table = self.new_child_table(table, virt_addr, depth)
             else:
                 table = self.tables[table.lookup(virt_addr)]
 
         # Set up entry in leaf page table
-        table.map(virt_addr, phys_addr, flags)
+        if not reserve:
+            table.map(virt_addr, phys_addr, flags)
+
+    def reserve(self, virt_base, size):
+        debug("Reserving paging structures 0x%x (%d)" %
+              (virt_base, size))
+
+        align_check(virt_base, size)
+
+        # How much memory is covered by leaf page table
+        scope = 1 << self.levels[-2].addr_shift
+
+        if virt_base % scope != 0:
+            error("misaligned virtual address space, 0x%x not a multiple of 0x%x" %
+                  (virt_base, scope))
+
+        for addr in range(virt_base, virt_base + size, scope):
+            self.map_page(addr, 0, 0, True)
 
     def map(self, phys_base, size, flags):
         """Identity map an address range in the page tables, with provided
@@ -332,7 +352,7 @@ class PtableSet(object):
                 # Never map the NULL page
                 continue
 
-            self.map_page(addr, addr, flags)
+            self.map_page(addr, addr, flags, False)
 
     def set_region_perms(self, name, flags):
         """Set access permissions for a named region that is already mapped
@@ -436,13 +456,28 @@ def main():
 
     debug("building %s" % pclass.__name__)
 
-    ram_base = syms["CONFIG_SRAM_BASE_ADDRESS"]
-    ram_size = syms["CONFIG_SRAM_SIZE"] * 1024
+    vm_base = syms["CONFIG_KERNEL_VM_BASE"]
+    # Work around #31562
+    vm_size = syms["CONFIG_KERNEL_VM_SIZE"] & 0xFFFFFFFF
+
+    if isdef("CONFIG_ARCH_MAPS_ALL_RAM"):
+        image_base = syms["CONFIG_SRAM_BASE_ADDRESS"]
+        image_size = syms["CONFIG_SRAM_SIZE"] * 1024
+    else:
+        image_base = syms["z_mapped_start"]
+        image_size = syms["z_mapped_size"]
     ptables_phys = syms["z_x86_pagetables_start"]
 
-    debug("Base addresses: physical 0x%x size %d" % (ram_base, ram_size))
+    debug("Address space: 0x%x - 0x%x size %x" %
+          (vm_base, vm_base + vm_size, vm_size))
+
+    debug("Zephyr image: 0x%x - 0x%x size %x" %
+          (image_base, image_base + image_size, image_size))
 
     is_perm_regions = isdef("CONFIG_SRAM_REGION_PERMISSIONS")
+
+    if image_size >= vm_size:
+        error("VM size is too small (have 0x%x need more than 0x%x)" % (vm_size, image_size))
 
     if is_perm_regions:
         # Don't allow execution by default for any pages. We'll adjust this
@@ -452,7 +487,19 @@ def main():
         map_flags = FLAG_P
 
     pt = pclass(ptables_phys)
-    pt.map(ram_base, ram_size, map_flags | ENTRY_RW)
+    # Instantiate all the paging structures for the address space
+    pt.reserve(vm_base, vm_size)
+    # Map the zephyr image
+    pt.map(image_base, image_size, map_flags | ENTRY_RW)
+
+    if isdef("CONFIG_X86_64"):
+        # 64-bit has a special region in the first 64K to bootstrap other CPUs
+        # from real mode
+        locore_base = syms["_locore_start"]
+        locore_size = syms["_lodata_end"] - locore_base
+        debug("Base addresses: physical 0x%x size %d" % (locore_base,
+                                                         locore_size))
+        pt.map(locore_base, locore_size, map_flags | ENTRY_RW)
 
     if isdef("CONFIG_XIP"):
         # Additionally identity-map all ROM as read-only

@@ -111,7 +111,7 @@ The power management subsystem classifies power states into two categories,
 Sleep State and Deep Sleep State, based on whether the CPU loses execution
 context during the power state transition.
 
-The list of available power states is defined by :code:`enum power_states`. In
+The list of available power states is defined by :code:`enum pm_state`. In
 general power states with higher indexes will offer greater power savings and
 have higher wake latencies.
 
@@ -158,7 +158,7 @@ the following function.
 
 .. code-block:: c
 
-   enum power_states pm_policy_next_state(int32_t ticks);
+   struct pm_state_info pm_policy_next_state(int32_t ticks);
 
 Dummy
 -----
@@ -498,14 +498,6 @@ the following configuration flags.
 :option:`CONFIG_TICKLESS_IDLE`
 
    This flag enables the tickless idle power saving feature.
-
-:option:`CONFIG_PM_SLEEP_STATES`
-
-   This flag enables support for the Sleep states.
-
-:option:`CONFIG_PM_DEEP_SLEEP_STATES`
-
-   This flag enables support for the Deep Sleep states.
 
 :option:`CONFIG_PM_DEVICE`
 

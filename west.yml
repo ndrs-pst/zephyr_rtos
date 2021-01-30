@@ -26,7 +26,7 @@ manifest:
   # Please add items below based on alphabetical order
   projects:
     - name: cmsis
-      revision: 421dcf358fa420e9721a8452c647f0d42af8d68c
+      revision: c3bd2094f92d574377f7af2aec147ae181aa5f8e
       path: modules/hal/cmsis
     - name: hal_atmel
       revision: 9f0a699a2f0253dc9688211ef696daa7b8fadb75
@@ -57,7 +57,7 @@ manifest:
       revision: f1fa8241f8786198ba41155413243de36ed878a5
       path: modules/hal/infineon
     - name: hal_nordic
-      revision: 8e132fee9794fcc8b809f3d7479b17031c156317
+      revision: f0d54d8449acbee49b3cebcef0e3e56640c50277
       path: modules/hal/nordic
     - name: hal_openisa
       revision: 40d049f69c50b58ea20473bee14cf93f518bf262
@@ -75,7 +75,7 @@ manifest:
       revision: b52fdbf4b62439be9fab9bb4bae9690a42d2fb14
       path: modules/hal/st
     - name: hal_stm32
-      revision: 5a10f27be1b21c597ec5dc0bd8b90d2abe9fca69
+      revision: cc8731dba4fd9c57d7fe8ea6149828b89c2bd635
       path: modules/hal/stm32
     - name: hal_ti
       revision: 277d70a65ab14d46bf1ec0935cf9bb28bbaa8ab9
@@ -94,16 +94,16 @@ manifest:
       revision: 13cf2e52024a144ecee9f37680681760a85febab
       path: modules/crypto/mbedtls
     - name: mcuboot
-      revision: 6f48e0abfd7c4284719dd7c25ef293d68ab528cf
+      revision: 30e0c5a0af21433efc8ea35cabc44bee3f096a62
       path: bootloader/mcuboot
     - name: mcumgr
-      revision: 697e145d5ee5e4b400e9d7bceaec79f6ac29df7c
+      revision: 43845e883ff3a6cdaae22e23f3e60b5fcf78c6ba
       path: modules/lib/mcumgr
     - name: net-tools
       revision: 41132e9220f8bc1223084975350c5e5f3b492afe
       path: tools/net-tools
     - name: hal_nxp
-      revision: 61a7788ac9379bfa7711bf9d15de735230528ea5
+      revision: b916bca1d5976b0157be80b326e3bb46ef605286
       path: modules/hal/nxp
     - name: open-amp
       revision: de1b85a13032a2de1d8b6695ae5f800b613e739d
@@ -112,13 +112,13 @@ manifest:
       revision: 3f545d76a2e6d1db83a470ccdb5bebd1f484e137
       path: modules/lib/loramac-node
     - name: openthread
-      revision: c3362bc8e24f7e1ec21242c03611595e2d8ec2f0
+      revision: aad6518ee30d3840411b21437d396f0405e947c3
       path: modules/lib/openthread
     - name: segger
       revision: 38c79a447e4a47d413b4e8d34448316a5cece77c
       path: modules/debug/segger
     - name: sof
-      revision: 9e75cce8bc1c649672931a4d772b2411a890804b
+      revision: b5b772dd611879ee6309da38759def79fc7f33f1
       path: modules/audio/sof
     - name: tinycbor
       path: modules/lib/tinycbor
@@ -140,10 +140,10 @@ manifest:
       path: modules/hal/xtensa
     - name: edtt
       path: tools/edtt
-      revision: b209a60ba3ad8887a7f35f67c0372c84a28b9b9b
+      revision: 7dd56fc100d79cc45c33d43e7401d1803e26f6e7
     - name: trusted-firmware-m
       path: modules/tee/tfm
-      revision: dcfa70e66e91d9bf31fd6f083e2fba19b4305f4e
+      revision: 96340fb6c0b7e31c2070e1f428ca24076d2700a6
     - name: tfm-mcuboot # This is used by the trusted-firmware-m module.
       repo-path: mcuboot
       path: modules/tee/tfm-mcuboot

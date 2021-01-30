@@ -95,6 +95,9 @@ def main():
         for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
             write_node_comment(node)
 
+            out_comment(f"Node's full path:")
+            out_dt_define(f"{node.z_path_id}_PATH", f'"{escape(node.path)}"')
+
             if node.parent is not None:
                 out_comment(f"Node parent ({node.parent.path}) identifier:")
                 out_dt_define(f"{node.z_path_id}_PARENT",
@@ -129,7 +132,8 @@ def write_device_extern_header(device_header_out, edt):
         print("", file=dev_header_file)
 
         for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
-            print(f"extern const struct device DEVICE_DT_NAME_GET(DT_{node.z_path_id});", file=dev_header_file)
+            print(f"extern const struct device DEVICE_DT_NAME_GET(DT_{node.z_path_id}); /* dts_ord_{node.dep_ordinal} */",
+                  file=dev_header_file)
 
         print("", file=dev_header_file)
         print("#ifdef __cplusplus", file=dev_header_file)
@@ -245,11 +249,19 @@ Binding (compatible = {node.matching_compat}):
 """
 
     if node.description:
-        # Indent description by two spaces
-        s += "\nDescription:\n" + \
-            "\n".join("  " + line for line in
-                      node.description.splitlines()) + \
-            "\n"
+        # We used to put descriptions in the generated file, but
+        # devicetree bindings now have pages in the HTML
+        # documentation. Let users who are accustomed to digging
+        # around in the generated file where to find the descriptions
+        # now.
+        #
+        # Keeping them here would mean that the descriptions
+        # themselves couldn't contain C multi-line comments, which is
+        # inconvenient when we want to do things like quote snippets
+        # of .dtsi files within the descriptions, or otherwise
+        # include the string "*/".
+        s += ("\n(Descriptions have moved to the Devicetree Bindings Index\n"
+              "in the documentation.)\n")
 
     out_comment(s)
 

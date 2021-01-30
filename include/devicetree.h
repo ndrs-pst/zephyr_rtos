@@ -65,7 +65,7 @@
  */
 
 /**
- * @defgroup devicetree-generic-id Node identifiers
+ * @defgroup devicetree-generic-id Node identifiers and helpers
  * @ingroup devicetree
  * @{
  */
@@ -77,6 +77,9 @@
 
 /**
  * @brief Get a node identifier for a devicetree path
+ *
+ * (This macro returns a node identifier from path components. To get
+ * a path string from a node identifier, use DT_NODE_PATH() instead.)
  *
  * The arguments to this macro are the names of non-root nodes in the
  * tree required to reach the desired node, starting from the root.
@@ -370,6 +373,52 @@
  * @return node identifier for the node with the name referred to by 'child'
  */
 #define DT_CHILD(node_id, child) UTIL_CAT(node_id, DT_S_PREFIX(child))
+
+/**
+ * @brief Get a devicetree node's full path as a string literal
+ *
+ * This returns the path to a node from a node identifier. To get a
+ * node identifier from path components instead, use DT_PATH().
+ *
+ * Example devicetree fragment:
+ *
+ *     / {
+ *             soc {
+ *                     node: my-node@12345678 { ... };
+ *             };
+ *     };
+ *
+ * Example usage:
+ *
+ *    DT_NODE_PATH(DT_NODELABEL(node)) // "/soc/my-node@12345678"
+ *    DT_NODE_PATH(DT_PATH(soc))       // "/soc"
+ *    DT_NODE_PATH(DT_ROOT)            // "/"
+ *
+ * @param node_id node identifier
+ * @return the node's full path in the devicetree
+ */
+#define DT_NODE_PATH(node_id) DT_CAT(node_id, _PATH)
+
+/**
+ * @brief Do node_id1 and node_id2 refer to the same node?
+ *
+ * Both "node_id1" and "node_id2" must be node identifiers for nodes
+ * that exist in the devicetree (if unsure, you can check with
+ * DT_NODE_EXISTS()).
+ *
+ * The expansion evaluates to 0 or 1, but may not be a literal integer
+ * 0 or 1.
+ *
+ * @param node_id1 first node identifer
+ * @param node_id2 second node identifier
+ * @return an expression that evaluates to 1 if the node identifiers
+ *         refer to the same node, and evaluates to 0 otherwise
+ */
+#define DT_SAME_NODE(node_id1, node_id2) \
+	(DT_DEP_ORD(node_id1) == (DT_DEP_ORD(node_id2)))
+
+/* Implementation note: distinct nodes have distinct node identifiers.
+ * See include/devicetree/ordinals.h. */
 
 /**
  * @}

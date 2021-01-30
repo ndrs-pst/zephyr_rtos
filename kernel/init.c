@@ -136,6 +136,14 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	ARG_UNUSED(unused2);
 	ARG_UNUSED(unused3);
 
+#ifdef CONFIG_MMU
+	/* Invoked here such that backing store or eviction algorithms may
+	 * initialize kernel objects, and that all POST_KERNEL and later tasks
+	 * may perform memory management tasks (except for z_phys_map() which
+	 * is allowed at any time)
+	 */
+	z_mem_manage_init();
+#endif /* CONFIG_MMU */
 	z_sys_post_kernel = true;
 
 	z_sys_init_run_level(_SYS_INIT_LEVEL_POST_KERNEL);
@@ -383,7 +391,9 @@ FUNC_NORETURN void z_cstart(void)
 
 	z_dummy_thread_init(&dummy_thread);
 #endif
-
+#if defined(CONFIG_MMU) && defined(CONFIG_USERSPACE)
+	z_kernel_map_fixup();
+#endif
 	/* perform basic hardware initialization */
 	z_sys_init_run_level(_SYS_INIT_LEVEL_PRE_KERNEL_1);
 	z_sys_init_run_level(_SYS_INIT_LEVEL_PRE_KERNEL_2);
