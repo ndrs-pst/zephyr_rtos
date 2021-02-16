@@ -442,7 +442,7 @@ int coap_well_known_core_get(struct coap_resource *resource,
 	struct coap_option query;
 	unsigned int num_queries;
 	size_t offset;
-	uint8_t token[8];
+	uint8_t token[COAP_TOKEN_MAX_LEN];
 	uint16_t remaining;
 	uint16_t id;
 	uint8_t tkl;
@@ -481,7 +481,7 @@ int coap_well_known_core_get(struct coap_resource *resource,
 
 	num_queries = r;
 
-	r = coap_packet_init(response, data, len, 1, COAP_TYPE_ACK,
+	r = coap_packet_init(response, data, len, COAP_VERSION_1, COAP_TYPE_ACK,
 			     tkl, token, COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
 		goto end;
@@ -638,7 +638,7 @@ int coap_well_known_core_get(struct coap_resource *resource,
 			     uint8_t *data, uint16_t len)
 {
 	struct coap_option query;
-	uint8_t token[8];
+	uint8_t token[COAP_TOKEN_MAX_LEN];
 	uint16_t id;
 	uint8_t tkl;
 	uint8_t num_queries;
@@ -661,7 +661,7 @@ int coap_well_known_core_get(struct coap_resource *resource,
 
 	num_queries = r;
 
-	r = coap_packet_init(response, data, len, 1, COAP_TYPE_ACK,
+	r = coap_packet_init(response, data, len, COAP_VERSION_1, COAP_TYPE_ACK,
 			     tkl, token, COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
 		return r;

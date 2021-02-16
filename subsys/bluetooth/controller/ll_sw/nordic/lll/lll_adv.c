@@ -161,6 +161,7 @@ int lll_adv_data_init(struct lll_adv_pdu *pdu)
 		return -ENOMEM;
 	}
 
+	p->len = 0U;
 	pdu->pdu[0] = (void *)p;
 
 	return 0;
@@ -223,7 +224,7 @@ struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx)
 		uint8_t first_latest;
 
 		pdu->last = first;
-		cpu_dsb();
+		cpu_dmb();
 		first_latest = pdu->first;
 		if (first_latest != first) {
 			last++;

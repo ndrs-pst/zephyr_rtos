@@ -33,9 +33,11 @@ context about the tool.
    :maxdepth: 1
 
    install.rst
-   moving-to-west.rst
+   release-notes.rst
    troubleshooting.rst
-   repo-tool.rst
+   basics.rst
+   built-in.rst
+   workspaces.rst
    manifest.rst
    config.rst
    extensions.rst
@@ -43,8 +45,8 @@ context about the tool.
    sign.rst
    zephyr-cmds.rst
    why.rst
+   moving-to-west.rst
    without-west.rst
-   release-notes.rst
 
 For details on west's Python APIs, see :ref:`west-apis`.
 

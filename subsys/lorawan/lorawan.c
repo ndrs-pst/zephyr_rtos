@@ -53,7 +53,7 @@ K_SEM_DEFINE(mcps_confirm_sem, 0, 1);
 K_MUTEX_DEFINE(lorawan_join_mutex);
 K_MUTEX_DEFINE(lorawan_send_mutex);
 
-static enum lorawan_datarate lorawan_datarate = LORAWAN_DR_0;
+static enum lorawan_datarate lorawan_datarate;
 static uint8_t lorawan_conf_msg_tries = 1;
 static bool lorawan_adr_enable;
 
@@ -222,10 +222,16 @@ static LoRaMacStatus_t lorawan_join_abp(
 
 int lorawan_join(const struct lorawan_join_config *join_cfg)
 {
+	MibRequestConfirm_t mib_req;
 	LoRaMacStatus_t status;
 	int ret = 0;
 
 	k_mutex_lock(&lorawan_join_mutex, K_FOREVER);
+
+	/* MIB_PUBLIC_NETWORK powers on the radio and does not turn it off */
+	mib_req.Type = MIB_PUBLIC_NETWORK;
+	mib_req.Param.EnablePublicNetwork = true;
+	LoRaMacMibSetRequestConfirm(&mib_req);
 
 	if (join_cfg->mode == LORAWAN_ACT_OTAA) {
 		status = lorawan_join_otaa(join_cfg);
@@ -261,6 +267,22 @@ int lorawan_join(const struct lorawan_join_config *join_cfg)
 	}
 
 out:
+	/*
+	 * Several regions (AS923, AU915, US915) overwrite the datarate as part
+	 * of the join process. Reset the datarate to the value requested
+	 * (and validated) in lorawan_set_datarate so that the MAC layer is
+	 * aware of the set datarate for LoRaMacQueryTxPossible. This is only
+	 * performed when ADR is disabled as it the network servers
+	 * responsibility to increase datarates when ADR is enabled.
+	 */
+	if ((ret == 0) && (!lorawan_adr_enable)) {
+		MibRequestConfirm_t mib_req;
+
+		mib_req.Type = MIB_CHANNELS_DATARATE;
+		mib_req.Param.ChannelsDatarate = lorawan_datarate;
+		LoRaMacMibSetRequestConfirm(&mib_req);
+	}
+
 	k_mutex_unlock(&lorawan_join_mutex);
 	return ret;
 }
@@ -296,8 +318,18 @@ int lorawan_set_class(enum lorawan_class dev_class)
 
 int lorawan_set_datarate(enum lorawan_datarate dr)
 {
+	MibRequestConfirm_t mib_req;
+
 	/* Bail out if using ADR */
 	if (lorawan_adr_enable) {
+		return -EINVAL;
+	}
+
+	/* Notify MAC layer of the requested datarate */
+	mib_req.Type = MIB_CHANNELS_DATARATE;
+	mib_req.Param.ChannelsDatarate = dr;
+	if (LoRaMacMibSetRequestConfirm(&mib_req) != LORAMAC_STATUS_OK) {
+		/* Datarate is invalid for this region */
 		return -EINVAL;
 	}
 
@@ -414,6 +446,8 @@ int lorawan_start(void)
 {
 	LoRaMacStatus_t status;
 	MibRequestConfirm_t mib_req;
+	GetPhyParams_t phy_params;
+	PhyParam_t phy_param;
 
 	status = LoRaMacStart();
 	if (status != LORAMAC_STATUS_OK) {
@@ -422,13 +456,14 @@ int lorawan_start(void)
 		return -EINVAL;
 	}
 
+	/* Retrieve the default TX datarate for selected region */
+	phy_params.Attribute = PHY_DEF_TX_DR;
+	phy_param = RegionGetPhyParam(LORAWAN_REGION, &phy_params);
+	lorawan_datarate = phy_param.Value;
+
 	/* TODO: Move these to a proper location */
 	mib_req.Type = MIB_SYSTEM_MAX_RX_ERROR;
 	mib_req.Param.SystemMaxRxError = CONFIG_LORAWAN_SYSTEM_MAX_RX_ERROR;
-	LoRaMacMibSetRequestConfirm(&mib_req);
-
-	mib_req.Type = MIB_PUBLIC_NETWORK;
-	mib_req.Param.EnablePublicNetwork = true;
 	LoRaMacMibSetRequestConfirm(&mib_req);
 
 	return 0;

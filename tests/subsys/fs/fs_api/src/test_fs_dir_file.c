@@ -94,6 +94,20 @@ void test_fs_file_t_init(void)
 }
 
 /**
+ * @brief Test fs_dir_t_init initializer
+ */
+void test_fs_dir_t_init(void)
+{
+	struct fs_dir_t dirp;
+
+	memset(&dirp, 0xff, sizeof(dirp));
+
+	fs_dir_t_init(&dirp);
+	zassert_equal(dirp.mp, NULL, "Expected to be initialized to NULL");
+	zassert_equal(dirp.dirp, NULL, "Expected to be initialized to NULL");
+}
+
+/**
  * @brief Test mount interface of filesystem
  *
  * @details
@@ -259,11 +273,14 @@ void test_mkdir(void)
 void test_opendir(void)
 {
 	int ret;
-	struct fs_dir_t dirp;
+	struct fs_dir_t dirp, dirp2, dirp3;
 
 	TC_PRINT("\nopendir tests:\n");
 
-	memset(&dirp, 0, sizeof(dirp));
+	fs_dir_t_init(&dirp);
+	fs_dir_t_init(&dirp2);
+	fs_dir_t_init(&dirp3);
+
 	TC_PRINT("Test null path\n");
 	ret = fs_opendir(NULL, NULL);
 	zassert_not_equal(ret, 0, "Open dir with NULL pointer parameter");
@@ -288,12 +305,22 @@ void test_opendir(void)
 	ret = fs_opendir(&dirp, "/");
 	zassert_equal(ret, 0, "Fail to open root dir");
 
-	ret = fs_opendir(&dirp, TEST_DIR);
+	TC_PRINT("Double-open using occupied fs_dir_t object\n");
+	ret = fs_opendir(&dirp, "/not_a_dir");
+	zassert_equal(ret, -EBUSY, "Expected -EBUSY, got %d", ret);
+
+	ret = fs_opendir(&dirp2, TEST_DIR);
 	zassert_equal(ret, 0, "Fail to open dir");
 
-	TC_PRINT("Open same directory multi times\n");
-	ret = fs_opendir(&dirp, TEST_DIR);
-	zassert_not_equal(ret, 0, "Can't reopen an opened dir");
+	TC_PRINT("Double-open using occupied fs_dir_t object\n");
+	ret = fs_opendir(&dirp2, "/xD");
+	zassert_equal(ret, -EBUSY, "Expected -EBUSY, got %d", ret);
+
+	mock_opendir_result(-EIO);
+	TC_PRINT("Transfer underlying FS error\n");
+	ret = fs_opendir(&dirp3, TEST_DIR);
+	mock_opendir_result(0);
+	zassert_equal(ret, -EIO, "FS error not transferred\n");
 }
 
 /**
@@ -307,7 +334,7 @@ void test_closedir(void)
 	struct fs_dir_t dirp;
 
 	TC_PRINT("\nclosedir tests: %s\n", TEST_DIR);
-	memset(&dirp, 0, sizeof(dirp));
+	fs_dir_t_init(&dirp);
 	ret = fs_opendir(&dirp, TEST_DIR);
 	zassert_equal(ret, 0, "Fail to open dir");
 
@@ -323,6 +350,38 @@ void test_closedir(void)
 	zassert_not_equal(ret, 0, "Filesystem has no closedir interface");
 }
 
+/**
+ * @brief Test Reuse fs_dir_t object from closed directory"
+ *
+ * @ingroup filesystem_api
+ */
+void test_opendir_closedir(void)
+{
+	int ret;
+	struct fs_dir_t dirp;
+
+	TC_PRINT("\nreuse fs_dir_t tests:\n");
+
+	fs_dir_t_init(&dirp);
+
+	TC_PRINT("Test: open root dir, close, open volume dir\n");
+	ret = fs_opendir(&dirp, "/");
+	zassert_equal(ret, 0, "Fail to open root dir");
+
+	ret = fs_closedir(&dirp);
+	zassert_equal(ret, 0, "Fail to close dir");
+
+	ret = fs_opendir(&dirp, TEST_DIR);
+	zassert_equal(ret, 0, "Fail to open dir");
+
+	TC_PRINT("Test: open volume dir, close, open root dir\n");
+	ret = fs_closedir(&dirp);
+	zassert_equal(ret, 0, "Fail to close dir");
+
+	ret = fs_opendir(&dirp, "/");
+	zassert_equal(ret, 0, "Fail to open root dir");
+}
+
 static int _test_lsdir(const char *path)
 {
 	int ret;
@@ -331,7 +390,7 @@ static int _test_lsdir(const char *path)
 
 	TC_PRINT("\nlsdir tests:\n");
 
-	memset(&dirp, 0, sizeof(dirp));
+	fs_dir_t_init(&dirp);
 	memset(&entry, 0, sizeof(entry));
 
 	TC_PRINT("read an unopened dir\n");
@@ -354,6 +413,7 @@ static int _test_lsdir(const char *path)
 	}
 
 	TC_PRINT("read an opened dir\n");
+	fs_dir_t_init(&dirp);
 	ret = fs_opendir(&dirp, path);
 	if (ret) {
 		if (path) {

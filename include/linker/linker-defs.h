@@ -186,7 +186,6 @@ extern char __data_ram_end[];
 /* Virtual addresses of page-aligned kernel image mapped into RAM at boot */
 extern char z_mapped_start[];
 extern char z_mapped_end[];
-extern char z_mapped_size[];
 #endif /* CONFIG_MMU */
 
 /* Includes text and rodata */
@@ -310,9 +309,11 @@ extern char z_kobject_data_begin[];
 extern char __tdata_start[];
 extern char __tdata_end[];
 extern char __tdata_size[];
+extern char __tdata_align[];
 extern char __tbss_start[];
 extern char __tbss_end[];
 extern char __tbss_size[];
+extern char __tbss_align[];
 extern char __tls_start[];
 extern char __tls_end[];
 extern char __tls_size[];

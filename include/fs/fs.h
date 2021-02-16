@@ -223,7 +223,7 @@ struct fs_statvfs {
 /**
  * @brief Initialize fs_file_t object
  *
- * Initialized the fs_file_t object; the function needs to be invoked
+ * Initializes the fs_file_t object; the function needs to be invoked
  * on object before first use with fs_open.
  *
  * @param zfp Pointer to file object
@@ -232,6 +232,20 @@ struct fs_statvfs {
 static inline void fs_file_t_init(struct fs_file_t *zfp)
 {
 	*zfp = (struct fs_file_t){ 0 };
+}
+
+/**
+ * @brief Initialize fs_dir_t object
+ *
+ * Initializes the fs_dir_t object; the function needs to be invoked
+ * on object before first use with fs_opendir.
+ *
+ * @param zdp Pointer to file object
+ *
+ */
+static inline void fs_dir_t_init(struct fs_dir_t *zdp)
+{
+	*zdp = (struct fs_dir_t){ 0 };
 }
 
 /**

@@ -91,7 +91,7 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 		return;
 	}
 
-#ifdef KERNEL_COHERENCE
+#ifdef CONFIG_KERNEL_COHERENCE
 	__ASSERT_NO_MSG(arch_mem_coherent(to));
 #endif
 
@@ -134,7 +134,8 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 			 */
 			int32_t next_time = next_timeout();
 
-			if (_current_cpu->slice_ticks != next_time) {
+			if (next_time == 0 ||
+			    _current_cpu->slice_ticks != next_time) {
 				z_clock_set_timeout(next_time, false);
 			}
 #else
@@ -214,7 +215,7 @@ void z_set_timeout_expiry(int32_t ticks, bool is_idle)
 	LOCKED(&timeout_lock) {
 		int next_to = next_timeout();
 		bool sooner = (next_to == K_TICKS_FOREVER)
-			      || (ticks < next_to);
+			      || (ticks <= next_to);
 		bool imminent = next_to <= 1;
 
 		/* Only set new timeouts when they are sooner than
