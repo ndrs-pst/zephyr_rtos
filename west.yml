@@ -147,5 +147,5 @@ manifest:
       revision: 1.7.0-rc1
 
   self:
-    path: zephyr
+    path: zephyr-rtos
     west-commands: scripts/west-commands.yml
