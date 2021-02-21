@@ -80,8 +80,8 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #endif
 
 #define USB_BASE_ADDRESS	DT_INST_REG_ADDR(0)
-#define USB_IRQ			DT_INST_IRQ_BY_NAME(0, USB_IRQ_NAME, irq)
-#define USB_IRQ_PRI		DT_INST_IRQ_BY_NAME(0, USB_IRQ_NAME, priority)
+#define USB_IRQ			    DT_INST_IRQ_BY_NAME(0, USB_IRQ_NAME, irq)
+#define USB_IRQ_PRI		    DT_INST_IRQ_BY_NAME(0, USB_IRQ_NAME, priority)
 #define USB_NUM_BIDIR_ENDPOINTS	DT_INST_PROP(0, num_bidir_endpoints)
 #define USB_RAM_SIZE		DT_INST_PROP(0, ram_size)
 #define USB_CLOCK_BITS		DT_INST_CLOCKS_CELL(0, bits)
@@ -89,12 +89,12 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #if DT_INST_NODE_HAS_PROP(0, maximum_speed)
 #define USB_MAXIMUM_SPEED	DT_INST_PROP(0, maximum_speed)
 #endif
-static const struct soc_gpio_pinctrl usb_pinctrl[] =
-						ST_STM32_DT_INST_PINCTRL(0, 0);
+
+static const struct soc_gpio_pinctrl usb_pinctrl[] = ST_STM32_DT_INST_PINCTRL(0, 0);
 
 
 #define USB_OTG_HS_EMB_PHY (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && \
-			    DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
+			                DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
 
 /*
  * USB and USB_OTG_FS are defined in STM32Cube HAL and allows to distinguish
@@ -157,20 +157,20 @@ static const struct soc_gpio_pinctrl usb_pinctrl[] =
 
 /* Endpoint state */
 struct usb_dc_stm32_ep_state {
-	uint16_t ep_mps;		/** Endpoint max packet size */
+	uint16_t ep_mps;		    /** Endpoint max packet size */
 	uint16_t ep_pma_buf_len;	/** Previously allocated buffer size */
-	uint8_t ep_type;		/** Endpoint type (STM32 HAL enum) */
-	uint8_t ep_stalled;	/** Endpoint stall flag */
-	usb_dc_ep_callback cb;	/** Endpoint callback function */
-	uint32_t read_count;	/** Number of bytes in read buffer  */
-	uint32_t read_offset;	/** Current offset in read buffer */
-	struct k_sem write_sem;	/** Write boolean semaphore */
+	uint8_t ep_type;		    /** Endpoint type (STM32 HAL enum) */
+	uint8_t ep_stalled;	        /** Endpoint stall flag */
+	usb_dc_ep_callback cb;	    /** Endpoint callback function */
+	uint32_t read_count;	    /** Number of bytes in read buffer  */
+	uint32_t read_offset;	    /** Current offset in read buffer */
+	struct k_sem write_sem;	    /** Write boolean semaphore */
 };
 
 /* Driver state */
 struct usb_dc_stm32_state {
-	PCD_HandleTypeDef pcd;	/* Storage for the HAL_PCD api */
-	usb_dc_status_callback status_cb; /* Status callback */
+	PCD_HandleTypeDef pcd;                  /* Storage for the HAL_PCD api */
+	usb_dc_status_callback status_cb;       /* Status callback */
 	struct usb_dc_stm32_ep_state out_ep_state[USB_NUM_BIDIR_ENDPOINTS];
 	struct usb_dc_stm32_ep_state in_ep_state[USB_NUM_BIDIR_ENDPOINTS];
 	uint8_t ep_buf[USB_NUM_BIDIR_ENDPOINTS][EP_MPS];
@@ -233,7 +233,7 @@ static int usb_dc_stm32_clock_enable(void)
 	/*
 	 * In STM32L0 series, HSI48 requires VREFINT and its buffer
 	 * with 48 MHz RC to be enabled.
-	 * See ENREF_HSI48 in referenc maual RM0367 section10.2.3:
+	 * See ENREF_HSI48 in reference manual RM0367 section10.2.3:
 	 * "Reference control and status register (SYSCFG_CFGR3)"
 	 */
 #ifdef CONFIG_SOC_SERIES_STM32L0X
@@ -313,6 +313,15 @@ static int usb_dc_stm32_clock_enable(void)
 	}
 
 #endif /* RCC_HSI48_SUPPORT / LL_RCC_USB_CLKSOURCE_NONE / RCC_CFGR_OTGFSPRE */
+
+	/* #CUSTOM@PST1981 : START */
+    #if defined(CONFIG_SOC_SERIES_STM32H7X)
+	LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL1Q);
+	LL_PWR_EnableUSBVoltageDetector();
+	volatile uint32_t usb_clk_hz;
+	usb_clk_hz = LL_RCC_GetUSBClockFreq(LL_RCC_USB_CLKSOURCE_PLL1Q);
+    #endif
+	/* #CUSTOM@PST1981 : END */
 
 	if (clock_control_on(clk, (clock_control_subsys_t *)&pclken) != 0) {
 		LOG_ERR("Unable to enable USB clock");
@@ -428,32 +437,31 @@ static int usb_dc_stm32_init(void)
 		return -EIO;
 	}
 
-	usb_dc_stm32_state.out_ep_state[EP0_IDX].ep_mps = EP0_MPS;
+	usb_dc_stm32_state.out_ep_state[EP0_IDX].ep_mps  = EP0_MPS;
 	usb_dc_stm32_state.out_ep_state[EP0_IDX].ep_type = EP_TYPE_CTRL;
-	usb_dc_stm32_state.in_ep_state[EP0_IDX].ep_mps = EP0_MPS;
-	usb_dc_stm32_state.in_ep_state[EP0_IDX].ep_type = EP_TYPE_CTRL;
+	usb_dc_stm32_state.in_ep_state[EP0_IDX].ep_mps   = EP0_MPS;
+	usb_dc_stm32_state.in_ep_state[EP0_IDX].ep_type  = EP_TYPE_CTRL;
 
-#ifdef USB
+    #ifdef USB
 	/* Start PMA configuration for the endpoints after the BTABLE. */
 	usb_dc_stm32_state.pma_offset = USB_BTABLE_SIZE;
 
 	for (i = 0U; i < USB_NUM_BIDIR_ENDPOINTS; i++) {
 		k_sem_init(&usb_dc_stm32_state.in_ep_state[i].write_sem, 1, 1);
 	}
-#else /* USB_OTG_FS */
+    #else /* USB_OTG_FS */
 	/* TODO: make this dynamic (depending usage) */
 	HAL_PCDEx_SetRxFiFo(&usb_dc_stm32_state.pcd, FIFO_EP_WORDS);
 	for (i = 0U; i < USB_NUM_BIDIR_ENDPOINTS; i++) {
-		HAL_PCDEx_SetTxFiFo(&usb_dc_stm32_state.pcd, i,
-				    FIFO_EP_WORDS);
+		HAL_PCDEx_SetTxFiFo(&usb_dc_stm32_state.pcd, i, FIFO_EP_WORDS);
 		k_sem_init(&usb_dc_stm32_state.in_ep_state[i].write_sem, 1, 1);
 	}
-#endif /* USB */
+    #endif /* USB */
 
-	IRQ_CONNECT(USB_IRQ, USB_IRQ_PRI,
-		    usb_dc_stm32_isr, 0, 0);
+	IRQ_CONNECT(USB_IRQ, USB_IRQ_PRI, usb_dc_stm32_isr, 0, 0);
 	irq_enable(USB_IRQ);
-	return 0;
+
+	return (0);
 }
 
 /* Zephyr USB device controller API implementation */
