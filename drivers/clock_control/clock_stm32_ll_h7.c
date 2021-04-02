@@ -609,7 +609,7 @@ static int stm32_clock_control_init(const struct device *dev)
 #endif /* CONFIG_CLOCK_STM32_PLL_SRC_* */
 
 
-	/* Preset the prescalers prior to chosing SYSCLK */
+	/* Preset the prescalers prior to choosing SYSCLK */
 	/* Prevents APB clock to go over limits */
 	/* Set buses (Sys,AHB, APB1, APB2 & APB4) prescalers */
 	LL_RCC_SetSysPrescaler(sysclk_prescaler(CONFIG_CLOCK_STM32_D1CPRE));
