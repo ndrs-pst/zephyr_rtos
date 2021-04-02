@@ -60,6 +60,7 @@
         led2 = &red_led;
 		pwm-led0 = &red_pwm_led;
 		sw0 = &user_button;
+        i2c-1 = &i2c1;
 	};
 };
 
