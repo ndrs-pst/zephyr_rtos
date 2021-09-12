@@ -35,7 +35,9 @@ uint32_t dma_stm32_id_to_stream(uint32_t id)
 	return stream_nr[id];
 }
 
-#if !defined(CONFIG_DMAMUX_STM32)
+#if defined(CONFIG_DMAMUX_STM32)
+/* pass */
+#else
 uint32_t dma_stm32_slot_to_channel(uint32_t slot)
 {
 	static const uint32_t channel_nr[] = {
