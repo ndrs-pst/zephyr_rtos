@@ -416,6 +416,16 @@ device_handle_get(const struct device *dev)
 }
 
 /**
+ * @brief Run device initialization in user space
+ *
+ * @param[in] dev the device that want to re-initialize
+ *
+ * @return 0 on success, negative errno code otherwise
+ * @note The init_entry entry of the device shall be in POST_KERNEL !!!
+ */
+int device_user_init(const struct device* dev);
+
+/**
  * @brief Get the device corresponding to a handle.
  *
  * @param dev_handle the device handle
@@ -562,7 +572,7 @@ device_supported_handles_get(const struct device *dev,
  * @return The number of devices that were visited if all visits succeed, or
  * the negative value returned from the first visit that did not succeed.
  */
-int device_required_foreach(const struct device *dev,
+int device_required_foreach(const struct device *_dev,
 			  device_visitor_callback_t visitor_cb,
 			  void *context);
 
@@ -598,7 +608,7 @@ int device_required_foreach(const struct device *dev,
  * @return The number of devices that were visited if all visits succeed, or
  * the negative value returned from the first visit that did not succeed.
  */
-int device_supported_foreach(const struct device *dev,
+int device_supported_foreach(const struct device *_dev,
 			     device_visitor_callback_t visitor_cb,
 			     void *context);
 
@@ -633,7 +643,7 @@ size_t z_device_get_all_static(const struct device * *devices);
  *
  * @return true if and only if the device is available for use.
  */
-bool z_device_ready(const struct device *dev);
+bool z_device_ready(const struct device *_dev);
 
 /** @brief Determine whether a device is ready for use
  *
@@ -660,7 +670,7 @@ static inline int z_device_usable_check(const struct device *dev)
  * @retval other negative error codes to indicate additional conditions that
  * make the device unusable.
  */
-__syscall int device_usable_check(const struct device *dev);
+__syscall int device_usable_check(const struct device *_dev);
 
 static inline int z_impl_device_usable_check(const struct device *dev)
 {

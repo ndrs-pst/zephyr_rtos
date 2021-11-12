@@ -202,3 +202,33 @@ int device_supported_foreach(const struct device *dev,
 
 	return device_visitor(handles, handle_count, visitor_cb, context);
 }
+
+/* #CUSTOM@PST1981 */
+int /**/device_user_init(const struct device* dev) {
+    const struct init_entry* entry;
+    int rc;
+
+    rc = -1;
+    for (entry = __init_POST_KERNEL_start; entry < __init_APPLICATION_start; entry++) {
+        if (entry->dev == dev) {
+            rc = entry->init(dev);
+
+            /* Mark device initialized.  If initialization
+             * failed, record the error condition.
+             */
+            if (rc != 0) {
+                if (rc < 0) {
+                    rc = -rc;
+                }
+
+                if (rc > UINT8_MAX) {
+                    rc = UINT8_MAX;
+                }
+                dev->state->init_res = rc;
+            }
+            dev->state->initialized = true;
+        }
+    }
+
+    return (rc);
+}
