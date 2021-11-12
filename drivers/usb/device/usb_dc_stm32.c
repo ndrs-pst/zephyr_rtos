@@ -59,8 +59,8 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #if DT_INST_NODE_HAS_PROP(0, maximum_speed)
 #define USB_MAXIMUM_SPEED	DT_INST_PROP(0, maximum_speed)
 #endif
-static const struct soc_gpio_pinctrl usb_pinctrl[] =
-						ST_STM32_DT_INST_PINCTRL(0, 0);
+
+static const struct soc_gpio_pinctrl usb_pinctrl[] = ST_STM32_DT_INST_PINCTRL(0, 0);
 
 
 #define USB_OTG_HS_EMB_PHY (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && \
@@ -155,8 +155,7 @@ static struct usb_dc_stm32_state usb_dc_stm32_state;
 
 /* Internal functions */
 
-static struct usb_dc_stm32_ep_state *usb_dc_stm32_get_ep_state(uint8_t ep)
-{
+static struct usb_dc_stm32_ep_state* usb_dc_stm32_get_ep_state(uint8_t ep) {
 	struct usb_dc_stm32_ep_state *ep_state_base;
 
 	if (USB_EP_GET_IDX(ep) >= USB_NUM_BIDIR_ENDPOINTS) {
@@ -206,7 +205,7 @@ static int usb_dc_stm32_clock_enable(void)
 	/*
 	 * In STM32L0 series, HSI48 requires VREFINT and its buffer
 	 * with 48 MHz RC to be enabled.
-	 * See ENREF_HSI48 in referenc maual RM0367 section10.2.3:
+     * See ENREF_HSI48 in reference manual RM0367 section10.2.3:
 	 * "Reference control and status register (SYSCFG_CFGR3)"
 	 */
 #ifdef CONFIG_SOC_SERIES_STM32L0X
@@ -286,6 +285,23 @@ static int usb_dc_stm32_clock_enable(void)
 	}
 
 #endif /* RCC_HSI48_SUPPORT / LL_RCC_USB_CLKSOURCE_NONE / RCC_CFGR_OTGFSPRE */
+
+    /* #CUSTOM@PST1981 : START */
+    #if defined(CONFIG_SOC_SERIES_STM32H7X)
+    LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL1Q);
+    LL_PWR_EnableUSBVoltageDetector();
+    volatile uint32_t usb_clk_hz;
+    usb_clk_hz = LL_RCC_GetUSBClockFreq(LL_RCC_USB_CLKSOURCE_PLL1Q);
+
+    #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
+    /* Not yet support OTGHS */
+    #else
+    __HAL_RCC_USB_OTG_FS_CLK_ENABLE();
+    __HAL_RCC_USB2_OTG_FS_CLK_SLEEP_ENABLE();
+    __HAL_RCC_USB2_OTG_FS_ULPI_CLK_SLEEP_DISABLE();
+    #endif
+    #endif
+    /* #CUSTOM@PST1981 : END */
 
 	if (clock_control_on(clk, (clock_control_subsys_t *)&pclken) != 0) {
 		LOG_ERR("Unable to enable USB clock");
@@ -442,16 +458,15 @@ static int usb_dc_stm32_init(void)
 	/* TODO: make this dynamic (depending usage) */
 	HAL_PCDEx_SetRxFiFo(&usb_dc_stm32_state.pcd, FIFO_EP_WORDS);
 	for (i = 0U; i < USB_NUM_BIDIR_ENDPOINTS; i++) {
-		HAL_PCDEx_SetTxFiFo(&usb_dc_stm32_state.pcd, i,
-				    FIFO_EP_WORDS);
+        HAL_PCDEx_SetTxFiFo(&usb_dc_stm32_state.pcd, i, FIFO_EP_WORDS);
 		k_sem_init(&usb_dc_stm32_state.in_ep_state[i].write_sem, 1, 1);
 	}
 #endif /* USB */
 
-	IRQ_CONNECT(USB_IRQ, USB_IRQ_PRI,
-		    usb_dc_stm32_isr, 0, 0);
+    IRQ_CONNECT(USB_IRQ, USB_IRQ_PRI, usb_dc_stm32_isr, 0, 0);
 	irq_enable(USB_IRQ);
-	return 0;
+
+    return (0);
 }
 
 /* Zephyr USB device controller API implementation */
@@ -729,35 +744,34 @@ int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled)
 	return 0;
 }
 
-int usb_dc_ep_enable(const uint8_t ep)
-{
-	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
+int usb_dc_ep_enable(const uint8_t ep) {
+    struct usb_dc_stm32_ep_state* ep_state;
 	HAL_StatusTypeDef status;
+    int rc;
 
 	LOG_DBG("ep 0x%02x", ep);
 
-	if (!ep_state) {
-		return -EINVAL;
+    rc = 0;
+    ep_state = usb_dc_stm32_get_ep_state(ep);
+    if (ep_state == NULL) {
+        rc = -EINVAL;
 	}
+    else {
+        LOG_DBG("HAL_PCD_EP_Open(0x%02x, %u, %u)", ep, ep_state->ep_mps, ep_state->ep_type);
 
-	LOG_DBG("HAL_PCD_EP_Open(0x%02x, %u, %u)", ep, ep_state->ep_mps,
-		ep_state->ep_type);
-
-	status = HAL_PCD_EP_Open(&usb_dc_stm32_state.pcd, ep,
-				 ep_state->ep_mps, ep_state->ep_type);
+        status = HAL_PCD_EP_Open(&usb_dc_stm32_state.pcd, ep, ep_state->ep_mps, ep_state->ep_type);
 	if (status != HAL_OK) {
-		LOG_ERR("HAL_PCD_EP_Open failed(0x%02x), %d", ep,
-			(int)status);
-		return -EIO;
+            LOG_ERR("HAL_PCD_EP_Open failed(0x%02x), %d", ep, (int )status);
+            rc = -EIO;
 	}
-
-	if (USB_EP_DIR_IS_OUT(ep) && ep != EP0_OUT) {
-		return usb_dc_ep_start_read(ep,
-					  usb_dc_stm32_state.ep_buf[USB_EP_GET_IDX(ep)],
-					  EP_MPS);
+        else {
+            if (USB_EP_DIR_IS_OUT(ep) && (ep != EP0_OUT)) {
+                rc = usb_dc_ep_start_read(ep, usb_dc_stm32_state.ep_buf[USB_EP_GET_IDX(ep)], EP_MPS);
 	}
+        }
+    }
 
-	return 0;
+    return (rc);
 }
 
 int usb_dc_ep_disable(const uint8_t ep)
@@ -1043,7 +1057,7 @@ void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
 	memcpy(&usb_dc_stm32_state.ep_buf[EP0_IDX],
 	       usb_dc_stm32_state.pcd.Setup, ep_state->read_count);
 
-	if (ep_state->cb) {
+    if (ep_state->cb != NULL) {
 		ep_state->cb(EP0_OUT, USB_DC_EP_SETUP);
 
 		if (!(setup->wLength == 0U) &&
