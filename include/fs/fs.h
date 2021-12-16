@@ -382,6 +382,13 @@ int fs_seek(struct fs_file_t *zfp, off_t offset, int whence);
  */
 off_t fs_tell(struct fs_file_t *zfp);
 
+/** Get the size of the file.
+ *
+ *  @param file     File handle.
+ *  @return         Size of the file in bytes.
+ */
+off_t fs_size(struct fs_file_t* zfp);       /* #CUSTOM@PST1981 */
+
 /**
  * @brief Truncate or extend an open file to a given size
  *

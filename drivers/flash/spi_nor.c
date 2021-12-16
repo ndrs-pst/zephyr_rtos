@@ -199,6 +199,14 @@ static inline uint32_t dev_flash_size(const struct device *dev)
 #endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
 }
 
+size_t /**/spi_nor_flash_size(const struct device* dev) {
+    size_t sz;
+
+    sz = (size_t)dev_flash_size(dev);
+
+    return (sz);
+}
+
 /* Get the flash device page size.  Constant for minimal, data for
  * runtime and devicetree.
  */
@@ -1258,9 +1266,92 @@ static const struct spi_nor_config spi_nor_config_0 = {
 #endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
 };
 
-static struct spi_nor_data spi_nor_data_0;
+/* @warning Instance number 1 and 2 share information as same as instance number 0 !!! */
+#if (DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1)
+static const struct spi_nor_config spi_nor_config_1 = {
+    .spi = SPI_DT_SPEC_INST_GET(1, SPI_WORD_SET(8),
+                    CONFIG_SPI_NOR_CS_WAIT_DELAY),
+#if !defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
 
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+    .layout = {
+        .pages_count = LAYOUT_PAGES_COUNT,
+        .pages_size = CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE,
+    },
+#undef LAYOUT_PAGES_COUNT
+#endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
+    .flash_size = DT_INST_PROP(0, size) / 8,
+    .jedec_id = DT_INST_PROP(0, jedec_id),
+
+#if DT_INST_NODE_HAS_PROP(0, has_lock)
+    .has_lock = DT_INST_PROP(0, has_lock),
+#endif
+#if defined(CONFIG_SPI_NOR_SFDP_MINIMAL)        \
+    && DT_INST_NODE_HAS_PROP(0, enter_4byte_addr)
+    .enter_4byte_addr = DT_INST_PROP(0, enter_4byte_addr),
+#endif
+#ifdef CONFIG_SPI_NOR_SFDP_DEVICETREE
+    .bfp_len = sizeof(bfp_data_0) / 4,
+    .bfp = (const struct jesd216_bfp *)bfp_data_0,
+#endif /* CONFIG_SPI_NOR_SFDP_DEVICETREE */
+
+#endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
+};
+#endif
+
+#if (DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 2)
+static const struct spi_nor_config spi_nor_config_2 = {
+    .spi = SPI_DT_SPEC_INST_GET(2, SPI_WORD_SET(8),
+                    CONFIG_SPI_NOR_CS_WAIT_DELAY),
+#if !defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
+
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+    .layout = {
+        .pages_count = LAYOUT_PAGES_COUNT,
+        .pages_size = CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE,
+    },
+#undef LAYOUT_PAGES_COUNT
+#endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
+    .flash_size = DT_INST_PROP(0, size) / 8,
+    .jedec_id = DT_INST_PROP(0, jedec_id),
+
+#if DT_INST_NODE_HAS_PROP(0, has_lock)
+    .has_lock = DT_INST_PROP(0, has_lock),
+#endif
+#if defined(CONFIG_SPI_NOR_SFDP_MINIMAL)        \
+    && DT_INST_NODE_HAS_PROP(0, enter_4byte_addr)
+    .enter_4byte_addr = DT_INST_PROP(0, enter_4byte_addr),
+#endif
+#ifdef CONFIG_SPI_NOR_SFDP_DEVICETREE
+    .bfp_len = sizeof(bfp_data_0) / 4,
+    .bfp = (const struct jesd216_bfp *)bfp_data_0,
+#endif /* CONFIG_SPI_NOR_SFDP_DEVICETREE */
+
+#endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
+};
+#endif
+
+/* #CUSTOM@PST1981 Support up to 3 instances of SPI_NOR */
+static struct spi_nor_data spi_nor_data_0;
 DEVICE_DT_INST_DEFINE(0, &spi_nor_init, NULL,
 		 &spi_nor_data_0, &spi_nor_config_0,
 		 POST_KERNEL, CONFIG_SPI_NOR_INIT_PRIORITY,
 		 &spi_nor_api);
+
+#if (DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) >= 2)
+static struct spi_nor_data spi_nor_data_1;
+DEVICE_DT_INST_DEFINE(1, &spi_nor_init, NULL,
+         &spi_nor_data_1, &spi_nor_config_1,
+         POST_KERNEL, CONFIG_SPI_NOR_INIT_PRIORITY,
+         &spi_nor_api);
+#endif
+
+#if (DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) >= 3)
+static struct spi_nor_data spi_nor_data_2;
+DEVICE_DT_INST_DEFINE(2, &spi_nor_init, NULL,
+         &spi_nor_data_2, &spi_nor_config_2,
+         POST_KERNEL, CONFIG_SPI_NOR_INIT_PRIORITY,
+         &spi_nor_api);
+#endif

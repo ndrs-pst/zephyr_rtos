@@ -434,7 +434,7 @@ K_APPMEM_PARTITION_DEFINE(ztest_mem_partition);
 #endif
 
 #ifndef KERNEL
-int main(void)
+int ztest_main(void)
 {
 	z_init_mock();
 	test_main();
@@ -443,7 +443,7 @@ int main(void)
 	return test_status;
 }
 #else
-void main(void)
+void ztest_main(void)
 {
 #ifdef CONFIG_USERSPACE
 	/* Partition containing globals tagged with ZTEST_DMEM and ZTEST_BMEM
