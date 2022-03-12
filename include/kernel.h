@@ -4232,7 +4232,7 @@ extern int k_work_poll_cancel(struct k_work_poll *work);
 /**
  * @brief Message Queue Structure
  */
-struct k_msgq {
+struct /**/k_msgq {
 	/** Message queue wait queue */
 	_wait_q_t wait_q;
 	/** Lock */
