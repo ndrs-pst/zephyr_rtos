@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <atmel/samd21.dtsi>
+#include <atmel/samc21.dtsi>
 #include "atsamd21_xpro-pinctrl.dtsi"
 
 / {
@@ -22,7 +22,6 @@
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
-		led1 = &led0;
 		pwm-led0 = &pwm_led0;
 		sw0 = &user_button;
 		i2c-0 = &sercom2;
@@ -129,5 +128,3 @@ zephyr_udc0: &usb0 {
 	pinctrl-0 = <&usb_dc_default>;
 	pinctrl-names = "default";
 };
-
-arduino_serial: &sercom3 { };
