@@ -102,8 +102,7 @@ static void wait_synchronization(SercomUsart *const usart)
 #endif
 }
 
-static int uart_sam0_set_baudrate(SercomUsart *const usart, uint32_t baudrate,
-				  uint32_t clk_freq_hz)
+static int uart_sam0_set_baudrate(SercomUsart *const usart, uint32_t baudrate, uint32_t clk_freq_hz)
 {
 	uint64_t tmp;
 	uint16_t baud;
@@ -473,8 +472,7 @@ static int uart_sam0_configure(const struct device *dev,
 	usart->CTRLB = CTRLB_temp;
 	wait_synchronization(usart);
 
-	retval = uart_sam0_set_baudrate(usart, new_cfg->baudrate,
-					SOC_ATMEL_SAM0_GCLK0_FREQ_HZ);
+	retval = uart_sam0_set_baudrate(usart, new_cfg->baudrate, SOC_ATMEL_SAM0_GCLK0_FREQ_HZ);
 	if (retval != 0) {
 		return retval;
 	}

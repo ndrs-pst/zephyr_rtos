@@ -11,3 +11,9 @@ properties:
       type: int
       required: true
       description: peripheral ID
+
+    clocks:
+      required: true
+
+    clock-names:
+      required: true
