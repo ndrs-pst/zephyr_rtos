@@ -6,22 +6,24 @@
 
 /dts-v1/;
 #include <atmel/samc21.dtsi>
-#include "atsamd21_xpro-pinctrl.dtsi"
+#include "atsamc21_xpro-pinctrl.dtsi"
 
 / {
-	model = "SAM D21 Xplained Pro";
-	compatible = "atsamd21,xpro", "atmel,samd21j18a", "atmel,samd21";
+	model = "SAM C21 Xplained Pro";
+	compatible = "atsamc21,xpro", "atmel,samc21j18a", "atmel,samc21";
 
 	chosen {
 		zephyr,console = &sercom3;
 		zephyr,shell-uart = &sercom3;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,canbus = &can0;
 	};
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
+		led1 = &led0;
 		pwm-led0 = &pwm_led0;
 		sw0 = &user_button;
 		i2c-0 = &sercom2;
@@ -122,9 +124,17 @@
 	pinctrl-names = "default";
 };
 
-zephyr_udc0: &usb0 {
+&can0 {
 	status = "okay";
 
-	pinctrl-0 = <&usb_dc_default>;
+	pinctrl-0 = <&can0_default>;
 	pinctrl-names = "default";
+
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
 };
+

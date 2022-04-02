@@ -4,12 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <atmel/samd2x.dtsi>
+#include <atmel/samc2x.dtsi>
 
 / {
-	aliases {
-		tc-6 = &tc6;
-	};
 
 	soc {
 		dmac: dmac@41006000 {
@@ -64,6 +61,48 @@
 			channels = <2>;
 			counter-size = <16>;
 		};
+		
+		can {
+			compatible = "bosch,m-can-base";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			std-filter-elements = <28>;
+			ext-filter-elements = <8>;
+			rx-fifo0-elements = <3>;
+			rx-fifo1-elements = <3>;
+			rx-buffer-elements = <0>;
+			tx-buffer-elements = <1>;
+
+			can0: can@42001C00 {
+				compatible = "atmel,sam0-can";
+				reg = <0x42001C00 0x100>;
+				reg-names = "m_can";
+				interrupts = <15 0>;
+				interrupt-names = "LINE_01";
+				peripheral-id = <15>;
+				sjw = <1>;
+				sample-point = <875>;
+				sjw-data = <1>;
+				sample-point-data = <875>;
+				status = "disabled";
+				label = "CAN_0";
+			};
+
+			can1: can@42002000 {
+				compatible = "atmel,sam0-can";
+				reg = <0x42002000 0x100>;
+				reg-names = "m_can";
+				interrupts = <16 0>;
+				interrupt-names = "LINE_01";
+				peripheral-id = <16>;
+				sjw = <1>;
+				sample-point = <875>;
+				sjw-data = <1>;
+				sample-point-data = <875>;
+				status = "disabled";
+				label = "CAN_1";
+			};
+		};		
 	};
 };
 
@@ -75,38 +114,38 @@
 
 &sercom0 {
 	interrupts = <9 0>;
-	clocks = <&gclk 0x14>, <&pm 0x20 2>;
-	clock-names = "GCLK", "PM";
+	clocks = <&gclk 2>, <&mclk 0x20 2>;
+	clock-names = "GCLK", "MCLK";
 };
 
 &sercom1 {
 	interrupts = <10 0>;
-	clocks = <&gclk 0x15>, <&pm 0x20 3>;
-	clock-names = "GCLK", "PM";
+	clocks = <&gclk 2>, <&mclk 0x20 3>;
+	clock-names = "GCLK", "MCLK";
 };
 
 &sercom2 {
 	interrupts = <11 0>;
-	clocks = <&gclk 0x16>, <&pm 0x20 4>;
-	clock-names = "GCLK", "PM";
+	clocks = <&gclk 2>, <&mclk 0x20 4>;
+	clock-names = "GCLK", "MCLK";
 };
 
 &sercom3 {
 	interrupts = <12 0>;
-	clocks = <&gclk 0x17>, <&pm 0x20 5>;
-	clock-names = "GCLK", "PM";
+	clocks = <&gclk 2>, <&mclk 0x20 5>;
+	clock-names = "GCLK", "MCLK";
 };
 
 &sercom4 {
 	interrupts = <13 0>;
-	clocks = <&gclk 0x18>, <&pm 0x20 6>;
-	clock-names = "GCLK", "PM";
+	clocks = <&gclk 2>, <&mclk 0x20 6>;
+	clock-names = "GCLK", "MCLK";
 };
 
 &sercom5 {
 	interrupts = <14 0>;
-	clocks = <&gclk 0x19>, <&pm 0x20 7>;
-	clock-names = "GCLK", "PM";
+	clocks = <&gclk 2>, <&mclk 0x20 7>;
+	clock-names = "GCLK", "MCLK";
 };
 
 &tc4 {
@@ -116,6 +155,14 @@
 };
 
 &adc0 {
+	clocks = <&gclk 0x1e>, <&pm 0x20 16>;
+	clock-names = "GCLK", "PM";
+	interrupts = <25 0>;
+	interrupt-names = "resrdy";
+};
+
+/* FIXME */
+&adc1 {
 	clocks = <&gclk 0x1e>, <&pm 0x20 16>;
 	clock-names = "GCLK", "PM";
 	interrupts = <25 0>;

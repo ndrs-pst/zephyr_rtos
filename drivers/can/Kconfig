@@ -93,6 +93,7 @@ config CAN_AUTO_BUS_OFF_RECOVERY
 	  available.
 
 source "drivers/can/Kconfig.sam"
+source "drivers/can/Kconfig.sam0"
 source "drivers/can/Kconfig.stm32"
 source "drivers/can/Kconfig.stm32fd"
 source "drivers/can/Kconfig.stm32h7"

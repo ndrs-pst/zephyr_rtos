@@ -85,8 +85,15 @@
 			#clock-cells = <2>;
 		};
 
+		mclk: mclk@40000800 {
+			compatible = "atmel,samc2x-mclk";
+			reg = <0x40000800 0x400>;
+			interrupts = <0 0>;
+			#clock-cells = <2>;
+		};
+
 		gclk: gclk@40001c00 {
-			compatible = "atmel,samd2x-gclk";
+			compatible = "atmel,samc2x-gclk";
 			reg = <0x40001c00 0x400>;
 			#clock-cells = <1>;
 		};
@@ -117,42 +124,42 @@
 
 		sercom0: sercom@42000400 {
 			compatible = "atmel,sam0-sercom";
-			reg = <0x42000400 0x40>;
+			reg = <0x42000400 0x400>;
 			status = "disabled";
 			label = "SERCOM0";
 		};
 
 		sercom1: sercom@42000800 {
 			compatible = "atmel,sam0-sercom";
-			reg = <0x42000800 0x40>;
+			reg = <0x42000800 0x400>;
 			status = "disabled";
 			label = "SERCOM1";
 		};
 
-		sercom2: sercom@42000C00 {
+		sercom2: sercom@42000c00 {
 			compatible = "atmel,sam0-sercom";
-			reg = <0x42000C00 0x40>;
+			reg = <0x42000c00 0x400>;
 			status = "disabled";
 			label = "SERCOM2";
 		};
 
 		sercom3: sercom@42001000 {
 			compatible = "atmel,sam0-sercom";
-			reg = <0x42001000 0x40>;
+			reg = <0x42001000 0x400>;
 			status = "disabled";
 			label = "SERCOM3";
 		};
 
 		sercom4: sercom@42001400 {
 			compatible = "atmel,sam0-sercom";
-			reg = <0x42001400 0x40>;
+			reg = <0x42001400 0x400>;
 			status = "disabled";
 			label = "SERCOM4";
 		};
 
 		sercom5: sercom@42001800 {
 			compatible = "atmel,sam0-sercom";
-			reg = <0x42001800 0x40>;
+			reg = <0x42001800 0x400>;
 			status = "disabled";
 			label = "SERCOM5";
 		};
@@ -212,7 +219,7 @@
 			#io-channel-cells = <1>;
 		};
 
-		adc1: adc0@42004800 {
+		adc1: adc1@42004800 {
 			compatible = "atmel,sam0-adc";
 			reg = <0x42004800 0x2D>;
 			label = "ADC_1";

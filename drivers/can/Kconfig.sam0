@@ -1,0 +1,22 @@
+# SAM0 CAN configuration options
+# Copyright (c) 2021 Alexander Wachter
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_ATMEL_SAM0_CAN := atmel,sam0-can
+
+config CAN_SAM0
+	bool "Atmel SAM0 CAN driver"
+	default $(dt_compat_enabled,$(DT_COMPAT_ATMEL_SAM0_CAN))
+	select CAN_MCAN
+
+if CAN_SAM0
+
+config CAN_SAM0_CKDIV
+	int "Clock divider"
+	range 0 255
+	default 0
+	depends on CAN_SAM0
+	help
+	  Clock divider for the MCAN core clock.
+
+endif #CAN_SAM0
