@@ -86,16 +86,12 @@ static int can_sam0_init(const struct device* dev) {
     can_sam0_clock_enable(cfg);
 
     ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-    if (ret < 0) {
-        return ret;
+    if (ret == 0) {
+        ret = can_mcan_init(dev, mcan_cfg, msg_ram, mcan_data);
+        if (ret == 0) {
+            cfg->config_irq();
+        }
     }
-
-    ret = can_mcan_init(dev, mcan_cfg, msg_ram, mcan_data);
-    if (ret) {
-        return ret;
-    }
-
-    cfg->config_irq();
 
     return (ret);
 }

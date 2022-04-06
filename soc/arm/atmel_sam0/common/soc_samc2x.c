@@ -87,12 +87,20 @@ static void osc32k_init(void) {
 
 #define DPLLRATIO_LDR_VAL   (((SOC_ATMEL_SAM0_MCK_FREQ_HZ + (SOC_ATMEL_SAM0_FDPLL_IN_FREQ_HZ / 2)) / SOC_ATMEL_SAM0_FDPLL_IN_FREQ_HZ) - 1U)
 
+/// @note Errata 1.25.1 FDPLL Unlock
+/// When using FDPLL at temperature below 25°C, spurious DPLL unlocks (OSCCTRL.DPLLSTATUS.LOCK = 0)
+/// may be detected while the FDPLL still adheres to the metrics described in the related electrical characteristics
+/// chapters of the data sheet. During these unlock periods, the DPLL output clock is halted and then restarts.
+/// Workaround :
+/// When using FDPLL at temperature below 25°C, enable the lock bypass (OSCCTRL.DPLLCTRLB.LBYPASS = 1)
+/// to avoid losing FDPLL clock output during a false unlock status.
 static void fdpll_init(void) {
     /****************** DPLL Initialization  *********************************/
 #if defined(CONFIG_SOC_ATMEL_SAMC_XOSC32K_AS_MAIN)
     /* Configure DPLL */
     /* XOSC32k(32.768 kHz) = 32,768 x (2928 + 11/16) = 96 MHz */
-    OSCCTRL->DPLLCTRLB.reg = (OSCCTRL_DPLLCTRLB_FILTER(0UL)  | OSCCTRL_DPLLCTRLB_LTIME(0UL)| OSCCTRL_DPLLCTRLB_REFCLK(0UL));
+    OSCCTRL->DPLLCTRLB.reg = (OSCCTRL_DPLLCTRLB_FILTER(0UL) | OSCCTRL_DPLLCTRLB_LTIME(0UL) | OSCCTRL_DPLLCTRLB_LBYPASS |
+                              OSCCTRL_DPLLCTRLB_REFCLK(0UL));
     OSCCTRL->DPLLRATIO.reg = OSCCTRL_DPLLRATIO_LDRFRAC(11UL) | OSCCTRL_DPLLRATIO_LDR(2928UL);
 #elif defined(CONFIG_SOC_ATMEL_SAMC_OSC48M_AS_MAIN)
 	// Enable GCLK_DPLL : FDPLL96M input clock source for reference
@@ -109,12 +117,13 @@ static void fdpll_init(void) {
     }
 
     /* GCLK1 (1 MHz) x 48 = 48 MHz / 1 = 48 MHz */
-    OSCCTRL->DPLLCTRLB.reg = (OSCCTRL_DPLLCTRLB_FILTER(0UL) | OSCCTRL_DPLLCTRLB_LTIME(0UL)| OSCCTRL_DPLLCTRLB_REFCLK(2UL));
+    OSCCTRL->DPLLCTRLB.reg = (OSCCTRL_DPLLCTRLB_FILTER(0UL) | OSCCTRL_DPLLCTRLB_LTIME(0UL)| OSCCTRL_DPLLCTRLB_LBYPASS |
+                              OSCCTRL_DPLLCTRLB_REFCLK(2UL));
 #elif defined(CONFIG_SOC_ATMEL_SAMC_XOSC_AS_MAIN)
     /* Configure DPLL */
 	/* (XOSC(8M) / 8) = 1 MHz x 48 = 48 MHz / 1 = 48 MHz */
 	/* OSCCTRL_DPLLCTRLB_DIV(3) : fDIV = fXOSC / 2 * (DIV + 1) */
-    OSCCTRL->DPLLCTRLB.reg = (OSCCTRL_DPLLCTRLB_FILTER(0UL) | OSCCTRL_DPLLCTRLB_LTIME(0UL)|
+    OSCCTRL->DPLLCTRLB.reg = (OSCCTRL_DPLLCTRLB_FILTER(0UL) | OSCCTRL_DPLLCTRLB_LTIME(0UL)| OSCCTRL_DPLLCTRLB_LBYPASS |
                               OSCCTRL_DPLLCTRLB_REFCLK(1UL) | OSCCTRL_DPLLCTRLB_DIV(3));
 #else
 #error Unsupported main clock source.
@@ -139,7 +148,7 @@ static void fdpll_init(void) {
     #endif
 
     /* Selection of the DPLL Enable */
-    OSCCTRL->DPLLCTRLA.reg = (uint8_t)(OSCCTRL_DPLLCTRLA_ENABLE);
+    OSCCTRL->DPLLCTRLA.reg = (uint8_t)(OSCCTRL_DPLLCTRLA_ENABLE | OSCCTRL_DPLLCTRLA_RUNSTDBY);
 
     while (OSCCTRL->DPLLSYNCBUSY.bit.ENABLE == 1U) {
         /* Waiting for the DPLL enable synchronization */
