@@ -497,6 +497,16 @@ device_handle_get(const struct device *dev)
 }
 
 /**
+ * @brief Run device initialization in user space
+ *
+ * @param[in] dev the device that want to re-initialize
+ *
+ * @return 0 on success, negative errno code otherwise
+ * @note The init_entry entry of the device shall be in POST_KERNEL !!!
+ */
+int device_user_init(const struct device* dev);                 /* #CUSTOM@PST1981 */
+
+/**
  * @brief Get the device corresponding to a handle.
  *
  * @param dev_handle the device handle

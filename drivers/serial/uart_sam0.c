@@ -102,8 +102,7 @@ static void wait_synchronization(SercomUsart *const usart)
 #endif
 }
 
-static int uart_sam0_set_baudrate(SercomUsart *const usart, uint32_t baudrate,
-				  uint32_t clk_freq_hz)
+static int uart_sam0_set_baudrate(SercomUsart *const usart, uint32_t baudrate, uint32_t clk_freq_hz)
 {
 	uint64_t tmp;
 	uint16_t baud;
@@ -473,8 +472,7 @@ static int uart_sam0_configure(const struct device *dev,
 	usart->CTRLB = CTRLB_temp;
 	wait_synchronization(usart);
 
-	retval = uart_sam0_set_baudrate(usart, new_cfg->baudrate,
-					SOC_ATMEL_SAM0_GCLK0_FREQ_HZ);
+	retval = uart_sam0_set_baudrate(usart, new_cfg->baudrate, SOC_ATMEL_SAM0_GCLK0_FREQ_HZ);
 	if (retval != 0) {
 		return retval;
 	}
@@ -505,19 +503,17 @@ static int uart_sam0_init(const struct device *dev)
 	const struct uart_sam0_dev_cfg *const cfg = dev->config;
 	struct uart_sam0_dev_data *const dev_data = dev->data;
 
-	SercomUsart * const usart = cfg->regs;
+    SercomUsart* const usart = cfg->regs;
 
 #ifdef MCLK
 	/* Enable the GCLK */
-	GCLK->PCHCTRL[cfg->gclk_core_id].reg = GCLK_PCHCTRL_GEN_GCLK0 |
-					       GCLK_PCHCTRL_CHEN;
+	GCLK->PCHCTRL[cfg->gclk_core_id].reg = (GCLK_PCHCTRL_GEN_GCLK0 | GCLK_PCHCTRL_CHEN);
 
 	/* Enable SERCOM clock in MCLK */
 	*cfg->mclk |= cfg->mclk_mask;
 #else
 	/* Enable the GCLK */
-	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 |
-			    GCLK_CLKCTRL_CLKEN;
+	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_CLKEN;
 
 	/* Enable SERCOM clock in PM */
 	PM->APBCMASK.reg |= cfg->pm_apbcmask;
