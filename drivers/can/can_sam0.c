@@ -53,7 +53,7 @@ struct can_sam0_data {
 #define USE_CAN_SAM0_ISR_OPTIMIZE           1U
 
 static int can_sam0_get_core_clock(const struct device* dev, uint32_t* rate) {
-    *rate = SOC_ATMEL_SAM0_MCK_FREQ_HZ / (CONFIG_CAN_SAM0_CKDIV + 1);
+    *rate = SOC_ATMEL_SAM0_GCLK0_FREQ_HZ;
 
     return (0);
 }

@@ -75,12 +75,11 @@ static int update_sampling_pnt(uint32_t ts, uint32_t sp, struct can_timing *res,
 
 /* Internal function to do the actual calculation */
 static int can_calc_timing_int(uint32_t core_clock, struct can_timing *res,
-			       const struct can_timing *min,
-			       const struct can_timing *max,
-			       uint32_t bitrate, uint16_t sp)
+                               const struct can_timing* min,
+                               const struct can_timing* max,
+                               uint32_t bitrate, uint16_t sp)
 {
-	uint32_t ts = max->prop_seg + max->phase_seg1 + max->phase_seg2 +
-		   CAN_SYNC_SEG;
+	uint32_t ts = max->prop_seg + max->phase_seg1 + max->phase_seg2 + CAN_SYNC_SEG;
 	uint16_t sp_err_min = UINT16_MAX;
 	int sp_err;
 	struct can_timing tmp_res;
@@ -91,12 +90,11 @@ static int can_calc_timing_int(uint32_t core_clock, struct can_timing *res,
 		return -EINVAL;
 	}
 
-	for (int prescaler = MAX(core_clock / (ts * bitrate), 1);
-	     prescaler <= max->prescaler; ++prescaler) {
-		if (core_clock % (prescaler * bitrate)) {
-			/* No integer ts */
-			continue;
-		}
+    for (int prescaler = MAX(core_clock / (ts * bitrate), 1); prescaler <= max->prescaler; ++prescaler) {
+        if (core_clock % (prescaler * bitrate)) {
+            /* No integer ts */
+            continue;
+        }
 
 		ts = core_clock / (prescaler * bitrate);
 
@@ -108,11 +106,11 @@ static int can_calc_timing_int(uint32_t core_clock, struct can_timing *res,
 		}
 
 		if (sp_err < sp_err_min) {
-			sp_err_min = sp_err;
-			res->prop_seg = tmp_res.prop_seg;
+			sp_err_min      = sp_err;
+			res->prop_seg   = tmp_res.prop_seg;
 			res->phase_seg1 = tmp_res.phase_seg1;
 			res->phase_seg2 = tmp_res.phase_seg2;
-			res->prescaler = (uint16_t)prescaler;
+			res->prescaler  = (uint16_t)prescaler;
 			if (sp_err == 0) {
 				/* No better result than a perfect match*/
 				break;
@@ -128,7 +126,7 @@ static int can_calc_timing_int(uint32_t core_clock, struct can_timing *res,
 }
 
 int can_calc_timing(const struct device *dev, struct can_timing *res,
-		    uint32_t bitrate, uint16_t sample_pnt)
+                    uint32_t bitrate, uint16_t sample_pnt)
 {
 	const struct can_driver_api *api = dev->api;
 	uint32_t core_clock;
@@ -140,7 +138,7 @@ int can_calc_timing(const struct device *dev, struct can_timing *res,
 	}
 
 	return can_calc_timing_int(core_clock, res, &api->timing_min,
-				   &api->timing_max, bitrate, sample_pnt);
+	                           &api->timing_max, bitrate, sample_pnt);
 }
 
 #ifdef CONFIG_CAN_FD_MODE

@@ -118,36 +118,28 @@ static int can_leave_init_mode(struct can_mcan_reg  *can, k_timeout_t timeout)
 	return 0;
 }
 
-void can_mcan_configure_timing(struct can_mcan_reg  *can,
-			       const struct can_timing *timing,
-			       const struct can_timing *timing_data)
-{
-	if (timing) {
+void can_mcan_configure_timing(struct can_mcan_reg* can, const struct can_timing* timing,
+                               const struct can_timing* timing_data) {
+	if (timing != NULL) {
 		uint32_t nbtp_sjw = can->nbtp & CAN_MCAN_NBTP_NSJW_MSK;
 
 		__ASSERT_NO_MSG(timing->prop_seg == 0);
-		__ASSERT_NO_MSG(timing->phase_seg1 <= 0x100 &&
-				timing->phase_seg1 > 0);
-		__ASSERT_NO_MSG(timing->phase_seg2 <= 0x80 &&
-				timing->phase_seg2 > 0);
-		__ASSERT_NO_MSG(timing->prescaler <= 0x200 &&
-				timing->prescaler > 0);
-		__ASSERT_NO_MSG(timing->sjw <= 0x80 && timing->sjw > 0);
+		__ASSERT_NO_MSG((timing->phase_seg1 <= 0x100) && (timing->phase_seg1 > 0));
+		__ASSERT_NO_MSG((timing->phase_seg2 <=  0x80) && (timing->phase_seg2 > 0));
+		__ASSERT_NO_MSG((timing->prescaler  <= 0x200) && (timing->prescaler  > 0));
+		__ASSERT_NO_MSG((timing->sjw        <=  0x80) && (timing->sjw        > 0));
 
-		can->nbtp = (((uint32_t)timing->phase_seg1 - 1UL) & 0xFF) <<
-				CAN_MCAN_NBTP_NTSEG1_POS |
-			    (((uint32_t)timing->phase_seg2 - 1UL) & 0x7F) <<
-				CAN_MCAN_NBTP_NTSEG2_POS |
-			    (((uint32_t)timing->prescaler  - 1UL) & 0x1FF) <<
-				CAN_MCAN_NBTP_NBRP_POS;
+		can->nbtp = (((uint32_t)timing->phase_seg1 - 1UL) &  0xFF) << CAN_MCAN_NBTP_NTSEG1_POS |
+		            (((uint32_t)timing->phase_seg2 - 1UL) &  0x7F) << CAN_MCAN_NBTP_NTSEG2_POS |
+		            (((uint32_t)timing->prescaler  - 1UL) & 0x1FF) << CAN_MCAN_NBTP_NBRP_POS;
 
-		if (timing->sjw == CAN_SJW_NO_CHANGE) {
-			can->nbtp |= nbtp_sjw;
-		} else {
-			can->nbtp |= (((uint32_t)timing->sjw - 1UL) & 0x7F) <<
-				     CAN_MCAN_NBTP_NSJW_POS;
-		}
-	}
+        if (timing->sjw == CAN_SJW_NO_CHANGE) {
+            can->nbtp |= nbtp_sjw;
+        }
+        else {
+            can->nbtp |= (((uint32_t)timing->sjw - 1UL) & 0x7F) << CAN_MCAN_NBTP_NSJW_POS;
+        }
+    }
 
 #ifdef CONFIG_CAN_FD_MODE
 	if (timing_data) {
@@ -326,14 +318,17 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 	/* Configuration Change Enable */
 	can->cccr |= CAN_MCAN_CCCR_CCE;
 
+#ifdef CONFIG_CAN_SAM0
+    can->cust = CAN_MRCFG_QOS_MEDIUM;
+#endif
+
 	LOG_DBG("IP rel: %lu.%lu.%lu %02lu.%lu.%lu",
-		(can->crel & CAN_MCAN_CREL_REL) >> CAN_MCAN_CREL_REL_POS,
-		(can->crel & CAN_MCAN_CREL_STEP) >> CAN_MCAN_CREL_STEP_POS,
-		(can->crel & CAN_MCAN_CREL_SUBSTEP) >>
-			     CAN_MCAN_CREL_SUBSTEP_POS,
-		(can->crel & CAN_MCAN_CREL_YEAR) >> CAN_MCAN_CREL_YEAR_POS,
-		(can->crel & CAN_MCAN_CREL_MON) >> CAN_MCAN_CREL_MON_POS,
-		(can->crel & CAN_MCAN_CREL_DAY) >> CAN_MCAN_CREL_DAY_POS);
+		(can->crel & CAN_MCAN_CREL_REL)     >> CAN_MCAN_CREL_REL_POS,
+		(can->crel & CAN_MCAN_CREL_STEP)    >> CAN_MCAN_CREL_STEP_POS,
+		(can->crel & CAN_MCAN_CREL_SUBSTEP) >> CAN_MCAN_CREL_SUBSTEP_POS,
+		(can->crel & CAN_MCAN_CREL_YEAR)    >> CAN_MCAN_CREL_YEAR_POS,
+		(can->crel & CAN_MCAN_CREL_MON)     >> CAN_MCAN_CREL_MON_POS,
+		(can->crel & CAN_MCAN_CREL_DAY)     >> CAN_MCAN_CREL_DAY_POS);
 
 #ifndef CONFIG_CAN_STM32FD
 	uint32_t mrba = 0;
@@ -345,40 +340,35 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 	can->mrba = mrba;
 #endif
 	can->sidfc = (((uint32_t)msg_ram->std_filt - mrba) & CAN_MCAN_SIDFC_FLSSA_MSK) |
-		(ARRAY_SIZE(msg_ram->std_filt) << CAN_MCAN_SIDFC_LSS_POS);
+	             (ARRAY_SIZE(msg_ram->std_filt) << CAN_MCAN_SIDFC_LSS_POS);
 	can->xidfc = (((uint32_t)msg_ram->ext_filt - mrba) & CAN_MCAN_XIDFC_FLESA_MSK) |
-		(ARRAY_SIZE(msg_ram->ext_filt) << CAN_MCAN_XIDFC_LSS_POS);
+	             (ARRAY_SIZE(msg_ram->ext_filt) << CAN_MCAN_XIDFC_LSS_POS);
 	can->rxf0c = (((uint32_t)msg_ram->rx_fifo0 - mrba) & CAN_MCAN_RXF0C_F0SA) |
-		(ARRAY_SIZE(msg_ram->rx_fifo0) << CAN_MCAN_RXF0C_F0S_POS);
+	             (ARRAY_SIZE(msg_ram->rx_fifo0) << CAN_MCAN_RXF0C_F0S_POS);
 	can->rxf1c = (((uint32_t)msg_ram->rx_fifo1 - mrba) & CAN_MCAN_RXF1C_F1SA) |
-		(ARRAY_SIZE(msg_ram->rx_fifo1) << CAN_MCAN_RXF1C_F1S_POS);
-	can->rxbc = (((uint32_t)msg_ram->rx_buffer - mrba) & CAN_MCAN_RXBC_RBSA);
+	             (ARRAY_SIZE(msg_ram->rx_fifo1) << CAN_MCAN_RXF1C_F1S_POS);
+	can->rxbc  = (((uint32_t)msg_ram->rx_buffer - mrba) & CAN_MCAN_RXBC_RBSA);
 	can->txefc = (((uint32_t)msg_ram->tx_event_fifo - mrba) & CAN_MCAN_TXEFC_EFSA_MSK) |
-		(ARRAY_SIZE(msg_ram->tx_event_fifo) << CAN_MCAN_TXEFC_EFS_POS);
-	can->txbc = (((uint32_t)msg_ram->tx_buffer - mrba) & CAN_MCAN_TXBC_TBSA) |
-		(ARRAY_SIZE(msg_ram->tx_buffer) << CAN_MCAN_TXBC_TFQS_POS) |
-		CAN_MCAN_TXBC_TFQM;
+	             (ARRAY_SIZE(msg_ram->tx_event_fifo) << CAN_MCAN_TXEFC_EFS_POS);
+	can->txbc  = (((uint32_t)msg_ram->tx_buffer - mrba) & CAN_MCAN_TXBC_TBSA) |
+	             (ARRAY_SIZE(msg_ram->tx_buffer) << CAN_MCAN_TXBC_TFQS_POS) | CAN_MCAN_TXBC_TFQM;
 
-	if (sizeof(msg_ram->tx_buffer[0].data) <= 24) {
-		can->txesc = (sizeof(msg_ram->tx_buffer[0].data) - 8) / 4;
-	} else {
-		can->txesc = (sizeof(msg_ram->tx_buffer[0].data) - 32) / 16 + 5;
-	}
+    if (sizeof(msg_ram->tx_buffer[0].data) <= 24) {
+        can->txesc = (sizeof(msg_ram->tx_buffer[0].data) - 8) / 4;
+    }
+    else {
+        can->txesc = (sizeof(msg_ram->tx_buffer[0].data) - 32) / 16 + 5;
+    }
 
 	if (sizeof(msg_ram->rx_fifo0[0].data) <= 24) {
-		can->rxesc = (((sizeof(msg_ram->rx_fifo0[0].data) - 8) / 4) <<
-				CAN_MCAN_RXESC_F0DS_POS) |
-			     (((sizeof(msg_ram->rx_fifo1[0].data) - 8) / 4) <<
-				CAN_MCAN_RXESC_F1DS_POS) |
-			     (((sizeof(msg_ram->rx_buffer[0].data) - 8) / 4) <<
-				CAN_MCAN_RXESC_RBDS_POS);
-	} else {
-		can->rxesc = (((sizeof(msg_ram->rx_fifo0[0].data) - 32)
-				/ 16 + 5) << CAN_MCAN_RXESC_F0DS_POS) |
-			     (((sizeof(msg_ram->rx_fifo1[0].data) - 32)
-				/ 16 + 5) << CAN_MCAN_RXESC_F1DS_POS) |
-			     (((sizeof(msg_ram->rx_buffer[0].data) - 32)
-				/ 16 + 5) << CAN_MCAN_RXESC_RBDS_POS);
+		can->rxesc = (((sizeof(msg_ram->rx_fifo0[0].data)  - 8) / 4) << CAN_MCAN_RXESC_F0DS_POS) |
+		             (((sizeof(msg_ram->rx_fifo1[0].data)  - 8) / 4) << CAN_MCAN_RXESC_F1DS_POS) |
+		             (((sizeof(msg_ram->rx_buffer[0].data) - 8) / 4) << CAN_MCAN_RXESC_RBDS_POS);
+	}
+	else {
+		can->rxesc = (((sizeof(msg_ram->rx_fifo0[0].data)  - 32) / 16 + 5) << CAN_MCAN_RXESC_F0DS_POS) |
+		             (((sizeof(msg_ram->rx_fifo1[0].data)  - 32) / 16 + 5) << CAN_MCAN_RXESC_F1DS_POS) |
+		             (((sizeof(msg_ram->rx_buffer[0].data) - 32) / 16 + 5) << CAN_MCAN_RXESC_RBDS_POS);
 	}
 #endif
 
@@ -387,13 +377,12 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 #else
 	can->cccr &= ~(CAN_MCAN_CCCR_FDOE | CAN_MCAN_CCCR_BRSE);
 #endif
-	can->cccr &= ~(CAN_MCAN_CCCR_TEST | CAN_MCAN_CCCR_MON |
-		       CAN_MCAN_CCCR_ASM);
+	can->cccr &= ~(CAN_MCAN_CCCR_TEST | CAN_MCAN_CCCR_MON | CAN_MCAN_CCCR_ASM);
 	can->test &= ~(CAN_MCAN_TEST_LBCK);
 
 #if defined(CONFIG_CAN_DELAY_COMP) && defined(CONFIG_CAN_FD_MODE)
 	can->dbtp |= CAN_MCAN_DBTP_TDC;
-	can->tdcr |=  cfg->tx_delay_comp_offset << CAN_MCAN_TDCR_TDCO_POS;
+	can->tdcr |= cfg->tx_delay_comp_offset << CAN_MCAN_TDCR_TDCO_POS;
 
 #endif
 
@@ -403,13 +392,12 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 		      (0x2 << CAN_MCAN_RXGFC_ANFS_POS) |
 		      (0x2 << CAN_MCAN_RXGFC_ANFE_POS);
 #else
-	can->gfc |= (0x2 << CAN_MCAN_GFC_ANFE_POS) |
-		    (0x2 << CAN_MCAN_GFC_ANFS_POS);
+	/* Reject both Non-matching Frames Standard and Non-matching Frames Extended */
+	can->gfc |= (0x02UL << CAN_MCAN_GFC_ANFE_POS) | (0x02UL << CAN_MCAN_GFC_ANFS_POS);
 #endif /* CONFIG_CAN_STM32FD */
 
 	if (cfg->sample_point) {
-		ret = can_calc_timing(dev, &timing, cfg->bus_speed,
-				      cfg->sample_point);
+		ret = can_calc_timing(dev, &timing, cfg->bus_speed, cfg->sample_point);
 		if (ret == -EINVAL) {
 			LOG_ERR("Can't find timing for given param");
 			ret = -EIO;
@@ -443,8 +431,7 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 		timing_data.prop_seg = 0;
 		timing_data.phase_seg1 = cfg->prop_ts1_data;
 		timing_data.phase_seg2 = cfg->ts2_data;
-		ret = can_calc_prescaler(dev, &timing_data,
-					 cfg->bus_speed_data);
+		ret = can_calc_prescaler(dev, &timing_data, cfg->bus_speed_data);
 		if (ret) {
 			LOG_WRN("Dataphase bitrate error: %d", ret);
 		}
@@ -459,10 +446,10 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 	can_mcan_configure_timing(can, &timing, NULL);
 #endif
 
-	can->ie = CAN_MCAN_IE_BO | CAN_MCAN_IE_EW | CAN_MCAN_IE_EP |
-		  CAN_MCAN_IE_MRAF | CAN_MCAN_IE_TEFL | CAN_MCAN_IE_TEFN |
-		  CAN_MCAN_IE_RF0N | CAN_MCAN_IE_RF1N | CAN_MCAN_IE_RF0L |
-		  CAN_MCAN_IE_RF1L;
+	can->ie = (CAN_MCAN_IE_BO   | CAN_MCAN_IE_EW   | CAN_MCAN_IE_EP   |
+	           CAN_MCAN_IE_MRAF | CAN_MCAN_IE_TEFL | CAN_MCAN_IE_TEFN |
+	           CAN_MCAN_IE_RF0N | CAN_MCAN_IE_RF1N | CAN_MCAN_IE_RF0L |
+	           CAN_MCAN_IE_RF1L);
 
 #ifdef CONFIG_CAN_STM32FD
 	can->ils = CAN_MCAN_ILS_RXFIFO0 | CAN_MCAN_ILS_RXFIFO1;
@@ -583,13 +570,12 @@ void can_mcan_get_message(struct can_mcan_data* data,
     struct can_mcan_rx_fifo_hdr hdr;
 
     while ((*fifo_status_reg & CAN_MCAN_RXF0S_F0FL)) {
-        get_idx = (*fifo_status_reg & CAN_MCAN_RXF0S_F0GI) >>
-        CAN_MCAN_RXF0S_F0GI_POS;
+        get_idx = (*fifo_status_reg & CAN_MCAN_RXF0S_F0GI) >> CAN_MCAN_RXF0S_F0GI_POS;
 
         CACHE_INVALIDATE(&fifo[get_idx].hdr, sizeof(struct can_mcan_rx_fifo_hdr));
         memcpy32_volatile(&hdr, &fifo[get_idx].hdr, sizeof(struct can_mcan_rx_fifo_hdr));
 
-        if (hdr.xtd) {
+        if (hdr.xtd == 1U) {
             frame.id = hdr.ext_id;
         }
         else {
@@ -715,11 +701,11 @@ int can_mcan_recover(struct can_mcan_reg *can, k_timeout_t timeout)
 
 
 int can_mcan_send(const struct can_mcan_config *cfg,
-		  struct can_mcan_data *data,
-		  struct can_mcan_msg_sram *msg_ram,
-		  const struct zcan_frame *frame,
-		  k_timeout_t timeout,
-		  can_tx_callback_t callback, void *user_data)
+                  struct can_mcan_data *data,
+                  struct can_mcan_msg_sram *msg_ram,
+                  const struct zcan_frame *frame,
+                  k_timeout_t timeout,
+                  can_tx_callback_t callback, void *user_data)
 {
 	struct can_mcan_reg  *can = cfg->can;
 	size_t data_length = can_dlc_to_bytes(frame->dlc);
