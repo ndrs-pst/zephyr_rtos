@@ -124,14 +124,11 @@ void can_mcan_configure_timing(struct can_mcan_reg* can, const struct can_timing
 		uint32_t nbtp_sjw = can->nbtp & CAN_MCAN_NBTP_NSJW_MSK;
 
 		__ASSERT_NO_MSG(timing->prop_seg == 0);
-		__ASSERT_NO_MSG(timing->phase_seg1 <= 0x100 &&
-				timing->phase_seg1 > 0);
-		__ASSERT_NO_MSG(timing->phase_seg2 <= 0x80 &&
-				timing->phase_seg2 > 0);
-		__ASSERT_NO_MSG(timing->prescaler <= 0x200 &&
-				timing->prescaler > 0);
-		__ASSERT_NO_MSG(timing->sjw == CAN_SJW_NO_CHANGE ||
-				(timing->sjw <= 0x80 && timing->sjw > 0));
+		__ASSERT_NO_MSG((timing->phase_seg1 <= 0x100) && (timing->phase_seg1 > 0));
+		__ASSERT_NO_MSG((timing->phase_seg2 <=  0x80) && (timing->phase_seg2 > 0));
+		__ASSERT_NO_MSG((timing->prescaler  <= 0x200) && (timing->prescaler  > 0));
+		__ASSERT_NO_MSG((timing->sjw == CAN_SJW_NO_CHANGE) ||
+		                ((timing->sjw <= 0x80) && (timing->sjw > 0)));
 
 		can->nbtp = (((uint32_t)timing->phase_seg1 - 1UL) &  0xFF) << CAN_MCAN_NBTP_NTSEG1_POS |
 		            (((uint32_t)timing->phase_seg2 - 1UL) &  0x7F) << CAN_MCAN_NBTP_NTSEG2_POS |

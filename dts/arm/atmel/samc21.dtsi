@@ -158,7 +158,7 @@
 
 &sercom5 {
 	interrupts = <14 0>;
-	clocks = <&gclk 24>, <&mclk 0x1C 6>;
+	clocks = <&gclk 25>, <&mclk 0x1C 6>;
 	clock-names = "GCLK", "MCLK";
 };
 
