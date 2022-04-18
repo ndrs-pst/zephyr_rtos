@@ -316,13 +316,11 @@ __subsystem struct dma_driver_api {
  * @retval 0 if successful.
  * @retval Negative errno code if failure.
  */
-static inline int dma_config(const struct device *dev, uint32_t channel,
-			     struct dma_config *config)
-{
-	const struct dma_driver_api *api =
-		(const struct dma_driver_api *)dev->api;
+static inline int dma_config(const struct device* dev,
+                             uint32_t channel, struct dma_config* config) {
+    const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
-	return api->config(dev, channel, config);
+    return api->config(dev, channel, config);
 }
 
 /**
@@ -372,12 +370,10 @@ static inline int dma_reload(const struct device *dev, uint32_t channel,
  */
 __syscall int dma_start(const struct device *dev, uint32_t channel);
 
-static inline int z_impl_dma_start(const struct device *dev, uint32_t channel)
-{
-	const struct dma_driver_api *api =
-		(const struct dma_driver_api *)dev->api;
+static inline int z_impl_dma_start(const struct device* dev, uint32_t channel) {
+    const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
-	return api->start(dev, channel);
+    return api->start(dev, channel);
 }
 
 /**
@@ -395,12 +391,10 @@ static inline int z_impl_dma_start(const struct device *dev, uint32_t channel)
  */
 __syscall int dma_stop(const struct device *dev, uint32_t channel);
 
-static inline int z_impl_dma_stop(const struct device *dev, uint32_t channel)
-{
-	const struct dma_driver_api *api =
-		(const struct dma_driver_api *)dev->api;
+static inline int z_impl_dma_stop(const struct device* dev, uint32_t channel) {
+    const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
-	return api->stop(dev, channel);
+    return api->stop(dev, channel);
 }
 
 

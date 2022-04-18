@@ -313,7 +313,7 @@ struct spi_config {
 	uint16_t		slave;
 #endif /* CONFIG_SPI_EXTENDED_MODES */
 
-	const struct spi_cs_control *cs;
+    const struct spi_cs_control* cs;
 };
 
 #ifndef __cplusplus

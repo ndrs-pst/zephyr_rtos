@@ -693,8 +693,7 @@ static int spi_sam0_init(const struct device* dev) {
     *cfg->mclk |= cfg->mclk_mask;
 #else
     /* Enable the GCLK */
-    GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 |
-                GCLK_CLKCTRL_CLKEN;
+    GCLK->CLKCTRL.reg = (cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_CLKEN);
 
     /* Enable SERCOM clock in PM */
     PM->APBCMASK.reg |= cfg->pm_apbcmask;

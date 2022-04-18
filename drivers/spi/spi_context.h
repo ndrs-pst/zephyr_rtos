@@ -85,7 +85,7 @@ static inline void spi_context_lock(struct spi_context* ctx,
                                     bool asynchronous,
                                     struct k_poll_signal* signal,
                                     const struct spi_config* spi_cfg) {
-    if ((spi_cfg->operation & SPI_LOCK_ON) &&
+    if (((spi_cfg->operation & SPI_LOCK_ON) != 0U) &&
         (k_sem_count_get(&ctx->lock) == 0) &&
         (ctx->owner == spi_cfg)) {
         return;
@@ -108,7 +108,7 @@ static inline void spi_context_release(struct spi_context* ctx, int status) {
 #endif /* CONFIG_SPI_SLAVE */
 
 #ifdef CONFIG_SPI_ASYNC
-    if (!ctx->asynchronous || (status < 0)) {
+    if ((ctx->asynchronous == false) || (status < 0)) {
         ctx->owner = NULL;
         k_sem_give(&ctx->lock);
     }
@@ -121,7 +121,7 @@ static inline void spi_context_release(struct spi_context* ctx, int status) {
 }
 
 static inline int spi_context_wait_for_completion(struct spi_context* ctx) {
-    int status = 0;
+    int status;
     k_timeout_t timeout;
 
     /* Do not use any timeout in the slave mode, as in this case it is not
@@ -140,13 +140,16 @@ static inline int spi_context_wait_for_completion(struct spi_context* ctx) {
         timeout = K_MSEC(timeout_ms);
     }
 
+    status = 0;
 #ifdef CONFIG_SPI_ASYNC
-    if (!ctx->asynchronous) {
-        if (k_sem_take(&ctx->sync, timeout)) {
-            LOG_ERR("Timeout waiting for transfer complete");
-            return -ETIMEDOUT;
+    if (ctx->asynchronous == false) {
+        if (k_sem_take(&ctx->sync, timeout) == 0) {
+            status = ctx->sync_status;
         }
-        status = ctx->sync_status;
+        else {
+            LOG_ERR("Timeout waiting for transfer complete");
+            status = -ETIMEDOUT;
+        }
     }
 #else
     if (k_sem_take(&ctx->sync, timeout)) {
@@ -162,17 +165,17 @@ static inline int spi_context_wait_for_completion(struct spi_context* ctx) {
     }
 #endif /* CONFIG_SPI_SLAVE */
 
-    return status;
+    return (status);
 }
 
 static inline void spi_context_complete(struct spi_context* ctx, int status) {
 #ifdef CONFIG_SPI_ASYNC
-    if (!ctx->asynchronous) {
+    if (ctx->asynchronous == false) {
         ctx->sync_status = status;
         k_sem_give(&ctx->sync);
     }
     else {
-        if (ctx->signal) {
+        if (ctx->signal != NULL) {
 #ifdef CONFIG_SPI_SLAVE
             if (spi_context_is_slave(ctx) && !status) {
                 /* Let's update the status so it tells
@@ -184,7 +187,7 @@ static inline void spi_context_complete(struct spi_context* ctx, int status) {
             k_poll_signal_raise(ctx->signal, status);
         }
 
-        if (!(ctx->config->operation & SPI_LOCK_ON)) {
+        if ((ctx->config->operation & SPI_LOCK_ON) == 0U) {
             ctx->owner = NULL;
             k_sem_give(&ctx->lock);
         }
@@ -215,7 +218,7 @@ static inline int spi_context_cs_configure_all(struct spi_context* ctx) {
 }
 
 static inline void _spi_context_cs_control(struct spi_context* ctx, bool on, bool force_off) {
-    const struct spi_config *config;
+    const struct spi_config* config;
 
     config = ctx->config;
     if ((config != NULL)     &&
@@ -226,12 +229,11 @@ static inline void _spi_context_cs_control(struct spi_context* ctx, bool on, boo
             k_busy_wait(config->cs->delay);
         }
         else {
-            if (!force_off && ((config->operation & SPI_HOLD_ON_CS) != 0U)) {
-                return;
+            if ((force_off == true) ||
+                ((config->operation & SPI_HOLD_ON_CS) == 0U)) {
+                k_busy_wait(config->cs->delay);
+                gpio_pin_set_dt(&config->cs->gpio, 0);
             }
-
-            k_busy_wait(config->cs->delay);
-            gpio_pin_set_dt(&config->cs->gpio, 0);
         }
     }
 }
@@ -303,7 +305,7 @@ void spi_context_update_tx(struct spi_context* ctx, uint8_t dfs, uint32_t len) {
     if (ctx->tx_len > 0U) {
         if (len <= ctx->tx_len) {
             ctx->tx_len -= len;
-            if (ctx->tx_len > 0U) {
+            if (ctx->tx_len == 0U) {
                 /* Current buffer is done. Get the next one to be processed. */
                 ++ctx->current_tx;
                 --ctx->tx_count;
@@ -349,7 +351,7 @@ void spi_context_update_rx(struct spi_context* ctx, uint8_t dfs, uint32_t len) {
     if (ctx->rx_len > 0U) {
         if (len <= ctx->rx_len) {
             ctx->rx_len -= len;
-            if (ctx->rx_len > 0U) {
+            if (ctx->rx_len == 0U) {
                 /* Current buffer is done. Get the next one to be processed. */
                 ++ctx->current_rx;
                 --ctx->rx_count;

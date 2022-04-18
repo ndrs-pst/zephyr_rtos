@@ -336,9 +336,7 @@ static inline int pinctrl_apply_state_direct(
  * @retval -ENOENT If given state id does not exist.
  * @retval -errno Negative errno for other failures.
  */
-static inline int pinctrl_apply_state(const struct pinctrl_dev_config *config,
-				      uint8_t id)
-{
+static inline int pinctrl_apply_state(const struct pinctrl_dev_config* config, uint8_t id) {
 	int ret;
 	const struct pinctrl_state *state;
 

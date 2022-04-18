@@ -1091,7 +1091,7 @@ static inline int gpio_pin_set_raw(const struct device* port,
     const struct gpio_driver_config* const cfg = (const struct gpio_driver_config*)port->config;
     int ret;
 
-    (void)cfg;
+    (void) cfg;
     __ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U, "Unsupported pin");
 
     if (value != 0) {
