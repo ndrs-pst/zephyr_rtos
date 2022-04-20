@@ -57,7 +57,7 @@ enum dma_channel_direction {
 enum dma_addr_adj {
 	DMA_ADDR_ADJ_INCREMENT,
 	DMA_ADDR_ADJ_DECREMENT,
-	DMA_ADDR_ADJ_NO_CHANGE,
+	DMA_ADDR_ADJ_NO_CHANGE
 };
 
 /* channel attributes */

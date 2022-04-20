@@ -21,7 +21,7 @@ extern "C" {
 
 enum spi_ctx_runtime_op_mode {
     SPI_CTX_RUNTIME_OP_MODE_MASTER = BIT(0),
-    SPI_CTX_RUNTIME_OP_MODE_SLAVE  = BIT(1),
+    SPI_CTX_RUNTIME_OP_MODE_SLAVE  = BIT(1)
 };
 
 struct spi_context {
@@ -203,7 +203,7 @@ static inline int spi_context_cs_configure_all(struct spi_context* ctx) {
     const struct gpio_dt_spec* cs_gpio;
 
     for (cs_gpio = ctx->cs_gpios; cs_gpio < &ctx->cs_gpios[ctx->num_cs_gpios]; cs_gpio++) {
-        if (!device_is_ready(cs_gpio->port)) {
+        if (device_is_ready(cs_gpio->port) == false) {
             LOG_ERR("CS GPIO port %s pin %d is not ready", cs_gpio->port->name, cs_gpio->pin);
             return -ENODEV;
         }
@@ -246,7 +246,7 @@ static inline void spi_context_unlock_unconditionally(struct spi_context* ctx) {
     /* Forcing CS to go to inactive status */
     _spi_context_cs_control(ctx, false, true);
 
-    if (!k_sem_count_get(&ctx->lock)) {
+    if (k_sem_count_get(&ctx->lock) == 0) {
         ctx->owner = NULL;
         k_sem_give(&ctx->lock);
     }
@@ -268,7 +268,7 @@ static inline void* spi_context_get_next_buf(const struct spi_buf** current,
 
     *buf_len = 0;
 
-    return NULL;
+    return (NULL);
 }
 
 static inline
@@ -391,11 +391,11 @@ bool spi_context_rx_buf_on(struct spi_context* ctx) {
  * can be done with DMA that handles only non-scattered buffers.
  */
 static inline size_t spi_context_max_continuous_chunk(struct spi_context* ctx) {
-    if (!ctx->tx_len) {
-        return ctx->rx_len;
+    if (ctx->tx_len == 0U) {
+        return (ctx->rx_len);
     }
-    else if (!ctx->rx_len) {
-        return ctx->tx_len;
+    else if (ctx->rx_len == 0U) {
+        return (ctx->tx_len);
     }
 
     return MIN(ctx->tx_len, ctx->rx_len);
