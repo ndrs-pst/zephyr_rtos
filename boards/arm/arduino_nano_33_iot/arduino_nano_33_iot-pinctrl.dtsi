@@ -14,8 +14,8 @@
 
 	sercom4_i2c_default: sercom4_i2c_default {
 		group1 {
-			pinmux = <PB8D_SERCOM4_PAD0>,
-				 <PB9D_SERCOM4_PAD1>;
+			pinmux = <PB08D_SERCOM4_PAD0>,
+				 <PB09D_SERCOM4_PAD1>;
 		};
 	};
 
