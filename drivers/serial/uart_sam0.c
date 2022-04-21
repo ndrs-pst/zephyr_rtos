@@ -44,7 +44,7 @@ struct uart_sam0_dev_cfg {
     uint16_t gclk_clkctrl_id;
 #endif
 
-#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
+#if (CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API)
     void (*irq_config_func)(const struct device* dev);
 #endif
 
@@ -224,74 +224,69 @@ static void uart_sam0_dma_rx_done(const struct device* dma_dev, void* arg,
     const struct device* dev = dev_data->dev;
     const struct uart_sam0_dev_cfg* const cfg = dev_data->cfg;
     SercomUsart* const regs = cfg->regs;
-    int key = irq_lock();
+    int key;
 
-    if (dev_data->rx_len == 0U) {
-        irq_unlock(key);
-        return;
-    }
+    key = irq_lock();
+    if (dev_data->rx_len != 0U) {
+        uart_sam0_notify_rx_processed(dev_data, dev_data->rx_len);
 
-    uart_sam0_notify_rx_processed(dev_data, dev_data->rx_len);
-
-    if (dev_data->async_cb) {
-        struct uart_event evt = {
-            .type = UART_RX_BUF_RELEASED,
-            .data.rx_buf = {
-                .buf = dev_data->rx_buf,
-            },
-        };
-
-        dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
-    }
-
-    /* No next buffer, so end the transfer */
-    if (dev_data->rx_next_len == 0U) {
-        dev_data->rx_buf = NULL;
-        dev_data->rx_len = 0U;
-
-        if (dev_data->async_cb) {
+        if (dev_data->async_cb != NULL) {
             struct uart_event evt = {
-                .type = UART_RX_DISABLED,
+                .type = UART_RX_BUF_RELEASED,
+                .data.rx_buf = {
+                    .buf = dev_data->rx_buf,
+                },
             };
 
             dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
         }
 
-        irq_unlock(key);
-        return;
+        /* No next buffer, so end the transfer */
+        if (dev_data->rx_next_len == 0U) {
+            dev_data->rx_buf = NULL;
+            dev_data->rx_len = 0U;
+
+            if (dev_data->async_cb != NULL) {
+                struct uart_event evt = {
+                    .type = UART_RX_DISABLED,
+                };
+
+                dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
+            }
+        }
+        else {
+            dev_data->rx_buf           = dev_data->rx_next_buf;
+            dev_data->rx_len           = dev_data->rx_next_len;
+            dev_data->rx_next_buf      = NULL;
+            dev_data->rx_next_len      = 0U;
+            dev_data->rx_processed_len = 0U;
+
+            dma_reload(cfg->dma_dev, cfg->rx_dma_channel,
+                       (uint32_t)(&(regs->DATA.reg)),
+                       (uint32_t)dev_data->rx_buf, dev_data->rx_len);
+
+            /*
+             * If there should be a timeout, handle starting the DMA in the
+             * ISR, since reception resets it and DMA completion implies
+             * reception.  This also catches the case of DMA completion during
+             * timeout handling.
+             */
+            if (dev_data->rx_timeout_time != SYS_FOREVER_US) {
+                dev_data->rx_waiting_for_irq = true;
+                regs->INTENSET.reg = SERCOM_USART_INTENSET_RXC;
+            }
+            else {
+                /* Otherwise, start the transfer immediately. */
+                dma_start(cfg->dma_dev, cfg->rx_dma_channel);
+
+                struct uart_event evt = {
+                    .type = UART_RX_BUF_REQUEST,
+                };
+
+                dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
+            }
+        }
     }
-
-    dev_data->rx_buf           = dev_data->rx_next_buf;
-    dev_data->rx_len           = dev_data->rx_next_len;
-    dev_data->rx_next_buf      = NULL;
-    dev_data->rx_next_len      = 0U;
-    dev_data->rx_processed_len = 0U;
-
-    dma_reload(cfg->dma_dev, cfg->rx_dma_channel,
-               (uint32_t)(&(regs->DATA.reg)),
-               (uint32_t)dev_data->rx_buf, dev_data->rx_len);
-
-    /*
-     * If there should be a timeout, handle starting the DMA in the
-     * ISR, since reception resets it and DMA completion implies
-     * reception.  This also catches the case of DMA completion during
-     * timeout handling.
-     */
-    if (dev_data->rx_timeout_time != SYS_FOREVER_US) {
-        dev_data->rx_waiting_for_irq = true;
-        regs->INTENSET.reg = SERCOM_USART_INTENSET_RXC;
-        irq_unlock(key);
-        return;
-    }
-
-    /* Otherwise, start the transfer immediately. */
-    dma_start(cfg->dma_dev, cfg->rx_dma_channel);
-
-    struct uart_event evt = {
-        .type = UART_RX_BUF_REQUEST,
-    };
-
-    dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
 
     irq_unlock(key);
 }
@@ -301,76 +296,73 @@ static void uart_sam0_rx_timeout(struct k_work* work) {
     const struct uart_sam0_dev_cfg* const cfg = dev_data->cfg;
     SercomUsart* const regs = cfg->regs;
     struct dma_status st;
-    int key = irq_lock();
+    int key;
 
-    if (dev_data->rx_len == 0U) {
-        irq_unlock(key);
-        return;
-    }
-
-    /*
-     * Stop the DMA transfer and restart the interrupt read
-     * component (so the timeout restarts if there's still data).
-     * However, just ignore it if the transfer has completed (nothing
-     * pending) that means the DMA ISR is already pending, so just let
-     * it handle things instead when we re-enable IRQs.
-     */
-    dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
-    if ((dma_get_status(cfg->dma_dev, cfg->rx_dma_channel, &st) == 0) &&
-        (st.pending_length == 0U)) {
-        irq_unlock(key);
-        return;
-    }
-
-    uint8_t* rx_dma_start = ((dev_data->rx_buf + dev_data->rx_len) - st.pending_length);
-    size_t rx_processed   = (rx_dma_start - dev_data->rx_buf);
-
-    /*
-     * We know we still have space, since the above will catch the
-     * empty buffer, so always restart the transfer.
-     */
-    dma_reload(cfg->dma_dev, cfg->rx_dma_channel,
-               (uint32_t)(&(regs->DATA.reg)),
-               (uint32_t)rx_dma_start,
-               dev_data->rx_len - rx_processed);
-
-    dev_data->rx_waiting_for_irq = true;
-    regs->INTENSET.reg = SERCOM_USART_INTENSET_RXC;
-
-    /*
-     * Never do a notify on a timeout started from the ISR: timing
-     * granularity means the first timeout can be in the middle
-     * of reception but still have the total elapsed time exhausted.
-     * So we require a timeout chunk with no data seen at all
-     * (i.e. no ISR entry).
-     */
-    if (dev_data->rx_timeout_from_isr == true) {
-        dev_data->rx_timeout_from_isr = false;
-        k_work_reschedule(&dev_data->rx_timeout_work,
-                          K_USEC(dev_data->rx_timeout_chunk));
-        irq_unlock(key);
-        return;
-    }
-
-    uint32_t now = (k_uptime_get_32() * USEC_PER_MSEC);
-    uint32_t elapsed = now - dev_data->rx_timeout_start;
-
-    if (elapsed >= dev_data->rx_timeout_time) {
+    key = irq_lock();
+    if (dev_data->rx_len != 0U) {
         /*
-         * No time left, so call the handler, and let the ISR
-         * restart the timeout when it sees data.
+         * Stop the DMA transfer and restart the interrupt read
+         * component (so the timeout restarts if there's still data).
+         * However, just ignore it if the transfer has completed (nothing
+         * pending) that means the DMA ISR is already pending, so just let
+         * it handle things instead when we re-enable IRQs.
          */
-        uart_sam0_notify_rx_processed(dev_data, rx_processed);
-    }
-    else {
-        /*
-         * Still have time left, so start another timeout.
-         */
-        uint32_t remaining = MIN(dev_data->rx_timeout_time - elapsed,
-                                 dev_data->rx_timeout_chunk);
+        dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
+        if ((dma_get_status(cfg->dma_dev, cfg->rx_dma_channel, &st) == 0) &&
+            (st.pending_length == 0U)) {
+            /* pass */
+        }
+        else {
+            uint8_t* rx_dma_start = ((dev_data->rx_buf + dev_data->rx_len) - st.pending_length);
+            size_t rx_processed   = (rx_dma_start - dev_data->rx_buf);
 
-        k_work_reschedule(&dev_data->rx_timeout_work,
-                          K_USEC(remaining));
+            /*
+             * We know we still have space, since the above will catch the
+             * empty buffer, so always restart the transfer.
+             */
+            dma_reload(cfg->dma_dev, cfg->rx_dma_channel,
+                       (uint32_t)(&(regs->DATA.reg)),
+                       (uint32_t)rx_dma_start,
+                       (dev_data->rx_len - rx_processed));
+
+            dev_data->rx_waiting_for_irq = true;
+            regs->INTENSET.reg = SERCOM_USART_INTENSET_RXC;
+
+            /*
+             * Never do a notify on a timeout started from the ISR: timing
+             * granularity means the first timeout can be in the middle
+             * of reception but still have the total elapsed time exhausted.
+             * So we require a timeout chunk with no data seen at all
+             * (i.e. no ISR entry).
+             */
+            if (dev_data->rx_timeout_from_isr == true) {
+                dev_data->rx_timeout_from_isr = false;
+                k_work_reschedule(&dev_data->rx_timeout_work,
+                                  K_USEC(dev_data->rx_timeout_chunk));
+            }
+            else {
+                uint32_t now     = (k_uptime_get_32() * USEC_PER_MSEC);
+                uint32_t elapsed = (now - dev_data->rx_timeout_start);
+
+                if (elapsed >= dev_data->rx_timeout_time) {
+                    /*
+                     * No time left, so call the handler, and let the ISR
+                     * restart the timeout when it sees data.
+                     */
+                    uart_sam0_notify_rx_processed(dev_data, rx_processed);
+                }
+                else {
+                    /*
+                     * Still have time left, so start another timeout.
+                     */
+                    uint32_t remaining = MIN((dev_data->rx_timeout_time - elapsed),
+                                             dev_data->rx_timeout_chunk);
+
+                    k_work_reschedule(&dev_data->rx_timeout_work,
+                                      K_USEC(remaining));
+                }
+            }
+        }
     }
 
     irq_unlock(key);
@@ -381,11 +373,10 @@ static void uart_sam0_rx_timeout(struct k_work* work) {
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 static int uart_sam0_configure(const struct device* dev,
                                const struct uart_config* new_cfg) {
-    int retval;
-
     const struct uart_sam0_dev_cfg* const cfg = dev->config;
     struct uart_sam0_dev_data* const dev_data = dev->data;
     SercomUsart* const usart = cfg->regs;
+    int ret;
 
     wait_synchronization(usart);
 
@@ -396,7 +387,7 @@ static int uart_sam0_configure(const struct device* dev,
         /* Flow control not yet supported though in principle possible
          * on this soc family.
          */
-        return -ENOTSUP;
+        return (-ENOTSUP);
     }
 
     dev_data->config_cache.flow_ctrl = new_cfg->flow_ctrl;
@@ -408,16 +399,19 @@ static int uart_sam0_configure(const struct device* dev,
         case UART_CFG_PARITY_NONE :
             CTRLA_temp.bit.FORM = 0x0;
             break;
+
         case UART_CFG_PARITY_ODD :
             CTRLA_temp.bit.FORM = 0x1;
             CTRLB_temp.bit.PMODE = 1;
             break;
+
         case UART_CFG_PARITY_EVEN :
             CTRLA_temp.bit.FORM = 0x1;
             CTRLB_temp.bit.PMODE = 0;
             break;
+
         default :
-            return -ENOTSUP;
+            return (-ENOTSUP);
     }
 
     dev_data->config_cache.parity = new_cfg->parity;
@@ -426,33 +420,40 @@ static int uart_sam0_configure(const struct device* dev,
         case UART_CFG_STOP_BITS_1 :
             CTRLB_temp.bit.SBMODE = 0;
             break;
+
         case UART_CFG_STOP_BITS_2 :
             CTRLB_temp.bit.SBMODE = 1;
             break;
+
         default :
-            return -ENOTSUP;
+            return (-ENOTSUP);
     }
 
     dev_data->config_cache.stop_bits = new_cfg->stop_bits;
 
     switch (new_cfg->data_bits) {
         case UART_CFG_DATA_BITS_5 :
-            CTRLB_temp.bit.CHSIZE = 0x5;
+            CTRLB_temp.bit.CHSIZE = 0x05;
             break;
+
         case UART_CFG_DATA_BITS_6 :
-            CTRLB_temp.bit.CHSIZE = 0x6;
+            CTRLB_temp.bit.CHSIZE = 0x06;
             break;
+
         case UART_CFG_DATA_BITS_7 :
-            CTRLB_temp.bit.CHSIZE = 0x7;
+            CTRLB_temp.bit.CHSIZE = 0x07;
             break;
+
         case UART_CFG_DATA_BITS_8 :
-            CTRLB_temp.bit.CHSIZE = 0x0;
+            CTRLB_temp.bit.CHSIZE = 0x00;
             break;
+
         case UART_CFG_DATA_BITS_9 :
-            CTRLB_temp.bit.CHSIZE = 0x1;
+            CTRLB_temp.bit.CHSIZE = 0x01;
             break;
+
         default :
-            return -ENOTSUP;
+            return (-ENOTSUP);
     }
 
     dev_data->config_cache.data_bits = new_cfg->data_bits;
@@ -467,17 +468,15 @@ static int uart_sam0_configure(const struct device* dev,
     usart->CTRLB = CTRLB_temp;
     wait_synchronization(usart);
 
-    retval = uart_sam0_set_baudrate(usart, new_cfg->baudrate, SOC_ATMEL_SAM0_GCLK0_FREQ_HZ);
-    if (retval != 0) {
-        return retval;
+    ret = uart_sam0_set_baudrate(usart, new_cfg->baudrate, SOC_ATMEL_SAM0_GCLK0_FREQ_HZ);
+    if (ret == 0) {
+        dev_data->config_cache.baudrate = new_cfg->baudrate;
+
+        usart->CTRLA.bit.ENABLE = 1;
+        wait_synchronization(usart);
     }
 
-    dev_data->config_cache.baudrate = new_cfg->baudrate;
-
-    usart->CTRLA.bit.ENABLE = 1;
-    wait_synchronization(usart);
-
-    return 0;
+    return (ret);
 }
 
 static int uart_sam0_config_get(const struct device* dev,
@@ -490,13 +489,11 @@ static int uart_sam0_config_get(const struct device* dev,
 }
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
-static int uart_sam0_init(const struct device *dev)
-{
-    int retval;
-    const struct uart_sam0_dev_cfg *const cfg = dev->config;
-    struct uart_sam0_dev_data *const dev_data = dev->data;
-
+static int uart_sam0_init(const struct device* dev) {
+    const struct uart_sam0_dev_cfg* const cfg = dev->config;
+    struct uart_sam0_dev_data* const dev_data = dev->data;
     SercomUsart* const usart = cfg->regs;
+    int ret;
 
 #ifdef MCLK
     /* Enable the GCLK */
@@ -530,9 +527,9 @@ static int uart_sam0_init(const struct device *dev)
     wait_synchronization(usart);
 
     /* Enable PINMUX based on PINCTRL */
-    retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-    if (retval < 0) {
-        return retval;
+    ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+    if (ret < 0) {
+        return (ret);
     }
 
     dev_data->config_cache.flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
@@ -541,14 +538,13 @@ static int uart_sam0_init(const struct device *dev)
     dev_data->config_cache.data_bits = UART_CFG_DATA_BITS_8;
 
     /* Enable receiver and transmitter */
-    usart->CTRLB.reg = SERCOM_USART_CTRLB_CHSIZE(0) |
-               SERCOM_USART_CTRLB_RXEN | SERCOM_USART_CTRLB_TXEN;
+    usart->CTRLB.reg = (SERCOM_USART_CTRLB_CHSIZE(0) | SERCOM_USART_CTRLB_RXEN | SERCOM_USART_CTRLB_TXEN);
     wait_synchronization(usart);
 
-    retval = uart_sam0_set_baudrate(usart, cfg->baudrate,
+    ret = uart_sam0_set_baudrate(usart, cfg->baudrate,
                     SOC_ATMEL_SAM0_GCLK0_FREQ_HZ);
-    if (retval != 0) {
-        return retval;
+    if (ret != 0) {
+        return (ret);
     }
     dev_data->config_cache.data_bits = cfg->baudrate;
 
@@ -560,14 +556,14 @@ static int uart_sam0_init(const struct device *dev)
     dev_data->dev = dev;
     dev_data->cfg = cfg;
     if (device_is_ready(cfg->dma_dev) == false) {
-        return -ENODEV;
+        return (-ENODEV);
     }
 
     k_work_init_delayable(&dev_data->tx_timeout_work, uart_sam0_tx_timeout);
     k_work_init_delayable(&dev_data->rx_timeout_work, uart_sam0_rx_timeout);
 
-    struct dma_config dma_cfg = { 0 };
-    struct dma_block_config dma_blk = { 0 };
+    struct dma_config dma_cfg = {0};
+    struct dma_block_config dma_blk = {0};
 
     dma_cfg.source_data_size = 1;
     dma_cfg.dest_data_size   = 1;
@@ -584,9 +580,9 @@ static int uart_sam0_init(const struct device *dev)
         dma_blk.dest_address  = (uint32_t)(&(usart->DATA.reg));
         dma_blk.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 
-        retval = dma_config(cfg->dma_dev, cfg->tx_dma_channel, &dma_cfg);
-        if (retval != 0) {
-            return retval;
+        ret = dma_config(cfg->dma_dev, cfg->tx_dma_channel, &dma_cfg);
+        if (ret != 0) {
+            return (ret);
         }
     }
 
@@ -599,9 +595,9 @@ static int uart_sam0_init(const struct device *dev)
         dma_blk.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
         dma_blk.dest_addr_adj   = DMA_ADDR_ADJ_INCREMENT;
 
-        retval = dma_config(cfg->dma_dev, cfg->rx_dma_channel, &dma_cfg);
-        if (retval != 0) {
-            return retval;
+        ret = dma_config(cfg->dma_dev, cfg->rx_dma_channel, &dma_cfg);
+        if (ret != 0) {
+            return (ret);
         }
     }
 
@@ -610,7 +606,7 @@ static int uart_sam0_init(const struct device *dev)
     usart->CTRLA.bit.ENABLE = 1;
     wait_synchronization(usart);
 
-    return 0;
+    return (0);
 }
 
 static int uart_sam0_poll_in(const struct device* dev, unsigned char* c) {
@@ -647,32 +643,29 @@ static int uart_sam0_err_check(const struct device* dev) {
     uint32_t err;
 
     err = 0U;
-    if (regs->STATUS.reg & SERCOM_USART_STATUS_BUFOVF) {
+    if ((regs->STATUS.reg & SERCOM_USART_STATUS_BUFOVF) != 0U) {
         err |= UART_ERROR_OVERRUN;
     }
 
-    if (regs->STATUS.reg & SERCOM_USART_STATUS_FERR) {
+    if ((regs->STATUS.reg & SERCOM_USART_STATUS_FERR) != 0U) {
         err |= UART_ERROR_PARITY;
     }
 
-    if (regs->STATUS.reg & SERCOM_USART_STATUS_PERR) {
+    if ((regs->STATUS.reg & SERCOM_USART_STATUS_PERR) != 0U) {
         err |= UART_ERROR_FRAMING;
     }
 
 #if defined(SERCOM_REV500)
-    if (regs->STATUS.reg & SERCOM_USART_STATUS_ISF) {
+    if ((regs->STATUS.reg & SERCOM_USART_STATUS_ISF) != 0U) {
         err |= UART_BREAK;
     }
 
-    if (regs->STATUS.reg & SERCOM_USART_STATUS_COLL) {
+    if ((regs->STATUS.reg & SERCOM_USART_STATUS_COLL) != 0U) {
         err |= UART_ERROR_COLLISION;
     }
 
-    regs->STATUS.reg |= SERCOM_USART_STATUS_BUFOVF
-             |  SERCOM_USART_STATUS_FERR
-             |  SERCOM_USART_STATUS_PERR
-             |  SERCOM_USART_STATUS_COLL
-             |  SERCOM_USART_STATUS_ISF;
+    regs->STATUS.reg |= (SERCOM_USART_STATUS_BUFOVF | SERCOM_USART_STATUS_FERR |
+                         SERCOM_USART_STATUS_PERR   | SERCOM_USART_STATUS_COLL | SERCOM_USART_STATUS_ISF);
 #else
     regs->STATUS.reg |= (SERCOM_USART_STATUS_BUFOVF | SERCOM_USART_STATUS_FERR | SERCOM_USART_STATUS_PERR);
 #endif
@@ -715,7 +708,7 @@ static void uart_sam0_isr(const struct device* dev) {
         dev_data->tx_buf = NULL;
         dev_data->tx_len = 0U;
 
-        if (evt.data.tx.len != 0U && dev_data->async_cb) {
+        if ((evt.data.tx.len != 0U) && (dev_data->async_cb != NULL)) {
             dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
         }
 
@@ -729,7 +722,8 @@ static void uart_sam0_isr(const struct device* dev) {
         regs->INTENCLR.reg = SERCOM_USART_INTENCLR_RXC;
 
         /* Receive started, so request the next buffer */
-        if (dev_data->rx_next_len == 0U && dev_data->async_cb) {
+        if ((dev_data->rx_next_len == 0U) &&
+            (dev_data->async_cb != NULL)) {
             struct uart_event evt = {
                 .type = UART_RX_BUF_REQUEST,
             };
@@ -763,12 +757,12 @@ static int uart_sam0_fifo_fill(const struct device* dev,
     const struct uart_sam0_dev_cfg* config = dev->config;
     SercomUsart* regs = config->regs;
 
-    if (regs->INTFLAG.bit.DRE && len >= 1) {
+    if ((regs->INTFLAG.bit.DRE == 1U) && (len >= 1)) {
         regs->DATA.reg = tx_data[0];
-        return 1;
+        return (1);
     }
     else {
-        return 0;
+        return (0);
     }
 }
 
@@ -776,28 +770,28 @@ static void uart_sam0_irq_tx_enable(const struct device* dev) {
     const struct uart_sam0_dev_cfg* config = dev->config;
     SercomUsart* const regs = config->regs;
 
-    regs->INTENSET.reg = SERCOM_USART_INTENSET_DRE | SERCOM_USART_INTENSET_TXC;
+    regs->INTENSET.reg = (SERCOM_USART_INTENSET_DRE | SERCOM_USART_INTENSET_TXC);
 }
 
 static void uart_sam0_irq_tx_disable(const struct device* dev) {
     const struct uart_sam0_dev_cfg* config = dev->config;
     SercomUsart* const regs = config->regs;
 
-    regs->INTENCLR.reg = SERCOM_USART_INTENCLR_DRE | SERCOM_USART_INTENCLR_TXC;
+    regs->INTENCLR.reg = (SERCOM_USART_INTENCLR_DRE | SERCOM_USART_INTENCLR_TXC);
 }
 
 static int uart_sam0_irq_tx_ready(const struct device* dev) {
     const struct uart_sam0_dev_cfg* config = dev->config;
     SercomUsart* const regs = config->regs;
 
-    return (regs->INTFLAG.bit.DRE != 0) && (regs->INTENSET.bit.DRE != 0);
+    return ((regs->INTFLAG.bit.DRE != 0) && (regs->INTENSET.bit.DRE != 0));
 }
 
 static int uart_sam0_irq_tx_complete(const struct device* dev) {
     const struct uart_sam0_dev_cfg* config = dev->config;
     SercomUsart* const regs = config->regs;
 
-    return (regs->INTFLAG.bit.TXC != 0) && (regs->INTENSET.bit.TXC != 0);
+    return ((regs->INTFLAG.bit.TXC != 0) && (regs->INTENSET.bit.TXC != 0));
 }
 
 static void uart_sam0_irq_rx_enable(const struct device* dev) {
@@ -807,18 +801,16 @@ static void uart_sam0_irq_rx_enable(const struct device* dev) {
     regs->INTENSET.reg = SERCOM_USART_INTENSET_RXC;
 }
 
-static void uart_sam0_irq_rx_disable(const struct device *dev)
-{
-    const struct uart_sam0_dev_cfg *config = dev->config;
-    SercomUsart * const regs = config->regs;
+static void uart_sam0_irq_rx_disable(const struct device* dev) {
+    const struct uart_sam0_dev_cfg* config = dev->config;
+    SercomUsart* const regs = config->regs;
 
     regs->INTENCLR.reg = SERCOM_USART_INTENCLR_RXC;
 }
 
-static int uart_sam0_irq_rx_ready(const struct device *dev)
-{
-    const struct uart_sam0_dev_cfg *config = dev->config;
-    SercomUsart * const regs = config->regs;
+static int uart_sam0_irq_rx_ready(const struct device* dev) {
+    const struct uart_sam0_dev_cfg* config = dev->config;
+    SercomUsart* const regs = config->regs;
 
     return (regs->INTFLAG.bit.RXC != 0);
 }
@@ -847,12 +839,11 @@ static int uart_sam0_fifo_read(const struct device* dev, uint8_t* rx_data, const
     return (ret);
 }
 
-static int uart_sam0_irq_is_pending(const struct device *dev)
-{
-    const struct uart_sam0_dev_cfg *config = dev->config;
-    SercomUsart * const regs = config->regs;
+static int uart_sam0_irq_is_pending(const struct device* dev) {
+    const struct uart_sam0_dev_cfg* config = dev->config;
+    SercomUsart* const regs = config->regs;
 
-    return (regs->INTENSET.reg & regs->INTFLAG.reg) != 0;
+    return ((regs->INTENSET.reg & regs->INTFLAG.reg) != 0);
 }
 
 #if defined(SERCOM_REV500)
@@ -875,11 +866,11 @@ static void uart_sam0_irq_err_disable(const struct device *dev)
 }
 #endif
 
-static int uart_sam0_irq_update(const struct device *dev)
-{
+static int uart_sam0_irq_update(const struct device* dev) {
     /* Clear sticky interrupts */
-    const struct uart_sam0_dev_cfg *config = dev->config;
-    SercomUsart * const regs = config->regs;
+    const struct uart_sam0_dev_cfg* config = dev->config;
+    SercomUsart* const regs = config->regs;
+
 #if defined(SERCOM_REV500)
     regs->INTFLAG.reg |=    SERCOM_USART_INTENCLR_ERROR
                |    SERCOM_USART_INTENCLR_RXBRK
@@ -888,7 +879,8 @@ static int uart_sam0_irq_update(const struct device *dev)
 #else
     regs->INTFLAG.reg = SERCOM_USART_INTENCLR_RXS;
 #endif
-    return 1;
+
+    return (1);
 }
 
 static void uart_sam0_irq_callback_set(const struct device* dev,
@@ -996,13 +988,13 @@ static int uart_sam0_rx_enable(const struct device* dev, uint8_t* buf,
                                     (uint32_t)(&(regs->DATA.reg)),
                                     (uint32_t)buf, len);
                 if (ret == 0) {
-                    dev_data->rx_buf = buf;
-                    dev_data->rx_len = len;
-                    dev_data->rx_processed_len = 0U;
-                    dev_data->rx_waiting_for_irq = true;
+                    dev_data->rx_buf              = buf;
+                    dev_data->rx_len              = len;
+                    dev_data->rx_processed_len    = 0U;
+                    dev_data->rx_waiting_for_irq  = true;
                     dev_data->rx_timeout_from_isr = true;
-                    dev_data->rx_timeout_time = timeout;
-                    dev_data->rx_timeout_chunk = MAX(timeout / 4U, 1);
+                    dev_data->rx_timeout_time     = timeout;
+                    dev_data->rx_timeout_chunk    = MAX(timeout / 4U, 1);
 
                     regs->INTENSET.reg = SERCOM_USART_INTENSET_RXC;
                 }
@@ -1086,11 +1078,11 @@ static int uart_sam0_rx_disable(const struct device* dev) {
         dev_data->rx_buf = NULL;
         dev_data->rx_len = 0U;
 
-        if (dev_data->async_cb) {
+        if (dev_data->async_cb != NULL) {
             dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
         }
 
-        if (dev_data->rx_next_len) {
+        if (dev_data->rx_next_len != 0U) {
             struct uart_event evt = {
                 .type = UART_RX_BUF_RELEASED,
                 .data.rx_buf = {
@@ -1125,38 +1117,43 @@ static int uart_sam0_rx_disable(const struct device* dev) {
 #endif
 
 static const struct uart_driver_api uart_sam0_driver_api = {
-    .poll_in = uart_sam0_poll_in,
+    .poll_in  = uart_sam0_poll_in,
     .poll_out = uart_sam0_poll_out,
+
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
-    .configure = uart_sam0_configure,
+    .configure  = uart_sam0_configure,
     .config_get = uart_sam0_config_get,
 #endif
+
     .err_check = uart_sam0_err_check,
+
 #if CONFIG_UART_INTERRUPT_DRIVEN
-    .fifo_fill = uart_sam0_fifo_fill,
-    .fifo_read = uart_sam0_fifo_read,
-    .irq_tx_enable = uart_sam0_irq_tx_enable,
-    .irq_tx_disable = uart_sam0_irq_tx_disable,
-    .irq_tx_ready = uart_sam0_irq_tx_ready,
+    .fifo_fill       = uart_sam0_fifo_fill,
+    .fifo_read       = uart_sam0_fifo_read,
+    .irq_tx_enable   = uart_sam0_irq_tx_enable,
+    .irq_tx_disable  = uart_sam0_irq_tx_disable,
+    .irq_tx_ready    = uart_sam0_irq_tx_ready,
     .irq_tx_complete = uart_sam0_irq_tx_complete,
-    .irq_rx_enable = uart_sam0_irq_rx_enable,
-    .irq_rx_disable = uart_sam0_irq_rx_disable,
-    .irq_rx_ready = uart_sam0_irq_rx_ready,
-    .irq_is_pending = uart_sam0_irq_is_pending,
+    .irq_rx_enable   = uart_sam0_irq_rx_enable,
+    .irq_rx_disable  = uart_sam0_irq_rx_disable,
+    .irq_rx_ready    = uart_sam0_irq_rx_ready,
+    .irq_is_pending  = uart_sam0_irq_is_pending,
+
 #if defined(SERCOM_REV500)
-    .irq_err_enable = uart_sam0_irq_err_enable,
+    .irq_err_enable  = uart_sam0_irq_err_enable,
     .irq_err_disable = uart_sam0_irq_err_disable,
 #endif
-    .irq_update = uart_sam0_irq_update,
+    .irq_update       = uart_sam0_irq_update,
     .irq_callback_set = uart_sam0_irq_callback_set,
 #endif
+
 #if CONFIG_UART_ASYNC_API
     .callback_set = uart_sam0_callback_set,
-    .tx = uart_sam0_tx,
-    .tx_abort = uart_sam0_tx_abort,
-    .rx_enable = uart_sam0_rx_enable,
-    .rx_buf_rsp = uart_sam0_rx_buf_rsp,
-    .rx_disable = uart_sam0_rx_disable,
+    .tx           = uart_sam0_tx,
+    .tx_abort     = uart_sam0_tx_abort,
+    .rx_enable    = uart_sam0_rx_enable,
+    .rx_buf_rsp   = uart_sam0_rx_buf_rsp,
+    .rx_disable   = uart_sam0_rx_disable,
 #endif
 };
 
