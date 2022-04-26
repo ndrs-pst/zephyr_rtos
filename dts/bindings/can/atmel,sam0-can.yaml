@@ -1,0 +1,19 @@
+description: Specialization of Bosch m_can CAN-FD controller for Atmel SAM
+
+compatible: "atmel,sam0-can"
+
+include:
+    - name: bosch,m-can.yaml
+    - name: pinctrl-device.yaml
+
+properties:
+    peripheral-id:
+      type: int
+      required: true
+      description: peripheral ID
+
+    clocks:
+      required: true
+
+    clock-names:
+      required: true

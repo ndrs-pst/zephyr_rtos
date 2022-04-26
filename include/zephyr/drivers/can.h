@@ -1300,10 +1300,8 @@ static inline void can_copy_filter_to_zfilter(const struct can_filter *filter,
 static inline void can_copy_zfilter_to_filter(const struct zcan_filter *zfilter,
 					      struct can_filter *filter)
 {
-	filter->can_id = (zfilter->id_type << 31) |
-		(zfilter->rtr << 30) | zfilter->id;
-	filter->can_mask = (zfilter->rtr_mask << 30) |
-		(zfilter->id_type << 31) | zfilter->id_mask;
+	filter->can_id   = (zfilter->id_type  << 31) | (zfilter->rtr << 30) | zfilter->id;
+	filter->can_mask = (zfilter->rtr_mask << 30) | (zfilter->id_type << 31) | zfilter->id_mask;
 }
 
 /** @} */

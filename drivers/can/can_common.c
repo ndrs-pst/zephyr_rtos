@@ -82,8 +82,7 @@ static int can_calc_timing_int(uint32_t core_clock, struct can_timing *res,
 			       const struct can_timing *max,
 			       uint32_t bitrate, uint16_t sp)
 {
-	uint32_t ts = max->prop_seg + max->phase_seg1 + max->phase_seg2 +
-		   CAN_SYNC_SEG;
+	uint32_t ts = max->prop_seg + max->phase_seg1 + max->phase_seg2 + CAN_SYNC_SEG;
 	uint16_t sp_err_min = UINT16_MAX;
 	int sp_err;
 	struct can_timing tmp_res;
@@ -94,8 +93,7 @@ static int can_calc_timing_int(uint32_t core_clock, struct can_timing *res,
 		return -EINVAL;
 	}
 
-	for (int prescaler = MAX(core_clock / (ts * bitrate), 1);
-	     prescaler <= max->prescaler; ++prescaler) {
+    for (int prescaler = MAX(core_clock / (ts * bitrate), 1); prescaler <= max->prescaler; ++prescaler) {
 		if (core_clock % (prescaler * bitrate)) {
 			/* No integer ts */
 			continue;
