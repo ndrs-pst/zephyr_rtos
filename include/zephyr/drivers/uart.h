@@ -1238,7 +1238,7 @@ static inline int z_impl_uart_tx_u16(const struct device* dev, const uint16_t* b
     ARG_UNUSED(dev);
     ARG_UNUSED(buf);
     ARG_UNUSED(len);
-    ARG_UNUSED(timeout);
+    ARG_UNUSED(tmout_ms);
 
     return (-ENOTSUP);
 #endif
@@ -1343,7 +1343,7 @@ static inline int z_impl_uart_rx_enable_u16(const struct device* dev, uint16_t* 
     ARG_UNUSED(dev);
     ARG_UNUSED(buf);
     ARG_UNUSED(len);
-    ARG_UNUSED(timeout);
+    ARG_UNUSED(tmout_ms);
 
     return (-ENOTSUP);
 #endif

@@ -654,10 +654,9 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
  * @param flags interrupt configuration flags
  * @return a value from gpio_pin_interrupt_configure()
  */
-static inline int gpio_pin_interrupt_configure_dt(const struct gpio_dt_spec *spec,
-						  gpio_flags_t flags)
-{
-	return gpio_pin_interrupt_configure(spec->port, spec->pin, flags);
+static inline int gpio_pin_interrupt_configure_dt(const struct gpio_dt_spec* spec,
+                                                  gpio_flags_t flags) {
+    return gpio_pin_interrupt_configure(spec->port, spec->pin, flags);
 }
 
 /**
@@ -744,12 +743,9 @@ static inline int z_impl_gpio_pin_configure(const struct device *port,
  * @param extra_flags additional flags
  * @return a value from gpio_pin_configure()
  */
-static inline int gpio_pin_configure_dt(const struct gpio_dt_spec *spec,
-					gpio_flags_t extra_flags)
-{
-	return gpio_pin_configure(spec->port,
-				  spec->pin,
-				  spec->dt_flags | extra_flags);
+static inline int gpio_pin_configure_dt(const struct gpio_dt_spec* spec,
+                                        gpio_flags_t extra_flags) {
+    return gpio_pin_configure(spec->port, spec->pin, spec->dt_flags | extra_flags);
 }
 
 /**
