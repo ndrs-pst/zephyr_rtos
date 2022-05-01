@@ -42,6 +42,12 @@ extern "C" {
  * @{
  */
 
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#ifndef CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE
+#define CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE      0
+#endif
+#endif
+
 /** @brief Required alignment of the buffer used for packaging. */
 #ifdef __xtensa__
 #define CBPRINTF_PACKAGE_ALIGNMENT 16
@@ -51,7 +57,11 @@ extern "C" {
 		(sizeof(long double)), (MAX(sizeof(double), sizeof(long long)))))
 #endif
 
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+/* pass */
+#else
 BUILD_ASSERT(Z_IS_POW2(CBPRINTF_PACKAGE_ALIGNMENT));
+#endif
 
 /**@defgroup CBPRINTF_PACKAGE_FLAGS Package flags.
  * @{

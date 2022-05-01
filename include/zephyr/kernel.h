@@ -302,8 +302,8 @@ __syscall k_tid_t k_thread_create(struct k_thread *new_thread,
  * @param p3 3rd entry point parameter
  */
 extern FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
-						   void *p1, void *p2,
-						   void *p3);
+                                                   void *p1, void *p2,
+                                                   void *p3);
 
 /**
  * @brief Grant a thread access to a set of kernel objects
@@ -428,8 +428,7 @@ __syscall int32_t k_sleep(k_timeout_t timeout);
  * @return Zero if the requested time has elapsed or the number of milliseconds
  * left to sleep, if thread was woken up by \ref k_wakeup call.
  */
-static inline int32_t k_msleep(int32_t ms)
-{
+static inline int32_t k_msleep(int32_t ms) {
 	return k_sleep(Z_TIMEOUT_MS(ms));
 }
 
@@ -1519,7 +1518,7 @@ static inline k_ticks_t z_impl_k_timer_remaining_ticks(
  */
 static inline uint32_t k_timer_remaining_get(struct k_timer *timer)
 {
-	return k_ticks_to_ms_floor32(k_timer_remaining_ticks(timer));
+	return k_ticks_to_ms_floor32((uint32_t)k_timer_remaining_ticks(timer));
 }
 
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
@@ -3936,7 +3935,7 @@ static inline int32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
 	k_ticks_t rem = k_work_delayable_remaining_get(&work->work);
 
 	/* Probably should be ceil32, but was floor32 */
-	return k_ticks_to_ms_floor32(rem);
+	return k_ticks_to_ms_floor32((uint32_t)rem);
 }
 
 __deprecated
@@ -4030,11 +4029,19 @@ struct k_work_user {
  * @param work Address of work item.
  * @param handler Function to invoke each time work item is processed.
  */
-static inline void k_work_user_init(struct k_work_user *work,
-				    k_work_user_handler_t handler)
-{
-	*work = (struct k_work_user)Z_WORK_USER_INITIALIZER(handler);
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+static inline void k_work_user_init(struct k_work_user* work,
+                                    k_work_user_handler_t handler) {
+    work->_reserved = NULL;
+    work->handler   = handler;
+    work->flags     = 0;
 }
+#else
+static inline void k_work_user_init(struct k_work_user *work,
+                                    k_work_user_handler_t handler) {
+    *work = (struct k_work_user)Z_WORK_USER_INITIALIZER(handler);
+}
+#endif
 
 /**
  * @brief Check if a userspace work item is pending.

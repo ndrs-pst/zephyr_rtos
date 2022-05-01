@@ -93,7 +93,7 @@ typedef int16_t device_handle_t;
  *
  * @return The full name of the device object defined by DEVICE_DEFINE()
  */
-#define DEVICE_NAME_GET(name) _CONCAT(__device_, name)
+#define DEVICE_NAME_GET(name) Z_CONCAT(__device_, name)
 
 /**
  * @def SYS_DEVICE_DEFINE
@@ -118,12 +118,12 @@ typedef int16_t device_handle_t;
  * format of this conversion changes, gen_defines should be updated to
  * match it.
  */
-#define Z_DEVICE_DT_DEV_NAME(node_id) _CONCAT(dts_ord_, DT_DEP_ORD(node_id))
+#define Z_DEVICE_DT_DEV_NAME(node_id) Z_CONCAT(dts_ord_, DT_DEP_ORD(node_id))
 
 /* Synthesize a unique name for the device state associated with
  * dev_name.
  */
-#define Z_DEVICE_STATE_NAME(dev_name) _CONCAT(__devstate_, dev_name)
+#define Z_DEVICE_STATE_NAME(dev_name) Z_CONCAT(__devstate_, dev_name)
 
 /**
  * @brief Utility macro to define and initialize the device state.
@@ -820,7 +820,7 @@ __deprecated static inline int device_usable_check(const struct device* dev) {
  * node, use dev_name.
  */
 #define Z_DEVICE_HANDLE_NAME(node_id, dev_name)         \
-    _CONCAT(__devicehdl_,                               \
+    Z_CONCAT(__devicehdl_,                              \
         COND_CODE_1(DT_NODE_EXISTS(node_id),            \
                 (node_id),                              \
                 (dev_name)))
