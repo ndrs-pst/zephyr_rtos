@@ -289,7 +289,7 @@ static int gpio_sam0_init(const struct device* dev) {
 /* Port A */
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(porta), okay)
 
-static const struct gpio_sam0_config gpio_sam0_config_0 = {
+static struct gpio_sam0_config DT_CONST gpio_sam0_config_0 = {
     .common = {
         .port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
     },
@@ -312,10 +312,11 @@ DEVICE_DT_DEFINE(DT_NODELABEL(porta),
 /* Port B */
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(portb), okay)
 
-static const struct gpio_sam0_config gpio_sam0_config_1 = {
+static struct gpio_sam0_config DT_CONST gpio_sam0_config_1 = {
     .common = {
         .port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(1),
     },
+
     .regs = (PortGroup*)DT_REG_ADDR(DT_NODELABEL(portb)),
 #ifdef CONFIG_SAM0_EIC
     .id = 1,
@@ -334,10 +335,11 @@ DEVICE_DT_DEFINE(DT_NODELABEL(portb),
 /* Port C */
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(portc), okay)
 
-static const struct gpio_sam0_config gpio_sam0_config_2 = {
+static struct gpio_sam0_config DT_CONST gpio_sam0_config_2 = {
     .common = {
         .port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(2),
     },
+
     .regs = (PortGroup*)DT_REG_ADDR(DT_NODELABEL(portc)),
 #ifdef CONFIG_SAM0_EIC
     .id = 2,
@@ -356,10 +358,11 @@ DEVICE_DT_DEFINE(DT_NODELABEL(portc),
 /* Port D */
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(portd), okay)
 
-static const struct gpio_sam0_config gpio_sam0_config_3 = {
+static struct gpio_sam0_config DT_CONST gpio_sam0_config_3 = {
     .common = {
         .port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(3),
     },
+
     .regs = (PortGroup*)DT_REG_ADDR(DT_NODELABEL(portd)),
 #ifdef CONFIG_SAM0_EIC
     .id = 3,
@@ -373,4 +376,11 @@ DEVICE_DT_DEFINE(DT_NODELABEL(portd),
                  &gpio_sam0_data_3, &gpio_sam0_config_3,
                  PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
                  &gpio_sam0_api);
+#endif
+
+#if (__GTEST == 1)                          /* #CUSTOM@NDRS */
+#include "samc21_reg_stub.h"
+void zephyr_gpio_sam0_gtest(void) {
+    gpio_sam0_config_0.regs = (PortGroup*)ut_mcu_port_ptr;
+}
 #endif

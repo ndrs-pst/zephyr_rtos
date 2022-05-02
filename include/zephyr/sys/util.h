@@ -82,7 +82,7 @@ extern "C" {
 /** @brief 0 if @p cond is true-ish; causes a compile error otherwise. */
 #define ZERO_OR_COMPILE_ERROR(cond) ((int) sizeof(char[1 - 2 * !(cond)]) - 1)
 
-#if defined(__cplusplus)
+#if (defined(__cplusplus) || defined(_MSC_VER))                 /* #CUSTOM@NDRS */
 
 /* The built-in function used below for type checking in C is not
  * supported by GNU C++.

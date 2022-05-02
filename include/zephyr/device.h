@@ -31,6 +31,12 @@
 #include <sys/device_mmio.h>
 #include <sys/util.h>
 
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define DT_CONST
+#else
+#define DT_CONST    const
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

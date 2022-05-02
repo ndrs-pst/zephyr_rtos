@@ -822,7 +822,7 @@ static int uart_sam0_fifo_read(const struct device* dev, uint8_t* rx_data, const
     int ret;
 
     if (regs->INTFLAG.bit.RXC == 1U) {
-        ch = regs->DATA.reg;
+        ch = (uint8_t)regs->DATA.reg;
 
         if (size >= 1) {
             *rx_data = ch;
@@ -979,7 +979,7 @@ static int uart_sam0_rx_enable(const struct device* dev, uint8_t* buf,
             if (dev_data->rx_len == 0U) {
                 /* Read off anything that was already there */
                 while (regs->INTFLAG.bit.RXC == 1U) {
-                    char discard = regs->DATA.reg;
+                    uint8_t discard = (uint8_t)regs->DATA.reg;
 
                     (void) discard;
                 }
@@ -1210,32 +1210,32 @@ static void uart_sam0_irq_config_##n(const struct device *dev)      \
     (DT_INST_PROP(n, rxpo) << SERCOM_USART_CTRLA_RXPO_Pos) |    \
     (DT_INST_PROP(n, txpo) << SERCOM_USART_CTRLA_TXPO_Pos)
 
-#define UART_SAM0_SERCOM_COLLISION_DETECT(n)        \
-    (DT_INST_PROP(n, collision_detect))
+#define UART_SAM0_SERCOM_COLLISION_DETECTION(n)        \
+    (DT_INST_PROP(n, collision_detection))
 
 #ifdef MCLK
 #define UART_SAM0_CONFIG_DEFN(n)                    \
-static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {      \
+static struct uart_sam0_dev_cfg DT_CONST uart_sam0_config_##n = {      \
     .regs = (SercomUsart *)DT_INST_REG_ADDR(n),         \
     .baudrate = DT_INST_PROP(n, current_speed),         \
     .mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(n),  \
     .mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),    \
     .gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),\
     .pads = UART_SAM0_SERCOM_PADS(n),               \
-    .collision_detect = UART_SAM0_SERCOM_PADS(n),   \
+    .collision_detect = UART_SAM0_SERCOM_COLLISION_DETECTION(n), \
     .pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),      \
     UART_SAM0_IRQ_HANDLER_FUNC(n)                   \
     UART_SAM0_DMA_CHANNELS(n)                       \
 }
 #else
 #define UART_SAM0_CONFIG_DEFN(n)                    \
-static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {      \
+static struct uart_sam0_dev_cfg DT_CONST uart_sam0_config_##n = {      \
     .regs = (SercomUsart *)DT_INST_REG_ADDR(n),         \
     .baudrate = DT_INST_PROP(n, current_speed),         \
     .pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),    \
     .gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),\
     .pads = UART_SAM0_SERCOM_PADS(n),               \
-    .collision_detect = UART_SAM0_SERCOM_PADS(n),   \
+    .collision_detect = UART_SAM0_SERCOM_COLLISION_DETECTION(n), \
     .pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),      \
     UART_SAM0_IRQ_HANDLER_FUNC(n)                   \
     UART_SAM0_DMA_CHANNELS(n)                       \
@@ -1255,3 +1255,28 @@ DEVICE_DT_INST_DEFINE(n, uart_sam0_init, NULL,      \
 UART_SAM0_IRQ_HANDLER(n)
 
 DT_INST_FOREACH_STATUS_OKAY(UART_SAM0_DEVICE_INIT)
+
+#if (__GTEST == 1)                          /* #CUSTOM@NDRS */
+#include "samc21_reg_stub.h"
+void zephyr_uart_sam0_gtest(void) {
+    if (uart_sam0_config_0.regs == (SercomUsart*)0x42000400) {
+        /* SERCOM0 */
+        uart_sam0_config_0.regs = (SercomUsart*)ut_mcu_sercom_ptr[0];
+    }
+
+    if (uart_sam0_config_1.regs == (SercomUsart*)0x42000800) {
+        /* SERCOM1 */
+        uart_sam0_config_1.regs = (SercomUsart*)ut_mcu_sercom_ptr[1];
+    }
+
+    if (uart_sam0_config_2.regs == (SercomUsart*)0x42001000) {
+        /* SERCOM3 */
+        uart_sam0_config_2.regs = (SercomUsart*)ut_mcu_sercom_ptr[3];
+    }
+
+    if (uart_sam0_config_3.regs == (SercomUsart*)0x42001400) {
+        /* SERCOM4 */
+        uart_sam0_config_3.regs = (SercomUsart*)ut_mcu_sercom_ptr[4];
+    }
+}
+#endif

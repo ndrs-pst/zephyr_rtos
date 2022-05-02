@@ -754,7 +754,7 @@ static struct spi_driver_api const spi_sam0_driver_api = {
 
 #ifdef MCLK
 #define SPI_SAM0_DEFINE_CONFIG(n)                   \
-static struct spi_sam0_config const spi_sam0_config_##n = {     \
+static struct spi_sam0_config DT_CONST spi_sam0_config_##n = {  \
     .regs = (SercomSpi *)DT_INST_REG_ADDR(n),       \
     .mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(n),  \
     .mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),    \
@@ -765,7 +765,7 @@ static struct spi_sam0_config const spi_sam0_config_##n = {     \
 }
 #else
 #define SPI_SAM0_DEFINE_CONFIG(n)                   \
-static struct spi_sam0_config const spi_sam0_config_##n = {     \
+static struct spi_sam0_config DT_CONST spi_sam0_config_##n = {  \
     .regs = (SercomSpi *)DT_INST_REG_ADDR(n),       \
     .pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),\
     .gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),\
@@ -790,3 +790,13 @@ static struct spi_sam0_config const spi_sam0_config_##n = {     \
                 &spi_sam0_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_SAM0_DEVICE_INIT)
+
+#if (__GTEST == 1)                          /* #CUSTOM@NDRS */
+#include "samc21_reg_stub.h"
+void zephyr_spi_sam0_gtest(void) {
+    if (spi_sam0_config_0.regs == (SercomSpi*)0x42001800) {
+        /* SERCOM5 */
+        spi_sam0_config_0.regs = (SercomSpi*)ut_mcu_sercom_ptr[5];
+    }
+}
+#endif

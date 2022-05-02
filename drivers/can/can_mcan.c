@@ -683,11 +683,9 @@ int can_mcan_get_state(const struct can_mcan_config *cfg, enum can_state *state,
 	}
 
 	if (err_cnt != NULL) {
-		err_cnt->rx_err_cnt = (can->ecr & CAN_MCAN_ECR_TEC_MSK) <<
-				      CAN_MCAN_ECR_TEC_POS;
+		err_cnt->rx_err_cnt = (uint8_t)((can->ecr & CAN_MCAN_ECR_TEC_MSK) << CAN_MCAN_ECR_TEC_POS);
 
-		err_cnt->tx_err_cnt = (can->ecr & CAN_MCAN_ECR_REC_MSK) <<
-				      CAN_MCAN_ECR_REC_POS;
+		err_cnt->tx_err_cnt = (uint8_t)((can->ecr & CAN_MCAN_ECR_REC_MSK) << CAN_MCAN_ECR_REC_POS);
 	}
 
 	return 0;
