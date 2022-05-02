@@ -254,5 +254,5 @@ manifest:
     - -ci
 
   self:
-    path: zephyr-rtos
+    path: zephyr_rtos
     west-commands: scripts/west-commands.yml
