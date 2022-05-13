@@ -246,8 +246,6 @@ uint32_t sys_clock_cycle_get_32(void)
 
 static int sys_clock_driver_init(const struct device *dev)
 {
-	int retval;
-
 	ARG_UNUSED(dev);
 
 #ifdef MCLK
@@ -264,10 +262,16 @@ static int sys_clock_driver_init(const struct device *dev)
 	}
 #endif
 
-	retval = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
-	if (retval < 0) {
-		return retval;
-	}
+#ifdef CONFIG_TICKLESS_KERNEL
+    /* pass */
+#else
+    int retval;
+
+    retval = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
+    if (retval < 0) {
+        return (retval);
+    }
+#endif
 
 	/* Reset module to hardware defaults. */
 	rtc_reset();
@@ -321,12 +325,10 @@ static int sys_clock_driver_init(const struct device *dev)
 
 	/* Enable RTC interrupt. */
 	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority), rtc_isr, 0, 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), rtc_isr, 0, 0);
 	irq_enable(DT_INST_IRQN(0));
 
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

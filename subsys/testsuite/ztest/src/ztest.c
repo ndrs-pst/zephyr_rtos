@@ -516,7 +516,7 @@ void __weak test_main(void)
 }
 
 #ifndef KERNEL
-int main(void)
+int ztest_main(void)    /* #CUSTOM@PST1981 */
 {
 	z_init_mock();
 	test_main();
@@ -525,7 +525,7 @@ int main(void)
 	return test_status;
 }
 #else
-void main(void)
+void ztest_main(void)   /* #CUSTOM@PST1981 */
 {
 #ifdef CONFIG_USERSPACE
 	int ret;

@@ -44,8 +44,13 @@ extern "C" {
  */
 #ifdef CONFIG_PRINTK
 
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+extern void printk(const char* fmt, ...);
+extern void vprintk(const char* fmt, va_list ap);
+#else
 extern __printf_like(1, 2) void printk(const char *fmt, ...);
 extern __printf_like(1, 0) void vprintk(const char *fmt, va_list ap);
+#endif
 
 #else
 static inline __printf_like(1, 2) void printk(const char *fmt, ...)
@@ -60,10 +65,15 @@ static inline __printf_like(1, 0) void vprintk(const char *fmt, va_list ap)
 }
 #endif
 
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+extern int snprintk(char* str, size_t size, const char* fmt, ...);
+extern int vsnprintk(char* str, size_t size, const char* fmt, va_list ap);
+#else
 extern __printf_like(3, 4) int snprintk(char *str, size_t size,
 					const char *fmt, ...);
 extern __printf_like(3, 0) int vsnprintk(char *str, size_t size,
 					  const char *fmt, va_list ap);
+#endif
 
 #ifdef __cplusplus
 }

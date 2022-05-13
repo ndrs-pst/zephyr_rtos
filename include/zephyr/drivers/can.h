@@ -1094,7 +1094,7 @@ static inline void z_impl_can_remove_rx_filter(const struct device *dev, int fil
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
-	return api->remove_rx_filter(dev, filter_id);
+	api->remove_rx_filter(dev, filter_id);
 }
 
 /**
@@ -1372,10 +1372,8 @@ static inline void can_copy_filter_to_zfilter(const struct can_filter *filter,
 static inline void can_copy_zfilter_to_filter(const struct zcan_filter *zfilter,
 					      struct can_filter *filter)
 {
-	filter->can_id = (zfilter->id_type << 31) |
-		(zfilter->rtr << 30) | zfilter->id;
-	filter->can_mask = (zfilter->rtr_mask << 30) |
-		(zfilter->id_type << 31) | zfilter->id_mask;
+	filter->can_id   = (zfilter->id_type  << 31) | (zfilter->rtr << 30) | zfilter->id;
+	filter->can_mask = (zfilter->rtr_mask << 30) | (zfilter->id_type << 31) | zfilter->id_mask;
 }
 
 /** @} */
