@@ -517,7 +517,7 @@ done:
 	return ret;
 }
 
-static void can_mcan_state_change_handler(const struct device *dev)
+void can_mcan_state_change_handler(const struct device *dev)
 {
 	struct can_mcan_data *data = dev->data;
 	const can_state_change_callback_t cb = data->state_change_cb;
@@ -532,7 +532,7 @@ static void can_mcan_state_change_handler(const struct device *dev)
 	}
 }
 
-static void can_mcan_tc_event_handler(const struct device *dev)
+void can_mcan_tc_event_handler(const struct device* dev)
 {
 	const struct can_mcan_config *cfg = dev->config;
 	struct can_mcan_data *data = dev->data;
@@ -601,9 +601,9 @@ void can_mcan_line_0_isr(const struct device *dev)
 			    CAN_MCAN_IR_TEFL | CAN_MCAN_IR_TEFN));
 }
 
-static void can_mcan_get_message(const struct device *dev,
-				 volatile struct can_mcan_rx_fifo *fifo,
-				 volatile uint32_t *fifo_status_reg,
+void can_mcan_get_message(const struct device* dev,
+                          volatile struct can_mcan_rx_fifo* fifo,
+                          volatile uint32_t* fifo_status_reg,
                           volatile uint32_t* fifo_ack_reg) {
 	struct can_mcan_data *data = dev->data;
 	uint32_t get_idx, filt_idx;

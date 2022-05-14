@@ -19,47 +19,25 @@ static struct k_poll_event msgq_events[1] = {
                                     &msgq, 0)
 };
 
-static inline int read_config_options(const struct shell *sh, int pos,
-				      char **argv, bool *listenonly, bool *loopback)
-{
-	char *arg = argv[pos];
+#define USE_MISRA_COMPLIANCE        1U
 
 #if (USE_MISRA_COMPLIANCE == 1U)
 static inline int read_config_options(const struct shell* sh, int pos, char** argv,
-                                      bool* silent, bool* loopback) {
+                                      bool* listenonly, bool* loopback) {
     char* arg = argv[pos];
     int ret;
 
-	for (arg = &arg[1]; *arg; arg++) {
-		switch (*arg) {
-		case 's':
-			if (listenonly == NULL) {
-				shell_error(sh, "Unknown option %c", *arg);
-			} else {
-				*listenonly = true;
-			}
-			break;
-		case 'l':
-			if (loopback == NULL) {
-				shell_error(sh, "Unknown option %c", *arg);
-			} else {
-				*loopback = true;
-			}
-			break;
-		default:
-			shell_error(sh, "Unknown option %c", *arg);
-			return -EINVAL;
-		}
-	}
+    if (arg[0] == '-') {
+        ret = ++pos;
 
         for (arg = &arg[1]; *arg; arg++) {
             switch (*arg) {
                 case 's' :
-                    if (silent == NULL) {
+                    if (listenonly == NULL) {
                         shell_error(sh, "Unknown option %c", *arg);
                     }
                     else {
-                        *silent = true;
+                        *listenonly = true;
                     }
                     break;
 
@@ -87,7 +65,7 @@ static inline int read_config_options(const struct shell* sh, int pos, char** ar
 }
 #else
 static inline int read_config_options(const struct shell* sh, int pos, char** argv,
-                                      bool* silent, bool* loopback) {
+                                      bool* listenonly, bool* loopback) {
     char* arg = argv[pos];
 
     if (arg[0] != '-') {
@@ -97,11 +75,11 @@ static inline int read_config_options(const struct shell* sh, int pos, char** ar
     for (arg = &arg[1]; *arg; arg++) {
         switch (*arg) {
             case 's' :
-                if (silent == NULL) {
+                if (listenonly == NULL) {
                     shell_error(sh, "Unknown option %c", *arg);
                 }
                 else {
-                    *silent = true;
+                    *listenonly = true;
                 }
                 break;
 
@@ -396,14 +374,10 @@ static inline int read_data(const struct shell* sh, int pos, char** argv, size_t
     int i;
     uint8_t* data_ptr = data;
 
-static int cmd_config(const struct shell *sh, size_t argc, char **argv)
-{
-	const struct device *can_dev;
-	int pos = 1;
-	bool listenonly = false, loopback = false;
-	can_mode_t mode = CAN_MODE_NORMAL;
-	uint32_t bitrate;
-	int ret;
+    if ((argc - pos) > CAN_MAX_DLC) {
+        shell_error(sh, "Too many databytes. Max is %d", CAN_MAX_DLC);
+        return (-EINVAL);
+    }
 
     for (i = pos; i < argc; i++) {
         char* end_ptr;
@@ -415,36 +389,25 @@ static int cmd_config(const struct shell *sh, size_t argc, char **argv)
             return (-EINVAL);
         }
 
-	pos = read_config_options(sh, pos, argv, &listenonly, &loopback);
-	if (pos < 0) {
-		return -EINVAL;
-	}
+        if (val & ~0xFFL) {
+            shell_error(sh, "A data bytes must not be > 0xFF");
+            return (-EINVAL);
+        }
 
-	if (listenonly) {
-		mode |= CAN_MODE_LISTENONLY;
-	}
+        *data_ptr = val;
+        data_ptr++;
+    }
 
-	if (loopback) {
-		mode |= CAN_MODE_LOOPBACK;
-	}
-
-	ret = can_set_mode(can_dev, mode);
-	if (ret) {
-		shell_error(sh, "Failed to set mode [%d]",
-			    ret);
-		return ret;
-	}
+    *dlc = i - pos;
 
     return i;
 }
 #endif
 
-	ret = can_set_bitrate(can_dev, bitrate);
-	if (ret) {
-		shell_error(sh, "Failed to set bitrate [%d]",
-			    ret);
-		return ret;
-	}
+#if (USE_MISRA_COMPLIANCE == 1U)
+static void print_frame(struct zcan_frame* frame, const struct shell* sh) {
+    char const* frame_id;
+    char const* frame_rtr;
 
     if (frame->id_type == CAN_STANDARD_IDENTIFIER) {
         frame_id = "std";
@@ -531,14 +494,14 @@ static void msgq_triggered_work_handler(struct k_work* work) {
 static int cmd_config(const struct shell* sh, size_t argc, char** argv) {
     const struct device* can_dev;
     int  pos;
-    bool silent;
+    bool listenonly;
     bool loopback;
-    enum can_mode mode;
+    can_mode_t mode;
     uint32_t bitrate;
     int ret;
 
     pos      = 1;
-    silent   = false;
+    listenonly = false;
     loopback = false;
     ret      = -EINVAL;
 
@@ -546,26 +509,22 @@ static int cmd_config(const struct shell* sh, size_t argc, char** argv) {
     if (can_dev != NULL) {
         pos++;
 
-        pos = read_config_options(sh, pos, argv, &silent, &loopback);
+        pos = read_config_options(sh, pos, argv, &listenonly, &loopback);
         if (pos >= 0) {
-            if (silent && loopback) {
-                mode = CAN_SILENT_LOOPBACK_MODE;
+            mode = CAN_MODE_NORMAL;
+            if (listenonly == true) {
+                mode |= CAN_MODE_LISTENONLY;
             }
-            else if (silent) {
-                mode = CAN_SILENT_MODE;
-            }
-            else if (loopback) {
-                mode = CAN_LOOPBACK_MODE;
-            }
-            else {
-                mode = CAN_NORMAL_MODE;
+
+            if (loopback == true) {
+                mode |= CAN_MODE_LOOPBACK;
             }
 
             ret = can_set_mode(can_dev, mode);
             if (ret == 0) {
                 pos = read_bitrate(sh, pos, argv, &bitrate);
                 if (pos >= 0) {
-                    ret = can_set_bitrate(can_dev, bitrate, 0);
+                    ret = can_set_bitrate(can_dev, bitrate);
                     if (ret == 0) {
                         // OK path
                     }
@@ -589,8 +548,8 @@ static int cmd_config(const struct shell* sh, size_t argc, char** argv) {
 static int cmd_config(const struct shell* sh, size_t argc, char** argv) {
     const struct device* can_dev;
     int pos = 1;
-    bool silent = false, loopback = false;
-    enum can_mode mode;
+    bool listenonly = false, loopback = false;
+    can_mode_t mode;
     uint32_t bitrate;
     int ret;
 
@@ -602,22 +561,18 @@ static int cmd_config(const struct shell* sh, size_t argc, char** argv) {
 
     pos++;
 
-    pos = read_config_options(sh, pos, argv, &silent, &loopback);
+    pos = read_config_options(sh, pos, argv, &listenonly, &loopback);
     if (pos < 0) {
         return (-EINVAL);
     }
 
-    if (silent && loopback) {
-        mode = CAN_SILENT_LOOPBACK_MODE;
+    mode = CAN_MODE_NORMAL;
+    if (listenonly == true) {
+        mode |= CAN_MODE_LISTENONLY;
     }
-    else if (silent) {
-        mode = CAN_SILENT_MODE;
-    }
-    else if (loopback) {
-        mode = CAN_LOOPBACK_MODE;
-    }
-    else {
-        mode = CAN_NORMAL_MODE;
+
+    if (loopback == true) {
+        mode |= CAN_MODE_LOOPBACK;
     }
 
     ret = can_set_mode(can_dev, mode);
@@ -999,29 +954,29 @@ static int cmd_remove_rx_filter(const struct shell* sh, size_t argc, char** argv
 #endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_can,
-	SHELL_CMD_ARG(config, NULL,
-		      "Configure CAN controller.\n"
-		      " Usage: config device_name [-sl] bitrate\n"
-		      " -s Listen-only mode\n"
-		      " -l Loopback mode",
-		      cmd_config, 3, 1),
-	SHELL_CMD_ARG(send, NULL,
-	              "Send a CAN frame.\n"
-	              " Usage: send device_name [-re] id [byte_1 byte_2 ...]\n"
-	              " -r Remote transmission request\n"
-	              " -e Extended address",
-	              cmd_send, 3, 12),
-	SHELL_CMD_ARG(add_rx_filter, NULL,
-	              "Add a RX filter and print matching frames.\n"
-	              " Usage: add_rx_filter device_name [-re] id [mask [-r]]\n"
-	              " -r Remote transmission request\n"
-	              " -e Extended address",
-	              cmd_add_rx_filter, 3, 3),
-	SHELL_CMD_ARG(remove_rx_filter, NULL,
-	              "Remove a RX filter and stop printing matching frames\n"
-	              " Usage: remove_rx_filter device_name filter_id",
-	              cmd_remove_rx_filter, 3, 0),
-	SHELL_SUBCMD_SET_END /* Array terminated. */
+    SHELL_CMD_ARG(config, NULL,
+                  "Configure CAN controller.\n"
+                  " Usage: config device_name [-sl] bitrate\n"
+                  " -s Listen-only mode\n"
+                  " -l Loopback mode",
+                  cmd_config, 3, 1),
+    SHELL_CMD_ARG(send, NULL,
+                  "Send a CAN frame.\n"
+                  " Usage: send device_name [-re] id [byte_1 byte_2 ...]\n"
+                  " -r Remote transmission request\n"
+                  " -e Extended address",
+                  cmd_send, 3, 12),
+    SHELL_CMD_ARG(add_rx_filter, NULL,
+                  "Add a RX filter and print matching frames.\n"
+                  " Usage: add_rx_filter device_name [-re] id [mask [-r]]\n"
+                  " -r Remote transmission request\n"
+                  " -e Extended address",
+                  cmd_add_rx_filter, 3, 3),
+    SHELL_CMD_ARG(remove_rx_filter, NULL,
+                  "Remove a RX filter and stop printing matching frames\n"
+                  " Usage: remove_rx_filter device_name filter_id",
+                  cmd_remove_rx_filter, 3, 0),
+    SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
 SHELL_CMD_ARG_REGISTER(canbus, &sub_can, "CAN commands", NULL, 2, 0);
