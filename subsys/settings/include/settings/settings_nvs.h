@@ -30,14 +30,14 @@ extern "C" {
  * Deleted records will not be found, only the last record will be
  * read.
  */
-#define NVS_NAMECNT_ID 0x8000
-#define NVS_NAME_ID_OFFSET 0x4000
+#define NVS_NAMECNT_ID      0x8000
+#define NVS_NAME_ID_OFFSET  0x4000
 
 struct settings_nvs {
 	struct settings_store cf_store;
 	struct nvs_fs cf_nvs;
 	uint16_t last_name_id;
-	const char *flash_dev_name;
+    const char* flash_dev_name;
 };
 
 /* register nvs to be a source of settings */
