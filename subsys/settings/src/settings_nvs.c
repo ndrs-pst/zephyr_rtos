@@ -212,7 +212,7 @@ static int settings_nvs_save(struct settings_store* cs,
     }
 
     /* write the value */
-    rc = nvs_write(&cf->cf_nvs, write_name_id + NVS_NAME_ID_OFFSET, value, val_len);
+    rc = nvs_write(&cf->cf_nvs, (write_name_id + NVS_NAME_ID_OFFSET), value, val_len);
     if (rc >= 0) {
         /* write the name if required */
         if (write_name == true) {
@@ -286,7 +286,7 @@ int settings_backend_init(void) {
             k_panic();
         }
         else {
-            nvs_sector_size = CONFIG_SETTINGS_NVS_SECTOR_SIZE_MULT * hw_flash_sector.fs_size;
+            nvs_sector_size = (CONFIG_SETTINGS_NVS_SECTOR_SIZE_MULT * hw_flash_sector.fs_size);
             if (nvs_sector_size > UINT16_MAX) {
                 return (-EDOM);
             }

@@ -204,7 +204,7 @@ static const struct can_driver_api can_sam0_driver_api = {
 static void config_can_##inst##_irq(void) {                                         \
     LOG_DBG("Enable CAN##inst## IRQ");                                              \
     IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, line_01, irq),                            \
-                DT_INST_IRQ_BY_NAME(inst, line_01, priority), can_sam0_line_01_isr,  \
+                DT_INST_IRQ_BY_NAME(inst, line_01, priority), can_sam0_line_01_isr, \
                 DEVICE_DT_INST_GET(inst), 0);                                       \
     irq_enable(DT_INST_IRQ_BY_NAME(inst, line_01, irq));                            \
 }

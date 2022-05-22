@@ -164,4 +164,4 @@ static int cmd_settings(const struct shell *shell_ptr, size_t argc, char **argv)
 }
 
 SHELL_CMD_ARG_REGISTER(settings, &settings_cmds, "Settings shell commands",
-		       cmd_settings, 2, 0);
+                       cmd_settings, 2, 0);

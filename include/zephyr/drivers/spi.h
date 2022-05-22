@@ -494,18 +494,19 @@ __subsystem struct spi_driver_api {
  * @retval true if the SPI bus is ready for use.
  * @retval false if the SPI bus is not ready for use.
  */
-static inline bool spi_is_ready(const struct spi_dt_spec *spec)
-{
+static inline bool spi_is_ready(const struct spi_dt_spec* spec) {
     /* Validate bus is ready */
-    if (!device_is_ready(spec->bus)) {
-        return false;
+    if (device_is_ready(spec->bus) == false) {
+        return (false);
     }
+
     /* Validate CS gpio port is ready, if it is used */
-    if (spec->config.cs &&
-        !device_is_ready(spec->config.cs->gpio.port)) {
-        return false;
+    if ((spec->config.cs != NULL) &&
+        (device_is_ready(spec->config.cs->gpio.port) == false)) {
+        return (false);
     }
-    return true;
+
+    return (true);
 }
 
 /**
@@ -621,10 +622,9 @@ static inline int spi_read_dt(const struct spi_dt_spec *spec,
  * @retval 0 If successful.
  * @retval -errno Negative errno code on failure.
  */
-static inline int spi_write(const struct device *dev,
-                const struct spi_config *config,
-                const struct spi_buf_set *tx_bufs)
-{
+static inline int spi_write(const struct device* dev,
+                            const struct spi_config* config,
+                            const struct spi_buf_set* tx_bufs) {
     return spi_transceive(dev, config, tx_bufs, NULL);
 }
 
@@ -640,9 +640,8 @@ static inline int spi_write(const struct device *dev,
  *
  * @return a value from spi_write().
  */
-static inline int spi_write_dt(const struct spi_dt_spec *spec,
-                   const struct spi_buf_set *tx_bufs)
-{
+static inline int spi_write_dt(const struct spi_dt_spec* spec,
+                               const struct spi_buf_set* tx_bufs) {
     return spi_write(spec->bus, &spec->config, tx_bufs);
 }
 

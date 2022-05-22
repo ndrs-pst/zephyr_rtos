@@ -5723,7 +5723,11 @@ static inline void k_cpu_atomic_idle(unsigned int key)
  */
 #ifdef ARCH_EXCEPT
 /* This architecture has direct support for triggering a CPU exception */
+#if defined(_MSC_VER)
+#define z_except_reason(reason)
+#else
 #define z_except_reason(reason)	ARCH_EXCEPT(reason)
+#endif
 #else
 
 #if !defined(CONFIG_ASSERT_NO_FILE_INFO)

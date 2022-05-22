@@ -1258,25 +1258,21 @@ DT_INST_FOREACH_STATUS_OKAY(UART_SAM0_DEVICE_INIT)
 
 #if (__GTEST == 1)                          /* #CUSTOM@NDRS */
 #include "samc21_reg_stub.h"
+
 void zephyr_uart_sam0_gtest(void) {
-    if (uart_sam0_config_0.regs == (SercomUsart*)0x42000400) {
-        /* SERCOM0 */
-        uart_sam0_config_0.regs = (SercomUsart*)ut_mcu_sercom_ptr[0];
-    }
-
-    if (uart_sam0_config_1.regs == (SercomUsart*)0x42000800) {
+    if (uart_sam0_config_0.regs == (SercomUsart*)0x42000800) {
         /* SERCOM1 */
-        uart_sam0_config_1.regs = (SercomUsart*)ut_mcu_sercom_ptr[1];
+        uart_sam0_config_0.regs = (SercomUsart*)ut_mcu_sercom_ptr[1];
     }
 
-    if (uart_sam0_config_2.regs == (SercomUsart*)0x42001000) {
+    if (uart_sam0_config_1.regs == (SercomUsart*)0x42001000) {
         /* SERCOM3 */
-        uart_sam0_config_2.regs = (SercomUsart*)ut_mcu_sercom_ptr[3];
+        uart_sam0_config_1.regs = (SercomUsart*)ut_mcu_sercom_ptr[3];
     }
 
-    if (uart_sam0_config_3.regs == (SercomUsart*)0x42001400) {
+    if (uart_sam0_config_2.regs == (SercomUsart*)0x42001400) {
         /* SERCOM4 */
-        uart_sam0_config_3.regs = (SercomUsart*)ut_mcu_sercom_ptr[4];
+        uart_sam0_config_2.regs = (SercomUsart*)ut_mcu_sercom_ptr[4];
     }
 }
 #endif
