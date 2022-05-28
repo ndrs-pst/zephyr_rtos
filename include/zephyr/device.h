@@ -31,6 +31,12 @@
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/sys/util.h>
 
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define DT_CONST
+#else
+#define DT_CONST    const
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -69,7 +75,7 @@ typedef int16_t device_handle_t;
 /** @brief Flag value used to identify an unknown device. */
 #define DEVICE_HANDLE_NULL 0
 
-#define Z_DEVICE_MAX_NAME_LEN	48
+#define Z_DEVICE_MAX_NAME_LEN   48
 
 /**
  * @def DEVICE_NAME_GET
@@ -93,7 +99,7 @@ typedef int16_t device_handle_t;
  *
  * @return The full name of the device object defined by DEVICE_DEFINE()
  */
-#define DEVICE_NAME_GET(name) _CONCAT(__device_, name)
+#define DEVICE_NAME_GET(name) Z_CONCAT(__device_, name)
 
 /**
  * @def SYS_DEVICE_DEFINE
@@ -107,8 +113,8 @@ typedef int16_t device_handle_t;
  * @param level Initialization level to run the function in.
  * @param prio Function's priority within its initialization level.
  */
-#define SYS_DEVICE_DEFINE(drv_name, init_fn, level, prio)		\
-	__DEPRECATED_MACRO SYS_INIT(init_fn, level, prio)
+#define SYS_DEVICE_DEFINE(drv_name, init_fn, level, prio)       \
+    __DEPRECATED_MACRO SYS_INIT(init_fn, level, prio)
 
 /* Node paths can exceed the maximum size supported by device_get_binding() in user mode,
  * so synthesize a unique dev_name from the devicetree node.
@@ -118,12 +124,12 @@ typedef int16_t device_handle_t;
  * format of this conversion changes, gen_defines should be updated to
  * match it.
  */
-#define Z_DEVICE_DT_DEV_NAME(node_id) _CONCAT(dts_ord_, DT_DEP_ORD(node_id))
+#define Z_DEVICE_DT_DEV_NAME(node_id) Z_CONCAT(dts_ord_, DT_DEP_ORD(node_id))
 
 /* Synthesize a unique name for the device state associated with
  * dev_name.
  */
-#define Z_DEVICE_STATE_NAME(dev_name) _CONCAT(__devstate_, dev_name)
+#define Z_DEVICE_STATE_NAME(dev_name) Z_CONCAT(__devstate_, dev_name)
 
 /**
  * @brief Utility macro to define and initialize the device state.
@@ -131,9 +137,9 @@ typedef int16_t device_handle_t;
  * @param node_id Devicetree node id of the device.
  * @param dev_name Device name.
  */
-#define Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
-	static struct device_state Z_DEVICE_STATE_NAME(dev_name)	\
-	__attribute__((__section__(".z_devstate")));
+#define Z_DEVICE_STATE_DEFINE(node_id, dev_name)            \
+    static struct device_state Z_DEVICE_STATE_NAME(dev_name)    \
+    __attribute__((__section__(".z_devstate")));
 
 /**
  * @def DEVICE_DEFINE
@@ -178,13 +184,13 @@ typedef int16_t device_handle_t;
  *
  * @param api_ptr Pointer to the device's API structure. Can be NULL.
  */
-#define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_device,		\
-		      data_ptr, cfg_ptr, level, prio, api_ptr)		\
-	Z_DEVICE_STATE_DEFINE(DT_INVALID_NODE, dev_name) \
-	Z_DEVICE_DEFINE(DT_INVALID_NODE, dev_name, drv_name, init_fn,	\
-			pm_device,					\
-			data_ptr, cfg_ptr, level, prio, api_ptr,	\
-			&Z_DEVICE_STATE_NAME(dev_name))
+#define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_device,       \
+              data_ptr, cfg_ptr, level, prio, api_ptr)      \
+    Z_DEVICE_STATE_DEFINE(DT_INVALID_NODE, dev_name) \
+    Z_DEVICE_DEFINE(DT_INVALID_NODE, dev_name, drv_name, init_fn,   \
+            pm_device,                  \
+            data_ptr, cfg_ptr, level, prio, api_ptr,    \
+            &Z_DEVICE_STATE_NAME(dev_name))
 
 /**
  * @def DEVICE_DT_NAME
@@ -200,7 +206,7 @@ typedef int16_t device_handle_t;
  * Otherwise, the node's full name in "node-name@@unit-address" form.
  */
 #define DEVICE_DT_NAME(node_id) \
-	DT_PROP_OR(node_id, label, DT_NODE_FULL_NAME(node_id))
+    DT_PROP_OR(node_id, label, DT_NODE_FULL_NAME(node_id))
 
 /**
  * @def DEVICE_DT_DEFINE
@@ -245,17 +251,17 @@ typedef int16_t device_handle_t;
  *
  * @param api_ptr Pointer to the device's API structure. Can be NULL.
  */
-#define DEVICE_DT_DEFINE(node_id, init_fn, pm_device,			\
-			 data_ptr, cfg_ptr, level, prio,		\
-			 api_ptr, ...)					\
-	Z_DEVICE_STATE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id)) \
-	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),		\
-			DEVICE_DT_NAME(node_id), init_fn,		\
-			pm_device,					\
-			data_ptr, cfg_ptr, level, prio,			\
-			api_ptr,					\
-			&Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_NAME(node_id)),	\
-			__VA_ARGS__)
+#define DEVICE_DT_DEFINE(node_id, init_fn, pm_device,           \
+             data_ptr, cfg_ptr, level, prio,        \
+             api_ptr, ...)                  \
+    Z_DEVICE_STATE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id)) \
+    Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),     \
+            DEVICE_DT_NAME(node_id), init_fn,       \
+            pm_device,                  \
+            data_ptr, cfg_ptr, level, prio,         \
+            api_ptr,                    \
+            &Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_NAME(node_id)),    \
+            __VA_ARGS__)
 
 /**
  * @def DEVICE_DT_INST_DEFINE
@@ -269,7 +275,7 @@ typedef int16_t device_handle_t;
  * @param ... other parameters as expected by DEVICE_DT_DEFINE.
  */
 #define DEVICE_DT_INST_DEFINE(inst, ...) \
-	DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+    DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
  * @def DEVICE_DT_NAME_GET
@@ -340,10 +346,10 @@ typedef int16_t device_handle_t;
  * @param compat lowercase-and-underscores devicetree compatible
  * @return a pointer to a device, or NULL
  */
-#define DEVICE_DT_GET_ANY(compat)					    \
-	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),			    \
-		    (DEVICE_DT_GET(DT_COMPAT_GET_ANY_STATUS_OKAY(compat))), \
-		    (NULL))
+#define DEVICE_DT_GET_ANY(compat)                       \
+    COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),              \
+            (DEVICE_DT_GET(DT_COMPAT_GET_ANY_STATUS_OKAY(compat))), \
+            (NULL))
 
 /**
  * @def DEVICE_DT_GET_ONE
@@ -364,10 +370,10 @@ typedef int16_t device_handle_t;
  * @param compat lowercase-and-underscores devicetree compatible
  * @return a pointer to a device
  */
-#define DEVICE_DT_GET_ONE(compat)					    \
-	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),			    \
-		    (DEVICE_DT_GET(DT_COMPAT_GET_ANY_STATUS_OKAY(compat))), \
-		    (ZERO_OR_COMPILE_ERROR(0)))
+#define DEVICE_DT_GET_ONE(compat)                       \
+    COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),              \
+            (DEVICE_DT_GET(DT_COMPAT_GET_ANY_STATUS_OKAY(compat))), \
+            (ZERO_OR_COMPILE_ERROR(0)))
 
 /**
  * @def DEVICE_DT_GET_OR_NULL
@@ -383,9 +389,9 @@ typedef int16_t device_handle_t;
  * @return a <tt>const struct device*</tt> for the node identifier,
  * which may be NULL.
  */
-#define DEVICE_DT_GET_OR_NULL(node_id)					\
-	COND_CODE_1(DT_NODE_HAS_STATUS(node_id, okay),			\
-		    (DEVICE_DT_GET(node_id)), (NULL))
+#define DEVICE_DT_GET_OR_NULL(node_id)                  \
+    COND_CODE_1(DT_NODE_HAS_STATUS(node_id, okay),          \
+            (DEVICE_DT_GET(node_id)), (NULL))
 
 /**
  * @def DEVICE_GET
@@ -427,19 +433,19 @@ typedef int16_t device_handle_t;
  * before they are accessed.
  */
 struct device_state {
-	/** Non-negative result of initializing the device.
-	 *
-	 * The absolute value returned when the device initialization
-	 * function was invoked, or `UINT8_MAX` if the value exceeds
-	 * an 8-bit integer. If initialized is also set, a zero value
-	 * indicates initialization succeeded.
-	 */
-	unsigned int init_res : 8;
+    /** Non-negative result of initializing the device.
+     *
+     * The absolute value returned when the device initialization
+     * function was invoked, or `UINT8_MAX` if the value exceeds
+     * an 8-bit integer. If initialized is also set, a zero value
+     * indicates initialization succeeded.
+     */
+    unsigned int init_res : 8;
 
-	/** Indicates the device initialization function has been
-	 * invoked.
-	 */
-	bool initialized : 1;
+    /** Indicates the device initialization function has been
+     * invoked.
+     */
+    bool initialized : 1;
 };
 
 struct pm_device;
@@ -454,28 +460,28 @@ struct pm_device;
  * @brief Runtime device structure (in ROM) per driver instance
  */
 struct device {
-	/** Name of the device instance */
-	const char *name;
-	/** Address of device instance config information */
-	const void *config;
-	/** Address of the API structure exposed by the device instance */
-	const void *api;
-	/** Address of the common device state */
-	struct device_state * const state;
-	/** Address of the device instance private data */
-	void * const data;
-	/** optional pointer to handles associated with the device.
-	 *
-	 * This encodes a sequence of sets of device handles that have
-	 * some relationship to this node. The individual sets are
-	 * extracted with dedicated API, such as
-	 * device_required_handles_get().
-	 */
-	Z_DEVICE_HANDLES_CONST device_handle_t * const handles;
+    /** Name of the device instance */
+    const char* name;
+    /** Address of device instance config information */
+    const void* config;
+    /** Address of the API structure exposed by the device instance */
+    const void* api;
+    /** Address of the common device state */
+    struct device_state* const state;
+    /** Address of the device instance private data */
+    void* const data;
+    /** optional pointer to handles associated with the device.
+     *
+     * This encodes a sequence of sets of device handles that have
+     * some relationship to this node. The individual sets are
+     * extracted with dedicated API, such as
+     * device_required_handles_get().
+     */
+    Z_DEVICE_HANDLES_CONST device_handle_t* const handles;
 
 #ifdef CONFIG_PM_DEVICE
-	/** Reference to the device PM resources. */
-	struct pm_device * const pm;
+    /** Reference to the device PM resources. */
+    struct pm_device* const pm;
 #endif
 };
 
@@ -487,21 +493,29 @@ struct device {
  * @return the handle for the device, or DEVICE_HANDLE_NULL if the
  * device does not have an associated handle.
  */
-static inline device_handle_t
-device_handle_get(const struct device *dev)
-{
-	device_handle_t ret = DEVICE_HANDLE_NULL;
-	extern const struct device __device_start[];
+static inline device_handle_t device_handle_get(const struct device* dev) {
+    device_handle_t ret = DEVICE_HANDLE_NULL;
+    extern const struct device __device_start[];
 
-	/* TODO: If/when devices can be constructed that are not part of the
-	 * fixed sequence we'll need another solution.
-	 */
-	if (dev != NULL) {
-		ret = 1 + (device_handle_t)(dev - __device_start);
-	}
+    /* TODO: If/when devices can be constructed that are not part of the
+     * fixed sequence we'll need another solution.
+     */
+    if (dev != NULL) {
+        ret = 1 + (device_handle_t)(dev - __device_start);
+    }
 
-	return ret;
+    return (ret);
 }
+
+/**
+ * @brief Run device initialization in user space
+ *
+ * @param[in] dev the device that want to re-initialize
+ *
+ * @return 0 on success, negative errno code otherwise
+ * @note The init_entry entry of the device shall be in POST_KERNEL !!!
+ */
+int device_user_init(const struct device* dev);                 /* #CUSTOM@PST1981 */
 
 /**
  * @brief Get the device corresponding to a handle.
@@ -511,19 +525,18 @@ device_handle_get(const struct device *dev)
  * @return the device that has that handle, or a null pointer if @p
  * dev_handle does not identify a device.
  */
-static inline const struct device *
-device_from_handle(device_handle_t dev_handle)
-{
-	extern const struct device __device_start[];
-	extern const struct device __device_end[];
-	const struct device *dev = NULL;
-	size_t numdev = __device_end - __device_start;
+static inline const struct device*
+device_from_handle(device_handle_t dev_handle) {
+    extern const struct device __device_start[];
+    extern const struct device __device_end[];
+    const struct device* dev = NULL;
+    size_t numdev = (__device_end - __device_start);
 
-	if ((dev_handle > 0) && ((size_t)dev_handle <= numdev)) {
-		dev = &__device_start[dev_handle - 1];
-	}
+    if ((dev_handle > 0) && ((size_t)dev_handle <= numdev)) {
+        dev = &__device_start[dev_handle - 1];
+    }
 
-	return dev;
+    return (dev);
 }
 
 /**
@@ -567,23 +580,21 @@ typedef int (*device_visitor_callback_t)(const struct device *dev, void *context
  * @return a pointer to a sequence of @p *count device handles, or a null
  * pointer if @p dev does not have any dependency data.
  */
-static inline const device_handle_t *
-device_required_handles_get(const struct device *dev,
-			    size_t *count)
-{
-	const device_handle_t *rv = dev->handles;
+static inline const device_handle_t*
+device_required_handles_get(const struct device* dev, size_t* count) {
+    const device_handle_t* rv = dev->handles;
 
-	if (rv != NULL) {
-		size_t i = 0;
+    if (rv != NULL) {
+        size_t i = 0;
 
-		while ((rv[i] != DEVICE_HANDLE_ENDS)
-		       && (rv[i] != DEVICE_HANDLE_SEP)) {
-			++i;
-		}
-		*count = i;
-	}
+        while ((rv[i] != DEVICE_HANDLE_ENDS) &&
+               (rv[i] != DEVICE_HANDLE_SEP)) {
+            ++i;
+        }
+        *count = i;
+    }
 
-	return rv;
+    return (rv);
 }
 
 /**
@@ -607,30 +618,28 @@ device_required_handles_get(const struct device *dev,
  * @return a pointer to a sequence of @p *count device handles, or a null
  * pointer if @p dev does not have any dependency data.
  */
-static inline const device_handle_t *
-device_supported_handles_get(const struct device *dev,
-			     size_t *count)
-{
-	const device_handle_t *rv = dev->handles;
-	size_t region = 0;
-	size_t i = 0;
+static inline const device_handle_t*
+device_supported_handles_get(const struct device* dev, size_t* count) {
+    const device_handle_t* rv = dev->handles;
+    size_t region = 0;
+    size_t i = 0;
 
-	if (rv != NULL) {
-		/* Fast forward to supporting devices */
-		while (region != 2) {
-			if (*rv == DEVICE_HANDLE_SEP) {
-				region++;
-			}
-			rv++;
-		}
-		/* Count supporting devices */
-		while (rv[i] != DEVICE_HANDLE_ENDS) {
-			++i;
-		}
-		*count = i;
-	}
+    if (rv != NULL) {
+        /* Fast forward to supporting devices */
+        while (region != 2) {
+            if (*rv == DEVICE_HANDLE_SEP) {
+                region++;
+            }
+            rv++;
+        }
+        /* Count supporting devices */
+        while (rv[i] != DEVICE_HANDLE_ENDS) {
+            ++i;
+        }
+        *count = i;
+    }
 
-	return rv;
+    return (rv);
 }
 
 /**
@@ -666,9 +675,9 @@ device_supported_handles_get(const struct device *dev,
  * @return The number of devices that were visited if all visits succeed, or
  * the negative value returned from the first visit that did not succeed.
  */
-int device_required_foreach(const struct device *dev,
-			  device_visitor_callback_t visitor_cb,
-			  void *context);
+int device_required_foreach(const struct device* dev,
+                            device_visitor_callback_t visitor_cb,
+                            void* context);
 
 /**
  * @brief Visit every device that @p dev directly supports.
@@ -702,9 +711,9 @@ int device_required_foreach(const struct device *dev,
  * @return The number of devices that were visited if all visits succeed, or
  * the negative value returned from the first visit that did not succeed.
  */
-int device_supported_foreach(const struct device *dev,
-			     device_visitor_callback_t visitor_cb,
-			     void *context);
+int device_supported_foreach(const struct device* dev,
+                             device_visitor_callback_t visitor_cb,
+                             void* context);
 
 /**
  * @brief Get a <tt>const struct device*</tt> from its @p name field
@@ -728,7 +737,7 @@ int device_supported_foreach(const struct device *dev,
  * the device is not found or if the device with that name's
  * initialization function failed.
  */
-__syscall const struct device *device_get_binding(const char *name);
+__syscall const struct device* device_get_binding(const char* name);
 
 /** @brief Get access to the static array of static devices.
  *
@@ -738,7 +747,7 @@ __syscall const struct device *device_get_binding(const char *name);
  *
  * @return the number of statically allocated devices.
  */
-size_t z_device_get_all_static(const struct device * *devices);
+size_t z_device_get_all_static(const struct device** devices);
 
 /**
  * @brief Verify that a device is ready for use.
@@ -754,7 +763,7 @@ size_t z_device_get_all_static(const struct device * *devices);
  *
  * @see device_is_ready()
  */
-bool z_device_is_ready(const struct device *dev);
+bool z_device_is_ready(const struct device* dev);
 
 /** @brief Verify that a device is ready for use.
  *
@@ -771,11 +780,10 @@ bool z_device_is_ready(const struct device *dev);
  * @retval false If the device is not ready for use or if a NULL device pointer
  * is passed as argument.
  */
-__syscall bool device_is_ready(const struct device *dev);
+__syscall bool device_is_ready(const struct device* dev);
 
-static inline bool z_impl_device_is_ready(const struct device *dev)
-{
-	return z_device_is_ready(dev);
+static inline bool z_impl_device_is_ready(const struct device* dev) {
+    return z_device_is_ready(dev);
 }
 
 /**
@@ -791,9 +799,8 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @retval 0 If device is usable.
  * @retval -ENODEV If device is not usable.
  */
-__deprecated static inline int z_device_usable_check(const struct device *dev)
-{
-	return z_device_is_ready(dev) ? 0 : -ENODEV;
+__deprecated static inline int z_device_usable_check(const struct device* dev) {
+    return z_device_is_ready(dev) ? 0 : -ENODEV;
 }
 
 /**
@@ -806,9 +813,8 @@ __deprecated static inline int z_device_usable_check(const struct device *dev)
  * @retval 0 If device is usable.
  * @retval -ENODEV If device is not usable.
  */
-__deprecated static inline int device_usable_check(const struct device *dev)
-{
-	return device_is_ready(dev) ? 0 : -ENODEV;
+__deprecated static inline int device_usable_check(const struct device* dev) {
+    return device_is_ready(dev) ? 0 : -ENODEV;
 }
 
 /**
@@ -819,14 +825,14 @@ __deprecated static inline int device_usable_check(const struct device *dev)
  * dependency data. If the object doesn't come from a devicetree
  * node, use dev_name.
  */
-#define Z_DEVICE_HANDLE_NAME(node_id, dev_name)				\
-	_CONCAT(__devicehdl_,						\
-		COND_CODE_1(DT_NODE_EXISTS(node_id),			\
-			    (node_id),					\
-			    (dev_name)))
+#define Z_DEVICE_HANDLE_NAME(node_id, dev_name)         \
+    Z_CONCAT(__devicehdl_,                              \
+        COND_CODE_1(DT_NODE_EXISTS(node_id),            \
+                (node_id),                              \
+                (dev_name)))
 
-#define Z_DEVICE_EXTRA_HANDLES(...)				\
-	FOR_EACH_NONEMPTY_TERM(IDENTITY, (,), __VA_ARGS__)
+#define Z_DEVICE_EXTRA_HANDLES(...)             \
+    FOR_EACH_NONEMPTY_TERM(IDENTITY, (,), __VA_ARGS__)
 
 /*
  * Utility macro to define and initialize the device state.
@@ -834,15 +840,15 @@ __deprecated static inline int device_usable_check(const struct device *dev)
  * @param node_id Devicetree node id of the device.
  * @param dev_name Device name.
  */
-#define Z_DEVICE_STATE_DEFINE(node_id, dev_name)			\
-	static struct device_state Z_DEVICE_STATE_NAME(dev_name)	\
-	__attribute__((__section__(".z_devstate")));
+#define Z_DEVICE_STATE_DEFINE(node_id, dev_name)            \
+    static struct device_state Z_DEVICE_STATE_NAME(dev_name)    \
+    __attribute__((__section__(".z_devstate")));
 
 /* Construct objects that are referenced from struct device. These
  * include power management and dependency handles.
  */
-#define Z_DEVICE_DEFINE_PRE(node_id, dev_name, ...)			\
-	Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, __VA_ARGS__)
+#define Z_DEVICE_DEFINE_PRE(node_id, dev_name, ...)         \
+    Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, __VA_ARGS__)
 
 /* Initial build provides a record that associates the device object
  * with its devicetree ordinal, and provides the dependency ordinals.
@@ -883,52 +889,52 @@ __deprecated static inline int device_usable_check(const struct device *dev)
  * `gen_handles.py` must be updated.
  */
 BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
-#define Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, ...)			\
-	extern Z_DEVICE_HANDLES_CONST device_handle_t			\
-		Z_DEVICE_HANDLE_NAME(node_id, dev_name)[];		\
-	Z_DEVICE_HANDLES_CONST device_handle_t				\
-	__aligned(sizeof(device_handle_t))				\
-	__attribute__((__weak__,					\
-		       __section__(".__device_handles_pass1")))		\
-	Z_DEVICE_HANDLE_NAME(node_id, dev_name)[] = {			\
-	COND_CODE_1(DT_NODE_EXISTS(node_id), (				\
-			DT_DEP_ORD(node_id),				\
-			DT_REQUIRES_DEP_ORDS(node_id)			\
-		), (							\
-			DEVICE_HANDLE_NULL,				\
-		))							\
-			DEVICE_HANDLE_SEP,				\
-			Z_DEVICE_EXTRA_HANDLES(__VA_ARGS__)		\
-			DEVICE_HANDLE_SEP,				\
-	COND_CODE_1(DT_NODE_EXISTS(node_id),				\
-			(DT_SUPPORTS_DEP_ORDS(node_id)), ())		\
-		};
+#define Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, ...)     \
+    extern Z_DEVICE_HANDLES_CONST device_handle_t           \
+        Z_DEVICE_HANDLE_NAME(node_id, dev_name)[];          \
+    Z_DEVICE_HANDLES_CONST device_handle_t                  \
+    __aligned(sizeof(device_handle_t))                      \
+    __attribute__((__weak__,                                \
+               __section__(".__device_handles_pass1")))     \
+    Z_DEVICE_HANDLE_NAME(node_id, dev_name)[] = {           \
+    COND_CODE_1(DT_NODE_EXISTS(node_id), (                  \
+            DT_DEP_ORD(node_id),                            \
+            DT_REQUIRES_DEP_ORDS(node_id)                   \
+        ), (                                                \
+            DEVICE_HANDLE_NULL,                             \
+        ))                                                  \
+            DEVICE_HANDLE_SEP,                              \
+            Z_DEVICE_EXTRA_HANDLES(__VA_ARGS__)             \
+            DEVICE_HANDLE_SEP,                              \
+    COND_CODE_1(DT_NODE_EXISTS(node_id),                    \
+            (DT_SUPPORTS_DEP_ORDS(node_id)), ())            \
+        };
 
-#define Z_DEVICE_DEFINE_INIT(node_id, dev_name)				\
-	.handles = Z_DEVICE_HANDLE_NAME(node_id, dev_name),
+#define Z_DEVICE_DEFINE_INIT(node_id, dev_name)             \
+    .handles = Z_DEVICE_HANDLE_NAME(node_id, dev_name),
 
 /* Like DEVICE_DEFINE but takes a node_id AND a dev_name, and trailing
  * dependency handles that come from outside devicetree.
  */
 #define Z_DEVICE_DEFINE(node_id, dev_name, drv_name, init_fn, pm_device,\
-			data_ptr, cfg_ptr, level, prio, api_ptr, state_ptr, ...)	\
-	Z_DEVICE_DEFINE_PRE(node_id, dev_name, __VA_ARGS__)		\
-	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))		\
-		const Z_DECL_ALIGN(struct device)			\
-		DEVICE_NAME_GET(dev_name) __used			\
-	__attribute__((__section__(".z_device_" #level STRINGIFY(prio)"_"))) = { \
-		.name = drv_name,					\
-		.config = (cfg_ptr),					\
-		.api = (api_ptr),					\
-		.state = (state_ptr),					\
-		.data = (data_ptr),					\
-		COND_CODE_1(CONFIG_PM_DEVICE, (.pm = pm_device,), ())	\
-		Z_DEVICE_DEFINE_INIT(node_id, dev_name)			\
-	};								\
-	BUILD_ASSERT(sizeof(Z_STRINGIFY(drv_name)) <= Z_DEVICE_MAX_NAME_LEN, \
-		     Z_STRINGIFY(DEVICE_NAME_GET(drv_name)) " too long"); \
-	Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_name), init_fn,		\
-		(&DEVICE_NAME_GET(dev_name)), level, prio)
+            data_ptr, cfg_ptr, level, prio, api_ptr, state_ptr, ...)    \
+    Z_DEVICE_DEFINE_PRE(node_id, dev_name, __VA_ARGS__)     \
+    COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))      \
+        const Z_DECL_ALIGN(struct device)           \
+        DEVICE_NAME_GET(dev_name) __used            \
+    __attribute__((__section__(".z_device_" #level STRINGIFY(prio)"_"))) = { \
+        .name = drv_name,                   \
+        .config = (cfg_ptr),                \
+        .api = (api_ptr),                   \
+        .state = (state_ptr),               \
+        .data = (data_ptr),                 \
+        COND_CODE_1(CONFIG_PM_DEVICE, (.pm = pm_device,), ())   \
+        Z_DEVICE_DEFINE_INIT(node_id, dev_name)         \
+    };                              \
+    BUILD_ASSERT(sizeof(Z_STRINGIFY(drv_name)) <= Z_DEVICE_MAX_NAME_LEN, \
+             Z_STRINGIFY(DEVICE_NAME_GET(drv_name)) " too long"); \
+    Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_name), init_fn,     \
+        (&DEVICE_NAME_GET(dev_name)), level, prio)
 
 #ifdef __cplusplus
 }

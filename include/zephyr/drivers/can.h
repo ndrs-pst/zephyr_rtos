@@ -258,7 +258,7 @@ struct can_bus_err_cnt {
  * is needed.
  */
 struct can_timing {
-	/** Synchronisation jump width. */
+	/** Synchronization jump width. */
 	uint16_t sjw;
 	/** Propagation segment. */
 	uint16_t prop_seg;
@@ -278,7 +278,7 @@ struct can_timing {
  *                  return values for @a can_send() for value descriptions.
  * @param user_data User data provided when the frame was sent.
  */
-typedef void (*can_tx_callback_t)(const struct device *dev, int error, void *user_data);
+typedef void (*can_tx_callback_t)(const struct device* dev, int error, void* user_data);
 
 /**
  * @brief Defines the application callback handler function signature for receiving.
@@ -287,8 +287,8 @@ typedef void (*can_tx_callback_t)(const struct device *dev, int error, void *use
  * @param frame     Received frame.
  * @param user_data User data provided when the filter was added.
  */
-typedef void (*can_rx_callback_t)(const struct device *dev, struct zcan_frame *frame,
-				  void *user_data);
+typedef void (*can_rx_callback_t)(const struct device* dev, struct zcan_frame* frame,
+                                  void* user_data);
 
 /**
  * @brief Defines the state change callback handler function signature
@@ -298,10 +298,10 @@ typedef void (*can_rx_callback_t)(const struct device *dev, struct zcan_frame *f
  * @param err_cnt   CAN controller error counter values.
  * @param user_data User data provided the callback was set.
  */
-typedef void (*can_state_change_callback_t)(const struct device *dev,
-					    enum can_state state,
-					    struct can_bus_err_cnt err_cnt,
-					    void *user_data);
+typedef void (*can_state_change_callback_t)(const struct device* dev,
+                                            enum can_state state,
+                                            struct can_bus_err_cnt err_cnt,
+                                            void* user_data);
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -313,84 +313,85 @@ typedef void (*can_state_change_callback_t)(const struct device *dev,
  * @brief Callback API upon setting CAN bus timing
  * See @a can_set_timing() for argument description
  */
-typedef int (*can_set_timing_t)(const struct device *dev,
-				const struct can_timing *timing);
+typedef int (*can_set_timing_t)(const struct device* dev,
+                                const struct can_timing* timing);
 
 /**
  * @brief Callback API upon setting CAN bus timing for the data phase.
  * See @a can_set_timing_data() for argument description
  */
-typedef int (*can_set_timing_data_t)(const struct device *dev,
-				     const struct can_timing *timing_data);
+typedef int (*can_set_timing_data_t)(const struct device* dev,
+                                     const struct can_timing* timing_data);
 
 /**
  * @brief Callback API upon setting CAN controller mode
  * See @a can_set_mode() for argument description
  */
-typedef int (*can_set_mode_t)(const struct device *dev, can_mode_t mode);
+typedef int (*can_set_mode_t)(const struct device* dev, can_mode_t mode);
 
 /**
  * @brief Callback API upon sending a CAN frame
  * See @a can_send() for argument description
  */
-typedef int (*can_send_t)(const struct device *dev,
-			  const struct zcan_frame *frame,
-			  k_timeout_t timeout, can_tx_callback_t callback,
-			  void *user_data);
+typedef int (*can_send_t)(const struct device* dev,
+                          const struct zcan_frame* frame,
+                          k_timeout_t timeout,
+                          can_tx_callback_t callback,
+                          void *user_data);
 
 /**
  * @brief Callback API upon adding an RX filter
  * See @a can_add_rx_callback() for argument description
  */
-typedef int (*can_add_rx_filter_t)(const struct device *dev,
-				   can_rx_callback_t callback,
-				   void *user_data,
-				   const struct zcan_filter *filter);
+typedef int (*can_add_rx_filter_t)(const struct device* dev,
+                                   can_rx_callback_t callback,
+                                   void* user_data,
+                                   const struct zcan_filter* filter);
 
 /**
  * @brief Callback API upon removing an RX filter
  * See @a can_remove_rx_filter() for argument description
  */
-typedef void (*can_remove_rx_filter_t)(const struct device *dev, int filter_id);
+typedef void (*can_remove_rx_filter_t)(const struct device* dev, int filter_id);
 
 /**
  * @brief Callback API upon recovering the CAN bus
  * See @a can_recover() for argument description
  */
-typedef int (*can_recover_t)(const struct device *dev, k_timeout_t timeout);
+typedef int (*can_recover_t)(const struct device* dev, k_timeout_t timeout);
 
 /**
  * @brief Callback API upon getting the CAN controller state
  * See @a can_get_state() for argument description
  */
-typedef int (*can_get_state_t)(const struct device *dev, enum can_state *state,
-			       struct can_bus_err_cnt *err_cnt);
+typedef int (*can_get_state_t)(const struct device* dev, enum can_state* state,
+                               struct can_bus_err_cnt* err_cnt);
 
 /**
  * @brief Callback API upon setting a state change callback
  * See @a can_set_state_change_callback() for argument description
  */
-typedef void(*can_set_state_change_callback_t)(const struct device *dev,
-					       can_state_change_callback_t callback,
-					       void *user_data);
+typedef void (*can_set_state_change_callback_t)(const struct device* dev,
+                                                can_state_change_callback_t callback,
+                                                void* user_data);
 
 /**
  * @brief Callback API upon getting the CAN core clock rate
  * See @a can_get_core_clock() for argument description
  */
-typedef int (*can_get_core_clock_t)(const struct device *dev, uint32_t *rate);
+typedef int (*can_get_core_clock_t)(const struct device* dev, uint32_t* rate);
 
 /**
  * @brief Callback API upon getting the maximum number of concurrent CAN RX filters
  * See @a can_get_max_filters() for argument description
  */
-typedef int (*can_get_max_filters_t)(const struct device *dev, enum can_ide id_type);
+typedef int (*can_get_max_filters_t)(const struct device* dev, enum can_ide id_type);
 
 /**
  * @brief Callback API upon getting the maximum supported bitrate
  * See @a can_get_max_bitrate() for argument description
  */
-typedef int (*can_get_max_bitrate_t)(const struct device *dev, uint32_t *max_bitrate);
+typedef int (*can_get_max_bitrate_t)(const struct device* dev, uint32_t* max_bitrate);
 
 __subsystem struct can_driver_api {
 	can_set_mode_t set_mode;
@@ -603,11 +604,11 @@ struct can_device_state {
 #define CAN_STATS_FORM_ERROR_INC(dev_)
 #define CAN_STATS_ACK_ERROR_INC(dev_)
 
-#define CAN_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
-			     data_ptr, cfg_ptr, level, prio,		\
-			     api_ptr, ...)				\
-	DEVICE_DT_DEFINE(node_id, init_fn, pm_device,			\
-			     data_ptr, cfg_ptr, level, prio,		\
+#define CAN_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,   \
+			     data_ptr, cfg_ptr, level, prio,            \
+			     api_ptr, ...)                              \
+	DEVICE_DT_DEFINE(node_id, init_fn, pm_device,           \
+			     data_ptr, cfg_ptr, level, prio,            \
 			     api_ptr, __VA_ARGS__)
 
 #endif /* CONFIG_CAN_STATS */
@@ -619,7 +620,7 @@ struct can_device_state {
  *             in the call to CAN_DEVICE_DT_DEFINE().
  * @param ...  Other parameters as expected by CAN_DEVICE_DT_DEFINE().
  */
-#define CAN_DEVICE_DT_INST_DEFINE(inst, ...)			\
+#define CAN_DEVICE_DT_INST_DEFINE(inst, ...)                \
 	CAN_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
@@ -640,11 +641,10 @@ struct can_device_state {
  */
 __syscall int can_get_core_clock(const struct device *dev, uint32_t *rate);
 
-static inline int z_impl_can_get_core_clock(const struct device *dev, uint32_t *rate)
-{
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+static inline int z_impl_can_get_core_clock(const struct device* dev, uint32_t* rate) {
+    const struct can_driver_api* api = (const struct can_driver_api*)dev->api;
 
-	return api->get_core_clock(dev, rate);
+    return (api->get_core_clock(dev, rate));
 }
 
 /**
@@ -660,15 +660,14 @@ static inline int z_impl_can_get_core_clock(const struct device *dev, uint32_t *
  */
 __syscall int can_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate);
 
-static inline int z_impl_can_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
-{
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+static inline int z_impl_can_get_max_bitrate(const struct device* dev, uint32_t* max_bitrate) {
+    const struct can_driver_api* api = (const struct can_driver_api*)dev->api;
 
-	if (api->get_max_bitrate == NULL) {
-		return -ENOSYS;
-	}
+    if (api->get_max_bitrate == NULL) {
+        return -ENOSYS;
+    }
 
-	return api->get_max_bitrate(dev, max_bitrate);
+    return (api->get_max_bitrate(dev, max_bitrate));
 }
 
 /**
@@ -723,8 +722,8 @@ static inline const struct can_timing *z_impl_can_get_timing_max(const struct de
  * @retval -EINVAL if there is no solution for the desired values.
  * @retval -EIO if @a can_get_core_clock() is not available.
  */
-__syscall int can_calc_timing(const struct device *dev, struct can_timing *res,
-			      uint32_t bitrate, uint16_t sample_pnt);
+__syscall int can_calc_timing(const struct device* dev, struct can_timing* res,
+                              uint32_t bitrate, uint16_t sample_pnt);
 
 /**
  * @brief Get the minimum supported timing parameter values for the data phase.
@@ -910,11 +909,10 @@ static inline int z_impl_can_set_timing(const struct device *dev,
  */
 __syscall int can_set_mode(const struct device *dev, can_mode_t mode);
 
-static inline int z_impl_can_set_mode(const struct device *dev, can_mode_t mode)
-{
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+static inline int z_impl_can_set_mode(const struct device* dev, can_mode_t mode) {
+    const struct can_driver_api* api = (const struct can_driver_api*)dev->api;
 
-	return api->set_mode(dev, mode);
+    return (api->set_mode(dev, mode));
 }
 
 /**
@@ -996,13 +994,12 @@ __syscall int can_send(const struct device *dev, const struct zcan_frame *frame,
 		       k_timeout_t timeout, can_tx_callback_t callback,
 		       void *user_data);
 
-static inline int z_impl_can_send(const struct device *dev, const struct zcan_frame *frame,
-				  k_timeout_t timeout, can_tx_callback_t callback,
-				  void *user_data)
-{
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+static inline int z_impl_can_send(const struct device* dev, const struct zcan_frame* frame,
+                                  k_timeout_t timeout, can_tx_callback_t callback,
+                                  void* user_data) {
+    const struct can_driver_api* api = (const struct can_driver_api*)dev->api;
 
-	return api->send(dev, frame, timeout, callback, user_data);
+	return (api->send(dev, frame, timeout, callback, user_data));
 }
 
 /** @} */
@@ -1035,11 +1032,10 @@ static inline int z_impl_can_send(const struct device *dev, const struct zcan_fr
  * @retval -ENOSPC if there are no free filters.
  */
 static inline int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
-				    void *user_data, const struct zcan_filter *filter)
-{
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+                                    void* user_data, const struct zcan_filter* filter) {
+    const struct can_driver_api* api = (const struct can_driver_api*)dev->api;
 
-	return api->add_rx_filter(dev, callback, user_data, filter);
+	return (api->add_rx_filter(dev, callback, user_data, filter));
 }
 
 /**
@@ -1094,7 +1090,7 @@ static inline void z_impl_can_remove_rx_filter(const struct device *dev, int fil
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
-	return api->remove_rx_filter(dev, filter_id);
+	api->remove_rx_filter(dev, filter_id);
 }
 
 /**
@@ -1200,11 +1196,10 @@ static inline int z_impl_can_recover(const struct device *dev, k_timeout_t timeo
  * @param callback  Callback function.
  * @param user_data User data to pass to callback function.
  */
-static inline void can_set_state_change_callback(const struct device *dev,
-						 can_state_change_callback_t callback,
-						 void *user_data)
-{
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+static inline void can_set_state_change_callback(const struct device* dev,
+                                                 can_state_change_callback_t callback,
+                                                 void* user_data) {
+    const struct can_driver_api* api = (const struct can_driver_api*)dev->api;
 
 	api->set_state_change_callback(dev, callback, user_data);
 }
@@ -1372,10 +1367,8 @@ static inline void can_copy_filter_to_zfilter(const struct can_filter *filter,
 static inline void can_copy_zfilter_to_filter(const struct zcan_filter *zfilter,
 					      struct can_filter *filter)
 {
-	filter->can_id = (zfilter->id_type << 31) |
-		(zfilter->rtr << 30) | zfilter->id;
-	filter->can_mask = (zfilter->rtr_mask << 30) |
-		(zfilter->id_type << 31) | zfilter->id_mask;
+	filter->can_id   = (zfilter->id_type  << 31) | (zfilter->rtr << 30) | zfilter->id;
+	filter->can_mask = (zfilter->rtr_mask << 30) | (zfilter->id_type << 31) | zfilter->id_mask;
 }
 
 /** @} */
