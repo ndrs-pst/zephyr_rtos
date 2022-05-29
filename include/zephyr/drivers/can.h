@@ -287,7 +287,7 @@ typedef void (*can_tx_callback_t)(const struct device* dev, int error, void* use
  * @param frame     Received frame.
  * @param user_data User data provided when the filter was added.
  */
-typedef void (*can_rx_callback_t)(const struct device* dev, struct zcan_frame* frame,
+typedef void (*can_rx_callback_t)(const struct device* dev, struct zcan_frame const* frame,
                                   void* user_data);
 
 /**
@@ -1219,12 +1219,11 @@ static inline void can_set_state_change_callback(const struct device* dev,
  *
  * @retval Number of bytes.
  */
-static inline uint8_t can_dlc_to_bytes(uint8_t dlc)
-{
-	static const uint8_t dlc_table[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12,
-					    16, 20, 24, 32, 48, 64};
+static inline uint8_t can_dlc_to_bytes(uint8_t dlc) {
+    static const uint8_t dlc_table[] = { 0,  1,  2,  3,  4,  5,  6, 7, 8,
+                                        12, 16, 20, 24, 32, 48, 64};
 
-	return dlc > 0x0F ? 64 : dlc_table[dlc];
+    return ((dlc > 0x0F) ? 64 : dlc_table[dlc]);
 }
 
 /**

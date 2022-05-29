@@ -302,7 +302,7 @@ int settings_backend_init(void) {
             }
 
             /* define the nvs file system using the page_info */
-            default_settings_nvs.cf_nvs.sector_size  = nvs_sector_size;
+            default_settings_nvs.cf_nvs.sector_size  = (uint16_t)nvs_sector_size;
             default_settings_nvs.cf_nvs.sector_count = cnt;
             default_settings_nvs.cf_nvs.offset       = fa->fa_off;
             default_settings_nvs.flash_dev_name      = fa->fa_dev_name;

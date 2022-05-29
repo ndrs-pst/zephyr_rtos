@@ -45,8 +45,8 @@ extern "C" {
 #ifdef CONFIG_PRINTK
 
 #if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
-extern void printk(const char* fmt, ...);
-extern void vprintk(const char* fmt, va_list ap);
+#define printk          printf
+#define vprintk         vprintf
 #else
 extern __printf_like(1, 2) void printk(const char *fmt, ...);
 extern __printf_like(1, 0) void vprintk(const char *fmt, va_list ap);

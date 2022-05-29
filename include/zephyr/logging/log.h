@@ -439,6 +439,9 @@ static inline char *log_strdup(const char *str)
  *       this macro has no effect.
  * @see LOG_MODULE_REGISTER
  */
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define LOG_MODULE_DECLARE(...)
+#else
 #define LOG_MODULE_DECLARE(...)						      \
 	extern const struct log_source_const_data			      \
 			Z_LOG_ITEM_CONST_DATA(GET_ARG_N(1, __VA_ARGS__));     \
@@ -460,6 +463,7 @@ static inline char *log_strdup(const char *str)
 									      \
 	static const uint32_t __log_level __unused =			      \
 					_LOG_LEVEL_RESOLVE(__VA_ARGS__)
+#endif
 
 /**
  * @brief Macro for setting log level in the file or function where instance

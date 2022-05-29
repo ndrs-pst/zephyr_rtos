@@ -23,6 +23,8 @@ LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 sys_slist_t settings_load_srcs;
 struct settings_store* settings_save_dst;
 extern struct k_mutex settings_lock;
+extern struct settings_handler_static _settings_handler_static_list_start[];
+extern struct settings_handler_static _settings_handler_static_list_end[];
 
 void settings_src_register(struct settings_store* cs) {
     sys_slist_append(&settings_load_srcs, &cs->cs_next);
@@ -50,7 +52,7 @@ int settings_load_subtree(const char* subtree) {
      *    commit all
      */
     k_mutex_lock(&settings_lock, K_FOREVER);
-    SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
+    SYS_SLIST_FOR_EACH_CONTAINER_WITH_TYPE(&settings_load_srcs, struct settings_store, cs, cs_next) {
         cs->cs_itf->csi_load(cs, &arg);
     }
     rc = settings_commit_subtree(subtree);
@@ -76,7 +78,7 @@ int settings_load_subtree_direct(const char* subtree,
      *    commit all
      */
     k_mutex_lock(&settings_lock, K_FOREVER);
-    SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
+    SYS_SLIST_FOR_EACH_CONTAINER_WITH_TYPE(&settings_load_srcs, struct settings_store, cs, cs_next) {
         cs->cs_itf->csi_load(cs, &arg);
     }
     k_mutex_unlock(&settings_lock);
@@ -124,7 +126,8 @@ int settings_save(void) {
     }
     rc = 0;
 
-    STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
+    for (struct settings_handler_static const* ch = _settings_handler_static_list_start;
+         ch < _settings_handler_static_list_end; ch++) {
         if (ch->h_export) {
             rc2 = ch->h_export(settings_save_one);
             if (rc == 0) {
@@ -135,7 +138,7 @@ int settings_save(void) {
 
     #if defined(CONFIG_SETTINGS_DYNAMIC_HANDLERS)
     struct settings_handler* ch;
-    SYS_SLIST_FOR_EACH_CONTAINER(&settings_handlers, ch, node) {
+    SYS_SLIST_FOR_EACH_CONTAINER_WITH_TYPE(&settings_handlers, struct settings_handler, ch, node) {
         if (ch->h_export) {
             rc2 = ch->h_export(settings_save_one);
             if (rc == 0) {

@@ -21,7 +21,7 @@
 #endif
 
 /* Internal helpers only used by the sys_* APIs further below */
-#if defined(CONFIG_CPU_CORTEX_M)    /* #CUSTOM@NDRS */
+#if (defined(CONFIG_CPU_CORTEX_M) && !defined(_MSC_VER))        /* #CUSTOM@NDRS */
 #define __bswap_16(x)   ((uint16_t)__REV16((uint32_t)(x)))
 #define __bswap_24(x)   ((uint32_t)(__REV(x) >> 8))
 #define __bswap_32(x)   ((uint32_t)__REV(x))
