@@ -465,7 +465,7 @@ static int flash_sam0_init(const struct device *dev)
 static const struct flash_driver_api flash_sam0_api = {
 	.erase = flash_sam0_erase,
 	.write = flash_sam0_write,
-	.read = flash_sam0_read,
+	.read  = flash_sam0_read,
 	.get_parameters = flash_sam0_get_parameters,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_sam0_page_layout,
@@ -475,5 +475,5 @@ static const struct flash_driver_api flash_sam0_api = {
 static struct flash_sam0_data flash_sam0_data_0;
 
 DEVICE_DT_INST_DEFINE(0, flash_sam0_init, NULL,
-		    &flash_sam0_data_0, NULL, POST_KERNEL,
-		    CONFIG_FLASH_INIT_PRIORITY, &flash_sam0_api);
+                      &flash_sam0_data_0, NULL, POST_KERNEL,
+                      CONFIG_FLASH_INIT_PRIORITY, &flash_sam0_api);
