@@ -21,10 +21,10 @@ extern "C" {
  * stack. The remaining levels are executed in the kernel's main task.
  */
 
-#define _SYS_INIT_LEVEL_PRE_KERNEL_1	0
-#define _SYS_INIT_LEVEL_PRE_KERNEL_2	1
-#define _SYS_INIT_LEVEL_POST_KERNEL	2
-#define _SYS_INIT_LEVEL_APPLICATION	3
+#define _SYS_INIT_LEVEL_PRE_KERNEL_1    0
+#define _SYS_INIT_LEVEL_PRE_KERNEL_2    1
+#define _SYS_INIT_LEVEL_POST_KERNEL     2
+#define _SYS_INIT_LEVEL_APPLICATION     3
 
 #ifdef CONFIG_SMP
 #define _SYS_INIT_LEVEL_SMP		4
