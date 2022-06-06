@@ -46,15 +46,15 @@ extern "C" {
  * @param flash_parameters Flash memory parameters structure
  */
 struct nvs_fs {
-	off_t offset;
-	uint32_t ate_wra;
-	uint32_t data_wra;
-	uint16_t sector_size;
-	uint16_t sector_count;
-	bool ready;
-	struct k_mutex nvs_lock;
-	const struct device *flash_device;
-	const struct flash_parameters *flash_parameters;
+    off_t offset;
+    uint32_t ate_wra;
+    uint32_t data_wra;
+    uint16_t sector_size;
+    uint16_t sector_count;
+    bool ready;
+    struct k_mutex nvs_lock;
+    const struct device* flash_device;
+    const struct flash_parameters* flash_parameters;
 };
 
 /**

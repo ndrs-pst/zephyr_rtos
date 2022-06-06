@@ -808,7 +808,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 {
     struct spi_nor_data *data = dev->data;
     struct jesd216_erase_type *etp = data->erase_types;
-    const size_t flash_size = jesd216_bfp_density(bfp) / 8U;
+    const size_t flash_size = (size_t)(jesd216_bfp_density(bfp) / 8U);
 
     LOG_INF("%s: %u MiBy flash", dev->name, (uint32_t)(flash_size >> 20));
 
@@ -863,7 +863,7 @@ static int spi_nor_process_sfdp(const struct device *dev)
     const uint8_t decl_nph = 2;
     union {
         /* We only process BFP so use one parameter block */
-        uint8_t raw[JESD216_SFDP_SIZE(decl_nph)];
+        uint8_t raw[JESD216_SFDP_SIZE(2U)];                     /* @see Use value from decl_nph */
         struct jesd216_sfdp_header sfdp;
     } u;
     const struct jesd216_sfdp_header *hp = &u.sfdp;
@@ -884,24 +884,23 @@ static int spi_nor_process_sfdp(const struct device *dev)
     LOG_INF("%s: SFDP v %u.%u AP %x with %u PH", dev->name,
         hp->rev_major, hp->rev_minor, hp->access, 1 + hp->nph);
 
-    const struct jesd216_param_header *php = hp->phdr;
-    const struct jesd216_param_header *phpe = php + MIN(decl_nph, 1 + hp->nph);
+    const struct jesd216_param_header* php = hp->phdr;
+    const struct jesd216_param_header* phpe = php + MIN(decl_nph, 1 + hp->nph);
 
     while (php != phpe) {
         uint16_t id = jesd216_param_id(php);
 
-        LOG_INF("PH%u: %04x rev %u.%u: %u DW @ %x",
-            (php - hp->phdr), id, php->rev_major, php->rev_minor,
-            php->len_dw, jesd216_param_addr(php));
+        LOG_INF("PH%u: %04x rev %u.%u: %u DW @ %x", (php - hp->phdr), id, php->rev_major, php->rev_minor, php->len_dw, jesd216_param_addr(php));
 
         if (id == JESD216_SFDP_PARAM_ID_BFP) {
             union {
-                uint32_t dw[MIN(php->len_dw, 20)];
+                uint32_t dw[20];
                 struct jesd216_bfp bfp;
             } u;
-            const struct jesd216_bfp *bfp = &u.bfp;
+            const struct jesd216_bfp* bfp = &u.bfp;
+            size_t len = MIN(php->len_dw, 20);
 
-            rc = read_sfdp(dev, jesd216_param_addr(php), u.dw, sizeof(u.dw));
+            rc = read_sfdp(dev, jesd216_param_addr(php), u.dw, len);
             if (rc == 0) {
                 rc = spi_nor_process_bfp(dev, php, bfp);
             }
