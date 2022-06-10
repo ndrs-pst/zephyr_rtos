@@ -898,7 +898,7 @@ static int spi_nor_process_sfdp(const struct device *dev)
                 struct jesd216_bfp bfp;
             } u;
             const struct jesd216_bfp* bfp = &u.bfp;
-            size_t len = MIN(php->len_dw, 20);
+            size_t len = (MIN(php->len_dw, 20) * sizeof(uint32_t));
 
             rc = read_sfdp(dev, jesd216_param_addr(php), u.dw, len);
             if (rc == 0) {
