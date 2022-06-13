@@ -95,6 +95,7 @@ static inline void rtc_sync(void)
 	}
 #else
 	while (RTC0->SYNCBUSY.reg) {
+		/* pass */
 	}
 #endif
 }

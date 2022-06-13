@@ -1014,7 +1014,9 @@ static int spi_nor_configure(const struct device* dev) {
     }
 
     /* Might be in DPD if system restarted without power cycle. */
+    #if (__GTEST == 0U)                     /* #CUSTOM@NDRS */
     exit_dpd(dev);
+    #endif
 
     /* now the spi bus is configured, we can verify SPI
      * connectivity by reading the JEDEC ID.
@@ -1235,7 +1237,7 @@ BUILD_ASSERT(DT_INST_PROP(0, has_lock) == (DT_INST_PROP(0, has_lock) & 0xFF),
              "Need support for lock clear beyond SR1");
 #endif
 
-static const struct spi_nor_config spi_nor_config_0 = {
+static struct spi_nor_config DT_CONST spi_nor_config_0 = {
     .spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8), CONFIG_SPI_NOR_CS_WAIT_DELAY),
 #if !defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
 
@@ -1267,7 +1269,7 @@ static const struct spi_nor_config spi_nor_config_0 = {
 };
 
 #if (DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1)
-static const struct spi_nor_config spi_nor_config_1 = {
+static struct spi_nor_config DT_CONST spi_nor_config_1 = {
     .spi = SPI_DT_SPEC_INST_GET(1, SPI_WORD_SET(8), CONFIG_SPI_NOR_CS_WAIT_DELAY),
 #if !defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
 
@@ -1300,7 +1302,7 @@ static const struct spi_nor_config spi_nor_config_1 = {
 #endif
 
 #if (DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 2)
-static const struct spi_nor_config spi_nor_config_2 = {
+static struct spi_nor_config DT_CONST spi_nor_config_2 = {
     .spi = SPI_DT_SPEC_INST_GET(2, SPI_WORD_SET(8), CONFIG_SPI_NOR_CS_WAIT_DELAY),
 #if !defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
 
@@ -1353,4 +1355,32 @@ DEVICE_DT_INST_DEFINE(2, &spi_nor_init, NULL,
                       &spi_nor_data_2, &spi_nor_config_2,
                       POST_KERNEL, CONFIG_SPI_NOR_INIT_PRIORITY,
                       &spi_nor_api);
+#endif
+
+#if (__GTEST == 1)                          /* #CUSTOM@NDRS */
+#include "samc21_reg_stub.h"
+
+extern void zephyr_gpio_sam0_set_regs(const struct device* dev, void* reg_ptr);
+
+void zephyr_spi_nor_gtest(void) {
+    struct device const* dev;
+    int rc;
+
+    dev = DEVICE_DT_GET(DT_NODELABEL(is25lp080));
+    zephyr_gpio_sam0_set_regs(spi_nor_config_0.spi.config.cs->gpio_dev, ut_mcu_port_ptr);
+
+    // Setup spi_nor_data_0 data parameter
+    spi_nor_data_0.flash_size = (16UL * 1024UL * 1024UL);
+    spi_nor_data_0.page_size  = 4096U;
+
+    spi_nor_data_0.erase_types[0].cmd = 0x20;
+    spi_nor_data_0.erase_types[0].exp = 0x0C;
+    spi_nor_data_0.erase_types[1].cmd = 0x52;
+    spi_nor_data_0.erase_types[1].exp = 0x0F;
+    spi_nor_data_0.erase_types[2].cmd = 0xD8;
+    spi_nor_data_0.erase_types[2].exp = 0x10;
+
+    spi_nor_data_0.layout.pages_count = 4096U;
+    spi_nor_data_0.layout.pages_size  = 4096U;
+}
 #endif

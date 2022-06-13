@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(fs_nvs, CONFIG_NVS_LOG_LEVEL);
 /* basic routines */
 /* nvs_al_size returns size aligned to fs->write_block_size */
 static inline size_t nvs_al_size(struct nvs_fs* fs, size_t len) {
-    uint8_t write_block_size = fs->flash_parameters->write_block_size;
+    uint8_t write_block_size = (uint8_t)fs->flash_parameters->write_block_size;
 
     if (write_block_size <= 1U) {
         return (len);
@@ -779,8 +779,7 @@ static int nvs_startup(struct nvs_fs* fs) {
     while (fs->ate_wra > fs->data_wra) {
         empty_len = fs->ate_wra - fs->data_wra;
 
-        rc = nvs_flash_cmp_const(fs, fs->data_wra, erase_value,
-                empty_len);
+        rc = nvs_flash_cmp_const(fs, fs->data_wra, erase_value, empty_len);
         if (rc < 0) {
             goto end;
         }
@@ -874,7 +873,11 @@ int nvs_mount(struct nvs_fs* fs) {
                         LOG_ERR("Configuration error - sector count");
                     }
                     else {
+                        #if (__GTEST == 0U) /* #CUSTOM@NDRS */
                         rc = nvs_startup(fs);
+                        #else
+                        rc = 0;
+                        #endif
                         if (rc == 0) {
                             /* nvs is ready for use */
                             fs->ready = true;
@@ -978,7 +981,7 @@ ssize_t nvs_write(struct nvs_fs* fs, uint16_t id, const void* data, size_t len) 
     /* calculate required space if the entry contains data */
     if (data_size) {
         /* Leave space for delete ate */
-        required_space = data_size + ate_size;
+        required_space = (uint16_t)(data_size + ate_size);
     }
     else {
         /* no space, appropriate for delete ate */

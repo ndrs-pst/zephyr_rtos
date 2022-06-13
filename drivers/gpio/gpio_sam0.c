@@ -383,4 +383,10 @@ DEVICE_DT_DEFINE(DT_NODELABEL(portd),
 void zephyr_gpio_sam0_gtest(void) {
     gpio_sam0_config_0.regs = (PortGroup*)ut_mcu_port_ptr;
 }
+
+void zephyr_gpio_sam0_set_regs(const struct device* dev, void* reg_ptr) {
+    struct gpio_sam0_config* config = (struct gpio_sam0_config*)dev->config;
+
+    config->regs = (PortGroup*)reg_ptr;
+}
 #endif
