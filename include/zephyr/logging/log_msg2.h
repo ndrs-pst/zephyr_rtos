@@ -18,6 +18,8 @@
 #ifndef alloca
 #define alloca __builtin_alloca
 #endif
+#elif defined(_MSC_VER)                     /* #CUSTOM@NDRS */
+/* pass */
 #else
 #include <alloca.h>
 #endif
@@ -80,10 +82,14 @@ struct log_msg2_hdr {
 /* Messages are aligned to alignment required by cbprintf package. */
 #define Z_LOG_MSG2_ALIGNMENT CBPRINTF_PACKAGE_ALIGNMENT
 
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define Z_LOG_MSG2_PADDING      8           /* workaround error C2131: expression did not evaluate to a constant */
+#else
 #define Z_LOG_MSG2_PADDING \
 	((sizeof(struct log_msg2_hdr) % Z_LOG_MSG2_ALIGNMENT) > 0 ? \
 	(Z_LOG_MSG2_ALIGNMENT - (sizeof(struct log_msg2_hdr) % Z_LOG_MSG2_ALIGNMENT)) : \
 		0)
+#endif
 
 struct log_msg2 {
 	struct log_msg2_hdr hdr;
@@ -91,7 +97,11 @@ struct log_msg2 {
 	 * properly aligned.
 	 */
 	uint8_t padding[Z_LOG_MSG2_PADDING];
-	uint8_t data[];
+#if defined(_MSC_VER)                       /* warning C4200: nonstandard extension used: zero-sized array in struct/union */
+    uint8_t data[1];
+#else
+    uint8_t data[];
+#endif
 };
 
 struct log_msg2_generic_hdr {

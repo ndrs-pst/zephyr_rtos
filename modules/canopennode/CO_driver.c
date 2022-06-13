@@ -16,7 +16,7 @@
 LOG_MODULE_REGISTER(canopen_driver);
 
 K_KERNEL_STACK_DEFINE(canopen_tx_workq_stack,
-		      CONFIG_CANOPENNODE_TX_WORKQUEUE_STACK_SIZE);
+                      CONFIG_CANOPENNODE_TX_WORKQUEUE_STACK_SIZE);
 
 struct k_work_q canopen_tx_workq;
 
@@ -489,8 +489,8 @@ static int canopen_init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	k_work_queue_start(&canopen_tx_workq, canopen_tx_workq_stack,
-			   K_KERNEL_STACK_SIZEOF(canopen_tx_workq_stack),
-			   CONFIG_CANOPENNODE_TX_WORKQUEUE_PRIORITY, NULL);
+	                   K_KERNEL_STACK_SIZEOF(canopen_tx_workq_stack),
+	                   CONFIG_CANOPENNODE_TX_WORKQUEUE_PRIORITY, NULL);
 
 	k_thread_name_set(&canopen_tx_workq.thread, "canopen_tx_workq");
 

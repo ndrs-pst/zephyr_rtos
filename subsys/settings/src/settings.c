@@ -24,6 +24,8 @@ sys_slist_t settings_handlers;
 
 K_MUTEX_DEFINE(settings_lock);
 
+extern struct settings_handler_static _settings_handler_static_list_start[];
+extern struct settings_handler_static _settings_handler_static_list_end[];
 
 void settings_store_init(void);
 
@@ -40,7 +42,8 @@ int settings_register(struct settings_handler *handler)
 {
 	int rc = 0;
 
-	STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
+	for (struct settings_handler_static const* ch = _settings_handler_static_list_start;
+		 ch < _settings_handler_static_list_end; ch++) {
 		if (strcmp(handler->name, ch->name) == 0) {
 			return -EEXIST;
 		}
@@ -49,7 +52,7 @@ int settings_register(struct settings_handler *handler)
 	k_mutex_lock(&settings_lock, K_FOREVER);
 
 	struct settings_handler *ch;
-	SYS_SLIST_FOR_EACH_CONTAINER(&settings_handlers, ch, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_WITH_TYPE(&settings_handlers, struct settings_handler, ch, node) {
 		if (strcmp(handler->name, ch->name) == 0) {
 			rc = -EEXIST;
 			goto end;
@@ -134,8 +137,7 @@ int settings_name_next(const char *name, const char **next)
 	return rc;
 }
 
-struct settings_handler_static *settings_parse_and_lookup(const char *name,
-							const char **next)
+struct settings_handler_static* settings_parse_and_lookup(const char *name, const char **next)
 {
 	struct settings_handler_static *bestmatch;
 	const char *tmpnext;
@@ -145,7 +147,8 @@ struct settings_handler_static *settings_parse_and_lookup(const char *name,
 		*next = NULL;
 	}
 
-	STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
+	for (struct settings_handler_static* ch = _settings_handler_static_list_start;
+		 ch < _settings_handler_static_list_end; ch++) {
 		if (!settings_name_steq(name, ch->name, &tmpnext)) {
 			continue;
 		}
@@ -167,7 +170,7 @@ struct settings_handler_static *settings_parse_and_lookup(const char *name,
 #if defined(CONFIG_SETTINGS_DYNAMIC_HANDLERS)
 	struct settings_handler *ch;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&settings_handlers, ch, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_WITH_TYPE(&settings_handlers, struct settings_handler, ch, node) {
 		if (!settings_name_steq(name, ch->name, &tmpnext)) {
 			continue;
 		}
@@ -207,7 +210,7 @@ int settings_call_set_handler(const char *name,
 		rc = load_arg->cb(name_key, len, read_cb, read_cb_arg,
 				  load_arg->param);
 	} else {
-		struct settings_handler_static *ch;
+		struct settings_handler_static const* ch;
 
 		ch = settings_parse_and_lookup(name, &name_key);
 		if (!ch) {
@@ -217,13 +220,11 @@ int settings_call_set_handler(const char *name,
 		rc = ch->h_set(name_key, len, read_cb, read_cb_arg);
 
 		if (rc != 0) {
-			LOG_ERR("set-value failure. key: %s error(%d)",
-				log_strdup(name), rc);
+			LOG_ERR("set-value failure. key: %s error(%d)", log_strdup(name), rc);
 			/* Ignoring the error */
 			rc = 0;
 		} else {
-			LOG_DBG("set-value OK. key: %s",
-				log_strdup(name));
+			LOG_DBG("set-value OK. key: %s", log_strdup(name));
 		}
 	}
 	return rc;
@@ -241,7 +242,8 @@ int settings_commit_subtree(const char *subtree)
 
 	rc = 0;
 
-	STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
+	for (struct settings_handler_static const* ch = _settings_handler_static_list_start;
+		 ch < _settings_handler_static_list_end; ch++) {
 		if (subtree && !settings_name_steq(ch->name, subtree, NULL)) {
 			continue;
 		}
@@ -255,7 +257,7 @@ int settings_commit_subtree(const char *subtree)
 
 #if defined(CONFIG_SETTINGS_DYNAMIC_HANDLERS)
 	struct settings_handler *ch;
-	SYS_SLIST_FOR_EACH_CONTAINER(&settings_handlers, ch, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_WITH_TYPE(&settings_handlers, struct settings_handler, ch, node) {
 		if (subtree && !settings_name_steq(ch->name, subtree, NULL)) {
 			continue;
 		}
