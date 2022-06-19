@@ -64,7 +64,7 @@ struct flash_area {
 	 * Name of the flash device, suitable for passing to
 	 * device_get_binding().
 	 */
-	const char *fa_dev_name;
+    const char* fa_dev_name;
 };
 
 /**

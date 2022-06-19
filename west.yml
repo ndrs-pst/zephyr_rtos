@@ -35,7 +35,7 @@ manifest:
       revision: 094aeb41bb93e9199d24d665ee43e9e05d6d7b1c
       path: modules/lib/civetweb
     - name: cmsis
-      revision: 5f86244bad4ad5a590e084f0e72ba7a1416c2edf
+      revision: 37349675ad02657b4b58f03c0491caaa0afd1a84
       path: modules/hal/cmsis
       groups:
         - hal
@@ -60,7 +60,7 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: 78c5567c05b6b434dd7d98f49156319df4217bac
+      revision: 2e9b11089cc3d8c7ba49dc3c58aafc5f1af75e12
       path: modules/hal/atmel
       groups:
         - hal
@@ -250,6 +250,6 @@ manifest:
     - -ci
 
   self:
-    path: zephyr
+    path: zephyr_rtos
     west-commands: scripts/west-commands.yml
     import: submanifests

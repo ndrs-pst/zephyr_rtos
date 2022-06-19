@@ -199,7 +199,11 @@ void arch_cpu_atomic_idle(unsigned int key);
  *
  * @param data context parameter, implementation specific
  */
+#if defined(_MSC_VER)						/* #CUSTOM@NDRS */
+typedef void (*arch_cpustart_t)(void* data);
+#else
 typedef FUNC_NORETURN void (*arch_cpustart_t)(void *data);
+#endif
 
 /**
  * @brief Start a numbered CPU on a MP-capable system
