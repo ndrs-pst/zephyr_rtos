@@ -3638,7 +3638,7 @@ enum {
 };
 
 /** @brief A structure used to submit work. */
-struct k_work {
+struct /**/k_work {
 	/* All fields are protected by the work module spinlock.  No fields
 	 * are to be accessed except through kernel API.
 	 */
@@ -3666,7 +3666,7 @@ struct k_work {
 }
 
 /** @brief A structure used to submit work after a delay. */
-struct k_work_delayable {
+struct /**/k_work_delayable {
 	/* The work item. */
 	struct k_work work;
 

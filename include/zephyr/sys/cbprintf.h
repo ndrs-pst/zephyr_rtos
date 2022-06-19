@@ -116,7 +116,7 @@ extern "C" {
 #endif
 
 /** @brief Required alignment of the buffer used for packaging. */
-#ifdef __xtensa__
+#if defined(__xtensa__) || defined(_MSC_VER)/* #CUSTOM@NDRS */
 #define CBPRINTF_PACKAGE_ALIGNMENT 16
 #else
 #define CBPRINTF_PACKAGE_ALIGNMENT \
