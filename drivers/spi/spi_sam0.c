@@ -274,7 +274,7 @@ static void spi_sam0_fast_txrx(SercomSpi* regs,
             while (regs->INTFLAG.bit.RXC == 0U) {
                 /* pass */
             }
-            *rx++ = regs->DATA.reg;
+            *rx++ = (uint8_t)regs->DATA.reg;
         }
 
         spi_sam0_finish(regs);
@@ -729,7 +729,7 @@ static int spi_sam0_init(const struct device* dev) {
     return (ret);
 }
 
-static struct spi_driver_api const spi_sam0_driver_api = {
+static struct spi_driver_api DT_CONST spi_sam0_driver_api = {
     .transceive = spi_sam0_transceive_sync,
 #ifdef CONFIG_SPI_ASYNC
     .transceive_async = spi_sam0_transceive_async,

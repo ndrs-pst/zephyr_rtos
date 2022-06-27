@@ -1360,7 +1360,7 @@ DEVICE_DT_INST_DEFINE(2, &spi_nor_init, NULL,
 #if (__GTEST == 1)                          /* #CUSTOM@NDRS */
 #include "samc21_reg_stub.h"
 
-extern void zephyr_gpio_sam0_set_regs(const struct device* dev, void* reg_ptr);
+extern void zephyr_gpio_sam0_set_regs(const struct device* dev, volatile void* reg_ptr);
 
 void zephyr_spi_nor_gtest(void) {
     struct device const* dev;

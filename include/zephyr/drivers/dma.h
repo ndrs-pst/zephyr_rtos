@@ -344,8 +344,7 @@ static inline int dma_reload(const struct device *dev, uint32_t channel,
 		uint32_t src, uint32_t dst, size_t size)
 #endif
 {
-	const struct dma_driver_api *api =
-		(const struct dma_driver_api *)dev->api;
+    const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
 	if (api->reload) {
 		return api->reload(dev, channel, src, dst, size);

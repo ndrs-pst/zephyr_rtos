@@ -117,12 +117,12 @@
 	__builtin_unreachable(); \
 }
 #else
-#define CODE_UNREACHABLE __builtin_unreachable()
+#define CODE_UNREACHABLE        __builtin_unreachable()
 #endif
-#if defined(_MSC_VER)						/* #CUSTOM@NDRS */
-#define FUNC_NORETURN			__declspec(noreturn)
+#if defined(_MSC_VER)           /* #CUSTOM@NDRS */
+#define FUNC_NORETURN           __declspec(noreturn)
 #else
-#define FUNC_NORETURN    __attribute__((__noreturn__))
+#define FUNC_NORETURN           __attribute__((__noreturn__))
 #endif
 
 /* The GNU assembler for Cortex-M3 uses # for immediate values, not

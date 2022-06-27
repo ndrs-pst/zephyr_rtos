@@ -446,15 +446,15 @@ struct pm_device;
  */
 struct device {
 	/** Name of the device instance */
-	const char *name;
+	const char* name;
 	/** Address of device instance config information */
-	const void *config;
+	const void* config;
 	/** Address of the API structure exposed by the device instance */
-	const void *api;
+	const void* api;
 	/** Address of the common device state */
-	struct device_state *state;
+	struct device_state* state;
 	/** Address of the device instance private data */
-	void *data;
+	void* data;
 	/** optional pointer to handles associated with the device.
 	 *
 	 * This encodes a sequence of sets of device handles that have
