@@ -1244,7 +1244,11 @@ bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
 }
 #endif /* __cplusplus */
 
+#if defined(CONFIG_SEGGER_SYSTEMVIEW)
+/* #CUSTOM@NDRS : cannot include arch_inlines.h when CONFIG_SEGGER_SYSTEMVIEW=y */
+#else
 #include <zephyr/arch/arch_inlines.h>
+#endif
 
 #endif /* _ASMLANGUAGE */
 

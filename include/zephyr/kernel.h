@@ -4072,6 +4072,8 @@ static inline void k_work_user_init(struct k_work_user *work,
  *
  * @return true if work item is pending, or false if it is not pending.
  */
+/* #CUSTOM@NDRS : provide function prototype for atomic_test_bit() */
+static inline bool atomic_test_bit(const atomic_t* target, int bit);
 static inline bool k_work_user_is_pending(struct k_work_user *work)
 {
 	return atomic_test_bit(&work->flags, K_WORK_USER_STATE_PENDING);
@@ -4095,6 +4097,9 @@ static inline bool k_work_user_is_pending(struct k_work_user *work)
  * @retval -ENOMEM if no memory for thread resource pool allocation
  * @retval 0 Success
  */
+/* #CUSTOM@NDRS : provide function prototype for atomic_test_and_set_bit(), atomic_clear_bit() */
+static inline bool atomic_test_and_set_bit(atomic_t *target, int bit);
+static inline void atomic_clear_bit(atomic_t *target, int bit);
 static inline int k_work_user_submit_to_queue(struct k_work_user_q *work_q,
 					      struct k_work_user *work)
 {

@@ -9,11 +9,10 @@
  * @brief Atmel SAMC MCU series initialization code
  */
 
-#include <arch/cpu.h>
-#include <arch/arm/aarch32/cortex_m/cmsis.h>
-#include <device.h>
-#include <init.h>
-#include <kernel.h>
+#include <zephyr/kernel.h>
+#include <zephyr/init.h>
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/device.h>
 #include <soc.h>
 
 #if (SOC_ATMEL_SAM0_MCK_FREQ_HZ != 48000000)
