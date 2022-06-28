@@ -117,8 +117,13 @@
 	__builtin_unreachable(); \
 }
 #else
+#if defined(_MSC_VER)           /* #CUSTOM@NDRS */
+#define CODE_UNREACHABLE
+#else
 #define CODE_UNREACHABLE        __builtin_unreachable()
 #endif
+#endif
+
 #if defined(_MSC_VER)           /* #CUSTOM@NDRS */
 #define FUNC_NORETURN           __declspec(noreturn)
 #else
