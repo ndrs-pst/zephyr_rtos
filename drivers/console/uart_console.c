@@ -35,7 +35,7 @@
 #include <zephyr/mgmt/mcumgr/serial.h>
 #endif
 
-static const struct device *uart_console_dev;
+static const struct device* uart_console_dev;
 
 #ifdef CONFIG_UART_CONSOLE_DEBUG_SERVER_HOOKS
 

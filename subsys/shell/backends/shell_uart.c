@@ -111,6 +111,7 @@ static void uart_dtr_wait(const struct device *dev)
 			if (err == -ENOSYS || err == -ENOTSUP) {
 				break;
 			}
+
 			if (dtr) {
 				break;
 			}
