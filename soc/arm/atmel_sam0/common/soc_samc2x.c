@@ -15,13 +15,24 @@
 #include <zephyr/device.h>
 #include <soc.h>
 
-#if (SOC_ATMEL_SAM0_MCK_FREQ_HZ != 48000000)
-#error "Expect system to run at 48 MHz !!!"
+#define SOC_ATMEL_SAMC_XOSC_FREQ_HZ         16000000UL
+
+#if ((SOC_ATMEL_SAM0_MCK_FREQ_HZ == 48000000UL) || (SOC_ATMEL_SAM0_MCK_FREQ_HZ == 64000000UL))
+/* pass */
+#else
+#error "Expect system to run at 48 MHz or 64 MHz !!!"
 #endif
 
 static void flash_waitstates_init(void) {
-    /* One wait state at 48 MHz. */
-    NVMCTRL->CTRLB.bit.RWS = NVMCTRL_CTRLB_RWS_HALF_Val;
+    if (SOC_ATMEL_SAM0_MCK_FREQ_HZ == 48000000UL) {
+        /* One wait state at 48 MHz. */
+        NVMCTRL->CTRLB.bit.RWS = NVMCTRL_CTRLB_RWS_HALF_Val;
+    }
+
+    if (SOC_ATMEL_SAM0_MCK_FREQ_HZ == 64000000UL) {
+        /* Two wait state at 64 MHz. */
+        NVMCTRL->CTRLB.bit.RWS = NVMCTRL_CTRLB_RWS_DUAL_Val;
+    }
 }
 
 /*
@@ -97,10 +108,19 @@ static void fdpll_init(void) {
     /****************** DPLL Initialization  *********************************/
 #if defined(CONFIG_SOC_ATMEL_SAMC_XOSC32K_AS_MAIN)
     /* Configure DPLL */
-    /* XOSC32k(32.768 kHz) = 32,768 x (2928 + 11/16) = 96 MHz */
-    OSCCTRL->DPLLCTRLB.reg = (OSCCTRL_DPLLCTRLB_FILTER(0UL) | OSCCTRL_DPLLCTRLB_LTIME(0UL) | OSCCTRL_DPLLCTRLB_LBYPASS |
-                              OSCCTRL_DPLLCTRLB_REFCLK(0UL));
-    OSCCTRL->DPLLRATIO.reg = OSCCTRL_DPLLRATIO_LDRFRAC(11UL) | OSCCTRL_DPLLRATIO_LDR(2928UL);
+    if (SOC_ATMEL_SAM0_MCK_FREQ_HZ == 48000000UL) {
+        /* XOSC32k(32.768 kHz) = 32,768 x ((2,928 + 1) + 11/16) = 96 MHz */
+        OSCCTRL->DPLLCTRLB.reg = (OSCCTRL_DPLLCTRLB_FILTER(0UL) | OSCCTRL_DPLLCTRLB_LTIME(0UL) | OSCCTRL_DPLLCTRLB_LBYPASS |
+                                  OSCCTRL_DPLLCTRLB_REFCLK(0UL));
+        OSCCTRL->DPLLRATIO.reg = OSCCTRL_DPLLRATIO_LDRFRAC(11UL) | OSCCTRL_DPLLRATIO_LDR(2928UL);
+    }
+
+    if (SOC_ATMEL_SAM0_MCK_FREQ_HZ == 64000000UL) {
+        /* XOSC32k(32.768 kHz) = 32,768 x ((1,952 + 1) + 2/16) = 64 MHz */
+        OSCCTRL->DPLLCTRLB.reg = (OSCCTRL_DPLLCTRLB_FILTER(0UL) | OSCCTRL_DPLLCTRLB_LTIME(0UL) | OSCCTRL_DPLLCTRLB_LBYPASS |
+                                  OSCCTRL_DPLLCTRLB_REFCLK(0UL));
+        OSCCTRL->DPLLRATIO.reg = OSCCTRL_DPLLRATIO_LDRFRAC(2UL) | OSCCTRL_DPLLRATIO_LDR(1952UL);
+    }
 #elif defined(CONFIG_SOC_ATMEL_SAMC_OSC48M_AS_MAIN)
 	// Enable GCLK_DPLL : FDPLL96M input clock source for reference
     GCLK->PCHCTRL[0].reg = GCLK_PCHCTRL_GEN(0x1UL) | GCLK_PCHCTRL_CHEN;
@@ -120,10 +140,19 @@ static void fdpll_init(void) {
                               OSCCTRL_DPLLCTRLB_REFCLK(2UL));
 #elif defined(CONFIG_SOC_ATMEL_SAMC_XOSC_AS_MAIN)
     /* Configure DPLL */
-	/* (XOSC(8M) / 8) = 1 MHz x 48 = 48 MHz / 1 = 48 MHz */
-	/* OSCCTRL_DPLLCTRLB_DIV(3) : fDIV = fXOSC / 2 * (DIV + 1) */
-    OSCCTRL->DPLLCTRLB.reg = (OSCCTRL_DPLLCTRLB_FILTER(0UL) | OSCCTRL_DPLLCTRLB_LTIME(0UL)| OSCCTRL_DPLLCTRLB_LBYPASS |
-                              OSCCTRL_DPLLCTRLB_REFCLK(1UL) | OSCCTRL_DPLLCTRLB_DIV(3));
+    if (SOC_ATMEL_SAMC_XOSC_FREQ_HZ == 8000000UL) {
+        /* (XOSC(8M) / 8) = 1 MHz */
+        /* OSCCTRL_DPLLCTRLB_DIV(3) : fDIV = fXOSC / 2 * (DIV + 1) */
+        OSCCTRL->DPLLCTRLB.reg = (OSCCTRL_DPLLCTRLB_FILTER(0UL) | OSCCTRL_DPLLCTRLB_LTIME(0UL)| OSCCTRL_DPLLCTRLB_LBYPASS |
+                                  OSCCTRL_DPLLCTRLB_REFCLK(1UL) | OSCCTRL_DPLLCTRLB_DIV(3));
+    }
+
+    if (SOC_ATMEL_SAMC_XOSC_FREQ_HZ == 16000000UL) {
+        /* (XOSC(16M) / 16) = 1 MHz */
+        /* OSCCTRL_DPLLCTRLB_DIV(7) : fDIV = fXOSC / 2 * (DIV + 1) */
+        OSCCTRL->DPLLCTRLB.reg = (OSCCTRL_DPLLCTRLB_FILTER(0UL) | OSCCTRL_DPLLCTRLB_LTIME(0UL)| OSCCTRL_DPLLCTRLB_LBYPASS |
+                                  OSCCTRL_DPLLCTRLB_REFCLK(1UL) | OSCCTRL_DPLLCTRLB_DIV(7));
+    }
 #else
 #error Unsupported main clock source.
 #endif
@@ -138,8 +167,15 @@ static void fdpll_init(void) {
 
     #if defined(CONFIG_SOC_ATMEL_SAMC_XOSC32K_AS_MAIN)
     /* Selection of the DPLL Pre-Scalar */
-    /* XOSC32k(32.768 kHz) = 32,768 x (2928 + 11/16) = 96 MHz / 2U = 48 MHz */
-    OSCCTRL->DPLLPRESC.reg = (uint8_t)OSCCTRL_DPLLPRESC_PRESC(1UL);
+    if (SOC_ATMEL_SAM0_MCK_FREQ_HZ == 48000000UL) {
+        /* XOSC32k(32.768 kHz) = 32,768 x ((2,928 + 1) + 11/16) = 96 MHz / 2U = 48 MHz */
+        OSCCTRL->DPLLPRESC.reg = (uint8_t)OSCCTRL_DPLLPRESC_PRESC(1UL);
+    }
+
+    if (SOC_ATMEL_SAM0_MCK_FREQ_HZ == 64000000UL) {
+        /* XOSC32k(32.768 kHz) = 32,768 x ((1,952 + 1) + 2/16) = 64 MHz / 1U = 64 MHz */
+        OSCCTRL->DPLLPRESC.reg = (uint8_t)OSCCTRL_DPLLPRESC_PRESC(0UL);
+    }
 
     while (OSCCTRL->DPLLSYNCBUSY.bit.DPLLPRESC == 1U) {
         /* Waiting for the synchronization */

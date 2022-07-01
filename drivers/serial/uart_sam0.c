@@ -969,7 +969,7 @@ static int uart_sam0_rx_enable(const struct device* dev, uint8_t* buf,
                 while (regs->INTFLAG.bit.RXC == 1U) {
                     uint8_t discard = (uint8_t)regs->DATA.reg;
 
-                    (void)discard;
+                    (void) discard;
                 }
 
                 ret = dma_reload(cfg->dma_dev, cfg->rx_dma_channel,
