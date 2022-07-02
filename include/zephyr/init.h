@@ -21,10 +21,10 @@ extern "C" {
  * stack. The remaining levels are executed in the kernel's main task.
  */
 
-#define _SYS_INIT_LEVEL_PRE_KERNEL_1	0
-#define _SYS_INIT_LEVEL_PRE_KERNEL_2	1
-#define _SYS_INIT_LEVEL_POST_KERNEL	2
-#define _SYS_INIT_LEVEL_APPLICATION	3
+#define _SYS_INIT_LEVEL_PRE_KERNEL_1    0
+#define _SYS_INIT_LEVEL_PRE_KERNEL_2    1
+#define _SYS_INIT_LEVEL_POST_KERNEL     2
+#define _SYS_INIT_LEVEL_APPLICATION     3
 
 #ifdef CONFIG_SMP
 #define _SYS_INIT_LEVEL_SMP		4
@@ -56,7 +56,7 @@ void z_sys_init_run_level(int32_t level);
 /* A counter is used to avoid issues when two or more system devices
  * are declared in the same C file with the same init function.
  */
-#define Z_SYS_NAME(_init_fn) _CONCAT(_CONCAT(sys_init_, _init_fn), __COUNTER__)
+#define Z_SYS_NAME(_init_fn) Z_CONCAT(Z_CONCAT(sys_init_, _init_fn), __COUNTER__)
 
 /**
  * @def Z_INIT_ENTRY_DEFINE
@@ -84,7 +84,7 @@ void z_sys_init_run_level(int32_t level);
  */
 #define Z_INIT_ENTRY_DEFINE(_entry_name, _init_fn, _device, _level, _prio)	\
 	static const Z_DECL_ALIGN(struct init_entry)			\
-		_CONCAT(__init_, _entry_name) __used			\
+		Z_CONCAT(__init_, _entry_name) __used			\
 	__attribute__((__section__(".z_init_" #_level STRINGIFY(_prio)"_"))) = { \
 		.init = (_init_fn),					\
 		.dev = (_device),					\

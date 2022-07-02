@@ -18,6 +18,7 @@
  * (originally from x86's atomic.c)
  */
 
+#include <zephyr/kernel.h>                  /* #CUSTOM@NDRS */
 #include <zephyr/toolchain.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/spinlock.h>
