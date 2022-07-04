@@ -21,18 +21,9 @@
 			#dma-cells = <2>;
 		};
 
-		tc0: tc@42003000 {
-			compatible = "atmel,sam0-tc32";
-			reg = <0x42003000 0x40>;
-			interrupts = <20 0>;
-			label = "TIMER_0";
-			clocks = <&gclk 30>, <&mclk 0x1C 12>;
-			clock-names = "GCLK", "MCLK";
-		};
-
-		tcc0: tcc@42002000 {
+		tcc0: tcc@42002400 {
 			compatible = "atmel,sam0-tcc";
-			reg = <0x42002000 0x80>;
+			reg = <0x42002400 0x80>;
 			interrupts = <17 0>;
 			label = "TCC_0";
 			clocks = <&gclk 28>, <&mclk 0x1C 9>;
@@ -42,9 +33,9 @@
 			counter-size = <24>;
 		};
 
-		tcc1: tcc@42002400 {
+		tcc1: tcc@42002800 {
 			compatible = "atmel,sam0-tcc";
-			reg = <0x42002400 0x80>;
+			reg = <0x42002800 0x80>;
 			interrupts = <18 0>;
 			label = "TCC_1";
 			clocks = <&gclk 28>, <&mclk 0x1C 10>;
@@ -54,9 +45,9 @@
 			counter-size = <24>;
 		};
 
-		tcc2: tcc@42002800 {
+		tcc2: tcc@42002C00 {
 			compatible = "atmel,sam0-tcc";
-			reg = <0x42002800 0x80>;
+			reg = <0x42002C00 0x80>;
 			interrupts = <19 0>;
 			label = "TCC_2";
 			clocks = <&gclk 29>, <&mclk 0x1C 11>;
@@ -65,7 +56,40 @@
 			channels = <2>;
 			counter-size = <16>;
 		};
-		
+
+		tc0: tc@42003000 {
+			compatible = "atmel,sam0-tc32";
+			reg = <0x42003000 0x40>;
+			interrupts = <20 0>;
+			label = "TIMER_0";
+			clocks = <&gclk 30>, <&mclk 0x1C 12>;
+			clock-names = "GCLK", "MCLK";
+		};
+
+		tc1: tc@42003400 {
+			compatible = "atmel,sam0-tc";
+			reg = <0x42003400 0x40>;
+			interrupts = <21 0>;
+			label = "TC_1";
+			clocks = <&gclk 30>, <&mclk 0x1C 13>;
+			clock-names = "GCLK", "MCLK";
+
+			channels = <2>;
+			counter-size = <8>;
+		};
+
+		tc2: tc@42003800 {
+			compatible = "atmel,sam0-tc";
+			reg = <0x42003800 0x40>;
+			interrupts = <22 0>;
+			label = "TC_2";
+			clocks = <&gclk 31>, <&mclk 0x1C 14>;
+			clock-names = "GCLK", "MCLK";
+
+			channels = <2>;
+			counter-size = <8>;
+		};
+
 		can {
 			compatible = "bosch,m_can-base";
 			#address-cells = <1>;

@@ -1107,15 +1107,12 @@ static inline int gpio_pin_get_raw(const struct device *port, gpio_pin_t pin)
  * @retval -EIO I/O error when accessing an external GPIO chip.
  * @retval -EWOULDBLOCK if operation would block.
  */
-static inline int gpio_pin_get(const struct device *port, gpio_pin_t pin)
-{
-	__unused const struct gpio_driver_config *const cfg =
-		(const struct gpio_driver_config *)port->config;
-	gpio_port_value_t value;
-	int ret;
+static inline int gpio_pin_get(const struct device* port, gpio_pin_t pin) {
+    __unused const struct gpio_driver_config* const cfg = (const struct gpio_driver_config*)port->config;
+    gpio_port_value_t value;
+    int ret;
 
-	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
-		 "Unsupported pin");
+    __ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U, "Unsupported pin");
 
     ret = gpio_port_get(port, &value);
     if (ret == 0) {
