@@ -1364,7 +1364,6 @@ extern void zephyr_gpio_sam0_set_regs(const struct device* dev, volatile void* r
 
 void zephyr_spi_nor_gtest(void) {
     struct device const* dev;
-    int rc;
 
     dev = DEVICE_DT_GET(DT_NODELABEL(is25lp080));
     zephyr_gpio_sam0_set_regs(spi_nor_config_0.spi.config.cs->gpio_dev, ut_mcu_port_ptr);

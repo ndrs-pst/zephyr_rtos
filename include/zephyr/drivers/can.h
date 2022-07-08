@@ -1333,12 +1333,11 @@ static inline void can_copy_frame_to_zframe(const struct can_frame *frame,
  * @param zframe Pointer to zcan_frame struct.
  * @param frame  Pointer to can_frame struct.
  */
-static inline void can_copy_zframe_to_frame(const struct zcan_frame *zframe,
-					    struct can_frame *frame)
-{
-	frame->can_id = (zframe->id_type << 31) | (zframe->rtr << 30) |	zframe->id;
-	frame->can_dlc = zframe->dlc;
-	memcpy(frame->data, zframe->data, sizeof(frame->data));
+static inline void can_copy_zframe_to_frame(const struct zcan_frame* zframe,
+                                            struct can_frame* frame) {
+    frame->can_id  = (zframe->id_type << 31) | (zframe->rtr << 30) |	zframe->id;
+    frame->can_dlc = zframe->dlc;
+    memcpy(frame->data, zframe->data, sizeof(frame->data));
 }
 
 /**
@@ -1347,14 +1346,13 @@ static inline void can_copy_zframe_to_frame(const struct zcan_frame *zframe,
  * @param filter  Pointer to can_filter struct.
  * @param zfilter Pointer to zcan_filter struct.
  */
-static inline void can_copy_filter_to_zfilter(const struct can_filter *filter,
-					      struct zcan_filter *zfilter)
-{
-	zfilter->id_type = (filter->can_id & BIT(31)) >> 31;
-	zfilter->rtr = (filter->can_id & BIT(30)) >> 30;
-	zfilter->id = filter->can_id & BIT_MASK(29);
-	zfilter->rtr_mask = (filter->can_mask & BIT(30)) >> 30;
-	zfilter->id_mask = filter->can_mask & BIT_MASK(29);
+static inline void can_copy_filter_to_zfilter(const struct can_filter* filter,
+                                              struct zcan_filter* zfilter) {
+    zfilter->id_type  = (filter->can_id & BIT(31)) >> 31;
+    zfilter->rtr      = (filter->can_id & BIT(30)) >> 30;
+    zfilter->id       = filter->can_id & BIT_MASK(29);
+    zfilter->rtr_mask = (filter->can_mask & BIT(30)) >> 30;
+    zfilter->id_mask  = filter->can_mask & BIT_MASK(29);
 }
 
 /**
@@ -1363,9 +1361,8 @@ static inline void can_copy_filter_to_zfilter(const struct can_filter *filter,
  * @param zfilter Pointer to zcan_filter struct.
  * @param filter  Pointer to can_filter struct.
  */
-static inline void can_copy_zfilter_to_filter(const struct zcan_filter *zfilter,
-					      struct can_filter *filter)
-{
+static inline void can_copy_zfilter_to_filter(const struct zcan_filter* zfilter,
+                                              struct can_filter* filter) {
 	filter->can_id   = (zfilter->id_type  << 31) | (zfilter->rtr << 30) | zfilter->id;
 	filter->can_mask = (zfilter->rtr_mask << 30) | (zfilter->id_type << 31) | zfilter->id_mask;
 }
