@@ -30,6 +30,7 @@
 #include "endpoint.h"
 #include "unicast_server.h"
 #include "pacs_internal.h"
+#include "cap_internal.h"
 
 #if defined(CONFIG_BT_AUDIO_UNICAST_SERVER)
 
@@ -332,7 +333,10 @@ static void ascs_iso_recv(struct bt_iso_chan *chan,
 
 	ops = ep->stream->ops;
 
-	BT_DBG("stream %p ep %p len %zu", chan, ep, net_buf_frags_len(buf));
+	if (IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_STREAM_DATA)) {
+		BT_DBG("stream %p ep %p len %zu",
+		       chan, ep, net_buf_frags_len(buf));
+	}
 
 	if (ops != NULL && ops->recv != NULL) {
 		ops->recv(ep->stream, info, buf);
@@ -549,6 +553,16 @@ static void ascs_cp_rsp_add_errno(uint8_t id, uint8_t op, int err,
 	case -EBADMSG:
 		return ascs_cp_rsp_add(id, op, BT_ASCS_RSP_INVALID_ASE_STATE,
 					       BT_ASCS_REASON_NONE);
+	case -EACCES:
+		switch (op) {
+		case BT_ASCS_METADATA_OP:
+			return ascs_cp_rsp_add(id, op,
+					       BT_ASCS_RSP_METADATA_REJECTED,
+					       reason);
+		default:
+			return ascs_cp_rsp_add(id, op, BT_ASCS_RSP_UNSPECIFIED,
+					       BT_ASCS_REASON_NONE);
+		}
 	default:
 		return ascs_cp_rsp_add(id, op, BT_ASCS_RSP_UNSPECIFIED,
 				       BT_ASCS_REASON_NONE);
@@ -1488,22 +1502,7 @@ static bool ascs_codec_store_metadata(struct bt_data *data, void *user_data)
 	struct bt_codec *codec = user_data;
 	struct bt_codec_data *meta;
 
-	if (codec->meta_count >= ARRAY_SIZE(codec->meta)) {
-		BT_ERR("No slot available for Codec Config Metadata");
-		return false;
-	}
-
 	meta = &codec->meta[codec->meta_count];
-
-	if (data->data_len > sizeof(meta->value)) {
-		BT_ERR("Not enough space for Codec Config Metadata: %u > %zu",
-		       data->data_len, sizeof(meta->value));
-		return false;
-	}
-
-	BT_DBG("#%u type 0x%02x len %u", codec->meta_count, data->type,
-	       data->data_len);
-
 	meta->data.type = data->type;
 	meta->data.data_len = data->data_len;
 
@@ -1511,18 +1510,130 @@ static bool ascs_codec_store_metadata(struct bt_data *data, void *user_data)
 	meta->data.data = meta->value;
 	(void)memcpy(meta->value, data->data, data->data_len);
 
-	BT_HEXDUMP_DBG(meta->value, data->data_len, "data");
+	BT_DBG("#%zu: data: %s",
+	       codec->meta_count,
+	       bt_hex(meta->value, data->data_len));
 
 	codec->meta_count++;
 
 	return true;
 }
 
+struct ascs_parse_result {
+	int err;
+	size_t count;
+	const struct bt_audio_ep *ep;
+};
+
+static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
+{
+	struct ascs_parse_result *result = user_data;
+	const struct bt_audio_ep *ep = result->ep;
+	const uint8_t data_len = data->data_len;
+	const uint8_t data_type = data->type;
+	const uint8_t *data_value = data->data;
+
+	result->count++;
+
+	BT_DBG("#%u type 0x%02x len %u", result->count, data_type, data_len);
+
+	if (result->count > CONFIG_BT_CODEC_MAX_METADATA_COUNT) {
+		BT_ERR("Not enough buffers for Codec Config Metadata: %zu > %zu",
+		       result->count, CONFIG_BT_CODEC_MAX_METADATA_LEN);
+		result->err = -ENOMEM;
+
+		return false;
+	}
+
+	if (data_len > CONFIG_BT_CODEC_MAX_METADATA_LEN) {
+		BT_ERR("Not enough space for Codec Config Metadata: %u > %zu",
+		       data->data_len, CONFIG_BT_CODEC_MAX_METADATA_LEN);
+		result->err = -ENOMEM;
+
+		return false;
+	}
+
+	/* The CAP acceptor shall not accept metadata with
+	 * unsupported stream context.
+	 */
+	if (IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR)) {
+		if (data_type == BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) {
+			const uint16_t context = sys_get_le16(data_value);
+
+			if (!bt_pacs_context_available(ep->dir, context)) {
+				result->err = -EACCES;
+
+				return false;
+			}
+		} else if (data_type == BT_AUDIO_METADATA_TYPE_CCID_LIST) {
+			/* Verify that the CCID is a known CCID on the
+			 * writing device
+			 */
+			for (uint8_t i = 0; i < data_len; i++) {
+				const uint8_t ccid = data_value[i];
+
+				if (!bt_cap_acceptor_ccid_exist(ep->stream->conn,
+								ccid)) {
+					BT_WARN("CCID %u is unknown", ccid);
+
+					/* TBD:
+					 * Should we reject the Metadata?
+					 *
+					 * Should unknown CCIDs trigger a
+					 * discovery procedure for TBS or MCS?
+					 *
+					 * Or should we just accept as is, and
+					 * then let the application decide?
+					 */
+				}
+			}
+		}
+	}
+
+	return true;
+}
+
+static int ascs_verify_metadata(const struct net_buf_simple *buf,
+				struct bt_audio_ep *ep)
+{
+	struct ascs_parse_result result = {
+		.count = 0U,
+		.err = 0,
+		.ep = ep
+	};
+	struct net_buf_simple meta_ltv;
+
+	/* Clone the buf to avoid pulling data from the original buffer */
+	net_buf_simple_clone(buf, &meta_ltv);
+
+	/* Parse LTV entries */
+	bt_data_parse(&meta_ltv, ascs_parse_metadata, &result);
+
+	/* Check if all entries could be parsed */
+	if (meta_ltv.len != 0) {
+		BT_ERR("Unable to parse Metadata: len %u", meta_ltv.len);
+
+		if (meta_ltv.len > 2) {
+			/* Value of the Metadata Type field in error */
+			return meta_ltv.data[2];
+		}
+
+		return -EINVAL;
+	}
+
+	if (result.count >= CONFIG_BT_CODEC_MAX_METADATA_COUNT) {
+		BT_ERR("No slot available for Codec Config Metadata");
+		return -ENOMEM;
+	}
+
+	return 0;
+}
+
 static int ascs_ep_set_metadata(struct bt_audio_ep *ep,
 				struct net_buf_simple *buf, uint8_t len,
 				struct bt_codec *codec)
 {
-	struct net_buf_simple meta;
+	struct net_buf_simple meta_ltv;
 	int err;
 
 	if (ep == NULL && codec == NULL) {
@@ -1532,6 +1643,7 @@ static int ascs_ep_set_metadata(struct bt_audio_ep *ep,
 	BT_DBG("ep %p len %u codec %p", ep, len, codec);
 
 	if (len == 0) {
+		(void)memset(codec->meta, 0, sizeof(codec->meta));
 		return 0;
 	}
 
@@ -1539,30 +1651,18 @@ static int ascs_ep_set_metadata(struct bt_audio_ep *ep,
 		codec = &ep->codec;
 	}
 
-	/* Reset current metadata */
-	codec->meta_count = 0;
-	(void)memset(codec->meta, 0, sizeof(codec->meta));
-
-	net_buf_simple_init_with_data(&meta, net_buf_simple_pull_mem(buf, len),
+	/* Extract metadata LTV for this specific endpoint */
+	net_buf_simple_init_with_data(&meta_ltv,
+				      net_buf_simple_pull_mem(buf, len),
 				      len);
 
-	/* Parse LTV entries */
-	bt_data_parse(&meta, ascs_codec_store_metadata, codec);
-
-	/* Check if all entries could be parsed */
-	if (meta.len != 0) {
-		BT_ERR("Unable to parse Metadata: len %u", meta.len);
-		err = -EINVAL;
-
-		if (meta.len > 2) {
-			/* Value of the Metadata Type field in error */
-			err = meta.data[2];
-		}
-
-		codec->meta_count = 0;
-		(void)memset(codec->meta, 0, sizeof(codec->meta));
+	err = ascs_verify_metadata(&meta_ltv, ep);
+	if (err != 0) {
 		return err;
 	}
+
+	/* store data contents */
+	bt_data_parse(&meta_ltv, ascs_codec_store_metadata, codec);
 
 	return 0;
 }
@@ -1571,6 +1671,7 @@ static int ase_metadata(struct bt_ascs_ase *ase, uint8_t op,
 			struct bt_ascs_metadata *meta,
 			struct net_buf_simple *buf)
 {
+	struct bt_codec_data metadata_backup[CONFIG_BT_CODEC_MAX_DATA_COUNT];
 	struct bt_audio_stream *stream;
 	struct bt_audio_ep *ep;
 	uint8_t state;
@@ -1599,7 +1700,8 @@ static int ase_metadata(struct bt_ascs_ase *ase, uint8_t op,
 		goto done;
 	}
 
-	/* TODO: We should ask the upper layer for accept before we store it */
+	/* Backup existing metadata */
+	(void)memcpy(metadata_backup, ep->codec.meta, sizeof(metadata_backup));
 	err = ascs_ep_set_metadata(ep, buf, meta->len, &ep->codec);
 	if (err) {
 		if (err < 0) {
@@ -1620,10 +1722,14 @@ static int ase_metadata(struct bt_ascs_ase *ase, uint8_t op,
 	}
 
 	if (err) {
+		/* Restore backup */
+		(void)memcpy(ep->codec.meta, metadata_backup,
+			     sizeof(metadata_backup));
+
 		BT_ERR("Metadata failed: %d", err);
 		ascs_cp_rsp_add_errno(ASE_ID(ase), op, err,
 				      buf->len ? *buf->data : 0x00);
-		return -EFAULT;
+		return err;
 	}
 
 	/* Set the state to the same state to trigger the notifications */
