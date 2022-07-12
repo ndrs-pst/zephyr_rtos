@@ -65,7 +65,7 @@ static void canopen_detach_all_rx_filters(CO_CANmodule_t* CANmodule) {
 	for (i = 0U; i < CANmodule->rx_size; i++) {
 		if (CANmodule->rx_array[i].filter_id != -ENOSPC) {
 			can_remove_rx_filter(CANmodule->dev,
-					     CANmodule->rx_array[i].filter_id);
+			                     CANmodule->rx_array[i].filter_id);
 			CANmodule->rx_array[i].filter_id = -ENOSPC;
 		}
 	}

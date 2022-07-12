@@ -639,7 +639,7 @@ struct can_device_state {
  *
  * @return 0 on success, or a negative error code on error
  */
-__syscall int can_get_core_clock(const struct device *dev, uint32_t *rate);
+__syscall int can_get_core_clock(const struct device* dev, uint32_t* rate);
 
 static inline int z_impl_can_get_core_clock(const struct device* dev, uint32_t* rate) {
     const struct can_driver_api* api = (const struct can_driver_api*)dev->api;
@@ -658,7 +658,7 @@ static inline int z_impl_can_get_core_clock(const struct device* dev, uint32_t* 
  * @retval -EIO General input/output error.
  * @retval -ENOSYS If this function is not implemented by the driver.
  */
-__syscall int can_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate);
+__syscall int can_get_max_bitrate(const struct device* dev, uint32_t* max_bitrate);
 
 static inline int z_impl_can_get_max_bitrate(const struct device* dev, uint32_t* max_bitrate) {
     const struct can_driver_api* api = (const struct can_driver_api*)dev->api;
@@ -677,13 +677,12 @@ static inline int z_impl_can_get_max_bitrate(const struct device* dev, uint32_t*
  *
  * @return Pointer to the minimum supported timing parameter values.
  */
-__syscall const struct can_timing *can_get_timing_min(const struct device *dev);
+__syscall const struct can_timing* can_get_timing_min(const struct device* dev);
 
-static inline const struct can_timing *z_impl_can_get_timing_min(const struct device *dev)
-{
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+static inline const struct can_timing* z_impl_can_get_timing_min(const struct device* dev) {
+    const struct can_driver_api* api = (const struct can_driver_api*)dev->api;
 
-	return &api->timing_min;
+    return &api->timing_min;
 }
 
 /**
@@ -693,13 +692,12 @@ static inline const struct can_timing *z_impl_can_get_timing_min(const struct de
  *
  * @return Pointer to the maximum supported timing parameter values.
  */
-__syscall const struct can_timing *can_get_timing_max(const struct device *dev);
+__syscall const struct can_timing* can_get_timing_max(const struct device* dev);
 
-static inline const struct can_timing *z_impl_can_get_timing_max(const struct device *dev)
-{
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+static inline const struct can_timing* z_impl_can_get_timing_max(const struct device* dev) {
+    const struct can_driver_api* api = (const struct can_driver_api*)dev->api;
 
-	return &api->timing_max;
+    return &api->timing_max;
 }
 
 /**
@@ -738,7 +736,7 @@ __syscall int can_calc_timing(const struct device* dev, struct can_timing* res,
  * @return Pointer to the minimum supported timing parameter values, or NULL if
  *         CAN-FD is not supported.
  */
-__syscall const struct can_timing *can_get_timing_data_min(const struct device *dev);
+__syscall const struct can_timing* can_get_timing_data_min(const struct device* dev);
 
 #ifdef CONFIG_CAN_FD_MODE
 static inline const struct can_timing *z_impl_can_get_timing_data_min(const struct device *dev)
@@ -762,7 +760,7 @@ static inline const struct can_timing *z_impl_can_get_timing_data_min(const stru
  * @return Pointer to the maximum supported timing parameter values, or NULL if
  *         CAN-FD is not supported.
  */
-__syscall const struct can_timing *can_get_timing_data_max(const struct device *dev);
+__syscall const struct can_timing* can_get_timing_data_max(const struct device* dev);
 
 #ifdef CONFIG_CAN_FD_MODE
 static inline const struct can_timing *z_impl_can_get_timing_data_max(const struct device *dev)
@@ -791,8 +789,8 @@ static inline const struct can_timing *z_impl_can_get_timing_data_max(const stru
  * @retval -EINVAL if there is no solution for the desired values.
  * @retval -EIO if @a can_get_core_clock() is not available.
  */
-__syscall int can_calc_timing_data(const struct device *dev, struct can_timing *res,
-				   uint32_t bitrate, uint16_t sample_pnt);
+__syscall int can_calc_timing_data(const struct device* dev, struct can_timing* res,
+                                   uint32_t bitrate, uint16_t sample_pnt);
 
 /**
  * @brief Configure the bus timing for the data phase of a CAN-FD controller.
@@ -810,8 +808,8 @@ __syscall int can_calc_timing_data(const struct device *dev, struct can_timing *
  * @retval 0 If successful.
  * @retval -EIO General input/output error, failed to configure device.
  */
-__syscall int can_set_timing_data(const struct device *dev,
-				  const struct can_timing *timing_data);
+__syscall int can_set_timing_data(const struct device* dev,
+                                  const struct can_timing* timing_data);
 
 #ifdef CONFIG_CAN_FD_MODE
 static inline int z_impl_can_set_timing_data(const struct device *dev,
@@ -848,7 +846,7 @@ static inline int z_impl_can_set_timing_data(const struct device *dev,
  * @retval -EINVAL bitrate/sample point cannot be met.
  * @retval -EIO General input/output error, failed to set bitrate.
  */
-__syscall int can_set_bitrate_data(const struct device *dev, uint32_t bitrate_data);
+__syscall int can_set_bitrate_data(const struct device* dev, uint32_t bitrate_data);
 
 /**
  * @brief Fill in the prescaler value for a given bitrate and timing
@@ -866,8 +864,8 @@ __syscall int can_set_bitrate_data(const struct device *dev, uint32_t bitrate_da
  * @retval 0 or positive bitrate error.
  * @retval Negative error code on error.
  */
-int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
-		       uint32_t bitrate);
+int can_calc_prescaler(const struct device* dev, struct can_timing* timing,
+                       uint32_t bitrate);
 
 /** Synchronization Jump Width (SJW) value to indicate that the SJW should not
  * be changed by the timing calculation.
@@ -887,8 +885,8 @@ int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
  * @retval 0 If successful.
  * @retval -EIO General input/output error, failed to configure device.
  */
-__syscall int can_set_timing(const struct device *dev,
-			     const struct can_timing *timing);
+__syscall int can_set_timing(const struct device* dev,
+                             const struct can_timing* timing);
 
 static inline int z_impl_can_set_timing(const struct device *dev,
 					const struct can_timing *timing)
@@ -907,7 +905,7 @@ static inline int z_impl_can_set_timing(const struct device *dev,
  * @retval 0 If successful.
  * @retval -EIO General input/output error, failed to configure device.
  */
-__syscall int can_set_mode(const struct device *dev, can_mode_t mode);
+__syscall int can_set_mode(const struct device* dev, can_mode_t mode);
 
 static inline int z_impl_can_set_mode(const struct device* dev, can_mode_t mode) {
     const struct can_driver_api* api = (const struct can_driver_api*)dev->api;
@@ -937,7 +935,7 @@ static inline int z_impl_can_set_mode(const struct device* dev, can_mode_t mode)
  * @retval -EINVAL bitrate/sample point cannot be met.
  * @retval -EIO General input/output error, failed to set bitrate.
  */
-__syscall int can_set_bitrate(const struct device *dev, uint32_t bitrate);
+__syscall int can_set_bitrate(const struct device* dev, uint32_t bitrate);
 
 /** @} */
 
@@ -990,9 +988,9 @@ __syscall int can_set_bitrate(const struct device *dev, uint32_t bitrate);
  *              automatic retransmissions are disabled).
  * @retval -EAGAIN on timeout.
  */
-__syscall int can_send(const struct device *dev, const struct zcan_frame *frame,
-		       k_timeout_t timeout, can_tx_callback_t callback,
-		       void *user_data);
+__syscall int can_send(const struct device* dev, const struct zcan_frame* frame,
+                       k_timeout_t timeout, can_tx_callback_t callback,
+                       void* user_data);
 
 static inline int z_impl_can_send(const struct device* dev, const struct zcan_frame* frame,
                                   k_timeout_t timeout, can_tx_callback_t callback,
@@ -1031,7 +1029,7 @@ static inline int z_impl_can_send(const struct device* dev, const struct zcan_fr
  * @retval filter_id on success.
  * @retval -ENOSPC if there are no free filters.
  */
-static inline int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
+static inline int can_add_rx_filter(const struct device* dev, can_rx_callback_t callback,
                                     void* user_data, const struct zcan_filter* filter) {
     const struct can_driver_api* api = (const struct can_driver_api*)dev->api;
 
