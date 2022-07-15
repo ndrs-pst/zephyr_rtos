@@ -60,15 +60,13 @@ static void dma_sam0_isr(const struct device* dev) {
 }
 
 /* Configure a channel */
-static int dma_sam0_config(const struct device *dev, uint32_t channel,
-			   struct dma_config *config)
-{
-	struct dma_sam0_data *data = dev->data;
-	DmacDescriptor *desc = &data->descriptors[channel];
-	struct dma_block_config *block = config->head_block;
-	struct dma_sam0_channel *channel_control;
-	DMAC_BTCTRL_Type btctrl = { .reg = 0 };
-	unsigned int key;
+static int dma_sam0_config(const struct device* dev, uint32_t channel, struct dma_config* config) {
+    struct dma_sam0_data* data = dev->data;
+    DmacDescriptor* desc = &data->descriptors[channel];
+    struct dma_block_config* block = config->head_block;
+    struct dma_sam0_channel* channel_control;
+    DMAC_BTCTRL_Type btctrl = {.reg = 0};
+    unsigned int key;
 
     if (channel >= DMAC_CH_NUM) {
         LOG_ERR("Unsupported channel");
@@ -271,9 +269,8 @@ inval :
     return (-EINVAL);
 }
 
-static int dma_sam0_start(const struct device *dev, uint32_t channel)
-{
-	unsigned int key = irq_lock();
+static int dma_sam0_start(const struct device* dev, uint32_t channel) {
+    unsigned int key = irq_lock();
 
     ARG_UNUSED(dev);
 
@@ -302,9 +299,8 @@ static int dma_sam0_start(const struct device *dev, uint32_t channel)
     return (0);
 }
 
-static int dma_sam0_stop(const struct device *dev, uint32_t channel)
-{
-	unsigned int key = irq_lock();
+static int dma_sam0_stop(const struct device* dev, uint32_t channel) {
+    unsigned int key = irq_lock();
 
     ARG_UNUSED(dev);
 
@@ -322,12 +318,10 @@ static int dma_sam0_stop(const struct device *dev, uint32_t channel)
     return (0);
 }
 
-static int dma_sam0_reload(const struct device *dev, uint32_t channel,
-			   uint32_t src, uint32_t dst, size_t size)
-{
-	struct dma_sam0_data *data = dev->data;
-	DmacDescriptor *desc = &data->descriptors[channel];
-	unsigned int key = irq_lock();
+static int dma_sam0_reload(const struct device* dev, uint32_t channel, uint32_t src, uint32_t dst, size_t size) {
+    struct dma_sam0_data* data = dev->data;
+    DmacDescriptor* desc = &data->descriptors[channel];
+    unsigned int key;
     int ret;
 
     ret = 0;

@@ -146,13 +146,12 @@ static void uart_sam0_dma_tx_done(const struct device* dma_dev, void* arg,
     regs->INTENSET.reg = SERCOM_USART_INTENSET_TXC;
 }
 
-static int uart_sam0_tx_halt(struct uart_sam0_dev_data *dev_data)
-{
-	const struct uart_sam0_dev_cfg *const cfg = dev_data->cfg;
-	unsigned int key = irq_lock();
-	size_t tx_active = dev_data->tx_len;
-	struct dma_status st;
-	int ret;
+static int uart_sam0_tx_halt(struct uart_sam0_dev_data* dev_data) {
+    const struct uart_sam0_dev_cfg* const cfg = dev_data->cfg;
+    unsigned int key = irq_lock();
+    size_t tx_active = dev_data->tx_len;
+    struct dma_status st;
+    int ret;
 
     struct uart_event evt = {
         .type = UART_TX_ABORTED,
@@ -223,7 +222,7 @@ static void uart_sam0_dma_rx_done(const struct device* dma_dev, void* arg,
     struct uart_sam0_dev_data* const dev_data = (struct uart_sam0_dev_data* const )arg;
     const struct device* dev = dev_data->dev;
     const struct uart_sam0_dev_cfg* const cfg = dev_data->cfg;
-    SercomUsart * const regs = cfg->regs;
+    SercomUsart* const regs = cfg->regs;
     unsigned int key;
 
     key = irq_lock();
@@ -689,7 +688,7 @@ static void uart_sam0_isr(const struct device* dev) {
 
         k_work_cancel_delayable(&dev_data->tx_timeout_work);
 
-		unsigned int key = irq_lock();
+        unsigned int key = irq_lock();
 
         struct uart_event evt = {
             .type = UART_TX_DONE,
@@ -911,8 +910,7 @@ static int uart_sam0_tx(const struct device* dev, const uint8_t* buf, size_t len
 
                 irq_unlock(key);
 
-                ret = dma_reload(cfg->dma_dev, cfg->tx_dma_channel, (uint32_t)buf,
-                                    (uint32_t)(&(regs->DATA.reg)), len);
+                ret = dma_reload(cfg->dma_dev, cfg->tx_dma_channel, (uint32_t)buf, (uint32_t)(&(regs->DATA.reg)), len);
                 if (ret == 0U) {
                     if (timeout != SYS_FOREVER_US) {
                         k_work_reschedule(&dev_data->tx_timeout_work, K_USEC(timeout));
@@ -968,7 +966,7 @@ static int uart_sam0_rx_enable(const struct device* dev, uint8_t* buf,
             key = irq_lock();
             if (dev_data->rx_len == 0U) {
                 /* Read off anything that was already there */
-                while (regs->INTFLAG.bit.RXC) {
+                while (regs->INTFLAG.bit.RXC == 1U) {
                     uint8_t discard = (uint8_t)regs->DATA.reg;
 
                     (void) discard;

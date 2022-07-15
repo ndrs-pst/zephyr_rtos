@@ -210,9 +210,8 @@ int can_mcan_set_timing_data(const struct device* dev,
 }
 #endif /* CONFIG_CAN_FD_MODE */
 
-int can_mcan_get_capabilities(const struct device *dev, can_mode_t *cap)
-{
-	ARG_UNUSED(dev);
+int can_mcan_get_capabilities(const struct device* dev, can_mode_t* cap) {
+    ARG_UNUSED(dev);
 
 	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY;
 
@@ -220,14 +219,13 @@ int can_mcan_get_capabilities(const struct device *dev, can_mode_t *cap)
 	*cap |= CAN_MODE_FD;
 #endif /* CONFIG_CAN_FD_MODE */
 
-	return 0;
+	return (0);
 }
 
-int can_mcan_set_mode(const struct device *dev, can_mode_t mode)
-{
-	const struct can_mcan_config *cfg = dev->config;
-	struct can_mcan_reg *can = cfg->can;
-	int ret;
+int can_mcan_set_mode(const struct device* dev, can_mode_t mode) {
+    const struct can_mcan_config* cfg = dev->config;
+    struct can_mcan_reg* can          = cfg->can;
+    int ret;
 
 #ifdef CONFIG_CAN_FD_MODE
 	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_FD)) != 0) {
@@ -532,11 +530,9 @@ void can_mcan_tc_event_handler(const struct device* dev) {
     uint32_t event_idx, tx_idx;
 
 	while (can->txefs & CAN_MCAN_TXEFS_EFFL) {
-		event_idx = (can->txefs & CAN_MCAN_TXEFS_EFGI) >>
-			    CAN_MCAN_TXEFS_EFGI_POS;
-		sys_cache_data_range((void *)&msg_ram->tx_event_fifo[event_idx],
-				     sizeof(struct can_mcan_tx_event_fifo),
-				     K_CACHE_INVD);
+        event_idx = (can->txefs & CAN_MCAN_TXEFS_EFGI) >> CAN_MCAN_TXEFS_EFGI_POS;
+        sys_cache_data_range((void*)&msg_ram->tx_event_fifo[event_idx],
+		                     sizeof(struct can_mcan_tx_event_fifo), K_CACHE_INVD);
 		tx_event = &msg_ram->tx_event_fifo[event_idx];
 		tx_idx = tx_event->mm.idx;
 		/* Acknowledge TX event */
@@ -606,11 +602,8 @@ void can_mcan_get_message(const struct device* dev,
 	while ((*fifo_status_reg & CAN_MCAN_RXF0S_F0FL)) {
         get_idx = (*fifo_status_reg & CAN_MCAN_RXF0S_F0GI) >> CAN_MCAN_RXF0S_F0GI_POS;
 
-		sys_cache_data_range((void *)&fifo[get_idx].hdr,
-				     sizeof(struct can_mcan_rx_fifo_hdr),
-				     K_CACHE_INVD);
-		memcpy32_volatile(&hdr, &fifo[get_idx].hdr,
-				  sizeof(struct can_mcan_rx_fifo_hdr));
+        sys_cache_data_range((void*)&fifo[get_idx].hdr, sizeof(struct can_mcan_rx_fifo_hdr), K_CACHE_INVD);
+        memcpy32_volatile(&hdr, &fifo[get_idx].hdr, sizeof(struct can_mcan_rx_fifo_hdr));
 
         if (hdr.xtd == 1U) {
 			frame.id = hdr.ext_id;
@@ -641,11 +634,10 @@ void can_mcan_get_message(const struct device* dev,
 		data_length = can_dlc_to_bytes(frame.dlc);
 		if (data_length <= sizeof(frame.data)) {
 			/* data needs to be written in 32 bit blocks!*/
-			sys_cache_data_range((void *)fifo[get_idx].data_32,
-					     ROUND_UP(data_length, sizeof(uint32_t)),
-					     K_CACHE_INVD);
-			memcpy32_volatile(frame.data_32, fifo[get_idx].data_32,
-					  ROUND_UP(data_length, sizeof(uint32_t)));
+            sys_cache_data_range((void*)fifo[get_idx].data_32,
+                                 ROUND_UP(data_length, sizeof(uint32_t)), K_CACHE_INVD);
+            memcpy32_volatile(frame.data_32, fifo[get_idx].data_32,
+                              ROUND_UP(data_length, sizeof(uint32_t)));
 
 			if (frame.id_type == CAN_STANDARD_IDENTIFIER) {
                 LOG_DBG("Frame on filter %d, ID: 0x%x", filt_idx, frame.id);
@@ -812,11 +804,10 @@ int can_mcan_send(const struct device* dev,
         tx_hdr.ext_id = frame->id;
     }
 
-	memcpy32_volatile(&msg_ram->tx_buffer[put_idx].hdr, &tx_hdr, sizeof(tx_hdr));
-	memcpy32_volatile(msg_ram->tx_buffer[put_idx].data_32, frame->data_32, ROUND_UP(data_length, 4));
-	sys_cache_data_range((void *)&msg_ram->tx_buffer[put_idx].hdr, sizeof(tx_hdr), K_CACHE_WB);
-	sys_cache_data_range((void *)&msg_ram->tx_buffer[put_idx].data_32, ROUND_UP(data_length, 4),
-			     K_CACHE_WB);
+    memcpy32_volatile(&msg_ram->tx_buffer[put_idx].hdr, &tx_hdr, sizeof(tx_hdr));
+    memcpy32_volatile(msg_ram->tx_buffer[put_idx].data_32, frame->data_32, ROUND_UP(data_length, 4));
+    sys_cache_data_range((void*)&msg_ram->tx_buffer[put_idx].hdr, sizeof(tx_hdr), K_CACHE_WB);
+    sys_cache_data_range((void*)&msg_ram->tx_buffer[put_idx].data_32, ROUND_UP(data_length, 4), K_CACHE_WB);
 
 	data->tx_fin_cb[put_idx] = callback;
 	data->tx_fin_cb_arg[put_idx] = user_data;
@@ -882,11 +873,9 @@ int can_mcan_add_rx_filter_std(const struct device* dev,
 	/* TODO proper fifo balancing */
 	filter_element.sfce = filter_id & 0x01 ? CAN_MCAN_FCE_FIFO1 : CAN_MCAN_FCE_FIFO0;
 
-	memcpy32_volatile(&msg_ram->std_filt[filter_id], &filter_element,
-			 sizeof(struct can_mcan_std_filter));
-	sys_cache_data_range((void *)&msg_ram->std_filt[filter_id],
-			     sizeof(struct can_mcan_std_filter),
-			     K_CACHE_WB);
+    memcpy32_volatile(&msg_ram->std_filt[filter_id], &filter_element, sizeof(struct can_mcan_std_filter));
+    sys_cache_data_range((void*)&msg_ram->std_filt[filter_id],
+                         sizeof(struct can_mcan_std_filter), K_CACHE_WB);
 
 	k_mutex_unlock(&data->inst_mutex);
 
@@ -945,11 +934,9 @@ static int can_mcan_add_rx_filter_ext(const struct device* dev,
 	/* TODO proper fifo balancing */
 	filter_element.efce = filter_id & 0x01 ? CAN_MCAN_FCE_FIFO1 : CAN_MCAN_FCE_FIFO0;
 
-	memcpy32_volatile(&msg_ram->ext_filt[filter_id], &filter_element,
-			  sizeof(struct can_mcan_ext_filter));
-	sys_cache_data_range((void *)&msg_ram->ext_filt[filter_id],
-			     sizeof(struct can_mcan_ext_filter),
-			     K_CACHE_WB);
+    memcpy32_volatile(&msg_ram->ext_filt[filter_id], &filter_element, sizeof(struct can_mcan_ext_filter));
+    sys_cache_data_range((void*)&msg_ram->ext_filt[filter_id],
+                         sizeof(struct can_mcan_ext_filter), K_CACHE_WB);
 
 	k_mutex_unlock(&data->inst_mutex);
 
@@ -1007,18 +994,15 @@ void can_mcan_remove_rx_filter(const struct device* dev, int filter_id) {
             return;
         }
 
-		memset32_volatile(&msg_ram->ext_filt[filter_id], 0,
-				  sizeof(struct can_mcan_ext_filter));
-		sys_cache_data_range((void *)&msg_ram->ext_filt[filter_id],
-				     sizeof(struct can_mcan_ext_filter),
-				     K_CACHE_WB);
-	} else {
-		memset32_volatile(&msg_ram->std_filt[filter_id], 0,
-				  sizeof(struct can_mcan_std_filter));
-		sys_cache_data_range((void *)&msg_ram->std_filt[filter_id],
-				     sizeof(struct can_mcan_std_filter),
-				     K_CACHE_WB);
-	}
+        memset32_volatile(&msg_ram->ext_filt[filter_id], 0, sizeof(struct can_mcan_ext_filter));
+        sys_cache_data_range((void*)&msg_ram->ext_filt[filter_id],
+                             sizeof(struct can_mcan_ext_filter), K_CACHE_WB);
+    }
+    else {
+        memset32_volatile(&msg_ram->std_filt[filter_id], 0, sizeof(struct can_mcan_std_filter));
+        sys_cache_data_range((void*)&msg_ram->std_filt[filter_id],
+                             sizeof(struct can_mcan_std_filter), K_CACHE_WB);
+    }
 
     k_mutex_unlock(&data->inst_mutex);
 }
