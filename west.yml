@@ -32,7 +32,7 @@ manifest:
       revision: 0edfe2c2ec656afb910cfab8ed59a5ffd59b87c8
       path: modules/lib/chre
     - name: cmsis
-      revision: 5f86244bad4ad5a590e084f0e72ba7a1416c2edf
+      revision: 37349675ad02657b4b58f03c0491caaa0afd1a84
       path: modules/hal/cmsis
       groups:
         - hal
@@ -57,7 +57,7 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: bb4e7104132bdc22c7cc7e20057434c2979e6706
+      revision: cbc60a7591da6fc091a14eebc102e45355bbb007
       path: modules/hal/atmel
       groups:
         - hal
@@ -250,6 +250,6 @@ manifest:
     - -ci
 
   self:
-    path: zephyr
+    path: zephyr_rtos
     west-commands: scripts/west-commands.yml
     import: submanifests
