@@ -5,7 +5,7 @@
  */
 
 /*
- * PWM driver using the SAM0 Timer/Counter (TCC) in Normal PWM (NPWM) mode.
+ * PWM driver using the SAM0 Timer/Counter for Control Applications (TCC) in Normal PWM (NPWM) mode.
  * Supports the SAMD21 and SAMD5x series.
  */
 
@@ -37,31 +37,29 @@ struct pwm_sam0_config {
 };
 
 /* Wait for the peripheral to finish all commands */
-static void wait_synchronization(Tcc *regs)
-{
-	while (regs->SYNCBUSY.reg != 0) {
-	}
+static void wait_synchronization(Tcc* regs) {
+    while (regs->SYNCBUSY.reg != 0) {
+        /* pass */
+    }
 }
 
-static int pwm_sam0_get_cycles_per_sec(const struct device *dev,
-				       uint32_t channel, uint64_t *cycles)
-{
-	const struct pwm_sam0_config *const cfg = dev->config;
+static int pwm_sam0_get_cycles_per_sec(const struct device* dev, uint32_t channel, uint64_t* cycles) {
+    const struct pwm_sam0_config* const cfg = dev->config;
 
-	if (channel >= cfg->channels) {
-		return -EINVAL;
-	}
-	*cycles = cfg->freq;
+    if (channel >= cfg->channels) {
+        return (-EINVAL);
+    }
 
-	return 0;
+    *cycles = cfg->freq;
+
+    return (0);
 }
 
-static int pwm_sam0_set_cycles(const struct device *dev, uint32_t channel,
-			       uint32_t period_cycles, uint32_t pulse_cycles,
-			       pwm_flags_t flags)
-{
-	const struct pwm_sam0_config *const cfg = dev->config;
-	Tcc *regs = cfg->regs;
+static int pwm_sam0_set_cycles(const struct device* dev, uint32_t channel,
+                               uint32_t period_cycles, uint32_t pulse_cycles,
+                               pwm_flags_t flags) {
+    const struct pwm_sam0_config* const cfg = dev->config;
+    Tcc* regs = cfg->regs;
 	uint32_t top = 1 << cfg->counter_size;
 	uint32_t invert_mask = 1 << channel;
 	bool invert = ((flags & PWM_POLARITY_INVERTED) != 0);
@@ -70,6 +68,7 @@ static int pwm_sam0_set_cycles(const struct device *dev, uint32_t channel,
 	if (channel >= cfg->channels) {
 		return -EINVAL;
 	}
+
 	if (period_cycles >= top || pulse_cycles >= top) {
 		return -EINVAL;
 	}
@@ -100,17 +99,15 @@ static int pwm_sam0_set_cycles(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int pwm_sam0_init(const struct device *dev)
-{
-	const struct pwm_sam0_config *const cfg = dev->config;
-	Tcc *regs = cfg->regs;
-	int retval;
+static int pwm_sam0_init(const struct device* dev) {
+    const struct pwm_sam0_config* const cfg = dev->config;
+    Tcc* regs = cfg->regs;
+    int retval;
 
 	/* Enable the clocks */
 #ifdef MCLK
-	GCLK->PCHCTRL[cfg->gclk_id].reg =
-		GCLK_PCHCTRL_GEN_GCLK0 | GCLK_PCHCTRL_CHEN;
-	*cfg->mclk |= cfg->mclk_mask;
+    GCLK->PCHCTRL[cfg->gclk_id].reg = (GCLK_PCHCTRL_GEN_GCLK0 | GCLK_PCHCTRL_CHEN);
+    *cfg->mclk |= cfg->mclk_mask;
 #else
 	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 |
 			    GCLK_CLKCTRL_CLKEN;
@@ -126,8 +123,8 @@ static int pwm_sam0_init(const struct device *dev)
 	wait_synchronization(regs);
 
 	regs->CTRLA.reg = cfg->prescaler;
-	regs->WAVE.reg = TCC_WAVE_WAVEGEN_NPWM;
-	regs->PER.reg = TCC_PER_PER(1);
+	regs->WAVE.reg  = TCC_WAVE_WAVEGEN_NPWM;
+	regs->PER.reg   = TCC_PER_PER(1);
 
 	regs->CTRLA.bit.ENABLE = 1;
 	wait_synchronization(regs);
