@@ -24,9 +24,41 @@
 #define NUM_STD_FILTER_ELEMENTS DT_PROP(MCAN_DT_PATH, std_filter_elements)
 #define NUM_EXT_FILTER_ELEMENTS DT_PROP(MCAN_DT_PATH, ext_filter_elements)
 #define NUM_RX_FIFO0_ELEMENTS   DT_PROP(MCAN_DT_PATH, rx_fifo0_elements)
-#define NUM_RX_FIFO1_ELEMENTS   DT_PROP(MCAN_DT_PATH, rx_fifo0_elements)
+#define NUM_RX_FIFO1_ELEMENTS   DT_PROP(MCAN_DT_PATH, rx_fifo1_elements)
 #define NUM_RX_BUF_ELEMENTS     DT_PROP(MCAN_DT_PATH, rx_buffer_elements)
 #define NUM_TX_BUF_ELEMENTS     DT_PROP(MCAN_DT_PATH, tx_buffer_elements)
+
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS, workaround for zero-length array */
+#if (NUM_STD_FILTER_ELEMENTS == 0)
+#undef NUM_STD_FILTER_ELEMENTS
+#define NUM_STD_FILTER_ELEMENTS 1
+#endif
+
+#if (NUM_EXT_FILTER_ELEMENTS == 0)
+#undef NUM_EXT_FILTER_ELEMENTS
+#define NUM_EXT_FILTER_ELEMENTS 1
+#endif
+
+#if (NUM_RX_FIFO0_ELEMENTS == 0)
+#undef NUM_RX_FIFO0_ELEMENTS
+#define NUM_RX_FIFO0_ELEMENTS   1
+#endif
+
+#if (NUM_RX_FIFO1_ELEMENTS == 0)
+#undef NUM_RX_FIFO1_ELEMENTS
+#define NUM_RX_FIFO1_ELEMENTS   1
+#endif
+
+#if (NUM_RX_BUF_ELEMENTS == 0)
+#undef NUM_RX_BUF_ELEMENTS
+#define NUM_RX_BUF_ELEMENTS     1
+#endif
+
+#if (NUM_TX_BUF_ELEMENTS == 0)
+#undef NUM_TX_BUF_ELEMENTS
+#define NUM_TX_BUF_ELEMENTS     1
+#endif
+#endif
 
 #ifdef CONFIG_CAN_STM32FD
 #define NUM_STD_FILTER_DATA CONFIG_CAN_MAX_STD_ID_FILTER
