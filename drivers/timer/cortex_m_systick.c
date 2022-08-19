@@ -245,41 +245,36 @@ uint32_t sys_clock_elapsed(void)
 	return cyc / CYC_PER_TICK;
 }
 
-uint32_t sys_clock_cycle_get_32(void)
-{
-	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint32_t ret = elapsed() + cycle_count;
+uint32_t sys_clock_cycle_get_32(void) {
+    k_spinlock_key_t key = k_spin_lock(&lock);
+    uint32_t ret = elapsed() + cycle_count;
 
-	k_spin_unlock(&lock, key);
-	return ret;
+    k_spin_unlock(&lock, key);
+
+    return (ret);
 }
 
-void sys_clock_idle_exit(void)
-{
-	if (last_load == TIMER_STOPPED) {
-		SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
-	}
+void sys_clock_idle_exit(void) {
+    if (last_load == TIMER_STOPPED) {
+        SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
+    }
 }
 
-void sys_clock_disable(void)
-{
-	SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
+void sys_clock_disable(void) {
+    SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 }
 
-static int sys_clock_driver_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
+static int sys_clock_driver_init(const struct device* dev) {
+    ARG_UNUSED(dev);
 
-	NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
-	last_load = CYC_PER_TICK - 1;
-	overflow_cyc = 0U;
-	SysTick->LOAD = last_load;
-	SysTick->VAL = 0; /* resets timer to last_load */
-	SysTick->CTRL |= (SysTick_CTRL_ENABLE_Msk |
-			  SysTick_CTRL_TICKINT_Msk |
-			  SysTick_CTRL_CLKSOURCE_Msk);
-	return 0;
+    NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
+    last_load = CYC_PER_TICK - 1;
+    overflow_cyc = 0U;
+    SysTick->LOAD = last_load;
+    SysTick->VAL = 0; /* resets timer to last_load */
+    SysTick->CTRL |= (SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_CLKSOURCE_Msk);
+    return 0;
 }
 
 SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+         CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

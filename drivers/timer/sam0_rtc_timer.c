@@ -33,8 +33,7 @@
 #endif
 
 /* Number of sys timer cycles per on tick. */
-#define CYCLES_PER_TICK (RTC_CLOCK_HW_CYCLES_PER_SEC \
-			 / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define CYCLES_PER_TICK     (RTC_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 /* Maximum number of ticks. */
 #define MAX_TICKS (UINT32_MAX / CYCLES_PER_TICK - 2)
@@ -48,9 +47,9 @@
  */
 #define TICK_THRESHOLD 7
 
-BUILD_ASSERT(CYCLES_PER_TICK > TICK_THRESHOLD,
-	     "CYCLES_PER_TICK must be greater than TICK_THRESHOLD for "
-	     "tickless mode");
+BUILD_ASSERT((CYCLES_PER_TICK > TICK_THRESHOLD),
+             "CYCLES_PER_TICK must be greater than TICK_THRESHOLD for "
+             "tickless mode");
 
 #else /* !CONFIG_TICKLESS_KERNEL */
 
@@ -65,8 +64,8 @@ BUILD_ASSERT(CYCLES_PER_TICK > 1,
 #endif /* CONFIG_TICKLESS_KERNEL */
 
 /* Helper macro to get the correct GCLK GEN based on configuration. */
-#define GCLK_GEN(n) GCLK_EVAL(n)
-#define GCLK_EVAL(n) GCLK_CLKCTRL_GEN_GCLK##n
+#define GCLK_GEN(n)     GCLK_EVAL(n)
+#define GCLK_EVAL(n)    GCLK_CLKCTRL_GEN_GCLK##n
 
 /* Tick/cycle count of the last announce call. */
 static volatile uint32_t rtc_last;
@@ -144,8 +143,7 @@ static void rtc_reset(void)
 #endif
 }
 
-static void rtc_isr(const void *arg)
-{
+static void rtc_isr(const void* arg) {
 	ARG_UNUSED(arg);
 
 	/* Read and clear the interrupt flag register. */
@@ -154,7 +152,6 @@ static void rtc_isr(const void *arg)
 	RTC0->INTFLAG.reg = status;
 
 #ifdef CONFIG_TICKLESS_KERNEL
-
 	/* Read the current counter and announce the elapsed time in ticks. */
 	uint32_t count = rtc_count();
 
