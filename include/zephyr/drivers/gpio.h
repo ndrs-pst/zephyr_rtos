@@ -1219,15 +1219,11 @@ static inline int gpio_pin_get_dt(const struct gpio_dt_spec* spec) {
  * @retval -EIO I/O error when accessing an external GPIO chip.
  * @retval -EWOULDBLOCK if operation would block.
  */
-static inline int gpio_pin_set_raw(const struct device *port, gpio_pin_t pin,
-				   int value)
-{
-	__unused const struct gpio_driver_config *const cfg =
-		(const struct gpio_driver_config *)port->config;
-	int ret;
+static inline int gpio_pin_set_raw(const struct device* port, gpio_pin_t pin, int value) {
+    __unused const struct gpio_driver_config* const cfg = (const struct gpio_driver_config*)port->config;
+    int ret;
 
-	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
-		 "Unsupported pin");
+    __ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U, "Unsupported pin");
 
     if (value != 0) {
         ret = gpio_port_set_bits_raw(port, (gpio_port_pins_t)BIT(pin));
@@ -1260,22 +1256,17 @@ static inline int gpio_pin_set_raw(const struct device *port, gpio_pin_t pin,
  * @retval -EIO I/O error when accessing an external GPIO chip.
  * @retval -EWOULDBLOCK if operation would block.
  */
-static inline int gpio_pin_set(const struct device *port, gpio_pin_t pin,
-			       int value)
-{
-	__unused const struct gpio_driver_config *const cfg =
-		(const struct gpio_driver_config *)port->config;
-	const struct gpio_driver_data *const data =
-			(const struct gpio_driver_data *)port->data;
+static inline int gpio_pin_set(const struct device* port, gpio_pin_t pin, int value) {
+    __unused const struct gpio_driver_config* const cfg = (const struct gpio_driver_config*)port->config;
+    const struct gpio_driver_data* const data = (const struct gpio_driver_data*)port->data;
 
-	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
-		 "Unsupported pin");
+    __ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U, "Unsupported pin");
 
-	if (data->invert & (gpio_port_pins_t)BIT(pin)) {
-		value = (value != 0) ? 0 : 1;
-	}
+    if (data->invert & (gpio_port_pins_t)BIT(pin)) {
+        value = (value != 0) ? 0 : 1;
+    }
 
-	return gpio_pin_set_raw(port, pin, value);
+    return gpio_pin_set_raw(port, pin, value);
 }
 
 /**

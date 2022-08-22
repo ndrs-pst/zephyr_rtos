@@ -790,7 +790,7 @@ int device_supported_foreach(const struct device *dev,
  * the device is not found or if the device with that name's
  * initialization function failed.
  */
-__syscall const struct device *device_get_binding(const char *name);
+__syscall const struct device* device_get_binding(const char* name);
 
 /** @brief Get access to the static array of static devices.
  *

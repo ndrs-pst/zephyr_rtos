@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Bryan O'Donoghue
+ * Copyright (c) 2022 NDR Solution (Thailand) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,17 +13,17 @@
     compatible = "atsamc21,xpro", "atmel,samc21j18a", "atmel,samc21";
 
     chosen {
-        zephyr,console = &sercom4;
+        zephyr,console    = &sercom4;
         zephyr,shell-uart = &sercom4;
-        zephyr,sram = &sram0;
-        zephyr,flash = &flash0;
-        zephyr,canbus = &can0;
+        zephyr,sram       = &sram0;
+        zephyr,flash      = &flash0;
+        zephyr,canbus     = &can0;
     };
 
     /* These aliases are provided for compatibility with samples */
     aliases {
-        led0 = &led0;
-        led1 = &led0;
+        led-0 = &led0;
+        led-1 = &led0;
         pwm-led0 = &pwm_led0;
         sw0 = &user_button;
         i2c-0 = &sercom2;

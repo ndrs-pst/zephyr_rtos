@@ -378,10 +378,14 @@ DEVICE_DT_DEFINE(DT_NODELABEL(portd),
                  &gpio_sam0_api);
 #endif
 
-#if (__GTEST == 1)                          /* #CUSTOM@NDRS */
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
 #include "samc21_reg_stub.h"
 void zephyr_gpio_sam0_gtest(void) {
-    gpio_sam0_config_0.regs = (PortGroup*)ut_mcu_port_ptr;
+    Port* port_ptr;
+
+    port_ptr = (Port*)ut_mcu_port_ptr;
+    gpio_sam0_config_0.regs = &port_ptr->Group[0];
+    gpio_sam0_config_1.regs = &port_ptr->Group[1];
 }
 
 void zephyr_gpio_sam0_set_regs(const struct gpio_dt_spec* spec, volatile void* reg_ptr) {

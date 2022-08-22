@@ -280,8 +280,8 @@ struct pinctrl_dev_config {
  * @retval 0 If state has been found.
  * @retval -ENOENT If the state has not been found.
  */
-int pinctrl_lookup_state(const struct pinctrl_dev_config *config, uint8_t id,
-			 const struct pinctrl_state **state);
+int pinctrl_lookup_state(const struct pinctrl_dev_config* config, uint8_t id,
+                         const struct pinctrl_state** state);
 
 /**
  * @brief Configure a set of pins.
@@ -300,7 +300,7 @@ int pinctrl_lookup_state(const struct pinctrl_dev_config *config, uint8_t id,
  * @retval -errno Negative errno for other failures.
  */
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
-			   uintptr_t reg);
+                           uintptr_t reg);
 
 /**
  * @brief Apply a state directly from the provided state configuration.

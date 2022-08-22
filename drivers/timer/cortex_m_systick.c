@@ -9,13 +9,13 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 
-#define COUNTER_MAX 0x00ffffff
-#define TIMER_STOPPED 0xff000000
+#define COUNTER_MAX     0x00FFFFFFUL
+#define TIMER_STOPPED   0xFF000000UL
 
-#define CYC_PER_TICK (sys_clock_hw_cycles_per_sec()	\
-		      / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#define MAX_TICKS ((COUNTER_MAX / CYC_PER_TICK) - 1)
-#define MAX_CYCLES (MAX_TICKS * CYC_PER_TICK)
+#define CYC_PER_TICK    (sys_clock_hw_cycles_per_sec()  \
+                         / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define MAX_TICKS       ((COUNTER_MAX / CYC_PER_TICK) - 1UL)
+#define MAX_CYCLES      (MAX_TICKS * CYC_PER_TICK)
 
 /* Minimum cycles in the future to try to program.  Note that this is
  * NOT simply "enough cycles to get the counter read and reprogrammed
@@ -26,7 +26,7 @@
  * masked.  Choosing a fraction of a tick is probably a good enough
  * default, with an absolute minimum of 1k cyc.
  */
-#define MIN_DELAY MAX(1024, (CYC_PER_TICK/16))
+#define MIN_DELAY MAX(1024UL, (CYC_PER_TICK / 16UL))
 
 #define TICKLESS (IS_ENABLED(CONFIG_TICKLESS_KERNEL))
 
@@ -166,7 +166,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 #if defined(CONFIG_TICKLESS_KERNEL)
 	uint32_t delay;
-	uint32_t val1, val2;
+	uint32_t val1;
+	uint32_t val2;
 	uint32_t last_load_ = last_load;
 
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
