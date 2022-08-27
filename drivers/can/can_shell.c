@@ -11,7 +11,7 @@
 #include <stdlib.h>
 
 CAN_MSGQ_DEFINE(msgq, 4);
-const struct shell *msgq_shell;
+const struct shell* msgq_shell;
 static struct k_work_poll msgq_work;
 static struct k_poll_event msgq_events[1] = {
 	K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,

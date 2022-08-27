@@ -1241,7 +1241,7 @@ UART_SAM0_IRQ_HANDLER(n)
 
 DT_INST_FOREACH_STATUS_OKAY(UART_SAM0_DEVICE_INIT)
 
-#if (__GTEST == 1)                          /* #CUSTOM@NDRS */
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
 #include "samc21_reg_stub.h"
 
 void zephyr_uart_sam0_gtest(void) {
