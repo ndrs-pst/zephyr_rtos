@@ -186,7 +186,7 @@ struct zcan_frame {
 #endif
 	/** The frame payload data. */
 	union {
-		uint8_t data[CAN_MAX_DLEN];
+		uint8_t  data[CAN_MAX_DLEN];
 		uint32_t data_32[ceiling_fraction(CAN_MAX_DLEN, sizeof(uint32_t))];
 	};
 };

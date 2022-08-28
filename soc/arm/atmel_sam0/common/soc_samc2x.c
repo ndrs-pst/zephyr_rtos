@@ -36,9 +36,10 @@ static void flash_waitstates_init(void) {
 }
 
 /*
- *  XOSC32K(32.768 kHz)                 -> DFLL48M -> GCLK0 (48 MHz)
- *  XOSC48M(48 MHz) / 48 = GCLK1(1 MHz) -> DFLL48M -> GCLK0 (48 MHz)
- *  XOSC(8 MHz) / 8      = 1 MHz        -> DFLL48M -> GCLK0 (48 MHz)
+ *  XOSC32K(32.768 kHz)                     -> DFLL48M -> GCLK0 (48 MHz)
+ *  XOSC48M(OUT 16 MHz) / 16 = GCLK3(1 MHz) -> DFLL48M -> GCLK0 (48 MHz)
+ *  XOSC( 8 MHz) /  8        = 1 MHz        -> DFLL48M -> GCLK0 (48 MHz)
+ *  XOSC(16 MHz) / 16        = 1 MHz        -> DFLL48M -> GCLK0 (48 MHz)
  */
 
 static void xosc_init(void) {
@@ -122,20 +123,20 @@ static void fdpll_init(void) {
         OSCCTRL->DPLLRATIO.reg = OSCCTRL_DPLLRATIO_LDRFRAC(2UL) | OSCCTRL_DPLLRATIO_LDR(1952UL);
     }
 #elif defined(CONFIG_SOC_ATMEL_SAMC_OSC48M_AS_MAIN)
-	// Enable GCLK_DPLL : FDPLL96M input clock source for reference
-    GCLK->PCHCTRL[0].reg = GCLK_PCHCTRL_GEN(0x1UL) | GCLK_PCHCTRL_CHEN;
+    /* Route OSC48M(16 MHz) / 16 = GCLK3 (1 MHz) */
+    GCLK->GENCTRL[3].reg = (GCLK_GENCTRL_DIV(16UL) | GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_OSC48M_Val) |
+                            GCLK_GENCTRL_RUNSTDBY  | GCLK_GENCTRL_GENEN);
+    while (GCLK->SYNCBUSY.bit.GENCTRL3 == 1) {
+        /* wait for the Generator 3 synchronization */
+    }
+
+    /* Enable GCLK3 as GCLK_DPLL : FDPLL96M input clock source for reference */
+    GCLK->PCHCTRL[0].reg = GCLK_PCHCTRL_GEN(0x3UL) | GCLK_PCHCTRL_CHEN;
     while (GCLK->PCHCTRL[0].bit.CHEN == 1U) {
         /* Wait for synchronization */
     }
 
-	/* Route OSC48M(48 MHz) / 48 = GCLK1 (1 MHz) */
-    GCLK->GENCTRL[1].reg = (GCLK_GENCTRL_DIV(48UL) | GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_OSC48M_Val) |
-                            GCLK_GENCTRL_RUNSTDBY  | GCLK_GENCTRL_GENEN);
-    while (GCLK->SYNCBUSY.bit.GENCTRL1 == 1) {
-        /* wait for the Generator 1 synchronization */
-    }
-
-    /* GCLK1 (1 MHz) x 48 = 48 MHz / 1 = 48 MHz */
+    /* GCLK3 (1 MHz) x 48 = 48 MHz / 1 = 48 MHz */
     OSCCTRL->DPLLCTRLB.reg = (OSCCTRL_DPLLCTRLB_FILTER(0UL) | OSCCTRL_DPLLCTRLB_LTIME(0UL)| OSCCTRL_DPLLCTRLB_LBYPASS |
                               OSCCTRL_DPLLCTRLB_REFCLK(2UL));
 #elif defined(CONFIG_SOC_ATMEL_SAMC_XOSC_AS_MAIN)
@@ -205,8 +206,8 @@ static void osc48m_init(void) {
     cal_val = (uint32_t)(((*(uint64_t*)0x806020UL) >> 41 ) & 0x3fffffUL);
     OSCCTRL->CAL48M.reg = cal_val;
 
-    /* Selection of the Division Value */
-    OSCCTRL->OSC48MDIV.reg = (uint8_t)OSCCTRL_OSC48MDIV_DIV(0UL);
+    /* Selection of the Division Value (48 MHz / 3 = 16 MHz) */
+    OSCCTRL->OSC48MDIV.reg = (uint8_t)OSCCTRL_OSC48MDIV_DIV(2UL);
 
     while (OSCCTRL->OSC48MSYNCBUSY.bit.OSC48MDIV == 1) {
         /* Waiting for the synchronization */
@@ -221,15 +222,26 @@ static void osc48m_init(void) {
 }
 
 static void gclks_init(void) {
-    /* OSC48M/2 -> GCLK3 */
-    GCLK->GENCTRL[3].reg = (GCLK_GENCTRL_DIV(2UL) | GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_OSC48M_Val) |
-                            GCLK_GENCTRL_IDC      | GCLK_GENCTRL_RUNSTDBY | GCLK_GENCTRL_GENEN);
-    wait_gclk_sync(GCLK_SYNCBUSY_GENCTRL_GCLK3);
+    #if defined(CONFIG_SOC_ATMEL_SAMC_XOSC_AS_MAIN)
+    if (SOC_ATMEL_SAMC_XOSC_FREQ_HZ == 8000000UL) {
+        /* XOSC(8M)/1 -> GCLK2 */
+        GCLK->GENCTRL[2].reg = (GCLK_GENCTRL_DIV(1UL) | GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_XOSC_Val) |
+                                GCLK_GENCTRL_IDC      | GCLK_GENCTRL_RUNSTDBY | GCLK_GENCTRL_GENEN);
+        wait_gclk_sync(GCLK_SYNCBUSY_GENCTRL_GCLK2);
+    }
 
-    /* OSCULP32K/32 -> GCLK2 */
-    GCLK->GENCTRL[2].reg = (GCLK_GENCTRL_DIV(32UL) | GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_OSCULP32K_Val) |
+    if (SOC_ATMEL_SAMC_XOSC_FREQ_HZ == 16000000UL) {
+        /* XOSC(16M)/2 -> GCLK2 */
+        GCLK->GENCTRL[2].reg = (GCLK_GENCTRL_DIV(2UL) | GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_XOSC_Val) |
+                                GCLK_GENCTRL_IDC      | GCLK_GENCTRL_RUNSTDBY | GCLK_GENCTRL_GENEN);
+        wait_gclk_sync(GCLK_SYNCBUSY_GENCTRL_GCLK2);
+    }
+    #endif
+
+    /* FDPLL/2 -> GCLK1 */
+    GCLK->GENCTRL[1].reg = (GCLK_GENCTRL_DIV(2UL) | GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_DPLL96M_Val) |
                             GCLK_GENCTRL_IDC      | GCLK_GENCTRL_RUNSTDBY | GCLK_GENCTRL_GENEN);
-    wait_gclk_sync(GCLK_SYNCBUSY_GENCTRL_GCLK2);
+    wait_gclk_sync(GCLK_SYNCBUSY_GENCTRL_GCLK1);
 
     /* FDPLL/1 -> GCLK0 */
     GCLK->GENCTRL[0].reg = (GCLK_GENCTRL_DIV(1UL) | GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_DPLL96M_Val) |

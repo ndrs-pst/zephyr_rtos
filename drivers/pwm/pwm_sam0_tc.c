@@ -99,11 +99,10 @@ static int pwm_sam0_tc_init(const struct device* dev) {
 
 	/* Enable the clocks */
 #ifdef MCLK
-    GCLK->PCHCTRL[cfg->gclk_id].reg = (GCLK_PCHCTRL_GEN_GCLK0 | GCLK_PCHCTRL_CHEN);
+    GCLK->PCHCTRL[cfg->gclk_id].reg = (GCLK_PCHCTRL_GEN_GCLK1 | GCLK_PCHCTRL_CHEN);
     *cfg->mclk |= cfg->mclk_mask;
 #else
-	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 |
-			    GCLK_CLKCTRL_CLKEN;
+	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK1 | GCLK_CLKCTRL_CLKEN;
 	PM->APBCMASK.reg |= cfg->pm_apbcmask;
 #endif
 
@@ -149,7 +148,7 @@ static const struct pwm_driver_api pwm_sam0_tc_driver_api = {
 		.channels = DT_INST_PROP(inst, channels),		       \
 		.counter_size = DT_INST_PROP(inst, counter_size),	       \
 		.prescaler = UTIL_CAT(TCC_CTRLA_PRESCALER_DIV, DT_INST_PROP(inst, prescaler)),	       \
-		.freq = SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / DT_INST_PROP(inst, prescaler),       \
+		.freq = SOC_ATMEL_SAM0_GCLK1_FREQ_HZ / DT_INST_PROP(inst, prescaler),       \
 		PWM_SAM0_TC_INIT_CLOCKS(inst),				       \
 	};								       \
 									       \

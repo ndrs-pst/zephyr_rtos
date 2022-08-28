@@ -216,8 +216,7 @@ static void print_frame(struct zcan_frame *frame, const struct shell *sh)
 
 	for (int i = 0; i < CAN_MAX_DLEN; i++) {
 		if (i < frame->dlc) {
-			shell_fprintf(sh, SHELL_NORMAL, " 0x%02x",
-				      frame->data[i]);
+			shell_fprintf(sh, SHELL_NORMAL, " 0x%02x", frame->data[i]);
 		} else {
 			shell_fprintf(sh, SHELL_NORMAL, "     ");
 		}
@@ -409,19 +408,19 @@ static int cmd_add_rx_filter(const struct shell *sh, size_t argc, char **argv)
 	filter.rtr_mask = rtr_mask;
 
 	shell_print(sh, "Add RX filter with ID 0x%x (%s ID), mask 0x%x, RTR %d",
-		    filter.id, ext ? "extended" : "standard", filter.id_mask,
-		    filter.rtr_mask);
+	            filter.id, ext ? "extended" : "standard", filter.id_mask, filter.rtr_mask);
 
 	ret = can_add_rx_filter_msgq(can_dev, &msgq, &filter);
-	if (ret < 0) {
-		if (ret == -ENOSPC) {
-			shell_error(sh, "Failed to add RX filter, no free filter left");
-		} else {
-			shell_error(sh, "Failed to add RX filter [%d]", ret);
-		}
+    if (ret < 0) {
+        if (ret == -ENOSPC) {
+            shell_error(sh, "Failed to add RX filter, no free filter left");
+        }
+        else {
+            shell_error(sh, "Failed to add RX filter [%d]", ret);
+        }
 
-		return -EIO;
-	}
+        return -EIO;
+    }
 
 	shell_print(sh, "Filter ID: %d", ret);
 
@@ -430,8 +429,7 @@ static int cmd_add_rx_filter(const struct shell *sh, size_t argc, char **argv)
 		k_work_poll_init(&msgq_work, msgq_triggered_work_handler);
 	}
 
-	ret = k_work_poll_submit(&msgq_work, msgq_events,
-				 ARRAY_SIZE(msgq_events), K_FOREVER);
+    ret = k_work_poll_submit(&msgq_work, msgq_events, ARRAY_SIZE(msgq_events), K_FOREVER);
 	if (ret != 0) {
 		shell_error(sh, "Failed to submit msgq polling [%d]", ret);
 	}
@@ -447,8 +445,7 @@ static int cmd_remove_rx_filter(const struct shell *sh, size_t argc, char **argv
 
 	can_dev = device_get_binding(argv[1]);
 	if (!can_dev) {
-		shell_error(sh, "Can't get binding to device \"%s\"",
-			    argv[1]);
+		shell_error(sh, "Can't get binding to device \"%s\"", argv[1]);
 		return -EINVAL;
 	}
 

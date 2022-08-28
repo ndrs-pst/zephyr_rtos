@@ -129,7 +129,7 @@ static int spi_sam0_configure(const struct device* dev,
             ctrlb.reg = (SERCOM_SPI_CTRLB_RXEN | SERCOM_USART_CTRLB_CHSIZE(0));
 
             /* Use the requested or next highest possible frequency */
-            div = ((SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / config->frequency) / 2U) - 1U;
+            div = ((SOC_ATMEL_SAM0_GCLK1_FREQ_HZ / config->frequency) / 2U) - 1U;
             div = CLAMP(div, 0, UINT8_MAX);
 
             /* Update the configuration only if it has changed */
@@ -687,13 +687,13 @@ static int spi_sam0_init(const struct device* dev) {
 
 #ifdef MCLK
     /* Enable the GCLK */
-    GCLK->PCHCTRL[cfg->gclk_core_id].reg = GCLK_PCHCTRL_GEN_GCLK0 | GCLK_PCHCTRL_CHEN;
+    GCLK->PCHCTRL[cfg->gclk_core_id].reg = GCLK_PCHCTRL_GEN_GCLK1 | GCLK_PCHCTRL_CHEN;
 
     /* Enable the MCLK */
     *cfg->mclk |= cfg->mclk_mask;
 #else
     /* Enable the GCLK */
-    GCLK->CLKCTRL.reg = (cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_CLKEN);
+    GCLK->CLKCTRL.reg = (cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK1 | GCLK_CLKCTRL_CLKEN);
 
     /* Enable SERCOM clock in PM */
     PM->APBCMASK.reg |= cfg->pm_apbcmask;

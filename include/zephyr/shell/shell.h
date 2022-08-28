@@ -957,7 +957,7 @@ int shell_stop(const struct shell *shell);
 /**
  * @brief Green text color for shell_fprintf function.
  */
-#define SHELL_INFO	SHELL_VT100_COLOR_GREEN
+#define SHELL_INFO      SHELL_VT100_COLOR_GREEN
 
 /**
  * @brief Cyan text color for shell_fprintf function.

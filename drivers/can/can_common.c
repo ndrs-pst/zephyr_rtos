@@ -12,10 +12,10 @@
 LOG_MODULE_REGISTER(can_common, CONFIG_CAN_LOG_LEVEL);
 
 /* Maximum acceptable deviation in sample point location (permille) */
-#define SAMPLE_POINT_MARGIN 50
+#define SAMPLE_POINT_MARGIN     50
 
 /* CAN sync segment is always one time quantum */
-#define CAN_SYNC_SEG 1
+#define CAN_SYNC_SEG            1
 
 static void can_msgq_put(const struct device* dev, struct zcan_frame const* frame, void* user_data) {
     struct k_msgq* msgq = (struct k_msgq*)user_data;
@@ -76,20 +76,19 @@ static int update_sampling_pnt(uint32_t ts, uint32_t sp, struct can_timing *res,
 }
 
 /* Internal function to do the actual calculation */
-static int can_calc_timing_int(uint32_t core_clock, struct can_timing *res,
-			       const struct can_timing *min,
-			       const struct can_timing *max,
-			       uint32_t bitrate, uint16_t sp)
-{
-	uint32_t ts = max->prop_seg + max->phase_seg1 + max->phase_seg2 + CAN_SYNC_SEG;
+static int can_calc_timing_int(uint32_t core_clock, struct can_timing* res,
+                               const struct can_timing* min,
+                               const struct can_timing* max,
+                               uint32_t bitrate, uint16_t sp) {
+    uint32_t ts = max->prop_seg + max->phase_seg1 + max->phase_seg2 + CAN_SYNC_SEG;
 	uint16_t sp_err_min = UINT16_MAX;
 	int sp_err;
 	struct can_timing tmp_res;
 
-	if (bitrate == 0 || sp >= 1000 ||
-	    (!IS_ENABLED(CONFIG_CAN_FD_MODE) && bitrate > 1000000) ||
-	     (IS_ENABLED(CONFIG_CAN_FD_MODE) && bitrate > 8000000)) {
-		return -EINVAL;
+	if ((bitrate == 0) || (sp >= 1000) ||
+	    (!IS_ENABLED(CONFIG_CAN_FD_MODE) && (bitrate > 1000000)) ||
+	     (IS_ENABLED(CONFIG_CAN_FD_MODE) && (bitrate > 8000000))) {
+		return (-EINVAL);
 	}
 
     for (int prescaler = MAX(core_clock / (ts * bitrate), 1); prescaler <= max->prescaler; ++prescaler) {
@@ -100,8 +99,7 @@ static int can_calc_timing_int(uint32_t core_clock, struct can_timing *res,
 
 		ts = core_clock / (prescaler * bitrate);
 
-		sp_err = update_sampling_pnt(ts, sp, &tmp_res,
-					     max, min);
+        sp_err = update_sampling_pnt(ts, sp, &tmp_res, max, min);
 		if (sp_err < 0) {
 			/* No prop_seg, seg1, seg2 combination possible */
 			continue;
@@ -109,10 +107,11 @@ static int can_calc_timing_int(uint32_t core_clock, struct can_timing *res,
 
 		if (sp_err < sp_err_min) {
 			sp_err_min = sp_err;
-			res->prop_seg = tmp_res.prop_seg;
+			res->prop_seg   = tmp_res.prop_seg;
 			res->phase_seg1 = tmp_res.phase_seg1;
 			res->phase_seg2 = tmp_res.phase_seg2;
-			res->prescaler = (uint16_t)prescaler;
+			res->prescaler  = (uint16_t)prescaler;
+
 			if (sp_err == 0) {
 				/* No better result than a perfect match*/
 				break;
@@ -128,20 +127,19 @@ static int can_calc_timing_int(uint32_t core_clock, struct can_timing *res,
 }
 
 
-int z_impl_can_calc_timing(const struct device *dev, struct can_timing *res,
-			   uint32_t bitrate, uint16_t sample_pnt)
-{
-	const struct can_timing *min = can_get_timing_min(dev);
-	const struct can_timing *max = can_get_timing_max(dev);
-	uint32_t core_clock;
-	int ret;
+int z_impl_can_calc_timing(const struct device* dev, struct can_timing* res,
+                           uint32_t bitrate, uint16_t sample_pnt) {
+    const struct can_timing* min = can_get_timing_min(dev);
+    const struct can_timing* max = can_get_timing_max(dev);
+    uint32_t core_clock;
+    int ret;
 
-	ret = can_get_core_clock(dev, &core_clock);
-	if (ret != 0) {
-		return ret;
-	}
+    ret = can_get_core_clock(dev, &core_clock);
+    if (ret == 0) {
+        ret = can_calc_timing_int(core_clock, res, min, max, bitrate, sample_pnt);
+    }
 
-	return can_calc_timing_int(core_clock, res, min, max, bitrate, sample_pnt);
+    return (ret);
 }
 
 #ifdef CONFIG_CAN_FD_MODE
@@ -186,51 +184,52 @@ int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
  * @param  bitrate The bitrate in bits/second.
  * @return The sample point in permille.
  */
-uint16_t sample_point_for_bitrate(uint32_t bitrate)
-{
-	uint16_t sample_pnt;
+uint16_t sample_point_for_bitrate(uint32_t bitrate) {
+    uint16_t sample_pnt;
 
-	if (bitrate > 800000) {
-		/* 75.0% */
-		sample_pnt = 750;
-	} else if (bitrate > 500000) {
-		/* 80.0% */
-		sample_pnt = 800;
-	} else {
-		/* 87.5% */
-		sample_pnt = 875;
-	}
+    if (bitrate > 800000) {
+        /* 75.0% */
+        sample_pnt = 750;
+    }
+    else if (bitrate > 500000) {
+        /* 80.0% */
+        sample_pnt = 800;
+    }
+    else {
+        /* 87.5% */
+        sample_pnt = 875;
+    }
 
-	return sample_pnt;
+    return (sample_pnt);
 }
 
-int z_impl_can_set_bitrate(const struct device *dev, uint32_t bitrate)
-{
-	struct can_timing timing;
-	uint32_t max_bitrate;
-	uint16_t sample_pnt;
-	int ret;
+int z_impl_can_set_bitrate(const struct device* dev, uint32_t bitrate) {
+    struct can_timing timing;
+    uint32_t max_bitrate;
+    uint16_t sample_pnt;
+    int ret;
 
-	ret = can_get_max_bitrate(dev, &max_bitrate);
-	if (ret == -ENOSYS) {
-		/* Maximum bitrate unknown */
-		max_bitrate = 0;
-	} else if (ret < 0) {
-		return ret;
-	}
+    ret = can_get_max_bitrate(dev, &max_bitrate);
+    if (ret == -ENOSYS) {
+        /* Maximum bitrate unknown */
+        max_bitrate = 0;
+    }
+    else if (ret < 0) {
+        return (ret);
+    }
 
 	if ((max_bitrate > 0) && (bitrate > max_bitrate)) {
-		return -ENOTSUP;
+		return (-ENOTSUP);
 	}
 
 	sample_pnt = sample_point_for_bitrate(bitrate);
 	ret = can_calc_timing(dev, &timing, bitrate, sample_pnt);
 	if (ret < 0) {
-		return -EINVAL;
+		return (-EINVAL);
 	}
 
 	if (ret > SAMPLE_POINT_MARGIN) {
-		return -EINVAL;
+		return (-EINVAL);
 	}
 
 	timing.sjw = CAN_SJW_NO_CHANGE;

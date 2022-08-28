@@ -52,14 +52,14 @@ struct can_sam0_data {
 static int can_sam0_get_core_clock(const struct device* dev, uint32_t* rate) {
     ARG_UNUSED(dev);
 
-    *rate = SOC_ATMEL_SAM0_GCLK0_FREQ_HZ;
+    *rate = SOC_ATMEL_SAM0_GCLK1_FREQ_HZ;
 
     return (0);
 }
 
 static void can_sam0_clock_enable(const struct can_sam0_config* cfg) {
     /* Enable the GCLK */
-    GCLK->PCHCTRL[cfg->gclk_core_id].reg = GCLK_PCHCTRL_GEN_GCLK0 | GCLK_PCHCTRL_CHEN;
+    GCLK->PCHCTRL[cfg->gclk_core_id].reg = GCLK_PCHCTRL_GEN_GCLK1 | GCLK_PCHCTRL_CHEN;
 
     /* Enable the MCLK */
     *cfg->mclk |= cfg->mclk_mask;
@@ -210,7 +210,7 @@ static void config_can_##inst##_irq(void) {                                     
 }
 
 #define CAN_SAM0_CFG_INST(inst)                                                     \
-static const struct can_sam0_config can_sam0_cfg_##inst = {                         \
+static struct can_sam0_config DT_CONST can_sam0_cfg_##inst = {                      \
     .config_irq = config_can_##inst##_irq,                                          \
     .pcfg       = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                             \
     .mclk       = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(inst),             \
@@ -218,7 +218,7 @@ static const struct can_sam0_config can_sam0_cfg_##inst = {                     
     .gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(inst, gclk, periph_ch)              \
 };                                                                                  \
                                                                                     \
-static const struct can_mcan_config can_mcan_cfg_##inst =                           \
+static struct can_mcan_config DT_CONST can_mcan_cfg_##inst =                        \
     CAN_MCAN_DT_CONFIG_INST_GET(inst, &can_sam0_cfg_##inst);
 
 #define CAN_SAM0_DATA_INST(inst)                                \
@@ -243,3 +243,12 @@ static const struct can_mcan_config can_mcan_cfg_##inst =                       
     CAN_SAM0_DEVICE_INST(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_SAM0_INST)
+
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#include "samc21_reg_stub.h"
+void zephyr_can_sam0_gtest(void) {
+    can_mcan_cfg_0.can = (struct can_mcan_reg*)ut_mcu_can0_ptr;
+}
+
+#endif
+
