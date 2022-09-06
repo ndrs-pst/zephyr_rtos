@@ -17,7 +17,7 @@
 #include "samc21_reg_stub.h"
 static uintptr_t sam_port_addrs[2];
 
-void zephyr_pinctrl_sam0_gtest(void) {
+void zephyr_gtest_pinctrl_sam0(void) {
     Port* port_ptr;
 
     port_ptr = (Port*)ut_mcu_port_ptr;

@@ -1294,10 +1294,9 @@ static inline int gpio_pin_set_dt(const struct gpio_dt_spec* spec, int value) {
  * @retval -EIO I/O error when accessing an external GPIO chip.
  * @retval -EWOULDBLOCK if operation would block.
  */
-static inline int gpio_pin_toggle(const struct device *port, gpio_pin_t pin)
-{
-	__unused const struct gpio_driver_config *const cfg =
-		(const struct gpio_driver_config *)port->config;
+static inline int gpio_pin_toggle(const struct device* port, gpio_pin_t pin) {
+    __unused const struct gpio_driver_config* const cfg =
+		(const struct gpio_driver_config*)port->config;
 
 	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
 		 "Unsupported pin");

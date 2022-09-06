@@ -380,7 +380,7 @@ DEVICE_DT_DEFINE(DT_NODELABEL(portd),
 
 #if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
 #include "samc21_reg_stub.h"
-void zephyr_gpio_sam0_gtest(void) {
+void zephyr_gtest_gpio_sam0(void) {
     Port* port_ptr;
 
     port_ptr = (Port*)ut_mcu_port_ptr;

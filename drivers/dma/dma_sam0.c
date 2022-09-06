@@ -9,11 +9,18 @@
 #include <zephyr/device.h>
 #include <soc.h>
 #include <zephyr/drivers/dma.h>
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#include "samc21_reg_stub.h"
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dma_sam0, CONFIG_DMA_LOG_LEVEL);
 
-#define DMA_REGS    ((Dmac *)DT_INST_REG_ADDR(0))
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#define DMA_REGS    ((Dmac*)ut_mcu_dmac_ptr)
+#else
+#define DMA_REGS    ((Dmac*)DT_INST_REG_ADDR(0))
+#endif
 
 struct dma_sam0_channel {
     dma_callback_t cb;
@@ -44,7 +51,7 @@ static void dma_sam0_isr(const struct device* dev) {
 
     if ((pend & DMAC_INTPEND_TERR) != 0U) {
         if (chdata->cb != NULL) {
-            chdata->cb(dev, chdata->user_data, channel, -DMAC_INTPEND_TERR);
+            chdata->cb(dev, chdata->user_data, channel, -(int)(DMAC_INTPEND_TERR));
         }
     }
     else if ((pend & DMAC_INTPEND_TCMPL) != 0U) {
@@ -275,7 +282,7 @@ static int dma_sam0_start(const struct device* dev, uint32_t channel) {
     ARG_UNUSED(dev);
 
 #ifdef DMAC_CHID_ID
-    DMA_REGS->CHID.reg    = channel;
+    DMA_REGS->CHID.reg    = (uint8_t)(channel);
     DMA_REGS->CHCTRLA.reg = DMAC_CHCTRLA_ENABLE;
 
     if (DMA_REGS->CHCTRLB.bit.TRIGSRC == 0U) {
@@ -305,7 +312,7 @@ static int dma_sam0_stop(const struct device* dev, uint32_t channel) {
     ARG_UNUSED(dev);
 
 #ifdef DMAC_CHID_ID
-    DMA_REGS->CHID.reg = channel;
+    DMA_REGS->CHID.reg = (uint8_t)(channel);
     DMA_REGS->CHCTRLA.reg = 0;
 #else
     DmacChannel * chcfg = &DMA_REGS->Channel[channel];
@@ -328,15 +335,15 @@ static int dma_sam0_reload(const struct device* dev, uint32_t channel, uint32_t 
     key = irq_lock();
     switch (desc->BTCTRL.bit.BEATSIZE) {
         case DMAC_BTCTRL_BEATSIZE_BYTE_Val :
-            desc->BTCNT.reg = size;
+            desc->BTCNT.reg = (uint16_t)(size);
             break;
 
         case DMAC_BTCTRL_BEATSIZE_HWORD_Val :
-            desc->BTCNT.reg = size / 2U;
+            desc->BTCNT.reg = (uint16_t)(size / 2U);
             break;
 
         case DMAC_BTCTRL_BEATSIZE_WORD_Val :
-            desc->BTCNT.reg = size / 4U;
+            desc->BTCNT.reg = (uint16_t)(size / 4U);
             break;
 
         default :
@@ -368,7 +375,7 @@ static int dma_sam0_reload(const struct device* dev, uint32_t channel, uint32_t 
 }
 
 static int dma_sam0_get_status(const struct device* dev, uint32_t channel, struct dma_status* stat) {
-    struct dma_sam0_data* data = dev->data;
+    struct dma_sam0_data const* data = dev->data;
     uint32_t act;
     int ret;
 
@@ -471,3 +478,23 @@ static const struct dma_driver_api dma_sam0_api = {
 DEVICE_DT_INST_DEFINE(0, &dma_sam0_init, NULL,
                       &dmac_data, NULL, PRE_KERNEL_1,
                       CONFIG_DMA_INIT_PRIORITY, &dma_sam0_api);
+
+
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#include "samc21_reg_stub.h"
+
+void zephyr_dma_sam0_init(const struct device* dev) {
+    dma_sam0_init(dev);
+}
+
+void zephyr_dma_sam0_isr(const struct device* dev) {
+    dma_sam0_isr(dev);
+}
+
+Dmac* zephyr_dma_sam0_get_reg(const struct device* dev) {
+    (void) dev;
+
+    return (DMA_REGS);
+}
+
+#endif

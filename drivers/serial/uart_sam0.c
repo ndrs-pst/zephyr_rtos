@@ -1244,8 +1244,25 @@ DT_INST_FOREACH_STATUS_OKAY(UART_SAM0_DEVICE_INIT)
 #if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
 #include "samc21_reg_stub.h"
 
-void zephyr_uart_sam0_gtest(void) {
+void zephyr_uart_sam0_init(const struct device* dev) {
+    uart_sam0_init(dev);
+}
+
+void zephyr_uart_sam0_isr(const struct device* dev) {
+    uart_sam0_isr(dev);
+}
+
+SercomUsart* zephyr_uart_sam0_get_reg(const struct device* dev) {
+    const struct uart_sam0_dev_cfg* const cfg = dev->config;
+    SercomUsart* regs = cfg->regs;
+
+    return (regs);
+}
+
+void zephyr_gtest_uart_sam0(void) {
     // ---------- CONFIG_0 ---------- //
+    uart_sam0_config_0.mclk = ut_mcu_mclk_ptr;
+
     if (uart_sam0_config_0.regs == (SercomUsart*)0x42000800) {
         /* SERCOM1 */
         uart_sam0_config_0.regs = (SercomUsart*)ut_mcu_sercom_ptr[1];
@@ -1257,6 +1274,8 @@ void zephyr_uart_sam0_gtest(void) {
     }
 
     // ---------- CONFIG_1 ---------- //
+    uart_sam0_config_1.mclk = ut_mcu_mclk_ptr;
+
     if (uart_sam0_config_1.regs == (SercomUsart*)0x42001000) {
         /* SERCOM3 */
         uart_sam0_config_1.regs = (SercomUsart*)ut_mcu_sercom_ptr[3];
@@ -1268,6 +1287,8 @@ void zephyr_uart_sam0_gtest(void) {
     }
 
     // ---------- CONFIG_2 ---------- //
+    uart_sam0_config_2.mclk = ut_mcu_mclk_ptr;
+
     if (uart_sam0_config_2.regs == (SercomUsart*)0x42001400) {
         /* SERCOM4 */
         uart_sam0_config_2.regs = (SercomUsart*)ut_mcu_sercom_ptr[4];

@@ -32,7 +32,7 @@ manifest:
       revision: ef76d3456db07e4959df555047d6962279528c8d
       path: modules/lib/chre
     - name: cmsis
-      revision: 37349675ad02657b4b58f03c0491caaa0afd1a84
+      revision: 51039788cb93e4d1085771fb01a1ebe45b93143c
       path: modules/hal/cmsis
       groups:
         - hal
@@ -57,7 +57,7 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: cbc60a7591da6fc091a14eebc102e45355bbb007
+      revision: 118ff9c240db8a7d335ff11bdc28ac21305f17e0
       path: modules/hal/atmel
       groups:
         - hal

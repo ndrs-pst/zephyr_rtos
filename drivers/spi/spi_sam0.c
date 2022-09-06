@@ -793,7 +793,8 @@ DT_INST_FOREACH_STATUS_OKAY(SPI_SAM0_DEVICE_INIT)
 
 #if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
 #include "samc21_reg_stub.h"
-void zephyr_spi_sam0_gtest(void) {
+
+void zephyr_gtest_spi_sam0(void) {
     if (spi_sam0_config_0.regs == (SercomSpi*)0x42001800) {
         /* SERCOM5 */
         spi_sam0_config_0.regs = (SercomSpi*)ut_mcu_sercom_ptr[5];

@@ -1358,11 +1358,12 @@ DEVICE_DT_INST_DEFINE(2, &spi_nor_init, NULL,
 #endif
 
 #if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include "samc21_reg_stub.h"
 
 extern void zephyr_gpio_sam0_set_regs(const struct gpio_dt_spec* spec, volatile void* reg_ptr);
 
-void zephyr_spi_nor_gtest(void) {
+void zephyr_gtest_spi_nor(void) {
     struct device const* dev;
 
     dev = DEVICE_DT_GET(DT_NODELABEL(is25lp080));
