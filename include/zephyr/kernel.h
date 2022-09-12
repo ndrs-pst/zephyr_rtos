@@ -4323,8 +4323,8 @@ struct k_msgq_attrs {
  * @param msg_size Message size (in bytes).
  * @param max_msgs Maximum number of messages that can be queued.
  */
-void k_msgq_init(struct k_msgq *msgq, char *buffer, size_t msg_size,
-		 uint32_t max_msgs);
+void k_msgq_init(struct k_msgq* msgq, char* buffer, size_t msg_size,
+                 uint32_t max_msgs);
 
 /**
  * @brief Initialize a message queue.

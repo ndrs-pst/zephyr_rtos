@@ -401,6 +401,7 @@ const struct shell_static_entry *z_shell_get_last_command(
 	return entry;
 }
 
+#if (__GTEST == 0U) /* #CUSTOM@NDRS */
 int shell_set_root_cmd(const char *cmd)
 {
 	const struct shell_static_entry *entry;
@@ -417,9 +418,7 @@ int shell_set_root_cmd(const char *cmd)
 
 	return 0;
 }
-
-
-
+#endif
 
 void z_shell_spaces_trim(char *str)
 {
