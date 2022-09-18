@@ -1,0 +1,198 @@
+/*
+ * Copyright (c) 2017 Google LLC.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <atmel/samc2x.dtsi>
+
+/* @see Table 10-3. Interrupt Line Mapping, SAM C21 */
+/* @see Table 16-9. PCHCTRLm Mapping for gclk_periph_ch */
+/* @see 17.7 Register Summary for mclk_offset_bit */
+
+/ {
+
+	soc {
+		dmac: dmac@41006000 {
+			compatible = "atmel,sam0-dmac";
+			reg = <0x41006000 0x50>;
+			interrupts = <7 0>;
+			#dma-cells = <2>;
+		};
+
+		tcc0: tcc@42002400 {
+			compatible = "atmel,sam0-tcc";
+			reg = <0x42002400 0x80>;
+			interrupts = <17 0>;
+			clocks = <&gclk 28>, <&mclk 0x1C 9>;
+			clock-names = "GCLK", "MCLK";
+
+			channels = <4>;
+			counter-size = <24>;
+		};
+
+		tcc1: tcc@42002800 {
+			compatible = "atmel,sam0-tcc";
+			reg = <0x42002800 0x80>;
+			interrupts = <18 0>;
+			clocks = <&gclk 28>, <&mclk 0x1C 10>;
+			clock-names = "GCLK", "MCLK";
+
+			channels = <2>;
+			counter-size = <24>;
+		};
+
+		tcc2: tcc@42002C00 {
+			compatible = "atmel,sam0-tcc";
+			reg = <0x42002C00 0x80>;
+			interrupts = <19 0>;
+			clocks = <&gclk 29>, <&mclk 0x1C 11>;
+			clock-names = "GCLK", "MCLK";
+
+			channels = <2>;
+			counter-size = <16>;
+		};
+
+		tc0: tc@42003000 {
+			compatible = "atmel,sam0-tc32";
+			reg = <0x42003000 0x40>;
+			interrupts = <20 0>;
+			clocks = <&gclk 30>, <&mclk 0x1C 12>;
+			clock-names = "GCLK", "MCLK";
+		};
+
+		tc1: tc@42003400 {
+			compatible = "atmel,sam0-tc";
+			reg = <0x42003400 0x40>;
+			interrupts = <21 0>;
+			clocks = <&gclk 30>, <&mclk 0x1C 13>;
+			clock-names = "GCLK", "MCLK";
+
+			channels = <2>;
+			counter-size = <8>;
+		};
+
+		tc2: tc@42003800 {
+			compatible = "atmel,sam0-tc";
+			reg = <0x42003800 0x40>;
+			interrupts = <22 0>;
+			clocks = <&gclk 31>, <&mclk 0x1C 14>;
+			clock-names = "GCLK", "MCLK";
+
+			channels = <2>;
+			counter-size = <8>;
+		};
+
+		can {
+			compatible = "bosch,m_can-base";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			std-filter-elements = <28>;
+			ext-filter-elements = <4>;
+			rx-fifo0-elements   = <3>;
+			rx-fifo1-elements   = <3>;
+			rx-buffer-elements  = <0>;
+			tx-buffer-elements  = <3>;
+
+			can0: can@42001C00 {
+				compatible = "atmel,sam0-can";
+				reg = <0x42001C00 0x100>;
+				reg-names = "m_can";
+				interrupts = <15 0>;
+				interrupt-names = "LINE_01";
+				peripheral-id = <15>;
+				sjw = <1>;						/* CRITICAL VALUE, shall large enough when compare to tq !!! */
+				sample-point = <875>;
+				sjw-data = <1>;					/* CRITICAL VALUE, shall large enough when compare to tq !!! */
+				sample-point-data = <875>;
+				status = "disabled";
+			};
+
+			can1: can@42002000 {
+				compatible = "atmel,sam0-can";
+				reg = <0x42002000 0x100>;
+				reg-names = "m_can";
+				interrupts = <16 0>;
+				interrupt-names = "LINE_01";
+				peripheral-id = <16>;
+				sjw = <1>;						/* CRITICAL VALUE, shall large enough when compare to tq !!! */
+				sample-point = <875>;
+				sjw-data = <1>;					/* CRITICAL VALUE, shall large enough when compare to tq !!! */
+				sample-point-data = <875>;
+				status = "disabled";
+			};
+		};
+	};
+};
+
+&dac0 {
+	interrupts = <28 0>;
+	clocks = <&gclk 36>, <&mclk 0x1C 21>;
+	clock-names = "GCLK", "MCLK";
+};
+
+&can0 {
+	clocks = <&gclk 26>, <&mclk 0x10 8>;
+	clock-names = "GCLK", "MCLK";
+};
+
+&can1 {
+	clocks = <&gclk 27>, <&mclk 0x10 9>;
+	clock-names = "GCLK", "MCLK";
+};
+
+&sercom0 {
+	interrupts = <9 0>;
+	clocks = <&gclk 19>, <&mclk 0x1C 1>;
+	clock-names = "GCLK", "MCLK";
+};
+
+&sercom1 {
+	interrupts = <10 0>;
+	clocks = <&gclk 20>, <&mclk 0x1C 2>;
+	clock-names = "GCLK", "MCLK";
+};
+
+&sercom2 {
+	interrupts = <11 0>;
+	clocks = <&gclk 21>, <&mclk 0x1C 3>;
+	clock-names = "GCLK", "MCLK";
+};
+
+&sercom3 {
+	interrupts = <12 0>;
+	clocks = <&gclk 22>, <&mclk 0x1C 4>;
+	clock-names = "GCLK", "MCLK";
+};
+
+&sercom4 {
+	interrupts = <13 0>;
+	clocks = <&gclk 23>, <&mclk 0x1C 5>;
+	clock-names = "GCLK", "MCLK";
+};
+
+&sercom5 {
+	interrupts = <14 0>;
+	clocks = <&gclk 25>, <&mclk 0x1C 6>;
+	clock-names = "GCLK", "MCLK";
+};
+
+&tc4 {
+	interrupts = <24 0>;
+	clocks = <&gclk 32>, <&mclk 0x1C 16>;
+	clock-names = "GCLK", "MCLK";
+};
+
+&adc0 {
+	interrupts = <25 0>;
+	interrupt-names = "resrdy";
+	clocks = <&gclk 33>, <&mclk 0x1C 17>;
+	clock-names = "GCLK", "MCLK";
+};
+
+&adc1 {
+	interrupts = <26 0>;
+	interrupt-names = "resrdy";
+	clocks = <&gclk 34>, <&mclk 0x1C 18>;
+	clock-names = "GCLK", "MCLK";
+};

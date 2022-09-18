@@ -21,10 +21,10 @@ extern "C" {
  * stack. The remaining levels are executed in the kernel's main task.
  */
 
-#define _SYS_INIT_LEVEL_PRE_KERNEL_1	0
-#define _SYS_INIT_LEVEL_PRE_KERNEL_2	1
-#define _SYS_INIT_LEVEL_POST_KERNEL	2
-#define _SYS_INIT_LEVEL_APPLICATION	3
+#define _SYS_INIT_LEVEL_PRE_KERNEL_1    0
+#define _SYS_INIT_LEVEL_PRE_KERNEL_2    1
+#define _SYS_INIT_LEVEL_POST_KERNEL     2
+#define _SYS_INIT_LEVEL_APPLICATION     3
 
 #ifdef CONFIG_SMP
 #define _SYS_INIT_LEVEL_SMP		4
@@ -58,14 +58,14 @@ void z_sys_init_run_level(int32_t level);
  *
  * @param _name Base unique name
  */
-#define Z_SYS_NAME(_name) _CONCAT(sys_init_, _name)
+#define Z_SYS_NAME(_name) Z_CONCAT(sys_init_, _name)
 
 /**
  * @brief Construct a namespaced identifier for @ref init_entry instance
  *
  * @param _entry_name Base unique name
  */
-#define Z_INIT_ENTRY_NAME(_entry_name) _CONCAT(__init_, _entry_name)
+#define Z_INIT_ENTRY_NAME(_entry_name) Z_CONCAT(__init_, _entry_name)
 
 /**
  * @brief Create an init entry object and set it up for boot time initialization
