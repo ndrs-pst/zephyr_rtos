@@ -895,9 +895,9 @@ static int spi_nor_process_sfdp(const struct device *dev)
 				struct jesd216_bfp bfp;
 			} u;
 			const struct jesd216_bfp *bfp = &u.bfp;
-            size_t len = (MIN(php->len_dw, 20) * sizeof(uint32_t));
+            size_t len = (MIN(php->len_dw, 20) * sizeof(uint32_t));     /* #CUSTOM@NDRS */
 
-			rc = spi_nor_sfdp_read(dev, jesd216_param_addr(php), u.dw, sizeof(u.dw));
+			rc = spi_nor_sfdp_read(dev, jesd216_param_addr(php), u.dw, len);
 			if (rc == 0) {
 				rc = spi_nor_process_bfp(dev, php, bfp);
 			}
