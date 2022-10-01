@@ -10,6 +10,28 @@
 #include <zephyr/device.h>
 #include <version.h>
 
+#define CLI_INFO_BBC_MICRO_OWL_LOGO_2   "■　■　■　■　■　■　■　■　■\n"   \
+                                        "　■　　　　　■　■　　　　　■　\n"   \
+                                        "■　　　■　　　■　　　■　　　■\n"   \
+                                        "　　　■　■　　　　　■　■　　　\n"   \
+                                        "■　　　■　　　　　　　■　　　■\n"   \
+                                        "　■　　　　　■　■　　　　　■　\n"   \
+                                        "■　■　　　　　■　　　　　■　■\n"   \
+                                        "　■　■　　　　　　　　　■　　　\n"   \
+                                        "■　■　■　■　■　■　■　　　■\n"   \
+                                        "　■　■　■　■　　　　　　　　　\n"   \
+                                        "■　■　■　■　■　　　　　　　■\n"   \
+                                        "　■　■　■　■　　　　　　　　　\n"   \
+                                        "　　■　■　■　■　　　　　　　■\n"   \
+                                        "　　　■　■　■　■　　　　　　　\n"   \
+                                        "　　　　■　■　■　■　　　　　■\n"   \
+                                        "　　　　　■　■　■　■　　　　　\n"   \
+                                        "　　　　　　■　■　■　■　　　■\n"   \
+                                        "　　　　　　　■　　　■　■　　　\n"   \
+                                        "　　　　　　■　　　■　　　■　■\n"   \
+                                        "　■　■　■　■　■　■　■　■　\n"   \
+                                        "　　　　　　　　　　　　　　　　■\n"
+
 /* boot banner items */
 #if defined(CONFIG_MULTITHREADING) && defined(CONFIG_BOOT_DELAY) &&            \
 	CONFIG_BOOT_DELAY > 0
@@ -27,25 +49,26 @@ void boot_banner(void)
 	static const unsigned int boot_delay;
 #endif
 
-	if (boot_delay > 0 && IS_ENABLED(CONFIG_MULTITHREADING)) {
-		printk("***** delaying boot " STRINGIFY(
-			CONFIG_BOOT_DELAY) "ms (per build configuration) *****\n");
-		k_busy_wait(CONFIG_BOOT_DELAY * USEC_PER_MSEC);
-	}
+    if (boot_delay > 0 && IS_ENABLED(CONFIG_MULTITHREADING)) {
+        printk("***** delaying boot "
+               STRINGIFY(CONFIG_BOOT_DELAY) "ms (per build configuration) *****\n");
+        k_busy_wait(CONFIG_BOOT_DELAY * USEC_PER_MSEC);
+    }
 
 #if defined(CONFIG_BOOT_BANNER)
 #ifdef BUILD_VERSION
-	printk("*** Booting Zephyr OS build %s %s ***\n",
-	       STRINGIFY(BUILD_VERSION), BOOT_DELAY_BANNER);
+    printk("*** Booting Zephyr OS build %s %s ***\n",
+           STRINGIFY(BUILD_VERSION), BOOT_DELAY_BANNER);
+    printk(CLI_INFO_BBC_MICRO_OWL_LOGO_2);
 #else
-	printk("*** Booting Zephyr OS version %s %s ***\n",
-	       KERNEL_VERSION_STRING, BOOT_DELAY_BANNER);
+    printk("*** Booting Zephyr OS version %s %s ***\n",
+           KERNEL_VERSION_STRING, BOOT_DELAY_BANNER);
 #endif
 #endif
 }
 #else
 void boot_banner(void)
 {
-	/* do nothing */
+    /* do nothing */
 }
 #endif

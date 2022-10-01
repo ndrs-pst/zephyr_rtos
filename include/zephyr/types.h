@@ -10,6 +10,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+typedef signed   int  ssize_t;              ///< Signed size type, usually encodes negative errors
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
