@@ -508,18 +508,19 @@ __subsystem struct spi_driver_api {
  * @retval true if the SPI bus is ready for use.
  * @retval false if the SPI bus is not ready for use.
  */
-static inline bool spi_is_ready(const struct spi_dt_spec *spec)
-{
+static inline bool spi_is_ready(const struct spi_dt_spec* spec) {
 	/* Validate bus is ready */
-	if (!device_is_ready(spec->bus)) {
-		return false;
+    if (device_is_ready(spec->bus) == false) {
+        return (false);
 	}
+
 	/* Validate CS gpio port is ready, if it is used */
-	if (spec->config.cs &&
-	    !device_is_ready(spec->config.cs->gpio.port)) {
-		return false;
+    if ((spec->config.cs != NULL) &&
+        (device_is_ready(spec->config.cs->gpio.port) == false)) {
+        return (false);
 	}
-	return true;
+
+    return (true);
 }
 
 /**
@@ -548,10 +549,8 @@ __syscall int spi_transceive(const struct device *dev,
 static inline int z_impl_spi_transceive(const struct device *dev,
 					const struct spi_config *config,
 					const struct spi_buf_set *tx_bufs,
-					const struct spi_buf_set *rx_bufs)
-{
-	const struct spi_driver_api *api =
-		(const struct spi_driver_api *)dev->api;
+                                        const struct spi_buf_set* rx_bufs) {
+    const struct spi_driver_api* api = (const struct spi_driver_api*)dev->api;
 
 	return api->transceive(dev, config, tx_bufs, rx_bufs);
 }
@@ -573,8 +572,7 @@ static inline int z_impl_spi_transceive(const struct device *dev,
  */
 static inline int spi_transceive_dt(const struct spi_dt_spec *spec,
 				    const struct spi_buf_set *tx_bufs,
-				    const struct spi_buf_set *rx_bufs)
-{
+                                    const struct spi_buf_set* rx_bufs) {
 	return spi_transceive(spec->bus, &spec->config, tx_bufs, rx_bufs);
 }
 
@@ -596,8 +594,7 @@ static inline int spi_transceive_dt(const struct spi_dt_spec *spec,
  */
 static inline int spi_read(const struct device *dev,
 			   const struct spi_config *config,
-			   const struct spi_buf_set *rx_bufs)
-{
+                           const struct spi_buf_set* rx_bufs) {
 	return spi_transceive(dev, config, NULL, rx_bufs);
 }
 
@@ -614,8 +611,7 @@ static inline int spi_read(const struct device *dev,
  * @return a value from spi_read().
  */
 static inline int spi_read_dt(const struct spi_dt_spec *spec,
-			      const struct spi_buf_set *rx_bufs)
-{
+                              const struct spi_buf_set* rx_bufs) {
 	return spi_read(spec->bus, &spec->config, rx_bufs);
 }
 
@@ -637,8 +633,7 @@ static inline int spi_read_dt(const struct spi_dt_spec *spec,
  */
 static inline int spi_write(const struct device *dev,
 			    const struct spi_config *config,
-			    const struct spi_buf_set *tx_bufs)
-{
+                            const struct spi_buf_set* tx_bufs) {
 	return spi_transceive(dev, config, tx_bufs, NULL);
 }
 
@@ -655,8 +650,7 @@ static inline int spi_write(const struct device *dev,
  * @return a value from spi_write().
  */
 static inline int spi_write_dt(const struct spi_dt_spec *spec,
-			       const struct spi_buf_set *tx_bufs)
-{
+                               const struct spi_buf_set* tx_bufs) {
 	return spi_write(spec->bus, &spec->config, tx_bufs);
 }
 
@@ -705,7 +699,7 @@ static inline int spi_transceive_cb(const struct device *dev,
 #ifdef CONFIG_POLL
 
 /** @cond INTERNAL_HIDDEN */
-void z_spi_transfer_signal_cb(const struct device *dev, int result, void *userdata);
+void z_spi_transfer_signal_cb(const struct device* dev, int result, void* userdata);
 /** @endcond */
 
 /**
@@ -733,14 +727,12 @@ void z_spi_transfer_signal_cb(const struct device *dev, int result, void *userda
  * @retval 0 If successful in master mode.
  * @retval -errno Negative errno code on failure.
  */
-static inline int spi_transceive_signal(const struct device *dev,
-				       const struct spi_config *config,
-				       const struct spi_buf_set *tx_bufs,
-				       const struct spi_buf_set *rx_bufs,
-				       struct k_poll_signal *sig)
-{
-	const struct spi_driver_api *api =
-		(const struct spi_driver_api *)dev->api;
+static inline int spi_transceive_signal(const struct device* dev,
+                                        const struct spi_config* config,
+                                        const struct spi_buf_set* tx_bufs,
+                                        const struct spi_buf_set* rx_bufs,
+                                        struct k_poll_signal* sig) {
+    const struct spi_driver_api* api = (const struct spi_driver_api*)dev->api;
 	spi_callback_t cb = (sig == NULL) ? NULL : z_spi_transfer_signal_cb;
 
 	return api->transceive_async(dev, config, tx_bufs, rx_bufs, cb, sig);
@@ -752,12 +744,11 @@ static inline int spi_transceive_signal(const struct device *dev,
  * @deprecated
  * @see spi_transceive_signal
  */
-__deprecated static inline int spi_transceive_async(const struct device *dev,
-				       const struct spi_config *config,
-				       const struct spi_buf_set *tx_bufs,
-				       const struct spi_buf_set *rx_bufs,
-				       struct k_poll_signal *sig)
-{
+__deprecated static inline int spi_transceive_async(const struct device* dev,
+                                                    const struct spi_config* config,
+                                                    const struct spi_buf_set* tx_bufs,
+                                                    const struct spi_buf_set* rx_bufs,
+                                                    struct k_poll_signal* sig) {
 	return spi_transceive_signal(dev, config, tx_bufs, rx_bufs, sig);
 }
 
@@ -829,11 +820,10 @@ __deprecated static inline int spi_read_async(const struct device *dev,
  * @retval 0 If successful.
  * @retval -errno Negative errno code on failure.
  */
-static inline int spi_write_signal(const struct device *dev,
-				  const struct spi_config *config,
-				  const struct spi_buf_set *tx_bufs,
-				  struct k_poll_signal *sig)
-{
+static inline int spi_write_signal(const struct device* dev,
+                                   const struct spi_config* config,
+                                   const struct spi_buf_set* tx_bufs,
+                                   struct k_poll_signal* sig) {
 	return spi_transceive_signal(dev, config, tx_bufs, NULL, sig);
 }
 
@@ -879,10 +869,8 @@ __syscall int spi_release(const struct device *dev,
 			  const struct spi_config *config);
 
 static inline int z_impl_spi_release(const struct device *dev,
-				     const struct spi_config *config)
-{
-	const struct spi_driver_api *api =
-		(const struct spi_driver_api *)dev->api;
+                                     const struct spi_config* config) {
+    const struct spi_driver_api* api = (const struct spi_driver_api*)dev->api;
 
 	return api->release(dev, config);
 }
@@ -898,8 +886,7 @@ static inline int z_impl_spi_release(const struct device *dev,
  *
  * @return a value from spi_release().
  */
-static inline int spi_release_dt(const struct spi_dt_spec *spec)
-{
+static inline int spi_release_dt(const struct spi_dt_spec* spec) {
 	return spi_release(spec->bus, &spec->config);
 }
 

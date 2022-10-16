@@ -74,7 +74,7 @@ static int32_t next_timeout(void)
 	    ((int64_t)(to->dticks - ticks_elapsed) > (int64_t)INT_MAX)) {
 		ret = MAX_WAIT;
 	} else {
-		ret = MAX(0, to->dticks - ticks_elapsed);
+		ret = (int32_t)MAX(0, (to->dticks - ticks_elapsed));
 	}
 
 #ifdef CONFIG_TIMESLICING
@@ -260,7 +260,7 @@ void sys_clock_announce(int32_t ticks)
 
 	while (first() != NULL && first()->dticks <= announce_remaining) {
 		struct _timeout *t = first();
-		int dt = t->dticks;
+		int dt = (int)t->dticks;
 
 		curr_tick += dt;
 		t->dticks = 0;

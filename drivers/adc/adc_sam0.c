@@ -16,8 +16,8 @@ LOG_MODULE_REGISTER(adc_sam0, CONFIG_ADC_LOG_LEVEL);
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
-#if defined(CONFIG_SOC_SERIES_SAMD21) || defined(CONFIG_SOC_SERIES_SAMR21) || \
-	defined(CONFIG_SOC_SERIES_SAMD20)
+#if defined(CONFIG_SOC_SERIES_SAMC21) || defined(CONFIG_SOC_SERIES_SAMD21) || \
+    defined(CONFIG_SOC_SERIES_SAMR21) || defined(CONFIG_SOC_SERIES_SAMD20)
 /*
  * SAMD21 Manual 33.6.2.1: The first conversion after changing the reference
  * is invalid, so we have to discard it.
