@@ -264,8 +264,8 @@
  * @param[out] dst Pointer to location where pointer to element is written.
  */
 #define STRUCT_SECTION_GET(struct_type, i, dst) do { \
-	extern struct struct_type _CONCAT(_##struct_type, _list_start)[]; \
-	*(dst) = &_CONCAT(_##struct_type, _list_start)[i]; \
+	extern struct struct_type Z_CONCAT(_##struct_type, _list_start)[]; \
+	*(dst) = &Z_CONCAT(_##struct_type, _list_start)[i]; \
 } while (0)
 
 /**
@@ -275,10 +275,10 @@
  * @param[out] dst Pointer to location where result is written.
  */
 #define STRUCT_SECTION_COUNT(struct_type, dst) do { \
-	extern struct struct_type _CONCAT(_##struct_type, _list_start)[]; \
-	extern struct struct_type _CONCAT(_##struct_type, _list_end)[]; \
-	*(dst) = ((uintptr_t)_CONCAT(_##struct_type, _list_end) - \
-		  (uintptr_t)_CONCAT(_##struct_type, _list_start)) / sizeof(struct struct_type); \
+	extern struct struct_type Z_CONCAT(_##struct_type, _list_start)[]; \
+	extern struct struct_type Z_CONCAT(_##struct_type, _list_end)[]; \
+	*(dst) = ((uintptr_t)Z_CONCAT(_##struct_type, _list_end) - \
+		  (uintptr_t)Z_CONCAT(_##struct_type, _list_start)) / sizeof(struct struct_type); \
 } while (0)
 
 /**

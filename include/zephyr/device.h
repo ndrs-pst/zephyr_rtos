@@ -828,7 +828,7 @@ static inline bool z_impl_device_is_ready(const struct device* dev) {
  * @param dev_id Device identifier.
  */
 #define Z_DEVICE_HANDLES_NAME(dev_id)                                          \
-	_CONCAT(__devicehdl_, dev_id)
+	Z_CONCAT(__devicehdl_, dev_id)
 
 /**
  * @brief Expand extra handles with a comma in between.
