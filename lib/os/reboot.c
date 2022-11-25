@@ -11,16 +11,15 @@
 
 extern void sys_arch_reboot(int type);
 
-FUNC_NORETURN void sys_reboot(int type)
-{
-	(void)irq_lock();
-	sys_clock_disable();
+FUNC_NORETURN void sys_reboot(int type) {
+    (void) irq_lock();
+    sys_clock_disable();
 
-	sys_arch_reboot(type);
+    sys_arch_reboot(type);
 
-	/* should never get here */
-	printk("Failed to reboot: spinning endlessly...\n");
-	for (;;) {
-		k_cpu_idle();
-	}
+    /* should never get here */
+    printk("Failed to reboot: spinning endlessly...\n");
+    for (;;) {
+        k_cpu_idle();
+    }
 }

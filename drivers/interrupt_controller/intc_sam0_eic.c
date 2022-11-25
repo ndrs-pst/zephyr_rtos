@@ -341,15 +341,13 @@ static int sam0_eic_init(const struct device *dev)
 	MCLK->APBAMASK.reg |= MCLK_APBAMASK_EIC;
 
 	/* Enable the GCLK */
-	GCLK->PCHCTRL[EIC_GCLK_ID].reg = GCLK_PCHCTRL_GEN_GCLK0 |
-					 GCLK_PCHCTRL_CHEN;
+	GCLK->PCHCTRL[EIC_GCLK_ID].reg = GCLK_PCHCTRL_GEN_GCLK1 | GCLK_PCHCTRL_CHEN;
 #else
 	/* Enable the EIC clock in PM */
 	PM->APBAMASK.bit.EIC_ = 1;
 
 	/* Enable the GCLK */
-	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID_EIC | GCLK_CLKCTRL_GEN_GCLK0 |
-			    GCLK_CLKCTRL_CLKEN;
+	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID_EIC | GCLK_CLKCTRL_GEN_GCLK1 | GCLK_CLKCTRL_CLKEN;
 #endif
 
 #if DT_INST_IRQ_HAS_CELL(0, irq)
