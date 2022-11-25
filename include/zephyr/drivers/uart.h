@@ -1199,7 +1199,7 @@ static inline int uart_callback_set(const struct device* dev, uart_callback_t ca
  * @param dev     UART device instance.
  * @param buf     Pointer to transmit buffer.
  * @param len     Length of transmit buffer.
- * @param timeout Timeout in microseconds. Valid only if flow control is
+ * @param tmout_us Timeout in microseconds. Valid only if flow control is
  *        enabled. @ref SYS_FOREVER_US disables timeout.
  *
  * @retval 0 If successful.
@@ -1218,7 +1218,7 @@ static inline int z_impl_uart_tx(const struct device* dev, const uint8_t* buf, s
     ARG_UNUSED(dev);
     ARG_UNUSED(buf);
     ARG_UNUSED(len);
-    ARG_UNUSED(timeout);
+    ARG_UNUSED(tmout_us);
 
     return (-ENOTSUP);
 #endif
@@ -1233,7 +1233,7 @@ static inline int z_impl_uart_tx(const struct device* dev, const uint8_t* buf, s
  * @param dev     UART device instance.
  * @param buf     Pointer to wide data transmit buffer.
  * @param len     Length of wide data transmit buffer.
- * @param timeout Timeout in milliseconds. Valid only if flow control is
+ * @param tmout_ms Timeout in milliseconds. Valid only if flow control is
  *        enabled. @ref SYS_FOREVER_MS disables timeout.
  *
  * @retval 0 If successful.
@@ -1296,7 +1296,7 @@ static inline int z_impl_uart_tx_abort(const struct device* dev) {
  * @param dev     UART device instance.
  * @param buf     Pointer to receive buffer.
  * @param len     Buffer length.
- * @param timeout Inactivity period after receiving at least a byte which
+ * @param tmout_us Inactivity period after receiving at least a byte which
  *        triggers  @ref uart_event_type::UART_RX_RDY event. Given in
  *        microseconds. @ref SYS_FOREVER_US disables timeout. See
  *        @ref uart_event_type for details.
@@ -1318,7 +1318,7 @@ static inline int z_impl_uart_rx_enable(const struct device* dev, uint8_t* buf, 
     ARG_UNUSED(dev);
     ARG_UNUSED(buf);
     ARG_UNUSED(len);
-    ARG_UNUSED(timeout);
+    ARG_UNUSED(tmout_us);
 
     return (-ENOTSUP);
 #endif
