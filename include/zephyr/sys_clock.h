@@ -79,12 +79,22 @@ typedef struct {
  */
 #define K_TIMEOUT_EQ(a, b) ((a).ticks == (b).ticks)
 
-#define Z_TIMEOUT_NO_WAIT ((k_timeout_t) {0})
+#if defined(_MSVC_LANG)                       /* #CUSTOM@NDRS, use _MSVC_LANG to distinguish between C and C++ */
+#define Z_TIMEOUT_NO_WAIT  (k_timeout_t {0})
+#if defined(__cplusplus) && ((__cplusplus - 0) < 202002L)
+#define Z_TIMEOUT_TICKS(t) (k_timeout_t { (t) })
+#else
+#define Z_TIMEOUT_TICKS(t) (k_timeout_t { .ticks = (t) })
+#endif
+#else
+#define Z_TIMEOUT_NO_WAIT  ((k_timeout_t) {0})
 #if defined(__cplusplus) && ((__cplusplus - 0) < 202002L)
 #define Z_TIMEOUT_TICKS(t) ((k_timeout_t) { (t) })
 #else
 #define Z_TIMEOUT_TICKS(t) ((k_timeout_t) { .ticks = (t) })
 #endif
+#endif
+
 #define Z_FOREVER Z_TIMEOUT_TICKS(K_TICKS_FOREVER)
 
 #ifdef CONFIG_TIMEOUT_64BIT

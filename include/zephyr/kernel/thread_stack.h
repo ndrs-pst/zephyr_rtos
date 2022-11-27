@@ -44,9 +44,19 @@ extern "C" {
  *
  * Stacks should always be created with K_THREAD_STACK_DEFINE().
  */
-struct __packed z_thread_stack_element {
-	char data;
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+__pragma(pack(push, 1))
+
+struct z_thread_stack_element {
+    char data;
 };
+
+__pragma(pack(pop))
+#else
+struct __packed z_thread_stack_element {
+    char data;
+};
+#endif
 
 /**
  * @typedef k_thread_stack_t
