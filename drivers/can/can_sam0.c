@@ -36,7 +36,7 @@ extern void can_mcan_get_message(const struct device* dev,
 // ---------- PRIVATE DATA DEFINITION ------------------------------------------------------------------------------- //
 struct can_sam0_config {
     void (*config_irq)(void);
-    const struct pinctrl_dev_config *pcfg;
+    const struct pinctrl_dev_config* pcfg;
     volatile uint32_t* mclk;
     uint32_t mclk_mask;
     uint16_t gclk_core_id;

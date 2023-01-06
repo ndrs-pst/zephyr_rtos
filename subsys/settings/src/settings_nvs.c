@@ -34,7 +34,7 @@ static int settings_nvs_save(struct settings_store* cs,
                              const char* name,
                              const char* value,
                              size_t val_len);
-static void *settings_nvs_storage_get(struct settings_store *cs);
+static void* settings_nvs_storage_get(struct settings_store* cs);
 
 static struct settings_store_itf settings_nvs_itf = {
     .csi_load = settings_nvs_load,
@@ -416,9 +416,8 @@ int settings_backend_init(void) {
 	return rc;
 }
 
-static void *settings_nvs_storage_get(struct settings_store *cs)
-{
-	struct settings_nvs *cf = CONTAINER_OF(cs, struct settings_nvs, cf_store);
+static void* settings_nvs_storage_get(struct settings_store* cs) {
+    struct settings_nvs* cf = CONTAINER_OF(cs, struct settings_nvs, cf_store);
 
-	return &cf->cf_nvs;
+    return &cf->cf_nvs;
 }

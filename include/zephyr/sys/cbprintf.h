@@ -141,7 +141,7 @@ extern "C" {
 
 /** @brief Required alignment of the buffer used for packaging. */
 #if defined(__xtensa__) || defined(_MSC_VER)/* #CUSTOM@NDRS */
-#define CBPRINTF_PACKAGE_ALIGNMENT 16
+#define CBPRINTF_PACKAGE_ALIGNMENT              8
 #else
 #define CBPRINTF_PACKAGE_ALIGNMENT \
 	Z_POW2_CEIL(COND_CODE_1(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE, \

@@ -42,7 +42,7 @@ void k_msgq_init(struct k_msgq* msgq, char* buffer, size_t msg_size, uint32_t ma
     msgq->used_msgs    = 0;
     msgq->flags        = 0;
     z_waitq_init(&msgq->wait_q);
-    msgq->lock = (struct k_spinlock) {0};   /* #CUSTOM@NDRS */
+    msgq->lock = (struct k_spinlock){};    /* #CUSTOM@NDRS */
 #ifdef CONFIG_POLL
     sys_dlist_init(&msgq->poll_events);
 #endif  /* CONFIG_POLL */
