@@ -623,9 +623,8 @@ static inline uint32_t log_msg_generic_get_wlen(const union mpsc_pbuf_generic *i
  *
  * @return Domain ID
  */
-static inline uint8_t log_msg_get_domain(struct log_msg *msg)
-{
-	return msg->hdr.desc.domain;
+static inline uint8_t log_msg_get_domain(struct log_msg* msg) {
+    return ((uint8_t)(msg->hdr.desc.domain));
 }
 
 /** @brief Get log message level.
@@ -634,9 +633,8 @@ static inline uint8_t log_msg_get_domain(struct log_msg *msg)
  *
  * @return Log level.
  */
-static inline uint8_t log_msg_get_level(struct log_msg *msg)
-{
-	return msg->hdr.desc.level;
+static inline uint8_t log_msg_get_level(struct log_msg* msg) {
+    return ((uint8_t)(msg->hdr.desc.level));
 }
 
 /** @brief Get message source data.

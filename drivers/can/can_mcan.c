@@ -600,7 +600,7 @@ void can_mcan_get_message(const struct device* dev,
         sys_cache_data_range((void*)&fifo[get_idx].hdr, sizeof(struct can_mcan_rx_fifo_hdr), K_CACHE_INVD);
         memcpy32_volatile(&hdr, &fifo[get_idx].hdr, sizeof(struct can_mcan_rx_fifo_hdr));
 
-        frame.dlc = hdr.dlc;
+        frame.dlc = (uint8_t)hdr.dlc;
 
         if (hdr.rtr != 0) {
             frame.flags |= CAN_FRAME_RTR;
@@ -849,7 +849,7 @@ int can_mcan_send(const struct device* dev,
 
     put_idx = ((can->txfqs & CAN_MCAN_TXFQS_TFQPI) >> CAN_MCAN_TXFQS_TFQPI_POS);
 
-    mm.idx = put_idx;
+    mm.idx = (uint8_t)put_idx;
     mm.cnt = data->mm.cnt++;
     tx_hdr.mm = mm;
 

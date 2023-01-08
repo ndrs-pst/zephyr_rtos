@@ -260,7 +260,11 @@ do {                                                                    \
 
 #if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
 #define __used
+#if __cplusplus
+#define __unused        [[maybe_unused]]
+#else
 #define __unused
+#endif
 #define __maybe_unused
 #else
 #define __used          __attribute__((__used__))
