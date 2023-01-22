@@ -249,9 +249,9 @@ DT_INST_FOREACH_STATUS_OKAY(CAN_SAM0_INST)
 
 #if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
 #include "samc21_reg_stub.h"
+
 void zephyr_gtest_can_sam0(void) {
     can_mcan_cfg_0.can = (struct can_mcan_reg*)ut_mcu_can0_ptr;
 }
 
 #endif
-

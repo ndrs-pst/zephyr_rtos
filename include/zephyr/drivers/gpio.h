@@ -857,9 +857,8 @@ static inline int z_impl_gpio_pin_get_config(const struct device *port,
  * @return a value from gpio_pin_configure()
  */
 static inline int gpio_pin_get_config_dt(const struct gpio_dt_spec *spec,
-					gpio_flags_t *flags)
-{
-	return gpio_pin_get_config(spec->port, spec->pin, flags);
+                                         gpio_flags_t* flags) {
+    return gpio_pin_get_config(spec->port, spec->pin, flags);
 }
 
 /**

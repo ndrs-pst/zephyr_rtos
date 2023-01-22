@@ -67,7 +67,8 @@ static void wait_gclk_sync(uint32_t sync_bit) {
 static void xosc32k_init(void) {
     #ifdef CONFIG_SOC_ATMEL_SAMC_XOSC32K
     OSC32KCTRL->XOSC32K.reg = (OSC32KCTRL_XOSC32K_STARTUP(1UL) | OSC32KCTRL_XOSC32K_ENABLE |
-                               OSC32KCTRL_XOSC32K_RUNSTDBY     | OSC32KCTRL_XOSC32K_EN32K  | OSC32KCTRL_XOSC32K_XTALEN);
+                               OSC32KCTRL_XOSC32K_RUNSTDBY     | OSC32KCTRL_XOSC32K_EN32K  |
+                               OSC32KCTRL_XOSC32K_EN1K         | OSC32KCTRL_XOSC32K_XTALEN);
 
     /* Enable clock failure detection */
     OSC32KCTRL->CFDCTRL.bit.CFDEN = 1U;
@@ -76,8 +77,6 @@ static void xosc32k_init(void) {
     while (!OSC32KCTRL->STATUS.bit.XOSC32KRDY) {
         /* pass */
     }
-
-    OSC32KCTRL->RTCCTRL.reg = OSC32KCTRL_RTCCTRL_RTCSEL(OSC32KCTRL_RTCCTRL_RTCSEL_XOSC32K_Val);
     #endif
 }
 
@@ -87,14 +86,12 @@ static void osc32k_init(void) {
     cal_val = (((*(uint32_t*)0x806020UL) >> 12) & 0x7FUL);
     OSC32KCTRL->OSC32K.reg = (OSC32KCTRL_OSC32K_CALIB(cal_val) | OSC32KCTRL_OSC32K_STARTUP(1U) |
                               OSC32KCTRL_OSC32K_ENABLE         | OSC32KCTRL_OSC32K_RUNSTDBY    |
-                              OSC32KCTRL_OSC32K_EN32K);
+                              OSC32KCTRL_OSC32K_EN32K          | OSC32KCTRL_OSC32K_EN1K);
 
-	/* Wait for the oscillator to stabilize. */
+    /* Wait for the oscillator to stabilize. */
     while (!OSC32KCTRL->STATUS.bit.OSC32KRDY) {
         /* pass */
     }
-
-    OSC32KCTRL->RTCCTRL.reg = OSC32KCTRL_RTCCTRL_RTCSEL(OSC32KCTRL_RTCCTRL_RTCSEL_OSC32K_Val);
 }
 
 #define DPLLRATIO_LDR_VAL   (((SOC_ATMEL_SAM0_MCK_FREQ_HZ + (SOC_ATMEL_SAM0_FDPLL_IN_FREQ_HZ / 2)) / SOC_ATMEL_SAM0_FDPLL_IN_FREQ_HZ) - 1U)

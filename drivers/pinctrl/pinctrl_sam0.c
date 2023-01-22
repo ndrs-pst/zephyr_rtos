@@ -15,6 +15,7 @@
 /** SAM0 port addresses */
 #if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
 #include "samc21_reg_stub.h"
+
 static uintptr_t sam_port_addrs[2];
 
 void zephyr_gtest_pinctrl_sam0(void) {
