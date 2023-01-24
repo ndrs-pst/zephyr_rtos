@@ -30,9 +30,9 @@ extern "C" {
  * Zephyr currently assumes the size of a couple standard types to simplify
  * print string formats. Let's make sure this doesn't change without notice.
  */
-BUILD_ASSERT(sizeof(int32_t) == sizeof(int));
-BUILD_ASSERT(sizeof(int64_t) == sizeof(long long));
-BUILD_ASSERT(sizeof(intptr_t) == sizeof(long));
+BUILD_ASSERT(sizeof(int32_t) == sizeof(int), "sizeof error");
+BUILD_ASSERT(sizeof(int64_t) == sizeof(long long), "sizeof error");
+BUILD_ASSERT(sizeof(intptr_t) == sizeof(long), "sizeof error");
 
 /**
  * @brief Kernel APIs
@@ -342,8 +342,8 @@ __syscall k_tid_t k_thread_create(struct k_thread *new_thread,
  * @param p3 3rd entry point parameter
  */
 extern FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
-						   void *p1, void *p2,
-						   void *p3);
+                                                   void *p1, void *p2,
+                                                   void *p3);
 
 /**
  * @brief Grant a thread access to a set of kernel objects
@@ -468,8 +468,7 @@ __syscall int32_t k_sleep(k_timeout_t timeout);
  * @return Zero if the requested time has elapsed or the number of milliseconds
  * left to sleep, if thread was woken up by \ref k_wakeup call.
  */
-static inline int32_t k_msleep(int32_t ms)
-{
+static inline int32_t k_msleep(int32_t ms) {
 	return k_sleep(Z_TIMEOUT_MS(ms));
 }
 
@@ -1571,7 +1570,7 @@ static inline k_ticks_t z_impl_k_timer_remaining_ticks(
  */
 static inline uint32_t k_timer_remaining_get(struct k_timer *timer)
 {
-	return k_ticks_to_ms_floor32(k_timer_remaining_ticks(timer));
+	return k_ticks_to_ms_floor32((uint32_t)k_timer_remaining_ticks(timer));
 }
 
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
@@ -3702,7 +3701,7 @@ enum {
 };
 
 /** @brief A structure used to submit work. */
-struct k_work {
+struct /**/k_work {
 	/* All fields are protected by the work module spinlock.  No fields
 	 * are to be accessed except through kernel API.
 	 */
@@ -3730,7 +3729,7 @@ struct k_work {
 }
 
 /** @brief A structure used to submit work after a delay. */
-struct k_work_delayable {
+struct /**/k_work_delayable {
 	/* The work item. */
 	struct k_work work;
 
@@ -3983,11 +3982,19 @@ struct k_work_user {
  * @param work Address of work item.
  * @param handler Function to invoke each time work item is processed.
  */
-static inline void k_work_user_init(struct k_work_user *work,
-				    k_work_user_handler_t handler)
-{
-	*work = (struct k_work_user)Z_WORK_USER_INITIALIZER(handler);
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+static inline void k_work_user_init(struct k_work_user* work,
+                                    k_work_user_handler_t handler) {
+    work->_reserved = NULL;
+    work->handler   = handler;
+    work->flags     = 0;
 }
+#else
+static inline void k_work_user_init(struct k_work_user *work,
+                                    k_work_user_handler_t handler) {
+    *work = (struct k_work_user)Z_WORK_USER_INITIALIZER(handler);
+}
+#endif
 
 /**
  * @brief Check if a userspace work item is pending.
@@ -4005,6 +4012,8 @@ static inline void k_work_user_init(struct k_work_user *work,
  *
  * @return true if work item is pending, or false if it is not pending.
  */
+/* #CUSTOM@NDRS : provide function prototype for atomic_test_bit() */
+static inline bool atomic_test_bit(const atomic_t* target, int bit);
 static inline bool k_work_user_is_pending(struct k_work_user *work)
 {
 	return atomic_test_bit(&work->flags, K_WORK_USER_STATE_PENDING);
@@ -4028,6 +4037,9 @@ static inline bool k_work_user_is_pending(struct k_work_user *work)
  * @retval -ENOMEM if no memory for thread resource pool allocation
  * @retval 0 Success
  */
+/* #CUSTOM@NDRS : provide function prototype for atomic_test_and_set_bit(), atomic_clear_bit() */
+static inline bool atomic_test_and_set_bit(atomic_t *target, int bit);
+static inline void atomic_clear_bit(atomic_t *target, int bit);
 static inline int k_work_user_submit_to_queue(struct k_work_user_q *work_q,
 					      struct k_work_user *work)
 {
@@ -4243,7 +4255,7 @@ extern int k_work_poll_cancel(struct k_work_poll *work);
 /**
  * @brief Message Queue Structure
  */
-struct k_msgq {
+struct /**/k_msgq {
 	/** Message queue wait queue */
 	_wait_q_t wait_q;
 	/** Lock */
@@ -4351,8 +4363,8 @@ struct k_msgq_attrs {
  * @param msg_size Message size (in bytes).
  * @param max_msgs Maximum number of messages that can be queued.
  */
-void k_msgq_init(struct k_msgq *msgq, char *buffer, size_t msg_size,
-		 uint32_t max_msgs);
+void k_msgq_init(struct k_msgq* msgq, char* buffer, size_t msg_size,
+                 uint32_t max_msgs);
 
 /**
  * @brief Initialize a message queue.
@@ -5699,7 +5711,11 @@ static inline void k_cpu_atomic_idle(unsigned int key)
  */
 #ifdef ARCH_EXCEPT
 /* This architecture has direct support for triggering a CPU exception */
+#if defined(_MSC_VER)
+#define z_except_reason(reason)
+#else
 #define z_except_reason(reason)	ARCH_EXCEPT(reason)
+#endif
 #else
 
 #if !defined(CONFIG_ASSERT_NO_FILE_INFO)

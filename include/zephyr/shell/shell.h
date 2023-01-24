@@ -159,7 +159,7 @@ typedef int (*shell_dict_cmd_handler)(const struct shell *shell, size_t argc,
  * native_posix_64 and x86_64 targets. Adding padding to allow handle data
  * in the memory section as array.
  */
-#if (defined(CONFIG_ARCH_POSIX) && defined(CONFIG_64BIT)) || defined(CONFIG_X86_64)
+#if (defined(CONFIG_ARCH_POSIX) && defined(CONFIG_64BIT)) || defined(CONFIG_X86_64) || defined(_MSC_VER)
 #define Z_SHELL_STATIC_ENTRY_PADDING 24
 #else
 #define Z_SHELL_STATIC_ENTRY_PADDING 0
@@ -958,7 +958,7 @@ int shell_stop(const struct shell *shell);
 /**
  * @brief Green text color for shell_fprintf function.
  */
-#define SHELL_INFO	SHELL_VT100_COLOR_GREEN
+#define SHELL_INFO      SHELL_VT100_COLOR_GREEN
 
 /**
  * @brief Cyan text color for shell_fprintf function.

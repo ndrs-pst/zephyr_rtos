@@ -52,7 +52,7 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: d45adfb6897aba323cac29cdda8070ce4f23f014
+      revision: df0d2ab928fd706c059b07d24c3d25c2e71a9bf9
       path: modules/hal/atmel
       groups:
         - hal
@@ -261,6 +261,6 @@ manifest:
       revision: 0035be5e6a45e4ab89755b176d305d7a877fc79c
 
   self:
-    path: zephyr
+    path: zephyr_rtos
     west-commands: scripts/west-commands.yml
     import: submanifests

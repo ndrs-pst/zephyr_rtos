@@ -20,8 +20,7 @@ LOG_MODULE_REGISTER(flash_map_shell);
 
 extern const struct flash_area *flash_map;
 
-static void fa_cb(const struct flash_area *fa, void *user_data)
-{
+static void fa_cb(const struct flash_area* fa, void* user_data) {
 	struct shell *shell = user_data;
 
 	shell_print(shell, "%2d   0x%0*"PRIxPTR"   %-26s  0x%-10x 0x%-12x",
@@ -29,15 +28,14 @@ static void fa_cb(const struct flash_area *fa, void *user_data)
 		    (uint32_t) fa->fa_off, fa->fa_size);
 }
 
-static int cmd_flash_map_list(const struct shell *shell, size_t argc,
-			      char **argv)
-{
+static int cmd_flash_map_list(const struct shell* shell, size_t argc, char** argv) {
 	shell_print(shell, "ID | Device     | Device Name               "
 		    "|   Offset   |   Size");
 	shell_print(shell, "-----------------------------------------"
 		    "------------------------------");
 	flash_area_foreach(fa_cb, (struct shell *)shell);
-	return 0;
+
+    return (0);
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_flash_map,

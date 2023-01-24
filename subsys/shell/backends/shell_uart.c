@@ -27,6 +27,7 @@ NET_BUF_POOL_DEFINE(smp_shell_rx_pool, CONFIG_MCUMGR_TRANSPORT_SHELL_RX_BUF_COUN
 SHELL_UART_DEFINE(shell_transport_uart,
 		  CONFIG_SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE,
 		  CONFIG_SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE);
+
 SHELL_DEFINE(shell_uart, CONFIG_SHELL_PROMPT_UART, &shell_transport_uart,
 	     CONFIG_SHELL_BACKEND_SERIAL_LOG_MESSAGE_QUEUE_SIZE,
 	     CONFIG_SHELL_BACKEND_SERIAL_LOG_MESSAGE_QUEUE_TIMEOUT,
@@ -34,8 +35,7 @@ SHELL_DEFINE(shell_uart, CONFIG_SHELL_PROMPT_UART, &shell_transport_uart,
 
 #ifdef CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 static void uart_rx_handle(const struct device *dev,
-			   const struct shell_uart *sh_uart)
-{
+                           const struct shell_uart* sh_uart) {
 	uint8_t *data;
 	uint32_t len;
 	uint32_t rd_len;
@@ -47,7 +47,6 @@ static void uart_rx_handle(const struct device *dev,
 	do {
 		len = ring_buf_put_claim(sh_uart->rx_ringbuf, &data,
 					 sh_uart->rx_ringbuf->size);
-
 		if (len > 0) {
 			rd_len = uart_fifo_read(dev, data, len);
 
@@ -72,11 +71,12 @@ static void uart_rx_handle(const struct device *dev,
 				}
 			}
 #endif /* CONFIG_MCUMGR_TRANSPORT_SHELL */
-			int err = ring_buf_put_finish(sh_uart->rx_ringbuf,
-						      rd_len);
+
+            int err = ring_buf_put_finish(sh_uart->rx_ringbuf, rd_len);
 			(void)err;
 			__ASSERT_NO_MSG(err == 0);
-		} else {
+        }
+        else {
 			uint8_t dummy;
 
 			/* No space in the ring buffer - consume byte. */
@@ -101,19 +101,21 @@ static void uart_rx_handle(const struct device *dev,
 	}
 }
 
-static void uart_dtr_wait(const struct device *dev)
-{
+static void uart_dtr_wait(const struct device* dev) {
 	if (IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL_CHECK_DTR)) {
-		int dtr, err;
+        int dtr;
+        int err;
 
 		while (true) {
 			err = uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
-			if (err == -ENOSYS || err == -ENOTSUP) {
+            if ((err == -ENOSYS) || (err == -ENOTSUP)) {
 				break;
 			}
+
 			if (dtr) {
 				break;
 			}
+
 			/* Give CPU resources to low priority threads. */
 			k_sleep(K_MSEC(100));
 		}
@@ -121,8 +123,7 @@ static void uart_dtr_wait(const struct device *dev)
 }
 
 static void uart_tx_handle(const struct device *dev,
-			   const struct shell_uart *sh_uart)
-{
+                           const struct shell_uart* sh_uart) {
 	uint32_t len;
 	const uint8_t *data;
 
@@ -137,7 +138,8 @@ static void uart_tx_handle(const struct device *dev,
 		err = ring_buf_get_finish(sh_uart->tx_ringbuf, len);
 		__ASSERT_NO_MSG(err == 0);
 		ARG_UNUSED(err);
-	} else {
+    }
+    else {
 		uart_irq_tx_disable(dev);
 		sh_uart->ctrl_blk->tx_busy = 0;
 	}
@@ -146,8 +148,7 @@ static void uart_tx_handle(const struct device *dev,
 				   sh_uart->ctrl_blk->context);
 }
 
-static void uart_callback(const struct device *dev, void *user_data)
-{
+static void uart_callback(const struct device* dev, void* user_data) {
 	const struct shell_uart *sh_uart = (struct shell_uart *)user_data;
 
 	uart_irq_update(dev);
@@ -162,8 +163,7 @@ static void uart_callback(const struct device *dev, void *user_data)
 }
 #endif /* CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN */
 
-static void uart_irq_init(const struct shell_uart *sh_uart)
-{
+static void uart_irq_init(const struct shell_uart* sh_uart) {
 #ifdef CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 	const struct device *dev = sh_uart->ctrl_blk->dev;
 
@@ -175,8 +175,7 @@ static void uart_irq_init(const struct shell_uart *sh_uart)
 #endif
 }
 
-static void timer_handler(struct k_timer *timer)
-{
+static void timer_handler(struct k_timer* timer) {
 	uint8_t c;
 	const struct shell_uart *sh_uart = k_timer_user_data_get(timer);
 
@@ -185,6 +184,7 @@ static void timer_handler(struct k_timer *timer)
 			/* ring buffer full. */
 			LOG_WRN("RX ring buffer full.");
 		}
+
 		sh_uart->ctrl_blk->handler(SHELL_TRANSPORT_EVT_RX_RDY,
 					   sh_uart->ctrl_blk->context);
 	}
@@ -193,8 +193,7 @@ static void timer_handler(struct k_timer *timer)
 static int init(const struct shell_transport *transport,
 		const void *config,
 		shell_transport_handler_t evt_handler,
-		void *context)
-{
+                void* context) {
 	const struct shell_uart *sh_uart = (struct shell_uart *)transport->ctx;
 
 	sh_uart->ctrl_blk->dev = (const struct device *)config;
@@ -208,17 +207,17 @@ static int init(const struct shell_transport *transport,
 
 	if (IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN)) {
 		uart_irq_init(sh_uart);
-	} else {
+    }
+    else {
 		k_timer_init(sh_uart->timer, timer_handler, NULL);
 		k_timer_user_data_set(sh_uart->timer, (void *)sh_uart);
 		k_timer_start(sh_uart->timer, RX_POLL_PERIOD, RX_POLL_PERIOD);
 	}
 
-	return 0;
+    return (0);
 }
 
-static int uninit(const struct shell_transport *transport)
-{
+static int uninit(const struct shell_transport* transport) {
 	const struct shell_uart *sh_uart = (struct shell_uart *)transport->ctx;
 
 	if (IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN)) {
@@ -226,15 +225,15 @@ static int uninit(const struct shell_transport *transport)
 
 		uart_irq_tx_disable(dev);
 		uart_irq_rx_disable(dev);
-	} else {
+    }
+    else {
 		k_timer_stop(sh_uart->timer);
 	}
 
 	return 0;
 }
 
-static int enable(const struct shell_transport *transport, bool blocking_tx)
-{
+static int enable(const struct shell_transport* transport, bool blocking_tx) {
 	const struct shell_uart *sh_uart = (struct shell_uart *)transport->ctx;
 
 	sh_uart->ctrl_blk->blocking_tx = blocking_tx;
@@ -245,12 +244,11 @@ static int enable(const struct shell_transport *transport, bool blocking_tx)
 #endif
 	}
 
-	return 0;
+    return (0);
 }
 
 static void irq_write(const struct shell_uart *sh_uart, const void *data,
-		     size_t length, size_t *cnt)
-{
+                      size_t length, size_t* cnt) {
 	*cnt = ring_buf_put(sh_uart->tx_ringbuf, data, length);
 
 	if (atomic_set(&sh_uart->ctrl_blk->tx_busy, 1) == 0) {
@@ -261,15 +259,15 @@ static void irq_write(const struct shell_uart *sh_uart, const void *data,
 }
 
 static int write(const struct shell_transport *transport,
-		 const void *data, size_t length, size_t *cnt)
-{
+                 const void* data, size_t length, size_t* cnt) {
 	const struct shell_uart *sh_uart = (struct shell_uart *)transport->ctx;
 	const uint8_t *data8 = (const uint8_t *)data;
 
 	if (IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN) &&
 		!sh_uart->ctrl_blk->blocking_tx) {
 		irq_write(sh_uart, data, length, cnt);
-	} else {
+    }
+    else {
 		for (size_t i = 0; i < length; i++) {
 			uart_poll_out(sh_uart->ctrl_blk->dev, data8[i]);
 		}
@@ -280,17 +278,16 @@ static int write(const struct shell_transport *transport,
 					   sh_uart->ctrl_blk->context);
 	}
 
-	return 0;
+    return (0);
 }
 
 static int read(const struct shell_transport *transport,
-		void *data, size_t length, size_t *cnt)
-{
+                void* data, size_t length, size_t* cnt) {
 	struct shell_uart *sh_uart = (struct shell_uart *)transport->ctx;
 
 	*cnt = ring_buf_get(sh_uart->rx_ringbuf, data, length);
 
-	return 0;
+    return (0);
 }
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
@@ -313,16 +310,13 @@ const struct shell_transport_api shell_uart_transport_api = {
 #endif /* CONFIG_MCUMGR_TRANSPORT_SHELL */
 };
 
-static int enable_shell_uart(const struct device *arg)
-{
+static int enable_shell_uart(const struct device* arg) {
 	ARG_UNUSED(arg);
 	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_shell_uart));
 	bool log_backend = CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL > 0;
-	uint32_t level =
-		(CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL > LOG_LEVEL_DBG) ?
+    uint32_t level   = (CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL > LOG_LEVEL_DBG) ?
 		CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL;
-	static const struct shell_backend_config_flags cfg_flags =
-					SHELL_DEFAULT_BACKEND_CONFIG_FLAGS;
+    static const struct shell_backend_config_flags cfg_flags = SHELL_DEFAULT_BACKEND_CONFIG_FLAGS;
 
 	if (!device_is_ready(dev)) {
 		return -ENODEV;
@@ -334,13 +328,11 @@ static int enable_shell_uart(const struct device *arg)
 
 	shell_init(&shell_uart, dev, cfg_flags, log_backend, level);
 
-	return 0;
+    return (0);
 }
 
-SYS_INIT(enable_shell_uart, POST_KERNEL,
-	 CONFIG_SHELL_BACKEND_SERIAL_INIT_PRIORITY);
+SYS_INIT(enable_shell_uart, POST_KERNEL, CONFIG_SHELL_BACKEND_SERIAL_INIT_PRIORITY);
 
-const struct shell *shell_backend_uart_get_ptr(void)
-{
-	return &shell_uart;
+const struct shell* shell_backend_uart_get_ptr(void) {
+    return (&shell_uart);
 }

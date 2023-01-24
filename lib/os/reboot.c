@@ -12,8 +12,7 @@
 
 extern void sys_arch_reboot(int type);
 
-FUNC_NORETURN void sys_reboot(int type)
-{
+FUNC_NORETURN void sys_reboot(int type) {
 	(void)irq_lock();
 
 	/* Disable caches to ensure all data is flushed */

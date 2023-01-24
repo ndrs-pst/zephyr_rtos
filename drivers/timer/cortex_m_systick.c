@@ -10,13 +10,13 @@
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/irq.h>
 
-#define COUNTER_MAX 0x00ffffff
-#define TIMER_STOPPED 0xff000000
+#define COUNTER_MAX     0x00FFFFFFUL
+#define TIMER_STOPPED   0xFF000000UL
 
-#define CYC_PER_TICK (sys_clock_hw_cycles_per_sec()	\
-		      / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#define MAX_TICKS ((COUNTER_MAX / CYC_PER_TICK) - 1)
-#define MAX_CYCLES (MAX_TICKS * CYC_PER_TICK)
+#define CYC_PER_TICK    (sys_clock_hw_cycles_per_sec()  \
+                         / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define MAX_TICKS       ((COUNTER_MAX / CYC_PER_TICK) - 1UL)
+#define MAX_CYCLES      (MAX_TICKS * CYC_PER_TICK)
 
 /* Minimum cycles in the future to try to program.  Note that this is
  * NOT simply "enough cycles to get the counter read and reprogrammed
@@ -27,7 +27,7 @@
  * masked.  Choosing a fraction of a tick is probably a good enough
  * default, with an absolute minimum of 1k cyc.
  */
-#define MIN_DELAY MAX(1024, (CYC_PER_TICK/16))
+#define MIN_DELAY MAX(1024UL, (CYC_PER_TICK / 16UL))
 
 #define TICKLESS (IS_ENABLED(CONFIG_TICKLESS_KERNEL))
 
@@ -167,7 +167,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 #if defined(CONFIG_TICKLESS_KERNEL)
 	uint32_t delay;
-	uint32_t val1, val2;
+	uint32_t val1;
+	uint32_t val2;
 	uint32_t last_load_ = last_load;
 
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
@@ -246,41 +247,36 @@ uint32_t sys_clock_elapsed(void)
 	return cyc / CYC_PER_TICK;
 }
 
-uint32_t sys_clock_cycle_get_32(void)
-{
-	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint32_t ret = elapsed() + cycle_count;
+uint32_t sys_clock_cycle_get_32(void) {
+    k_spinlock_key_t key = k_spin_lock(&lock);
+    uint32_t ret = elapsed() + cycle_count;
 
-	k_spin_unlock(&lock, key);
-	return ret;
+    k_spin_unlock(&lock, key);
+
+    return (ret);
 }
 
-void sys_clock_idle_exit(void)
-{
-	if (last_load == TIMER_STOPPED) {
-		SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
-	}
+void sys_clock_idle_exit(void) {
+    if (last_load == TIMER_STOPPED) {
+        SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
+    }
 }
 
-void sys_clock_disable(void)
-{
-	SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
+void sys_clock_disable(void) {
+    SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 }
 
-static int sys_clock_driver_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
+static int sys_clock_driver_init(const struct device* dev) {
+    ARG_UNUSED(dev);
 
-	NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
-	last_load = CYC_PER_TICK - 1;
-	overflow_cyc = 0U;
-	SysTick->LOAD = last_load;
-	SysTick->VAL = 0; /* resets timer to last_load */
-	SysTick->CTRL |= (SysTick_CTRL_ENABLE_Msk |
-			  SysTick_CTRL_TICKINT_Msk |
-			  SysTick_CTRL_CLKSOURCE_Msk);
-	return 0;
+    NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
+    last_load = CYC_PER_TICK - 1;
+    overflow_cyc = 0U;
+    SysTick->LOAD = last_load;
+    SysTick->VAL = 0; /* resets timer to last_load */
+    SysTick->CTRL |= (SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_CLKSOURCE_Msk);
+    return 0;
 }
 
 SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+         CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
