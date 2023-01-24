@@ -47,8 +47,8 @@ LOG_MODULE_REGISTER(flash_sam0);
 
 struct flash_sam0_data {
 #if CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
-	/* NOTE: this buffer can be large, avoid placing it on the stack... */
-	uint8_t buf[ROW_SIZE];
+    /* NOTE: this buffer can be large, avoid placing it on the stack... */
+    uint8_t buf[ROW_SIZE];
 #endif
 
 #if defined(CONFIG_MULTITHREADING)
@@ -199,35 +199,32 @@ static int flash_sam0_erase_row(const struct device* dev, off_t offset) {
 
 #if CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
 
-static int flash_sam0_commit(const struct device *dev, off_t base)
-{
-	struct flash_sam0_data *ctx = dev->data;
-	int err;
-	int page;
+static int flash_sam0_commit(const struct device* dev, off_t base) {
+    struct flash_sam0_data* ctx = dev->data;
+    int err;
+    int page;
 
-	err = flash_sam0_erase_row(dev, base);
-	if (err != 0) {
-		return err;
-	}
+    err = flash_sam0_erase_row(dev, base);
+    if (err != 0) {
+        return (err);
+    }
 
-	for (page = 0; page < PAGES_PER_ROW; page++) {
-		err = flash_sam0_write_page(
-			dev, base + page * FLASH_PAGE_SIZE,
-			&ctx->buf[page * FLASH_PAGE_SIZE]);
-		if (err != 0) {
-			return err;
-		}
-	}
+    for (page = 0; page < PAGES_PER_ROW; page++) {
+        err = flash_sam0_write_page(dev, base + (page * FLASH_PAGE_SIZE),
+                                    &ctx->buf[page * FLASH_PAGE_SIZE]);
+        if (err != 0) {
+            return (err);
+        }
+    }
 
     return (0);
 }
 
-static int flash_sam0_write(const struct device *dev, off_t offset,
-			    const void *data, size_t len)
-{
-	struct flash_sam0_data *ctx = dev->data;
-	const uint8_t *pdata = data;
-	int err;
+static int flash_sam0_write(const struct device* dev, off_t offset,
+                            const void* data, size_t len) {
+    struct flash_sam0_data* ctx = dev->data;
+    const uint8_t* pdata = data;
+    int err;
 
     LOG_DBG("0x%lx: len %zu", (long)offset, len);
 
@@ -236,31 +233,31 @@ static int flash_sam0_write(const struct device *dev, off_t offset,
         return (err);
     }
 
-	if (len == 0) {
-		return 0;
-	}
+    if (len == 0U) {
+        return (0);
+    }
 
-	flash_sam0_sem_take(dev);
+    flash_sam0_sem_take(dev);
 
-	err = flash_sam0_write_protection(dev, false);
+    err = flash_sam0_write_protection(dev, false);
 
-	size_t pos = 0;
+    size_t pos = 0U;
 
-	while ((err == 0) && (pos < len)) {
-		off_t  start    = offset % sizeof(ctx->buf);
-		off_t  base     = offset - start;
-		size_t len_step = sizeof(ctx->buf) - start;
-		size_t len_copy = MIN(len - pos, len_step);
+    while ((err == 0) && (pos < len)) {
+        off_t  start    = offset % sizeof(ctx->buf);
+        off_t  base     = offset - start;
+        size_t len_step = sizeof(ctx->buf) - start;
+        size_t len_copy = MIN(len - pos, len_step);
 
-		if (len_copy < sizeof(ctx->buf)) {
-			memcpy(ctx->buf, (void *)base, sizeof(ctx->buf));
-		}
-		memcpy(&(ctx->buf[start]), &(pdata[pos]), len_copy);
-		err = flash_sam0_commit(dev, base);
+        if (len_copy < sizeof(ctx->buf)) {
+            memcpy(ctx->buf, (void*)base, sizeof(ctx->buf));
+        }
+        memcpy(&(ctx->buf[start]), &(pdata[pos]), len_copy);
+        err = flash_sam0_commit(dev, base);
 
-		offset += len_step;
-		pos    += len_copy;
-	}
+        offset += len_step;
+        pos    += len_copy;
+    }
 
     int err2 = flash_sam0_write_protection(dev, true);
 

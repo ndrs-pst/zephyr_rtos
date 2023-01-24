@@ -44,14 +44,14 @@ extern "C" {
 /** @brief Cast @p x, a signed integer, to a <tt>void*</tt>. */
 #define INT_TO_POINTER(x)  ((void *) (intptr_t) (x))
 
-#if !(defined(__CHAR_BIT__) && defined(__SIZEOF_LONG__) && defined(__SIZEOF_LONG_LONG__))
 #if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
 #define __CHAR_BIT__            8
 #define __SIZEOF_LONG__         32
+#define __SIZEOF_LONG_LONG__    64
 #endif
 
-#if !(defined(__CHAR_BIT__) && defined(__SIZEOF_LONG__))
-#	error Missing required predefined macros for BITS_PER_LONG calculation
+#if !(defined(__CHAR_BIT__) && defined(__SIZEOF_LONG__) && defined(__SIZEOF_LONG_LONG__))
+#error Missing required predefined macros for BITS_PER_LONG calculation
 #endif
 
 /** Number of bits in a long int. */

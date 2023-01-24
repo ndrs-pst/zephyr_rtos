@@ -24,12 +24,12 @@ LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 #endif
 
 struct settings_nvs_read_fn_arg {
-	struct nvs_fs *fs;
-	uint16_t id;
+    struct nvs_fs* fs;
+    uint16_t id;
 };
 
-static int settings_nvs_load(struct settings_store *cs,
-			     const struct settings_load_arg *arg);
+static int settings_nvs_load(struct settings_store* cs,
+                             const struct settings_load_arg* arg);
 static int settings_nvs_save(struct settings_store* cs,
                              const char* name,
                              const char* value,
@@ -74,15 +74,14 @@ int settings_nvs_dst(struct settings_nvs* cf) {
 }
 
 #if CONFIG_SETTINGS_NVS_NAME_CACHE
-static void settings_nvs_cache_add(struct settings_nvs *cf, const char *name,
-				   uint16_t name_id)
-{
-	uint16_t name_hash = crc16_ccitt(0xffff, name, strlen(name));
+static void settings_nvs_cache_add(struct settings_nvs* cf, const char* name,
+                                   uint16_t name_id) {
+    uint16_t name_hash = crc16_ccitt(0xffff, name, strlen(name));
 
-	cf->cache[cf->cache_next].name_hash = name_hash;
-	cf->cache[cf->cache_next++].name_id = name_id;
+    cf->cache[cf->cache_next].name_hash = name_hash;
+    cf->cache[cf->cache_next++].name_id = name_id;
 
-	cf->cache_next %= CONFIG_SETTINGS_NVS_NAME_CACHE_SIZE;
+    cf->cache_next %= CONFIG_SETTINGS_NVS_NAME_CACHE_SIZE;
 }
 
 static uint16_t settings_nvs_cache_match(struct settings_nvs *cf, const char *name,
@@ -184,8 +183,8 @@ static int settings_nvs_save(struct settings_store* cs,
                              const char* name,
                              const char* value,
                              size_t val_len) {
-	struct settings_nvs *cf = CONTAINER_OF(cs, struct settings_nvs, cf_store);
-	char rdname[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
+    struct settings_nvs* cf = CONTAINER_OF(cs, struct settings_nvs, cf_store);
+    char rdname[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
     uint16_t name_id;
     uint16_t write_name_id;
     bool delete;
@@ -196,8 +195,8 @@ static int settings_nvs_save(struct settings_store* cs,
         return (-EINVAL);
 	}
 
-	/* Find out if we are doing a delete */
-	delete = ((value == NULL) || (val_len == 0));
+    /* Find out if we are doing a delete */
+    delete = ((value == NULL) || (val_len == 0));
 
 #if CONFIG_SETTINGS_NVS_NAME_CACHE
 	name_id = settings_nvs_cache_match(cf, name, rdname, sizeof(rdname));
@@ -208,127 +207,127 @@ static int settings_nvs_save(struct settings_store* cs,
 	}
 #endif
 
-	name_id = cf->last_name_id + 1;
-	write_name_id = cf->last_name_id + 1;
-	write_name = true;
+    name_id       = cf->last_name_id + 1;
+    write_name_id = cf->last_name_id + 1;
+    write_name    = true;
 
-	while (1) {
-		name_id--;
-		if (name_id == NVS_NAMECNT_ID) {
-			break;
-		}
+    while (1) {
+        name_id--;
+        if (name_id == NVS_NAMECNT_ID) {
+            break;
+        }
 
-		rc = nvs_read(&cf->cf_nvs, name_id, &rdname, sizeof(rdname));
-		if (rc < 0) {
-			/* Error or entry not found */
-			if (rc == -ENOENT) {
-				write_name_id = name_id;
-			}
-			continue;
-		}
+        rc = nvs_read(&cf->cf_nvs, name_id, &rdname, sizeof(rdname));
+        if (rc < 0) {
+            /* Error or entry not found */
+            if (rc == -ENOENT) {
+                write_name_id = name_id;
+            }
+            continue;
+        }
 
-		rdname[rc] = '\0';
+        rdname[rc] = '\0';
 
-		if (strcmp(name, rdname)) {
-			continue;
-		}
+        if (strcmp(name, rdname)) {
+            continue;
+        }
 
-		if (!delete) {
+        if (!delete) {
 #if CONFIG_SETTINGS_NVS_NAME_CACHE
 			settings_nvs_cache_add(cf, name, name_id);
 #endif
-			write_name_id = name_id;
-			write_name = false;
-		}
+            write_name_id = name_id;
+            write_name = false;
+        }
 
-		goto found;
-	}
+        goto found;
+    }
 
 found:
 	if (delete == true) {
-		if (name_id == NVS_NAMECNT_ID) {
-			return (0);
-		}
+        if (name_id == NVS_NAMECNT_ID) {
+            return (0);
+        }
 
-		if (name_id == cf->last_name_id) {
-			cf->last_name_id--;
-			rc = nvs_write(&cf->cf_nvs, NVS_NAMECNT_ID,
-				       &cf->last_name_id, sizeof(uint16_t));
-			if (rc < 0) {
-				/* Error: can't to store
-				 * the largest name ID in use.
-				 */
-				return (rc);
-			}
-		}
+        if (name_id == cf->last_name_id) {
+            cf->last_name_id--;
+            rc = nvs_write(&cf->cf_nvs, NVS_NAMECNT_ID,
+                           &cf->last_name_id, sizeof(uint16_t));
+            if (rc < 0) {
+                /* Error: can't to store
+                 * the largest name ID in use.
+                 */
+                return (rc);
+            }
+        }
 
-		rc = nvs_delete(&cf->cf_nvs, name_id);
+        rc = nvs_delete(&cf->cf_nvs, name_id);
 
-		if (rc >= 0) {
-			rc = nvs_delete(&cf->cf_nvs, (name_id + NVS_NAME_ID_OFFSET));
-		}
+        if (rc >= 0) {
+            rc = nvs_delete(&cf->cf_nvs, (name_id + NVS_NAME_ID_OFFSET));
+        }
 
-		if (rc < 0) {
+        if (rc < 0) {
             return (rc);
-		}
+        }
 
-		return (0);
-	}
+        return (0);
+    }
 
-	/* No free IDs left. */
+    /* No free IDs left. */
     if (write_name_id == (NVS_NAMECNT_ID + NVS_NAME_ID_OFFSET)) {
         return (-ENOMEM);
-	}
+    }
 
 	/* write the value */
     rc = nvs_write(&cf->cf_nvs, (write_name_id + NVS_NAME_ID_OFFSET), value, val_len);
     if (rc >= 0) {
-	/* write the name if required */
+        /* write the name if required */
         if (write_name == true) {
-		rc = nvs_write(&cf->cf_nvs, write_name_id, name, strlen(name));
-		if (rc < 0) {
+            rc = nvs_write(&cf->cf_nvs, write_name_id, name, strlen(name));
+            if (rc < 0) {
                 return (rc);
-		}
-	}
+            }
+        }
 
-	/* update the last_name_id and write to flash if required*/
-	if (write_name_id > cf->last_name_id) {
-		cf->last_name_id = write_name_id;
+        /* update the last_name_id and write to flash if required*/
+        if (write_name_id > cf->last_name_id) {
+            cf->last_name_id = write_name_id;
             rc = nvs_write(&cf->cf_nvs, NVS_NAMECNT_ID, &cf->last_name_id, sizeof(uint16_t));
-	}
+        }
     }
 
     if (rc >= 0) {
         rc = 0;
-	}
+    }
 
     return (rc);
 }
 
 /* Initialize the nvs backend. */
 int settings_nvs_backend_init(struct settings_nvs* cf) {
-	int rc;
-	uint16_t last_name_id;
+    int rc;
+    uint16_t last_name_id;
 
-	cf->cf_nvs.flash_device = cf->flash_dev;
-	if (cf->cf_nvs.flash_device == NULL) {
+    cf->cf_nvs.flash_device = cf->flash_dev;
+    if (cf->cf_nvs.flash_device == NULL) {
         rc = -ENODEV;
-	}
+    }
     else {
-	rc = nvs_mount(&cf->cf_nvs);
+        rc = nvs_mount(&cf->cf_nvs);
         if (rc == 0) {
             rc = nvs_read(&cf->cf_nvs, NVS_NAMECNT_ID, &last_name_id, sizeof(last_name_id));
-	if (rc < 0) {
-		cf->last_name_id = NVS_NAMECNT_ID;
+            if (rc < 0) {
+                cf->last_name_id = NVS_NAMECNT_ID;
             }
             else {
-		cf->last_name_id = last_name_id;
-	}
+                cf->last_name_id = last_name_id;
+            }
 
-	LOG_DBG("Initialized");
+            LOG_DBG("Initialized");
 
             rc = 0;
-}
+        }
     }
 
     return (rc);
@@ -344,19 +343,18 @@ int settings_backend_init(void) {
 	struct flash_sector hw_flash_sector;
     uint32_t sector_cnt;
 
-	rc = flash_area_open(SETTINGS_PARTITION, &fa);
+    rc = flash_area_open(SETTINGS_PARTITION, &fa);
     if (rc == 0) {
         sector_cnt = 1;
         rc = flash_area_get_sectors(SETTINGS_PARTITION, &sector_cnt, &hw_flash_sector);
         if (rc == -ENODEV) {
             /* pass */
-	}
+        }
 
-	rc = flash_area_get_sectors(SETTINGS_PARTITION, &sector_cnt,
-				    &hw_flash_sector);
-	if (rc != 0 && rc != -ENOMEM) {
-		return rc;
-	}
+        rc = flash_area_get_sectors(SETTINGS_PARTITION, &sector_cnt, &hw_flash_sector);
+        if ((rc != 0) && (rc != -ENOMEM)) {
+            return rc;
+        }
         else {
             nvs_sector_size = (CONFIG_SETTINGS_NVS_SECTOR_SIZE_MULT * hw_flash_sector.fs_size);
             if (nvs_sector_size > UINT16_MAX) {
@@ -374,34 +372,34 @@ int settings_backend_init(void) {
             }
 
             /* define the nvs file system using the page_info */
-            default_settings_nvs.cf_nvs.sector_size  = (uint16_t)nvs_sector_size;
+            default_settings_nvs.cf_nvs.sector_size = (uint16_t)nvs_sector_size;
             default_settings_nvs.cf_nvs.sector_count = cnt;
-            default_settings_nvs.cf_nvs.offset       = fa->fa_off;
-            default_settings_nvs.flash_dev_name      = fa->fa_dev_name;
+            default_settings_nvs.cf_nvs.offset = fa->fa_off;
+            default_settings_nvs.flash_dev_name = fa->fa_dev_name;
 
             rc = settings_nvs_backend_init(&default_settings_nvs);
             if (rc == 0) {
                 rc = settings_nvs_src(&default_settings_nvs);
                 if (rc == 0) {
                     rc = settings_nvs_dst(&default_settings_nvs);
-	}
+                }
             }
         }
     }
 
-	while (cnt < CONFIG_SETTINGS_NVS_SECTOR_COUNT) {
-		nvs_size += nvs_sector_size;
-		if (nvs_size > fa->fa_size) {
-			break;
-		}
-		cnt++;
-	}
+    while (cnt < CONFIG_SETTINGS_NVS_SECTOR_COUNT) {
+        nvs_size += nvs_sector_size;
+        if (nvs_size > fa->fa_size) {
+            break;
+        }
+        cnt++;
+    }
 
 	/* define the nvs file system using the page_info */
-	default_settings_nvs.cf_nvs.sector_size = nvs_sector_size;
-	default_settings_nvs.cf_nvs.sector_count = cnt;
-	default_settings_nvs.cf_nvs.offset = fa->fa_off;
-	default_settings_nvs.flash_dev = fa->fa_dev;
+    default_settings_nvs.cf_nvs.sector_size  = nvs_sector_size;
+    default_settings_nvs.cf_nvs.sector_count = cnt;
+    default_settings_nvs.cf_nvs.offset       = fa->fa_off;
+    default_settings_nvs.flash_dev           = fa->fa_dev;
 
 	rc = settings_nvs_backend_init(&default_settings_nvs);
 	if (rc) {

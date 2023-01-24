@@ -294,63 +294,63 @@ static inline void delay_until_exit_dpd_ok(const struct device* const dev) {
  * @param length The size of the buffer
  * @return 0 on success, negative errno code otherwise
  */
-static int spi_nor_access(const struct device *const dev,
-			  uint8_t opcode, unsigned int access,
+static int spi_nor_access(const struct device* const dev,
+                          uint8_t opcode, unsigned int access,
                           off_t addr, void* data, size_t length) {
-	const struct spi_nor_config *const driver_cfg = dev->config;
-	struct spi_nor_data *const driver_data = dev->data;
+    const struct spi_nor_config* const driver_cfg = dev->config;
+    struct spi_nor_data* const driver_data = dev->data;
     bool is_addressed = ((access & NOR_ACCESS_ADDRESSED) != 0U);
     bool is_write     = ((access & NOR_ACCESS_WRITE) != 0U);
     uint8_t buf[5];
 
-	struct spi_buf spi_buf[2] = {
-		{
-			.buf = buf,
+    struct spi_buf spi_buf[2] = {
+        {
+            .buf = buf,
             .len = 1
-		},
-		{
-			.buf = data,
-			.len = length
-		}
-	};
+        },
+        {
+            .buf = data,
+            .len = length
+        }
+    };
 
 	buf[0] = opcode;
     if (is_addressed == true) {
         bool access_24bit = ((access & NOR_ACCESS_24BIT_ADDR) != 0U);
         bool access_32bit = ((access & NOR_ACCESS_32BIT_ADDR) != 0U);
         bool use_32bit    = (access_32bit || (!access_24bit && driver_data->flag_access_32bit));
-		union {
-			uint32_t u32;
-			uint8_t u8[4];
-		} addr32 = {
+        union {
+            uint32_t u32;
+            uint8_t u8[4];
+        } addr32 = {
 			.u32 = sys_cpu_to_be32(addr),
-		};
+        };
 
         if (use_32bit == true) {
-			memcpy(&buf[1], &addr32.u8[0], 4);
-			spi_buf[0].len += 4;
+            memcpy(&buf[1], &addr32.u8[0], 4);
+            spi_buf[0].len += 4;
         }
         else {
-			memcpy(&buf[1], &addr32.u8[1], 3);
-			spi_buf[0].len += 3;
-		}
-	};
+            memcpy(&buf[1], &addr32.u8[1], 3);
+            spi_buf[0].len += 3;
+        }
+    };
 
-	const struct spi_buf_set tx_set = {
-		.buffers = spi_buf,
+    const struct spi_buf_set tx_set = {
+        .buffers = spi_buf,
         .count   = (length != 0) ? 2 : 1
-	};
+    };
 
-	const struct spi_buf_set rx_set = {
-		.buffers = spi_buf,
+    const struct spi_buf_set rx_set = {
+        .buffers = spi_buf,
         .count   = 2
-	};
+    };
 
     if (is_write == true) {
-		return spi_write_dt(&driver_cfg->spi, &tx_set);
-	}
+        return spi_write_dt(&driver_cfg->spi, &tx_set);
+    }
 
-	return spi_transceive_dt(&driver_cfg->spi, &tx_set, &rx_set);
+    return spi_transceive_dt(&driver_cfg->spi, &tx_set, &rx_set);
 }
 
 #define spi_nor_cmd_read(dev, opcode, dest, length) \
@@ -401,7 +401,7 @@ static int spi_nor_wait_until_ready(const struct device* dev) {
  * @param length The size of the buffer
  * @return 0 on success, negative errno code otherwise
  */
-static int read_sfdp(const struct device *const dev,
+static int read_sfdp(const struct device* const dev,
                      off_t addr, void* data, size_t length) {
 	/* READ_SFDP requires a 24-bit address followed by a single
 	 * byte for a wait state.  This is effected by using 32-bit
@@ -417,12 +417,12 @@ static int enter_dpd(const struct device* const dev) {
     int ret;
 
     ret = 0;
-	if (IS_ENABLED(DT_INST_PROP(0, has_dpd))) {
-		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_DPD);
-		if (ret == 0) {
-			record_entered_dpd(dev);
-		}
-	}
+    if (IS_ENABLED(DT_INST_PROP(0, has_dpd))) {
+        ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_DPD);
+        if (ret == 0) {
+            record_entered_dpd(dev);
+        }
+    }
 
     return (ret);
 }
@@ -506,13 +506,13 @@ static void release_device(const struct device* dev) {
  * @return the non-negative value of the status register, or an error code.
  */
 static int spi_nor_rdsr(const struct device* dev) {
-	uint8_t reg;
+    uint8_t reg;
     int ret;
 
     ret = spi_nor_cmd_read(dev, SPI_NOR_CMD_RDSR, &reg, sizeof(reg));
-	if (ret == 0) {
-		ret = reg;
-	}
+    if (ret == 0) {
+        ret = reg;
+    }
 
     return (ret);
 }
@@ -532,10 +532,10 @@ static int spi_nor_wrsr(const struct device* dev, uint8_t sr) {
     int ret;
 
     ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
-	if (ret == 0) {
+    if (ret == 0) {
         ret = spi_nor_access(dev, SPI_NOR_CMD_WRSR, NOR_ACCESS_WRITE, 0, &sr, sizeof(sr));
-		spi_nor_wait_until_ready(dev);
-	}
+        spi_nor_wait_until_ready(dev);
+    }
 
     return (ret);
 }
@@ -680,59 +680,59 @@ static int spi_nor_read(const struct device* dev,
 
 static int /**/spi_nor_write(const struct device* dev,
                              off_t addr, const void* src, size_t size) {
-	const size_t flash_size = dev_flash_size(dev);
+	const size_t flash_size  = dev_flash_size(dev);
 	const uint16_t page_size = dev_page_size(dev);
-    int ret;
+	int ret;
 
 	/* should be between 0 and flash size */
 	if ((addr < 0) || ((size + addr) > flash_size)) {
-        return (-EINVAL);
+	    return (-EINVAL);
 	}
 
 	acquire_device(dev);
 	ret = spi_nor_write_protection_set(dev, false);
-	if (ret == 0) {
-		while (size > 0) {
-			size_t to_write = size;
+    if (ret == 0) {
+        while (size > 0) {
+            size_t to_write = size;
 
-			/* Don't write more than a page. */
-			if (to_write >= page_size) {
-				to_write = page_size;
-			}
+            /* Don't write more than a page. */
+            if (to_write >= page_size) {
+                to_write = page_size;
+            }
 
-			/* Don't write across a page boundary */
+            /* Don't write across a page boundary */
             if (((addr + to_write - 1U) / page_size) != (addr / page_size)) {
-				to_write = page_size - (addr % page_size);
-			}
+                to_write = page_size - (addr % page_size);
+            }
 
-			spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+            spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
             ret = spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_PP, addr, src, to_write);
-			if (ret != 0) {
-				break;
-			}
+            if (ret != 0) {
+                break;
+            }
 
-			size -= to_write;
-			src = (const uint8_t *)src + to_write;
-			addr += to_write;
+            size -= to_write;
+            src   = (const uint8_t *)src + to_write;
+            addr += to_write;
 
-			spi_nor_wait_until_ready(dev);
-		}
-	}
+            spi_nor_wait_until_ready(dev);
+        }
+    }
 
-	int ret2 = spi_nor_write_protection_set(dev, true);
+    int ret2 = spi_nor_write_protection_set(dev, true);
 
-	if (!ret) {
-		ret = ret2;
-	}
+    if (!ret) {
+        ret = ret2;
+    }
 
-	release_device(dev);
+    release_device(dev);
 
     return (ret);
 }
 
 static int spi_nor_erase(const struct device* dev, off_t addr, size_t size) {
 	const size_t flash_size = dev_flash_size(dev);
-	int ret = 0;
+	int ret;
 
     /* erase area must be sub-region of device */
 	if ((addr < 0) || ((size + addr) > flash_size)) {
@@ -1224,7 +1224,7 @@ static int spi_nor_configure(const struct device* dev) {
 	(void) mxicy_configure(dev, jedec_id);
 #endif /* DT_INST_NODE_HAS_PROP(0, mxicy_mx25r_power_mode) */
 
-    if (IS_ENABLED(CONFIG_SPI_NOR_IDLE_IN_DPD) &&
+	if (IS_ENABLED(CONFIG_SPI_NOR_IDLE_IN_DPD) &&
         (enter_dpd(dev) != 0)) {
         return (-ENODEV);
 	}

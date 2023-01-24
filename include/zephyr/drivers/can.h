@@ -197,7 +197,7 @@ struct can_frame {
 #define CAN_FILTER_DATA BIT(2)
 
 /** Filter matches CAN-FD frames (FDF) */
-#define CAN_FILTER_FDF BIT(3)
+#define CAN_FILTER_FDF  BIT(3)
 
 /** @} */
 

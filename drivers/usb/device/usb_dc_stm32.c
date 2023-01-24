@@ -253,6 +253,9 @@ static int usb_dc_stm32_clock_enable(void)
 	/* PLL output clock is set to 48MHz, it should not be divided */
 #warning USBPRE/OTGFSPRE should be set in rcc node
 #endif
+
+#endif /* RCC_CFGR_OTGFSPRE / RCC_CFGR_USBPRE */
+
     /* #CUSTOM@PST1981 : START */
     #if defined(CONFIG_SOC_SERIES_STM32H7X)
     LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL1Q);
@@ -269,13 +272,6 @@ static int usb_dc_stm32_clock_enable(void)
     #endif
     #endif
     /* #CUSTOM@PST1981 : END */
-
-	if (clock_control_on(clk, (clock_control_subsys_t *)&pclken) != 0) {
-		LOG_ERR("Unable to enable USB clock");
-		return -EIO;
-	}
-
-#endif /* RCC_CFGR_OTGFSPRE / RCC_CFGR_USBPRE */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc)

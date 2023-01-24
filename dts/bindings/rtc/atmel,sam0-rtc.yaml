@@ -18,7 +18,7 @@ properties:
     description: clock generator index
     required: true
 
-    prescaler:
-      type: int
-      description: RTC prescaler
-      required: true
+  prescaler:
+    type: int
+    description: RTC prescaler
+    required: true

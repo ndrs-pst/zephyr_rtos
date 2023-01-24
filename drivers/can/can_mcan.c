@@ -525,15 +525,14 @@ void can_mcan_tc_event_handler(const struct device* dev) {
     uint32_t event_idx;
     uint32_t tx_idx;
 
-	while (can->txefs & CAN_MCAN_TXEFS_EFFL) {
-		event_idx = (can->txefs & CAN_MCAN_TXEFS_EFGI) >>
-			    CAN_MCAN_TXEFS_EFGI_POS;
-		sys_cache_data_invd_range((void *)&msg_ram->tx_event_fifo[event_idx],
-					  sizeof(struct can_mcan_tx_event_fifo));
-		tx_event = &msg_ram->tx_event_fifo[event_idx];
-		tx_idx = tx_event->mm.idx;
-		/* Acknowledge TX event */
-		can->txefa = event_idx;
+    while (can->txefs & CAN_MCAN_TXEFS_EFFL) {
+        event_idx = ((can->txefs & CAN_MCAN_TXEFS_EFGI) >> CAN_MCAN_TXEFS_EFGI_POS);
+        sys_cache_data_invd_range((void*)&msg_ram->tx_event_fifo[event_idx],
+                                  sizeof(struct can_mcan_tx_event_fifo));
+        tx_event = &msg_ram->tx_event_fifo[event_idx];
+        tx_idx   = tx_event->mm.idx;
+        /* Acknowledge TX event */
+        can->txefa = event_idx;
 
         k_sem_give(&data->tx_sem);
 
@@ -594,15 +593,13 @@ void can_mcan_get_message(const struct device* dev,
     struct can_mcan_rx_fifo_hdr hdr;
     bool rtr_filter_mask;
     bool rtr_filter;
-	bool fd_frame_filter;
+    bool fd_frame_filter;
 
     while ((*fifo_status_reg & CAN_MCAN_RXF0S_F0FL)) {
         get_idx = (*fifo_status_reg & CAN_MCAN_RXF0S_F0GI) >> CAN_MCAN_RXF0S_F0GI_POS;
 
-		sys_cache_data_invd_range((void *)&fifo[get_idx].hdr,
-					  sizeof(struct can_mcan_rx_fifo_hdr));
-		memcpy32_volatile(&hdr, &fifo[get_idx].hdr,
-				  sizeof(struct can_mcan_rx_fifo_hdr));
+        sys_cache_data_invd_range((void*)&fifo[get_idx].hdr, sizeof(struct can_mcan_rx_fifo_hdr));
+        memcpy32_volatile(&hdr, &fifo[get_idx].hdr, sizeof(struct can_mcan_rx_fifo_hdr));
 
         frame.dlc = (uint8_t)hdr.dlc;
 
@@ -618,42 +615,42 @@ void can_mcan_get_message(const struct device* dev,
             frame.flags |= CAN_FRAME_BRS;
         }
 
-#if defined(CONFIG_CAN_RX_TIMESTAMP)
+        #if defined(CONFIG_CAN_RX_TIMESTAMP)
         frame.timestamp = hdr.rxts;
-#endif
+        #endif
 
         filt_idx = hdr.fidx;
 
-		if (hdr.xtd != 0) {
-			frame.id = hdr.ext_id;
-			frame.flags |= CAN_FRAME_IDE;
-			rtr_filter_mask = (data->ext_filt_rtr_mask & BIT(filt_idx)) != 0;
-			rtr_filter = (data->ext_filt_rtr & BIT(filt_idx)) != 0;
-			fd_frame_filter = (data->ext_filt_fd_frame & BIT(filt_idx)) != 0;
-		} else {
-			frame.id = hdr.std_id;
-			rtr_filter_mask = (data->std_filt_rtr_mask & BIT(filt_idx)) != 0;
-			rtr_filter = (data->std_filt_rtr & BIT(filt_idx)) != 0;
-			fd_frame_filter = (data->std_filt_fd_frame & BIT(filt_idx)) != 0;
-		}
+        if (hdr.xtd != 0) {
+            frame.id        = hdr.ext_id;
+            frame.flags    |= CAN_FRAME_IDE;
+            rtr_filter_mask = ((data->ext_filt_rtr_mask & BIT(filt_idx)) != 0);
+            rtr_filter      = ((data->ext_filt_rtr & BIT(filt_idx)) != 0);
+            fd_frame_filter = ((data->ext_filt_fd_frame & BIT(filt_idx)) != 0);
+        }
+        else {
+            frame.id        = hdr.std_id;
+            rtr_filter_mask = ((data->std_filt_rtr_mask & BIT(filt_idx)) != 0);
+            rtr_filter      = ((data->std_filt_rtr & BIT(filt_idx)) != 0);
+            fd_frame_filter = ((data->std_filt_fd_frame & BIT(filt_idx)) != 0);
+        }
 
-		if (rtr_filter_mask && (rtr_filter != ((frame.flags & CAN_FRAME_RTR) != 0))) {
-			/* RTR bit does not match filter RTR mask, drop frame */
-			*fifo_ack_reg = get_idx;
-			continue;
-		} else if (fd_frame_filter != ((frame.flags & CAN_FRAME_FDF) != 0)) {
-			/* FD bit does not match filter FD frame, drop frame */
-			*fifo_ack_reg = get_idx;
-			continue;
-		}
+        if (rtr_filter_mask && (rtr_filter != ((frame.flags & CAN_FRAME_RTR) != 0))) {
+            /* RTR bit does not match filter RTR mask, drop frame */
+            *fifo_ack_reg = get_idx;
+            continue;
+        }
+        else if (fd_frame_filter != ((frame.flags & CAN_FRAME_FDF) != 0)) {
+            /* FD bit does not match filter FD frame, drop frame */
+            *fifo_ack_reg = get_idx;
+            continue;
+        }
 
-		data_length = can_dlc_to_bytes(frame.dlc);
-		if (data_length <= sizeof(frame.data)) {
-			/* Data needs to be written in 32 bit blocks! */
-			sys_cache_data_invd_range((void *)fifo[get_idx].data_32,
-						  ROUND_UP(data_length, sizeof(uint32_t)));
-			memcpy32_volatile(frame.data_32, fifo[get_idx].data_32,
-					  ROUND_UP(data_length, sizeof(uint32_t)));
+        data_length = can_dlc_to_bytes(frame.dlc);
+        if (data_length <= sizeof(frame.data)) {
+            /* Data needs to be written in 32 bit blocks! */
+            sys_cache_data_invd_range((void*)fifo[get_idx].data_32, ROUND_UP(data_length, sizeof(uint32_t)));
+            memcpy32_volatile(frame.data_32, fifo[get_idx].data_32, ROUND_UP(data_length, sizeof(uint32_t)));
 
             if ((frame.flags & CAN_FRAME_IDE) != 0) {
                 LOG_DBG("Frame on filter %d, ID: 0x%x", filt_idx + NUM_STD_FILTER_DATA, frame.id);
@@ -869,14 +866,12 @@ int can_mcan_send(const struct device* dev,
         tx_hdr.std_id = (frame->id & CAN_STD_ID_MASK);
     }
 
-	memcpy32_volatile(&msg_ram->tx_buffer[put_idx].hdr, &tx_hdr, sizeof(tx_hdr));
-	memcpy32_volatile(msg_ram->tx_buffer[put_idx].data_32, frame->data_32,
-			  ROUND_UP(data_length, 4));
-	sys_cache_data_flush_range((void *)&msg_ram->tx_buffer[put_idx].hdr, sizeof(tx_hdr));
-	sys_cache_data_flush_range((void *)&msg_ram->tx_buffer[put_idx].data_32,
-				   ROUND_UP(data_length, 4));
+    memcpy32_volatile(&msg_ram->tx_buffer[put_idx].hdr, &tx_hdr, sizeof(tx_hdr));
+    memcpy32_volatile(msg_ram->tx_buffer[put_idx].data_32, frame->data_32, ROUND_UP(data_length, 4));
+    sys_cache_data_flush_range((void*)&msg_ram->tx_buffer[put_idx].hdr, sizeof(tx_hdr));
+    sys_cache_data_flush_range((void*)&msg_ram->tx_buffer[put_idx].data_32, ROUND_UP(data_length, 4));
 
-    data->tx_fin_cb[put_idx]     = callback;
+    data->tx_fin_cb[put_idx] = callback;
     data->tx_fin_cb_arg[put_idx] = user_data;
 
     can->txbar = (1U << put_idx);
@@ -935,16 +930,16 @@ int can_mcan_add_rx_filter_std(const struct device* dev,
     /* TODO proper fifo balancing */
     filter_element.sfce = filter_id & 0x01 ? CAN_MCAN_FCE_FIFO1 : CAN_MCAN_FCE_FIFO0;
 
-	memcpy32_volatile(&msg_ram->std_filt[filter_id], &filter_element,
-			 sizeof(struct can_mcan_std_filter));
-	sys_cache_data_flush_range((void *)&msg_ram->std_filt[filter_id],
-				   sizeof(struct can_mcan_std_filter));
+    memcpy32_volatile(&msg_ram->std_filt[filter_id], &filter_element,
+                      sizeof(struct can_mcan_std_filter));
+    sys_cache_data_flush_range((void*)&msg_ram->std_filt[filter_id],
+                               sizeof(struct can_mcan_std_filter));
 
     k_mutex_unlock(&data->inst_mutex);
 
     LOG_DBG("Attached std filter at %d", filter_id);
 
-    if ((filter->flags & CAN_FILTER_RTR) != 0) {
+    if ((filter->flags & CAN_FILTER_RTR) != 0U) {
         data->std_filt_rtr |= (1U << filter_id);
     }
     else {
@@ -959,14 +954,15 @@ int can_mcan_add_rx_filter_std(const struct device* dev,
         data->std_filt_rtr_mask &= ~(1U << filter_id);
     }
 
-	if ((filter->flags & CAN_FILTER_FDF) != 0) {
-		data->std_filt_fd_frame |= (1U << filter_id);
-	} else {
-		data->std_filt_fd_frame &= ~(1U << filter_id);
-	}
+    if ((filter->flags & CAN_FILTER_FDF) != 0U) {
+        data->std_filt_fd_frame |= (1U << filter_id);
+    }
+    else {
+        data->std_filt_fd_frame &= ~(1U << filter_id);
+    }
 
-	data->rx_cb_std[filter_id] = callback;
-	data->cb_arg_std[filter_id] = user_data;
+    data->rx_cb_std[filter_id]  = callback;
+    data->cb_arg_std[filter_id] = user_data;
 
     return (filter_id);
 }
@@ -1004,16 +1000,16 @@ static int can_mcan_add_rx_filter_ext(const struct device* dev,
     /* TODO proper fifo balancing */
     filter_element.efce = filter_id & 0x01 ? CAN_MCAN_FCE_FIFO1 : CAN_MCAN_FCE_FIFO0;
 
-	memcpy32_volatile(&msg_ram->ext_filt[filter_id], &filter_element,
-			  sizeof(struct can_mcan_ext_filter));
-	sys_cache_data_flush_range((void *)&msg_ram->ext_filt[filter_id],
-				   sizeof(struct can_mcan_ext_filter));
+    memcpy32_volatile(&msg_ram->ext_filt[filter_id], &filter_element,
+                      sizeof(struct can_mcan_ext_filter));
+    sys_cache_data_flush_range((void *)&msg_ram->ext_filt[filter_id],
+                               sizeof(struct can_mcan_ext_filter));
 
     k_mutex_unlock(&data->inst_mutex);
 
     LOG_DBG("Attached ext filter at %d", filter_id);
 
-    if ((filter->flags & CAN_FILTER_RTR) != 0) {
+    if ((filter->flags & CAN_FILTER_RTR) != 0U) {
         data->ext_filt_rtr |= (1U << filter_id);
     }
     else {
@@ -1027,14 +1023,15 @@ static int can_mcan_add_rx_filter_ext(const struct device* dev,
         data->ext_filt_rtr_mask &= ~(1U << filter_id);
     }
 
-	if ((filter->flags & CAN_FILTER_FDF) != 0) {
-		data->ext_filt_fd_frame |= (1U << filter_id);
-	} else {
-		data->ext_filt_fd_frame &= ~(1U << filter_id);
-	}
+    if ((filter->flags & CAN_FILTER_FDF) != 0U) {
+        data->ext_filt_fd_frame |= (1U << filter_id);
+    }
+    else {
+        data->ext_filt_fd_frame &= ~(1U << filter_id);
+    }
 
-	data->rx_cb_ext[filter_id] = callback;
-	data->cb_arg_ext[filter_id] = user_data;
+    data->rx_cb_ext[filter_id]  = callback;
+    data->cb_arg_ext[filter_id] = user_data;
 
     return (filter_id);
 }
@@ -1050,23 +1047,23 @@ int can_mcan_add_rx_filter(const struct device* dev,
 
 
 #ifdef CONFIG_CAN_FD_MODE
-	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA |
-							CAN_FILTER_RTR | CAN_FILTER_FDF)) != 0) {
+    if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR | CAN_FILTER_FDF)) != 0U) {
 #else
-	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR)) != 0) {
+    if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR)) != 0U) {
 #endif
-		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
-		return -ENOTSUP;
-	}
+        LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
+        return (-ENOTSUP);
+    }
 
-	if ((filter->flags & CAN_FILTER_IDE) != 0) {
-		filter_id = can_mcan_add_rx_filter_ext(dev, callback, user_data, filter);
-		if (filter_id >= 0) {
-			filter_id += NUM_STD_FILTER_DATA;
-		}
-	} else {
-		filter_id = can_mcan_add_rx_filter_std(dev, callback, user_data, filter);
-	}
+    if ((filter->flags & CAN_FILTER_IDE) != 0U) {
+        filter_id = can_mcan_add_rx_filter_ext(dev, callback, user_data, filter);
+        if (filter_id >= 0) {
+            filter_id += NUM_STD_FILTER_DATA;
+        }
+    }
+    else {
+        filter_id = can_mcan_add_rx_filter_std(dev, callback, user_data, filter);
+    }
 
     return (filter_id);
 }
@@ -1083,16 +1080,17 @@ void can_mcan_remove_rx_filter(const struct device* dev, int filter_id) {
             return;
         }
 
-		memset32_volatile(&msg_ram->ext_filt[filter_id], 0,
-				  sizeof(struct can_mcan_ext_filter));
-		sys_cache_data_flush_range((void *)&msg_ram->ext_filt[filter_id],
-					   sizeof(struct can_mcan_ext_filter));
-	} else {
-		memset32_volatile(&msg_ram->std_filt[filter_id], 0,
-				  sizeof(struct can_mcan_std_filter));
-		sys_cache_data_flush_range((void *)&msg_ram->std_filt[filter_id],
-					   sizeof(struct can_mcan_std_filter));
-	}
+        memset32_volatile(&msg_ram->ext_filt[filter_id], 0,
+                          sizeof(struct can_mcan_ext_filter));
+        sys_cache_data_flush_range((void*)&msg_ram->ext_filt[filter_id],
+                                   sizeof(struct can_mcan_ext_filter));
+    }
+    else {
+        memset32_volatile(&msg_ram->std_filt[filter_id], 0,
+                          sizeof(struct can_mcan_std_filter));
+        sys_cache_data_flush_range((void*)&msg_ram->std_filt[filter_id],
+                                   sizeof(struct can_mcan_std_filter));
+    }
 
     k_mutex_unlock(&data->inst_mutex);
 }

@@ -236,65 +236,62 @@ void z_set_timeout_expiry(int32_t ticks, bool is_idle)
 	}
 }
 
-void sys_clock_announce(int32_t ticks)
-{
+void sys_clock_announce(int32_t ticks) {
 #ifdef CONFIG_TIMESLICING
-	z_time_slice(ticks);
+    z_time_slice(ticks);
 #endif
 
-	k_spinlock_key_t key = k_spin_lock(&timeout_lock);
+    k_spinlock_key_t key = k_spin_lock(&timeout_lock);
 
-	/* We release the lock around the callbacks below, so on SMP
-	 * systems someone might be already running the loop.  Don't
-	 * race (which will cause paralllel execution of "sequential"
-	 * timeouts and confuse apps), just increment the tick count
-	 * and return.
-	 */
-	if (IS_ENABLED(CONFIG_SMP) && (announce_remaining != 0)) {
-		announce_remaining += ticks;
-		k_spin_unlock(&timeout_lock, key);
-		return;
-	}
+    /* We release the lock around the callbacks below, so on SMP
+     * systems someone might be already running the loop.  Don't
+     * race (which will cause paralllel execution of "sequential"
+     * timeouts and confuse apps), just increment the tick count
+     * and return.
+     */
+    if (IS_ENABLED(CONFIG_SMP) && (announce_remaining != 0)) {
+        announce_remaining += ticks;
+        k_spin_unlock(&timeout_lock, key);
+        return;
+    }
 
-	announce_remaining = ticks;
+    announce_remaining = ticks;
 
-	struct _timeout *t = first();
+    struct _timeout* t = first();
 
-	for (t = first();
-	     (t != NULL) && (t->dticks <= announce_remaining);
-	     t = first()) {
-		int dt = t->dticks;
+    for (t = first(); (t != NULL) && (t->dticks <= announce_remaining); t = first()) {
+        int dt = (int)t->dticks;
 
-		curr_tick += dt;
-		t->dticks = 0;
-		remove_timeout(t);
+        curr_tick += dt;
+        t->dticks = 0;
+        remove_timeout(t);
 
-		k_spin_unlock(&timeout_lock, key);
-		t->fn(t);
-		key = k_spin_lock(&timeout_lock);
-		announce_remaining -= dt;
-	}
+        k_spin_unlock(&timeout_lock, key);
+        t->fn(t);
+        key = k_spin_lock(&timeout_lock);
+        announce_remaining -= dt;
+    }
 
-	if (t != NULL) {
-		t->dticks -= announce_remaining;
-	}
+    if (t != NULL) {
+        t->dticks -= announce_remaining;
+    }
 
-	curr_tick += announce_remaining;
-	announce_remaining = 0;
+    curr_tick += announce_remaining;
+    announce_remaining = 0;
 
-	sys_clock_set_timeout(next_timeout(), false);
+    sys_clock_set_timeout(next_timeout(), false);
 
-	k_spin_unlock(&timeout_lock, key);
+    k_spin_unlock(&timeout_lock, key);
 }
 
-int64_t sys_clock_tick_get(void)
-{
-	uint64_t t = 0U;
+int64_t sys_clock_tick_get(void) {
+    uint64_t t = 0U;
 
-	LOCKED(&timeout_lock) {
-		t = curr_tick + elapsed();
-	}
-	return t;
+    LOCKED(&timeout_lock) {
+        t = curr_tick + elapsed();
+    }
+
+    return (t);
 }
 
 uint32_t sys_clock_tick_get_32(void)
@@ -384,13 +381,11 @@ uint64_t sys_clock_timeout_end_calc(k_timeout_t timeout)
 }
 
 #ifdef CONFIG_ZTEST
-void z_impl_sys_clock_tick_set(uint64_t tick)
-{
-	curr_tick = tick;
+void z_impl_sys_clock_tick_set(uint64_t tick) {
+    curr_tick = tick;
 }
 
-void z_vrfy_sys_clock_tick_set(uint64_t tick)
-{
-	z_impl_sys_clock_tick_set(tick);
+void z_vrfy_sys_clock_tick_set(uint64_t tick) {
+    z_impl_sys_clock_tick_set(tick);
 }
 #endif
