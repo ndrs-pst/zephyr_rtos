@@ -290,9 +290,8 @@ static int read(const struct shell_transport* transport,
 }
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
-static void update(const struct shell_transport *transport)
-{
-	struct shell_uart *sh_uart = (struct shell_uart *)transport->ctx;
+static void update(const struct shell_transport* transport) {
+    struct shell_uart* sh_uart = (struct shell_uart*)transport->ctx;
 
 	smp_shell_process(&sh_uart->ctrl_blk->smp);
 }
