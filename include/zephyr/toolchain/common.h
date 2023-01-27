@@ -121,7 +121,11 @@
      */
     #define ALWAYS_INLINE inline
   #else
+    #if defined(_MSC_VER)                   /* #CUSTOM@NDRS */
+    #define ALWAYS_INLINE inline
+    #else
     #define ALWAYS_INLINE inline __attribute__((always_inline))
+    #endif
   #endif
 #endif
 
@@ -130,7 +134,11 @@
 
 /* concatenate the values of the arguments into one */
 #define _DO_CONCAT(x, y) x ## y
-#define _CONCAT(x, y) _DO_CONCAT(x, y)
+#define Z_CONCAT(x, y) _DO_CONCAT(x, y)     /* #CUSTOM@NDRS */
+
+#if !defined(_MSC_VER)                      /* #CUSTOM@NDRS */
+#define _CONCAT(x, y)  _DO_CONCAT(x, y)
+#endif
 
 /* Additionally used as a sentinel by gen_syscalls.py to identify what
  * functions are system calls
@@ -163,9 +171,9 @@
  * Common implementation swallows the message.
  */
 #define BUILD_ASSERT(EXPR, MSG...) \
-	enum _CONCAT(__build_assert_enum, __COUNTER__) { \
-		_CONCAT(__build_assert, __COUNTER__) = 1 / !!(EXPR) \
-	}
+    enum Z_CONCAT(__build_assert_enum, __COUNTER__) { \
+         Z_CONCAT(__build_assert, __COUNTER__) = 1 / !!(EXPR) \
+    }
 #endif
 
 /*
@@ -237,14 +245,14 @@
  * ITERABLE_SECTION_ROM() or ITERABLE_SECTION_RAM() in the linker script.
  */
 #define STRUCT_SECTION_FOREACH(struct_type, iterator) \
-	extern struct struct_type _CONCAT(_##struct_type, _list_start)[]; \
-	extern struct struct_type _CONCAT(_##struct_type, _list_end)[]; \
-	for (struct struct_type *iterator = \
-			_CONCAT(_##struct_type, _list_start); \
-	     ({ __ASSERT(iterator <= _CONCAT(_##struct_type, _list_end), \
-			 "unexpected list end location"); \
-		iterator < _CONCAT(_##struct_type, _list_end); }); \
-	     iterator++)
+    extern struct struct_type Z_CONCAT(_##struct_type, _list_start)[]; \
+    extern struct struct_type Z_CONCAT(_##struct_type, _list_end)[]; \
+    for (struct struct_type *iterator = \
+        Z_CONCAT(_##struct_type, _list_start); \
+        ({ __ASSERT(iterator <= Z_CONCAT(_##struct_type, _list_end), \
+           "unexpected list end location"); \
+           iterator < Z_CONCAT(_##struct_type, _list_end); }); \
+           iterator++)
 
 /**
  * @brief Get element from section.
@@ -256,8 +264,8 @@
  * @param[out] dst Pointer to location where pointer to element is written.
  */
 #define STRUCT_SECTION_GET(struct_type, i, dst) do { \
-	extern struct struct_type _CONCAT(_##struct_type, _list_start)[]; \
-	*(dst) = &_CONCAT(_##struct_type, _list_start)[i]; \
+	extern struct struct_type Z_CONCAT(_##struct_type, _list_start)[]; \
+	*(dst) = &Z_CONCAT(_##struct_type, _list_start)[i]; \
 } while (0)
 
 /**
@@ -267,10 +275,10 @@
  * @param[out] dst Pointer to location where result is written.
  */
 #define STRUCT_SECTION_COUNT(struct_type, dst) do { \
-	extern struct struct_type _CONCAT(_##struct_type, _list_start)[]; \
-	extern struct struct_type _CONCAT(_##struct_type, _list_end)[]; \
-	*(dst) = ((uintptr_t)_CONCAT(_##struct_type, _list_end) - \
-		  (uintptr_t)_CONCAT(_##struct_type, _list_start)) / sizeof(struct struct_type); \
+	extern struct struct_type Z_CONCAT(_##struct_type, _list_start)[]; \
+	extern struct struct_type Z_CONCAT(_##struct_type, _list_end)[]; \
+	*(dst) = ((uintptr_t)Z_CONCAT(_##struct_type, _list_end) - \
+		  (uintptr_t)Z_CONCAT(_##struct_type, _list_start)) / sizeof(struct struct_type); \
 } while (0)
 
 /**

@@ -1474,7 +1474,7 @@ static inline int i2c_reg_update_byte_dt(const struct i2c_dt_spec *spec,
 					 uint8_t reg_addr, uint8_t mask,
 					 uint8_t value)
 {
-	return i2c_reg_update_byte(spec->bus, spec->addr,
+	return i2c_reg_update_byte(spec->bus, (uint8_t)spec->addr,
 				   reg_addr, mask, value);
 }
 

@@ -1539,8 +1539,7 @@ void shell_hexdump_line(const struct shell *shell, unsigned int offset,
 		}
 
 		if (i < len) {
-			shell_fprintf(shell, SHELL_NORMAL, "%02x ",
-				      data[i] & 0xFF);
+			shell_fprintf(shell, SHELL_NORMAL, "%02X ", data[i] & 0xFF);
 		} else {
 			shell_fprintf(shell, SHELL_NORMAL, "   ");
 		}

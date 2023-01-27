@@ -30,8 +30,8 @@ extern "C" {
  * Deleted records will not be found, only the last record will be
  * read.
  */
-#define NVS_NAMECNT_ID 0x8000
-#define NVS_NAME_ID_OFFSET 0x4000
+#define NVS_NAMECNT_ID      0x8000
+#define NVS_NAME_ID_OFFSET  0x4000
 
 struct settings_nvs {
 	struct settings_store cf_store;

@@ -484,12 +484,12 @@ ZTEST(test_log_core_additional, test_log_msg_create)
 					  sizeof(msg_data), NULL);
 		/* try z_log_msg_static_create() */
 		Z_LOG_MSG2_STACK_CREATE(0, domain, __log_current_const_data,
-					level, &msg_data,
-					sizeof(msg_data), NULL);
+		                        level, &msg_data,
+		                        sizeof(msg_data), NULL);
 
 		Z_LOG_MSG2_CREATE(!IS_ENABLED(CONFIG_USERSPACE), mode,
-			  Z_LOG_LOCAL_DOMAIN_ID, NULL,
-			  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, test_msg_usr);
+                          Z_LOG_LOCAL_DOMAIN_ID, NULL,
+                          LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, test_msg_usr);
 
 		while (log_test_process()) {
 		}
