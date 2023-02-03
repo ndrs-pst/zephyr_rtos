@@ -38,16 +38,15 @@
  */
 static struct k_spinlock lock;
 
-int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
-		      unsigned int limit)
-{
+int z_impl_k_sem_init(struct k_sem* sem, unsigned int initial_count,
+                      unsigned int limit) {
 	/*
 	 * Limit cannot be zero and count cannot be greater than limit
 	 */
-	CHECKIF(limit == 0U || limit > K_SEM_MAX_LIMIT || initial_count > limit) {
+	CHECKIF((limit == 0U) || (limit > K_SEM_MAX_LIMIT) || (initial_count > limit)) {
 		SYS_PORT_TRACING_OBJ_FUNC(k_sem, init, sem, -EINVAL);
 
-		return -EINVAL;
+		return (-EINVAL);
 	}
 
 	sem->count = initial_count;
@@ -61,21 +60,19 @@ int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 #endif
 	z_object_init(sem);
 
-	return 0;
+	return (0);
 }
 
 #ifdef CONFIG_USERSPACE
-int z_vrfy_k_sem_init(struct k_sem *sem, unsigned int initial_count,
-		      unsigned int limit)
-{
+int z_vrfy_k_sem_init(struct k_sem* sem, unsigned int initial_count,
+                      unsigned int limit) {
 	Z_OOPS(Z_SYSCALL_OBJ_INIT(sem, K_OBJ_SEM));
 	return z_impl_k_sem_init(sem, initial_count, limit);
 }
 #include <syscalls/k_sem_init_mrsh.c>
 #endif
 
-static inline void handle_poll_events(struct k_sem *sem)
-{
+static inline void handle_poll_events(struct k_sem* sem) {
 #ifdef CONFIG_POLL
 	z_handle_obj_poll_events(&sem->poll_events, K_POLL_STATE_SEM_AVAILABLE);
 #else
@@ -83,22 +80,22 @@ static inline void handle_poll_events(struct k_sem *sem)
 #endif
 }
 
-void z_impl_k_sem_give(struct k_sem *sem)
-{
-	k_spinlock_key_t key = k_spin_lock(&lock);
-	struct k_thread *thread;
+void z_impl_k_sem_give(struct k_sem* sem) {
+    k_spinlock_key_t key = k_spin_lock(&lock);
+    struct k_thread* thread;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_sem, give, sem);
 
 	thread = z_unpend_first_thread(&sem->wait_q);
 
-	if (thread != NULL) {
-		arch_thread_return_value_set(thread, 0);
-		z_ready_thread(thread);
-	} else {
-		sem->count += (sem->count != sem->limit) ? 1U : 0U;
-		handle_poll_events(sem);
-	}
+    if (thread != NULL) {
+        arch_thread_return_value_set(thread, 0);
+        z_ready_thread(thread);
+    }
+    else {
+        sem->count += (sem->count != sem->limit) ? 1U : 0U;
+        handle_poll_events(sem);
+    }
 
 	z_reschedule(&lock, key);
 
@@ -114,12 +111,10 @@ static inline void z_vrfy_k_sem_give(struct k_sem *sem)
 #include <syscalls/k_sem_give_mrsh.c>
 #endif
 
-int z_impl_k_sem_take(struct k_sem *sem, k_timeout_t timeout)
-{
+int z_impl_k_sem_take(struct k_sem* sem, k_timeout_t timeout) {
 	int ret = 0;
 
-	__ASSERT(((arch_is_in_isr() == false) ||
-		  K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
+	__ASSERT(((arch_is_in_isr() == false) || K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
@@ -148,9 +143,8 @@ out:
 	return ret;
 }
 
-void z_impl_k_sem_reset(struct k_sem *sem)
-{
-	struct k_thread *thread;
+void z_impl_k_sem_reset(struct k_sem* sem) {
+    struct k_thread* thread;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	while (true) {

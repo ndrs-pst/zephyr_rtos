@@ -50,9 +50,7 @@ static void pinctrl_configure_pin(pinctrl_soc_pin_t pin) {
 	soc_pin.flags = SAM_PINCTRL_FLAGS_GET(pin) << SOC_PORT_FLAGS_POS;
 
 	if (port_func == SAM_PINMUX_FUNC_periph) {
-		soc_pin.flags |= (SAM_PINMUX_PERIPH_GET(pin)
-				  << SOC_PORT_FUNC_POS)
-			      |  SOC_PORT_PMUXEN_ENABLE;
+		soc_pin.flags |= (SAM_PINMUX_PERIPH_GET(pin) << SOC_PORT_FUNC_POS) | SOC_PORT_PMUXEN_ENABLE;
 	}
 
 	soc_port_configure(&soc_pin);
@@ -66,5 +64,5 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t* pins,
 		pinctrl_configure_pin(*pins++);
 	}
 
-	return 0;
+	return (0);
 }

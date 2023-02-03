@@ -3001,8 +3001,8 @@ struct k_sem {
  * @retval -EINVAL Invalid values
  *
  */
-__syscall int k_sem_init(struct k_sem *sem, unsigned int initial_count,
-			  unsigned int limit);
+__syscall int k_sem_init(struct k_sem* sem, unsigned int initial_count,
+                         unsigned int limit);
 
 /**
  * @brief Take a semaphore.
@@ -3022,7 +3022,7 @@ __syscall int k_sem_init(struct k_sem *sem, unsigned int initial_count,
  * @retval -EAGAIN Waiting period timed out,
  *			or the semaphore was reset during the waiting period.
  */
-__syscall int k_sem_take(struct k_sem *sem, k_timeout_t timeout);
+__syscall int k_sem_take(struct k_sem* sem, k_timeout_t timeout);
 
 /**
  * @brief Give a semaphore.
@@ -5623,14 +5623,14 @@ __syscall int k_poll(struct k_poll_event *events, int num_events,
  * @param sig A poll signal.
  */
 
-__syscall void k_poll_signal_init(struct k_poll_signal *sig);
+__syscall void k_poll_signal_init(struct k_poll_signal* sig);
 
 /*
  * @brief Reset a poll signal object's state to unsignaled.
  *
  * @param sig A poll signal object
  */
-__syscall void k_poll_signal_reset(struct k_poll_signal *sig);
+__syscall void k_poll_signal_reset(struct k_poll_signal* sig);
 
 /**
  * @brief Fetch the signaled state and result value of a poll signal
@@ -5642,8 +5642,8 @@ __syscall void k_poll_signal_reset(struct k_poll_signal *sig);
  *		   result value if the object was signaled, or an undefined
  *		   value if it was not.
  */
-__syscall void k_poll_signal_check(struct k_poll_signal *sig,
-				   unsigned int *signaled, int *result);
+__syscall void k_poll_signal_check(struct k_poll_signal* sig,
+                                   unsigned int* signaled, int* result);
 
 /**
  * @brief Signal a poll signal object.
@@ -5669,12 +5669,12 @@ __syscall void k_poll_signal_check(struct k_poll_signal *sig,
  * @retval -EAGAIN The polling thread's timeout is in the process of expiring.
  */
 
-__syscall int k_poll_signal_raise(struct k_poll_signal *sig, int result);
+__syscall int k_poll_signal_raise(struct k_poll_signal* sig, int result);
 
 /**
  * @internal
  */
-extern void z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state);
+extern void z_handle_obj_poll_events(sys_dlist_t* events, uint32_t state);
 
 /** @} */
 
