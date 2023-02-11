@@ -996,7 +996,7 @@ ssize_t nvs_write(struct nvs_fs* fs, uint16_t id, const void* data, size_t len) 
         return (-EACCES);
 	}
 
-	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
+	ate_size  = nvs_al_size(fs, sizeof(struct nvs_ate));
 	data_size = nvs_al_size(fs, len);
 
 	/* The maximum data size is sector size - 4 ate
@@ -1010,7 +1010,7 @@ ssize_t nvs_write(struct nvs_fs* fs, uint16_t id, const void* data, size_t len) 
 
 	/* find latest entry with same id */
 	wlk_addr = fs->ate_wra;
-	rd_addr = wlk_addr;
+	rd_addr  = wlk_addr;
 
     prev_found = false;
 	while (1) {

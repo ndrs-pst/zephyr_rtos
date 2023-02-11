@@ -434,8 +434,8 @@ struct spi_dt_spec {
  *    the length of bytes that should be skipped (as RX buffer).
  */
 struct spi_buf {
-	void *buf;
-	size_t len;
+    void*  buf;
+    size_t len;
 };
 
 /**
@@ -445,8 +445,8 @@ struct spi_buf {
  * @param count is the length of the array pointed by buffers.
  */
 struct spi_buf_set {
-	const struct spi_buf *buffers;
-	size_t count;
+    const struct spi_buf* buffers;
+    size_t count;
 };
 
 /**
