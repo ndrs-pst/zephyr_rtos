@@ -52,7 +52,7 @@ static ALWAYS_INLINE unsigned int find_msb_set(uint32_t op)
 
 static ALWAYS_INLINE unsigned int find_lsb_set(uint32_t op)
 {
-#ifdef CONFIG_TOOLCHAIN_HAS_BUILTIN_FFS
+#if (defined(CONFIG_TOOLCHAIN_HAS_BUILTIN_FFS) && !defined(_MSC_VER))   /* #CUSTOM@NDRS */
 	return __builtin_ffs(op);
 
 #else

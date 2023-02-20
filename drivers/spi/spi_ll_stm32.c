@@ -471,6 +471,10 @@ static int spi_stm32_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+    if ((config->operation & SPI_HALF_DUPLEX) == SPI_HALF_DUPLEX) {
+        /* TODO : customized to support 3-wire SPI */
+    }
+
 	/* configure the frame format Motorola (default) or TI */
 	if ((config->operation & SPI_FRAME_FORMAT_TI) == SPI_FRAME_FORMAT_TI) {
 #ifdef LL_SPI_PROTOCOL_TI

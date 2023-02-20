@@ -1075,16 +1075,18 @@ static inline int z_impl_i2c_target_driver_unregister(const struct device *dev)
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-static inline int i2c_write(const struct device *dev, const uint8_t *buf,
-			    uint32_t num_bytes, uint16_t addr)
-{
-	struct i2c_msg msg;
+static inline int i2c_write(const struct device* dev, const uint8_t* buf,
+                            uint32_t num_bytes, uint16_t addr) {
+    struct i2c_msg msg;
+    int ret;
 
-	msg.buf = (uint8_t *)buf;
-	msg.len = num_bytes;
-	msg.flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+    msg.buf   = (uint8_t*)buf;
+    msg.len   = num_bytes;
+    msg.flags = (I2C_MSG_WRITE | I2C_MSG_STOP);
 
-	return i2c_transfer(dev, &msg, 1, addr);
+    ret = i2c_transfer(dev, &msg, 1, addr);
+
+    return (ret);
 }
 
 /**
@@ -1100,10 +1102,13 @@ static inline int i2c_write(const struct device *dev, const uint8_t *buf,
  *
  * @return a value from i2c_write()
  */
-static inline int i2c_write_dt(const struct i2c_dt_spec *spec,
-			       const uint8_t *buf, uint32_t num_bytes)
-{
-	return i2c_write(spec->bus, buf, num_bytes, spec->addr);
+static inline int i2c_write_dt(const struct i2c_dt_spec* spec,
+                               const uint8_t* buf, uint32_t num_bytes) {
+    int ret;
+
+    ret = i2c_write(spec->bus, buf, num_bytes, spec->addr);
+
+    return (ret);
 }
 
 /**
@@ -1120,16 +1125,18 @@ static inline int i2c_write_dt(const struct i2c_dt_spec *spec,
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-static inline int i2c_read(const struct device *dev, uint8_t *buf,
-			   uint32_t num_bytes, uint16_t addr)
-{
-	struct i2c_msg msg;
+static inline int i2c_read(const struct device* dev, uint8_t* buf,
+                           uint32_t num_bytes, uint16_t addr) {
+    struct i2c_msg msg;
+    int ret;
 
-	msg.buf = buf;
-	msg.len = num_bytes;
-	msg.flags = I2C_MSG_READ | I2C_MSG_STOP;
+    msg.buf   = buf;
+    msg.len   = num_bytes;
+    msg.flags = (I2C_MSG_READ | I2C_MSG_STOP);
 
-	return i2c_transfer(dev, &msg, 1, addr);
+    ret = i2c_transfer(dev, &msg, 1, addr);
+
+    return (ret);
 }
 
 /**
@@ -1145,10 +1152,13 @@ static inline int i2c_read(const struct device *dev, uint8_t *buf,
  *
  * @return a value from i2c_read()
  */
-static inline int i2c_read_dt(const struct i2c_dt_spec *spec,
-			      uint8_t *buf, uint32_t num_bytes)
-{
-	return i2c_read(spec->bus, buf, num_bytes, spec->addr);
+static inline int i2c_read_dt(const struct i2c_dt_spec* spec,
+                              uint8_t* buf, uint32_t num_bytes) {
+    int ret;
+
+    ret = i2c_read(spec->bus, buf, num_bytes, spec->addr);
+
+    return (ret);
 }
 
 /**
@@ -1474,7 +1484,7 @@ static inline int i2c_reg_update_byte_dt(const struct i2c_dt_spec *spec,
 					 uint8_t reg_addr, uint8_t mask,
 					 uint8_t value)
 {
-	return i2c_reg_update_byte(spec->bus, spec->addr,
+	return i2c_reg_update_byte(spec->bus, (uint8_t)spec->addr,
 				   reg_addr, mask, value);
 }
 
