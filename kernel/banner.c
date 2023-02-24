@@ -9,6 +9,28 @@
 #include <zephyr/device.h>
 #include <version.h>
 
+#define CLI_INFO_BBC_MICRO_OWL_LOGO_2   "■　■　■　■　■　■　■　■　■\n"   \
+                                        "　■　　　　　■　■　　　　　■　\n"   \
+                                        "■　　　■　　　■　　　■　　　■\n"   \
+                                        "　　　■　■　　　　　■　■　　　\n"   \
+                                        "■　　　■　　　　　　　■　　　■\n"   \
+                                        "　■　　　　　■　■　　　　　■　\n"   \
+                                        "■　■　　　　　■　　　　　■　■\n"   \
+                                        "　■　■　　　　　　　　　■　　　\n"   \
+                                        "■　■　■　■　■　■　■　　　■\n"   \
+                                        "　■　■　■　■　　　　　　　　　\n"   \
+                                        "■　■　■　■　■　　　　　　　■\n"   \
+                                        "　■　■　■　■　　　　　　　　　\n"   \
+                                        "　　■　■　■　■　　　　　　　■\n"   \
+                                        "　　　■　■　■　■　　　　　　　\n"   \
+                                        "　　　　■　■　■　■　　　　　■\n"   \
+                                        "　　　　　■　■　■　■　　　　　\n"   \
+                                        "　　　　　　■　■　■　■　　　■\n"   \
+                                        "　　　　　　　■　　　■　■　　　\n"   \
+                                        "　　　　　　■　　　■　　　■　■\n"   \
+                                        "　■　■　■　■　■　■　■　■　\n"   \
+                                        "　　　　　　　　　　　　　　　　■\n"
+
 #if defined(CONFIG_BOOT_DELAY) && (CONFIG_BOOT_DELAY > 0)
 #define DELAY_STR STRINGIFY(CONFIG_BOOT_DELAY)
 #define BANNER_POSTFIX " (delayed boot " DELAY_STR "ms)"
@@ -31,5 +53,6 @@ void boot_banner(void)
 
 #if CONFIG_BOOT_BANNER
 	printk("*** Booting Zephyr OS build " BANNER_VERSION BANNER_POSTFIX " ***\n");
+    printk(CLI_INFO_BBC_MICRO_OWL_LOGO_2);
 #endif /* CONFIG_BOOT_BANNER */
 }

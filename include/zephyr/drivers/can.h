@@ -198,7 +198,7 @@ struct can_frame {
 #define CAN_FILTER_DATA BIT(2)
 
 /** Filter matches CAN-FD frames (FDF) */
-#define CAN_FILTER_FDF BIT(3)
+#define CAN_FILTER_FDF  BIT(3)
 
 /** @} */
 
@@ -262,7 +262,7 @@ struct can_bus_err_cnt {
  * is needed.
  */
 struct can_timing {
-	/** Synchronisation jump width. */
+	/** Synchronization jump width. */
 	uint16_t sjw;
 	/** Propagation segment. */
 	uint16_t prop_seg;
@@ -291,8 +291,7 @@ typedef void (*can_tx_callback_t)(const struct device *dev, int error, void *use
  * @param frame     Received frame.
  * @param user_data User data provided when the filter was added.
  */
-typedef void (*can_rx_callback_t)(const struct device *dev, struct can_frame *frame,
-				  void *user_data);
+typedef void (*can_rx_callback_t)(const struct device* dev, struct can_frame const* frame, void *user_data);
 
 /**
  * @brief Defines the state change callback handler function signature
@@ -360,7 +359,8 @@ typedef int (*can_set_mode_t)(const struct device *dev, can_mode_t mode);
  */
 typedef int (*can_send_t)(const struct device *dev,
 			  const struct can_frame *frame,
-			  k_timeout_t timeout, can_tx_callback_t callback,
+                          k_timeout_t timeout,
+                          can_tx_callback_t callback,
 			  void *user_data);
 
 /**
@@ -678,11 +678,10 @@ struct can_device_state {
  */
 __syscall int can_get_core_clock(const struct device *dev, uint32_t *rate);
 
-static inline int z_impl_can_get_core_clock(const struct device *dev, uint32_t *rate)
-{
+static inline int z_impl_can_get_core_clock(const struct device* dev, uint32_t* rate) {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
-	return api->get_core_clock(dev, rate);
+    return (api->get_core_clock(dev, rate));
 }
 
 /**
@@ -698,15 +697,14 @@ static inline int z_impl_can_get_core_clock(const struct device *dev, uint32_t *
  */
 __syscall int can_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate);
 
-static inline int z_impl_can_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
-{
+static inline int z_impl_can_get_max_bitrate(const struct device* dev, uint32_t* max_bitrate) {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
 	if (api->get_max_bitrate == NULL) {
 		return -ENOSYS;
 	}
 
-	return api->get_max_bitrate(dev, max_bitrate);
+    return (api->get_max_bitrate(dev, max_bitrate));
 }
 
 /**
@@ -718,8 +716,7 @@ static inline int z_impl_can_get_max_bitrate(const struct device *dev, uint32_t 
  */
 __syscall const struct can_timing *can_get_timing_min(const struct device *dev);
 
-static inline const struct can_timing *z_impl_can_get_timing_min(const struct device *dev)
-{
+static inline const struct can_timing* z_impl_can_get_timing_min(const struct device* dev) {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
 	return &api->timing_min;
@@ -734,8 +731,7 @@ static inline const struct can_timing *z_impl_can_get_timing_min(const struct de
  */
 __syscall const struct can_timing *can_get_timing_max(const struct device *dev);
 
-static inline const struct can_timing *z_impl_can_get_timing_max(const struct device *dev)
-{
+static inline const struct can_timing* z_impl_can_get_timing_max(const struct device* dev) {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
 	return &api->timing_max;
@@ -1031,11 +1027,10 @@ static inline int z_impl_can_stop(const struct device *dev)
  */
 __syscall int can_set_mode(const struct device *dev, can_mode_t mode);
 
-static inline int z_impl_can_set_mode(const struct device *dev, can_mode_t mode)
-{
+static inline int z_impl_can_set_mode(const struct device* dev, can_mode_t mode) {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
-	return api->set_mode(dev, mode);
+    return (api->set_mode(dev, mode));
 }
 
 /**
@@ -1152,16 +1147,15 @@ __syscall int can_send(const struct device *dev, const struct can_frame *frame,
  * @retval -EINVAL if the requested filter type is invalid.
  * @retval -ENOTSUP if the requested filter type is not supported.
  */
-static inline int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
-				    void *user_data, const struct can_filter *filter)
-{
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+static inline int can_add_rx_filter(const struct device* dev, can_rx_callback_t callback,
+                                    void* user_data, const struct can_filter* filter) {
+    const struct can_driver_api* api = (const struct can_driver_api*)dev->api;
 
-	if (filter == NULL || (filter->flags & (CAN_FILTER_DATA | CAN_FILTER_RTR)) == 0) {
-		return -EINVAL;
-	}
+    if (filter == NULL || (filter->flags & (CAN_FILTER_DATA | CAN_FILTER_RTR)) == 0) {
+        return (-EINVAL);
+    }
 
-	return api->add_rx_filter(dev, callback, user_data, filter);
+    return (api->add_rx_filter(dev, callback, user_data, filter));
 }
 
 /**
@@ -1221,7 +1215,7 @@ static inline void z_impl_can_remove_rx_filter(const struct device *dev, int fil
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
-	return api->remove_rx_filter(dev, filter_id);
+	api->remove_rx_filter(dev, filter_id);
 }
 
 /**
@@ -1331,8 +1325,7 @@ static inline int z_impl_can_recover(const struct device *dev, k_timeout_t timeo
  */
 static inline void can_set_state_change_callback(const struct device *dev,
 						 can_state_change_callback_t callback,
-						 void *user_data)
-{
+                                                 void* user_data) {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
 	api->set_state_change_callback(dev, callback, user_data);
@@ -1353,12 +1346,11 @@ static inline void can_set_state_change_callback(const struct device *dev,
  *
  * @retval Number of bytes.
  */
-static inline uint8_t can_dlc_to_bytes(uint8_t dlc)
-{
-	static const uint8_t dlc_table[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12,
-					    16, 20, 24, 32, 48, 64};
+static inline uint8_t can_dlc_to_bytes(uint8_t dlc) {
+    static const uint8_t dlc_table[] = { 0,  1,  2,  3,  4,  5,  6, 7, 8,
+                                        12, 16, 20, 24, 32, 48, 64};
 
-	return dlc > 0x0F ? 64 : dlc_table[dlc];
+    return ((dlc > 0x0F) ? 64 : dlc_table[dlc]);
 }
 
 /**
