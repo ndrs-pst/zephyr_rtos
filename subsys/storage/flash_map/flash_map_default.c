@@ -28,4 +28,4 @@ const struct flash_area default_flash_map[] = {
 };
 
 const int flash_map_entries = ARRAY_SIZE(default_flash_map);
-const struct flash_area *flash_map = default_flash_map;
+const struct flash_area* flash_map = default_flash_map;

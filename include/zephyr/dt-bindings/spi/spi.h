@@ -20,8 +20,8 @@
  * Some controllers support half duplex transfer, which results in 3-wire usage.
  * By default, full duplex will prevail.
  */
-#define SPI_FULL_DUPLEX		(0U << 11)
-#define SPI_HALF_DUPLEX		(1U << 11)
+#define SPI_FULL_DUPLEX                     (0U << 11)
+#define SPI_HALF_DUPLEX                     (1U << 11)
 /** @} */
 
 /**
@@ -36,8 +36,8 @@
  * By default, as it is the most commonly used, the Motorola frame format
  * will prevail.
  */
-#define SPI_FRAME_FORMAT_MOTOROLA	(0U << 15)
-#define SPI_FRAME_FORMAT_TI		(1U << 15)
+#define SPI_FRAME_FORMAT_MOTOROLA           (0U << 15)
+#define SPI_FRAME_FORMAT_TI                 (1U << 15)
 /** @} */
 
 /**

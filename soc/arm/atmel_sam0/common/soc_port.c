@@ -15,7 +15,7 @@
 
 int soc_port_pinmux_set(PortGroup *pg, uint32_t pin, uint32_t func)
 {
-	bool is_odd = pin & 1;
+	bool is_odd = pin & 0x01;
 	int idx = pin / 2U;
 
 	/* Each pinmux register holds the config for two pins.  The
@@ -23,9 +23,9 @@ int soc_port_pinmux_set(PortGroup *pg, uint32_t pin, uint32_t func)
 	 * numbered pin in bits 4..7.
 	 */
 	if (is_odd) {
-		pg->PMUX[idx].bit.PMUXO = func;
+		pg->PMUX[idx].bit.PMUXO = (uint8_t)func;
 	} else {
-		pg->PMUX[idx].bit.PMUXE = func;
+		pg->PMUX[idx].bit.PMUXE = (uint8_t)func;
 	}
 	pg->PINCFG[pin].bit.PMUXEN = 1;
 
@@ -75,7 +75,7 @@ void soc_port_configure(const struct soc_port_pin *pin)
 void soc_port_list_configure(const struct soc_port_pin pins[],
 			     unsigned int size)
 {
-	for (int i = 0; i < size; i++) {
+	for (unsigned int i = 0; i < size; i++) {
 		soc_port_configure(&pins[i]);
 	}
 }
