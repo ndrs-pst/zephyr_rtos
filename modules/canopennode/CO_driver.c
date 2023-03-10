@@ -316,8 +316,8 @@ CO_ReturnError_t CO_CANrxBufferInit(CO_CANmodule_t *CANmodule, uint16_t index,
 	return CO_ERROR_NO;
 }
 
-CO_CANtx_t *CO_CANtxBufferInit(CO_CANmodule_t *CANmodule, uint16_t index,
-			       uint16_t ident, bool_t rtr, uint8_t noOfBytes,
+CO_CANtx_t* CO_CANtxBufferInit(CO_CANmodule_t* CANmodule, uint16_t index,
+                               uint16_t ident, bool_t rtr, uint8_t noOfBytes,
                                bool_t syncFlag) {
 	CO_CANtx_t *buffer;
 
@@ -328,14 +328,14 @@ CO_CANtx_t *CO_CANtxBufferInit(CO_CANmodule_t *CANmodule, uint16_t index,
 	if (index >= CANmodule->tx_size) {
 		LOG_ERR("failed to initialize CAN rx buffer, illegal argument");
 		CO_errorReport(CANmodule->em, CO_EM_GENERIC_SOFTWARE_ERROR,
-			       CO_EMC_SOFTWARE_INTERNAL, 0);
+		               CO_EMC_SOFTWARE_INTERNAL, 0);
 		return NULL;
 	}
 
 	buffer = &CANmodule->tx_array[index];
 	buffer->ident = ident;
-	buffer->rtr = rtr;
-	buffer->DLC = noOfBytes;
+	buffer->rtr   = rtr;
+	buffer->DLC   = noOfBytes;
 	buffer->bufferFull = false;
 	buffer->syncFlag = syncFlag;
 
@@ -358,7 +358,7 @@ CO_ReturnError_t CO_CANsend(CO_CANmodule_t* CANmodule, CO_CANtx_t* buffer) {
 	if (buffer->bufferFull) {
 		if (!CANmodule->first_tx_msg) {
 			CO_errorReport(CANmodule->em, CO_EM_CAN_TX_OVERFLOW,
-				       CO_EMC_CAN_OVERRUN, buffer->ident);
+			               CO_EMC_CAN_OVERRUN, buffer->ident);
 		}
 		buffer->bufferFull = false;
 		ret = CO_ERROR_TX_OVERFLOW;
