@@ -1486,6 +1486,12 @@ DEVICE_DT_INST_DEFINE(2, &spi_nor_init, NULL,
 
 #if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+
+#if defined(CONFIG_SOC_SERIES_SAMV71)
+
+#endif
+
+#if defined(CONFIG_SOC_SERIES_SAMC21)
 #include "samc21_reg_stub.h"
 
 extern void zephyr_gpio_sam0_set_regs(const struct gpio_dt_spec* spec, volatile void* reg_ptr);
@@ -1510,4 +1516,6 @@ void zephyr_gtest_spi_nor(void) {
     spi_nor_data_0.layout.pages_count = 4096U;
     spi_nor_data_0.layout.pages_size  = 4096U;
 }
+#endif
+
 #endif

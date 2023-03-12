@@ -29,7 +29,7 @@ typedef atomic_ptr_t atomic_ptr_val_t;
 #if defined(CONFIG_ATOMIC_OPERATIONS_C)
 /* Generic-but-slow implementation based on kernel locking and syscalls */
 #include <zephyr/sys/atomic_c.h>
-#elif defined(CONFIG_ATOMIC_OPERATIONS_ARCH)
+#elif (defined(CONFIG_ATOMIC_OPERATIONS_ARCH) || (__GTEST == 1U)) /* @CUSTOM@NDRS */
 /* Some architectures need their own implementation */
 # ifdef CONFIG_XTENSA
 /* Not all Xtensa toolchains support GCC-style atomic intrinsics */

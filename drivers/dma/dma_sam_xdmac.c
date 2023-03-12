@@ -376,8 +376,8 @@ static int sam_xdmac_initialize(const struct device *dev)
 static const struct dma_driver_api sam_xdmac_driver_api = {
 	.config = sam_xdmac_config,
 	.reload = sam_xdmac_transfer_reload,
-	.start = sam_xdmac_transfer_start,
-	.stop = sam_xdmac_transfer_stop,
+	.start  = sam_xdmac_transfer_start,
+	.stop   = sam_xdmac_transfer_stop,
 };
 
 /* DMA0 */
