@@ -1526,9 +1526,8 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 	va_end(args);
 }
 
-void shell_hexdump_line(const struct shell *shell, unsigned int offset,
-			const uint8_t *data, size_t len)
-{
+void shell_hexdump_line(const struct shell* shell, unsigned int offset,
+                        const uint8_t* data, size_t len) {
 	__ASSERT_NO_MSG(shell);
 
 	int i;
@@ -1541,8 +1540,7 @@ void shell_hexdump_line(const struct shell *shell, unsigned int offset,
 		}
 
 		if (i < len) {
-			shell_fprintf(shell, SHELL_NORMAL, "%02x ",
-				      data[i] & 0xFF);
+			shell_fprintf(shell, SHELL_NORMAL, "%02X ", data[i] & 0xFF);
 		} else {
 			shell_fprintf(shell, SHELL_NORMAL, "   ");
 		}

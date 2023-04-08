@@ -133,15 +133,15 @@ struct rtio_iodev_sqe;
  * @param sqe Submission for the callback op
  * @param arg0 Argument option as part of the sqe
  */
-typedef void (*rtio_callback_t)(struct rtio *r, const struct rtio_sqe *sqe, void *arg0);
+typedef void (*rtio_callback_t)(struct rtio* r, const struct rtio_sqe* sqe, void* arg0);
 
 /**
  * @brief A submission queue event
  */
 struct rtio_sqe {
-	uint8_t op; /**< Op code */
+	uint8_t op;     /**< Op code */
 
-	uint8_t prio; /**< Op priority */
+	uint8_t prio;   /**< Op priority */
 
 	uint16_t flags; /**< Op Flags */
 
@@ -154,10 +154,9 @@ struct rtio_sqe {
 	 * If unique identification of completions is desired this should be
 	 * unique as well.
 	 */
-	void *userdata;
+    void* userdata;
 
 	union {
-
 		/** OP_TX, OP_RX */
 		struct {
 			uint32_t buf_len; /**< Length of buffer */
@@ -188,7 +187,11 @@ struct rtio_sqe {
 
 /** @cond ignore */
 /* Ensure the rtio_sqe never grows beyond a common cacheline size of 64 bytes */
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+/* pass */
+#else
 BUILD_ASSERT(sizeof(struct rtio_sqe) <= 64);
+#endif
 /** @endcond */
 
 
@@ -199,16 +202,16 @@ BUILD_ASSERT(sizeof(struct rtio_sqe) <= 64);
  * but nothing more.
  */
 struct rtio_sq {
-	struct rtio_spsc _spsc;
-	struct rtio_sqe *const buffer;
+    struct rtio_spsc _spsc;
+    struct rtio_sqe* const buffer;
 };
 
 /**
  * @brief A completion queue event
  */
 struct rtio_cqe {
-	int32_t result; /**< Result from operation */
-	void *userdata; /**< Associated userdata with operation */
+    int32_t result; /**< Result from operation */
+    void* userdata; /**< Associated userdata with operation */
 };
 
 /**
@@ -379,52 +382,49 @@ struct rtio_iodev {
 /**
  * @brief Prepare a nop (no op) submission
  */
-static inline void rtio_sqe_prep_nop(struct rtio_sqe *sqe,
-				const struct rtio_iodev *iodev,
-				void *userdata)
-{
-	sqe->op = RTIO_OP_NOP;
-	sqe->flags = 0;
-	sqe->iodev = iodev;
-	sqe->userdata = userdata;
+static inline void rtio_sqe_prep_nop(struct rtio_sqe* sqe,
+                                     const struct rtio_iodev* iodev,
+                                     void* userdata) {
+    sqe->op       = RTIO_OP_NOP;
+    sqe->flags    = 0;
+    sqe->iodev    = iodev;
+    sqe->userdata = userdata;
 }
 
 /**
  * @brief Prepare a read op submission
  */
-static inline void rtio_sqe_prep_read(struct rtio_sqe *sqe,
-				      const struct rtio_iodev *iodev,
-				      int8_t prio,
-				      uint8_t *buf,
-				      uint32_t len,
-				      void *userdata)
-{
-	sqe->op = RTIO_OP_RX;
-	sqe->prio = prio;
-	sqe->flags = 0;
-	sqe->iodev = iodev;
-	sqe->buf_len = len;
-	sqe->buf = buf;
-	sqe->userdata = userdata;
+static inline void rtio_sqe_prep_read(struct rtio_sqe* sqe,
+                                      const struct rtio_iodev* iodev,
+                                      int8_t prio,
+                                      uint8_t* buf,
+                                      uint32_t len,
+                                      void* userdata) {
+    sqe->op       = RTIO_OP_RX;
+    sqe->prio     = prio;
+    sqe->flags    = 0;
+    sqe->iodev    = iodev;
+    sqe->buf_len  = len;
+    sqe->buf      = buf;
+    sqe->userdata = userdata;
 }
 
 /**
  * @brief Prepare a write op submission
  */
-static inline void rtio_sqe_prep_write(struct rtio_sqe *sqe,
-				       const struct rtio_iodev *iodev,
-				       int8_t prio,
-				       uint8_t *buf,
-				       uint32_t len,
-				       void *userdata)
-{
-	sqe->op = RTIO_OP_TX;
-	sqe->prio = prio;
-	sqe->flags = 0;
-	sqe->iodev = iodev;
-	sqe->buf_len = len;
-	sqe->buf = buf;
-	sqe->userdata = userdata;
+static inline void rtio_sqe_prep_write(struct rtio_sqe* sqe,
+                                       const struct rtio_iodev* iodev,
+                                       int8_t prio,
+                                       uint8_t* buf,
+                                       uint32_t len,
+                                       void* userdata) {
+    sqe->op       = RTIO_OP_TX;
+    sqe->prio     = prio;
+    sqe->flags    = 0;
+    sqe->iodev    = iodev;
+    sqe->buf_len  = len;
+    sqe->buf      = buf;
+    sqe->userdata = userdata;
 }
 
 /**
@@ -437,17 +437,16 @@ static inline void rtio_sqe_prep_write(struct rtio_sqe *sqe,
  * This is useful in many scenarios with RTL logic where a write of the register to
  * subsequently read must be done.
  */
-static inline void rtio_sqe_prep_tiny_write(struct rtio_sqe *sqe,
-					    const struct rtio_iodev *iodev,
-					    int8_t prio,
-					    const uint8_t *tiny_write_data,
-					    uint8_t tiny_write_len,
-					    void *userdata)
-{
+static inline void rtio_sqe_prep_tiny_write(struct rtio_sqe* sqe,
+                                            const struct rtio_iodev* iodev,
+                                            int8_t prio,
+                                            const uint8_t* tiny_write_data,
+                                            uint8_t tiny_write_len,
+                                            void* userdata) {
 	__ASSERT_NO_MSG(tiny_write_len <= sizeof(sqe->tiny_buf));
 
-	sqe->op = RTIO_OP_TINY_TX;
-	sqe->prio = prio;
+	sqe->op    = RTIO_OP_TINY_TX;
+	sqe->prio  = prio;
 	sqe->flags = 0;
 	sqe->iodev = iodev;
 	sqe->tiny_buf_len = tiny_write_len;
@@ -463,39 +462,37 @@ static inline void rtio_sqe_prep_tiny_write(struct rtio_sqe *sqe,
  * Used where general purpose logic is required in a queue of io operations to do
  * transforms or logic.
  */
-static inline void rtio_sqe_prep_callback(struct rtio_sqe *sqe,
-					  rtio_callback_t callback,
-					  void *arg0,
-					  void *userdata)
-{
-	sqe->op = RTIO_OP_CALLBACK;
-	sqe->prio = 0;
-	sqe->flags = 0;
-	sqe->iodev = NULL;
-	sqe->callback = callback;
-	sqe->arg0 = arg0;
-	sqe->userdata = userdata;
+static inline void rtio_sqe_prep_callback(struct rtio_sqe* sqe,
+                                          rtio_callback_t callback,
+                                          void* arg0,
+                                          void* userdata) {
+    sqe->op       = RTIO_OP_CALLBACK;
+    sqe->prio     = 0;
+    sqe->flags    = 0;
+    sqe->iodev    = NULL;
+    sqe->callback = callback;
+    sqe->arg0     = arg0;
+    sqe->userdata = userdata;
 }
 
 /**
  * @brief Prepare a transceive op submission
  */
-static inline void rtio_sqe_prep_transceive(struct rtio_sqe *sqe,
-					    const struct rtio_iodev *iodev,
-					    int8_t prio,
-					    uint8_t *tx_buf,
-					    uint8_t *rx_buf,
-					    uint32_t buf_len,
-					    void *userdata)
-{
-	sqe->op = RTIO_OP_TXRX;
-	sqe->prio = prio;
-	sqe->flags = 0;
-	sqe->iodev = iodev;
-	sqe->txrx_buf_len = buf_len;
-	sqe->tx_buf = tx_buf;
-	sqe->rx_buf = rx_buf;
-	sqe->userdata = userdata;
+static inline void rtio_sqe_prep_transceive(struct rtio_sqe* sqe,
+                                            const struct rtio_iodev* iodev,
+                                            int8_t prio,
+                                            uint8_t* tx_buf,
+                                            uint8_t* rx_buf,
+                                            uint32_t buf_len,
+                                            void* userdata) {
+    sqe->op    = RTIO_OP_TXRX;
+    sqe->prio  = prio;
+    sqe->flags = 0;
+    sqe->iodev = iodev;
+    sqe->txrx_buf_len = buf_len;
+    sqe->tx_buf   = tx_buf;
+    sqe->rx_buf   = rx_buf;
+    sqe->userdata = userdata;
 }
 
 /**
@@ -505,7 +502,7 @@ static inline void rtio_sqe_prep_transceive(struct rtio_sqe *sqe,
  * @param len Queue length, power of 2 required (2, 4, 8).
  */
 #define RTIO_SQ_DEFINE(name, len)			\
-	RTIO_SPSC_DEFINE(name, struct rtio_sqe, len)
+    RTIO_SPSC_DEFINE(name, struct rtio_sqe, len)
 
 /**
  * @brief Statically define and initialize a fixed length completion queue.
@@ -523,11 +520,11 @@ static inline void rtio_sqe_prep_transceive(struct rtio_sqe *sqe,
  * @param iodev_api Pointer to struct rtio_iodev_api
  * @param iodev_data Data pointer
  */
-#define RTIO_IODEV_DEFINE(name, iodev_api, iodev_data)                                             \
-	STRUCT_SECTION_ITERABLE(rtio_iodev, name) = {                                              \
-		.api = (iodev_api),                                                                \
-		.iodev_sq = RTIO_MPSC_INIT((name.iodev_sq)),                                       \
-		.data = (iodev_data),                                                              \
+#define RTIO_IODEV_DEFINE(name, iodev_api, iodev_data)          \
+	STRUCT_SECTION_ITERABLE(rtio_iodev, name) = {               \
+		.api = (iodev_api),                                     \
+		.iodev_sq = RTIO_MPSC_INIT((name.iodev_sq)),            \
+		.data = (iodev_data),                                   \
 	}
 
 /**
@@ -538,29 +535,28 @@ static inline void rtio_sqe_prep_transceive(struct rtio_sqe *sqe,
  * @param sq_sz Size of the submission queue, must be power of 2
  * @param cq_sz Size of the completion queue, must be power of 2
  */
-#define RTIO_DEFINE(name, exec, sq_sz, cq_sz)							\
+#define RTIO_DEFINE(name, exec, sq_sz, cq_sz)					\
 	IF_ENABLED(CONFIG_RTIO_SUBMIT_SEM,							\
 		   (static K_SEM_DEFINE(_submit_sem_##name, 0, K_SEM_MAX_LIMIT)))		\
 	IF_ENABLED(CONFIG_RTIO_CONSUME_SEM,							\
 		   (static K_SEM_DEFINE(_consume_sem_##name, 0, K_SEM_MAX_LIMIT)))		\
 	RTIO_SQ_DEFINE(_sq_##name, sq_sz);							\
 	RTIO_CQ_DEFINE(_cq_##name, cq_sz);							\
-	STRUCT_SECTION_ITERABLE(rtio, name) = {							\
-		.executor = (exec),								\
-		.xcqcnt = ATOMIC_INIT(0),							\
+	STRUCT_SECTION_ITERABLE(rtio, name) = {						\
+		.executor = (exec),								        \
+		.xcqcnt = ATOMIC_INIT(0),							    \
 		IF_ENABLED(CONFIG_RTIO_SUBMIT_SEM, (.submit_sem = &_submit_sem_##name,))	\
 		IF_ENABLED(CONFIG_RTIO_SUBMIT_SEM, (.submit_count = 0,))			\
 		IF_ENABLED(CONFIG_RTIO_CONSUME_SEM, (.consume_sem = &_consume_sem_##name,))	\
-		.sq = (struct rtio_sq *const)&_sq_##name,					\
-		.cq = (struct rtio_cq *const)&_cq_##name,					\
+		.sq = (struct rtio_sq *const)&_sq_##name,				\
+		.cq = (struct rtio_cq *const)&_cq_##name,				\
 	};
 
 /**
  * @brief Set the executor of the rtio context
  */
-static inline void rtio_set_executor(struct rtio *r, struct rtio_executor *exc)
-{
-	r->executor = exc;
+static inline void rtio_set_executor(struct rtio* r, struct rtio_executor* exc) {
+    r->executor = exc;
 }
 
 /**
@@ -571,9 +567,8 @@ static inline void rtio_set_executor(struct rtio *r, struct rtio_executor *exc)
  *
  * @param iodev_sqe Submission to work on
  */
-static inline void rtio_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
-{
-	iodev_sqe->sqe->iodev->api->submit(iodev_sqe);
+static inline void rtio_iodev_submit(struct rtio_iodev_sqe* iodev_sqe) {
+    iodev_sqe->sqe->iodev->api->submit(iodev_sqe);
 }
 
 /**
@@ -583,9 +578,8 @@ static inline void rtio_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
  *
  * @return Count of acquirable submission queue events
  */
-static inline uint32_t rtio_sqe_acquirable(struct rtio *r)
-{
-	return rtio_spsc_acquirable(r->sq);
+static inline uint32_t rtio_sqe_acquirable(struct rtio* r) {
+    return rtio_spsc_acquirable(r->sq);
 }
 
 /**
@@ -596,9 +590,12 @@ static inline uint32_t rtio_sqe_acquirable(struct rtio *r)
  * @retval sqe A valid submission queue event acquired from the submission queue
  * @retval NULL No subsmission queue event available
  */
-static inline struct rtio_sqe *rtio_sqe_acquire(struct rtio *r)
-{
-	return rtio_spsc_acquire(r->sq);
+static inline struct rtio_sqe* rtio_sqe_acquire(struct rtio* r) {
+    #if defined(_MSC_VER)
+    /* pass: unsupported compilation error */
+    #else
+    return rtio_spsc_acquire(r->sq);
+    #endif
 }
 
 /**
@@ -606,9 +603,12 @@ static inline struct rtio_sqe *rtio_sqe_acquire(struct rtio *r)
  *
  * @param r RTIO context
  */
-static inline void rtio_sqe_produce_all(struct rtio *r)
-{
-	rtio_spsc_produce_all(r->sq);
+static inline void rtio_sqe_produce_all(struct rtio* r) {
+    #if defined(_MSC_VER)
+    /* pass: unsupported compilation error */
+    #else
+    rtio_spsc_produce_all(r->sq);
+    #endif
 }
 
 
@@ -617,9 +617,8 @@ static inline void rtio_sqe_produce_all(struct rtio *r)
  *
  * @param r RTIO context
  */
-static inline void rtio_sqe_drop_all(struct rtio *r)
-{
-	rtio_spsc_drop_all(r->sq);
+static inline void rtio_sqe_drop_all(struct rtio* r) {
+    rtio_spsc_drop_all(r->sq);
 }
 
 
@@ -634,17 +633,21 @@ static inline void rtio_sqe_drop_all(struct rtio *r)
  * @retval cqe A valid completion queue event consumed from the completion queue
  * @retval NULL No completion queue event available
  */
-static inline struct rtio_cqe *rtio_cqe_consume(struct rtio *r)
-{
-#ifdef CONFIG_RTIO_CONSUME_SEM
-	if (k_sem_take(r->consume_sem, K_NO_WAIT) == 0) {
-		return rtio_spsc_consume(r->cq);
-	} else {
-		return NULL;
+static inline struct rtio_cqe* rtio_cqe_consume(struct rtio* r) {
+    #ifdef CONFIG_RTIO_CONSUME_SEM
+    if (k_sem_take(r->consume_sem, K_NO_WAIT) == 0) {
+	    return rtio_spsc_consume(r->cq);
+    }
+    else {
+        return NULL;
 	}
-#else
-	return rtio_spsc_consume(r->cq);
-#endif
+    #else
+    #if defined(_MSC_VER)
+    /* pass: unsupported compilation error */
+    #else
+    return rtio_spsc_consume(r->cq);
+    #endif
+    #endif
 }
 
 /**
@@ -657,24 +660,27 @@ static inline struct rtio_cqe *rtio_cqe_consume(struct rtio *r)
  *
  * @retval cqe A valid completion queue event consumed from the completion queue
  */
-static inline struct rtio_cqe *rtio_cqe_consume_block(struct rtio *r)
-{
-	struct rtio_cqe *cqe;
+static inline struct rtio_cqe* rtio_cqe_consume_block(struct rtio* r) {
+    struct rtio_cqe* cqe;
 
-#ifdef CONFIG_RTIO_CONSUME_SEM
-	k_sem_take(r->consume_sem, K_FOREVER);
+    #ifdef CONFIG_RTIO_CONSUME_SEM
+    k_sem_take(r->consume_sem, K_FOREVER);
 
-	cqe = rtio_spsc_consume(r->cq);
-#else
-	cqe = rtio_spsc_consume(r->cq);
+    cqe = rtio_spsc_consume(r->cq);
+    #else
+    #if defined(_MSC_VER)
+    /* pass: unsupported compilation error */
+    #else
+    cqe = rtio_spsc_consume(r->cq);
 
-	while (cqe == NULL) {
-		cqe = rtio_spsc_consume(r->cq);
+    while (cqe == NULL) {
+        cqe = rtio_spsc_consume(r->cq);
+    }
+    #endif
 
-	}
-#endif
+    #endif
 
-	return cqe;
+    return cqe;
 }
 
 /**
@@ -682,9 +688,12 @@ static inline struct rtio_cqe *rtio_cqe_consume_block(struct rtio *r)
  *
  * @param r RTIO context
  */
-static inline void rtio_cqe_release(struct rtio *r)
-{
-	rtio_spsc_release(r->cq);
+static inline void rtio_cqe_release(struct rtio* r) {
+    #if defined(_MSC_VER)
+    /* pass: unsupported compilation error */
+    #else
+    rtio_spsc_release(r->cq);
+    #endif
 }
 
 /**
@@ -692,9 +701,12 @@ static inline void rtio_cqe_release(struct rtio *r)
  *
  * @param r RTIO context
  */
-static inline void rtio_cqe_release_all(struct rtio *r)
-{
-	rtio_spsc_release_all(r->cq);
+static inline void rtio_cqe_release_all(struct rtio* r) {
+    #if defined(_MSC_VER)
+    /* pass: unsupported compilation error */
+    #else
+    rtio_spsc_release_all(r->cq);
+    #endif
 }
 
 
@@ -706,9 +718,8 @@ static inline void rtio_cqe_release_all(struct rtio *r)
  * @param iodev_sqe IODev Submission that has succeeded
  * @param result Result of the request
  */
-static inline void rtio_iodev_sqe_ok(struct rtio_iodev_sqe *iodev_sqe, int result)
-{
-	iodev_sqe->r->executor->api->ok(iodev_sqe, result);
+static inline void rtio_iodev_sqe_ok(struct rtio_iodev_sqe* iodev_sqe, int result) {
+    iodev_sqe->r->executor->api->ok(iodev_sqe, result);
 }
 
 /**
@@ -719,9 +730,8 @@ static inline void rtio_iodev_sqe_ok(struct rtio_iodev_sqe *iodev_sqe, int resul
  * @param iodev_sqe Submission that has failed
  * @param result Result of the request
  */
-static inline void rtio_iodev_sqe_err(struct rtio_iodev_sqe *iodev_sqe, int result)
-{
-	iodev_sqe->r->executor->api->err(iodev_sqe, result);
+static inline void rtio_iodev_sqe_err(struct rtio_iodev_sqe* iodev_sqe, int result) {
+    iodev_sqe->r->executor->api->err(iodev_sqe, result);
 }
 
 /**
@@ -729,17 +739,16 @@ static inline void rtio_iodev_sqe_err(struct rtio_iodev_sqe *iodev_sqe, int resu
  *
  * @param iodev IODev to cancel all requests for
  */
-static inline void rtio_iodev_cancel_all(struct rtio_iodev *iodev)
-{
-	/* Clear pending requests as -ENODATA */
-	struct rtio_mpsc_node *node = rtio_mpsc_pop(&iodev->iodev_sq);
+static inline void rtio_iodev_cancel_all(struct rtio_iodev* iodev) {
+    /* Clear pending requests as -ENODATA */
+    struct rtio_mpsc_node* node = rtio_mpsc_pop(&iodev->iodev_sq);
 
-	while (node != NULL) {
-		struct rtio_iodev_sqe *iodev_sqe = CONTAINER_OF(node, struct rtio_iodev_sqe, q);
+    while (node != NULL) {
+        struct rtio_iodev_sqe* iodev_sqe = CONTAINER_OF(node, struct rtio_iodev_sqe, q);
 
-		rtio_iodev_sqe_err(iodev_sqe, -ECANCELED);
-		node = rtio_mpsc_pop(&iodev->iodev_sq);
-	}
+        rtio_iodev_sqe_err(iodev_sqe, -ECANCELED);
+        node = rtio_mpsc_pop(&iodev->iodev_sq);
+    }
 }
 
 /**
@@ -752,44 +761,48 @@ static inline void rtio_iodev_cancel_all(struct rtio_iodev *iodev)
  * @param result Integer result code (could be -errno)
  * @param userdata Userdata to pass along to completion
  */
-static inline void rtio_cqe_submit(struct rtio *r, int result, void *userdata)
-{
-	struct rtio_cqe *cqe = rtio_spsc_acquire(r->cq);
+static inline void rtio_cqe_submit(struct rtio* r, int result, void* userdata) {
+    #if defined(_MSC_VER)
+    /* pass: unsupported compilation error */
+    #else
+    struct rtio_cqe* cqe = rtio_spsc_acquire(r->cq);
 
-	if (cqe == NULL) {
-		atomic_inc(&r->xcqcnt);
-	} else {
-		cqe->result = result;
-		cqe->userdata = userdata;
-		rtio_spsc_produce(r->cq);
-	}
-#ifdef CONFIG_RTIO_SUBMIT_SEM
+    if (cqe == NULL) {
+        atomic_inc(&r->xcqcnt);
+    }
+    else {
+        cqe->result = result;
+        cqe->userdata = userdata;
+        rtio_spsc_produce(r->cq);
+    }
+    #ifdef CONFIG_RTIO_SUBMIT_SEM
 	if (r->submit_count > 0) {
 		r->submit_count--;
 		if (r->submit_count == 0) {
 			k_sem_give(r->submit_sem);
 		}
 	}
-#endif
-#ifdef CONFIG_RTIO_CONSUME_SEM
+    #endif
+    #ifdef CONFIG_RTIO_CONSUME_SEM
 	k_sem_give(r->consume_sem);
-#endif
+    #endif
+
+    #endif
 }
 
 /**
  * Grant access to an RTIO context to a user thread
  */
-static inline void rtio_access_grant(struct rtio *r, struct k_thread *t)
-{
-	k_object_access_grant(r, t);
+static inline void rtio_access_grant(struct rtio* r, struct k_thread* t) {
+    k_object_access_grant(r, t);
 
-#ifdef CONFIG_RTIO_SUBMIT_SEM
+    #ifdef CONFIG_RTIO_SUBMIT_SEM
 	k_object_access_grant(r->submit_sem, t);
-#endif
+    #endif
 
-#ifdef CONFIG_RTIO_CONSUME_SEM
+    #ifdef CONFIG_RTIO_CONSUME_SEM
 	k_object_access_grant(r->consume_sem, t);
-#endif
+    #endif
 }
 
 /**
@@ -808,21 +821,20 @@ static inline void rtio_access_grant(struct rtio *r, struct k_thread *t)
  * @retval 0 success
  * @retval -ENOMEM not enough room in the queue
  */
-__syscall int rtio_sqe_copy_in(struct rtio *r,
-			       const struct rtio_sqe *sqes,
-			       size_t sqe_count);
-static inline int z_impl_rtio_sqe_copy_in(struct rtio *r,
-					  const struct rtio_sqe *sqes,
-					  size_t sqe_count)
-{
-	struct rtio_sqe *sqe;
-	uint32_t acquirable = rtio_sqe_acquirable(r);
+__syscall int rtio_sqe_copy_in(struct rtio* r,
+                               const struct rtio_sqe* sqes,
+                               size_t sqe_count);
+static inline int z_impl_rtio_sqe_copy_in(struct rtio* r,
+                                          const struct rtio_sqe* sqes,
+                                          size_t sqe_count) {
+    struct rtio_sqe* sqe;
+    uint32_t acquirable = rtio_sqe_acquirable(r);
 
 	if (acquirable < sqe_count) {
 		return -ENOMEM;
 	}
 
-	for (int i = 0; i < sqe_count; i++) {
+	for (unsigned int i = 0; i < sqe_count; i++) {
 		sqe = rtio_sqe_acquire(r);
 		__ASSERT_NO_MSG(sqe != NULL);
 		*sqe = sqes[i];
@@ -848,30 +860,28 @@ static inline int z_impl_rtio_sqe_copy_in(struct rtio *r,
  *
  * @retval copy_count Count of copied CQEs (0 to cqe_count)
  */
-__syscall int rtio_cqe_copy_out(struct rtio *r,
-				struct rtio_cqe *cqes,
-				size_t cqe_count,
-				k_timeout_t timeout);
-static inline int z_impl_rtio_cqe_copy_out(struct rtio *r,
-					   struct rtio_cqe *cqes,
-					   size_t cqe_count,
-					   k_timeout_t timeout)
-{
-	size_t copied;
-	struct rtio_cqe *cqe;
+__syscall int rtio_cqe_copy_out(struct rtio* r,
+                                struct rtio_cqe* cqes,
+                                size_t cqe_count,
+                                k_timeout_t timeout);
+static inline int z_impl_rtio_cqe_copy_out(struct rtio* r,
+                                           struct rtio_cqe* cqes,
+                                           size_t cqe_count,
+                                           k_timeout_t timeout) {
+    size_t copied;
+    struct rtio_cqe* cqe;
 
-	for (copied = 0; copied < cqe_count; copied++) {
-		cqe = rtio_cqe_consume_block(r);
-		if (cqe == NULL) {
-			break;
-		}
-		cqes[copied] = *cqe;
-	}
+    for (copied = 0; copied < cqe_count; copied++) {
+        cqe = rtio_cqe_consume_block(r);
+        if (cqe == NULL) {
+            break;
+        }
+        cqes[copied] = *cqe;
+    }
 
+    rtio_cqe_release_all(r);
 
-	rtio_cqe_release_all(r);
-
-	return copied;
+    return copied;
 }
 
 /**
@@ -887,15 +897,14 @@ static inline int z_impl_rtio_cqe_copy_out(struct rtio *r,
  *
  * @retval 0 On success
  */
-__syscall int rtio_submit(struct rtio *r, uint32_t wait_count);
+__syscall int rtio_submit(struct rtio* r, uint32_t wait_count);
 
-static inline int z_impl_rtio_submit(struct rtio *r, uint32_t wait_count)
-{
-	int res;
+static inline int z_impl_rtio_submit(struct rtio* r, uint32_t wait_count) {
+    int res;
 
 	__ASSERT(r->executor != NULL, "expected rtio submit context to have an executor");
 
-#ifdef CONFIG_RTIO_SUBMIT_SEM
+    #ifdef CONFIG_RTIO_SUBMIT_SEM
 	/* TODO undefined behavior if another thread calls submit of course
 	 */
 	if (wait_count > 0) {
@@ -905,7 +914,7 @@ static inline int z_impl_rtio_submit(struct rtio *r, uint32_t wait_count)
 		k_sem_reset(r->submit_sem);
 		r->submit_count = wait_count;
 	}
-#endif
+    #endif
 
 	/* Enqueue all prepared submissions */
 	rtio_spsc_produce_all(r->sq);
@@ -921,19 +930,23 @@ static inline int z_impl_rtio_submit(struct rtio *r, uint32_t wait_count)
 	/* TODO could be nicer if we could suspend the thread and not
 	 * wake up on each completion here.
 	 */
-#ifdef CONFIG_RTIO_SUBMIT_SEM
+	#ifdef CONFIG_RTIO_SUBMIT_SEM
 
 	if (wait_count > 0) {
 		res = k_sem_take(r->submit_sem, K_FOREVER);
 		__ASSERT(res == 0,
 			 "semaphore was reset or timed out while waiting on completions!");
 	}
-#else
-	while (rtio_spsc_consumable(r->cq) < wait_count) {
-		Z_SPIN_DELAY(10);
-		k_yield();
-	}
-#endif
+	#else
+    #if defined(_MSC_VER)
+	/* pass: unsupported compilation error */
+    #else
+    while (rtio_spsc_consumable(r->cq) < wait_count) {
+        Z_SPIN_DELAY(10);
+        k_yield();
+    }
+    #endif
+	#endif
 
 	return res;
 }

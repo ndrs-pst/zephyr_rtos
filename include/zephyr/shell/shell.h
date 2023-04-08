@@ -159,7 +159,7 @@ typedef int (*shell_dict_cmd_handler)(const struct shell *shell, size_t argc,
  * native_posix_64 and x86_64 targets. Adding padding to allow handle data
  * in the memory section as array.
  */
-#if (defined(CONFIG_ARCH_POSIX) && defined(CONFIG_64BIT)) || defined(CONFIG_X86_64)
+#if (defined(CONFIG_ARCH_POSIX) && defined(CONFIG_64BIT)) || defined(CONFIG_X86_64) || defined(_MSC_VER)
 #define Z_SHELL_STATIC_ENTRY_PADDING 24
 #else
 #define Z_SHELL_STATIC_ENTRY_PADDING 0
@@ -379,13 +379,13 @@ struct shell_static_entry {
  * @param[in] name	Name of the dynamic entry.
  * @param[in] get	Pointer to the function returning dynamic commands array
  */
-#define SHELL_DYNAMIC_CMD_CREATE(name, get)					\
-	static const union shell_cmd_entry name					\
-	__attribute__ ((section("."						\
-			STRINGIFY(UTIL_CAT(shell_dynamic_subcmd_, syntax)))))	\
-	__attribute__((used)) = {						\
-		.dynamic_get = get						\
-	}
+#define SHELL_DYNAMIC_CMD_CREATE(name, get)         \
+    static const union shell_cmd_entry name         \
+    __attribute__ ((section("."                     \
+            STRINGIFY(UTIL_CAT(shell_dynamic_subcmd_, syntax)))))   \
+    __attribute__((used)) = {                       \
+        .dynamic_get = get                          \
+    }
 
 /**
  * @brief Initializes a shell command with arguments.
@@ -582,10 +582,10 @@ enum shell_transport_evt {
 };
 
 typedef void (*shell_transport_handler_t)(enum shell_transport_evt evt,
-					  void *context);
+                                          void* context);
 
 
-typedef void (*shell_uninit_cb_t)(const struct shell *shell, int res);
+typedef void (*shell_uninit_cb_t)(const struct shell* shell, int res);
 
 /** @brief Bypass callback.
  *
@@ -593,9 +593,9 @@ typedef void (*shell_uninit_cb_t)(const struct shell *shell, int res);
  * @param data  Raw data from transport.
  * @param len   Data length.
  */
-typedef void (*shell_bypass_cb_t)(const struct shell *shell,
-				  uint8_t *data,
-				  size_t len);
+typedef void (*shell_bypass_cb_t)(const struct shell* shell,
+                                  uint8_t* data,
+                                  size_t len);
 
 struct shell_transport;
 
@@ -614,10 +614,10 @@ struct shell_transport_api {
 	 *
 	 * @return Standard error code.
 	 */
-	int (*init)(const struct shell_transport *transport,
-		    const void *config,
-		    shell_transport_handler_t evt_handler,
-		    void *context);
+    int (*init)(const struct shell_transport* transport,
+                const void* config,
+                shell_transport_handler_t evt_handler,
+                void* context);
 
 	/**
 	 * @brief Function for uninitializing the shell transport interface.
@@ -626,7 +626,7 @@ struct shell_transport_api {
 	 *
 	 * @return Standard error code.
 	 */
-	int (*uninit)(const struct shell_transport *transport);
+    int (*uninit)(const struct shell_transport* transport);
 
 	/**
 	 * @brief Function for enabling transport in given TX mode.
@@ -640,8 +640,8 @@ struct shell_transport_api {
 	 * @return NRF_SUCCESS on successful enabling, error otherwise (also if
 	 * not supported).
 	 */
-	int (*enable)(const struct shell_transport *transport,
-		      bool blocking_tx);
+    int (*enable)(const struct shell_transport* transport,
+                  bool blocking_tx);
 
 	/**
 	 * @brief Function for writing data to the transport interface.
@@ -653,8 +653,8 @@ struct shell_transport_api {
 	 *
 	 * @return Standard error code.
 	 */
-	int (*write)(const struct shell_transport *transport,
-		     const void *data, size_t length, size_t *cnt);
+    int (*write)(const struct shell_transport* transport,
+                 const void* data, size_t length, size_t* cnt);
 
 	/**
 	 * @brief Function for reading data from the transport interface.
@@ -666,8 +666,8 @@ struct shell_transport_api {
 	 *
 	 * @return Standard error code.
 	 */
-	int (*read)(const struct shell_transport *transport,
-		    void *data, size_t length, size_t *cnt);
+    int (*read)(const struct shell_transport* transport,
+	            void* data, size_t length, size_t* cnt);
 
 	/**
 	 * @brief Function called in shell thread loop.
@@ -676,8 +676,7 @@ struct shell_transport_api {
 	 *
 	 * @param[in] transport Pointer to the transfer instance.
 	 */
-	void (*update)(const struct shell_transport *transport);
-
+    void (*update)(const struct shell_transport* transport);
 };
 
 struct shell_transport {
@@ -709,44 +708,44 @@ struct shell_backend_config_flags {
 	uint32_t obscure     :1; /*!< If echo on, print asterisk instead */
 	uint32_t mode_delete :1; /*!< Operation mode of backspace key */
 	uint32_t use_colors  :1; /*!< Controls colored syntax */
-	uint32_t use_vt100   :1; /*!< Controls VT100 commands usage in shell */
+    uint32_t use_vt100   :1; /*!< Controls VT100 commands usage in shell */
 };
 
 BUILD_ASSERT((sizeof(struct shell_backend_config_flags) == sizeof(uint32_t)),
-	     "Structure must fit in 4 bytes");
+             "Structure must fit in 4 bytes");
 
 /**
  * @internal @brief Default backend configuration.
  */
-#define SHELL_DEFAULT_BACKEND_CONFIG_FLAGS				\
-{									\
-	.insert_mode	= 0,						\
-	.echo		= 1,						\
-	.obscure	= IS_ENABLED(CONFIG_SHELL_START_OBSCURED),	\
-	.mode_delete	= 1,						\
-	.use_colors	= 1,						\
-	.use_vt100	= 1,						\
+#define SHELL_DEFAULT_BACKEND_CONFIG_FLAGS  \
+{                                           \
+    .insert_mode = 0,                       \
+    .echo        = 1,                       \
+    .obscure     = IS_ENABLED(CONFIG_SHELL_START_OBSCURED), \
+    .mode_delete = 1,                       \
+    .use_colors  = 1,                       \
+    .use_vt100   = 1,                       \
 };
 
 struct shell_backend_ctx_flags {
-	uint32_t processing   :1; /*!< Shell is executing process function */
-	uint32_t tx_rdy       :1;
-	uint32_t history_exit :1; /*!< Request to exit history mode */
-	uint32_t last_nl      :8; /*!< Last received new line character */
-	uint32_t cmd_ctx      :1; /*!< Shell is executing command */
-	uint32_t print_noinit :1; /*!< Print request from not initialized shell */
-	uint32_t sync_mode    :1; /*!< Shell in synchronous mode */
+    uint32_t processing   :1; /*!< Shell is executing process function */
+    uint32_t tx_rdy       :1;
+    uint32_t history_exit :1; /*!< Request to exit history mode */
+    uint32_t last_nl      :8; /*!< Last received new line character */
+    uint32_t cmd_ctx      :1; /*!< Shell is executing command */
+    uint32_t print_noinit :1; /*!< Print request from not initialized shell */
+    uint32_t sync_mode    :1; /*!< Shell in synchronous mode */
 };
 
 BUILD_ASSERT((sizeof(struct shell_backend_ctx_flags) == sizeof(uint32_t)),
-	     "Structure must fit in 4 bytes");
+             "Structure must fit in 4 bytes");
 
 /**
  * @internal @brief Union for internal shell usage.
  */
 union shell_backend_cfg {
-	atomic_t value;
-	struct shell_backend_config_flags flags;
+    atomic_t value;
+    struct shell_backend_config_flags flags;
 };
 
 /**
@@ -958,7 +957,7 @@ int shell_stop(const struct shell *shell);
 /**
  * @brief Green text color for shell_fprintf function.
  */
-#define SHELL_INFO	SHELL_VT100_COLOR_GREEN
+#define SHELL_INFO      SHELL_VT100_COLOR_GREEN
 
 /**
  * @brief Cyan text color for shell_fprintf function.

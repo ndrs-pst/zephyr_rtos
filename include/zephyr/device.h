@@ -15,6 +15,12 @@
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/sys/util.h>
 
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define DT_CONST
+#else
+#define DT_CONST    const
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -80,7 +86,7 @@ typedef int16_t device_handle_t;
  * @return The full name of the device object defined by device definition
  * macros.
  */
-#define DEVICE_NAME_GET(dev_id) _CONCAT(__device_, dev_id)
+#define DEVICE_NAME_GET(dev_id) Z_CONCAT(__device_, dev_id)
 
 /* Node paths can exceed the maximum size supported by
  * device_get_binding() in user mode; this macro synthesizes a unique
@@ -90,7 +96,7 @@ typedef int16_t device_handle_t;
  * The ordinal used in this name can be mapped to the path by
  * examining zephyr/include/generated/devicetree_generated.h.
  */
-#define Z_DEVICE_DT_DEV_ID(node_id) _CONCAT(dts_ord_, DT_DEP_ORD(node_id))
+#define Z_DEVICE_DT_DEV_ID(node_id) Z_CONCAT(dts_ord_, DT_DEP_ORD(node_id))
 
 /**
  * @brief Create a device object and set it up for boot time initialization.
@@ -377,15 +383,15 @@ struct pm_device;
  */
 struct device {
 	/** Name of the device instance */
-	const char *name;
+	const char* name;
 	/** Address of device instance config information */
-	const void *config;
+	const void* config;
 	/** Address of the API structure exposed by the device instance */
-	const void *api;
+	const void* api;
 	/** Address of the common device state */
-	struct device_state *state;
+	struct device_state* state;
 	/** Address of the device instance private data */
-	void *data;
+    void* data;
 	/**
 	 * Optional pointer to handles associated with the device.
 	 *
@@ -412,8 +418,7 @@ struct device {
  * @return the handle for the device, or DEVICE_HANDLE_NULL if the device does
  * not have an associated handle.
  */
-static inline device_handle_t device_handle_get(const struct device *dev)
-{
+static inline device_handle_t device_handle_get(const struct device* dev) {
 	device_handle_t ret = DEVICE_HANDLE_NULL;
 	extern const struct device __device_start[];
 
@@ -424,8 +429,18 @@ static inline device_handle_t device_handle_get(const struct device *dev)
 		ret = 1 + (device_handle_t)(dev - __device_start);
 	}
 
-	return ret;
+    return (ret);
 }
+
+/**
+ * @brief Run device initialization in user space
+ *
+ * @param[in] dev the device that want to re-initialize
+ *
+ * @return 0 on success, negative errno code otherwise
+ * @note The init_entry entry of the device shall be in POST_KERNEL !!!
+ */
+int device_user_init(const struct device* dev);                 /* #CUSTOM@PST1981 */
 
 /**
  * @brief Get the device corresponding to a handle.
@@ -436,18 +451,17 @@ static inline device_handle_t device_handle_get(const struct device *dev)
  * does not identify a device.
  */
 static inline const struct device *
-device_from_handle(device_handle_t dev_handle)
-{
+device_from_handle(device_handle_t dev_handle) {
 	extern const struct device __device_start[];
 	extern const struct device __device_end[];
 	const struct device *dev = NULL;
-	size_t numdev = __device_end - __device_start;
+    size_t numdev = (__device_end - __device_start);
 
 	if ((dev_handle > 0) && ((size_t)dev_handle <= numdev)) {
 		dev = &__device_start[dev_handle - 1];
 	}
 
-	return dev;
+    return (dev);
 }
 
 /**
@@ -490,21 +504,20 @@ typedef int (*device_visitor_callback_t)(const struct device *dev,
  * if @p dev does not have any dependency data.
  */
 static inline const device_handle_t *
-device_required_handles_get(const struct device *dev, size_t *count)
-{
+device_required_handles_get(const struct device* dev, size_t* count) {
 	const device_handle_t *rv = dev->handles;
 
 	if (rv != NULL) {
 		size_t i = 0;
 
-		while ((rv[i] != DEVICE_HANDLE_ENDS) &&
-		       (rv[i] != DEVICE_HANDLE_SEP)) {
+        while ((rv[i] != DEVICE_HANDLE_ENDS) &&
+               (rv[i] != DEVICE_HANDLE_SEP)) {
 			++i;
 		}
 		*count = i;
 	}
 
-	return rv;
+    return (rv);
 }
 
 /**
@@ -570,8 +583,7 @@ device_injected_handles_get(const struct device *dev, size_t *count)
  * pointer if @p dev does not have any dependency data.
  */
 static inline const device_handle_t *
-device_supported_handles_get(const struct device *dev, size_t *count)
-{
+device_supported_handles_get(const struct device* dev, size_t* count) {
 	const device_handle_t *rv = dev->handles;
 	size_t region = 0;
 	size_t i = 0;
@@ -595,7 +607,7 @@ device_supported_handles_get(const struct device *dev, size_t *count)
 		*count = i;
 	}
 
-	return rv;
+    return (rv);
 }
 
 /**
@@ -685,7 +697,7 @@ int device_supported_foreach(const struct device *dev,
  * is not found or if the device with that name's initialization function
  * failed.
  */
-__syscall const struct device *device_get_binding(const char *name);
+__syscall const struct device* device_get_binding(const char* name);
 
 /**
  * @brief Get access to the static array of static devices.
@@ -695,7 +707,7 @@ __syscall const struct device *device_get_binding(const char *name);
  *
  * @return the number of statically allocated devices.
  */
-size_t z_device_get_all_static(const struct device **devices);
+size_t z_device_get_all_static(const struct device** devices);
 
 /**
  * @brief Verify that a device is ready for use.
@@ -731,8 +743,7 @@ bool z_device_is_ready(const struct device *dev);
  */
 __syscall bool device_is_ready(const struct device *dev);
 
-static inline bool z_impl_device_is_ready(const struct device *dev)
-{
+static inline bool z_impl_device_is_ready(const struct device* dev) {
 	return z_device_is_ready(dev);
 }
 
@@ -746,7 +757,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @brief Synthesize a unique name for the device state associated with
  * @p dev_id.
  */
-#define Z_DEVICE_STATE_NAME(dev_id) _CONCAT(__devstate_, dev_id)
+#define Z_DEVICE_STATE_NAME(dev_id) Z_CONCAT(__devstate_, dev_id)
 
 /**
  * @brief Utility macro to define and initialize the device state.
@@ -763,7 +774,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  *
  * @param dev_id Device identifier.
  */
-#define Z_DEVICE_HANDLES_NAME(dev_id) _CONCAT(__devicehdl_, dev_id)
+#define Z_DEVICE_HANDLES_NAME(dev_id) Z_CONCAT(__devicehdl_, dev_id)
 
 /**
  * @brief Expand extra handles with a comma in between.

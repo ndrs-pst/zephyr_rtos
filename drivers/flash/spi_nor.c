@@ -109,6 +109,7 @@ struct spi_nor_config {
  */
 struct spi_nor_data {
 	struct k_sem sem;
+
 #if DT_INST_NODE_HAS_PROP(0, has_dpd)
 	/* Low 32-bits of uptime counter at which device last entered
 	 * deep power-down.
@@ -162,45 +163,49 @@ static const struct jesd216_erase_type minimal_erase_types[JESD216_NUM_ERASE_TYP
 };
 #endif /* CONFIG_SPI_NOR_SFDP_MINIMAL */
 
-static int spi_nor_write_protection_set(const struct device *dev,
-					bool write_protect);
+static int spi_nor_write_protection_set(const struct device* dev, bool write_protect);
 
 /* Get pointer to array of supported erase types.  Static const for
  * minimal, data for runtime and devicetree.
  */
-static inline const struct jesd216_erase_type *
-dev_erase_types(const struct device *dev)
-{
+static inline const struct jesd216_erase_type* dev_erase_types(const struct device* dev) {
 #ifdef CONFIG_SPI_NOR_SFDP_MINIMAL
-	return minimal_erase_types;
+    return (minimal_erase_types);
 #else /* CONFIG_SPI_NOR_SFDP_MINIMAL */
 	const struct spi_nor_data *data = dev->data;
 
-	return data->erase_types;
+    return (data->erase_types);
 #endif /* CONFIG_SPI_NOR_SFDP_MINIMAL */
 }
 
 /* Get the size of the flash device.  Data for runtime, constant for
  * minimal and devicetree.
  */
-static inline uint32_t dev_flash_size(const struct device *dev)
-{
+static inline uint32_t dev_flash_size(const struct device* dev) {
 #ifdef CONFIG_SPI_NOR_SFDP_RUNTIME
 	const struct spi_nor_data *data = dev->data;
 
-	return data->flash_size;
+    return (data->flash_size);
 #else /* CONFIG_SPI_NOR_SFDP_RUNTIME */
 	const struct spi_nor_config *cfg = dev->config;
 
-	return cfg->flash_size;
+    return (cfg->flash_size);
 #endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
+}
+
+/* #CUSTOM@NDRS */
+size_t /**/spi_nor_flash_size(const struct device* dev) {
+    size_t sz;
+
+    sz = (size_t)dev_flash_size(dev);
+
+    return (sz);
 }
 
 /* Get the flash device page size.  Constant for minimal, data for
  * runtime and devicetree.
  */
-static inline uint16_t dev_page_size(const struct device *dev)
-{
+static inline uint16_t dev_page_size(const struct device* dev) {
 #ifdef CONFIG_SPI_NOR_SFDP_MINIMAL
 	return 256;
 #else /* CONFIG_SPI_NOR_SFDP_MINIMAL */
@@ -211,13 +216,12 @@ static inline uint16_t dev_page_size(const struct device *dev)
 }
 
 static const struct flash_parameters flash_nor_parameters = {
-	.write_block_size = 1,
-	.erase_value = 0xff,
+    .write_block_size = 1U,
+    .erase_value      = 0xFFU
 };
 
 /* Capture the time at which the device entered deep power-down. */
-static inline void record_entered_dpd(const struct device *const dev)
-{
+static inline void record_entered_dpd(const struct device* const dev) {
 #if DT_INST_NODE_HAS_PROP(0, has_dpd)
 	struct spi_nor_data *const driver_data = dev->data;
 
@@ -228,11 +232,12 @@ static inline void record_entered_dpd(const struct device *const dev)
 /* Check the current time against the time DPD was entered and delay
  * until it's ok to initiate the DPD exit process.
  */
-static inline void delay_until_exit_dpd_ok(const struct device *const dev)
-{
+static inline void delay_until_exit_dpd_ok(const struct device* const dev) {
 #if DT_INST_NODE_HAS_PROP(0, has_dpd)
 	struct spi_nor_data *const driver_data = dev->data;
-	int32_t since = (int32_t)(k_uptime_get_32() - driver_data->ts_enter_dpd);
+    int32_t since;
+
+    since = (int32_t)(k_uptime_get_32() - driver_data->ts_enter_dpd);
 
 	/* If the time is negative the 32-bit counter has wrapped,
 	 * which is certainly long enough no further delay is
@@ -291,17 +296,17 @@ static inline void delay_until_exit_dpd_ok(const struct device *const dev)
  */
 static int spi_nor_access(const struct device *const dev,
 			  uint8_t opcode, unsigned int access,
-			  off_t addr, void *data, size_t length)
-{
+                          off_t addr, void* data, size_t length) {
 	const struct spi_nor_config *const driver_cfg = dev->config;
 	struct spi_nor_data *const driver_data = dev->data;
-	bool is_addressed = (access & NOR_ACCESS_ADDRESSED) != 0U;
-	bool is_write = (access & NOR_ACCESS_WRITE) != 0U;
-	uint8_t buf[5] = { 0 };
+    bool is_addressed = ((access & NOR_ACCESS_ADDRESSED) != 0U);
+    bool is_write     = ((access & NOR_ACCESS_WRITE) != 0U);
+    uint8_t buf[5];
+
 	struct spi_buf spi_buf[2] = {
 		{
 			.buf = buf,
-			.len = 1,
+            .len = 1
 		},
 		{
 			.buf = data,
@@ -310,12 +315,10 @@ static int spi_nor_access(const struct device *const dev,
 	};
 
 	buf[0] = opcode;
-	if (is_addressed) {
-		bool access_24bit = (access & NOR_ACCESS_24BIT_ADDR) != 0;
-		bool access_32bit = (access & NOR_ACCESS_32BIT_ADDR) != 0;
-		bool use_32bit = (access_32bit
-				  || (!access_24bit
-				      && driver_data->flag_access_32bit));
+    if (is_addressed == true) {
+        bool access_24bit = ((access & NOR_ACCESS_24BIT_ADDR) != 0U);
+        bool access_32bit = ((access & NOR_ACCESS_32BIT_ADDR) != 0U);
+        bool use_32bit    = (access_32bit || (!access_24bit && driver_data->flag_access_32bit));
 		union {
 			uint32_t u32;
 			uint8_t u8[4];
@@ -323,10 +326,11 @@ static int spi_nor_access(const struct device *const dev,
 			.u32 = sys_cpu_to_be32(addr),
 		};
 
-		if (use_32bit) {
+        if (use_32bit == true) {
 			memcpy(&buf[1], &addr32.u8[0], 4);
 			spi_buf[0].len += 4;
-		} else {
+        }
+        else {
 			memcpy(&buf[1], &addr32.u8[1], 3);
 			spi_buf[0].len += 3;
 		}
@@ -334,15 +338,15 @@ static int spi_nor_access(const struct device *const dev,
 
 	const struct spi_buf_set tx_set = {
 		.buffers = spi_buf,
-		.count = (length != 0) ? 2 : 1,
+        .count   = (length != 0) ? 2 : 1
 	};
 
 	const struct spi_buf_set rx_set = {
 		.buffers = spi_buf,
-		.count = 2,
+        .count   = 2
 	};
 
-	if (is_write) {
+    if (is_write == true) {
 		return spi_write_dt(&driver_cfg->spi, &tx_set);
 	}
 
@@ -356,7 +360,7 @@ static int spi_nor_access(const struct device *const dev,
 #define spi_nor_cmd_write(dev, opcode) \
 	spi_nor_access(dev, opcode, NOR_ACCESS_WRITE, 0, NULL, 0)
 #define spi_nor_cmd_addr_write(dev, opcode, addr, src, length) \
-	spi_nor_access(dev, opcode, NOR_ACCESS_WRITE | NOR_ACCESS_ADDRESSED, \
+    spi_nor_access(dev, opcode, (NOR_ACCESS_WRITE | NOR_ACCESS_ADDRESSED),  \
 		       addr, (void *)src, length)
 
 /**
@@ -373,8 +377,7 @@ static int spi_nor_access(const struct device *const dev,
  * @param dev The device structure
  * @return 0 on success, negative errno code otherwise
  */
-static int spi_nor_wait_until_ready(const struct device *dev)
-{
+static int spi_nor_wait_until_ready(const struct device* dev) {
 	int ret;
 	uint8_t reg;
 
@@ -382,7 +385,7 @@ static int spi_nor_wait_until_ready(const struct device *dev)
 		ret = spi_nor_cmd_read(dev, SPI_NOR_CMD_RDSR, &reg, sizeof(reg));
 	} while (!ret && (reg & SPI_NOR_WIP_BIT));
 
-	return ret;
+    return (ret);
 }
 
 #if defined(CONFIG_SPI_NOR_SFDP_RUNTIME) || defined(CONFIG_FLASH_JESD216_API)
@@ -399,35 +402,35 @@ static int spi_nor_wait_until_ready(const struct device *dev)
  * @return 0 on success, negative errno code otherwise
  */
 static int read_sfdp(const struct device *const dev,
-		     off_t addr, void *data, size_t length)
-{
+                     off_t addr, void* data, size_t length) {
 	/* READ_SFDP requires a 24-bit address followed by a single
 	 * byte for a wait state.  This is effected by using 32-bit
 	 * address by shifting the 24-bit address up 8 bits.
 	 */
 	return spi_nor_access(dev, JESD216_CMD_READ_SFDP,
-			      NOR_ACCESS_32BIT_ADDR | NOR_ACCESS_ADDRESSED,
-			      addr << 8, data, length);
+                          (NOR_ACCESS_32BIT_ADDR | NOR_ACCESS_ADDRESSED),
+                          (addr << 8), data, length);
 }
 #endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
 
-static int enter_dpd(const struct device *const dev)
-{
-	int ret = 0;
+static int enter_dpd(const struct device* const dev) {
+    int ret;
 
+    ret = 0;
 	if (IS_ENABLED(DT_INST_PROP(0, has_dpd))) {
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_DPD);
 		if (ret == 0) {
 			record_entered_dpd(dev);
 		}
 	}
-	return ret;
+
+    return (ret);
 }
 
-static int exit_dpd(const struct device *const dev)
-{
-	int ret = 0;
+static int exit_dpd(const struct device* const dev) {
+    int ret;
 
+    ret = 0;
 	if (IS_ENABLED(DT_INST_PROP(0, has_dpd))) {
 		delay_until_exit_dpd_ok(dev);
 
@@ -454,7 +457,8 @@ static int exit_dpd(const struct device *const dev)
 		}
 #endif /* DPD_WAKEUP_SEQUENCE */
 	}
-	return ret;
+
+    return (ret);
 }
 
 /* Everything necessary to acquire owning access to the device.
@@ -462,8 +466,7 @@ static int exit_dpd(const struct device *const dev)
  * This means taking the lock and, if necessary, waking the device
  * from deep power-down mode.
  */
-static void acquire_device(const struct device *dev)
-{
+static void acquire_device(const struct device* dev) {
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		struct spi_nor_data *const driver_data = dev->data;
 
@@ -480,8 +483,7 @@ static void acquire_device(const struct device *dev)
  * This means (optionally) putting the device into deep power-down
  * mode, and releasing the lock.
  */
-static void release_device(const struct device *dev)
-{
+static void release_device(const struct device* dev) {
 	if (IS_ENABLED(CONFIG_SPI_NOR_IDLE_IN_DPD)) {
 		enter_dpd(dev);
 	}
@@ -503,16 +505,16 @@ static void release_device(const struct device *dev)
  *
  * @return the non-negative value of the status register, or an error code.
  */
-static int spi_nor_rdsr(const struct device *dev)
-{
+static int spi_nor_rdsr(const struct device* dev) {
 	uint8_t reg;
-	int ret = spi_nor_cmd_read(dev, SPI_NOR_CMD_RDSR, &reg, sizeof(reg));
+    int ret;
 
+    ret = spi_nor_cmd_read(dev, SPI_NOR_CMD_RDSR, &reg, sizeof(reg));
 	if (ret == 0) {
 		ret = reg;
 	}
 
-	return ret;
+    return (ret);
 }
 
 /**
@@ -526,18 +528,16 @@ static int spi_nor_rdsr(const struct device *dev)
  *
  * @return 0 on success or a negative error code.
  */
-static int spi_nor_wrsr(const struct device *dev,
-			uint8_t sr)
-{
-	int ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+static int spi_nor_wrsr(const struct device* dev, uint8_t sr) {
+    int ret;
 
+    ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
 	if (ret == 0) {
-		ret = spi_nor_access(dev, SPI_NOR_CMD_WRSR, NOR_ACCESS_WRITE, 0, &sr,
-				     sizeof(sr));
+        ret = spi_nor_access(dev, SPI_NOR_CMD_WRSR, NOR_ACCESS_WRITE, 0, &sr, sizeof(sr));
 		spi_nor_wait_until_ready(dev);
 	}
 
-	return ret;
+    return (ret);
 }
 
 #if DT_INST_NODE_HAS_PROP(0, mxicy_mx25r_power_mode)
@@ -659,9 +659,8 @@ static int mxicy_configure(const struct device *dev, const uint8_t *jedec_id)
 
 #endif /* DT_INST_NODE_HAS_PROP(0, mxicy_mx25r_power_mode) */
 
-static int spi_nor_read(const struct device *dev, off_t addr, void *dest,
-			size_t size)
-{
+static int spi_nor_read(const struct device* dev,
+                        off_t addr, void* dest, size_t size) {
 	const size_t flash_size = dev_flash_size(dev);
 	int ret;
 
@@ -675,20 +674,19 @@ static int spi_nor_read(const struct device *dev, off_t addr, void *dest,
 	ret = spi_nor_cmd_addr_read(dev, SPI_NOR_CMD_READ, addr, dest, size);
 
 	release_device(dev);
-	return ret;
+
+    return (ret);
 }
 
-static int spi_nor_write(const struct device *dev, off_t addr,
-			 const void *src,
-			 size_t size)
-{
+static int /**/spi_nor_write(const struct device* dev,
+                             off_t addr, const void* src, size_t size) {
 	const size_t flash_size = dev_flash_size(dev);
 	const uint16_t page_size = dev_page_size(dev);
-	int ret = 0;
+	int ret;
 
 	/* should be between 0 and flash size */
 	if ((addr < 0) || ((size + addr) > flash_size)) {
-		return -EINVAL;
+	    return (-EINVAL);
 	}
 
 	acquire_device(dev);
@@ -703,14 +701,12 @@ static int spi_nor_write(const struct device *dev, off_t addr,
 			}
 
 			/* Don't write across a page boundary */
-			if (((addr + to_write - 1U) / page_size)
-			!= (addr / page_size)) {
+            if (((addr + to_write - 1U) / page_size) != (addr / page_size)) {
 				to_write = page_size - (addr % page_size);
 			}
 
 			spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
-			ret = spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_PP, addr,
-						src, to_write);
+            ret = spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_PP, addr, src, to_write);
 			if (ret != 0) {
 				break;
 			}
@@ -730,27 +726,27 @@ static int spi_nor_write(const struct device *dev, off_t addr,
 	}
 
 	release_device(dev);
-	return ret;
+
+    return (ret);
 }
 
-static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
-{
+static int spi_nor_erase(const struct device* dev, off_t addr, size_t size) {
 	const size_t flash_size = dev_flash_size(dev);
-	int ret = 0;
+	int ret;
 
-	/* erase area must be subregion of device */
+    /* erase area must be sub-region of device */
 	if ((addr < 0) || ((size + addr) > flash_size)) {
-		return -EINVAL;
+		return (-EINVAL);
 	}
 
 	/* address must be sector-aligned */
 	if (!SPI_NOR_IS_SECTOR_ALIGNED(addr)) {
-		return -EINVAL;
+        return (-EINVAL);
 	}
 
 	/* size must be a multiple of sectors */
 	if ((size % SPI_NOR_SECTOR_SIZE) != 0) {
-		return -EINVAL;
+        return (-EINVAL);
 	}
 
 	acquire_device(dev);
@@ -763,30 +759,29 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 			/* chip erase */
 			spi_nor_cmd_write(dev, SPI_NOR_CMD_CE);
 			size -= flash_size;
-		} else {
-			const struct jesd216_erase_type *erase_types =
-				dev_erase_types(dev);
+        }
+        else {
+            const struct jesd216_erase_type* erase_types = dev_erase_types(dev);
 			const struct jesd216_erase_type *bet = NULL;
 
 			for (uint8_t ei = 0; ei < JESD216_NUM_ERASE_TYPES; ++ei) {
-				const struct jesd216_erase_type *etp =
-					&erase_types[ei];
+                const struct jesd216_erase_type* etp = &erase_types[ei];
 
-				if ((etp->exp != 0)
-				    && SPI_NOR_IS_ALIGNED(addr, etp->exp)
-				    && SPI_NOR_IS_ALIGNED(size, etp->exp)
-				    && ((bet == NULL)
-					|| (etp->exp > bet->exp))) {
+                if ((etp->exp != 0)                    &&
+                    SPI_NOR_IS_ALIGNED(addr, etp->exp) &&
+                    SPI_NOR_IS_ALIGNED(size, etp->exp) &&
+                    ((bet == NULL) || (etp->exp > bet->exp))) {
 					bet = etp;
 				}
 			}
+
 			if (bet != NULL) {
 				spi_nor_cmd_addr_write(dev, bet->cmd, addr, NULL, 0);
 				addr += BIT(bet->exp);
 				size -= BIT(bet->exp);
-			} else {
-				LOG_DBG("Can't erase %zu at 0x%lx",
-					size, (long)addr);
+            }
+            else {
+                LOG_DBG("Can't erase %zu at 0x%lx", size, (long)addr);
 				ret = -EINVAL;
 			}
 		}
@@ -812,50 +807,43 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 
 	release_device(dev);
 
-	return ret;
+    return (ret);
 }
 
 /* @note The device must be externally acquired before invoking this
  * function.
  */
-static int spi_nor_write_protection_set(const struct device *dev,
-					bool write_protect)
-{
+static int spi_nor_write_protection_set(const struct device* dev, bool write_protect) {
 	int ret;
 
-	ret = spi_nor_cmd_write(dev, (write_protect) ?
-	      SPI_NOR_CMD_WRDI : SPI_NOR_CMD_WREN);
+    ret = spi_nor_cmd_write(dev, (write_protect) ? SPI_NOR_CMD_WRDI : SPI_NOR_CMD_WREN);
 
-	if (IS_ENABLED(DT_INST_PROP(0, requires_ulbpr))
-	    && (ret == 0)
-	    && !write_protect) {
+    if (IS_ENABLED(DT_INST_PROP(0, requires_ulbpr)) &&
+        (ret == 0)                                  &&
+        (write_protect == false)) {
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_ULBPR);
 	}
 
-	return ret;
+    return (ret);
 }
 
 #if defined(CONFIG_FLASH_JESD216_API) || defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
 
-static int spi_nor_sfdp_read(const struct device *dev, off_t addr,
-			     void *dest, size_t size)
-{
+static int spi_nor_sfdp_read(const struct device* dev, off_t addr, void* dest, size_t size) {
 	acquire_device(dev);
 
 	int ret = read_sfdp(dev, addr, dest, size);
 
 	release_device(dev);
 
-	return ret;
+    return (ret);
 }
 
 #endif /* CONFIG_FLASH_JESD216_API || CONFIG_SPI_NOR_SFDP_RUNTIME */
 
-static int spi_nor_read_jedec_id(const struct device *dev,
-				 uint8_t *id)
-{
+static int spi_nor_read_jedec_id(const struct device* dev, uint8_t* id) {
 	if (id == NULL) {
-		return -EINVAL;
+        return (-EINVAL);
 	}
 
 	acquire_device(dev);
@@ -864,7 +852,7 @@ static int spi_nor_read_jedec_id(const struct device *dev,
 
 	release_device(dev);
 
-	return ret;
+    return (ret);
 }
 
 /* Put the device into the appropriate address mode, if supported.
@@ -886,16 +874,14 @@ static int spi_nor_read_jedec_id(const struct device *dev,
  *         reconfigured to 32-bit mode.
  */
 static int spi_nor_set_address_mode(const struct device *dev,
-				    uint8_t enter_4byte_addr)
-{
-	int ret = 0;
+                                    uint8_t enter_4byte_addr) {
+    int ret;
 
 	/* Do nothing if not provided (either no bits or all bits
 	 * set).
 	 */
-	if ((enter_4byte_addr == 0)
-	    || (enter_4byte_addr == 0xff)) {
-		return 0;
+    if ((enter_4byte_addr == 0U) || (enter_4byte_addr == 0xFFU)) {
+        return (0);
 	}
 
 	LOG_DBG("Checking enter-4byte-addr %02x", enter_4byte_addr);
@@ -903,16 +889,18 @@ static int spi_nor_set_address_mode(const struct device *dev,
 	/* This currently only supports command 0xB7 (Enter 4-Byte
 	 * Address Mode), with or without preceding WREN.
 	 */
-	if ((enter_4byte_addr & 0x03) == 0) {
-		return -ENOTSUP;
+    if ((enter_4byte_addr & 0x03U) == 0) {
+        return (-ENOTSUP);
 	}
 
 	acquire_device(dev);
 
-	if ((enter_4byte_addr & 0x02) != 0) {
+    ret = 0;
+    if ((enter_4byte_addr & 0x02U) != 0) {
 		/* Enter after WREN. */
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
 	}
+
 	if (ret == 0) {
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_4BA);
 	}
@@ -925,18 +913,17 @@ static int spi_nor_set_address_mode(const struct device *dev,
 
 	release_device(dev);
 
-	return ret;
+    return (ret);
 }
 
 #ifndef CONFIG_SPI_NOR_SFDP_MINIMAL
 
 static int spi_nor_process_bfp(const struct device *dev,
 			       const struct jesd216_param_header *php,
-			       const struct jesd216_bfp *bfp)
-{
+                               const struct jesd216_bfp* bfp) {
 	struct spi_nor_data *data = dev->data;
 	struct jesd216_erase_type *etp = data->erase_types;
-	const size_t flash_size = jesd216_bfp_density(bfp) / 8U;
+    const size_t flash_size = (size_t)(jesd216_bfp_density(bfp) / 8U);
 
 	LOG_INF("%s: %u MiBy flash", dev->name, (uint32_t)(flash_size >> 20));
 
@@ -980,8 +967,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 	return 0;
 }
 
-static int spi_nor_process_sfdp(const struct device *dev)
-{
+static int spi_nor_process_sfdp(const struct device* dev) {
 	int rc;
 
 #if defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
@@ -991,7 +977,7 @@ static int spi_nor_process_sfdp(const struct device *dev)
 	const uint8_t decl_nph = 2;
 	union {
 		/* We only process BFP so use one parameter block */
-		uint8_t raw[JESD216_SFDP_SIZE(decl_nph)];
+        uint8_t raw[JESD216_SFDP_SIZE(2U)];                     /* @see Use value from decl_nph */
 		struct jesd216_sfdp_header sfdp;
 	} u;
 	const struct jesd216_sfdp_header *hp = &u.sfdp;
@@ -1018,18 +1004,17 @@ static int spi_nor_process_sfdp(const struct device *dev)
 	while (php != phpe) {
 		uint16_t id = jesd216_param_id(php);
 
-		LOG_INF("PH%u: %04x rev %u.%u: %u DW @ %x",
-			(php - hp->phdr), id, php->rev_major, php->rev_minor,
-			php->len_dw, jesd216_param_addr(php));
+        LOG_INF("PH%u: %04x rev %u.%u: %u DW @ %x", (php - hp->phdr), id, php->rev_major, php->rev_minor, php->len_dw, jesd216_param_addr(php));
 
 		if (id == JESD216_SFDP_PARAM_ID_BFP) {
 			union {
-				uint32_t dw[MIN(php->len_dw, 20)];
+                uint32_t dw[20];
 				struct jesd216_bfp bfp;
 			} u;
 			const struct jesd216_bfp *bfp = &u.bfp;
+            size_t len = (MIN(php->len_dw, 20) * sizeof(uint32_t));     /* #CUSTOM@NDRS */
 
-			rc = spi_nor_sfdp_read(dev, jesd216_param_addr(php), u.dw, sizeof(u.dw));
+            rc = spi_nor_sfdp_read(dev, jesd216_param_addr(php), u.dw, len);
 			if (rc == 0) {
 				rc = spi_nor_process_bfp(dev, php, bfp);
 			}
@@ -1059,8 +1044,7 @@ static int spi_nor_process_sfdp(const struct device *dev)
 }
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
-static int setup_pages_layout(const struct device *dev)
-{
+static int setup_pages_layout(const struct device* dev) {
 	int rv = 0;
 
 #if defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
@@ -1073,8 +1057,8 @@ static int setup_pages_layout(const struct device *dev)
 	for (size_t i = 0; i < ARRAY_SIZE(data->erase_types); ++i) {
 		const struct jesd216_erase_type *etp = &data->erase_types[i];
 
-		if ((etp->cmd != 0)
-		    && ((exp == 0) || (etp->exp < exp))) {
+        if ((etp->cmd != 0) &&
+            ((exp == 0) || (etp->exp < exp))) {
 			exp = etp->exp;
 		}
 	}
@@ -1132,8 +1116,7 @@ static int setup_pages_layout(const struct device *dev)
  * @param info The flash info structure
  * @return 0 on success, negative errno code otherwise
  */
-static int spi_nor_configure(const struct device *dev)
-{
+static int spi_nor_configure(const struct device* dev) {
 	const struct spi_nor_config *cfg = dev->config;
 	uint8_t jedec_id[SPI_NOR_MAX_ID_LEN];
 	int rc;
@@ -1143,6 +1126,8 @@ static int spi_nor_configure(const struct device *dev)
 		return -ENODEV;
 	}
 
+    /* Might be in DPD if system restarted without power cycle. */
+    #if (__GTEST == 0U)                     /* #CUSTOM@NDRS */
 	/* After a soft-reset the flash might be in DPD or busy writing/erasing.
 	 * Exit DPD and wait until flash is ready.
 	 */
@@ -1153,6 +1138,7 @@ static int spi_nor_configure(const struct device *dev)
 		spi_nor_wait_until_ready(dev);
 	}
 	release_device(dev);
+    #endif
 
 	/* now the spi bus is configured, we can verify SPI
 	 * connectivity by reading the JEDEC ID.
@@ -1193,12 +1179,12 @@ static int spi_nor_configure(const struct device *dev)
 			rc = spi_nor_wrsr(dev, rc & ~cfg->has_lock);
 		}
 
+        release_device(dev);
+
 		if (rc != 0) {
 			LOG_ERR("BP clear failed: %d\n", rc);
 			return -ENODEV;
 		}
-
-		release_device(dev);
 	}
 
 #ifdef CONFIG_SPI_NOR_SFDP_MINIMAL
@@ -1210,7 +1196,7 @@ static int spi_nor_configure(const struct device *dev)
 
 		if (rc != 0) {
 			LOG_ERR("Unable to enter 4-byte mode: %d\n", rc);
-			return -ENODEV;
+            return (-ENODEV);
 		}
 	}
 
@@ -1238,12 +1224,12 @@ static int spi_nor_configure(const struct device *dev)
 	(void) mxicy_configure(dev, jedec_id);
 #endif /* DT_INST_NODE_HAS_PROP(0, mxicy_mx25r_power_mode) */
 
-	if (IS_ENABLED(CONFIG_SPI_NOR_IDLE_IN_DPD)
-	    && (enter_dpd(dev) != 0)) {
-		return -ENODEV;
+	if (IS_ENABLED(CONFIG_SPI_NOR_IDLE_IN_DPD) &&
+        (enter_dpd(dev) != 0)) {
+        return (-ENODEV);
 	}
 
-	return 0;
+    return (0);
 }
 
 /**
@@ -1252,8 +1238,7 @@ static int spi_nor_configure(const struct device *dev)
  * @param name The flash name
  * @return 0 on success, negative errno code otherwise
  */
-static int spi_nor_init(const struct device *dev)
-{
+static int spi_nor_init(const struct device* dev) {
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		struct spi_nor_data *const driver_data = dev->data;
 
@@ -1267,8 +1252,7 @@ static int spi_nor_init(const struct device *dev)
 
 static void spi_nor_pages_layout(const struct device *dev,
 				 const struct flash_pages_layout **layout,
-				 size_t *layout_size)
-{
+                                 size_t* layout_size) {
 	/* Data for runtime, const for devicetree and minimal. */
 #ifdef CONFIG_SPI_NOR_SFDP_RUNTIME
 	const struct spi_nor_data *data = dev->data;
@@ -1285,12 +1269,10 @@ static void spi_nor_pages_layout(const struct device *dev,
 
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-static const struct flash_parameters *
-flash_nor_get_parameters(const struct device *dev)
-{
+static const struct flash_parameters* flash_nor_get_parameters(const struct device* dev) {
 	ARG_UNUSED(dev);
 
-	return &flash_nor_parameters;
+    return (&flash_nor_parameters);
 }
 
 static const struct flash_driver_api spi_nor_api = {
@@ -1331,19 +1313,45 @@ BUILD_ASSERT(SPI_NOR_IS_SECTOR_ALIGNED(CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE),
 	     "SPI_NOR_FLASH_LAYOUT_PAGE_SIZE must be multiple of 4096");
 
 /* instance 0 page count */
-#define LAYOUT_PAGES_COUNT (INST_0_BYTES / CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE)
+#define LAYOUT_PAGES_COUNT_0     (INST_0_BYTES / CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE)
 
-BUILD_ASSERT((CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE * LAYOUT_PAGES_COUNT)
-	     == INST_0_BYTES,
+BUILD_ASSERT((CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE * LAYOUT_PAGES_COUNT_0) == INST_0_BYTES,
 	     "SPI_NOR_FLASH_LAYOUT_PAGE_SIZE incompatible with flash size");
+
+#if (DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1)
+BUILD_ASSERT(DT_INST_NODE_HAS_PROP(1, jedec_id), "jedec,spi-nor jedec-id required for non-runtime SFDP");
+BUILD_ASSERT(DT_INST_NODE_HAS_PROP(1, size), "jedec,spi-nor size required for non-runtime SFDP page layout");
+
+#define INST_1_BYTES            (DT_INST_PROP(1, size) / 8)
+#define LAYOUT_PAGES_COUNT_1    (INST_1_BYTES / CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE)
+BUILD_ASSERT((CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE * LAYOUT_PAGES_COUNT_1) == INST_1_BYTES,
+             "SPI_NOR_FLASH_LAYOUT_PAGE_SIZE incompatible with flash size");
+#endif
+
+#if (DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 2)
+BUILD_ASSERT(DT_INST_NODE_HAS_PROP(2, jedec_id), "jedec,spi-nor jedec-id required for non-runtime SFDP");
+BUILD_ASSERT(DT_INST_NODE_HAS_PROP(2, size), "jedec,spi-nor size required for non-runtime SFDP page layout");
+
+#define INST_2_BYTES            (DT_INST_PROP(2, size) / 8)
+#define LAYOUT_PAGES_COUNT_2    (INST_2_BYTES / CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE)
+BUILD_ASSERT((CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE * LAYOUT_PAGES_COUNT_2) == INST_2_BYTES,
+             "SPI_NOR_FLASH_LAYOUT_PAGE_SIZE incompatible with flash size");
+#endif
 
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
 #ifdef CONFIG_SPI_NOR_SFDP_DEVICETREE
 BUILD_ASSERT(DT_INST_NODE_HAS_PROP(0, sfdp_bfp),
 	     "jedec,spi-nor sfdp-bfp required for devicetree SFDP");
-
 static const __aligned(4) uint8_t bfp_data_0[] = DT_INST_PROP(0, sfdp_bfp);
+
+#if (DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1) && DT_INST_NODE_HAS_PROP(1, sfdp_bfp)
+static const __aligned(4) uint8_t bfp_data_1[] = DT_INST_PROP(1, sfdp_bfp);
+#endif
+
+#if (DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 2) && DT_INST_NODE_HAS_PROP(2, sfdp_bfp)
+static const __aligned(4) uint8_t bfp_data_2[] = DT_INST_PROP(2, sfdp_bfp);
+#endif
 #endif /* CONFIG_SPI_NOR_SFDP_DEVICETREE */
 
 #endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
@@ -1356,40 +1364,158 @@ BUILD_ASSERT(DT_INST_PROP(0, has_lock) == (DT_INST_PROP(0, has_lock) & 0xFF),
 	     "Need support for lock clear beyond SR1");
 #endif
 
-static const struct spi_nor_config spi_nor_config_0 = {
-	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8),
-				    CONFIG_SPI_NOR_CS_WAIT_DELAY),
+static struct spi_nor_config DT_CONST spi_nor_config_0 = {
+    .spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8), CONFIG_SPI_NOR_CS_WAIT_DELAY),
 #if !defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.layout = {
-		.pages_count = LAYOUT_PAGES_COUNT,
+        .pages_count = LAYOUT_PAGES_COUNT_0,
 		.pages_size = CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE,
 	},
 #undef LAYOUT_PAGES_COUNT
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-	.flash_size = DT_INST_PROP(0, size) / 8,
+    .flash_size = (DT_INST_PROP(0, size) / 8U),
 	.jedec_id = DT_INST_PROP(0, jedec_id),
 
 #if DT_INST_NODE_HAS_PROP(0, has_lock)
 	.has_lock = DT_INST_PROP(0, has_lock),
 #endif
-#if defined(CONFIG_SPI_NOR_SFDP_MINIMAL)		\
-	&& DT_INST_NODE_HAS_PROP(0, enter_4byte_addr)
+
+#if defined(CONFIG_SPI_NOR_SFDP_MINIMAL) && DT_INST_NODE_HAS_PROP(0, enter_4byte_addr)
 	.enter_4byte_addr = DT_INST_PROP(0, enter_4byte_addr),
 #endif
+
 #ifdef CONFIG_SPI_NOR_SFDP_DEVICETREE
-	.bfp_len = sizeof(bfp_data_0) / 4,
+    .bfp_len = (sizeof(bfp_data_0) / 4),
 	.bfp = (const struct jesd216_bfp *)bfp_data_0,
 #endif /* CONFIG_SPI_NOR_SFDP_DEVICETREE */
 
 #endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
 };
 
-static struct spi_nor_data spi_nor_data_0;
+#if (DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1)
+static struct spi_nor_config DT_CONST spi_nor_config_1 = {
+    .spi = SPI_DT_SPEC_INST_GET(1, SPI_WORD_SET(8), CONFIG_SPI_NOR_CS_WAIT_DELAY),
+#if !defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
 
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+    .layout = {
+        .pages_count = LAYOUT_PAGES_COUNT_1,
+        .pages_size  = CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE,
+    },
+#undef LAYOUT_PAGES_COUNT
+#endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
+    .flash_size = (DT_INST_PROP(1, size) / 8U),
+    .jedec_id   =  DT_INST_PROP(1, jedec_id),
+
+#if DT_INST_NODE_HAS_PROP(1, has_lock)
+    .has_lock = DT_INST_PROP(1, has_lock),
+#endif
+
+#if defined(CONFIG_SPI_NOR_SFDP_MINIMAL) && DT_INST_NODE_HAS_PROP(1, enter_4byte_addr)
+    .enter_4byte_addr = DT_INST_PROP(1, enter_4byte_addr),
+#endif
+
+#ifdef CONFIG_SPI_NOR_SFDP_DEVICETREE
+    .bfp_len = (sizeof(bfp_data_1) / 4),
+    .bfp     = (const struct jesd216_bfp*)bfp_data_1,
+#endif /* CONFIG_SPI_NOR_SFDP_DEVICETREE */
+
+#endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
+};
+#endif
+
+#if (DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 2)
+static struct spi_nor_config DT_CONST spi_nor_config_2 = {
+    .spi = SPI_DT_SPEC_INST_GET(2, SPI_WORD_SET(8), CONFIG_SPI_NOR_CS_WAIT_DELAY),
+#if !defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
+
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+    .layout = {
+        .pages_count = LAYOUT_PAGES_COUNT_2,
+        .pages_size  = CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE,
+    },
+#undef LAYOUT_PAGES_COUNT
+#endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
+    .flash_size = (DT_INST_PROP(2, size) / 8U),
+    .jedec_id   =  DT_INST_PROP(2, jedec_id),
+
+#if DT_INST_NODE_HAS_PROP(2, has_lock)
+    .has_lock = DT_INST_PROP(2, has_lock),
+#endif
+
+#if defined(CONFIG_SPI_NOR_SFDP_MINIMAL) && DT_INST_NODE_HAS_PROP(2, enter_4byte_addr)
+    .enter_4byte_addr = DT_INST_PROP(2, enter_4byte_addr),
+#endif
+
+#ifdef CONFIG_SPI_NOR_SFDP_DEVICETREE
+    .bfp_len = (sizeof(bfp_data_2) / 4),
+    .bfp     = (const struct jesd216_bfp*)bfp_data_2,
+#endif /* CONFIG_SPI_NOR_SFDP_DEVICETREE */
+
+#endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
+};
+#endif
+
+/* #CUSTOM@NDRS Support up to 3 instances of SPI_NOR */
+static struct spi_nor_data spi_nor_data_0;
 DEVICE_DT_INST_DEFINE(0, &spi_nor_init, NULL,
 		 &spi_nor_data_0, &spi_nor_config_0,
 		 POST_KERNEL, CONFIG_SPI_NOR_INIT_PRIORITY,
 		 &spi_nor_api);
+
+#if (DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1)
+static struct spi_nor_data spi_nor_data_1;
+DEVICE_DT_INST_DEFINE(1, &spi_nor_init, NULL,
+                      &spi_nor_data_1, &spi_nor_config_1,
+                      POST_KERNEL, CONFIG_SPI_NOR_INIT_PRIORITY,
+                      &spi_nor_api);
+#endif
+
+#if (DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 2)
+static struct spi_nor_data spi_nor_data_2;
+DEVICE_DT_INST_DEFINE(2, &spi_nor_init, NULL,
+                      &spi_nor_data_2, &spi_nor_config_2,
+                      POST_KERNEL, CONFIG_SPI_NOR_INIT_PRIORITY,
+                      &spi_nor_api);
+#endif
+
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+
+#if defined(CONFIG_SOC_SERIES_SAMV71)
+
+#endif
+
+#if defined(CONFIG_SOC_SERIES_SAMC21)
+#include "samc21_reg_stub.h"
+
+extern void zephyr_gpio_sam0_set_regs(const struct gpio_dt_spec* spec, volatile void* reg_ptr);
+
+void zephyr_gtest_spi_nor(void) {
+    struct device const* dev;
+
+    dev = DEVICE_DT_GET(DT_NODELABEL(is25lp080));
+    zephyr_gpio_sam0_set_regs(&spi_nor_config_0.spi.config.cs->gpio, ut_mcu_port_ptr);
+
+    // Setup spi_nor_data_0 data parameter
+    spi_nor_data_0.flash_size = (16UL * 1024UL * 1024UL);
+    spi_nor_data_0.page_size  = 4096U;
+
+    spi_nor_data_0.erase_types[0].cmd = 0x20;
+    spi_nor_data_0.erase_types[0].exp = 0x0C;
+    spi_nor_data_0.erase_types[1].cmd = 0x52;
+    spi_nor_data_0.erase_types[1].exp = 0x0F;
+    spi_nor_data_0.erase_types[2].cmd = 0xD8;
+    spi_nor_data_0.erase_types[2].exp = 0x10;
+
+    spi_nor_data_0.layout.pages_count = 4096U;
+    spi_nor_data_0.layout.pages_size  = 4096U;
+}
+#endif
+
+#endif
