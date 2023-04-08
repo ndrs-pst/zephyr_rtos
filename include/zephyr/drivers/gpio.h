@@ -270,7 +270,7 @@ typedef uint32_t gpio_flags_t;
  */
 struct gpio_dt_spec {
 	/** GPIO device controlling the pin */
-	const struct device *port;
+	const struct device* port;
 	/** The pin's number on the device */
 	gpio_pin_t pin;
 	/** The pin's configuration flags as specified in devicetree */
@@ -590,22 +590,18 @@ static inline bool gpio_is_ready_dt(const struct gpio_dt_spec* spec) {
  * @retval -EIO I/O error when accessing an external GPIO chip.
  * @retval -EWOULDBLOCK if operation would block.
  */
-__syscall int gpio_pin_interrupt_configure(const struct device *port,
-					   gpio_pin_t pin,
-					   gpio_flags_t flags);
+__syscall int gpio_pin_interrupt_configure(const struct device* port,
+                                           gpio_pin_t pin,
+                                           gpio_flags_t flags);
 
-static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
-						      gpio_pin_t pin,
-						      gpio_flags_t flags)
-{
-	const struct gpio_driver_api *api =
-		(const struct gpio_driver_api *)port->api;
-	__unused const struct gpio_driver_config *const cfg =
-		(const struct gpio_driver_config *)port->config;
-	const struct gpio_driver_data *const data =
-		(const struct gpio_driver_data *)port->data;
-	enum gpio_int_trig trig;
-	enum gpio_int_mode mode;
+static inline int z_impl_gpio_pin_interrupt_configure(const struct device* port,
+                                                      gpio_pin_t pin,
+                                                      gpio_flags_t flags) {
+    const struct gpio_driver_api* api = (const struct gpio_driver_api*)port->api;
+    __unused const struct gpio_driver_config* const cfg = (const struct gpio_driver_config*)port->config;
+    const struct gpio_driver_data* const data = (const struct gpio_driver_data*)port->data;
+    enum gpio_int_trig trig;
+    enum gpio_int_mode mode;
 
     __ASSERT((flags & (GPIO_INT_DISABLE | GPIO_INT_ENABLE)) != (GPIO_INT_DISABLE | GPIO_INT_ENABLE),
 		 "Cannot both enable and disable interrupts");
