@@ -46,6 +46,10 @@
 #endif
 
 #ifndef __BYTE_ORDER__
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define __LITTLE_ENDIAN__
+#endif
+
 #if defined(__BIG_ENDIAN__) || defined(__ARMEB__) || \
     defined(__THUMBEB__) || defined(__AARCH64EB__) || \
     defined(__MIPSEB__) || defined(__TC32EB__)
@@ -67,7 +71,11 @@
 #undef BUILD_ASSERT /* clear out common version */
 /* C++11 has static_assert built in */
 #if defined(__cplusplus) && (__cplusplus >= 201103L)
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define BUILD_ASSERT               static_assert
+#else
 #define BUILD_ASSERT(EXPR, MSG...) static_assert(EXPR, "" MSG)
+#endif
 
 /*
  * GCC 4.6 and higher have the C11 _Static_assert built in and its
@@ -78,7 +86,12 @@
 #elif !defined(__cplusplus) && \
 	((__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)) ||	\
 	 (__STDC_VERSION__) >= 201100)
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define BUILD_ASSERT(EXPR, MSG)    _Static_assert(EXPR, MSG)
+#else
 #define BUILD_ASSERT(EXPR, MSG...) _Static_assert(EXPR, "" MSG)
+#endif
+
 #else
 #define BUILD_ASSERT(EXPR, MSG...)
 #endif
@@ -108,9 +121,18 @@
 	__builtin_unreachable(); \
 }
 #else
-#define CODE_UNREACHABLE __builtin_unreachable()
+#if defined(_MSC_VER)           /* #CUSTOM@NDRS */
+#define CODE_UNREACHABLE
+#else
+#define CODE_UNREACHABLE        __builtin_unreachable()
 #endif
-#define FUNC_NORETURN    __attribute__((__noreturn__))
+#endif
+
+#if defined(_MSC_VER)           /* #CUSTOM@NDRS */
+#define FUNC_NORETURN           __declspec(noreturn)
+#else
+#define FUNC_NORETURN           __attribute__((__noreturn__))
+#endif
 
 /* The GNU assembler for Cortex-M3 uses # for immediate values, not
  * comments, so the @nobits# trick does not work.
@@ -207,7 +229,11 @@ do {                                                                    \
 #endif
 
 #ifndef __packed
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define __packed
+#else
 #define __packed        __attribute__((__packed__))
+#endif
 #endif
 
 #ifndef __aligned
@@ -217,7 +243,10 @@ do {                                                                    \
 #define __may_alias     __attribute__((__may_alias__))
 
 #ifndef __printf_like
-#ifdef CONFIG_ENFORCE_ZEPHYR_STDINT
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define __printf_like(f, a)
+
+#elif defined(CONFIG_ENFORCE_ZEPHYR_STDINT)
 #define __printf_like(f, a)   __attribute__((format (printf, f, a)))
 #else
 /*
@@ -233,16 +262,34 @@ do {                                                                    \
 #endif
 #endif
 
-#define __used		__attribute__((__used__))
-#define __unused	__attribute__((__unused__))
-#define __maybe_unused	__attribute__((__unused__))
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define __used
+#if __cplusplus
+#define __unused        [[maybe_unused]]
+#else
+#define __unused
+#endif
+#define __maybe_unused
+#else
+#define __used          __attribute__((__used__))
+#define __unused        __attribute__((__unused__))
+#define __maybe_unused  __attribute__((__unused__))
+#endif
 
 #ifndef __deprecated
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define __deprecated    __declspec(deprecated)
+#else
 #define __deprecated	__attribute__((deprecated))
+#endif
 #endif
 
 #ifndef __attribute_const__
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define __attribute_const__
+#else
 #define __attribute_const__ __attribute__((__const__))
+#endif
 #endif
 
 #ifndef __must_check
@@ -558,9 +605,13 @@ do {                                                                    \
 #error processor architecture not supported
 #endif
 
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define compiler_barrier()      do { } while (false)
+#else
 #define compiler_barrier() do { \
 	__asm__ __volatile__ ("" ::: "memory"); \
 } while (false)
+#endif
 
 /** @brief Return larger value of two provided expressions.
  *
