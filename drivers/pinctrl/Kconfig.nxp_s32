@@ -4,6 +4,6 @@
 config PINCTRL_NXP_S32
 	bool "Pin controller driver for NXP S32 processors"
 	default y
-	depends on DT_HAS_NXP_S32ZE_PINCTRL_ENABLED
+	depends on DT_HAS_NXP_S32ZE_PINCTRL_ENABLED || DT_HAS_NXP_S32K1XX_PINCTRL_ENABLED
 	help
 	  Enable pin controller driver for NXP S32 processors.
