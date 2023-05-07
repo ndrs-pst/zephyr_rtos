@@ -25,7 +25,7 @@ extern void can_mcan_state_change_handler(const struct device* dev);
 extern void can_mcan_tc_event_handler(const struct device* dev);
 extern void can_mcan_get_message(const struct device* dev,
                                  volatile struct can_mcan_rx_fifo* fifo,
-                                 volatile uint32_t* fifo_status_reg,
+                                 volatile uint32_t const* fifo_status_reg,
                                  volatile uint32_t* fifo_ack_reg);
 
 #define CAN_MCAN_IR_ISR_MSK_BIT     (CAN_MCAN_IR_BO   | CAN_MCAN_IR_EW   | CAN_MCAN_IR_EP |     \

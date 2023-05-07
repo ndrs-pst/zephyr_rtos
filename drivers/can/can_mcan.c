@@ -100,7 +100,7 @@ static int can_mcan_leave_init_mode(const struct device* dev, k_timeout_t timeou
 
 int can_mcan_set_timing(const struct device* dev, const struct can_timing* timing) {
     const struct can_mcan_config* config = dev->config;
-    struct can_mcan_data* data = dev->data;
+    struct can_mcan_data const* data = dev->data;
     struct can_mcan_reg* can = config->can;
     uint32_t nbtp_sjw = can->nbtp & CAN_MCAN_NBTP_NSJW;
 
@@ -212,7 +212,6 @@ int can_mcan_stop(const struct device* dev) {
     const struct can_mcan_config* config = dev->config;
     struct can_mcan_data* data = dev->data;
     can_tx_callback_t tx_cb;
-    uint32_t tx_idx;
     int ret;
 
     if (!data->started) {
@@ -238,7 +237,7 @@ int can_mcan_stop(const struct device* dev) {
 
     data->started = false;
 
-    for (tx_idx = 0; tx_idx < ARRAY_SIZE(data->tx_fin_cb); tx_idx++) {
+    for (uint32_t tx_idx = 0; tx_idx < ARRAY_SIZE(data->tx_fin_cb); tx_idx++) {
         tx_cb = data->tx_fin_cb[tx_idx];
 
         if (tx_cb != NULL) {
@@ -253,7 +252,7 @@ int can_mcan_stop(const struct device* dev) {
 
 int can_mcan_set_mode(const struct device* dev, can_mode_t mode) {
     const struct can_mcan_config* config = dev->config;
-    struct can_mcan_data* data = dev->data;
+    struct can_mcan_data const* data = dev->data;
     struct can_mcan_reg* can = config->can;
 
     #ifdef CONFIG_CAN_FD_MODE
@@ -320,7 +319,7 @@ void can_mcan_tc_event_handler(const struct device* dev) {
     struct can_mcan_data* data = dev->data;
     struct can_mcan_reg* can = config->can;
     struct can_mcan_msg_sram* msg_ram = data->msg_ram;
-    volatile struct can_mcan_tx_event_fifo* tx_event;
+    volatile struct can_mcan_tx_event_fifo const* tx_event;
     can_tx_callback_t tx_cb;
     uint32_t event_idx;
     uint32_t tx_idx;
@@ -380,9 +379,9 @@ void can_mcan_line_0_isr(const struct device* dev) {
 
 void can_mcan_get_message(const struct device* dev,
                           volatile struct can_mcan_rx_fifo* fifo,
-                          volatile uint32_t* fifo_status_reg,
+                          volatile uint32_t const* fifo_status_reg,
                           volatile uint32_t* fifo_ack_reg) {
-    struct can_mcan_data* data = dev->data;
+    struct can_mcan_data const* data = dev->data;
     uint32_t get_idx;
     uint32_t filt_idx;
     struct can_frame frame = {0};
@@ -394,10 +393,10 @@ void can_mcan_get_message(const struct device* dev,
     bool rtr_filter;
     bool fd_frame_filter;
 
-    while ((*fifo_status_reg & CAN_MCAN_RXF0S_F0FL)) {
+    while ((*fifo_status_reg & CAN_MCAN_RXF0S_F0FL) != 0U) {
         get_idx = FIELD_GET(CAN_MCAN_RXF0S_F0GI, *fifo_status_reg);
 
-        sys_cache_data_invd_range((void *)&fifo[get_idx].hdr, sizeof(struct can_mcan_rx_fifo_hdr));
+        sys_cache_data_invd_range((void*)&fifo[get_idx].hdr, sizeof(struct can_mcan_rx_fifo_hdr));
         memcpy32_volatile(&hdr, &fifo[get_idx].hdr, sizeof(struct can_mcan_rx_fifo_hdr));
 
         frame.dlc = (uint8_t)hdr.dlc;
@@ -517,8 +516,8 @@ void can_mcan_line_1_isr(const struct device* dev) {
 int can_mcan_get_state(const struct device* dev, enum can_state* state,
                        struct can_bus_err_cnt* err_cnt) {
     const struct can_mcan_config* config = dev->config;
-    struct can_mcan_data* data = dev->data;
-    struct can_mcan_reg* can = config->can;
+    struct can_mcan_data const* data = dev->data;
+    struct can_mcan_reg const*  can = config->can;
 
     if (state != NULL) {
         if (!data->started) {
@@ -539,8 +538,8 @@ int can_mcan_get_state(const struct device* dev, enum can_state* state,
     }
 
     if (err_cnt != NULL) {
-        err_cnt->tx_err_cnt = FIELD_GET(CAN_MCAN_ECR_TEC, can->ecr);
-        err_cnt->rx_err_cnt = FIELD_GET(CAN_MCAN_ECR_REC, can->ecr);
+        err_cnt->tx_err_cnt = (uint8_t)FIELD_GET(CAN_MCAN_ECR_TEC, can->ecr);
+        err_cnt->rx_err_cnt = (uint8_t)FIELD_GET(CAN_MCAN_ECR_REC, can->ecr);
     }
 
     return (0);
@@ -558,8 +557,8 @@ int can_mcan_recover(const struct device* dev, k_timeout_t timeout) {
 }
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 
-int can_mcan_send(const struct device *dev,
-                  const struct can_frame *frame,
+int can_mcan_send(const struct device* dev,
+                  const struct can_frame* frame,
                   k_timeout_t timeout,
                   can_tx_callback_t callback, void* user_data) {
     const struct can_mcan_config* config = dev->config;
@@ -679,10 +678,10 @@ int can_mcan_send(const struct device *dev,
     return (0);
 }
 
-static int can_mcan_get_free_std(volatile struct can_mcan_std_filter* filters) {
+static int can_mcan_get_free_std(volatile struct can_mcan_std_filter const* filters) {
     for (int i = 0; i < NUM_STD_FILTER_DATA; ++i) {
         if (filters[i].sfce == CAN_MCAN_FCE_DISABLE) {
-            return i;
+            return (i);
         }
     }
 
@@ -731,7 +730,7 @@ int can_mcan_add_rx_filter_std(const struct device* dev,
 
     memcpy32_volatile(&msg_ram->std_filt[filter_id], &filter_element,
                       sizeof(struct can_mcan_std_filter));
-    sys_cache_data_flush_range((void *)&msg_ram->std_filt[filter_id],
+    sys_cache_data_flush_range((void*)&msg_ram->std_filt[filter_id],
                                sizeof(struct can_mcan_std_filter));
 
     k_mutex_unlock(&data->inst_mutex);
@@ -765,7 +764,7 @@ int can_mcan_add_rx_filter_std(const struct device* dev,
     return (filter_id);
 }
 
-static int can_mcan_get_free_ext(volatile struct can_mcan_ext_filter* filters) {
+static int can_mcan_get_free_ext(volatile struct can_mcan_ext_filter const* filters) {
     for (int i = 0; i < NUM_EXT_FILTER_DATA; ++i) {
         if (filters[i].efce == CAN_MCAN_FCE_DISABLE) {
             return (i);
@@ -801,7 +800,7 @@ static int can_mcan_add_rx_filter_ext(const struct device* dev,
 
     memcpy32_volatile(&msg_ram->ext_filt[filter_id], &filter_element,
                       sizeof(struct can_mcan_ext_filter));
-    sys_cache_data_flush_range((void *)&msg_ram->ext_filt[filter_id],
+    sys_cache_data_flush_range((void*)&msg_ram->ext_filt[filter_id],
                                sizeof(struct can_mcan_ext_filter));
 
     k_mutex_unlock(&data->inst_mutex);
