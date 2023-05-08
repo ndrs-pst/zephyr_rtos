@@ -281,6 +281,10 @@ struct can_mcan_reg;
         .msg_ram = _msg_ram, .custom = _custom_data,            \
     }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int can_mcan_get_capabilities(const struct device* dev, can_mode_t* cap);
 
 int can_mcan_start(const struct device* dev);
@@ -321,5 +325,9 @@ void can_mcan_set_state_change_callback(const struct device* dev,
 int can_mcan_get_max_bitrate(const struct device* dev, uint32_t* max_bitrate);
 
 void can_mcan_enable_configuration_change(const struct device* dev);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_DRIVERS_CAN_MCAN_H_ */
