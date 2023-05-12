@@ -85,8 +85,7 @@ struct shell_static_entry;
  * write to entry->syntax NULL value. This will indicate to the shell
  * module that there are no more dynamic commands to read.
  */
-typedef void (*shell_dynamic_get)(size_t idx,
-				  struct shell_static_entry *entry);
+typedef void (*shell_dynamic_get)(size_t idx, struct shell_static_entry* entry);
 
 /**
  * @brief Shell command descriptor.
@@ -121,8 +120,7 @@ struct shell_static_args {
  * devices.  Indexing is done relative to devices with names that
  * start with this text.  Pass null if no prefix match is required.
  */
-const struct device *shell_device_lookup(size_t idx,
-				   const char *prefix);
+const struct device* shell_device_lookup(size_t idx, const char* prefix);
 
 /**
  * @brief Shell command handler prototype.
@@ -136,8 +134,7 @@ const struct device *shell_device_lookup(size_t idx,
  * @retval -EINVAL Argument validation failed.
  * @retval -ENOEXEC Command not executed.
  */
-typedef int (*shell_cmd_handler)(const struct shell *sh,
-				 size_t argc, char **argv);
+typedef int (*shell_cmd_handler)(const struct shell* sh, size_t argc, char** argv);
 
 /**
  * @brief Shell dictionary command handler prototype.
@@ -159,7 +156,7 @@ typedef int (*shell_dict_cmd_handler)(const struct shell *sh, size_t argc,
  * native_posix_64 and x86_64 targets. Adding padding to allow handle data
  * in the memory section as array.
  */
-#if (defined(CONFIG_ARCH_POSIX) && defined(CONFIG_64BIT)) || defined(CONFIG_X86_64)
+#if (defined(CONFIG_ARCH_POSIX) && defined(CONFIG_64BIT)) || defined(CONFIG_X86_64) || defined(_MSC_VER)
 #define Z_SHELL_STATIC_ENTRY_PADDING 24
 #else
 #define Z_SHELL_STATIC_ENTRY_PADDING 0
@@ -678,7 +675,6 @@ struct shell_transport_api {
 	 * @param[in] transport Pointer to the transfer instance.
 	 */
 	void (*update)(const struct shell_transport *transport);
-
 };
 
 struct shell_transport {

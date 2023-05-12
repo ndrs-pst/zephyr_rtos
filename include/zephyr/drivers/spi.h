@@ -36,9 +36,9 @@ extern "C" {
  * @name SPI operational mode
  * @{
  */
-#define SPI_OP_MODE_MASTER	0U
-#define SPI_OP_MODE_SLAVE	BIT(0)
-#define SPI_OP_MODE_MASK	0x1U
+#define SPI_OP_MODE_MASTER  0U
+#define SPI_OP_MODE_SLAVE   BIT(0)
+#define SPI_OP_MODE_MASK    0x1U
 #define SPI_OP_MODE_GET(_operation_) ((_operation_) & SPI_OP_MODE_MASK)
 /** @} */
 
@@ -52,7 +52,7 @@ extern "C" {
  * and active state will be 0. If untouched, the inverse will be true
  * which is the default.
  */
-#define SPI_MODE_CPOL		BIT(1)
+#define SPI_MODE_CPOL       BIT(1)
 
 /**
  * Clock Phase: this dictates when is the data captured, and depends
@@ -61,18 +61,18 @@ extern "C" {
  * this bit is not set (default). This is fully reversed if CPOL is
  * not set.
  */
-#define SPI_MODE_CPHA		BIT(2)
+#define SPI_MODE_CPHA       BIT(2)
 
 /**
  * Whatever data is transmitted is looped-back to the receiving buffer of
  * the controller. This is fully controller dependent as some may not
  * support this, and can be used for testing purposes only.
  */
-#define SPI_MODE_LOOP		BIT(3)
+#define SPI_MODE_LOOP       BIT(3)
 
-#define SPI_MODE_MASK		(0xEU)
-#define SPI_MODE_GET(_mode_)			\
-	((_mode_) & SPI_MODE_MASK)
+#define SPI_MODE_MASK       (0xEU)
+#define SPI_MODE_GET(_mode_)            \
+    ((_mode_) & SPI_MODE_MASK)
 
 /** @} */
 
@@ -80,21 +80,21 @@ extern "C" {
  * @name SPI Transfer modes (host controller dependent)
  * @{
  */
-#define SPI_TRANSFER_MSB	(0U)
-#define SPI_TRANSFER_LSB	BIT(4)
+#define SPI_TRANSFER_MSB    (0U)
+#define SPI_TRANSFER_LSB    BIT(4)
 /** @} */
 
 /**
  * @name SPI word size
  * @{
  */
-#define SPI_WORD_SIZE_SHIFT	(5U)
-#define SPI_WORD_SIZE_MASK	(0x3FU << SPI_WORD_SIZE_SHIFT)
-#define SPI_WORD_SIZE_GET(_operation_)					\
-	(((_operation_) & SPI_WORD_SIZE_MASK) >> SPI_WORD_SIZE_SHIFT)
+#define SPI_WORD_SIZE_SHIFT (5U)
+#define SPI_WORD_SIZE_MASK  (0x3FU << SPI_WORD_SIZE_SHIFT)
+#define SPI_WORD_SIZE_GET(_operation_)                  \
+    (((_operation_) & SPI_WORD_SIZE_MASK) >> SPI_WORD_SIZE_SHIFT)
 
-#define SPI_WORD_SET(_word_size_)		\
-	((_word_size_) << SPI_WORD_SIZE_SHIFT)
+#define SPI_WORD_SET(_word_size_)       \
+    ((_word_size_) << SPI_WORD_SIZE_SHIFT)
 /** @} */
 
 /**
@@ -102,13 +102,13 @@ extern "C" {
  * @{
  */
 /* Requests - if possible - to keep CS asserted after the transaction */
-#define SPI_HOLD_ON_CS		BIT(12)
+#define SPI_HOLD_ON_CS      BIT(12)
 /* Keep the device locked after the transaction for the current config.
  * Use this with extreme caution (see spi_release() below) as it will
  * prevent other callers to access the SPI device until spi_release() is
  * properly called.
  */
-#define SPI_LOCK_ON		BIT(13)
+#define SPI_LOCK_ON         BIT(13)
 
 /* Active high logic on CS - Usually, and by default, CS logic is active
  * low. However, some devices may require the reverse logic: active high.
@@ -117,7 +117,7 @@ extern "C" {
  * the CS control to a gpio line through struct spi_cs_control would be
  * the solution.
  */
-#define SPI_CS_ACTIVE_HIGH	BIT(14)
+#define SPI_CS_ACTIVE_HIGH  BIT(14)
 /** @} */
 
 /**
@@ -129,12 +129,12 @@ extern "C" {
  * Without @kconfig{CONFIG_SPI_EXTENDED_MODES} being enabled, single is the
  * only supported one.
  */
-#define SPI_LINES_SINGLE	(0U << 16)
-#define SPI_LINES_DUAL		(1U << 16)
-#define SPI_LINES_QUAD		(2U << 16)
-#define SPI_LINES_OCTAL		(3U << 16)
+#define SPI_LINES_SINGLE    (0U << 16)
+#define SPI_LINES_DUAL      (1U << 16)
+#define SPI_LINES_QUAD      (2U << 16)
+#define SPI_LINES_OCTAL     (3U << 16)
 
-#define SPI_LINES_MASK		(0x3U << 16)
+#define SPI_LINES_MASK      (0x3U << 16)
 /** @} */
 
 /**
@@ -145,19 +145,19 @@ extern "C" {
  *
  */
 struct spi_cs_control {
-	/**
-	 * GPIO devicetree specification of CS GPIO.
-	 * The device pointer can be set to NULL to fully inhibit CS control if
-	 * necessary. The GPIO flags GPIO_ACTIVE_LOW/GPIO_ACTIVE_HIGH should be
-	 * equivalent to SPI_CS_ACTIVE_HIGH/SPI_CS_ACTIVE_LOW options in struct
-	 * spi_config.
-	 */
-	struct gpio_dt_spec gpio;
-	/**
-	 * Delay in microseconds to wait before starting the
-	 * transmission and before releasing the CS line.
-	 */
-	uint32_t delay;
+    /**
+     * GPIO devicetree specification of CS GPIO.
+     * The device pointer can be set to NULL to fully inhibit CS control if
+     * necessary. The GPIO flags GPIO_ACTIVE_LOW/GPIO_ACTIVE_HIGH should be
+     * equivalent to SPI_CS_ACTIVE_HIGH/SPI_CS_ACTIVE_LOW options in struct
+     * spi_config.
+     */
+    struct gpio_dt_spec gpio;
+    /**
+     * Delay in microseconds to wait before starting the
+     * transmission and before releasing the CS line.
+     */
+    uint32_t delay;
 };
 
 /**
@@ -197,9 +197,9 @@ struct spi_cs_control {
  * @param spi_dev a SPI device node identifier
  * @return #gpio_dt_spec struct corresponding with spi_dev's chip select
  */
-#define SPI_CS_GPIOS_DT_SPEC_GET(spi_dev)			\
-	GPIO_DT_SPEC_GET_BY_IDX_OR(DT_BUS(spi_dev), cs_gpios,	\
-				   DT_REG_ADDR(spi_dev), {})
+#define SPI_CS_GPIOS_DT_SPEC_GET(spi_dev)           \
+    GPIO_DT_SPEC_GET_BY_IDX_OR(DT_BUS(spi_dev), cs_gpios,   \
+                   DT_REG_ADDR(spi_dev), {})
 
 /**
  * @brief Get a <tt>struct gpio_dt_spec</tt> for a SPI device's chip select pin
@@ -211,7 +211,7 @@ struct spi_cs_control {
  * @return #gpio_dt_spec struct corresponding with spi_dev's chip select
  */
 #define SPI_CS_GPIOS_DT_SPEC_INST_GET(inst) \
-	SPI_CS_GPIOS_DT_SPEC_GET(DT_DRV_INST(inst))
+    SPI_CS_GPIOS_DT_SPEC_GET(DT_DRV_INST(inst))
 
 /**
  * @brief Initialize and get a pointer to a @p spi_cs_control from a
@@ -245,11 +245,11 @@ struct spi_cs_control {
  * @param delay_ The @p delay field to set in the @p spi_cs_control
  * @return a pointer to the @p spi_cs_control structure
  */
-#define SPI_CS_CONTROL_INIT(node_id, delay_)			  \
-	{							  \
-		.gpio = SPI_CS_GPIOS_DT_SPEC_GET(node_id),	  \
-		.delay = (delay_),				  \
-	}
+#define SPI_CS_CONTROL_INIT(node_id, delay_)        \
+    {                           \
+        .gpio = SPI_CS_GPIOS_DT_SPEC_GET(node_id),  \
+        .delay = (delay_),      \
+    }
 
 /**
  * @brief Get a pointer to a @p spi_cs_control from a devicetree node
@@ -264,8 +264,8 @@ struct spi_cs_control {
  * @param delay_ The @p delay field to set in the @p spi_cs_control
  * @return a pointer to the @p spi_cs_control structure
  */
-#define SPI_CS_CONTROL_PTR_DT_INST(inst, delay_)		\
-	SPI_CS_CONTROL_PTR_DT(DT_DRV_INST(inst), delay_)
+#define SPI_CS_CONTROL_PTR_DT_INST(inst, delay_)        \
+    SPI_CS_CONTROL_PTR_DT(DT_DRV_INST(inst), delay_)
 
 /**
  * @brief SPI controller configuration structure
@@ -294,17 +294,17 @@ struct spi_cs_control {
  * detected.
  */
 struct spi_config {
-	uint32_t		frequency;
-#if defined(CONFIG_SPI_EXTENDED_MODES)
-	uint32_t		operation;
-	uint16_t		slave;
-	uint16_t		_unused;
-#else
-	uint16_t		operation;
-	uint16_t		slave;
-#endif /* CONFIG_SPI_EXTENDED_MODES */
+    uint32_t frequency;
+    #if defined(CONFIG_SPI_EXTENDED_MODES)
+    uint32_t operation;
+    uint16_t slave;
+    uint16_t _unused;
+    #else
+    uint16_t operation;
+    uint16_t slave;
+    #endif /* CONFIG_SPI_EXTENDED_MODES */
 
-	struct spi_cs_control cs;
+    struct spi_cs_control cs;
 };
 
 /**
@@ -324,15 +324,15 @@ struct spi_config {
  * @param delay_ the desired @p delay field in the struct spi_config's
  *               spi_cs_control, if there is one
  */
-#define SPI_CONFIG_DT(node_id, operation_, delay_)			\
-	{								\
-		.frequency = DT_PROP(node_id, spi_max_frequency),	\
-		.operation = (operation_) |				\
-			DT_PROP(node_id, duplex) |			\
-			DT_PROP(node_id, frame_format),			\
-		.slave = DT_REG_ADDR(node_id),				\
-		.cs = SPI_CS_CONTROL_INIT(node_id, delay_),		\
-	}
+#define SPI_CONFIG_DT(node_id, operation_, delay_)  \
+    {                                       \
+        .frequency = DT_PROP(node_id, spi_max_frequency),   \
+        .operation = (operation_)    |      \
+            DT_PROP(node_id, duplex) |      \
+            DT_PROP(node_id, frame_format), \
+        .slave = DT_REG_ADDR(node_id),      \
+        .cs = SPI_CS_CONTROL_INIT(node_id, delay_), \
+    }
 
 /**
  * @brief Structure initializer for spi_config from devicetree instance
@@ -345,8 +345,8 @@ struct spi_config {
  * @param delay_ the desired @p delay field in the struct spi_config's
  *               spi_cs_control, if there is one
  */
-#define SPI_CONFIG_DT_INST(inst, operation_, delay_)	\
-	SPI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)
+#define SPI_CONFIG_DT_INST(inst, operation_, delay_)    \
+    SPI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)
 
 /**
  * @brief Complete SPI DT information
@@ -355,8 +355,8 @@ struct spi_config {
  * @param config is the slave specific configuration
  */
 struct spi_dt_spec {
-	const struct device *bus;
-	struct spi_config config;
+    const struct device* bus;
+    struct spi_config config;
 };
 
 /**
@@ -377,11 +377,11 @@ struct spi_dt_spec {
  * @param delay_ the desired @p delay field in the struct spi_config's
  *               spi_cs_control, if there is one
  */
-#define SPI_DT_SPEC_GET(node_id, operation_, delay_)		     \
-	{							     \
-		.bus = DEVICE_DT_GET(DT_BUS(node_id)),		     \
-		.config = SPI_CONFIG_DT(node_id, operation_, delay_) \
-	}
+#define SPI_DT_SPEC_GET(node_id, operation_, delay_)            \
+    {                               \
+        .bus = DEVICE_DT_GET(DT_BUS(node_id)),      \
+        .config = SPI_CONFIG_DT(node_id, operation_, delay_) \
+    }
 
 /**
  * @brief Structure initializer for spi_dt_spec from devicetree instance
@@ -395,7 +395,7 @@ struct spi_dt_spec {
  *               spi_cs_control, if there is one
  */
 #define SPI_DT_SPEC_INST_GET(inst, operation_, delay_) \
-	SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_, delay_)
+    SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_, delay_)
 
 /**
  * @brief SPI buffer structure
@@ -406,8 +406,8 @@ struct spi_dt_spec {
  *    the length of bytes that should be skipped (as RX buffer).
  */
 struct spi_buf {
-	void *buf;
-	size_t len;
+    void*  buf;
+    size_t len;
 };
 
 /**
@@ -417,8 +417,8 @@ struct spi_buf {
  * @param count is the length of the array pointed by buffers.
  */
 struct spi_buf_set {
-	const struct spi_buf *buffers;
-	size_t count;
+    const struct spi_buf* buffers;
+    size_t count;
 };
 
 /**
@@ -426,10 +426,10 @@ struct spi_buf_set {
  * @brief Callback API for I/O
  * See spi_transceive() for argument descriptions
  */
-typedef int (*spi_api_io)(const struct device *dev,
-			  const struct spi_config *config,
-			  const struct spi_buf_set *tx_bufs,
-			  const struct spi_buf_set *rx_bufs);
+typedef int (*spi_api_io)(const struct device* dev,
+                          const struct spi_config* config,
+                          const struct spi_buf_set* tx_bufs,
+                          const struct spi_buf_set* rx_bufs);
 
 /**
  * @brief SPI callback for asynchronous transfer requests
@@ -438,19 +438,19 @@ typedef int (*spi_api_io)(const struct device *dev,
  * @param result Result code of the transfer request. 0 is success, -errno for failure.
  * @param data Transfer requester supplied data which is passed along to the callback.
  */
-typedef void (*spi_callback_t)(const struct device *dev, int result, void *data);
+typedef void (*spi_callback_t)(const struct device* dev, int result, void* data);
 
 /**
  * @typedef spi_api_io
  * @brief Callback API for asynchronous I/O
  * See spi_transceive_async() for argument descriptions
  */
-typedef int (*spi_api_io_async)(const struct device *dev,
-				const struct spi_config *config,
-				const struct spi_buf_set *tx_bufs,
-				const struct spi_buf_set *rx_bufs,
-				spi_callback_t cb,
-				void *userdata);
+typedef int (*spi_api_io_async)(const struct device* dev,
+                                const struct spi_config* config,
+                                const struct spi_buf_set* tx_bufs,
+                                const struct spi_buf_set* rx_bufs,
+                                spi_callback_t cb,
+                                void* userdata);
 
 #if defined(CONFIG_SPI_RTIO) || defined(DOXYGEN)
 
@@ -459,7 +459,7 @@ typedef int (*spi_api_io_async)(const struct device *dev,
  * @brief Callback API for submitting work to a SPI device with RTIO
  */
 typedef void (*spi_api_iodev_submit)(const struct device *dev,
-				     struct rtio_iodev_sqe *iodev_sqe);
+                     struct rtio_iodev_sqe *iodev_sqe);
 #endif /* CONFIG_SPI_RTIO */
 
 /**
@@ -467,8 +467,8 @@ typedef void (*spi_api_iodev_submit)(const struct device *dev,
  * @brief Callback API for unlocking SPI device.
  * See spi_release() for argument descriptions
  */
-typedef int (*spi_api_release)(const struct device *dev,
-			       const struct spi_config *config);
+typedef int (*spi_api_release)(const struct device* dev,
+                               const struct spi_config* config);
 
 
 /**
@@ -476,14 +476,14 @@ typedef int (*spi_api_release)(const struct device *dev,
  * This is the mandatory API any SPI driver needs to expose.
  */
 __subsystem struct spi_driver_api {
-	spi_api_io transceive;
-#ifdef CONFIG_SPI_ASYNC
-	spi_api_io_async transceive_async;
-#endif /* CONFIG_SPI_ASYNC */
-#ifdef CONFIG_SPI_RTIO
-	spi_api_iodev_submit iodev_submit;
-#endif /* CONFIG_SPI_RTIO */
-	spi_api_release release;
+    spi_api_io transceive;
+    #ifdef CONFIG_SPI_ASYNC
+    spi_api_io_async transceive_async;
+    #endif /* CONFIG_SPI_ASYNC */
+    #ifdef CONFIG_SPI_RTIO
+    spi_api_iodev_submit iodev_submit;
+    #endif /* CONFIG_SPI_RTIO */
+    spi_api_release release;
 };
 
 /**
@@ -493,9 +493,8 @@ __subsystem struct spi_driver_api {
  * @return true If CS is controlled using a GPIO.
  * @return false If CS is controlled by hardware or any other means.
  */
-static inline bool spi_cs_is_gpio(const struct spi_config *config)
-{
-	return config->cs.gpio.port != NULL;
+static inline bool spi_cs_is_gpio(const struct spi_config* config) {
+    return (config->cs.gpio.port != NULL);
 }
 
 /**
@@ -505,9 +504,8 @@ static inline bool spi_cs_is_gpio(const struct spi_config *config)
  * @return true If CS is controlled using a GPIO.
  * @return false If CS is controlled by hardware or any other means.
  */
-static inline bool spi_cs_is_gpio_dt(const struct spi_dt_spec *spec)
-{
-	return spi_cs_is_gpio(&spec->config);
+static inline bool spi_cs_is_gpio_dt(const struct spi_dt_spec* spec) {
+    return spi_cs_is_gpio(&spec->config);
 }
 
 /**
@@ -519,18 +517,19 @@ static inline bool spi_cs_is_gpio_dt(const struct spi_dt_spec *spec)
  * @retval false if the SPI bus is not ready for use.
  */
 __deprecated
-static inline bool spi_is_ready(const struct spi_dt_spec *spec)
-{
-	/* Validate bus is ready */
-	if (!device_is_ready(spec->bus)) {
-		return false;
-	}
-	/* Validate CS gpio port is ready, if it is used */
-	if (spi_cs_is_gpio_dt(spec) &&
-	    !device_is_ready(spec->config.cs.gpio.port)) {
-		return false;
-	}
-	return true;
+static inline bool spi_is_ready(const struct spi_dt_spec* spec) {
+    /* Validate bus is ready */
+    if (device_is_ready(spec->bus) == false) {
+        return (false);
+    }
+
+    /* Validate CS gpio port is ready, if it is used */
+    if (spi_cs_is_gpio_dt(spec) &&
+        (device_is_ready(spec->config.cs.gpio.port) == false)) {
+        return (false);
+    }
+
+    return (true);
 }
 
 /**
@@ -541,18 +540,19 @@ static inline bool spi_is_ready(const struct spi_dt_spec *spec)
  * @retval true if the SPI bus is ready for use.
  * @retval false if the SPI bus (or the CS gpio defined) is not ready for use.
  */
-static inline bool spi_is_ready_dt(const struct spi_dt_spec *spec)
-{
-	/* Validate bus is ready */
-	if (!device_is_ready(spec->bus)) {
-		return false;
-	}
-	/* Validate CS gpio port is ready, if it is used */
-	if (spi_cs_is_gpio_dt(spec) &&
-	    !device_is_ready(spec->config.cs.gpio.port)) {
-		return false;
-	}
-	return true;
+static inline bool spi_is_ready_dt(const struct spi_dt_spec* spec) {
+    /* Validate bus is ready */
+    if (device_is_ready(spec->bus) == false) {
+        return (false);
+    }
+
+    /* Validate CS gpio port is ready, if it is used */
+    if (spi_cs_is_gpio_dt(spec) &&
+        (device_is_ready(spec->config.cs.gpio.port) == false)) {
+        return (false);
+    }
+
+    return (true);
 }
 
 /**
@@ -573,20 +573,18 @@ static inline bool spi_is_ready_dt(const struct spi_dt_spec *spec)
  * @retval 0 If successful in master mode.
  * @retval -errno Negative errno code on failure.
  */
-__syscall int spi_transceive(const struct device *dev,
-			     const struct spi_config *config,
-			     const struct spi_buf_set *tx_bufs,
-			     const struct spi_buf_set *rx_bufs);
+__syscall int spi_transceive(const struct device* dev,
+                             const struct spi_config* config,
+                             const struct spi_buf_set* tx_bufs,
+                             const struct spi_buf_set* rx_bufs);
 
-static inline int z_impl_spi_transceive(const struct device *dev,
-					const struct spi_config *config,
-					const struct spi_buf_set *tx_bufs,
-					const struct spi_buf_set *rx_bufs)
-{
-	const struct spi_driver_api *api =
-		(const struct spi_driver_api *)dev->api;
+static inline int z_impl_spi_transceive(const struct device* dev,
+                                        const struct spi_config* config,
+                                        const struct spi_buf_set* tx_bufs,
+                                        const struct spi_buf_set* rx_bufs) {
+    const struct spi_driver_api* api = (const struct spi_driver_api*)dev->api;
 
-	return api->transceive(dev, config, tx_bufs, rx_bufs);
+    return api->transceive(dev, config, tx_bufs, rx_bufs);
 }
 
 /**
@@ -604,11 +602,10 @@ static inline int z_impl_spi_transceive(const struct device *dev,
  *
  * @return a value from spi_transceive().
  */
-static inline int spi_transceive_dt(const struct spi_dt_spec *spec,
-				    const struct spi_buf_set *tx_bufs,
-				    const struct spi_buf_set *rx_bufs)
-{
-	return spi_transceive(spec->bus, &spec->config, tx_bufs, rx_bufs);
+static inline int spi_transceive_dt(const struct spi_dt_spec* spec,
+                                    const struct spi_buf_set* tx_bufs,
+                                    const struct spi_buf_set* rx_bufs) {
+    return spi_transceive(spec->bus, &spec->config, tx_bufs, rx_bufs);
 }
 
 /**
@@ -627,11 +624,10 @@ static inline int spi_transceive_dt(const struct spi_dt_spec *spec,
  * @retval 0 If successful.
  * @retval -errno Negative errno code on failure.
  */
-static inline int spi_read(const struct device *dev,
-			   const struct spi_config *config,
-			   const struct spi_buf_set *rx_bufs)
-{
-	return spi_transceive(dev, config, NULL, rx_bufs);
+static inline int spi_read(const struct device* dev,
+                           const struct spi_config* config,
+                           const struct spi_buf_set* rx_bufs) {
+    return spi_transceive(dev, config, NULL, rx_bufs);
 }
 
 /**
@@ -646,10 +642,9 @@ static inline int spi_read(const struct device *dev,
  *
  * @return a value from spi_read().
  */
-static inline int spi_read_dt(const struct spi_dt_spec *spec,
-			      const struct spi_buf_set *rx_bufs)
-{
-	return spi_read(spec->bus, &spec->config, rx_bufs);
+static inline int spi_read_dt(const struct spi_dt_spec* spec,
+                              const struct spi_buf_set* rx_bufs) {
+    return spi_read(spec->bus, &spec->config, rx_bufs);
 }
 
 /**
@@ -668,11 +663,10 @@ static inline int spi_read_dt(const struct spi_dt_spec *spec,
  * @retval 0 If successful.
  * @retval -errno Negative errno code on failure.
  */
-static inline int spi_write(const struct device *dev,
-			    const struct spi_config *config,
-			    const struct spi_buf_set *tx_bufs)
-{
-	return spi_transceive(dev, config, tx_bufs, NULL);
+static inline int spi_write(const struct device* dev,
+                            const struct spi_config* config,
+                            const struct spi_buf_set* tx_bufs) {
+    return spi_transceive(dev, config, tx_bufs, NULL);
 }
 
 /**
@@ -687,10 +681,9 @@ static inline int spi_write(const struct device *dev,
  *
  * @return a value from spi_write().
  */
-static inline int spi_write_dt(const struct spi_dt_spec *spec,
-			       const struct spi_buf_set *tx_bufs)
-{
-	return spi_write(spec->bus, &spec->config, tx_bufs);
+static inline int spi_write_dt(const struct spi_dt_spec* spec,
+                               const struct spi_buf_set* tx_bufs) {
+    return spi_write(spec->bus, &spec->config, tx_bufs);
 }
 
 /* Doxygen defines this so documentation is generated. */
@@ -713,7 +706,7 @@ static inline int spi_write_dt(const struct spi_dt_spec *spec,
  * @param rx_bufs Buffer array where data to be read will be written to,
  *        or NULL if none.
  * @param callback Function pointer to completion callback.
- *	  (Note: if NULL this function will not
+ *    (Note: if NULL this function will not
  *        notify the end of the transaction, and whether it went
  *        successfully or not).
  * @param userdata Userdata passed to callback
@@ -722,23 +715,21 @@ static inline int spi_write_dt(const struct spi_dt_spec *spec,
  * @retval 0 If successful in master mode.
  * @retval -errno Negative errno code on failure.
  */
-static inline int spi_transceive_cb(const struct device *dev,
-				    const struct spi_config *config,
-				    const struct spi_buf_set *tx_bufs,
-				    const struct spi_buf_set *rx_bufs,
-				    spi_callback_t callback,
-				    void *userdata)
-{
-	const struct spi_driver_api *api =
-		(const struct spi_driver_api *)dev->api;
+static inline int spi_transceive_cb(const struct device* dev,
+                                    const struct spi_config* config,
+                                    const struct spi_buf_set* tx_bufs,
+                                    const struct spi_buf_set* rx_bufs,
+                                    spi_callback_t callback,
+                                    void* userdata) {
+    const struct spi_driver_api* api = (const struct spi_driver_api*)dev->api;
 
-	return api->transceive_async(dev, config, tx_bufs, rx_bufs, callback, userdata);
+    return api->transceive_async(dev, config, tx_bufs, rx_bufs, callback, userdata);
 }
 
 #ifdef CONFIG_POLL
 
 /** @cond INTERNAL_HIDDEN */
-void z_spi_transfer_signal_cb(const struct device *dev, int result, void *userdata);
+void z_spi_transfer_signal_cb(const struct device* dev, int result, void* userdata);
 /** @endcond */
 
 /**
@@ -766,17 +757,15 @@ void z_spi_transfer_signal_cb(const struct device *dev, int result, void *userda
  * @retval 0 If successful in master mode.
  * @retval -errno Negative errno code on failure.
  */
-static inline int spi_transceive_signal(const struct device *dev,
-				       const struct spi_config *config,
-				       const struct spi_buf_set *tx_bufs,
-				       const struct spi_buf_set *rx_bufs,
-				       struct k_poll_signal *sig)
-{
-	const struct spi_driver_api *api =
-		(const struct spi_driver_api *)dev->api;
-	spi_callback_t cb = (sig == NULL) ? NULL : z_spi_transfer_signal_cb;
+static inline int spi_transceive_signal(const struct device* dev,
+                                        const struct spi_config* config,
+                                        const struct spi_buf_set* tx_bufs,
+                                        const struct spi_buf_set* rx_bufs,
+                                        struct k_poll_signal* sig) {
+    const struct spi_driver_api* api = (const struct spi_driver_api*)dev->api;
+    spi_callback_t cb = (sig == NULL) ? NULL : z_spi_transfer_signal_cb;
 
-	return api->transceive_async(dev, config, tx_bufs, rx_bufs, cb, sig);
+    return api->transceive_async(dev, config, tx_bufs, rx_bufs, cb, sig);
 }
 
 /**
@@ -785,13 +774,12 @@ static inline int spi_transceive_signal(const struct device *dev,
  * @deprecated
  * @see spi_transceive_signal
  */
-__deprecated static inline int spi_transceive_async(const struct device *dev,
-				       const struct spi_config *config,
-				       const struct spi_buf_set *tx_bufs,
-				       const struct spi_buf_set *rx_bufs,
-				       struct k_poll_signal *sig)
-{
-	return spi_transceive_signal(dev, config, tx_bufs, rx_bufs, sig);
+__deprecated static inline int spi_transceive_async(const struct device* dev,
+                                                    const struct spi_config* config,
+                                                    const struct spi_buf_set* tx_bufs,
+                                                    const struct spi_buf_set* rx_bufs,
+                                                    struct k_poll_signal* sig) {
+    return spi_transceive_signal(dev, config, tx_bufs, rx_bufs, sig);
 }
 
 /**
@@ -817,12 +805,11 @@ __deprecated static inline int spi_transceive_async(const struct device *dev,
  * @retval 0 If successful
  * @retval -errno Negative errno code on failure.
  */
-static inline int spi_read_signal(const struct device *dev,
-				 const struct spi_config *config,
-				 const struct spi_buf_set *rx_bufs,
-				 struct k_poll_signal *sig)
-{
-	return spi_transceive_signal(dev, config, NULL, rx_bufs, sig);
+static inline int spi_read_signal(const struct device* dev,
+                                  const struct spi_config* config,
+                                  const struct spi_buf_set* rx_bufs,
+                                  struct k_poll_signal* sig) {
+    return spi_transceive_signal(dev, config, NULL, rx_bufs, sig);
 }
 
 /**
@@ -831,12 +818,11 @@ static inline int spi_read_signal(const struct device *dev,
  * @deprecated
  * @see spi_read_signal
  */
-__deprecated static inline int spi_read_async(const struct device *dev,
-				 const struct spi_config *config,
-				 const struct spi_buf_set *rx_bufs,
-				 struct k_poll_signal *sig)
-{
-	return spi_read_signal(dev, config, rx_bufs, sig);
+__deprecated static inline int spi_read_async(const struct device* dev,
+                                              const struct spi_config* config,
+                                              const struct spi_buf_set* rx_bufs,
+                                              struct k_poll_signal* sig) {
+    return spi_read_signal(dev, config, rx_bufs, sig);
 }
 
 /**
@@ -862,12 +848,11 @@ __deprecated static inline int spi_read_async(const struct device *dev,
  * @retval 0 If successful.
  * @retval -errno Negative errno code on failure.
  */
-static inline int spi_write_signal(const struct device *dev,
-				  const struct spi_config *config,
-				  const struct spi_buf_set *tx_bufs,
-				  struct k_poll_signal *sig)
-{
-	return spi_transceive_signal(dev, config, tx_bufs, NULL, sig);
+static inline int spi_write_signal(const struct device* dev,
+                                   const struct spi_config* config,
+                                   const struct spi_buf_set* tx_bufs,
+                                   struct k_poll_signal* sig) {
+    return spi_transceive_signal(dev, config, tx_bufs, NULL, sig);
 }
 
 /**
@@ -876,12 +861,11 @@ static inline int spi_write_signal(const struct device *dev,
  * @deprecated
  * @see spi_read_signal
  */
-__deprecated static inline int spi_write_async(const struct device *dev,
-				 const struct spi_config *config,
-				 const struct spi_buf_set *tx_bufs,
-				 struct k_poll_signal *sig)
-{
-	return spi_write_signal(dev, config, tx_bufs, sig);
+__deprecated static inline int spi_write_async(const struct device* dev,
+                                               const struct spi_config* config,
+                                               const struct spi_buf_set* tx_bufs,
+                                               struct k_poll_signal* sig) {
+    return spi_write_signal(dev, config, tx_bufs, sig);
 }
 
 #endif /* CONFIG_POLL */
@@ -889,7 +873,7 @@ __deprecated static inline int spi_write_async(const struct device *dev,
 #endif /* CONFIG_SPI_ASYNC */
 
 
-#if defined(CONFIG_SPI_RTIO) || defined(DOXYGEN)
+#if (defined(CONFIG_SPI_RTIO) || defined(DOXYGEN))
 
 /**
  * @brief Submit a SPI device with a request
@@ -902,13 +886,12 @@ __deprecated static inline int spi_write_async(const struct device *dev,
  * @retval 0 If successful.
  * @retval -errno Negative errno code on failure.
  */
-static inline void spi_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
-{
-	const struct spi_dt_spec *dt_spec = iodev_sqe->sqe.iodev->data;
-	const struct device *dev = dt_spec->bus;
-	const struct spi_driver_api *api = (const struct spi_driver_api *)dev->api;
+static inline void spi_iodev_submit(struct rtio_iodev_sqe* iodev_sqe) {
+    const struct spi_dt_spec* dt_spec = iodev_sqe->sqe.iodev->data;
+    const struct device* dev = dt_spec->bus;
+    const struct spi_driver_api* api = (const struct spi_driver_api*)dev->api;
 
-	api->iodev_submit(dt_spec->bus, iodev_sqe);
+    api->iodev_submit(dt_spec->bus, iodev_sqe);
 }
 
 extern const struct rtio_iodev_api spi_iodev_api;
@@ -921,10 +904,10 @@ extern const struct rtio_iodev_api spi_iodev_api;
  *
  * @param node DT_NODE
  */
-#define SPI_DT_IODEV_DEFINE(name, node_id, operation_, delay_)			\
-	const struct spi_dt_spec _spi_dt_spec_##name =				\
-		SPI_DT_SPEC_GET(node_id, operation_, delay_);			\
-	RTIO_IODEV_DEFINE(name, &spi_iodev_api, (void *)&_spi_dt_spec_##name)
+#define SPI_DT_IODEV_DEFINE(name, node_id, operation_, delay_)  \
+    const struct spi_dt_spec _spi_dt_spec_##name =              \
+        SPI_DT_SPEC_GET(node_id, operation_, delay_);           \
+    RTIO_IODEV_DEFINE(name, &spi_iodev_api, (void *)&_spi_dt_spec_##name)
 
 /**
  * @brief Validate that SPI bus (and CS gpio if defined) is ready.
@@ -934,11 +917,10 @@ extern const struct rtio_iodev_api spi_iodev_api;
  * @retval true if the SPI bus is ready for use.
  * @retval false if the SPI bus (or the CS gpio defined) is not ready for use.
  */
-static inline bool spi_is_ready_iodev(const struct rtio_iodev *spi_iodev)
-{
-	struct spi_dt_spec *spec = spi_iodev->data;
+static inline bool spi_is_ready_iodev(const struct rtio_iodev* spi_iodev) {
+    struct spi_dt_spec* spec = spi_iodev->data;
 
-	return spi_is_ready_dt(spec);
+    return spi_is_ready_dt(spec);
 }
 
 /**
@@ -953,150 +935,166 @@ static inline bool spi_is_ready_iodev(const struct rtio_iodev *spi_iodev)
  * @retval Number of submission queue entries
  * @retval -ENOMEM out of memory
  */
-static inline int spi_rtio_copy(struct rtio *r,
-				struct rtio_iodev *iodev,
-				const struct spi_buf_set *tx_bufs,
-				const struct spi_buf_set *rx_bufs,
-				struct rtio_sqe **last_sqe)
-{
-	int ret = 0;
-	size_t tx_count = tx_bufs ? tx_bufs->count : 0;
-	size_t rx_count = rx_bufs ? rx_bufs->count : 0;
+static inline int spi_rtio_copy(struct rtio* r,
+                                struct rtio_iodev* iodev,
+                                const struct spi_buf_set* tx_bufs,
+                                const struct spi_buf_set* rx_bufs,
+                                struct rtio_sqe** last_sqe) {
+    int ret = 0;
+    size_t tx_count = tx_bufs ? tx_bufs->count : 0;
+    size_t rx_count = rx_bufs ? rx_bufs->count : 0;
 
-	uint32_t tx = 0, tx_len = 0;
-	uint32_t rx = 0, rx_len = 0;
-	uint8_t *tx_buf, *rx_buf;
+    uint32_t tx = 0, tx_len = 0;
+    uint32_t rx = 0, rx_len = 0;
+    uint8_t* tx_buf;
+    uint8_t* rx_buf;
 
-	struct rtio_sqe *sqe = NULL;
+    struct rtio_sqe *sqe = NULL;
 
-	if (tx < tx_count) {
-		tx_buf = tx_bufs->buffers[tx].buf;
-		tx_len = tx_bufs->buffers[tx].len;
-	} else {
-		tx_buf = NULL;
-		tx_len = rx_bufs->buffers[rx].len;
-	}
+    if (tx < tx_count) {
+        tx_buf = tx_bufs->buffers[tx].buf;
+        tx_len = tx_bufs->buffers[tx].len;
+    }
+    else {
+        tx_buf = NULL;
+        tx_len = rx_bufs->buffers[rx].len;
+    }
 
-	if (rx < rx_count) {
-		rx_buf = rx_bufs->buffers[rx].buf;
-		rx_len = rx_bufs->buffers[rx].len;
-	} else {
-		rx_buf = NULL;
-		rx_len = tx_bufs->buffers[tx].len;
-	}
+    if (rx < rx_count) {
+        rx_buf = rx_bufs->buffers[rx].buf;
+        rx_len = rx_bufs->buffers[rx].len;
+    }
+    else {
+        rx_buf = NULL;
+        rx_len = tx_bufs->buffers[tx].len;
+    }
 
 
-	while ((tx < tx_count || rx < rx_count) && (tx_len > 0 || rx_len > 0)) {
-		sqe = rtio_sqe_acquire(r);
+    while ((tx < tx_count || rx < rx_count) && (tx_len > 0 || rx_len > 0)) {
+        sqe = rtio_sqe_acquire(r);
 
-		if (sqe == NULL) {
-			ret = -ENOMEM;
-			rtio_sqe_drop_all(r);
-			goto out;
-		}
+        if (sqe == NULL) {
+            ret = -ENOMEM;
+            rtio_sqe_drop_all(r);
+            goto out;
+        }
 
-		ret++;
+        ret++;
 
-		/* If tx/rx len are same, we can do a simple transceive */
-		if (tx_len == rx_len) {
-			if (tx_buf == NULL) {
-				rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM,
-						   rx_buf, rx_len, NULL);
-			} else if (rx_buf == NULL) {
-				rtio_sqe_prep_write(sqe, iodev, RTIO_PRIO_NORM,
-						    tx_buf, tx_len, NULL);
-			} else {
-				rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM,
-							 tx_buf, rx_buf, rx_len, NULL);
-			}
-			tx++;
-			rx++;
-			if (rx < rx_count) {
-				rx_buf = rx_bufs->buffers[rx].buf;
-				rx_len = rx_bufs->buffers[rx].len;
-			} else {
-				rx_buf = NULL;
-				rx_len = 0;
-			}
-			if (tx < tx_count) {
-				tx_buf = tx_bufs->buffers[tx].buf;
-				tx_len = tx_bufs->buffers[tx].len;
-			} else {
-				tx_buf = NULL;
-				tx_len = 0;
-			}
-		} else if (tx_len == 0) {
-			rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM,
-					   (uint8_t *)rx_buf,
-					   (uint32_t)rx_len,
-					   NULL);
-			rx++;
-			if (rx < rx_count) {
-				rx_buf = rx_bufs->buffers[rx].buf;
-				rx_len = rx_bufs->buffers[rx].len;
-			} else {
-				rx_buf = NULL;
-				rx_len = 0;
-			}
-		} else if (rx_len == 0) {
-			rtio_sqe_prep_write(sqe, iodev, RTIO_PRIO_NORM,
-					    (uint8_t *)tx_buf,
-					    (uint32_t)tx_len,
-					    NULL);
-			tx++;
-			if (tx < tx_count) {
-				tx_buf = rx_bufs->buffers[rx].buf;
-				tx_len = rx_bufs->buffers[rx].len;
-			} else {
-				tx_buf = NULL;
-				tx_len = 0;
-			}
-		} else if (tx_len > rx_len) {
-			rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM,
-						 (uint8_t *)tx_buf,
-						 (uint8_t *)rx_buf,
-						 (uint32_t)rx_len,
-						 NULL);
-			tx_len -= rx_len;
-			tx_buf += rx_len;
-			rx++;
-			if (rx < rx_count) {
-				rx_buf = rx_bufs->buffers[rx].buf;
-				rx_len = rx_bufs->buffers[rx].len;
-			} else {
-				rx_buf = NULL;
-				rx_len = tx_len;
-			}
-		} else if (rx_len > tx_len) {
-			rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM,
-						 (uint8_t *)tx_buf,
-						 (uint8_t *)rx_buf,
-						 (uint32_t)tx_len,
-						 NULL);
-			rx_len -= tx_len;
-			rx_buf += tx_len;
-			tx++;
-			if (tx < tx_count) {
-				tx_buf = tx_bufs->buffers[tx].buf;
-				tx_len = tx_bufs->buffers[tx].len;
-			} else {
-				tx_buf = NULL;
-				tx_len = rx_len;
-			}
-		} else {
-			__ASSERT_NO_MSG("Invalid spi_rtio_copy state");
-		}
+        /* If tx/rx len are same, we can do a simple transceive */
+        if (tx_len == rx_len) {
+            if (tx_buf == NULL) {
+                rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM,
+                                   rx_buf, rx_len, NULL);
+            }
+            else if (rx_buf == NULL) {
+                rtio_sqe_prep_write(sqe, iodev, RTIO_PRIO_NORM,
+                                    tx_buf, tx_len, NULL);
+            }
+            else {
+                rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM,
+                                         tx_buf, rx_buf, rx_len, NULL);
+            }
+            tx++;
+            rx++;
+            if (rx < rx_count) {
+                rx_buf = rx_bufs->buffers[rx].buf;
+                rx_len = rx_bufs->buffers[rx].len;
+            }
+            else {
+                rx_buf = NULL;
+                rx_len = 0;
+            }
 
-		sqe->flags = RTIO_SQE_TRANSACTION;
-	}
+            if (tx < tx_count) {
+                tx_buf = tx_bufs->buffers[tx].buf;
+                tx_len = tx_bufs->buffers[tx].len;
+            }
+            else {
+                tx_buf = NULL;
+                tx_len = 0;
+            }
+        }
+        else if (tx_len == 0) {
+            rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM,
+                               (uint8_t*)rx_buf,
+                               (uint32_t)rx_len,
+                               NULL);
+            rx++;
+            if (rx < rx_count) {
+                rx_buf = rx_bufs->buffers[rx].buf;
+                rx_len = rx_bufs->buffers[rx].len;
+            }
+            else {
+                rx_buf = NULL;
+                rx_len = 0;
+            }
+        }
+        else if (rx_len == 0) {
+            rtio_sqe_prep_write(sqe, iodev, RTIO_PRIO_NORM,
+                                (uint8_t*)tx_buf,
+                                (uint32_t)tx_len,
+                                NULL);
+            tx++;
+            if (tx < tx_count) {
+                tx_buf = rx_bufs->buffers[rx].buf;
+                tx_len = rx_bufs->buffers[rx].len;
+            }
+            else {
+                tx_buf = NULL;
+                tx_len = 0;
+            }
+        }
+        else if (tx_len > rx_len) {
+            rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM,
+                                     (uint8_t*)tx_buf,
+                                     (uint8_t*)rx_buf,
+                                     (uint32_t)rx_len,
+                                     NULL);
+            tx_len -= rx_len;
+            tx_buf += rx_len;
+            rx++;
+            if (rx < rx_count) {
+                rx_buf = rx_bufs->buffers[rx].buf;
+                rx_len = rx_bufs->buffers[rx].len;
+            }
+            else {
+                rx_buf = NULL;
+                rx_len = tx_len;
+            }
+        }
+        else if (rx_len > tx_len) {
+            rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM,
+                                     (uint8_t*)tx_buf,
+                                     (uint8_t*)rx_buf,
+                                     (uint32_t)tx_len,
+                                     NULL);
+            rx_len -= tx_len;
+            rx_buf += tx_len;
+            tx++;
+            if (tx < tx_count) {
+                tx_buf = tx_bufs->buffers[tx].buf;
+                tx_len = tx_bufs->buffers[tx].len;
+            }
+            else {
+                tx_buf = NULL;
+                tx_len = rx_len;
+            }
+        }
+        else {
+            __ASSERT_NO_MSG("Invalid spi_rtio_copy state");
+        }
 
-	if (sqe != NULL) {
-		sqe->flags = 0;
-		*last_sqe = sqe;
-	}
+        sqe->flags = RTIO_SQE_TRANSACTION;
+    }
+
+    if (sqe != NULL) {
+        sqe->flags = 0;
+        *last_sqe = sqe;
+    }
 
 out:
-	return ret;
+    return ret;
 }
 
 #endif /* CONFIG_SPI_RTIO */
@@ -1121,16 +1119,13 @@ out:
  * @retval 0 If successful.
  * @retval -errno Negative errno code on failure.
  */
-__syscall int spi_release(const struct device *dev,
-			  const struct spi_config *config);
+__syscall int spi_release(const struct device* dev, const struct spi_config* config);
 
-static inline int z_impl_spi_release(const struct device *dev,
-				     const struct spi_config *config)
-{
-	const struct spi_driver_api *api =
-		(const struct spi_driver_api *)dev->api;
+static inline int z_impl_spi_release(const struct device* dev,
+                                     const struct spi_config* config) {
+    const struct spi_driver_api* api = (const struct spi_driver_api*)dev->api;
 
-	return api->release(dev, config);
+    return api->release(dev, config);
 }
 
 /**
@@ -1144,9 +1139,8 @@ static inline int z_impl_spi_release(const struct device *dev,
  *
  * @return a value from spi_release().
  */
-static inline int spi_release_dt(const struct spi_dt_spec *spec)
-{
-	return spi_release(spec->bus, &spec->config);
+static inline int spi_release_dt(const struct spi_dt_spec* spec) {
+    return spi_release(spec->bus, &spec->config);
 }
 
 #ifdef __cplusplus

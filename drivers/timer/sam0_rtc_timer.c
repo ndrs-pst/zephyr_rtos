@@ -31,12 +31,11 @@
 #ifdef MCLK
 #define RTC_CLOCK_HW_CYCLES_PER_SEC SOC_ATMEL_SAM0_OSC32K_FREQ_HZ
 #else
-#define RTC_CLOCK_HW_CYCLES_PER_SEC SOC_ATMEL_SAM0_GCLK0_FREQ_HZ
+#define RTC_CLOCK_HW_CYCLES_PER_SEC SOC_ATMEL_SAM0_GCLK1_FREQ_HZ
 #endif
 
 /* Number of sys timer cycles per on tick. */
-#define CYCLES_PER_TICK (RTC_CLOCK_HW_CYCLES_PER_SEC \
-			 / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define CYCLES_PER_TICK     (RTC_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 /* Maximum number of ticks. */
 #define MAX_TICKS (UINT32_MAX / CYCLES_PER_TICK - 2)
@@ -50,9 +49,9 @@
  */
 #define TICK_THRESHOLD 7
 
-BUILD_ASSERT(CYCLES_PER_TICK > TICK_THRESHOLD,
-	     "CYCLES_PER_TICK must be greater than TICK_THRESHOLD for "
-	     "tickless mode");
+BUILD_ASSERT((CYCLES_PER_TICK > TICK_THRESHOLD),
+             "CYCLES_PER_TICK must be greater than TICK_THRESHOLD for "
+             "tickless mode");
 
 #else /* !CONFIG_TICKLESS_KERNEL */
 
@@ -67,8 +66,8 @@ BUILD_ASSERT(CYCLES_PER_TICK > 1,
 #endif /* CONFIG_TICKLESS_KERNEL */
 
 /* Helper macro to get the correct GCLK GEN based on configuration. */
-#define GCLK_GEN(n) GCLK_EVAL(n)
-#define GCLK_EVAL(n) GCLK_CLKCTRL_GEN_GCLK##n
+#define GCLK_GEN(n)     GCLK_EVAL(n)
+#define GCLK_EVAL(n)    GCLK_CLKCTRL_GEN_GCLK##n
 
 /* Tick/cycle count of the last announce call. */
 static volatile uint32_t rtc_last;
@@ -97,6 +96,7 @@ static inline void rtc_sync(void)
 	}
 #else
 	while (RTC0->SYNCBUSY.reg) {
+		/* pass */
 	}
 #endif
 }
@@ -145,8 +145,7 @@ static void rtc_reset(void)
 #endif
 }
 
-static void rtc_isr(const void *arg)
-{
+static void rtc_isr(const void* arg) {
 	ARG_UNUSED(arg);
 
 	/* Read and clear the interrupt flag register. */
@@ -155,7 +154,6 @@ static void rtc_isr(const void *arg)
 	RTC0->INTFLAG.reg = status;
 
 #ifdef CONFIG_TICKLESS_KERNEL
-
 	/* Read the current counter and announce the elapsed time in ticks. */
 	uint32_t count = rtc_count();
 
@@ -247,8 +245,6 @@ uint32_t sys_clock_cycle_get_32(void)
 
 static int sys_clock_driver_init(void)
 {
-	int retval;
-
 
 #ifdef MCLK
 	MCLK->APBAMASK.reg |= MCLK_APBAMASK_RTC;
@@ -264,10 +260,16 @@ static int sys_clock_driver_init(void)
 	}
 #endif
 
-	retval = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
-	if (retval < 0) {
-		return retval;
-	}
+#ifdef CONFIG_TICKLESS_KERNEL
+    /* pass */
+#else
+    int retval;
+
+    retval = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
+    if (retval < 0) {
+        return (retval);
+    }
+#endif
 
 	/* Reset module to hardware defaults. */
 	rtc_reset();
@@ -321,12 +323,10 @@ static int sys_clock_driver_init(void)
 
 	/* Enable RTC interrupt. */
 	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority), rtc_isr, 0, 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), rtc_isr, 0, 0);
 	irq_enable(DT_INST_IRQN(0));
 
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

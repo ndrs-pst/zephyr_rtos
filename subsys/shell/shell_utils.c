@@ -18,73 +18,65 @@ TYPE_SECTION_END_EXTERN(union shell_cmd_entry, shell_subcmds);
 /* Macro creates empty entry at the bottom of the memory section with subcommands
  * it is used to detect end of subcommand set that is located before this marker.
  */
-#define Z_SHELL_SUBCMD_END_MARKER_CREATE()				\
-	static const TYPE_SECTION_ITERABLE(struct shell_static_entry, \
+#define Z_SHELL_SUBCMD_END_MARKER_CREATE()                          \
+	static const TYPE_SECTION_ITERABLE(struct shell_static_entry,   \
 			z_shell_subcmd_end_marker, shell_subcmds, Z_SHELL_UNDERSCORE(999))
 
 Z_SHELL_SUBCMD_END_MARKER_CREATE();
 
-static inline const union shell_cmd_entry *shell_root_cmd_get(uint32_t id)
-{
-	const union shell_cmd_entry *cmd;
+static inline const union shell_cmd_entry* shell_root_cmd_get(uint32_t id) {
+    const union shell_cmd_entry* cmd;
 
 	TYPE_SECTION_GET(union shell_cmd_entry, shell_root_cmds, id, &cmd);
 
-	return cmd;
+	return (cmd);
 }
 
 /* Determine if entry is a dynamic command by checking if address is within
  * dynamic commands memory section.
  */
-static inline bool is_dynamic_cmd(const union shell_cmd_entry *entry)
-{
-	return (entry >= TYPE_SECTION_START(shell_dynamic_subcmds)) &&
-		(entry < TYPE_SECTION_END(shell_dynamic_subcmds));
+static inline bool is_dynamic_cmd(const union shell_cmd_entry* entry) {
+	return ((entry >= TYPE_SECTION_START(shell_dynamic_subcmds)) &&
+	        (entry < TYPE_SECTION_END(shell_dynamic_subcmds)));
 }
 
 /* Determine if entry is a section command by checking if address is within
  * subcommands memory section.
  */
-static inline bool is_section_cmd(const union shell_cmd_entry *entry)
-{
-	return (entry >= TYPE_SECTION_START(shell_subcmds)) &&
-		(entry < TYPE_SECTION_END(shell_subcmds));
+static inline bool is_section_cmd(const union shell_cmd_entry* entry) {
+	return ((entry >= TYPE_SECTION_START(shell_subcmds)) &&
+	        (entry < TYPE_SECTION_END(shell_subcmds)));
 }
 
 /* Calculates relative line number of given position in buffer */
-static uint32_t line_num_with_buffer_offset_get(struct shell_multiline_cons *cons,
-					     uint16_t buffer_pos)
-{
+static uint32_t line_num_with_buffer_offset_get(struct shell_multiline_cons* cons,
+                                                uint16_t buffer_pos) {
 	return ((buffer_pos + cons->name_len) / cons->terminal_wid);
 }
 
 /* Calculates column number of given position in buffer */
-static uint32_t col_num_with_buffer_offset_get(struct shell_multiline_cons *cons,
-					    uint16_t buffer_pos)
-{
+static uint32_t col_num_with_buffer_offset_get(struct shell_multiline_cons* cons,
+                                               uint16_t buffer_pos) {
 	/* columns are counted from 1 */
 	return (1 + ((buffer_pos + cons->name_len) % cons->terminal_wid));
 }
 
-int32_t z_column_span_with_buffer_offsets_get(struct shell_multiline_cons *cons,
-					      uint16_t offset1,
-					      uint16_t offset2)
-{
-	return col_num_with_buffer_offset_get(cons, offset2)
-			- col_num_with_buffer_offset_get(cons, offset1);
+int32_t z_column_span_with_buffer_offsets_get(struct shell_multiline_cons* cons,
+                                              uint16_t offset1,
+                                              uint16_t offset2) {
+    return (col_num_with_buffer_offset_get(cons, offset2) -
+            col_num_with_buffer_offset_get(cons, offset1));
 }
 
-int32_t z_row_span_with_buffer_offsets_get(struct shell_multiline_cons *cons,
-					   uint16_t offset1,
-					   uint16_t offset2)
-{
-	return line_num_with_buffer_offset_get(cons, offset2)
-		- line_num_with_buffer_offset_get(cons, offset1);
+int32_t z_row_span_with_buffer_offsets_get(struct shell_multiline_cons* cons,
+                                           uint16_t offset1,
+                                           uint16_t offset2) {
+	return (line_num_with_buffer_offset_get(cons, offset2) -
+	        line_num_with_buffer_offset_get(cons, offset1));
 }
 
-void z_shell_multiline_data_calc(struct shell_multiline_cons *cons,
-				 uint16_t buff_pos, uint16_t buff_len)
-{
+void z_shell_multiline_data_calc(struct shell_multiline_cons* cons,
+                                 uint16_t buff_pos, uint16_t buff_len) {
 	/* Current cursor position in command.
 	 * +1 -> because home position is (1, 1)
 	 */
@@ -96,9 +88,8 @@ void z_shell_multiline_data_calc(struct shell_multiline_cons *cons,
 	cons->cur_x_end = (buff_len + cons->name_len) % cons->terminal_wid + 1;
 }
 
-static char make_argv(char **ppcmd, uint8_t c)
-{
-	char *cmd = *ppcmd;
+static char make_argv(char** ppcmd, uint8_t c) {
+    char* cmd = *ppcmd;
 	char quote = 0;
 
 	while (1) {
@@ -111,17 +102,16 @@ static char make_argv(char **ppcmd, uint8_t c)
 		if (!quote) {
 			switch (c) {
 			case '\\':
-				memmove(cmd, cmd + 1,
-						z_shell_strlen(cmd));
+			    memmove(cmd, cmd + 1, z_shell_strlen(cmd));
 				cmd += 1;
 				continue;
 
 			case '\'':
 			case '\"':
-				memmove(cmd, cmd + 1,
-						z_shell_strlen(cmd));
+			    memmove(cmd, cmd + 1, z_shell_strlen(cmd));
 				quote = c;
 				continue;
+
 			default:
 				break;
 			}
@@ -137,56 +127,56 @@ static char make_argv(char **ppcmd, uint8_t c)
 			char t = *(cmd + 1);
 
 			if (t == quote) {
-				memmove(cmd, cmd + 1,
-						z_shell_strlen(cmd));
+                memmove(cmd, cmd + 1, z_shell_strlen(cmd));
 				cmd += 1;
 				continue;
 			}
 
 			if (t == '0') {
-				uint8_t i;
-				uint8_t v = 0U;
+				uint_fast8_t i;
+				uint_fast8_t v = 0U;
 
 				for (i = 2U; i < (2 + 3); i++) {
 					t = *(cmd + i);
 
 					if (t >= '0' && t <= '7') {
 						v = (v << 3) | (t - '0');
-					} else {
+                    }
+                    else {
 						break;
 					}
 				}
 
 				if (i > 2) {
-					memmove(cmd, cmd + (i - 1),
-						z_shell_strlen(cmd) - (i - 2));
+                    memmove(cmd, cmd + (i - 1), z_shell_strlen(cmd) - (i - 2));
 					*cmd++ = v;
 					continue;
 				}
 			}
 
 			if (t == 'x') {
-				uint8_t i;
-				uint8_t v = 0U;
+				uint_fast8_t i;
+				uint_fast8_t v = 0U;
 
 				for (i = 2U; i < (2 + 2); i++) {
 					t = *(cmd + i);
 
 					if (t >= '0' && t <= '9') {
 						v = (v << 4) | (t - '0');
-					} else if ((t >= 'a') &&
-						   (t <= 'f')) {
+                    }
+                    else if ((t >= 'a') && (t <= 'f')) {
 						v = (v << 4) | (t - 'a' + 10);
-					} else if ((t >= 'A') && (t <= 'F')) {
+                    }
+                    else if ((t >= 'A') && (t <= 'F')) {
 						v = (v << 4) | (t - 'A' + 10);
-					} else {
+                    }
+                    else {
 						break;
 					}
 				}
 
 				if (i > 2) {
-					memmove(cmd, cmd + (i - 1),
-						z_shell_strlen(cmd) - (i - 2));
+                    memmove(cmd, cmd + (i - 1), z_shell_strlen(cmd) - (i - 2));
 					*cmd++ = v;
 					continue;
 				}
@@ -201,13 +191,12 @@ static char make_argv(char **ppcmd, uint8_t c)
 	}
 	*ppcmd = cmd;
 
-	return quote;
+	return (quote);
 }
 
 
-char z_shell_make_argv(size_t *argc, const char **argv, char *cmd,
-		       uint8_t max_argc)
-{
+char z_shell_make_argv(size_t* argc, const char** argv, char* cmd,
+                       uint8_t max_argc) {
 	char quote = 0;
 	char c;
 
@@ -233,8 +222,7 @@ char z_shell_make_argv(size_t *argc, const char **argv, char *cmd,
 	return quote;
 }
 
-void z_shell_pattern_remove(char *buff, uint16_t *buff_len, const char *pattern)
-{
+void z_shell_pattern_remove(char* buff, uint16_t* buff_len, const char* pattern) {
 	char *pattern_addr = strstr(buff, pattern);
 	uint16_t shift;
 	uint16_t pattern_len = z_shell_strlen(pattern);
@@ -256,8 +244,7 @@ void z_shell_pattern_remove(char *buff, uint16_t *buff_len, const char *pattern)
 	memmove(pattern_addr, pattern_addr + pattern_len, shift);
 }
 
-static inline uint32_t shell_root_cmd_count(void)
-{
+static inline uint32_t shell_root_cmd_count(void) {
 	size_t len;
 
 	TYPE_SECTION_COUNT(union shell_cmd_entry, shell_root_cmds, &len);
@@ -266,31 +253,27 @@ static inline uint32_t shell_root_cmd_count(void)
 }
 
 /* Function returning pointer to parent command matching requested syntax. */
-const struct shell_static_entry *root_cmd_find(const char *syntax)
-{
+const struct shell_static_entry* root_cmd_find(const char* syntax) {
 	const size_t cmd_count = shell_root_cmd_count();
 	const union shell_cmd_entry *cmd;
 
 	for (size_t cmd_idx = 0; cmd_idx < cmd_count; ++cmd_idx) {
 		cmd = shell_root_cmd_get(cmd_idx);
 		if (strcmp(syntax, cmd->entry->syntax) == 0) {
-			return cmd->entry;
+			return (cmd->entry);
 		}
 	}
 
-	return NULL;
+	return (NULL);
 }
 
-const struct shell_static_entry *z_shell_cmd_get(
-					const struct shell_static_entry *parent,
-					size_t idx,
-					struct shell_static_entry *dloc)
-{
+const struct shell_static_entry* z_shell_cmd_get(const struct shell_static_entry* parent,
+                                                 size_t idx,
+                                                 struct shell_static_entry* dloc) {
 	const struct shell_static_entry *res = NULL;
 
 	if (parent == NULL) {
-		return  (idx < shell_root_cmd_count()) ?
-				shell_root_cmd_get(idx)->entry : NULL;
+		return (idx < shell_root_cmd_count()) ? shell_root_cmd_get(idx)->entry : NULL;
 	}
 
 	__ASSERT_NO_MSG(dloc != NULL);
@@ -301,18 +284,18 @@ const struct shell_static_entry *z_shell_cmd_get(
 			if (dloc->syntax != NULL) {
 				res = dloc;
 			}
-		} else {
+        }
+        else {
 			const struct shell_static_entry *entry_list;
 
 			if (is_section_cmd(parent->subcmd)) {
 				/* First element is null */
-				entry_list =
-					(const struct shell_static_entry *)parent->subcmd;
+                entry_list = (const struct shell_static_entry*)parent->subcmd;
 				idx++;
-			} else {
+            }
+            else {
 				entry_list = parent->subcmd->entry;
 			}
-
 
 			if (entry_list[idx].syntax != NULL) {
 				res = &entry_list[idx];
@@ -320,7 +303,7 @@ const struct shell_static_entry *z_shell_cmd_get(
 		}
 	}
 
-	return res;
+	return (res);
 }
 
 /* Function returns pointer to a command matching given pattern.
@@ -333,11 +316,9 @@ const struct shell_static_entry *z_shell_cmd_get(
  *
  * @return		Pointer to found command.
  */
-const struct shell_static_entry *z_shell_find_cmd(
-					const struct shell_static_entry *parent,
-					const char *cmd_str,
-					struct shell_static_entry *dloc)
-{
+const struct shell_static_entry* z_shell_find_cmd(const struct shell_static_entry* parent,
+                                                  const char* cmd_str,
+                                                  struct shell_static_entry* dloc) {
 	const struct shell_static_entry *entry;
 	struct shell_static_entry parent_cpy;
 	size_t idx = 0;
@@ -355,27 +336,24 @@ const struct shell_static_entry *z_shell_find_cmd(
 
 	while ((entry = z_shell_cmd_get(parent, idx++, dloc)) != NULL) {
 		if (strcmp(cmd_str, entry->syntax) == 0) {
-			return entry;
+			return (entry);
 		}
 	}
 
-	return NULL;
+	return (NULL);
 }
 
-const struct shell_static_entry *z_shell_get_last_command(
-					const struct shell_static_entry *entry,
-					size_t argc,
-					const char *argv[],
-					size_t *match_arg,
-					struct shell_static_entry *dloc,
-					bool only_static)
-{
+const struct shell_static_entry* z_shell_get_last_command(const struct shell_static_entry* entry,
+                                                          size_t argc,
+                                                          const char* argv[],
+                                                          size_t* match_arg,
+                                                          struct shell_static_entry* dloc,
+                                                          bool only_static) {
 	const struct shell_static_entry *prev_entry = NULL;
 
 	*match_arg = Z_SHELL_CMD_ROOT_LVL;
 
 	while (*match_arg < argc) {
-
 		if (IS_ENABLED(CONFIG_SHELL_WILDCARD)) {
 			/* ignore wildcard argument */
 			if (z_shell_has_wildcard(argv[*match_arg])) {
@@ -388,66 +366,63 @@ const struct shell_static_entry *z_shell_get_last_command(
 		entry = z_shell_find_cmd(entry, argv[*match_arg], dloc);
 		if (entry) {
 			(*match_arg)++;
-		} else {
+        }
+        else {
 			entry = prev_entry;
 			break;
 		}
 
 		if (only_static && (entry == dloc)) {
 			(*match_arg)--;
-			return NULL;
+			return (NULL);
 		}
 	}
 
-	return entry;
+	return (entry);
 }
 
-int shell_set_root_cmd(const char *cmd)
-{
+#if (__GTEST == 0U) /* #CUSTOM@NDRS */
+int shell_set_root_cmd(const char* cmd) {
 	const struct shell_static_entry *entry;
 
 	entry = cmd ? root_cmd_find(cmd) : NULL;
 
 	if (cmd && (entry == NULL)) {
-		return -EINVAL;
+		return (-EINVAL);
 	}
 
 	STRUCT_SECTION_FOREACH(shell, sh) {
 		sh->ctx->selected_cmd = entry;
 	}
 
-	return 0;
+	return (0);
 }
+#endif
 
-
-
-
-void z_shell_spaces_trim(char *str)
-{
-	uint16_t len = z_shell_strlen(str);
-	uint16_t shift = 0U;
+void z_shell_spaces_trim(char* str) {
+    uint_fast16_t len = z_shell_strlen(str);
+    uint_fast16_t shift = 0U;
 
 	if (!str) {
 		return;
 	}
 
-	for (uint16_t i = 0; i < len - 1; i++) {
+	for (uint_fast16_t i = 0U; i < (len - 1U); i++) {
 		if (isspace((int)str[i]) != 0) {
-			for (uint16_t j = i + 1; j < len; j++) {
+			for (uint_fast16_t j = i + 1U; j < len; j++) {
 				if (isspace((int)str[j]) != 0) {
 					shift++;
 					continue;
 				}
 
-				if (shift > 0) {
+				if (shift > 0U) {
 					/* +1 for EOS */
-					memmove(&str[i + 1],
-						&str[j],
-						len - j + 1);
+					memmove(&str[i + 1U],
+					        &str[j],
+					        len - j + 1U);
 					len -= shift;
 					shift = 0U;
 				}
-
 				break;
 			}
 		}
@@ -457,8 +432,7 @@ void z_shell_spaces_trim(char *str)
 /** @brief Remove white chars from beginning and end of command buffer.
  *
  */
-static void buffer_trim(char *buff, uint16_t *buff_len)
-{
+static void buffer_trim(char* buff, uint16_t* buff_len) {
 	uint16_t i = 0U;
 
 	/* no command in the buffer */
@@ -479,6 +453,7 @@ static void buffer_trim(char *buff, uint16_t *buff_len)
 	 * command.
 	 */
 	while (isspace((int) buff[i++]) != 0) {
+	    /* pass */
 	}
 
 
@@ -489,40 +464,34 @@ static void buffer_trim(char *buff, uint16_t *buff_len)
 	}
 }
 
-void z_shell_cmd_trim(const struct shell *sh)
-{
+void z_shell_cmd_trim(const struct shell* sh) {
 	buffer_trim(sh->ctx->cmd_buff, &sh->ctx->cmd_buff_len);
 	sh->ctx->cmd_buff_pos = sh->ctx->cmd_buff_len;
 }
 
-const struct device *shell_device_lookup(size_t idx,
-				   const char *prefix)
-{
+const struct device* shell_device_lookup(size_t idx, const char* prefix) {
 	size_t match_idx = 0;
 	const struct device *dev;
 	size_t len = z_device_get_all_static(&dev);
 	const struct device *dev_end = dev + len;
 
 	while (dev < dev_end) {
-		if (device_is_ready(dev)
-		    && (dev->name != NULL)
-		    && (strlen(dev->name) != 0)
-		    && ((prefix == NULL)
-			|| (strncmp(prefix, dev->name,
-				    strlen(prefix)) == 0))) {
+		if (device_is_ready(dev)     &&
+		    (dev->name != NULL)      &&
+		    (strlen(dev->name) != 0) &&
+		    ((prefix == NULL) || (strncmp(prefix, dev->name, strlen(prefix)) == 0))) {
 			if (match_idx == idx) {
-				return dev;
+				return (dev);
 			}
 			++match_idx;
 		}
 		++dev;
 	}
 
-	return NULL;
+	return (NULL);
 }
 
-long shell_strtol(const char *str, int base, int *err)
-{
+long shell_strtol(const char* str, int base, int* err) {
 	long val;
 	char *endptr = NULL;
 
@@ -530,46 +499,46 @@ long shell_strtol(const char *str, int base, int *err)
 	val = strtol(str, &endptr, base);
 	if (errno == ERANGE) {
 		*err = -ERANGE;
-		return 0;
-	} else if (errno || endptr == str || *endptr) {
+        return (0);
+    }
+    else if (errno || (endptr == str) || *endptr) {
 		*err = -EINVAL;
-		return 0;
+        return (0);
 	}
 
-	return val;
+    return (val);
 }
 
-unsigned long shell_strtoul(const char *str, int base, int *err)
-{
+unsigned long shell_strtoul(const char* str, int base, int* err) {
 	unsigned long val;
 	char *endptr = NULL;
 
 	if (*str == '-') {
 		*err = -EINVAL;
-		return 0;
+		return (0);
 	}
 
 	errno = 0;
 	val = strtoul(str, &endptr, base);
 	if (errno == ERANGE) {
 		*err = -ERANGE;
-		return 0;
-	} else if (errno || endptr == str || *endptr) {
+        return (0);
+    }
+    else if (errno || (endptr == str) || *endptr) {
 		*err = -EINVAL;
-		return 0;
+        return (0);
 	}
 
-	return val;
+	return (val);
 }
 
-bool shell_strtobool(const char *str, int base, int *err)
-{
+bool shell_strtobool(const char* str, int base, int* err) {
 	if (!strcmp(str, "on") || !strcmp(str, "enable") || !strcmp(str, "true")) {
-		return true;
+		return (true);
 	}
 
 	if (!strcmp(str, "off") || !strcmp(str, "disable") || !strcmp(str, "false")) {
-		return false;
+		return (false);
 	}
 
 	return shell_strtoul(str, base, err);

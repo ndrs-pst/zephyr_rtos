@@ -121,7 +121,11 @@
      */
     #define ALWAYS_INLINE inline
   #else
+    #if defined(_MSC_VER)                   /* #CUSTOM@NDRS */
+    #define ALWAYS_INLINE inline
+    #else
     #define ALWAYS_INLINE inline __attribute__((always_inline))
+    #endif
   #endif
 #endif
 
@@ -130,7 +134,11 @@
 
 /* concatenate the values of the arguments into one */
 #define _DO_CONCAT(x, y) x ## y
-#define _CONCAT(x, y) _DO_CONCAT(x, y)
+#define Z_CONCAT(x, y) _DO_CONCAT(x, y)     /* #CUSTOM@NDRS */
+
+#if !defined(_MSC_VER)                      /* #CUSTOM@NDRS */
+#define _CONCAT(x, y)  _DO_CONCAT(x, y)
+#endif
 
 /* Additionally used as a sentinel by gen_syscalls.py to identify what
  * functions are system calls
@@ -165,9 +173,9 @@
  * Common implementation swallows the message.
  */
 #define BUILD_ASSERT(EXPR, MSG...) \
-	enum _CONCAT(__build_assert_enum, __COUNTER__) { \
-		_CONCAT(__build_assert, __COUNTER__) = 1 / !!(EXPR) \
-	}
+    enum Z_CONCAT(__build_assert_enum, __COUNTER__) { \
+         Z_CONCAT(__build_assert, __COUNTER__) = 1 / !!(EXPR) \
+    }
 #endif
 
 /*
@@ -232,7 +240,7 @@
  * would be TYPE_SECTION_START(foobar)
  *
  */
-#define TYPE_SECTION_START(secname) _CONCAT(_##secname, _list_start)
+#define TYPE_SECTION_START(secname) Z_CONCAT(_##secname, _list_start)
 
 /**
  * @brief iterable section end symbol for a generic type
@@ -242,7 +250,7 @@
  * @param[in]  secname type name of iterable section.  For 'struct foobar' this
  * would be TYPE_SECTION_START(foobar)
  */
-#define TYPE_SECTION_END(secname) _CONCAT(_##secname, _list_end)
+#define TYPE_SECTION_END(secname) Z_CONCAT(_##secname, _list_end)
 
 /**
  * @brief iterable section extern for start symbol for a generic type
