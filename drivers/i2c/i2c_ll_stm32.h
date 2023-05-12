@@ -86,14 +86,14 @@ struct i2c_stm32_data {
 };
 
 int32_t stm32_i2c_msg_write(const struct device* dev, struct i2c_msg* msg, 
-                            uint8_t* flg, uint16_t sadr);
+		            uint8_t const* next_msg_flags, uint16_t slave);
 int32_t stm32_i2c_msg_read(const struct device* dev, struct i2c_msg* msg,
-                           uint8_t* flg, uint16_t sadr);
+                           uint8_t const* next_msg_flags, uint16_t slave);
 int32_t stm32_i2c_configure_timing(const struct device* dev, uint32_t clk);
 int     i2c_stm32_runtime_configure(const struct device* dev, uint32_t config);
 
-void stm32_i2c_event_isr(void* arg);
-void stm32_i2c_error_isr(void* arg);
+void stm32_i2c_event_isr(void const* arg);
+void stm32_i2c_error_isr(void const* arg);
 #ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
 void stm32_i2c_combined_isr(void* arg);
 #endif

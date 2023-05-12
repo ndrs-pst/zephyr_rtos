@@ -1370,7 +1370,7 @@ static inline int i2c_reg_write_byte(const struct device* dev,
  *
  * @return a value from i2c_reg_write_byte()
  */
-static inline int i2c_reg_write_byte_dt(const struct i2c_dt_spec* spec
+static inline int i2c_reg_write_byte_dt(const struct i2c_dt_spec* spec,
                                         uint8_t reg_addr, uint8_t value) {
     return i2c_reg_write_byte(spec->bus, spec->addr, reg_addr, value);
 }
