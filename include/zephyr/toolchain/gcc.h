@@ -145,6 +145,9 @@
 #endif
 
 /* Unaligned access */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS : workaround to pass compilation */
+#define UNALIGNED_GET(p)    *p
+#else
 #define UNALIGNED_GET(p)						\
 __extension__ ({							\
 	struct  __attribute__((__packed__)) {				\
@@ -152,7 +155,7 @@ __extension__ ({							\
 	} *__p = (__typeof__(__p)) (p);					\
 	__p->__v;							\
 })
-
+#endif
 
 #if __GNUC__ >= 7 && (defined(CONFIG_ARM) || defined(CONFIG_ARM64))
 
@@ -165,24 +168,31 @@ __extension__ ({							\
  * compilers in question do this optimization ignoring __packed__
  * attribute).
  */
-#define UNALIGNED_PUT(v, p)                                             \
-do {                                                                    \
-	struct __attribute__((__packed__)) {                            \
-		__typeof__(*p) __v;                                     \
-	} *__p = (__typeof__(__p)) (p);                                 \
-	__p->__v = (v);                                                 \
-	compiler_barrier();                                             \
+#define UNALIGNED_PUT(v, p)                 \
+do {                                        \
+	struct __attribute__((__packed__)) {    \
+		__typeof__(*p) __v;                 \
+	} *__p = (__typeof__(__p)) (p);         \
+	__p->__v = (v);                         \
+	compiler_barrier();                     \
 } while (false)
 
 #else
 
-#define UNALIGNED_PUT(v, p)                                             \
-do {                                                                    \
-	struct __attribute__((__packed__)) {                            \
-		__typeof__(*p) __v;                                     \
-	} *__p = (__typeof__(__p)) (p);                                 \
-	__p->__v = (v);                                               \
+#if defined(_MSC_VER) /* #CUSTOM@NDRS : workaround to pass compilation */
+#define UNALIGNED_PUT(v, p)                 \
+do {                                        \
+    *p = v;                                 \
 } while (false)
+#else
+#define UNALIGNED_PUT(v, p)                 \
+do {                                        \
+	struct __attribute__((__packed__)) {    \
+		__typeof__(*p) __v;                 \
+	} *__p = (__typeof__(__p)) (p);         \
+	__p->__v = (v);                         \
+} while (false)
+#endif
 
 #endif
 

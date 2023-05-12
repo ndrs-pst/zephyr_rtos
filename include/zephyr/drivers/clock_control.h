@@ -121,12 +121,10 @@ struct clock_control_driver_api {
  * @return 0 on success, negative errno on failure.
  */
 static inline int clock_control_on(const struct device *dev,
-				   clock_control_subsys_t sys)
-{
-	const struct clock_control_driver_api *api =
-		(const struct clock_control_driver_api *)dev->api;
+                                   clock_control_subsys_t sys) {
+    const struct clock_control_driver_api* api = (const struct clock_control_driver_api*)dev->api;
 
-	return api->on(dev, sys);
+    return api->on(dev, sys);
 }
 
 /**
