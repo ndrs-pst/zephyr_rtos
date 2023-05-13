@@ -28,6 +28,7 @@ extern void can_mcan_get_message(const struct device* dev,
 
 #define CAN_MCAN_IR_ISR_MSK_BIT     (CAN_MCAN_IR_BO   | CAN_MCAN_IR_EW   | CAN_MCAN_IR_EP |     \
                                      CAN_MCAN_IR_TEFL | CAN_MCAN_IR_TEFN |                      \
+                                     CAN_MCAN_IR_ARA  | CAN_MCAN_IR_MRAF |                      \
                                      CAN_MCAN_IR_RF0N | CAN_MCAN_IR_RF1N |                      \
                                      CAN_MCAN_IR_RF0L | CAN_MCAN_IR_RF1L)
 
@@ -49,17 +50,17 @@ struct can_sam0_data {
 #define USE_CAN_SAM0_ISR_OPTIMIZE           1U
 
 static int can_sam0_read_reg(const struct device* dev, uint16_t reg, uint32_t* val) {
-    const struct can_mcan_config* mcan_config = dev->config;
-    const struct can_sam0_config* sam0_config = mcan_config->custom;
+    const struct can_mcan_config* mcan_cfg = dev->config;
+    const struct can_sam0_config* sam0_cfg = mcan_cfg->custom;
 
-    return can_mcan_sys_read_reg(sam0_config->base, reg, val);
+    return can_mcan_sys_read_reg(sam0_cfg->base, reg, val);
 }
 
 static int can_sam0_write_reg(const struct device* dev, uint16_t reg, uint32_t val) {
-    const struct can_mcan_config* mcan_config = dev->config;
-    const struct can_sam0_config* sam0_config = mcan_config->custom;
+    const struct can_mcan_config* mcan_cfg = dev->config;
+    const struct can_sam0_config* sam0_cfg = mcan_cfg->custom;
 
-    return can_mcan_sys_write_reg(sam0_config->base, reg, val);
+    return can_mcan_sys_write_reg(sam0_cfg->base, reg, val);
 }
 
 static int can_sam0_get_core_clock(const struct device* dev, uint32_t* rate) {
@@ -80,16 +81,20 @@ static void can_sam0_clock_enable(const struct can_sam0_config* cfg) {
 
 static int can_sam0_init(const struct device* dev) {
     const struct can_mcan_config* mcan_cfg = dev->config;
-    const struct can_sam0_config* sam_cfg  = mcan_cfg->custom;
+    const struct can_sam0_config* sam0_cfg = mcan_cfg->custom;
     int ret;
 
-    can_sam0_clock_enable(sam_cfg);
+    can_sam0_clock_enable(sam0_cfg);
 
-    ret = pinctrl_apply_state(sam_cfg->pcfg, PINCTRL_STATE_DEFAULT);
+    ret = pinctrl_apply_state(sam0_cfg->pcfg, PINCTRL_STATE_DEFAULT);
+    if (ret == 0) {
+        ret = can_mcan_configure_message_ram(dev, 0U);
+    }
+
     if (ret == 0) {
         ret = can_mcan_init(dev);
         if (ret == 0) {
-            sam_cfg->config_irq();
+            sam0_cfg->config_irq();
         }
     }
 
@@ -135,12 +140,12 @@ static void can_sam0_line_01_isr(const struct device* dev) {
 
         if ((ir & CAN_MCAN_IR_RF0N) != 0UL) {
             LOG_DBG("RX FIFO0 INT");
-	    can_mcan_get_message(dev, msg_ram->rx_fifo0, CAN_MCAN_RXF0S, CAN_MCAN_RXF0A);
+            can_mcan_get_message(dev, msg_ram->rx_fifo0, CAN_MCAN_RXF0S, CAN_MCAN_RXF0A);
         }
 
         if ((ir & CAN_MCAN_IR_RF1N) != 0UL) {
             LOG_DBG("RX FIFO1 INT");
-	    can_mcan_get_message(dev, msg_ram->rx_fifo1, CAN_MCAN_RXF1S, CAN_MCAN_RXF1A);
+            can_mcan_get_message(dev, msg_ram->rx_fifo1, CAN_MCAN_RXF1S, CAN_MCAN_RXF1A);
         }
 
         if ((ir & CAN_MCAN_IR_RF0L) != 0UL) {
@@ -151,15 +156,15 @@ static void can_sam0_line_01_isr(const struct device* dev) {
             LOG_ERR("Message lost on FIFO1");
         }
 
-	err = can_mcan_write_reg(dev, CAN_MCAN_IR, ir);
-	if (err != 0) {
+        err = can_mcan_write_reg(dev, CAN_MCAN_IR, ir);
+        if (err != 0) {
             return;
-	}
+        }
 
-	err = can_mcan_read_reg(dev, CAN_MCAN_IR, &ir);
-	if (err != 0) {
-	    return;
-	}
+        err = can_mcan_read_reg(dev, CAN_MCAN_IR, &ir);
+        if (err != 0) {
+            return;
+        }
 
         if ((ir & CAN_MCAN_IR_ISR_MSK_BIT) == 0U) {
             // All of flag already handle then can break from this loop !!!
@@ -176,9 +181,9 @@ static void can_sam0_line_01_isr(const struct device* dev) {
 
 static const struct can_driver_api can_sam0_driver_api = {
     .get_capabilities = can_mcan_get_capabilities,
-    .set_mode         = can_mcan_set_mode,
     .start            = can_mcan_start,
     .stop             = can_mcan_stop,
+    .set_mode         = can_mcan_set_mode,
     .set_timing       = can_mcan_set_timing,
     .send             = can_mcan_send,
     .add_rx_filter    = can_mcan_add_rx_filter,

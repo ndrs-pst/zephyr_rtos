@@ -389,43 +389,20 @@
 #define MCAN_DT_PATH DT_PATH(soc, can)
 #endif
 
+#if (defined(_MSC_VER) && (__GTEST == 1U))  /* #CUSTOM@NDRS, workaround for zero-length array */
+#define NUM_STD_FILTER_ELEMENTS 8U
+#define NUM_EXT_FILTER_ELEMENTS 8U
+#define NUM_RX_FIFO0_ELEMENTS   3U
+#define NUM_RX_FIFO1_ELEMENTS   3U
+#define NUM_RX_BUF_ELEMENTS     1U
+#define NUM_TX_BUF_ELEMENTS     24U
+#else
 #define NUM_STD_FILTER_ELEMENTS DT_PROP(MCAN_DT_PATH, std_filter_elements)
 #define NUM_EXT_FILTER_ELEMENTS DT_PROP(MCAN_DT_PATH, ext_filter_elements)
 #define NUM_RX_FIFO0_ELEMENTS   DT_PROP(MCAN_DT_PATH, rx_fifo0_elements)
 #define NUM_RX_FIFO1_ELEMENTS   DT_PROP(MCAN_DT_PATH, rx_fifo1_elements)
 #define NUM_RX_BUF_ELEMENTS     DT_PROP(MCAN_DT_PATH, rx_buffer_elements)
 #define NUM_TX_BUF_ELEMENTS     DT_PROP(MCAN_DT_PATH, tx_buffer_elements)
-
-#if defined(_MSC_VER)                       /* #CUSTOM@NDRS, workaround for zero-length array */
-#if (NUM_STD_FILTER_ELEMENTS == 0)
-#undef NUM_STD_FILTER_ELEMENTS
-#define NUM_STD_FILTER_ELEMENTS 1
-#endif
-
-#if (NUM_EXT_FILTER_ELEMENTS == 0)
-#undef NUM_EXT_FILTER_ELEMENTS
-#define NUM_EXT_FILTER_ELEMENTS 1
-#endif
-
-#if (NUM_RX_FIFO0_ELEMENTS == 0)
-#undef NUM_RX_FIFO0_ELEMENTS
-#define NUM_RX_FIFO0_ELEMENTS   1
-#endif
-
-#if (NUM_RX_FIFO1_ELEMENTS == 0)
-#undef NUM_RX_FIFO1_ELEMENTS
-#define NUM_RX_FIFO1_ELEMENTS   1
-#endif
-
-#if (NUM_RX_BUF_ELEMENTS == 0)
-#undef NUM_RX_BUF_ELEMENTS
-#define NUM_RX_BUF_ELEMENTS     1
-#endif
-
-#if (NUM_TX_BUF_ELEMENTS == 0)
-#undef NUM_TX_BUF_ELEMENTS
-#define NUM_TX_BUF_ELEMENTS     1
-#endif
 #endif
 
 #ifdef CONFIG_CAN_STM32FD
@@ -562,7 +539,7 @@ struct can_mcan_msg_sram {
     volatile struct can_mcan_rx_fifo    rx_fifo1[NUM_RX_FIFO1_ELEMENTS];
     volatile struct can_mcan_rx_fifo    rx_buffer[NUM_RX_BUF_ELEMENTS];
     volatile struct can_mcan_tx_event_fifo tx_event_fifo[NUM_TX_BUF_ELEMENTS];
-    volatile struct can_mcan_tx_buffer tx_buffer[NUM_TX_BUF_ELEMENTS];
+    volatile struct can_mcan_tx_buffer  tx_buffer[NUM_TX_BUF_ELEMENTS];
 } __packed __aligned(4);
 
 struct can_mcan_data {
@@ -617,7 +594,7 @@ typedef int (*can_mcan_read_reg_t)(const struct device* dev, uint16_t reg, uint3
 typedef int (*can_mcan_write_reg_t)(const struct device* dev, uint16_t reg, uint32_t val);
 
 struct can_mcan_config {
-    can_mcan_read_reg_t read_reg;
+    can_mcan_read_reg_t  read_reg;
     can_mcan_write_reg_t write_reg;
     uint32_t bus_speed;
     uint32_t bus_speed_data;
