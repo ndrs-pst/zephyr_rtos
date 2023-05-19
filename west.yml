@@ -39,7 +39,7 @@ manifest:
       revision: b7955c27e50485b7dafdc3888d7d6afdc2ac6d96
       path: modules/lib/chre
     - name: cmsis
-      revision: 4c6c072ac771d4ba17d9901bb995e84565377286
+      revision: c432b1df586a3fb23d595f2266e2299bb2042ba8
       path: modules/hal/cmsis
       groups:
         - hal
@@ -136,7 +136,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 8eea8aeff439e8d70d5e097bed506b3593e4c071
+      revision: 957d2bc7833832d9efe9fabc0642dd044299260e
       path: modules/hal/stm32
       groups:
         - hal
