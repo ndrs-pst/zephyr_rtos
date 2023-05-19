@@ -699,7 +699,7 @@ static int gpio_stm32_init(const struct device* dev) {
 }
 
 #define GPIO_DEVICE_INIT(__node, __suffix, __base_addr, __port, __cenr, __bus)  \
-    static const struct gpio_stm32_config gpio_stm32_cfg_##__suffix = {         \
+    static struct gpio_stm32_config DT_CONST gpio_stm32_cfg_##__suffix = {         \
         .common = {                                             \
             .port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(16U),   \
         },                                                      \
@@ -772,3 +772,19 @@ GPIO_DEVICE_INIT_STM32(j, J);
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpiok), okay)
 GPIO_DEVICE_INIT_STM32(k, K);
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpiok), okay) */
+
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+void zephyr_gtest_gpio_stm32(void) {
+    gpio_stm32_cfg_a.base = (uint32_t*)ut_mcu_gpio_a_ptr;
+    gpio_stm32_cfg_b.base = (uint32_t*)ut_mcu_gpio_b_ptr;
+    gpio_stm32_cfg_c.base = (uint32_t*)ut_mcu_gpio_c_ptr;
+    gpio_stm32_cfg_d.base = (uint32_t*)ut_mcu_gpio_d_ptr;
+    gpio_stm32_cfg_e.base = (uint32_t*)ut_mcu_gpio_e_ptr;
+    gpio_stm32_cfg_f.base = (uint32_t*)ut_mcu_gpio_f_ptr;
+    gpio_stm32_cfg_g.base = (uint32_t*)ut_mcu_gpio_g_ptr;
+}
+
+#endif
+

@@ -26,10 +26,10 @@ typedef atomic_ptr_t atomic_ptr_val_t;
 
 /* Low-level primitives come in several styles: */
 
-#if defined(CONFIG_ATOMIC_OPERATIONS_C)
+#if (defined(CONFIG_ATOMIC_OPERATIONS_C) || (__GTEST == 1U)) /* @CUSTOM@NDRS */
 /* Generic-but-slow implementation based on kernel locking and syscalls */
 #include <zephyr/sys/atomic_c.h>
-#elif (defined(CONFIG_ATOMIC_OPERATIONS_ARCH) || (__GTEST == 1U)) /* @CUSTOM@NDRS */
+#elif defined(CONFIG_ATOMIC_OPERATIONS_ARCH)
 /* Some architectures need their own implementation */
 # ifdef CONFIG_XTENSA
 /* Not all Xtensa toolchains support GCC-style atomic intrinsics */

@@ -308,8 +308,14 @@ do {                                        \
 
 #define ARG_UNUSED(x) (void)(x)
 
-#define likely(x)   (__builtin_expect((bool)!!(x), true) != 0L)
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define likely(x)   (x)
+#define unlikely(x) (x)
+#else
+#define likely(x)   (__builtin_expect((bool)!!(x), true ) != 0L)
 #define unlikely(x) (__builtin_expect((bool)!!(x), false) != 0L)
+#endif
+
 #define POPCOUNT(x) __builtin_popcount(x)
 
 #ifndef __no_optimization

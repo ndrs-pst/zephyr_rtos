@@ -246,7 +246,7 @@ void smf_set_terminate(struct smf_ctx* ctx, int32_t val) {
 }
 
 int32_t smf_run_state(struct smf_ctx* const ctx) {
-    struct internal_ctx* const internal = (void*)&ctx->internal;
+    struct internal_ctx const* const internal = (void*)&ctx->internal;
 
     /* No need to continue if terminate was set */
     if (internal->terminate) {

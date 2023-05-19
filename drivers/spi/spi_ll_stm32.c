@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <zephyr/irq.h>
 
 #include "spi_ll_stm32.h"
-#define CONFIG_SPI_STM32_DMA  // @RESUME
+
 /*
  * Check for SPI_SR_FRE to determine support for TI mode frame format
  * error flag, because STM32F1 SoCs do not support it and  STM32CUBE
@@ -858,7 +858,7 @@ static int spi_stm32_transceive_async(const struct device* dev,
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static const struct spi_driver_api api_funcs = {
+static struct spi_driver_api DT_CONST api_funcs = {
     .transceive = spi_stm32_transceive,
     #ifdef CONFIG_SPI_ASYNC
     .transceive_async = spi_stm32_transceive_async,
@@ -1006,7 +1006,7 @@ PINCTRL_DT_INST_DEFINE(id);                 \
                                             \
 static const struct stm32_pclken pclken_##id[] = STM32_DT_INST_CLOCKS(id);  \
                                             \
-static const struct spi_stm32_config spi_stm32_cfg_##id = { \
+static struct spi_stm32_config DT_CONST spi_stm32_cfg_##id = { \
     .spi = (SPI_TypeDef *) DT_INST_REG_ADDR(id),            \
     .pclken = pclken_##id,                  \
     .pclk_len = DT_INST_NUM_CLOCKS(id),     \

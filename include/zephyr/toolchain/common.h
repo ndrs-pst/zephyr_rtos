@@ -149,7 +149,7 @@
  * disallow us to test system calls in POSIX unit testing (currently
  * not used).
  */
-#ifndef ZTEST_UNITTEST
+#if (!defined(ZTEST_UNITTEST) && !defined(_MSC_VER)) /* #CUSTOM@NDRS */
 #define __syscall static inline
 #define __syscall_always_inline static inline __attribute__((always_inline))
 #else
