@@ -72,65 +72,65 @@ struct rtc_stm32_config {
 
 struct rtc_stm32_data {
     counter_alarm_callback_t callback;
-    uint32_t                 ticks;
-    void*                    user_data;
+    uint32_t ticks;
+    void*    user_data;
 };
 
 static inline ErrorStatus ll_func_init_alarm(RTC_TypeDef* rtc, uint32_t format,
                                              LL_RTC_AlarmTypeDef* alarmStruct) {
-#if defined(CONFIG_SOC_SERIES_STM32F1X)
+    #if defined(CONFIG_SOC_SERIES_STM32F1X)
     return LL_RTC_ALARM_Init(rtc, format, alarmStruct);
-#else
+    #else
     return LL_RTC_ALMA_Init(rtc, format, alarmStruct);
-#endif
+    #endif
 }
 
 static inline void ll_func_clear_alarm_flag(RTC_TypeDef* rtc) {
-#if defined(CONFIG_SOC_SERIES_STM32F1X)
+    #if defined(CONFIG_SOC_SERIES_STM32F1X)
     LL_RTC_ClearFlag_ALR(rtc);
-#else
+    #else
     LL_RTC_ClearFlag_ALRA(rtc);
-#endif
+    #endif
 }
 
 static inline uint32_t ll_func_is_active_alarm(RTC_TypeDef* rtc) {
-#if defined(CONFIG_SOC_SERIES_STM32F1X)
+    #if defined(CONFIG_SOC_SERIES_STM32F1X)
     return LL_RTC_IsActiveFlag_ALR(rtc);
-#else
+    #else
     return LL_RTC_IsActiveFlag_ALRA(rtc);
-#endif
+    #endif
 }
 
 static inline void ll_func_enable_interrupt_alarm(RTC_TypeDef* rtc) {
-#if defined(CONFIG_SOC_SERIES_STM32F1X)
+    #if defined(CONFIG_SOC_SERIES_STM32F1X)
     LL_RTC_EnableIT_ALR(rtc);
-#else
+    #else
     LL_RTC_EnableIT_ALRA(rtc);
-#endif
+    #endif
 }
 
 static inline void ll_func_disable_interrupt_alarm(RTC_TypeDef* rtc) {
-#if defined(CONFIG_SOC_SERIES_STM32F1X)
+    #if defined(CONFIG_SOC_SERIES_STM32F1X)
     LL_RTC_DisableIT_ALR(rtc);
-#else
+    #else
     LL_RTC_DisableIT_ALRA(rtc);
-#endif
+    #endif
 }
 
 static inline void ll_func_enable_alarm(RTC_TypeDef* rtc) {
-#if defined(CONFIG_SOC_SERIES_STM32F1X)
+    #if defined(CONFIG_SOC_SERIES_STM32F1X)
     ARG_UNUSED(rtc);
-#else
+    #else
     LL_RTC_ALMA_Enable(rtc);
-#endif
+    #endif
 }
 
 static inline void ll_func_disable_alarm(RTC_TypeDef* rtc) {
-#if defined(CONFIG_SOC_SERIES_STM32F1X)
+    #if defined(CONFIG_SOC_SERIES_STM32F1X)
     ARG_UNUSED(rtc);
-#else
+    #else
     LL_RTC_ALMA_Disable(rtc);
-#endif
+    #endif
 }
 
 static void rtc_stm32_irq_config(const struct device* dev);
@@ -142,7 +142,7 @@ static int rtc_stm32_start(const struct device* dev) {
     LL_RCC_EnableRTC();
     z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
-    return 0;
+    return (0);
 }
 
 static int rtc_stm32_stop(const struct device* dev) {
@@ -152,26 +152,27 @@ static int rtc_stm32_stop(const struct device* dev) {
     LL_RCC_DisableRTC();
     z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
-    return 0;
+    return (0);
 }
 
 static uint32_t rtc_stm32_read(const struct device* dev) {
-#if !defined(COUNTER_NO_DATE)
+    #if !defined(COUNTER_NO_DATE)
     struct tm now = {0};
     time_t    ts;
     uint32_t  rtc_date, rtc_time, ticks;
-#else
-    uint32_t rtc_time, ticks;
-#endif
+    #else
+    uint32_t  rtc_time;
+    uint32_t  ticks;
+    #endif
     ARG_UNUSED(dev);
 
     /* Read time and date registers */
     rtc_time = LL_RTC_TIME_Get(RTC);
-#if !defined(COUNTER_NO_DATE)
+    #if !defined(COUNTER_NO_DATE)
     rtc_date = LL_RTC_DATE_Get(RTC);
-#endif
+    #endif
 
-#if !defined(COUNTER_NO_DATE)
+    #if !defined(COUNTER_NO_DATE)
     /* Convert calendar datetime to UNIX timestamp */
     /* RTC start time: 1st, Jan, 2000 */
     /* time_t start:   1st, Jan, 1970 */
@@ -189,28 +190,28 @@ static uint32_t rtc_stm32_read(const struct device* dev) {
     /* Return number of seconds since RTC init */
     ts -= T_TIME_OFFSET;
 
-    __ASSERT(sizeof(time_t) == 8, "unexpected time_t definition");
+    __ASSERT((sizeof(time_t) == 8), "unexpected time_t definition");
     ticks = counter_us_to_ticks(dev, ts * USEC_PER_SEC);
-#else
+    #else
     ticks = rtc_time;
-#endif
+    #endif
 
-    return ticks;
+    return (ticks);
 }
 
 static int rtc_stm32_get_value(const struct device* dev, uint32_t* ticks) {
     *ticks = rtc_stm32_read(dev);
-    return 0;
+    return (0);
 }
 
 static int rtc_stm32_set_alarm(const struct device* dev, uint8_t chan_id,
                                const struct counter_alarm_cfg* alarm_cfg) {
-#if !defined(COUNTER_NO_DATE)
+    #if !defined(COUNTER_NO_DATE)
     struct tm alarm_tm;
     time_t    alarm_val;
-#else
+    #else
     uint32_t remain;
-#endif
+    #endif
     LL_RTC_AlarmTypeDef    rtc_alarm;
     struct rtc_stm32_data* data = dev->data;
 
@@ -219,13 +220,13 @@ static int rtc_stm32_set_alarm(const struct device* dev, uint8_t chan_id,
 
     if (data->callback != NULL) {
         LOG_DBG("Alarm busy\n");
-        return -EBUSY;
+        return (-EBUSY);
     }
 
     data->callback  = alarm_cfg->callback;
     data->user_data = alarm_cfg->user_data;
 
-#if !defined(COUNTER_NO_DATE)
+    #if !defined(COUNTER_NO_DATE)
     if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
         /* Add +1 in order to compensate the partially started tick.
          * Alarm will expire between requested ticks and ticks+1.
@@ -238,7 +239,7 @@ static int rtc_stm32_set_alarm(const struct device* dev, uint8_t chan_id,
     else {
         alarm_val = (time_t)(counter_ticks_to_us(dev, ticks) / USEC_PER_SEC);
     }
-#else
+    #else
     if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
         remain = ticks + now + 1;
     }
@@ -250,9 +251,9 @@ static int rtc_stm32_set_alarm(const struct device* dev, uint8_t chan_id,
      * not when the counter matches, so set -1
      */
     remain--;
-#endif
+    #endif
 
-#if !defined(COUNTER_NO_DATE)
+    #if !defined(COUNTER_NO_DATE)
     LOG_DBG("Set Alarm: %d\n", ticks);
 
     gmtime_r(&alarm_val, &alarm_tm);
@@ -266,20 +267,20 @@ static int rtc_stm32_set_alarm(const struct device* dev, uint8_t chan_id,
     rtc_alarm.AlarmMask           = LL_RTC_ALMA_MASK_NONE;
     rtc_alarm.AlarmDateWeekDaySel = LL_RTC_ALMA_DATEWEEKDAYSEL_DATE;
     rtc_alarm.AlarmDateWeekDay    = alarm_tm.tm_mday;
-#else
+    #else
     rtc_alarm.AlarmTime.Hours = remain / 3600;
     remain -= rtc_alarm.AlarmTime.Hours * 3600;
     rtc_alarm.AlarmTime.Minutes = remain / 60;
     remain -= rtc_alarm.AlarmTime.Minutes * 60;
     rtc_alarm.AlarmTime.Seconds = remain;
-#endif
+    #endif
 
     LL_RTC_DisableWriteProtection(RTC);
     ll_func_disable_alarm(RTC);
     LL_RTC_EnableWriteProtection(RTC);
 
     if (ll_func_init_alarm(RTC, LL_RTC_FORMAT_BIN, &rtc_alarm) != SUCCESS) {
-        return -EIO;
+        return (-EIO);
     }
 
     LL_RTC_DisableWriteProtection(RTC);
@@ -288,7 +289,7 @@ static int rtc_stm32_set_alarm(const struct device* dev, uint8_t chan_id,
     ll_func_enable_interrupt_alarm(RTC);
     LL_RTC_EnableWriteProtection(RTC);
 
-    return 0;
+    return (0);
 }
 
 static int rtc_stm32_cancel_alarm(const struct device* dev, uint8_t chan_id) {
@@ -302,38 +303,36 @@ static int rtc_stm32_cancel_alarm(const struct device* dev, uint8_t chan_id) {
 
     data->callback = NULL;
 
-    return 0;
+    return (0);
 }
 
 static uint32_t rtc_stm32_get_pending_int(const struct device* dev) {
-    return ll_func_is_active_alarm(RTC) != 0;
+    return (ll_func_is_active_alarm(RTC) != 0);
 }
 
 static uint32_t rtc_stm32_get_top_value(const struct device* dev) {
     const struct counter_config_info* info = dev->config;
 
-    return info->max_top_value;
+    return (info->max_top_value);
 }
 
 static int rtc_stm32_set_top_value(const struct device* dev, const struct counter_top_cfg* cfg) {
     const struct counter_config_info* info = dev->config;
 
     if ((cfg->ticks != info->max_top_value) || !(cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
-        return -ENOTSUP;
+        return (-ENOTSUP);
     }
     else {
-        return 0;
+        return (0);
     }
 }
 
 void rtc_stm32_isr(const struct device* dev) {
     struct rtc_stm32_data*   data           = dev->data;
     counter_alarm_callback_t alarm_callback = data->callback;
-
     uint32_t now = rtc_stm32_read(dev);
 
     if (ll_func_is_active_alarm(RTC) != 0) {
-
         LL_RTC_DisableWriteProtection(RTC);
         ll_func_clear_alarm_flag(RTC);
         ll_func_disable_interrupt_alarm(RTC);
@@ -346,18 +345,18 @@ void rtc_stm32_isr(const struct device* dev) {
         }
     }
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
+    #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
     LL_C2_EXTI_ClearFlag_0_31(RTC_EXTI_LINE);
-#elif defined(CONFIG_SOC_SERIES_STM32C0X) || \
-      defined(CONFIG_SOC_SERIES_STM32G0X) || \
-      defined(CONFIG_SOC_SERIES_STM32L5X) || \
-      defined(CONFIG_SOC_SERIES_STM32H5X)
+    #elif defined(CONFIG_SOC_SERIES_STM32C0X) || \
+          defined(CONFIG_SOC_SERIES_STM32G0X) || \
+          defined(CONFIG_SOC_SERIES_STM32L5X) || \
+          defined(CONFIG_SOC_SERIES_STM32H5X)
     LL_EXTI_ClearRisingFlag_0_31(RTC_EXTI_LINE);
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+    #elif defined(CONFIG_SOC_SERIES_STM32U5X)
     /* in STM32U5 family RTC is not connected to EXTI */
-#else
+    #else
     LL_EXTI_ClearFlag_0_31(RTC_EXTI_LINE);
-#endif
+    #endif
 }
 
 static int rtc_stm32_init(const struct device* dev) {
@@ -369,63 +368,63 @@ static int rtc_stm32_init(const struct device* dev) {
 
     if (!device_is_ready(clk)) {
         LOG_ERR("clock control device not ready");
-        return -ENODEV;
+        return (-ENODEV);
     }
 
     /* Enable RTC bus clock */
     if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]) != 0) {
         LOG_ERR("clock op failed\n");
-        return -EIO;
+        return (-EIO);
     }
 
     /* Enable Backup access */
     z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-#if defined(PWR_CR_DBP)    || defined(PWR_CR1_DBP) || \
-    defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+    #if defined(PWR_CR_DBP)    || defined(PWR_CR1_DBP) || \
+        defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
     LL_PWR_EnableBkUpAccess();
-#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
+    #endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 
     /* Enable RTC clock source */
     if (clock_control_configure(clk,
                                 (clock_control_subsys_t)&cfg->pclken[1],
                                 NULL) != 0) {
         LOG_ERR("clock configure failed\n");
-        return -EIO;
+        return (-EIO);
     }
 
     LL_RCC_EnableRTC();
 
     z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
-#if !defined(CONFIG_COUNTER_RTC_STM32_SAVE_VALUE_BETWEEN_RESETS)
+    #if !defined(CONFIG_COUNTER_RTC_STM32_SAVE_VALUE_BETWEEN_RESETS)
     if (LL_RTC_DeInit(RTC) != SUCCESS) {
-        return -EIO;
+        return (-EIO);
     }
-#endif
+    #endif
 
     if (LL_RTC_Init(RTC, ((LL_RTC_InitTypeDef*)&cfg->ll_rtc_config)) != SUCCESS) {
-        return -EIO;
+        return (-EIO);
     }
 
-#ifdef RTC_CR_BYPSHAD
+    #ifdef RTC_CR_BYPSHAD
     LL_RTC_DisableWriteProtection(RTC);
     LL_RTC_EnableShadowRegBypass(RTC);
     LL_RTC_EnableWriteProtection(RTC);
-#endif /* RTC_CR_BYPSHAD */
+    #endif /* RTC_CR_BYPSHAD */
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
+    #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
     LL_C2_EXTI_EnableIT_0_31(RTC_EXTI_LINE);
     LL_EXTI_EnableRisingTrig_0_31(RTC_EXTI_LINE);
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+    #elif defined(CONFIG_SOC_SERIES_STM32U5X)
     /* in STM32U5 family RTC is not connected to EXTI */
-#else
+    #else
     LL_EXTI_EnableIT_0_31(RTC_EXTI_LINE);
     LL_EXTI_EnableRisingTrig_0_31(RTC_EXTI_LINE);
-#endif
+    #endif
 
     rtc_stm32_irq_config(dev);
 
-    return 0;
+    return (0);
 }
 
 static struct rtc_stm32_data rtc_data;
@@ -434,13 +433,19 @@ static struct rtc_stm32_data rtc_data;
 #warning STM32 RTC needs a kernel source clock. Please define it in dts file
 static const struct stm32_pclken rtc_clk[] = {
     STM32_CLOCK_INFO(0, DT_DRV_INST(0)),
- /* Use Kconfig to configure source clocks fields (Deprecated) */
-  /* Fortunately, values are consistent across enabled series */
-#ifdef CONFIG_COUNTER_RTC_STM32_CLOCK_LSE
-    {.bus = STM32_SRC_LSE, .enr = RTC_SEL(1)}
-#else
-    {.bus = STM32_SRC_LSI, .enr = RTC_SEL(2)}
-#endif
+    /* Use Kconfig to configure source clocks fields (Deprecated) */
+    /* Fortunately, values are consistent across enabled series */
+    #ifdef CONFIG_COUNTER_RTC_STM32_CLOCK_LSE
+    {
+        .bus = STM32_SRC_LSE,
+        .enr = RTC_SEL(1)
+    }
+    #else
+    {
+        .bus = STM32_SRC_LSI,
+        .enr = RTC_SEL(2)
+    }
+    #endif
 };
 #else
 static const struct stm32_pclken rtc_clk[] = STM32_DT_INST_CLOCKS(0);

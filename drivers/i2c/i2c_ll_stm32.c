@@ -527,8 +527,14 @@ static int i2c_stm32_pm_action(const struct device* dev, enum pm_device_action a
 #endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2)
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
 #define DEFINE_TIMINGS(index)               \
-        static const uint32_t i2c_timings_##index[] = DT_INST_PROP_OR(index, timings, {0U});
+        static const uint32_t i2c_timings_##index[] = DT_INST_PROP_OR(index, timings, {0U}); /* workaround need to put 0U inside bracket {} */
+#else
+#define DEFINE_TIMINGS(index)               \
+        static const uint32_t i2c_timings_##index[] = DT_INST_PROP_OR(index, timings, {});
+#endif
+
 #define USE_TIMINGS(index)                  \
         .timings   = (const struct i2c_config_timing*)i2c_timings_##index, \
         .n_timings = ARRAY_SIZE(i2c_timings_##index),

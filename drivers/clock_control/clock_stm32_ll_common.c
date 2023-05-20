@@ -770,9 +770,9 @@ static void set_up_fixed_clock_sources(void) {
 int stm32_clock_control_init(const struct device* dev) {
     ARG_UNUSED(dev);
 
-    if (IS_ENABLED(__GTEST)) { /* #CUSTOM@NDRS */
-        rcc_dt_reg_addr = RCC_BASE;
-    }
+    #if (__GTEST == 1) /* #CUSTOM@NDRS */
+    rcc_dt_reg_addr = RCC_BASE;
+    #endif
 
     /* Some clocks would be activated by default */
     config_enable_default_clocks();

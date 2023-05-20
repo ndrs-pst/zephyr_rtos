@@ -669,7 +669,7 @@ int stm32_i2c_configure_timing(const struct device* dev, uint32_t clock) {
 
         if ((I2C_SPEED_GET(speed) == I2C_SPEED_GET(data->dev_config)) &&
             (preset->periph_clock == clock)) {
-            /*  Found a matching periph clock and i2c speed */
+            /* Found a matching periph clock and i2c speed */
             LL_I2C_SetTiming(i2c, preset->timing_setting);
             return (0);
         }
@@ -678,17 +678,17 @@ int stm32_i2c_configure_timing(const struct device* dev, uint32_t clock) {
     /* No preset timing was provided, let's dynamically configure */
     switch (I2C_SPEED_GET(data->dev_config)) {
         case I2C_SPEED_STANDARD :
-            i2c_h_min_time     = 4000U;
-            i2c_l_min_time     = 4700U;
-            i2c_hold_time_min  = 500U;
-            i2c_setup_time_min = 1250U;
+            i2c_h_min_time     = 4000U;     /* 4,000 μs */
+            i2c_l_min_time     = 4700U;     /* 4,700 μs */
+            i2c_hold_time_min  = 500U;      /*   500 ns */
+            i2c_setup_time_min = 1250U;     /* 1,250 ns */
             break;
 
         case I2C_SPEED_FAST :
-            i2c_h_min_time     = 600U;
-            i2c_l_min_time     = 1300U;
-            i2c_hold_time_min  = 375U;
-            i2c_setup_time_min = 500U;
+            i2c_h_min_time     = 600U;      /*   600 μs */
+            i2c_l_min_time     = 1300U;     /* 1,300 μs */
+            i2c_hold_time_min  = 375U;      /*   375 ns */
+            i2c_setup_time_min = 500U;      /*   500 ns */
             break;
 
         default :
