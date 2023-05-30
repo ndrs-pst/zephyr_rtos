@@ -1141,11 +1141,11 @@ static inline int i2c_write_read(const struct device* dev, uint16_t addr,
                                  void* read_buf, size_t num_read) {
     struct i2c_msg msg[2];
 
-    msg[0].buf   = (uint8_t *)write_buf;
+    msg[0].buf   = (uint8_t*)write_buf;
     msg[0].len   = num_write;
     msg[0].flags = I2C_MSG_WRITE;
 
-    msg[1].buf   = (uint8_t *)read_buf;
+    msg[1].buf   = (uint8_t*)read_buf;
     msg[1].len   = num_read;
     msg[1].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
 

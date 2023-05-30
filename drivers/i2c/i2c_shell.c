@@ -48,7 +48,7 @@ static int get_bytes_count_for_hex(char* arg) {
  * https://manpages.debian.org/buster/i2c-tools/i2cdetect.8.en.html
  */
 /* i2c scan <device> */
-static int cmd_i2c_scan(const struct shell* sh, size_t argc, char** argv) {
+static int cmd_i2c_scan(struct shell const* sh, size_t argc, char** argv) {
     const struct device* dev;
     uint8_t cnt   = 0;
     uint8_t first = 0x04;
@@ -60,9 +60,9 @@ static int cmd_i2c_scan(const struct shell* sh, size_t argc, char** argv) {
         return -ENODEV;
     }
 
-    shell_print(sh, "     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f");
+    shell_print(sh, "     0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F");
     for (uint8_t i = 0; i <= last; i += 16) {
-        shell_fprintf(sh, SHELL_NORMAL, "%02x: ", i);
+        shell_fprintf(sh, SHELL_NORMAL, "%02X: ", i);
         for (uint8_t j = 0; j < 16; j++) {
             if (i + j < first || i + j > last) {
                 shell_fprintf(sh, SHELL_NORMAL, "   ");
@@ -77,7 +77,7 @@ static int cmd_i2c_scan(const struct shell* sh, size_t argc, char** argv) {
             msgs[0].len   = 0U;
             msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
             if (i2c_transfer(dev, &msgs[0], 1, i + j) == 0) {
-                shell_fprintf(sh, SHELL_NORMAL, "%02x ", i + j);
+                shell_fprintf(sh, SHELL_NORMAL, "%02X ", i + j);
                 ++cnt;
             }
             else {
@@ -93,7 +93,7 @@ static int cmd_i2c_scan(const struct shell* sh, size_t argc, char** argv) {
 }
 
 /* i2c recover <device> */
-static int cmd_i2c_recover(const struct shell* sh, size_t argc, char** argv) {
+static int cmd_i2c_recover(struct shell const* sh, size_t argc, char** argv) {
     const struct device* dev;
     int err;
 
@@ -112,7 +112,7 @@ static int cmd_i2c_recover(const struct shell* sh, size_t argc, char** argv) {
     return (0);
 }
 
-static int i2c_write_from_buffer(const struct shell* sh,
+static int i2c_write_from_buffer(struct shell const* sh,
                                  char* s_dev_name, char* s_dev_addr, char* s_reg_addr,
                                  char** data, uint8_t data_length) {
     /* This buffer must preserve 4 bytes for register address, as it is
@@ -162,19 +162,19 @@ static int i2c_write_from_buffer(const struct shell* sh,
 }
 
 /* i2c write <device> <dev_addr> <reg_addr> [<byte1>, ...] */
-static int cmd_i2c_write(const struct shell* sh, size_t argc, char** argv) {
+static int cmd_i2c_write(struct shell const* sh, size_t argc, char** argv) {
     return i2c_write_from_buffer(sh, argv[ARGV_DEV],
                                  argv[ARGV_ADDR], argv[ARGV_REG],
                                  &argv[4], (uint8_t)(argc - 4));
 }
 
 /* i2c write_byte <device> <dev_addr> <reg_addr> <value> */
-static int cmd_i2c_write_byte(const struct shell* sh, size_t argc, char** argv) {
+static int cmd_i2c_write_byte(struct shell const* sh, size_t argc, char** argv) {
     return i2c_write_from_buffer(sh, argv[ARGV_DEV],
                                  argv[ARGV_ADDR], argv[ARGV_REG], &argv[4], 1);
 }
 
-static int i2c_read_to_buffer(const struct shell* sh,
+static int i2c_read_to_buffer(struct shell const* sh,
                               char* s_dev_name,
                               char* s_dev_addr, char* s_reg_addr,
                               uint8_t* buf, uint8_t buf_length) {
@@ -211,7 +211,7 @@ static int i2c_read_to_buffer(const struct shell* sh,
 }
 
 /* i2c read_byte <device> <dev_addr> <reg_addr> */
-static int cmd_i2c_read_byte(const struct shell* sh, size_t argc, char** argv) {
+static int cmd_i2c_read_byte(struct shell const* sh, size_t argc, char** argv) {
     uint8_t out;
     int ret;
 
@@ -225,7 +225,7 @@ static int cmd_i2c_read_byte(const struct shell* sh, size_t argc, char** argv) {
 }
 
 /* i2c read <device> <dev_addr> <reg_addr> [<numbytes>] */
-static int cmd_i2c_read(const struct shell* sh, size_t argc, char** argv) {
+static int cmd_i2c_read(struct shell const* sh, size_t argc, char** argv) {
     uint8_t buf[MAX_I2C_BYTES];
     int num_bytes;
     int ret;
@@ -251,7 +251,7 @@ static int cmd_i2c_read(const struct shell* sh, size_t argc, char** argv) {
 /* i2c speed <device> <speed>
  * For: speed see constants like I2C_SPEED_STANDARD
  */
-static int cmd_i2c_speed(const struct shell* sh, size_t argc, char** argv) {
+static int cmd_i2c_speed(struct shell const* sh, size_t argc, char** argv) {
     char* s_dev_name = argv[ARGV_DEV];
     const struct device* dev;
     uint32_t dev_config = 0;

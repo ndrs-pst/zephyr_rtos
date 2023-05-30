@@ -295,6 +295,7 @@ static int eeprom_at24_write(const struct device* dev, off_t offset, void const*
     uint8_t  block[EEPROM_MAX_ADDR_WIDTH + EEPROM_MAX_PG_SZ];
     int64_t  timeout;
     uint16_t bus_addr;
+    uint32_t num_bytes;
     int      count;
     int      i = 0;
     int      err;
@@ -312,6 +313,7 @@ static int eeprom_at24_write(const struct device* dev, off_t offset, void const*
     }
     block[i++] = (uint8_t)offset;
     memcpy(&block[i], buf, count);
+    num_bytes  = ((config->addr_width / 8) + count);
 
     /*
      * A write cycle may already be in progress so writes must be
@@ -321,7 +323,7 @@ static int eeprom_at24_write(const struct device* dev, off_t offset, void const*
     timeout = k_uptime_get() + config->timeout;
     while (1) {
         int64_t now = k_uptime_get();
-        err = i2c_write(config->bus.i2c.bus, block, sizeof(block), bus_addr);
+        err = i2c_write(config->bus.i2c.bus, block, num_bytes, bus_addr);
         if (!err || (now > timeout)) {
             break;
         }
