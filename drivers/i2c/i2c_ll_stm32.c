@@ -552,7 +552,7 @@ static int i2c_stm32_pm_action(const struct device* dev, enum pm_device_action a
                                             \
     static const struct stm32_pclken pclken_##index[] = STM32_DT_INST_CLOCKS(index); \
                                             \
-    static const struct i2c_stm32_config i2c_stm32_cfg_##index = {  \
+    static DT_CONST struct i2c_stm32_config i2c_stm32_cfg_##index = {  \
         .i2c      = (I2C_TypeDef*)DT_INST_REG_ADDR(index),      \
         .pclken   = pclken_##index,                             \
         .pclk_len = DT_INST_NUM_CLOCKS(index),                  \
@@ -577,3 +577,29 @@ static int i2c_stm32_pm_action(const struct device* dev, enum pm_device_action a
     STM32_I2C_IRQ_HANDLER(index)
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_I2C_INIT)
+
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#include "stm32g4_reg_stub.h"
+
+#define STM32_I2C_CFG_REG_INIT(index)       \
+    zephyr_i2c_cfg_reg_init(&i2c_stm32_cfg_##index);
+
+void zephyr_i2c_cfg_reg_init(struct i2c_stm32_config* cfg) {
+    if (cfg->i2c == (I2C_TypeDef*)I2C1_BASE) {
+        cfg->i2c = (I2C_TypeDef*)ut_mcu_i2c1_ptr;
+    }
+
+    if (cfg->i2c == (I2C_TypeDef*)I2C2_BASE) {
+        cfg->i2c = (I2C_TypeDef*)ut_mcu_i2c2_ptr;
+    }
+
+    if (cfg->i2c == (I2C_TypeDef*)I2C3_BASE) {
+        cfg->i2c = (I2C_TypeDef*)ut_mcu_i2c3_ptr;
+    }
+}
+
+void zephyr_gtest_i2c_stm32(void) {
+    DT_INST_FOREACH_STATUS_OKAY(STM32_I2C_CFG_REG_INIT)
+}
+
+#endif

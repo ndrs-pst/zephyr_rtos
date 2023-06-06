@@ -662,7 +662,7 @@ int stm32_i2c_configure_timing(const struct device* dev, uint32_t clock) {
     uint32_t presc  = 1U;
     uint32_t timing = 0U;
 
-    /*  Look for an adequate preset timing value */
+    /* Look for an adequate preset timing value */
     for (uint32_t i = 0; i < cfg->n_timings; i++) {
         const struct i2c_config_timing* preset = &cfg->timings[i];
         uint32_t speed = i2c_map_dt_bitrate(preset->i2c_speed);
@@ -678,15 +678,15 @@ int stm32_i2c_configure_timing(const struct device* dev, uint32_t clock) {
     /* No preset timing was provided, let's dynamically configure */
     switch (I2C_SPEED_GET(data->dev_config)) {
         case I2C_SPEED_STANDARD :
-            i2c_h_min_time     = 4000U;     /* 4,000 μs */
-            i2c_l_min_time     = 4700U;     /* 4,700 μs */
+            i2c_h_min_time     = 4000U;     /* 4,000 ns */
+            i2c_l_min_time     = 4700U;     /* 4,700 ns */
             i2c_hold_time_min  = 500U;      /*   500 ns */
             i2c_setup_time_min = 1250U;     /* 1,250 ns */
             break;
 
         case I2C_SPEED_FAST :
-            i2c_h_min_time     = 600U;      /*   600 μs */
-            i2c_l_min_time     = 1300U;     /* 1,300 μs */
+            i2c_h_min_time     = 600U;      /*   600 ns */
+            i2c_l_min_time     = 1300U;     /* 1,300 ns */
             i2c_hold_time_min  = 375U;      /*   375 ns */
             i2c_setup_time_min = 500U;      /*   500 ns */
             break;
