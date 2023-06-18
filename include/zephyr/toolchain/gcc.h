@@ -322,8 +322,12 @@ do {                                        \
 #define __no_optimization __attribute__((optimize("-O0")))
 #endif
 
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define __weak
+#else
 #ifndef __weak
 #define __weak __attribute__((__weak__))
+#endif
 #endif
 
 /* Builtins with availability that depend on the compiler version. */

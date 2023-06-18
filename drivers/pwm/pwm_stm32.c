@@ -727,7 +727,7 @@ static void pwm_stm32_irq_config_func_##index(const struct device* dev) {   \
                                                                 \
     PINCTRL_DT_INST_DEFINE(index);                              \
                                                                 \
-    static const struct pwm_stm32_config pwm_stm32_config_##index = {       \
+    static DT_CONST struct pwm_stm32_config pwm_stm32_config_##index = {    \
         .timer       = (TIM_TypeDef*)DT_REG_ADDR(DT_INST_PARENT(index)),    \
         .prescaler   = DT_PROP(DT_INST_PARENT(index), st_prescaler),        \
         .countermode = DT_PROP(DT_INST_PARENT(index), st_countermode),      \
@@ -742,3 +742,45 @@ static void pwm_stm32_irq_config_func_##index(const struct device* dev) {   \
                           &pwm_stm32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_INIT)
+
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#include "stm32g4_reg_stub.h"
+
+#define STM32_PWR_CFG_REG_INIT(index)       \
+    zephyr_pwm_cfg_reg_init(&pwm_stm32_config_##index);
+
+void zephyr_pwm_cfg_reg_init(struct pwm_stm32_config* cfg) {
+    if (cfg->timer == (TIM_TypeDef*)TIM1_BASE) {
+        cfg->timer = (TIM_TypeDef*)ut_mcu_tim1_ptr;
+    }
+
+    if (cfg->timer == (TIM_TypeDef*)TIM2_BASE) {
+        cfg->timer = (TIM_TypeDef*)ut_mcu_tim2_ptr;
+    }
+
+    if (cfg->timer == (TIM_TypeDef*)TIM3_BASE) {
+        cfg->timer = (TIM_TypeDef*)ut_mcu_tim3_ptr;
+    }
+
+    if (cfg->timer == (TIM_TypeDef*)TIM4_BASE) {
+        cfg->timer = (TIM_TypeDef*)ut_mcu_tim4_ptr;
+    }
+
+    if (cfg->timer == (TIM_TypeDef*)TIM5_BASE) {
+        cfg->timer = (TIM_TypeDef*)ut_mcu_tim5_ptr;
+    }
+
+    if (cfg->timer == (TIM_TypeDef*)TIM6_BASE) {
+        cfg->timer = (TIM_TypeDef*)ut_mcu_tim6_ptr;
+    }
+
+    if (cfg->timer == (TIM_TypeDef*)TIM7_BASE) {
+        cfg->timer = (TIM_TypeDef*)ut_mcu_tim7_ptr;
+    }
+}
+
+void zephyr_gtest_pwm_stm32(void) {
+    DT_INST_FOREACH_STATUS_OKAY(STM32_PWR_CFG_REG_INIT)
+}
+
+#endif
