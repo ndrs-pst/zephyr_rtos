@@ -39,17 +39,16 @@ static void time_civil_from_days(bigint_type z,
 	z += 719468;
 
 	bigint_type era = ((z >= 0) ? z : (z - 146096)) / 146097;
-	unsigned int doe = (z - era * (bigint_type)146097);
-	unsigned int yoe = (doe - doe / 1460U + doe / 36524U - doe / 146096U)
-		/ 365U;
-	bigint_type y = (time_t)yoe + era * 400;
+	unsigned int doe = (unsigned int)(z - era * (bigint_type)146097);
+	unsigned int yoe = (doe - doe / 1460U + doe / 36524U - doe / 146096U) / 365U;
+	bigint_type y    = (time_t)yoe + era * 400;
 	unsigned int doy = doe - (365U * yoe + yoe / 4U - yoe / 100U);
-	unsigned int mp = (5U * doy + 2U) / 153U;
-	unsigned int d = doy - (153U * mp + 2U) / 5U + 1U;
-	unsigned int m = mp + ((mp < 10) ? 3 : -9);
+	unsigned int mp  = (5U * doy + 2U) / 153U;
+	unsigned int d   = doy - (153U * mp + 2U) / 5U + 1U;
+	unsigned int m   = mp + ((mp < 10) ? 3 : -9);
 
-	tp->tm_year = y + (m <= 2) - 1900;
-	tp->tm_mon = m - 1;
+	tp->tm_year = (int)(y + (m <= 2) - 1900);
+	tp->tm_mon  = m - 1;
 	tp->tm_mday = d;
 
 	/* Everything above is explained on the referenced page, but
@@ -83,7 +82,7 @@ struct tm *gmtime_r(const time_t *ZRESTRICT timep,
 {
 	time_t z = *timep;
 	bigint_type days = (z >= 0 ? z : z - 86399) / 86400;
-	unsigned int rem = z - days * 86400;
+	unsigned int rem = (unsigned int)(z - days * 86400);
 
 	*result = (struct tm){ 0 };
 

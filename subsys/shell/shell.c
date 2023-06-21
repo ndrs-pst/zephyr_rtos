@@ -955,6 +955,17 @@ static inline int ascii_filter(const char data)
 	return (uint8_t) data > SHELL_ASCII_MAX_CHAR ? -EINVAL : 0;
 }
 
+/* #CUSTOM@NDRS : workaround to protect shell when user input only spaces ' ' into command buffers */
+bool utl_is_all_space(char* buf, uint16_t len) {
+    for (uint_fast16_t i = 0; i < len; i++) {
+        if (buf[i] != ' ') {
+            return (false);
+        }
+    }
+
+    return (true);
+}
+
 static void state_collect(const struct shell *sh)
 {
 	size_t count = 0;
@@ -996,7 +1007,10 @@ static void state_collect(const struct shell *sh)
 		switch (sh->ctx->receive_state) {
 		case SHELL_RECEIVE_DEFAULT:
 			if (process_nl(sh, data)) {
-				if (!sh->ctx->cmd_buff_len) {
+			    uint16_t cmd_buff_len = sh->ctx->cmd_buff_len;
+
+				if ((cmd_buff_len == 0U) ||
+				    (utl_is_all_space(sh->ctx->cmd_buff, cmd_buff_len) == true)) {
 					history_mode_exit(sh);
 					z_cursor_next_line_move(sh);
 				} else {
@@ -1528,8 +1542,7 @@ void shell_fprintf(const struct shell *sh, enum shell_vt100_color color,
 }
 
 void shell_hexdump_line(const struct shell *sh, unsigned int offset,
-			const uint8_t *data, size_t len)
-{
+                        const uint8_t* data, size_t len) {
 	__ASSERT_NO_MSG(sh);
 
 	int i;
@@ -1542,8 +1555,7 @@ void shell_hexdump_line(const struct shell *sh, unsigned int offset,
 		}
 
 		if (i < len) {
-			shell_fprintf(sh, SHELL_NORMAL, "%02x ",
-				      data[i] & 0xFF);
+			shell_fprintf(sh, SHELL_NORMAL, "%02X ", data[i] & 0xFF);
 		} else {
 			shell_fprintf(sh, SHELL_NORMAL, "   ");
 		}

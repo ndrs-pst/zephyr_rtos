@@ -46,6 +46,10 @@
 #endif
 
 #ifndef __BYTE_ORDER__
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define __LITTLE_ENDIAN__
+#endif
+
 #if defined(__BIG_ENDIAN__) || defined(__ARMEB__) || \
     defined(__THUMBEB__) || defined(__AARCH64EB__) || \
     defined(__MIPSEB__) || defined(__TC32EB__)
@@ -67,7 +71,11 @@
 #undef BUILD_ASSERT /* clear out common version */
 /* C++11 has static_assert built in */
 #if defined(__cplusplus) && (__cplusplus >= 201103L)
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define BUILD_ASSERT               static_assert
+#else
 #define BUILD_ASSERT(EXPR, MSG...) static_assert(EXPR, "" MSG)
+#endif
 
 /*
  * GCC 4.6 and higher have the C11 _Static_assert built in and its
@@ -78,7 +86,12 @@
 #elif !defined(__cplusplus) && \
 	((__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)) ||	\
 	 (__STDC_VERSION__) >= 201100)
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define BUILD_ASSERT(EXPR, MSG)    _Static_assert(EXPR, MSG)
+#else
 #define BUILD_ASSERT(EXPR, MSG...) _Static_assert(EXPR, "" MSG)
+#endif
+
 #else
 #define BUILD_ASSERT(EXPR, MSG...)
 #endif
@@ -108,9 +121,18 @@
 	__builtin_unreachable(); \
 }
 #else
-#define CODE_UNREACHABLE __builtin_unreachable()
+#if defined(_MSC_VER)           /* #CUSTOM@NDRS */
+#define CODE_UNREACHABLE
+#else
+#define CODE_UNREACHABLE        __builtin_unreachable()
 #endif
-#define FUNC_NORETURN    __attribute__((__noreturn__))
+#endif
+
+#if defined(_MSC_VER)           /* #CUSTOM@NDRS */
+#define FUNC_NORETURN           __declspec(noreturn)
+#else
+#define FUNC_NORETURN           __attribute__((__noreturn__))
+#endif
 
 /* The GNU assembler for Cortex-M3 uses # for immediate values, not
  * comments, so the @nobits# trick does not work.
@@ -123,6 +145,9 @@
 #endif
 
 /* Unaligned access */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS : workaround to pass compilation */
+#define UNALIGNED_GET(p)    *p
+#else
 #define UNALIGNED_GET(p)						\
 __extension__ ({							\
 	struct  __attribute__((__packed__)) {				\
@@ -130,7 +155,7 @@ __extension__ ({							\
 	} *__p = (__typeof__(__p)) (p);					\
 	__p->__v;							\
 })
-
+#endif
 
 #if __GNUC__ >= 7 && (defined(CONFIG_ARM) || defined(CONFIG_ARM64))
 
@@ -143,24 +168,31 @@ __extension__ ({							\
  * compilers in question do this optimization ignoring __packed__
  * attribute).
  */
-#define UNALIGNED_PUT(v, p)                                             \
-do {                                                                    \
-	struct __attribute__((__packed__)) {                            \
-		__typeof__(*p) __v;                                     \
-	} *__p = (__typeof__(__p)) (p);                                 \
-	__p->__v = (v);                                                 \
-	compiler_barrier();                                             \
+#define UNALIGNED_PUT(v, p)                 \
+do {                                        \
+	struct __attribute__((__packed__)) {    \
+		__typeof__(*p) __v;                 \
+	} *__p = (__typeof__(__p)) (p);         \
+	__p->__v = (v);                         \
+	compiler_barrier();                     \
 } while (false)
 
 #else
 
-#define UNALIGNED_PUT(v, p)                                             \
-do {                                                                    \
-	struct __attribute__((__packed__)) {                            \
-		__typeof__(*p) __v;                                     \
-	} *__p = (__typeof__(__p)) (p);                                 \
-	__p->__v = (v);                                               \
+#if defined(_MSC_VER) /* #CUSTOM@NDRS : workaround to pass compilation */
+#define UNALIGNED_PUT(v, p)                 \
+do {                                        \
+    *p = v;                                 \
 } while (false)
+#else
+#define UNALIGNED_PUT(v, p)                 \
+do {                                        \
+	struct __attribute__((__packed__)) {    \
+		__typeof__(*p) __v;                 \
+	} *__p = (__typeof__(__p)) (p);         \
+	__p->__v = (v);                         \
+} while (false)
+#endif
 
 #endif
 
@@ -207,7 +239,11 @@ do {                                                                    \
 #endif
 
 #ifndef __packed
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define __packed
+#else
 #define __packed        __attribute__((__packed__))
+#endif
 #endif
 
 #ifndef __aligned
@@ -217,7 +253,10 @@ do {                                                                    \
 #define __may_alias     __attribute__((__may_alias__))
 
 #ifndef __printf_like
-#ifdef CONFIG_ENFORCE_ZEPHYR_STDINT
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define __printf_like(f, a)
+
+#elif defined(CONFIG_ENFORCE_ZEPHYR_STDINT)
 #define __printf_like(f, a)   __attribute__((format (printf, f, a)))
 #else
 /*
@@ -233,16 +272,34 @@ do {                                                                    \
 #endif
 #endif
 
-#define __used		__attribute__((__used__))
-#define __unused	__attribute__((__unused__))
-#define __maybe_unused	__attribute__((__unused__))
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define __used
+#if __cplusplus
+#define __unused        [[maybe_unused]]
+#else
+#define __unused
+#endif
+#define __maybe_unused
+#else
+#define __used          __attribute__((__used__))
+#define __unused        __attribute__((__unused__))
+#define __maybe_unused  __attribute__((__unused__))
+#endif
 
 #ifndef __deprecated
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define __deprecated    __declspec(deprecated)
+#else
 #define __deprecated	__attribute__((deprecated))
+#endif
 #endif
 
 #ifndef __attribute_const__
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define __attribute_const__
+#else
 #define __attribute_const__ __attribute__((__const__))
+#endif
 #endif
 
 #ifndef __must_check
@@ -251,16 +308,26 @@ do {                                                                    \
 
 #define ARG_UNUSED(x) (void)(x)
 
-#define likely(x)   (__builtin_expect((bool)!!(x), true) != 0L)
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define likely(x)   (x)
+#define unlikely(x) (x)
+#else
+#define likely(x)   (__builtin_expect((bool)!!(x), true ) != 0L)
 #define unlikely(x) (__builtin_expect((bool)!!(x), false) != 0L)
+#endif
+
 #define POPCOUNT(x) __builtin_popcount(x)
 
 #ifndef __no_optimization
 #define __no_optimization __attribute__((optimize("-O0")))
 #endif
 
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define __weak
+#else
 #ifndef __weak
 #define __weak __attribute__((__weak__))
+#endif
 #endif
 
 /* Builtins with availability that depend on the compiler version. */
@@ -558,9 +625,13 @@ do {                                                                    \
 #error processor architecture not supported
 #endif
 
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define compiler_barrier()      do { } while (false)
+#else
 #define compiler_barrier() do { \
 	__asm__ __volatile__ ("" ::: "memory"); \
 } while (false)
+#endif
 
 /** @brief Return larger value of two provided expressions.
  *

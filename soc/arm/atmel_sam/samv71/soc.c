@@ -57,8 +57,7 @@ LOG_MODULE_REGISTER(soc);
  * Setup Slow, Main, PLLA, Processor and Master clocks during the device boot.
  * It is assumed that the relevant registers are at their reset value.
  */
-static ALWAYS_INLINE void clock_init(void)
-{
+static ALWAYS_INLINE void clock_init(void) {
 	uint32_t reg_val;
 
 #ifdef CONFIG_SOC_ATMEL_SAMV71_EXT_SLCK
@@ -67,7 +66,7 @@ static ALWAYS_INLINE void clock_init(void)
 
 	/* Wait for oscillator to be stabilized */
 	while (!(SUPC->SUPC_SR & SUPC_SR_OSCSEL)) {
-		;
+        /* pass */
 	}
 #endif /* CONFIG_SOC_ATMEL_SAMV71_EXT_SLCK */
 
@@ -79,44 +78,41 @@ static ALWAYS_INLINE void clock_init(void)
 
 	if (!(PMC->CKGR_MOR & CKGR_MOR_MOSCSEL_Msk)) {
 		/* Start the external crystal oscillator */
-		PMC->CKGR_MOR =   CKGR_MOR_KEY_PASSWD
-				/* We select maximum setup time.
+        PMC->CKGR_MOR = CKGR_MOR_KEY_PASSWD         |
+                        CKGR_MOR_MOSCXTST(0xFFU)    |   /* We select maximum setup time.
 				 * While start up time could be shortened
-				 * this optimization is not deemed
-				 * critical now.
+                                                         * this optimization is not deemed critical now.
 				 */
-				| CKGR_MOR_MOSCXTST(0xFFu)
-				/* RC OSC must stay on */
-				| CKGR_MOR_MOSCRCEN
-				| CKGR_MOR_MOSCXTEN;
+                        CKGR_MOR_MOSCRCEN           |   /* RC OSC must stay on */
+                        CKGR_MOR_MOSCXTEN;
 
 		/* Wait for oscillator to be stabilized */
 		while (!(PMC->PMC_SR & PMC_SR_MOSCXTS)) {
-			;
+            /* pass */
 		}
 
 		/* Select the external crystal oscillator as main clock */
-		PMC->CKGR_MOR =   CKGR_MOR_KEY_PASSWD
-				| CKGR_MOR_MOSCSEL
-				| CKGR_MOR_MOSCXTST(0xFFu)
-				| CKGR_MOR_MOSCRCEN
-				| CKGR_MOR_MOSCXTEN;
+        PMC->CKGR_MOR = CKGR_MOR_KEY_PASSWD |
+                        CKGR_MOR_MOSCSEL    |
+                        CKGR_MOR_MOSCXTST(0xFFU) |
+                        CKGR_MOR_MOSCRCEN   |
+                        CKGR_MOR_MOSCXTEN;
 
 		/* Wait for external oscillator to be selected */
 		while (!(PMC->PMC_SR & PMC_SR_MOSCSELS)) {
-			;
+            /* pass */
 		}
 	}
 
 	/* Turn off RC OSC, not used any longer, to save power */
-	PMC->CKGR_MOR =   CKGR_MOR_KEY_PASSWD
-			| CKGR_MOR_MOSCSEL
-			| CKGR_MOR_MOSCXTST(0xFFu)
-			| CKGR_MOR_MOSCXTEN;
+    PMC->CKGR_MOR = CKGR_MOR_KEY_PASSWD |
+                    CKGR_MOR_MOSCSEL    |
+                    CKGR_MOR_MOSCXTST(0xFFU) |
+                    CKGR_MOR_MOSCXTEN;
 
 	/* Wait for RC OSC to be turned off */
 	while (PMC->PMC_SR & PMC_SR_MOSCRCS) {
-		;
+        /* pass */
 	}
 
 #ifdef CONFIG_SOC_ATMEL_SAMV71_WAIT_MODE
@@ -127,6 +123,7 @@ static ALWAYS_INLINE void clock_init(void)
 	 */
 	PMC->PMC_FSMR |= PMC_FSMR_LPM;
 #endif
+
 #else
 	/* Attempt to change main fast RC oscillator frequency */
 
@@ -135,7 +132,7 @@ static ALWAYS_INLINE void clock_init(void)
 	 * register, should normally be the case here
 	 */
 	while (!(PMC->PMC_SR & PMC_SR_MOSCRCS)) {
-		;
+        /* pass */
 	}
 
 	/* Set main fast RC oscillator to 12 MHz */
@@ -145,7 +142,7 @@ static ALWAYS_INLINE void clock_init(void)
 
 	/* Wait for oscillator to be stabilized */
 	while (!(PMC->PMC_SR & PMC_SR_MOSCRCS)) {
-		;
+        /* pass */
 	}
 #endif /* CONFIG_SOC_ATMEL_SAMV71_EXT_MAINCK */
 
@@ -159,14 +156,14 @@ static ALWAYS_INLINE void clock_init(void)
 
 	/* Wait for clock selection to complete */
 	while (!(PMC->PMC_SR & PMC_SR_MCKRDY)) {
-		;
+        /* pass */
 	}
 
 	/* Setup PLLA */
-	PMC->CKGR_PLLAR =   CKGR_PLLAR_ONE
-			  | PMC_CKGR_PLLAR_MULA
-			  | CKGR_PLLAR_PLLACOUNT(0x3Fu)
-			  | PMC_CKGR_PLLAR_DIVA;
+    PMC->CKGR_PLLAR = CKGR_PLLAR_ONE      |
+                      PMC_CKGR_PLLAR_MULA |
+                      CKGR_PLLAR_PLLACOUNT(0x3FU) |
+                      PMC_CKGR_PLLAR_DIVA;
 
 	/*
 	 * NOTE: Both MULA and DIVA must be set to a value greater than 0 or
@@ -176,7 +173,7 @@ static ALWAYS_INLINE void clock_init(void)
 
 	/* Wait for PLL lock */
 	while (!(PMC->PMC_SR & PMC_SR_LOCKA)) {
-		;
+        /* pass */
 	}
 
 	/* Setup UPLL */
@@ -184,7 +181,7 @@ static ALWAYS_INLINE void clock_init(void)
 
 	/* Wait for PLL lock */
 	while (!(PMC->PMC_SR & PMC_SR_LOCKU)) {
-		;
+        /* pass */
 	}
 
 	/*
@@ -203,7 +200,7 @@ static ALWAYS_INLINE void clock_init(void)
 
 	/* Wait for Master Clock setup to complete */
 	while (!(PMC->PMC_SR & PMC_SR_MCKRDY)) {
-		;
+        /* pass */
 	}
 
 	/* Setup divider - Processor Clock (HCLK) / Master Clock (MCK) */
@@ -212,7 +209,7 @@ static ALWAYS_INLINE void clock_init(void)
 
 	/* Wait for Master Clock setup to complete */
 	while (!(PMC->PMC_SR & PMC_SR_MCKRDY)) {
-		;
+        /* pass */
 	}
 
 	/* Finally select PLL as Master Clock source */
@@ -221,7 +218,7 @@ static ALWAYS_INLINE void clock_init(void)
 
 	/* Wait for Master Clock setup to complete */
 	while (!(PMC->PMC_SR & PMC_SR_MCKRDY)) {
-		;
+        /* pass */
 	}
 }
 
@@ -233,15 +230,12 @@ static ALWAYS_INLINE void clock_init(void)
  *
  * @return 0
  */
-static int atmel_samv71_init(void)
-{
+static int atmel_samv71_init(void) {
 	uint32_t key;
-
 
 	key = irq_lock();
 
 	SCB_EnableICache();
-
 	if (!(SCB->CCR & SCB_CCR_DC_Msk)) {
 		SCB_EnableDCache();
 	}
@@ -270,7 +264,7 @@ static int atmel_samv71_init(void)
 			(uint32_t)CHIPID->CHIPID_CIDR, (uint32_t)CHIP_CIDR);
 	}
 
-	return 0;
+    return (0);
 }
 
 SYS_INIT(atmel_samv71_init, PRE_KERNEL_1, 0);
