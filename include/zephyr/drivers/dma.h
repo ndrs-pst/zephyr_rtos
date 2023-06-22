@@ -57,7 +57,7 @@ enum dma_channel_direction {
 enum dma_addr_adj {
 	DMA_ADDR_ADJ_INCREMENT,
 	DMA_ADDR_ADJ_DECREMENT,
-	DMA_ADDR_ADJ_NO_CHANGE,
+	DMA_ADDR_ADJ_NO_CHANGE
 };
 
 /* channel attributes */
@@ -336,13 +336,11 @@ __subsystem struct dma_driver_api {
  * @retval 0 if successful.
  * @retval Negative errno code if failure.
  */
-static inline int dma_config(const struct device *dev, uint32_t channel,
-			     struct dma_config *config)
-{
-	const struct dma_driver_api *api =
-		(const struct dma_driver_api *)dev->api;
+static inline int dma_config(const struct device* dev,
+                             uint32_t channel, struct dma_config* config) {
+    const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
-	return api->config(dev, channel, config);
+    return api->config(dev, channel, config);
 }
 
 /**
@@ -359,15 +357,14 @@ static inline int dma_config(const struct device *dev, uint32_t channel,
  * @retval Negative errno code if failure.
  */
 #ifdef CONFIG_DMA_64BIT
-static inline int dma_reload(const struct device *dev, uint32_t channel,
-			     uint64_t src, uint64_t dst, size_t size)
+static inline int dma_reload(const struct device* dev, uint32_t channel,
+                             uint64_t src, uint64_t dst, size_t size)
 #else
-static inline int dma_reload(const struct device *dev, uint32_t channel,
-		uint32_t src, uint32_t dst, size_t size)
+static inline int dma_reload(const struct device* dev, uint32_t channel,
+                             uint32_t src, uint32_t dst, size_t size)
 #endif
 {
-	const struct dma_driver_api *api =
-		(const struct dma_driver_api *)dev->api;
+    const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
 	if (api->reload) {
 		return api->reload(dev, channel, src, dst, size);
@@ -393,14 +390,12 @@ static inline int dma_reload(const struct device *dev, uint32_t channel,
  * @retval 0 if successful.
  * @retval Negative errno code if failure.
  */
-__syscall int dma_start(const struct device *dev, uint32_t channel);
+__syscall int dma_start(const struct device* dev, uint32_t channel);
 
-static inline int z_impl_dma_start(const struct device *dev, uint32_t channel)
-{
-	const struct dma_driver_api *api =
-		(const struct dma_driver_api *)dev->api;
+static inline int z_impl_dma_start(const struct device* dev, uint32_t channel) {
+    const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
-	return api->start(dev, channel);
+    return api->start(dev, channel);
 }
 
 /**
@@ -421,12 +416,10 @@ static inline int z_impl_dma_start(const struct device *dev, uint32_t channel)
  */
 __syscall int dma_stop(const struct device *dev, uint32_t channel);
 
-static inline int z_impl_dma_stop(const struct device *dev, uint32_t channel)
-{
-	const struct dma_driver_api *api =
-		(const struct dma_driver_api *)dev->api;
+static inline int z_impl_dma_stop(const struct device* dev, uint32_t channel) {
+    const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
-	return api->stop(dev, channel);
+    return api->stop(dev, channel);
 }
 
 

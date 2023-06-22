@@ -21,8 +21,7 @@
  *
  * @return 0
  */
-static int atmel_samv71_config(void)
-{
+static int atmel_samv71_config(void) {
 #ifdef CONFIG_SOC_ATMEL_SAMV71_DISABLE_ERASE_PIN
 	/* Disable ERASE function on PB12 pin, this is controlled by Bus
 	 * Matrix
@@ -43,16 +42,18 @@ static int atmel_samv71_config(void)
 	/* Disable PCK3 clock used by ETM module */
 	PMC->PMC_SCDR = PMC_SCDR_PCK3;
 	while ((PMC->PMC_SCSR) & PMC_SCSR_PCK3) {
-		;
+        /* pass */
 	}
+
 	/* Select PLLA clock as PCK3 clock */
 	PMC->PMC_PCK[3] = PMC_MCKR_CSS_PLLA_CLK;
 	/* Enable PCK3 clock */
 	PMC->PMC_SCER = PMC_SCER_PCK3;
 	/* Wait for PCK3 setup to complete */
 	while (!((PMC->PMC_SR) & PMC_SR_PCKRDY3)) {
-		;
+        /* pass */
 	}
+
 	/* Enable TDO/TRACESWO function on PB5 pin */
 	MATRIX->CCFG_SYSIO &= ~CCFG_SYSIO_SYSIO5;
 #else
@@ -60,7 +61,7 @@ static int atmel_samv71_config(void)
 	MATRIX->CCFG_SYSIO |= CCFG_SYSIO_SYSIO5;
 #endif
 
-	return 0;
+    return (0);
 }
 
 SYS_INIT(atmel_samv71_config, PRE_KERNEL_1, 1);

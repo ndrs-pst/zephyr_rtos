@@ -1,7 +1,8 @@
+# Copyright (c) 2020, Linaro Limited
 # Copyright (c) 2022, Kamil Serwus
 # SPDX-License-Identifier: Apache-2.0
 
-description: Atmel SAMC2x Generic Clock Controller (MCLK)
+description: Atmel SAMC2x Main Clock Controller (MCLK)
 
 compatible: "atmel,samc2x-mclk"
 
