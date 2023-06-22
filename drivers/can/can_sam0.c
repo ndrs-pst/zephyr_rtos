@@ -40,6 +40,7 @@ struct can_sam0_config {
     volatile uint32_t* mclk;
     uint32_t mclk_mask;
     uint16_t gclk_core_id;
+    int divider;
 };
 
 // ---------- PRIVATE PROGRAMMING DEFINE / CONSTEXPR ---------------------------------------------------------------- //
@@ -111,7 +112,7 @@ static int can_sam0_clear_mram(const struct device *dev, uint16_t offset, size_t
 
 static void can_sam0_line_x_isr(const struct device *dev) {
     struct can_mcan_data* data = dev->data;
-    struct can_mcan_msg_sram* msg_ram = data->msg_ram;
+    struct can_mcan_config const * config = dev->config;
     uint32_t ir;
     int err;
 
@@ -134,7 +135,7 @@ static void can_sam0_line_x_isr(const struct device *dev) {
 
         // TX event FIFO new entry
         if ((ir & CAN_MCAN_IR_TEFN) != 0UL) {
-            can_mcan_tc_event_handler(dev);
+            can_mcan_tx_event_handler(dev);
         }
 
         if ((ir & CAN_MCAN_IR_TEFL) != 0UL) {

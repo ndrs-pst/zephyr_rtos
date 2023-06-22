@@ -26,15 +26,15 @@
 
 static void flash_waitstates_init(void) {
     if (SOC_ATMEL_SAM0_MCK_FREQ_HZ == 48000000UL) {
-	/* One wait state at 48 MHz. */
-	NVMCTRL->CTRLB.bit.RWS = NVMCTRL_CTRLB_RWS_HALF_Val;
-}
+        /* One wait state at 48 MHz. */
+        NVMCTRL->CTRLB.bit.RWS = NVMCTRL_CTRLB_RWS_HALF_Val;
+    }
 
     if (SOC_ATMEL_SAM0_MCK_FREQ_HZ == 64000000UL) {
         /* Two wait state at 64 MHz. */
         NVMCTRL->CTRLB.bit.RWS = NVMCTRL_CTRLB_RWS_DUAL_Val;
-	}
-	}
+    }
+}
 
 /*
  *  XOSC32K(32.768 kHz)                     -> DFLL48M -> GCLK0 (48 MHz)
@@ -51,7 +51,7 @@ static void xosc_init(void) {
                                        OSCCTRL_XOSCCTRL_XTALEN       | OSCCTRL_XOSCCTRL_ENABLE);
     while (OSCCTRL->STATUS.bit.XOSCRDY == 0) {
         /* Waiting for the XOSC Ready state */
-}
+    }
 
     /* Setting the Automatic Gain Control */
     OSCCTRL->XOSCCTRL.reg |= (uint16_t)OSCCTRL_XOSCCTRL_AMPGC;
@@ -61,7 +61,7 @@ static void xosc_init(void) {
 static void wait_gclk_sync(uint32_t sync_bit) {
     while ((GCLK->SYNCBUSY.reg & sync_bit) == sync_bit) {
         /* pass */
-}
+    }
 }
 
 static void xosc32k_init(void) {
@@ -135,7 +135,7 @@ static void fdpll_init(void) {
     }
 
     /* GCLK3 (1 MHz) x 48 = 48 MHz / 1 = 48 MHz */
-    OSCCTRL->DPLLCTRLB.reg = (OSCCTRL_DPLLCTRLB_FILTER(0UL) | OSCCTRL_DPLLCTRLB_LTIME(0UL)| OSCCTRL_DPLLCTRLB_LBYPASS |
+    OSCCTRL->DPLLCTRLB.reg = (OSCCTRL_DPLLCTRLB_FILTER(0UL) | OSCCTRL_DPLLCTRLB_LTIME(0UL) | OSCCTRL_DPLLCTRLB_LBYPASS |
                               OSCCTRL_DPLLCTRLB_REFCLK(2UL));
 #elif defined(CONFIG_SOC_ATMEL_SAMC_XOSC_AS_MAIN)
     /* Configure DPLL */
@@ -157,7 +157,7 @@ static void fdpll_init(void) {
 #endif
 
     #if !defined(CONFIG_SOC_ATMEL_SAMC_XOSC32K_AS_MAIN)
-	OSCCTRL->DPLLRATIO.reg = OSCCTRL_DPLLRATIO_LDRFRAC(0UL) | OSCCTRL_DPLLRATIO_LDR(DPLLRATIO_LDR_VAL);
+    OSCCTRL->DPLLRATIO.reg = OSCCTRL_DPLLRATIO_LDRFRAC(0UL) | OSCCTRL_DPLLRATIO_LDR(DPLLRATIO_LDR_VAL);
     #endif
 
     while (OSCCTRL->DPLLSYNCBUSY.bit.DPLLRATIO == 1U) {
@@ -189,7 +189,7 @@ static void fdpll_init(void) {
     }
 
     while ((OSCCTRL->DPLLSTATUS.reg & (OSCCTRL_DPLLSTATUS_LOCK | OSCCTRL_DPLLSTATUS_CLKRDY)) !=
-                    (OSCCTRL_DPLLSTATUS_LOCK | OSCCTRL_DPLLSTATUS_CLKRDY)) {
+           (OSCCTRL_DPLLSTATUS_LOCK | OSCCTRL_DPLLSTATUS_CLKRDY)) {
         /* Waiting for the Ready state */
     }
 }
@@ -201,7 +201,7 @@ static void osc48m_init(void) {
     /* Selection of the Clock failure detection (CFD) pre scalar */
     OSCCTRL->CFDPRESC.bit.CFDPRESC = OSCCTRL_CFDPRESC_CFDPRESC(0);
 
-    cal_val = (uint32_t)(((*(uint64_t*)0x806020UL) >> 41 ) & 0x3fffffUL);
+    cal_val = (uint32_t)(((*(uint64_t*)0x806020UL) >> 41) & 0x3fffffUL);
     OSCCTRL->CAL48M.reg = cal_val;
 
     /* Selection of the Division Value (48 MHz / 3 = 16 MHz) */
@@ -214,7 +214,6 @@ static void osc48m_init(void) {
     while (OSCCTRL->STATUS.bit.OSC48MRDY == 0) {
         /* Waiting for the OSC48M Ready state */
     }
-
 
     OSCCTRL->OSC48MCTRL.bit.ONDEMAND = 0;
 }
@@ -248,30 +247,29 @@ static void gclks_init(void) {
 }
 
 static int atmel_samc_init(void) {
-	uint32_t key;
+    uint32_t key;
 
+    key = irq_lock();
 
-	key = irq_lock();
-
-	flash_waitstates_init();
-	osc48m_init();
+    flash_waitstates_init();
+    osc48m_init();
     osc32k_init();
     xosc_init();
     xosc32k_init();
     fdpll_init();
-	gclks_init();
+    gclks_init();
 
     /* Configure the AHB Bridge Clocks */
     MCLK->AHBMASK.reg = 0x1DFFU;
 
-	/* Install default handler that simply resets the CPU
-	 * if configured in the kernel, NOP otherwise
-	 */
-	NMI_INIT();
+    /* Install default handler that simply resets the CPU
+     * if configured in the kernel, NOP otherwise
+     */
+    NMI_INIT();
 
-	irq_unlock(key);
+    irq_unlock(key);
 
-	return 0;
+    return (0);
 }
 
 SYS_INIT(atmel_samc_init, PRE_KERNEL_1, 0);
