@@ -159,28 +159,26 @@ int mcuboot_swap_type(void)
 
 }
 
-int boot_request_upgrade(int permanent)
-{
+int boot_request_upgrade(int permanent) {
 #ifdef FLASH_AREA_IMAGE_SECONDARY
-	int rc;
+    int rc;
 
-	rc = boot_set_pending(permanent);
-	if (rc) {
-		return -EFAULT;
-	}
+    rc = boot_set_pending(permanent);
+    if (rc) {
+        return -EFAULT;
+    }
 #endif /* FLASH_AREA_IMAGE_SECONDARY */
-	return 0;
+    return 0;
 }
 
-int boot_request_upgrade_multi(int image_index, int permanent)
-{
-	int rc;
+int boot_request_upgrade_multi(int image_index, int permanent) {
+    int rc;
 
-	rc = boot_set_pending_multi(image_index, permanent);
-	if (rc) {
-		return -EFAULT;
-	}
-	return 0;
+    rc = boot_set_pending_multi(image_index, permanent);
+    if (rc) {
+        return -EFAULT;
+    }
+    return 0;
 }
 
 bool boot_is_img_confirmed(void)
