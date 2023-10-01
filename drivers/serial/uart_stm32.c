@@ -51,8 +51,7 @@ LOG_MODULE_REGISTER(uart_stm32, CONFIG_UART_LOG_LEVEL);
 #define STM32_UART_DOMAIN_CLOCK_SUPPORT 0
 #endif
 
-#define HAS_LPUART_1 (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart1),
-                                                st_stm32_lpuart, okay))
+#define HAS_LPUART_1 (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart1), st_stm32_lpuart, okay))
 
 /* Available everywhere except l1, f1, f2, f4. */
 #ifdef USART_CR3_DEM
