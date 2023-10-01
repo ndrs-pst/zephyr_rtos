@@ -57,8 +57,8 @@ __pinned_bss
 struct k_thread z_idle_threads[CONFIG_MP_MAX_NUM_CPUS];
 
 static K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_idle_stacks,
-					  CONFIG_MP_MAX_NUM_CPUS,
-					  CONFIG_IDLE_STACK_SIZE);
+                                          CONFIG_MP_MAX_NUM_CPUS,
+                                          CONFIG_IDLE_STACK_SIZE);
 #endif /* CONFIG_MULTITHREADING */
 
 extern const struct init_entry __init_start[];
@@ -442,11 +442,11 @@ static char *prepare_multithreading(void)
 	 */
 	_kernel.ready_q.cache = &z_main_thread;
 #endif
-	stack_ptr = z_setup_new_thread(&z_main_thread, z_main_stack,
-				       CONFIG_MAIN_STACK_SIZE, bg_thread_main,
-				       NULL, NULL, NULL,
-				       CONFIG_MAIN_THREAD_PRIORITY,
-				       K_ESSENTIAL, "main");
+    stack_ptr = z_setup_new_thread(&z_main_thread, z_main_stack,
+                                   CONFIG_MAIN_STACK_SIZE, bg_thread_main,
+                                   NULL, NULL, NULL,
+                                   CONFIG_MAIN_THREAD_PRIORITY,
+                                   K_ESSENTIAL, "main");
 	z_mark_thread_as_started(&z_main_thread);
 	z_ready_thread(&z_main_thread);
 

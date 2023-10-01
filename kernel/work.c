@@ -829,9 +829,8 @@ static void work_timeout(struct _timeout *to)
 	k_spin_unlock(&lock, key);
 }
 
-void k_work_init_delayable(struct k_work_delayable *dwork,
-			    k_work_handler_t handler)
-{
+void k_work_init_delayable(struct k_work_delayable* dwork,
+                           k_work_handler_t handler) {
 	__ASSERT_NO_MSG(dwork != NULL);
 	__ASSERT_NO_MSG(handler != NULL);
 
