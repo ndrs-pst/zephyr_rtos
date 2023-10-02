@@ -152,7 +152,7 @@ void sys_clock_isr(void* arg) {
          * We can assess if this is the case by inspecting COUNTFLAG.
          */
 
-        dcycles = cycle_count - announced_cycles;
+        dcycles = (uint32_t)(cycle_count - announced_cycles);
         dticks = dcycles / CYC_PER_TICK;
         announced_cycles += (dticks * CYC_PER_TICK);
         sys_clock_announce(dticks);
@@ -195,7 +195,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle) {
     cycle_count += pending;
     overflow_cyc = 0U;
 
-    uint32_t unannounced = cycle_count - announced_cycles;
+    uint32_t unannounced = (uint32_t)(cycle_count - announced_cycles);
 
     if ((int32_t)unannounced < 0) {
         /* We haven't announced for more than half the 32-bit
@@ -254,7 +254,7 @@ uint32_t sys_clock_elapsed(void) {
     }
 
     k_spinlock_key_t key = k_spin_lock(&lock);
-    uint32_t unannounced = cycle_count - announced_cycles;
+    uint32_t unannounced = (uint32_t)(cycle_count - announced_cycles);
     uint32_t cyc = elapsed() + unannounced;
 
     k_spin_unlock(&lock, key);
@@ -263,7 +263,7 @@ uint32_t sys_clock_elapsed(void) {
 
 uint32_t sys_clock_cycle_get_32(void) {
     k_spinlock_key_t key = k_spin_lock(&lock);
-    uint32_t ret = cycle_count;
+    uint32_t ret = (uint32_t)cycle_count;
 
     ret += elapsed();
     k_spin_unlock(&lock, key);

@@ -133,7 +133,7 @@ int timeutil_sync_ref_from_local(const struct timeutil_sync_state* tsp,
          * Therefore only apply the multiplication if the skew is not one.
          */
         if (tsp->skew != 1.0f) {
-            local_delta *= (double)tsp->skew;
+            local_delta = (int64_t)((double)local_delta * (double)tsp->skew);
         }
 
         int64_t ref_delta = (local_delta * cfg->ref_Hz) / cfg->local_Hz;
@@ -165,7 +165,7 @@ int timeutil_sync_local_from_ref(const struct timeutil_sync_state* tsp,
         int64_t local_delta = (ref_delta * cfg->local_Hz) / cfg->ref_Hz;
 
         if (tsp->skew != 1.0f) {
-            local_delta /= (double)tsp->skew;
+            local_delta = (int64_t)((double)local_delta / (double)tsp->skew);
         }
         int64_t local_abs = (int64_t)tsp->base.local + (int64_t)local_delta;
 
