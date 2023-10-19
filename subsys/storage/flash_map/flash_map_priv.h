@@ -15,13 +15,13 @@
 #include <sys/types.h>
 #include <zephyr/device.h>
 
-extern const struct flash_area *flash_map;
+extern const struct flash_area* flash_map;
 extern const int flash_map_entries;
 
 static inline struct flash_area const* get_flash_area_from_id(int idx) {
     for (int i = 0; i < flash_map_entries; i++) {
         if (flash_map[i].fa_id == idx) {
-            return &flash_map[i];
+            return (&flash_map[i]);
         }
     }
 
