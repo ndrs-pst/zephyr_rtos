@@ -46,8 +46,16 @@
 #include <zephyr/toolchain/armclang.h>
 #elif defined(__llvm__) || (defined(_LINKER) && defined(__LLD_LINKER_CMD__))
 #include <zephyr/toolchain/llvm.h>
-#elif defined(__GNUC__) || (defined(_LINKER) && defined(__GCC_LINKER_CMD__))
+#elif defined(__GNUC__) || defined(_MSC_VER) || (defined(_LINKER) && defined(__GCC_LINKER_CMD__))
 #include <zephyr/toolchain/gcc.h>
+
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#include <immintrin.h>
+#define __attribute__(...)
+#define __alignof__             alignof
+#define __builtin_clz           _lzcnt_u32
+#endif
+
 #else
 #error "Invalid/unknown toolchain configuration"
 #endif

@@ -10,6 +10,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+typedef signed int ssize_t;		  ///< Signed size type, usually encodes negative errors
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -31,7 +35,11 @@ typedef union {
 
 #ifdef __cplusplus
 /* Zephyr requires an int main(void) signature with C linkage for the application main if present */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+/* pass */
+#else
 extern int main(void);
+#endif
 #endif
 
 #ifdef __cplusplus

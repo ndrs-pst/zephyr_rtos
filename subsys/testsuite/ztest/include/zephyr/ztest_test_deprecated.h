@@ -93,7 +93,7 @@ extern struct ztest_suite_node _ztest_suite_node_list_end[];
  * @param state The current state of the machine as it relates to the test executable.
  * @return The number of tests that ran.
  */
-__deprecated
+/* __deprecated */
 int ztest_run_registered_test_suites(const void *state);
 
 /**
@@ -105,7 +105,7 @@ int ztest_run_registered_test_suites(const void *state);
  * may be called at the end of test_main(). It will cause the test to fail if any suite was
  * registered but never ran.
  */
-__deprecated
+/* __deprecated */
 void ztest_verify_all_registered_test_suites_ran(void);
 
 /**

@@ -24,8 +24,7 @@ static struct k_obj_type obj_type_timer;
  *
  * @param t  Timeout used by the timer.
  */
-void z_timer_expiration_handler(struct _timeout *t)
-{
+void z_timer_expiration_handler(struct _timeout* t) {
 	struct k_timer *timer = CONTAINER_OF(t, struct k_timer, timeout);
 	struct k_thread *thread;
 	k_spinlock_key_t key = k_spin_lock(&lock);
@@ -73,8 +72,7 @@ void z_timer_expiration_handler(struct _timeout *t)
 		 */
 		next = K_TIMEOUT_ABS_TICKS(k_uptime_ticks() + 1 + next.ticks);
 #endif
-		z_add_timeout(&timer->timeout, z_timer_expiration_handler,
-			      next);
+		z_add_timeout(&timer->timeout, z_timer_expiration_handler, next);
 	}
 
 	/* update timer's status */
@@ -110,10 +108,7 @@ void z_timer_expiration_handler(struct _timeout *t)
 }
 
 
-void k_timer_init(struct k_timer *timer,
-			 k_timer_expiry_t expiry_fn,
-			 k_timer_stop_t stop_fn)
-{
+void k_timer_init(struct k_timer* timer, k_timer_expiry_t expiry_fn, k_timer_stop_t stop_fn) {
 	timer->expiry_fn = expiry_fn;
 	timer->stop_fn = stop_fn;
 	timer->status = 0U;
@@ -136,9 +131,7 @@ void k_timer_init(struct k_timer *timer,
 }
 
 
-void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
-			  k_timeout_t period)
-{
+void z_impl_k_timer_start(struct k_timer* timer, k_timeout_t duration, k_timeout_t period) {
 	SYS_PORT_TRACING_OBJ_FUNC(k_timer, start, timer, duration, period);
 
 	if (K_TIMEOUT_EQ(duration, K_FOREVER)) {
@@ -166,8 +159,7 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 	timer->period = period;
 	timer->status = 0U;
 
-	z_add_timeout(&timer->timeout, z_timer_expiration_handler,
-		     duration);
+	z_add_timeout(&timer->timeout, z_timer_expiration_handler, duration);
 }
 
 #ifdef CONFIG_USERSPACE
