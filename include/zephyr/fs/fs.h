@@ -417,7 +417,7 @@ off_t fs_tell(struct fs_file_t *zfp);
  *  @param file     File handle.
  *  @return         Size of the file in bytes.
  */
-off_t fs_size(struct fs_file_t* zfp);       /* #CUSTOM@PST1981 */
+off_t fs_size(struct fs_file_t* zfp);       /* #CUSTOM@NDRS */
 
 /**
  * @brief Truncate or extend an open file to a given size

@@ -523,7 +523,7 @@ static void i2c_stm32_irq_config_func_##index(const struct device* dev) {   \
 DT_INST_FOREACH_STATUS_OKAY(STM32_I2C_INIT)
 
 #if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
-#include "stm32g4_reg_stub.h"
+#include "mcu_reg_stub.h"
 
 #define STM32_I2C_CFG_REG_INIT(index)       \
     zephyr_i2c_cfg_reg_init(&i2c_stm32_cfg_##index);

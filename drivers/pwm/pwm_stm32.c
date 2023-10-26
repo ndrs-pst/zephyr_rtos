@@ -912,7 +912,7 @@ static void pwm_stm32_irq_config_func_##index(const struct device* dev) {   \
 DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_INIT)
 
 #if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
-#include "stm32g4_reg_stub.h"
+#include "mcu_reg_stub.h"
 
 #define STM32_PWR_CFG_REG_INIT(index)       \
     zephyr_pwm_cfg_reg_init(&pwm_stm32_config_##index);

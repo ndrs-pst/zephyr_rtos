@@ -135,7 +135,7 @@ int device_supported_foreach(const struct device* dev,
 
 #endif /* CONFIG_DEVICE_DEPS */
 
-/* #CUSTOM@PST1981 */
+/* #CUSTOM@NDRS */
 extern const struct init_entry __init_POST_KERNEL_start[];
 extern const struct init_entry __init_APPLICATION_start[];
 

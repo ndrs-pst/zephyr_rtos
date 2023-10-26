@@ -256,7 +256,7 @@ static int usb_dc_stm32_clock_enable(void)
 
 #endif /* RCC_CFGR_OTGFSPRE / RCC_CFGR_USBPRE */
 
-    /* #CUSTOM@PST1981 : START */
+    /* #CUSTOM@NDRS : START */
     #if defined(CONFIG_SOC_SERIES_STM32H7X)
     LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL1Q);
     LL_PWR_EnableUSBVoltageDetector();
@@ -271,7 +271,7 @@ static int usb_dc_stm32_clock_enable(void)
     __HAL_RCC_USB2_OTG_FS_ULPI_CLK_SLEEP_DISABLE();
     #endif
     #endif
-    /* #CUSTOM@PST1981 : END */
+    /* #CUSTOM@NDRS : END */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc)

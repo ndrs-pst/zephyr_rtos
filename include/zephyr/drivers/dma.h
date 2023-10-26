@@ -20,7 +20,6 @@
 extern "C" {
 #endif
 
-
 /**
  * @brief DMA Interface
  * @defgroup dma_interface DMA Interface
@@ -29,49 +28,49 @@ extern "C" {
  */
 
 enum dma_channel_direction {
-	MEMORY_TO_MEMORY = 0x0,
-	MEMORY_TO_PERIPHERAL,
-	PERIPHERAL_TO_MEMORY,
-	PERIPHERAL_TO_PERIPHERAL,
-	HOST_TO_MEMORY,
-	MEMORY_TO_HOST,
+    MEMORY_TO_MEMORY = 0x0,
+    MEMORY_TO_PERIPHERAL,
+    PERIPHERAL_TO_MEMORY,
+    PERIPHERAL_TO_PERIPHERAL,
+    HOST_TO_MEMORY,
+    MEMORY_TO_HOST,
 
-	/**
-	 * Number of all common channel directions.
-	 */
-	DMA_CHANNEL_DIRECTION_COMMON_COUNT,
+    /**
+     * Number of all common channel directions.
+     */
+    DMA_CHANNEL_DIRECTION_COMMON_COUNT,
 
-	/**
-	 * This and higher values are dma controller or soc specific.
-	 * Refer to the specified dma driver header file.
-	 */
-	DMA_CHANNEL_DIRECTION_PRIV_START = DMA_CHANNEL_DIRECTION_COMMON_COUNT,
+    /**
+     * This and higher values are dma controller or soc specific.
+     * Refer to the specified dma driver header file.
+     */
+    DMA_CHANNEL_DIRECTION_PRIV_START = DMA_CHANNEL_DIRECTION_COMMON_COUNT,
 
-	/**
-	 * Maximum allowed value (3 bit field!)
-	 */
-	DMA_CHANNEL_DIRECTION_MAX = 0x7
+    /**
+     * Maximum allowed value (3 bit field!)
+     */
+    DMA_CHANNEL_DIRECTION_MAX = 0x7
 };
 
 /** Valid values for @a source_addr_adj and @a dest_addr_adj */
 enum dma_addr_adj {
-	DMA_ADDR_ADJ_INCREMENT,
-	DMA_ADDR_ADJ_DECREMENT,
-	DMA_ADDR_ADJ_NO_CHANGE
+    DMA_ADDR_ADJ_INCREMENT,
+    DMA_ADDR_ADJ_DECREMENT,
+    DMA_ADDR_ADJ_NO_CHANGE
 };
 
 /* channel attributes */
 enum dma_channel_filter {
-	DMA_CHANNEL_NORMAL, /* normal DMA channel */
-	DMA_CHANNEL_PERIODIC, /* can be triggered by periodic sources */
+    DMA_CHANNEL_NORMAL,   /* normal DMA channel */
+    DMA_CHANNEL_PERIODIC, /* can be triggered by periodic sources */
 };
 
 /* DMA attributes */
 enum dma_attribute_type {
-	DMA_ATTR_BUFFER_ADDRESS_ALIGNMENT,
-	DMA_ATTR_BUFFER_SIZE_ALIGNMENT,
-	DMA_ATTR_COPY_ALIGNMENT,
-	DMA_ATTR_MAX_BLOCK_COUNT,
+    DMA_ATTR_BUFFER_ADDRESS_ALIGNMENT,
+    DMA_ATTR_BUFFER_SIZE_ALIGNMENT,
+    DMA_ATTR_COPY_ALIGNMENT,
+    DMA_ATTR_MAX_BLOCK_COUNT,
 };
 
 /**
@@ -113,31 +112,31 @@ enum dma_attribute_type {
  */
 struct dma_block_config {
 #ifdef CONFIG_DMA_64BIT
-	uint64_t source_address;
-	uint64_t dest_address;
+    uint64_t source_address;
+    uint64_t dest_address;
 #else
-	uint32_t source_address;
-	uint32_t dest_address;
+    uint32_t source_address;
+    uint32_t dest_address;
 #endif
-	uint32_t source_gather_interval;
-	uint32_t dest_scatter_interval;
-	uint16_t dest_scatter_count;
-	uint16_t source_gather_count;
-	uint32_t block_size;
-	struct dma_block_config *next_block;
-	uint16_t  source_gather_en :  1;
-	uint16_t  dest_scatter_en :   1;
-	uint16_t  source_addr_adj :   2;
-	uint16_t  dest_addr_adj :     2;
-	uint16_t  source_reload_en :  1;
-	uint16_t  dest_reload_en :    1;
-	uint16_t  fifo_mode_control : 4;
-	uint16_t  flow_control_mode : 1;
-	uint16_t  reserved :          3;
+    uint32_t                 source_gather_interval;
+    uint32_t                 dest_scatter_interval;
+    uint16_t                 dest_scatter_count;
+    uint16_t                 source_gather_count;
+    uint32_t                 block_size;
+    struct dma_block_config* next_block;
+    uint16_t                 source_gather_en  : 1;
+    uint16_t                 dest_scatter_en   : 1;
+    uint16_t                 source_addr_adj   : 2;
+    uint16_t                 dest_addr_adj     : 2;
+    uint16_t                 source_reload_en  : 1;
+    uint16_t                 dest_reload_en    : 1;
+    uint16_t                 fifo_mode_control : 4;
+    uint16_t                 flow_control_mode : 1;
+    uint16_t                 reserved          : 3;
 };
 
-#define DMA_STATUS_COMPLETE	0
-#define DMA_STATUS_BLOCK	1
+#define DMA_STATUS_COMPLETE 0
+#define DMA_STATUS_BLOCK    1
 
 /**
  * @typedef dma_callback_t
@@ -156,8 +155,8 @@ struct dma_block_config {
  *                        or water mark
  *                      - a negative errno otherwise
  */
-typedef void (*dma_callback_t)(const struct device *dev, void *user_data,
-			       uint32_t channel, int status);
+typedef void (*dma_callback_t)(const struct device* dev, void* user_data,
+                               uint32_t channel, int status);
 
 /**
  * @struct dma_config
@@ -201,26 +200,26 @@ typedef void (*dma_callback_t)(const struct device *dev, void *user_data,
  * @param dma_callback see dma_callback_t for details
  */
 struct dma_config {
-	uint32_t  dma_slot :             8;
-	uint32_t  channel_direction :    3;
-	uint32_t  complete_callback_en : 1;
-	uint32_t  error_callback_en :    1;
-	uint32_t  source_handshake :     1;
-	uint32_t  dest_handshake :       1;
-	uint32_t  channel_priority :     4;
-	uint32_t  source_chaining_en :   1;
-	uint32_t  dest_chaining_en :     1;
-	uint32_t  linked_channel   :     7;
-	uint32_t  cyclic :				 1;
-	uint32_t  reserved :             3;
-	uint32_t  source_data_size :    16;
-	uint32_t  dest_data_size :      16;
-	uint32_t  source_burst_length : 16;
-	uint32_t  dest_burst_length :   16;
-	uint32_t block_count;
-	struct dma_block_config *head_block;
-	void *user_data;
-	dma_callback_t dma_callback;
+    uint32_t                 dma_slot             : 8;
+    uint32_t                 channel_direction    : 3;
+    uint32_t                 complete_callback_en : 1;
+    uint32_t                 error_callback_en    : 1;
+    uint32_t                 source_handshake     : 1;
+    uint32_t                 dest_handshake       : 1;
+    uint32_t                 channel_priority     : 4;
+    uint32_t                 source_chaining_en   : 1;
+    uint32_t                 dest_chaining_en     : 1;
+    uint32_t                 linked_channel       : 7;
+    uint32_t                 cyclic               : 1;
+    uint32_t                 reserved             : 3;
+    uint32_t                 source_data_size     : 16;
+    uint32_t                 dest_data_size       : 16;
+    uint32_t                 source_burst_length  : 16;
+    uint32_t                 dest_burst_length    : 16;
+    uint32_t                 block_count;
+    struct dma_block_config* head_block;
+    void*                    user_data;
+    dma_callback_t           dma_callback;
 };
 
 /**
@@ -236,13 +235,13 @@ struct dma_config {
  *
  */
 struct dma_status {
-	bool busy;
-	enum dma_channel_direction dir;
-	uint32_t pending_length;
-	uint32_t free;
-	uint32_t write_position;
-	uint32_t read_position;
-	uint64_t total_copied;
+    bool                       busy;
+    enum dma_channel_direction dir;
+    uint32_t                   pending_length;
+    uint32_t                   free;
+    uint32_t                   write_position;
+    uint32_t                   read_position;
+    uint64_t                   total_copied;
 };
 
 /**
@@ -256,9 +255,9 @@ struct dma_status {
  *
  */
 struct dma_context {
-	int32_t magic;
-	int dma_channels;
-	atomic_t *atomic;
+    int32_t   magic;
+    int       dma_channels;
+    atomic_t* atomic;
 };
 
 /* magic code to identify context content */
@@ -270,29 +269,29 @@ struct dma_context {
  * These are for internal use only, so skip these in
  * public documentation.
  */
-typedef int (*dma_api_config)(const struct device *dev, uint32_t channel,
-			      struct dma_config *config);
+typedef int (*dma_api_config)(const struct device* dev, uint32_t channel,
+                              struct dma_config* config);
 
 #ifdef CONFIG_DMA_64BIT
-typedef int (*dma_api_reload)(const struct device *dev, uint32_t channel,
-			      uint64_t src, uint64_t dst, size_t size);
+typedef int (*dma_api_reload)(const struct device* dev, uint32_t channel,
+                              uint64_t src, uint64_t dst, size_t size);
 #else
-typedef int (*dma_api_reload)(const struct device *dev, uint32_t channel,
-			      uint32_t src, uint32_t dst, size_t size);
+typedef int (*dma_api_reload)(const struct device* dev, uint32_t channel,
+                              uint32_t src, uint32_t dst, size_t size);
 #endif
 
-typedef int (*dma_api_start)(const struct device *dev, uint32_t channel);
+typedef int (*dma_api_start)(const struct device* dev, uint32_t channel);
 
-typedef int (*dma_api_stop)(const struct device *dev, uint32_t channel);
+typedef int (*dma_api_stop)(const struct device* dev, uint32_t channel);
 
-typedef int (*dma_api_suspend)(const struct device *dev, uint32_t channel);
+typedef int (*dma_api_suspend)(const struct device* dev, uint32_t channel);
 
-typedef int (*dma_api_resume)(const struct device *dev, uint32_t channel);
+typedef int (*dma_api_resume)(const struct device* dev, uint32_t channel);
 
-typedef int (*dma_api_get_status)(const struct device *dev, uint32_t channel,
-				  struct dma_status *status);
+typedef int (*dma_api_get_status)(const struct device* dev, uint32_t channel,
+                                  struct dma_status* status);
 
-typedef int (*dma_api_get_attribute)(const struct device *dev, uint32_t type, uint32_t *value);
+typedef int (*dma_api_get_attribute)(const struct device* dev, uint32_t type, uint32_t* value);
 
 /**
  * @typedef dma_chan_filter
@@ -307,20 +306,21 @@ typedef int (*dma_api_get_attribute)(const struct device *dev, uint32_t type, ui
  *
  * @retval True on filter matched otherwise return False.
  */
-typedef bool (*dma_api_chan_filter)(const struct device *dev,
-				int channel, void *filter_param);
+typedef bool (*dma_api_chan_filter)(const struct device* dev,
+                                    int channel, void* filter_param);
 
 __subsystem struct dma_driver_api {
-	dma_api_config config;
-	dma_api_reload reload;
-	dma_api_start start;
-	dma_api_stop stop;
-	dma_api_suspend suspend;
-	dma_api_resume resume;
-	dma_api_get_status get_status;
-	dma_api_get_attribute get_attribute;
-	dma_api_chan_filter chan_filter;
+    dma_api_config        config;
+    dma_api_reload        reload;
+    dma_api_start         start;
+    dma_api_stop          stop;
+    dma_api_suspend       suspend;
+    dma_api_resume        resume;
+    dma_api_get_status    get_status;
+    dma_api_get_attribute get_attribute;
+    dma_api_chan_filter   chan_filter;
 };
+
 /**
  * @endcond
  */
@@ -366,11 +366,11 @@ static inline int dma_reload(const struct device* dev, uint32_t channel,
 {
     const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
-	if (api->reload) {
-		return api->reload(dev, channel, src, dst, size);
-	}
+    if (api->reload) {
+        return api->reload(dev, channel, src, dst, size);
+    }
 
-	return -ENOSYS;
+    return -ENOSYS;
 }
 
 /**
@@ -414,14 +414,13 @@ static inline int z_impl_dma_start(const struct device* dev, uint32_t channel) {
  * @retval 0 if successful.
  * @retval Negative errno code if failure.
  */
-__syscall int dma_stop(const struct device *dev, uint32_t channel);
+__syscall int dma_stop(const struct device* dev, uint32_t channel);
 
 static inline int z_impl_dma_stop(const struct device* dev, uint32_t channel) {
     const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
     return api->stop(dev, channel);
 }
-
 
 /**
  * @brief Suspend a DMA channel transfer
@@ -437,16 +436,15 @@ static inline int z_impl_dma_stop(const struct device* dev, uint32_t channel) {
  * @retval -EINVAL If invalid channel id or state.
  * @retval -errno Other negative errno code failure.
  */
-__syscall int dma_suspend(const struct device *dev, uint32_t channel);
+__syscall int dma_suspend(const struct device* dev, uint32_t channel);
 
-static inline int z_impl_dma_suspend(const struct device *dev, uint32_t channel)
-{
-	const struct dma_driver_api *api = (const struct dma_driver_api *)dev->api;
+static inline int z_impl_dma_suspend(const struct device* dev, uint32_t channel) {
+    const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
-	if (api->suspend == NULL) {
-		return -ENOSYS;
-	}
-	return api->suspend(dev, channel);
+    if (api->suspend == NULL) {
+        return -ENOSYS;
+    }
+    return api->suspend(dev, channel);
 }
 
 /**
@@ -463,16 +461,15 @@ static inline int z_impl_dma_suspend(const struct device *dev, uint32_t channel)
  * @retval -EINVAL If invalid channel id or state.
  * @retval -errno Other negative errno code failure.
  */
-__syscall int dma_resume(const struct device *dev, uint32_t channel);
+__syscall int dma_resume(const struct device* dev, uint32_t channel);
 
-static inline int z_impl_dma_resume(const struct device *dev, uint32_t channel)
-{
-	const struct dma_driver_api *api = (const struct dma_driver_api *)dev->api;
+static inline int z_impl_dma_resume(const struct device* dev, uint32_t channel) {
+    const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
-	if (api->resume == NULL) {
-		return -ENOSYS;
-	}
-	return api->resume(dev, channel);
+    if (api->resume == NULL) {
+        return -ENOSYS;
+    }
+    return api->resume(dev, channel);
 }
 
 /**
@@ -487,36 +484,33 @@ static inline int z_impl_dma_resume(const struct device *dev, uint32_t channel)
  * @retval dma channel if successful.
  * @retval Negative errno code if failure.
  */
-__syscall int dma_request_channel(const struct device *dev,
-				  void *filter_param);
+__syscall int dma_request_channel(const struct device* dev, void* filter_param);
 
-static inline int z_impl_dma_request_channel(const struct device *dev,
-					     void *filter_param)
-{
-	int i = 0;
-	int channel = -EINVAL;
-	const struct dma_driver_api *api =
-		(const struct dma_driver_api *)dev->api;
-	/* dma_context shall be the first one in dev data */
-	struct dma_context *dma_ctx = (struct dma_context *)dev->data;
+static inline int z_impl_dma_request_channel(const struct device* dev,
+                                             void* filter_param) {
+    int i = 0;
+    int channel = -EINVAL;
+    const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
+    /* dma_context shall be the first one in dev data */
+    struct dma_context* dma_ctx = (struct dma_context*)dev->data;
 
-	if (dma_ctx->magic != DMA_MAGIC) {
-		return channel;
-	}
+    if (dma_ctx->magic != DMA_MAGIC) {
+        return (channel);
+    }
 
-	for (i = 0; i < dma_ctx->dma_channels; i++) {
-		if (!atomic_test_and_set_bit(dma_ctx->atomic, i)) {
-			if (api->chan_filter &&
-			    !api->chan_filter(dev, i, filter_param)) {
-				atomic_clear_bit(dma_ctx->atomic, i);
-				continue;
-			}
-			channel = i;
-			break;
-		}
-	}
+    for (i = 0; i < dma_ctx->dma_channels; i++) {
+        if (!atomic_test_and_set_bit(dma_ctx->atomic, i)) {
+            if (api->chan_filter &&
+                !api->chan_filter(dev, i, filter_param)) {
+                atomic_clear_bit(dma_ctx->atomic, i);
+                continue;
+            }
+            channel = i;
+            break;
+        }
+    }
 
-	return channel;
+    return (channel);
 }
 
 /**
@@ -528,22 +522,20 @@ static inline int z_impl_dma_request_channel(const struct device *dev,
  * @param channel  channel number
  *
  */
-__syscall void dma_release_channel(const struct device *dev,
-				   uint32_t channel);
+__syscall void dma_release_channel(const struct device* dev,
+                                   uint32_t channel);
 
-static inline void z_impl_dma_release_channel(const struct device *dev,
-					      uint32_t channel)
-{
-	struct dma_context *dma_ctx = (struct dma_context *)dev->data;
+static inline void z_impl_dma_release_channel(const struct device* dev,
+                                              uint32_t channel) {
+    struct dma_context* dma_ctx = (struct dma_context*)dev->data;
 
-	if (dma_ctx->magic != DMA_MAGIC) {
-		return;
-	}
+    if (dma_ctx->magic != DMA_MAGIC) {
+        return;
+    }
 
-	if ((int)channel < dma_ctx->dma_channels) {
-		atomic_clear_bit(dma_ctx->atomic, channel);
-	}
-
+    if ((int)channel < dma_ctx->dma_channels) {
+        atomic_clear_bit(dma_ctx->atomic, channel);
+    }
 }
 
 /**
@@ -558,20 +550,18 @@ static inline void z_impl_dma_release_channel(const struct device *dev,
  * @retval Negative errno code if not support
  *
  */
-__syscall int dma_chan_filter(const struct device *dev,
-				   int channel, void *filter_param);
+__syscall int dma_chan_filter(const struct device* dev,
+                              int channel, void* filter_param);
 
-static inline int z_impl_dma_chan_filter(const struct device *dev,
-					      int channel, void *filter_param)
-{
-	const struct dma_driver_api *api =
-		(const struct dma_driver_api *)dev->api;
+static inline int z_impl_dma_chan_filter(const struct device* dev,
+                                         int channel, void* filter_param) {
+    const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
-	if (api->chan_filter) {
-		return api->chan_filter(dev, channel, filter_param);
-	}
+    if (api->chan_filter) {
+        return api->chan_filter(dev, channel, filter_param);
+    }
 
-	return -ENOSYS;
+    return -ENOSYS;
 }
 
 /**
@@ -588,17 +578,15 @@ static inline int z_impl_dma_chan_filter(const struct device *dev,
  * @retval non-negative if successful.
  * @retval Negative errno code if failure.
  */
-static inline int dma_get_status(const struct device *dev, uint32_t channel,
-				 struct dma_status *stat)
-{
-	const struct dma_driver_api *api =
-		(const struct dma_driver_api *)dev->api;
+static inline int dma_get_status(const struct device* dev, uint32_t channel,
+                                 struct dma_status* stat) {
+    const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
-	if (api->get_status) {
-		return api->get_status(dev, channel, stat);
-	}
+    if (api->get_status) {
+        return api->get_status(dev, channel, stat);
+    }
 
-	return -ENOSYS;
+    return -ENOSYS;
 }
 
 /**
@@ -616,15 +604,14 @@ static inline int dma_get_status(const struct device *dev, uint32_t channel,
  * @retval non-negative if successful.
  * @retval Negative errno code if failure.
  */
-static inline int dma_get_attribute(const struct device *dev, uint32_t type, uint32_t *value)
-{
-	const struct dma_driver_api *api = (const struct dma_driver_api *)dev->api;
+static inline int dma_get_attribute(const struct device* dev, uint32_t type, uint32_t* value) {
+    const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
-	if (api->get_attribute) {
-		return api->get_attribute(dev, type, value);
-	}
+    if (api->get_attribute) {
+        return api->get_attribute(dev, type, value);
+    }
 
-	return -ENOSYS;
+    return -ENOSYS;
 }
 
 /**
@@ -640,20 +627,19 @@ static inline int dma_get_attribute(const struct device *dev, uint32_t type, uin
  *
  * @retval common DMA index to be placed into registers.
  */
-static inline uint32_t dma_width_index(uint32_t size)
-{
-	/* Check boundaries (max supported width is 32 Bytes) */
-	if (size < 1 || size > 32) {
-		return 0; /* Zero is the default (8 Bytes) */
-	}
+static inline uint32_t dma_width_index(uint32_t size) {
+    /* Check boundaries (max supported width is 32 Bytes) */
+    if (size < 1 || size > 32) {
+        return 0; /* Zero is the default (8 Bytes) */
+    }
 
-	/* Ensure size is a power of 2 */
-	if (!is_power_of_two(size)) {
-		return 0; /* Zero is the default (8 Bytes) */
-	}
+    /* Ensure size is a power of 2 */
+    if (!is_power_of_two(size)) {
+        return 0; /* Zero is the default (8 Bytes) */
+    }
 
-	/* Convert to bit pattern for writing to a register */
-	return find_msb_set(size);
+    /* Convert to bit pattern for writing to a register */
+    return find_msb_set(size);
 }
 
 /**
@@ -669,20 +655,19 @@ static inline uint32_t dma_width_index(uint32_t size)
  *
  * @retval common DMA index to be placed into registers.
  */
-static inline uint32_t dma_burst_index(uint32_t burst)
-{
-	/* Check boundaries (max supported burst length is 256) */
-	if (burst < 1 || burst > 256) {
-		return 0; /* Zero is the default (1 burst length) */
-	}
+static inline uint32_t dma_burst_index(uint32_t burst) {
+    /* Check boundaries (max supported burst length is 256) */
+    if (burst < 1 || burst > 256) {
+        return 0; /* Zero is the default (1 burst length) */
+    }
 
-	/* Ensure burst is a power of 2 */
-	if (!(burst & (burst - 1))) {
-		return 0; /* Zero is the default (1 burst length) */
-	}
+    /* Ensure burst is a power of 2 */
+    if (!(burst & (burst - 1))) {
+        return 0; /* Zero is the default (1 burst length) */
+    }
 
-	/* Convert to bit pattern for writing to a register */
-	return find_msb_set(burst);
+    /* Convert to bit pattern for writing to a register */
+    return find_msb_set(burst);
 }
 
 /**

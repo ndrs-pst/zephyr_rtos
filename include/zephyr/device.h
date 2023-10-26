@@ -444,7 +444,7 @@ static inline device_handle_t device_handle_get(const struct device* dev) {
  * @return 0 on success, negative errno code otherwise
  * @note The init_entry entry of the device shall be in POST_KERNEL !!!
  */
-int device_user_init(const struct device* dev);                 /* #CUSTOM@PST1981 */
+int device_user_init(const struct device* dev);                 /* #CUSTOM@NDRS */
 
 /**
  * @brief Get the device corresponding to a handle.

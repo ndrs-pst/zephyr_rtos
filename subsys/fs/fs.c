@@ -277,7 +277,7 @@ off_t fs_tell(struct fs_file_t *zfp)
 	return rc;
 }
 
-/* #CUSTOM@PST1981 */
+/* #CUSTOM@NDRS */
 off_t /**/fs_size(struct fs_file_t* zfp)
 {
     off_t off  = fs_tell(zfp);
