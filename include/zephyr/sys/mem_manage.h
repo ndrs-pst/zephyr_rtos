@@ -226,26 +226,21 @@ static inline uintptr_t z_mem_phys_addr(void *virt)
 }
 
 /* Just like Z_MEM_VIRT_ADDR() but with type safety and assertions */
-static inline void *z_mem_virt_addr(uintptr_t phys)
-{
-#if defined(CONFIG_KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK)
-	__ASSERT(sys_mm_is_phys_addr_in_range(phys),
-		"physical address 0x%lx not in RAM", (unsigned long)phys);
-#else
-	__ASSERT(
-#if CONFIG_SRAM_BASE_ADDRESS != 0
-		 (phys >= CONFIG_SRAM_BASE_ADDRESS) &&
-#endif
-		 (phys < (CONFIG_SRAM_BASE_ADDRESS +
-			  (CONFIG_SRAM_SIZE * 1024UL))),
-		 "physical address 0x%lx not in RAM", (unsigned long)phys);
-#endif
+static inline void* z_mem_virt_addr(uintptr_t phys) {
+    #if defined(CONFIG_KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK)
+    __ASSERT(sys_mm_is_phys_addr_in_range(phys),
+             "physical address 0x%lx not in RAM", (unsigned long)phys);
+    #else
+    __ASSERT((phys >= CONFIG_SRAM_BASE_ADDRESS) &&
+             (phys < (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL))),
+             "physical address 0x%lx not in RAM", (unsigned long)phys);
+    #endif
 
-	/* TODO add assertion that this page frame is pinned to boot mapping,
-	 * the above check won't be sufficient with demand paging
-	 */
+    /* TODO add assertion that this page frame is pinned to boot mapping,
+     * the above check won't be sufficient with demand paging
+     */
 
-	return (void *)Z_MEM_VIRT_ADDR(phys);
+    return (void*)Z_MEM_VIRT_ADDR(phys);
 }
 
 #ifdef __cplusplus
@@ -293,8 +288,8 @@ extern "C" {
  * @param size Size of the memory region
  * @param flags Caching mode and access flags, see K_MAP_* macros
  */
-void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size,
-		uint32_t flags);
+void z_phys_map(uint8_t** virt_ptr, uintptr_t phys, size_t size,
+                uint32_t flags);
 
 /**
  * Unmap a virtual memory region from kernel's virtual address space.

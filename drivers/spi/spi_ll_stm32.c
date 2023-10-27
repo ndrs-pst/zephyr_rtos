@@ -182,7 +182,9 @@ static int spi_stm32_dma_tx_load(const struct device* dev, uint8_t const* buf,
     }
 
     /* gives the request ID to the dma mux */
-    return dma_start(data->dma_tx.dma_dev, data->dma_tx.channel);
+    ret = dma_start(data->dma_tx.dma_dev, data->dma_tx.channel);
+
+    return (ret);
 }
 
 static int spi_stm32_dma_rx_load(const struct device* dev, uint8_t* buf,
@@ -198,7 +200,7 @@ static int spi_stm32_dma_rx_load(const struct device* dev, uint8_t* buf,
     blk_cfg = &stream->dma_blk_cfg;
 
     /* prepare the block for this RX DMA channel */
-    memset(blk_cfg, 0, sizeof(struct dma_block_config));
+    (void) memset(blk_cfg, 0, sizeof(struct dma_block_config));
     blk_cfg->block_size = len;
 
     /* rx direction has periph as source and mem as dest. */
@@ -241,7 +243,9 @@ static int spi_stm32_dma_rx_load(const struct device* dev, uint8_t* buf,
     }
 
     /* gives the request ID to the dma mux */
-    return dma_start(data->dma_rx.dma_dev, data->dma_rx.channel);
+    ret = dma_start(data->dma_rx.dma_dev, data->dma_rx.channel);
+
+    return (ret);
 }
 
 static int spi_dma_move_buffers(const struct device* dev, size_t len) {
@@ -293,7 +297,9 @@ static void spi_stm32_shift_m(SPI_TypeDef* spi, struct spi_stm32_data* data) {
     uint16_t rx_frame;
 
     while (!ll_func_tx_is_empty(spi)) {
-        /* NOP */
+        if (IS_ENABLED(__GTEST)) {
+            break;
+        }
     }
 
     #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
@@ -305,7 +311,9 @@ static void spi_stm32_shift_m(SPI_TypeDef* spi, struct spi_stm32_data* data) {
     if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
         LL_SPI_StartMasterTransfer(spi);
         while (!LL_SPI_IsActiveMasterTransfer(spi)) {
-            /* NOP */
+            if (IS_ENABLED(__GTEST)) {
+                break;
+            }
         }
     }
     #endif
@@ -330,7 +338,9 @@ static void spi_stm32_shift_m(SPI_TypeDef* spi, struct spi_stm32_data* data) {
     }
 
     while (!ll_func_rx_is_not_empty(spi)) {
-        /* NOP */
+        if (IS_ENABLED(__GTEST)) {
+            break;
+        }
     }
 
     if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
@@ -396,6 +406,7 @@ static void spi_stm32_shift_s(SPI_TypeDef* spi, struct spi_stm32_data* data) {
  */
 static int spi_stm32_shift_frames(SPI_TypeDef* spi, struct spi_stm32_data* data) {
     uint16_t operation = data->ctx.config->operation;
+    int ret;
 
     if (SPI_OP_MODE_GET(operation) == SPI_OP_MODE_MASTER) {
         spi_stm32_shift_m(spi, data);
@@ -404,7 +415,9 @@ static int spi_stm32_shift_frames(SPI_TypeDef* spi, struct spi_stm32_data* data)
         spi_stm32_shift_s(spi, data);
     }
 
-    return spi_stm32_get_err(spi);
+    ret = spi_stm32_get_err(spi);
+
+    return (ret);
 }
 
 static void spi_stm32_cs_control(const struct device* dev, bool on) {
@@ -429,6 +442,7 @@ static void spi_stm32_cs_control(const struct device* dev, bool on) {
 static void spi_stm32_complete(const struct device* dev, int status) {
     const struct spi_stm32_config* cfg = dev->config;
     SPI_TypeDef* spi = cfg->spi;
+
     #ifdef CONFIG_SPI_STM32_INTERRUPT
     struct spi_stm32_data* data = dev->data;
 
@@ -443,12 +457,18 @@ static void spi_stm32_complete(const struct device* dev, int status) {
     /* Flush RX buffer */
     while (ll_func_rx_is_not_empty(spi)) {
         (void) LL_SPI_ReceiveData8(spi);
+
+        if (IS_ENABLED(__GTEST)) {
+            break;
+        }
     }
     #endif
 
     if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
         while (ll_func_spi_is_busy(spi)) {
-            /* NOP */
+            if (IS_ENABLED(__GTEST)) {
+                break;
+            }
         }
     }
     /* BSY flag is cleared when MODF flag is raised */
@@ -593,12 +613,13 @@ static int spi_stm32_configure(const struct device* dev, const struct spi_config
     LL_SPI_DisableCRC(spi);
 
     if (spi_cs_is_gpio(config) || !IS_ENABLED(CONFIG_SPI_STM32_USE_HW_SS)) {
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+        #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
         if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
-            if (LL_SPI_GetNSSPolarity(spi) == LL_SPI_NSS_POLARITY_LOW)
+            if (LL_SPI_GetNSSPolarity(spi) == LL_SPI_NSS_POLARITY_LOW) {
                 LL_SPI_SetInternalSSLevel(spi, LL_SPI_SS_LEVEL_HIGH);
+            }
         }
-#endif
+        #endif
         LL_SPI_SetNSSMode(spi, LL_SPI_NSS_SOFT);
     }
     else {
@@ -692,6 +713,10 @@ static int transceive(const struct device* dev,
     /* Flush RX buffer */
     while (ll_func_rx_is_not_empty(spi)) {
         (void) LL_SPI_ReceiveData8(spi);
+
+        if (IS_ENABLED(__GTEST)) {
+            break;
+        }
     }
     #endif
 
@@ -740,10 +765,9 @@ end:
 }
 
 #ifdef CONFIG_SPI_STM32_DMA
-
 static int wait_dma_rx_tx_done(const struct device* dev) {
     struct spi_stm32_data *data = dev->data;
-    int res = -1;
+    int res;
     k_timeout_t timeout;
 
     /*
@@ -908,7 +932,9 @@ static int transceive_dma(const struct device* dev,
 
         /* wait until spi is no more busy (spi TX fifo is really empty) */
         while (ll_func_spi_dma_busy(spi) == 0) {
-            /* pass */
+            if (IS_ENABLED(__GTEST)) {
+                break;
+            }
         }
 
         #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)

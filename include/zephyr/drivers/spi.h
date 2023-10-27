@@ -40,7 +40,7 @@ extern "C" {
 #define SPI_OP_MODE_MASTER           0U
 #define SPI_OP_MODE_SLAVE            BIT(0)
 #define SPI_OP_MODE_MASK             0x1U
-#define SPI_OP_MODE_GET(_operation_) ((_operation_)&SPI_OP_MODE_MASK)
+#define SPI_OP_MODE_GET(_operation_) ((_operation_) & SPI_OP_MODE_MASK)
 /** @} */
 
 /**
