@@ -103,6 +103,7 @@
 #include <inttypes.h>
 #include <zephyr/sys/__assert.h>
 
+#ifdef CONFIG_DEMAND_PAGING_STATS           /* #CUSTOM@NDRS */
 struct k_mem_paging_stats_t {
 #ifdef CONFIG_DEMAND_PAGING_STATS
 	struct {
@@ -130,7 +131,13 @@ struct k_mem_paging_stats_t {
 	} eviction;
 #endif /* CONFIG_DEMAND_PAGING_STATS */
 };
+#else
+struct k_mem_paging_stats_t {
+	unsigned dummy;
+};
+#endif
 
+#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM    /* #CUSTOM@NDRS */
 struct k_mem_paging_histogram_t {
 #ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
 	/* Counts for each bin in timing histogram */
@@ -142,6 +149,11 @@ struct k_mem_paging_histogram_t {
 	unsigned long	bounds[CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS];
 #endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
 };
+#else
+struct k_mem_paging_histogram_t {
+	unsigned dummy;
+};
+#endif
 
 /**
  * @brief Check if a physical address is within range of physical memory.
@@ -199,10 +211,7 @@ static inline uintptr_t z_mem_phys_addr(void *virt)
 		 "address %p not in permanent mappings", virt);
 #else
 	/* Should be identity-mapped */
-	__ASSERT(
-#if CONFIG_SRAM_BASE_ADDRESS != 0
-		 (addr >= CONFIG_SRAM_BASE_ADDRESS) &&
-#endif
+	__ASSERT((addr >= CONFIG_SRAM_BASE_ADDRESS) &&
 		 (addr < (CONFIG_SRAM_BASE_ADDRESS +
 			  (CONFIG_SRAM_SIZE * 1024UL))),
 		 "physical address 0x%lx not in RAM",

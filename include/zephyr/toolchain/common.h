@@ -126,7 +126,11 @@
      */
     #define ALWAYS_INLINE inline
   #else
+    #if defined(_MSC_VER)                   /* #CUSTOM@NDRS */
+    #define ALWAYS_INLINE inline
+    #else
     #define ALWAYS_INLINE inline __attribute__((always_inline))
+    #endif
   #endif
 #endif
 
@@ -135,7 +139,11 @@
 
 /* concatenate the values of the arguments into one */
 #define _DO_CONCAT(x, y) x ## y
-#define _CONCAT(x, y) _DO_CONCAT(x, y)
+#define Z_CONCAT(x, y) _DO_CONCAT(x, y)     /* #CUSTOM@NDRS */
+
+#if !defined(_MSC_VER)                      /* #CUSTOM@NDRS */
+#define _CONCAT(x, y)  _DO_CONCAT(x, y)
+#endif
 
 /* Additionally used as a sentinel by gen_syscalls.py to identify what
  * functions are system calls
@@ -146,7 +154,7 @@
  * disallow us to test system calls in POSIX unit testing (currently
  * not used).
  */
-#ifndef ZTEST_UNITTEST
+#if (!defined(ZTEST_UNITTEST) && !defined(_MSC_VER)) /* #CUSTOM@NDRS */
 #define __syscall static inline
 #define __syscall_always_inline static inline __attribute__((always_inline))
 #else
@@ -170,9 +178,9 @@
  * Common implementation swallows the message.
  */
 #define BUILD_ASSERT(EXPR, MSG...) \
-	enum _CONCAT(__build_assert_enum, __COUNTER__) { \
-		_CONCAT(__build_assert, __COUNTER__) = 1 / !!(EXPR) \
-	}
+    enum Z_CONCAT(__build_assert_enum, __COUNTER__) { \
+         Z_CONCAT(__build_assert, __COUNTER__) = 1 / !!(EXPR) \
+    }
 #endif
 
 /*

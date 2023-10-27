@@ -96,7 +96,7 @@ struct init_entry {
 	 * If the init entry belongs to a device, this fields stores a
 	 * reference to it, otherwise it is set to NULL.
 	 */
-	const struct device *dev;
+    const struct device* dev;
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -122,7 +122,7 @@ struct init_entry {
  *
  * @param init_id Init entry unique identifier.
  */
-#define Z_INIT_ENTRY_NAME(init_id) _CONCAT(__init_, init_id)
+#define Z_INIT_ENTRY_NAME(init_id) Z_CONCAT(__init_, init_id)
 
 /**
  * @brief Init entry section.

@@ -226,8 +226,7 @@ int usb_dc_attach(void)
 	MCLK->APBBMASK.bit.USB_ = 1;
 
 	/* Enable the GCLK - use 48 MHz source */
-	GCLK->PCHCTRL[USB_GCLK_ID].reg = GCLK_PCHCTRL_GEN(2)
-				       | GCLK_PCHCTRL_CHEN;
+	GCLK->PCHCTRL[USB_GCLK_ID].reg = GCLK_PCHCTRL_GEN(2) | GCLK_PCHCTRL_CHEN;
 
 	while (GCLK->SYNCBUSY.reg) {
 	}
