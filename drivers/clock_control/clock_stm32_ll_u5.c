@@ -399,7 +399,9 @@ static void set_regu_voltage(uint32_t hclk_freq) {
     }
 
     while (LL_PWR_IsActiveFlag_VOS() == 0) {
-        /* pass */
+        if (IS_ENABLED(__GTEST)) {
+            break;
+        }
     }
 }
 
@@ -417,7 +419,9 @@ static void set_epod_booster(void) {
     /* Reset Epod Prescaler in case it was set earlier with another DIV value */
     LL_PWR_DisableEPODBooster();
     while (LL_PWR_IsActiveFlag_BOOST() == 1) {
-        /* pass */
+        if (IS_ENABLED(__GTEST)) {
+            break;
+        }
     }
 
     LL_RCC_SetPll1EPodPrescaler(LL_RCC_PLL1MBOOST_DIV_1);
@@ -456,7 +460,9 @@ static void set_epod_booster(void) {
         /* Enable EPOD booster and wait for booster ready flag set */
         LL_PWR_EnableEPODBooster();
         while (LL_PWR_IsActiveFlag_BOOST() == 0) {
-            /* pass */
+            if (IS_ENABLED(__GTEST)) {
+                break;
+            }
         }
     }
 }
@@ -470,13 +476,18 @@ static void clock_switch_to_hsi(void) {
         LL_RCC_HSI_Enable();
         while (LL_RCC_HSI_IsReady() != 1) {
             /* Wait for HSI ready */
+            if (IS_ENABLED(__GTEST)) {
+                break;
+            }
         }
     }
 
     /* Set HSI as SYSCLCK source */
     LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
     while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
-        /* pass */
+        if (IS_ENABLED(__GTEST)) {
+            break;
+        }
     }
 
     LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
@@ -564,7 +575,9 @@ static int set_up_plls(void) {
 
     LL_RCC_PLL1_Enable();
     while (LL_RCC_PLL1_IsReady() != 1U) {
-        /* pass */
+        if (IS_ENABLED(__GTEST)) {
+            break;
+        }
     }
     #else
     /* Init PLL source to None */
@@ -620,7 +633,9 @@ static int set_up_plls(void) {
 
     LL_RCC_PLL2_Enable();
     while (LL_RCC_PLL2_IsReady() != 1U) {
-        /* pass */
+        if (IS_ENABLED(__GTEST)) {
+            break;
+        }
     }
     #else
     /* Init PLL2 source to None */
@@ -676,7 +691,9 @@ static int set_up_plls(void) {
 
     LL_RCC_PLL3_Enable();
     while (LL_RCC_PLL3_IsReady() != 1U) {
-        /* pass */
+        if (IS_ENABLED(__GTEST)) {
+            break;
+        }
     }
     #else
     /* Init PLL3 source to None */
@@ -700,7 +717,9 @@ static void set_up_fixed_clock_sources(void) {
         /* Enable HSE */
         LL_RCC_HSE_Enable();
         while (LL_RCC_HSE_IsReady() != 1) {
-            /* Wait for HSE ready */
+            if (IS_ENABLED(__GTEST)) {
+                break;
+            }
         }
     }
 
@@ -711,6 +730,9 @@ static void set_up_fixed_clock_sources(void) {
             LL_RCC_HSI_Enable();
             while (LL_RCC_HSI_IsReady() != 1) {
                 /* Wait for HSI ready */
+                if (IS_ENABLED(__GTEST)) {
+                    break;
+                }
             }
         }
     }
@@ -724,6 +746,9 @@ static void set_up_fixed_clock_sources(void) {
             LL_PWR_EnableBkUpAccess();
             while (!LL_PWR_IsEnabledBkUpAccess()) {
                 /* Wait for Backup domain access */
+                if (IS_ENABLED(__GTEST)) {
+                    break;
+                }
             }
         }
 
@@ -739,14 +764,18 @@ static void set_up_fixed_clock_sources(void) {
         LL_RCC_LSE_Enable();
         /* Wait for LSE ready */
         while (!LL_RCC_LSE_IsReady()) {
-            /* pass */
+            if (IS_ENABLED(__GTEST)) {
+                break;
+            }
         }
 
         /* Enable LSESYS additionally */
         LL_RCC_LSE_EnablePropagation();
         /* Wait till LSESYS is ready */
         while (!LL_RCC_LSESYS_IsReady()) {
-            /* pass */
+            if (IS_ENABLED(__GTEST)) {
+                break;
+            }
         }
 
         LL_PWR_DisableBkUpAccess();
@@ -771,6 +800,9 @@ static void set_up_fixed_clock_sources(void) {
 
         while (LL_RCC_MSIS_IsReady() != 1) {
             /* Wait till MSIS is ready */
+            if (IS_ENABLED(__GTEST)) {
+                break;
+            }
         }
     }
 
@@ -798,6 +830,9 @@ static void set_up_fixed_clock_sources(void) {
 
         while (LL_RCC_MSIK_IsReady() != 1) {
             /* Wait till MSIK is ready */
+            if (IS_ENABLED(__GTEST)) {
+                break;
+            }
         }
     }
 
@@ -812,6 +847,9 @@ static void set_up_fixed_clock_sources(void) {
             LL_PWR_EnableBkUpAccess();
             while (!LL_PWR_IsEnabledBkUpAccess()) {
                 /* Wait for Backup domain access */
+                if (IS_ENABLED(__GTEST)) {
+                    break;
+                }
             }
         }
 
@@ -819,6 +857,9 @@ static void set_up_fixed_clock_sources(void) {
         LL_RCC_LSI_Enable();
         while (LL_RCC_LSI_IsReady() != 1) {
             /* Wait till LSI is ready */
+            if (IS_ENABLED(__GTEST)) {
+                break;
+            }
         }
 
         LL_PWR_DisableBkUpAccess();
@@ -828,6 +869,9 @@ static void set_up_fixed_clock_sources(void) {
         LL_RCC_HSI48_Enable();
         while (LL_RCC_HSI48_IsReady() != 1) {
             /* Wait till HSI48 is ready */
+            if (IS_ENABLED(__GTEST)) {
+                break;
+            }
         }
     }
 }
@@ -869,28 +913,36 @@ int stm32_clock_control_init(const struct device* dev) {
         /* Set PLL1 as System Clock Source */
         LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PLL1);
         while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_PLL1) {
-            /* pass */
+            if (IS_ENABLED(__GTEST)) {
+                break;
+            }
         }
     }
     else if (IS_ENABLED(STM32_SYSCLK_SRC_HSE)) {
         /* Set HSE as SYSCLCK source */
         LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSE);
         while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSE) {
-            /* pass */
+            if (IS_ENABLED(__GTEST)) {
+                break;
+            }
         }
     }
     else if (IS_ENABLED(STM32_SYSCLK_SRC_MSIS)) {
         /* Set MSIS as SYSCLCK source */
         LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_MSIS);
         while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_MSIS) {
-            /* pass */
+            if (IS_ENABLED(__GTEST)) {
+                break;
+            }
         }
     }
     else if (IS_ENABLED(STM32_SYSCLK_SRC_HSI)) {
         /* Set HSI as SYSCLCK source */
         LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
         while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
-            /* pass */
+            if (IS_ENABLED(__GTEST)) {
+                break;
+            }
         }
     }
     else {
