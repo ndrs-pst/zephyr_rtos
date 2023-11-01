@@ -1281,5 +1281,5 @@ ssize_t nvs_calc_free_space(struct nvs_fs* fs) {
         }
     }
 
-    return (free_space);
+    return ((ssize_t)free_space);
 }
