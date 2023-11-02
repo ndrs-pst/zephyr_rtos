@@ -35,7 +35,7 @@ struct dac_channel_cfg {
     uint8_t resolution;
     /** Enable output buffer for this channel.
      * This is relevant for instance if the output is directly connected to the load,
-     * without an amplifierin between. The actual details on this are hardware dependent.
+     * without an amplifier in between. The actual details on this are hardware dependent.
      */
     bool buffered;
 };

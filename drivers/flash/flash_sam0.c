@@ -47,61 +47,61 @@ BUILD_ASSERT((FLASH_WRITE_BLK_SZ % sizeof(uint32_t)) == 0, "unsupported write-bl
 
 #define PAGES_PER_ROW (ROW_SIZE / FLASH_PAGE_SIZE)
 
-#define FLASH_MEM(_a) ((uint32_t *)((uint8_t *)((_a) + CONFIG_FLASH_BASE_ADDRESS)))
+#define FLASH_MEM(_a) ((uint32_t*)((uint8_t*)((_a) + CONFIG_FLASH_BASE_ADDRESS)))
 
 struct flash_sam0_data {
-#if CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
+    #if CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
     /* NOTE: this buffer can be large, avoid placing it on the stack... */
     uint8_t buf[ROW_SIZE];
-#endif
+    #endif
 
-#if defined(CONFIG_MULTITHREADING)
+    #if defined(CONFIG_MULTITHREADING)
     struct k_sem sem;
-#endif
+    #endif
 };
 
 #if CONFIG_FLASH_PAGE_LAYOUT
 static const struct flash_pages_layout flash_sam0_pages_layout = {
-    .pages_count = CONFIG_FLASH_SIZE * 1024 / ROW_SIZE,
+    .pages_count = ((CONFIG_FLASH_SIZE * 1024) / ROW_SIZE),
     .pages_size  = ROW_SIZE,
 };
 #endif
 
 static const struct flash_parameters flash_sam0_parameters = {
-#if CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
+    #if CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
     .write_block_size = 1,
-#else
+    #else
     .write_block_size = FLASH_WRITE_BLK_SZ,
-#endif
+    #endif
     .erase_value = 0xFFU,
 };
 
 static int flash_sam0_write_protection(const struct device* dev, bool enable);
 
 static inline void flash_sam0_sem_take(const struct device* dev) {
-#if defined(CONFIG_MULTITHREADING)
+    #if defined(CONFIG_MULTITHREADING)
     struct flash_sam0_data* ctx = dev->data;
 
     k_sem_take(&ctx->sem, K_FOREVER);
-#endif
+    #endif
 }
 
 static inline void flash_sam0_sem_give(const struct device* dev) {
-#if defined(CONFIG_MULTITHREADING)
+    #if defined(CONFIG_MULTITHREADING)
     struct flash_sam0_data* ctx = dev->data;
 
     k_sem_give(&ctx->sem);
-#endif
+    #endif
 }
 
 static int flash_sam0_valid_range(off_t offset, size_t len) {
     if (offset < 0) {
-        LOG_WRN("0x%lx: before start of flash", (long)offset);
+        LOG_WRN("0x%lX: before start of flash", (long)offset);
         return (-EINVAL);
     }
 
-    if ((offset + len) > CONFIG_FLASH_SIZE * 1024) {
-        LOG_WRN("0x%lx: ends past the end of flash", (long)offset);
+    if ((offset + len) > (CONFIG_FLASH_SIZE * 1024)) {
+        LOG_WRN("0x%lX: ends past the end of flash", (long)offset);
         return (-EINVAL);
     }
 
@@ -109,15 +109,15 @@ static int flash_sam0_valid_range(off_t offset, size_t len) {
 }
 
 static void flash_sam0_wait_ready(void) {
-#ifdef NVMCTRL_STATUS_READY
+    #ifdef NVMCTRL_STATUS_READY
     while (NVMCTRL->STATUS.bit.READY == 0) {
-        // pass
+        /* pass */
     }
-#else
+    #else
     while (NVMCTRL->INTFLAG.bit.READY == 0) {
-        // pass
+        /* pass */
     }
-#endif
+    #endif
 }
 
 static int flash_sam0_check_status(off_t offset) {
@@ -136,15 +136,15 @@ static int flash_sam0_check_status(off_t offset) {
     #endif
 
     if (status.bit.PROGE) {
-        LOG_ERR("programming error at 0x%lx", (long)offset);
+        LOG_ERR("programming error at 0x%lX", (long)offset);
         return (-EIO);
     }
     else if (status.bit.LOCKE) {
-        LOG_ERR("lock error at 0x%lx", (long)offset);
+        LOG_ERR("lock error at 0x%lX", (long)offset);
         return (-EROFS);
     }
     else if (status.bit.NVME) {
-        LOG_ERR("NVM error at 0x%lx", (long)offset);
+        LOG_ERR("NVM error at 0x%lX", (long)offset);
         return (-EIO);
     }
 
@@ -158,18 +158,18 @@ static int flash_sam0_check_status(off_t offset) {
  * be 16 or 32 bits. 8-bit writes to the page buffer are not allowed and
  * will cause a system exception
  */
-static int flash_sam0_write_page(const struct device *dev, off_t offset,
+static int flash_sam0_write_page(const struct device* dev, off_t offset,
                                  const void* data, size_t len) {
     const uint32_t* src = data;
     const uint32_t* end = src + (len / sizeof(*src));
     uint32_t* dst = FLASH_MEM(offset);
     int err;
 
-#ifdef NVMCTRL_CTRLA_CMD_PBC
-    NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_PBC | NVMCTRL_CTRLA_CMDEX_KEY;
-#else
-    NVMCTRL->CTRLB.reg = NVMCTRL_CTRLB_CMD_PBC | NVMCTRL_CTRLB_CMDEX_KEY;
-#endif
+    #ifdef NVMCTRL_CTRLA_CMD_PBC
+    NVMCTRL->CTRLA.reg = (NVMCTRL_CTRLA_CMD_PBC | NVMCTRL_CTRLA_CMDEX_KEY);
+    #else
+    NVMCTRL->CTRLB.reg = (NVMCTRL_CTRLB_CMD_PBC | NVMCTRL_CTRLB_CMDEX_KEY);
+    #endif
     flash_sam0_wait_ready();
 
     /* Ensure writes happen 32 bits at a time. */
@@ -177,11 +177,11 @@ static int flash_sam0_write_page(const struct device *dev, off_t offset,
         *dst = UNALIGNED_GET((uint32_t*)src);
     }
 
-#ifdef NVMCTRL_CTRLA_CMD_WP
+    #ifdef NVMCTRL_CTRLA_CMD_WP
     NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_WP | NVMCTRL_CTRLA_CMDEX_KEY;
-#else
+    #else
     NVMCTRL->CTRLB.reg = NVMCTRL_CTRLB_CMD_WP | NVMCTRL_CTRLB_CMDEX_KEY;
-#endif
+    #endif
 
     err = flash_sam0_check_status(offset);
     if (err != 0) {
@@ -189,7 +189,7 @@ static int flash_sam0_write_page(const struct device *dev, off_t offset,
     }
 
     if (memcmp(data, FLASH_MEM(offset), len) != 0) {
-        LOG_ERR("verify error at offset 0x%lx", (long)offset);
+        LOG_ERR("verify error at offset 0x%lX", (long)offset);
         return (-EIO);
     }
 
@@ -237,7 +237,7 @@ static int flash_sam0_write(const struct device* dev, off_t offset,
     const uint8_t* pdata = data;
     int err;
 
-    LOG_DBG("0x%lx: len %zu", (long)offset, len);
+    LOG_DBG("0x%lX: len %zu", (long)offset, len);
 
     err = flash_sam0_valid_range(offset, len);
     if (err != 0) {
@@ -285,7 +285,7 @@ static int flash_sam0_write(const struct device* dev, off_t offset,
 
 static int flash_sam0_write(const struct device* dev, off_t offset,
                             const void* data, size_t len) {
-    const uint8_t *pdata = data;
+    const uint8_t* pdata = data;
     int err;
 
     err = flash_sam0_valid_range(offset, len);
@@ -294,7 +294,7 @@ static int flash_sam0_write(const struct device* dev, off_t offset,
     }
 
     if ((offset % FLASH_WRITE_BLK_SZ) != 0) {
-        LOG_WRN("0x%lx: not on a write block boundary", (long)offset);
+        LOG_WRN("0x%lX: not on a write block boundary", (long)offset);
         return (-EINVAL);
     }
 
@@ -361,7 +361,7 @@ static int flash_sam0_erase(const struct device* dev, off_t offset,
     }
 
     if ((offset % ROW_SIZE) != 0) {
-        LOG_WRN("0x%lx: not on a page boundary", (long)offset);
+        LOG_WRN("0x%lX: not on a page boundary", (long)offset);
         return (-EINVAL);
     }
 
@@ -445,26 +445,26 @@ flash_sam0_get_parameters(const struct device* dev) {
 }
 
 static int flash_sam0_init(const struct device* dev) {
-#if defined(CONFIG_MULTITHREADING)
+    #if defined(CONFIG_MULTITHREADING)
     struct flash_sam0_data* ctx = dev->data;
 
     k_sem_init(&ctx->sem, 1, 1);
-#endif
+    #endif
 
-#ifdef PM_APBBMASK_NVMCTRL
+    #ifdef PM_APBBMASK_NVMCTRL
     /* Ensure the clock is on. */
     PM->APBBMASK.bit.NVMCTRL_ = 1;
-#else
+    #else
     MCLK->APBBMASK.reg |= MCLK_APBBMASK_NVMCTRL;
-#endif
+    #endif
 
-#ifdef NVMCTRL_CTRLB_MANW
+    #ifdef NVMCTRL_CTRLB_MANW
     /* Require an explicit write command */
     NVMCTRL->CTRLB.bit.MANW = 1;
-#elif NVMCTRL_CTRLA_WMODE
+    #elif NVMCTRL_CTRLA_WMODE
     /* Set manual write mode */
     NVMCTRL->CTRLA.bit.WMODE = NVMCTRL_CTRLA_WMODE_MAN_Val;
-#endif
+    #endif
 
     return flash_sam0_write_protection(dev, false);
 }
@@ -474,9 +474,9 @@ static const struct flash_driver_api flash_sam0_api = {
     .write = flash_sam0_write,
     .read  = flash_sam0_read,
     .get_parameters = flash_sam0_get_parameters,
-#ifdef CONFIG_FLASH_PAGE_LAYOUT
-    .page_layout = flash_sam0_page_layout,
-#endif
+    #ifdef CONFIG_FLASH_PAGE_LAYOUT
+    .page_layout    = flash_sam0_page_layout,
+    #endif
 };
 
 static struct flash_sam0_data flash_sam0_data_0;

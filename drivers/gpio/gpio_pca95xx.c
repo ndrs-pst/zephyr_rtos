@@ -627,6 +627,8 @@ static int gpio_pca95xx_pin_interrupt_configure(const struct device* dev,
     bool active;
     int ret;
 
+    ret = 0;
+
     /* Check if GPIO port supports interrupts */
     if ((config->capabilities & PCA_HAS_INTERRUPT) == 0U) {
         return (-ENOTSUP);

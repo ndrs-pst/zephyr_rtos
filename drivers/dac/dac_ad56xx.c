@@ -181,7 +181,7 @@ BUILD_ASSERT(CONFIG_DAC_AD56XX_INIT_PRIORITY > CONFIG_SPI_INIT_PRIORITY,
 #define DT_DRV_COMPAT adi_ad5628
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
 static const uint8_t ad5628_channels[] = {
-    0, 1, 2, 3, 4, 5, 6, 7,
+    0, 1, 2, 3, 4, 5, 6, 7
 };
 #define DAC_AD5628_RESOLUTION    12
 #define DAC_AD5628_CHANNELS      ad5628_channels
@@ -194,7 +194,7 @@ DT_INST_FOREACH_STATUS_OKAY_VARGS(DAC_AD56XX_INST_DEFINE, DT_DRV_COMPAT, DAC_AD5
 #define DT_DRV_COMPAT adi_ad5648
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
 static const uint8_t ad5648_channels[] = {
-    0, 1, 2, 3, 4, 5, 6, 7,
+    0, 1, 2, 3, 4, 5, 6, 7
 };
 #define DAC_AD5648_RESOLUTION    14
 #define DAC_AD5648_CHANNELS      ad5648_channels
@@ -207,7 +207,7 @@ DT_INST_FOREACH_STATUS_OKAY_VARGS(DAC_AD56XX_INST_DEFINE, DT_DRV_COMPAT, DAC_AD5
 #define DT_DRV_COMPAT adi_ad5668
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
 static const uint8_t ad5668_channels[] = {
-    0, 1, 2, 3, 4, 5, 6, 7,
+    0, 1, 2, 3, 4, 5, 6, 7
 };
 #define DAC_AD5668_RESOLUTION    16
 #define DAC_AD5668_CHANNELS      ad5668_channels
@@ -220,7 +220,7 @@ DT_INST_FOREACH_STATUS_OKAY_VARGS(DAC_AD56XX_INST_DEFINE, DT_DRV_COMPAT, DAC_AD5
 #define DT_DRV_COMPAT adi_ad5672
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
 static const uint8_t ad5672_channels[] = {
-    0, 1, 2, 3, 4, 5, 6, 7,
+    0, 1, 2, 3, 4, 5, 6, 7
 };
 #define DAC_AD5672_RESOLUTION    12
 #define DAC_AD5672_CHANNELS      ad5672_channels
@@ -233,7 +233,7 @@ DT_INST_FOREACH_STATUS_OKAY_VARGS(DAC_AD56XX_INST_DEFINE, DT_DRV_COMPAT, DAC_AD5
 #define DT_DRV_COMPAT adi_ad5674
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
 static const uint8_t ad5674_channels[] = {
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
 };
 #define DAC_AD5674_RESOLUTION    12
 #define DAC_AD5674_CHANNELS      ad5674_channels
@@ -246,7 +246,7 @@ DT_INST_FOREACH_STATUS_OKAY_VARGS(DAC_AD56XX_INST_DEFINE, DT_DRV_COMPAT, DAC_AD5
 #define DT_DRV_COMPAT adi_ad5676
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
 static const uint8_t ad5676_channels[] = {
-    0, 1, 2, 3, 4, 5, 6, 7,
+    0, 1, 2, 3, 4, 5, 6, 7
 };
 #define DAC_AD5676_RESOLUTION    16
 #define DAC_AD5676_CHANNELS      ad5676_channels
@@ -259,7 +259,7 @@ DT_INST_FOREACH_STATUS_OKAY_VARGS(DAC_AD56XX_INST_DEFINE, DT_DRV_COMPAT, DAC_AD5
 #define DT_DRV_COMPAT adi_ad5679
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
 static const uint8_t ad5679_channels[] = {
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
 };
 #define DAC_AD5679_RESOLUTION    16
 #define DAC_AD5679_CHANNELS      ad5679_channels
@@ -272,10 +272,7 @@ DT_INST_FOREACH_STATUS_OKAY_VARGS(DAC_AD56XX_INST_DEFINE, DT_DRV_COMPAT, DAC_AD5
 #define DT_DRV_COMPAT adi_ad5684
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
 static const uint8_t ad5684_channels[] = {
-    1,
-    2,
-    4,
-    8,
+    1, 2, 4, 8
 };
 #define DAC_AD5684_RESOLUTION    12
 #define DAC_AD5684_CHANNELS      ad5684_channels
@@ -288,10 +285,7 @@ DT_INST_FOREACH_STATUS_OKAY_VARGS(DAC_AD56XX_INST_DEFINE, DT_DRV_COMPAT, DAC_AD5
 #define DT_DRV_COMPAT adi_ad5686
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
 static const uint8_t ad5686_channels[] = {
-    1,
-    2,
-    4,
-    8,
+    1, 2, 4, 8
 };
 #define DAC_AD5686_RESOLUTION    16
 #define DAC_AD5686_CHANNELS      ad5686_channels
@@ -304,8 +298,7 @@ DT_INST_FOREACH_STATUS_OKAY_VARGS(DAC_AD56XX_INST_DEFINE, DT_DRV_COMPAT, DAC_AD5
 #define DT_DRV_COMPAT adi_ad5687
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
 static const uint8_t ad5687_channels[] = {
-    1,
-    8,
+    1, 8
 };
 #define DAC_AD5687_RESOLUTION    12
 #define DAC_AD5687_CHANNELS      ad5687_channels
@@ -318,8 +311,7 @@ DT_INST_FOREACH_STATUS_OKAY_VARGS(DAC_AD56XX_INST_DEFINE, DT_DRV_COMPAT, DAC_AD5
 #define DT_DRV_COMPAT adi_ad5689
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
 static const uint8_t ad5689_channels[] = {
-    1,
-    8,
+    1, 8
 };
 #define DAC_AD5689_RESOLUTION    16
 #define DAC_AD5689_CHANNELS      ad5689_channels
