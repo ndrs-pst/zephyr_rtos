@@ -39,7 +39,7 @@ struct ad56xx_config {
 };
 
 struct ad56xx_data {
-    /* pass */
+    uint8_t dummy;
 };
 
 static int ad56xx_write_command(const struct device* dev, enum ad56xx_command command,
@@ -165,7 +165,7 @@ BUILD_ASSERT(CONFIG_DAC_AD56XX_INIT_PRIORITY > CONFIG_SPI_INIT_PRIORITY,
              "CONFIG_DAC_AD56XX_INIT_PRIORITY must be higher than CONFIG_SPI_INIT_PRIORITY");
 
 #define DAC_AD56XX_INST_DEFINE(index, name, res, channels, channels_count)  \
-    static struct ad56xx_data         data_##name##_##index;                \
+    static struct ad56xx_data data_##name##_##index;                        \
     static const struct ad56xx_config config_##name##_##index = {           \
         .bus               = SPI_DT_SPEC_INST_GET(                          \
                              index, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8), 0), \
