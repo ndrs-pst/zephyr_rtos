@@ -130,7 +130,7 @@ struct adc_channel_cfg {
     /** Channel type: single-ended or differential. */
     uint8_t differential : 1;
 
-#ifdef CONFIG_ADC_CONFIGURABLE_INPUTS
+    #ifdef CONFIG_ADC_CONFIGURABLE_INPUTS
     /**
      * Positive ADC input.
      * This is a driver dependent value that identifies an ADC input to be
@@ -144,9 +144,9 @@ struct adc_channel_cfg {
      * associated with the channel.
      */
     uint8_t input_negative;
-#endif /* CONFIG_ADC_CONFIGURABLE_INPUTS */
+    #endif /* CONFIG_ADC_CONFIGURABLE_INPUTS */
 
-#ifdef CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
+    #ifdef CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
     uint8_t current_source_pin_set : 1;
     /**
      * Output pin for the current sources.
@@ -155,7 +155,7 @@ struct adc_channel_cfg {
      * The meaning itself is then defined by the driver itself.
      */
     uint8_t current_source_pin[2];
-#endif /* CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN */
+    #endif /* CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN */
 };
 
 /**
@@ -411,7 +411,7 @@ struct adc_dt_spec {
  *
  * @return Static initializer for an adc_dt_spec structure.
  */
-#define ADC_DT_SPEC_GET(node_id) ADC_DT_SPEC_GET_BY_IDX(node_id, 0)
+#define ADC_DT_SPEC_GET(node_id)    ADC_DT_SPEC_GET_BY_IDX(node_id, 0)
 
 /** @brief Equivalent to ADC_DT_SPEC_INST_GET_BY_IDX(inst, 0).
  *
@@ -421,7 +421,7 @@ struct adc_dt_spec {
  *
  * @return Static initializer for an adc_dt_spec structure.
  */
-#define ADC_DT_SPEC_INST_GET(inst) ADC_DT_SPEC_GET(DT_DRV_INST(inst))
+#define ADC_DT_SPEC_INST_GET(inst)  ADC_DT_SPEC_GET(DT_DRV_INST(inst))
 
 /* Forward declaration of the adc_sequence structure. */
 struct adc_sequence;
@@ -440,7 +440,7 @@ enum adc_action {
     ADC_ACTION_REPEAT,
 
     /** The sequence should be finished immediately. */
-    ADC_ACTION_FINISH,
+    ADC_ACTION_FINISH
 };
 
 /**
@@ -638,7 +638,7 @@ static inline int z_impl_adc_channel_setup(const struct device* dev,
  */
 static inline int adc_channel_setup_dt(const struct adc_dt_spec* spec) {
     if (!spec->channel_cfg_dt_node_exists) {
-        return -ENOTSUP;
+        return (-ENOTSUP);
     }
 
     return adc_channel_setup(spec->dev, &spec->channel_cfg);
@@ -735,7 +735,7 @@ static inline int z_impl_adc_read_async(const struct device* dev,
 static inline uint16_t adc_ref_internal(const struct device* dev) {
     const struct adc_driver_api* api = (const struct adc_driver_api*)dev->api;
 
-    return api->ref_internal;
+    return (api->ref_internal);
 }
 
 /**
@@ -772,7 +772,7 @@ static inline int adc_raw_to_millivolts(int32_t ref_mv,
         *valp = (adc_mv >> resolution);
     }
 
-    return ret;
+    return (ret);
 }
 
 /**
@@ -794,7 +794,7 @@ static inline int adc_raw_to_millivolts_dt(const struct adc_dt_spec* spec,
     uint8_t resolution;
 
     if (!spec->channel_cfg_dt_node_exists) {
-        return -ENOTSUP;
+        return (-ENOTSUP);
     }
 
     if (spec->channel_cfg.reference == ADC_REF_INTERNAL) {
@@ -839,14 +839,14 @@ static inline int adc_raw_to_millivolts_dt(const struct adc_dt_spec* spec,
 static inline int adc_sequence_init_dt(const struct adc_dt_spec* spec,
                                        struct adc_sequence* seq) {
     if (!spec->channel_cfg_dt_node_exists) {
-        return -ENOTSUP;
+        return (-ENOTSUP);
     }
 
     seq->channels     = BIT(spec->channel_id);
     seq->resolution   = spec->resolution;
     seq->oversampling = spec->oversampling;
 
-    return 0;
+    return (0);
 }
 
 /**
