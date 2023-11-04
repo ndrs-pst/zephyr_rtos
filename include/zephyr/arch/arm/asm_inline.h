@@ -16,6 +16,17 @@
 
 #if defined(__GNUC__)
 #include <zephyr/arch/arm/asm_inline_gcc.h>
+#elif defined(_MSC_VER)                     /* #CUSTOM@NDRS */
+/* @note Dummy function for __GTEST */
+static ALWAYS_INLINE void arch_irq_unlock(unsigned int key) {
+    (void) key;
+}
+
+/* @note Dummy function for __GTEST */
+static ALWAYS_INLINE unsigned int arch_irq_lock(void) {
+    return (0U);
+}
+
 #else
 #include <arch/arm/asm_inline_other.h>
 #endif

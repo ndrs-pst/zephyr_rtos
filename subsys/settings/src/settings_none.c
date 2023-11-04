@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-int settings_backend_init(void)
-{
-	return 0;
+int settings_backend_init(void) {
+    return (0);
 }

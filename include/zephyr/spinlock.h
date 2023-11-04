@@ -355,8 +355,8 @@ static ALWAYS_INLINE void z_spin_onexit(__maybe_unused k_spinlock_key_t *k)
  *
  * @param lck Spinlock used to guard the enclosed code block.
  */
-#define K_SPINLOCK(lck)                                                                            \
-	for (k_spinlock_key_t __i K_SPINLOCK_ONEXIT = {}, __key = k_spin_lock(lck); !__i.key;      \
+#define K_SPINLOCK(lck)                                         \
+	for (k_spinlock_key_t __i K_SPINLOCK_ONEXIT = {0}, __key = k_spin_lock(lck); !__i.key;  \
 	     k_spin_unlock(lck, __key), __i.key = 1)
 
 /** @} */

@@ -175,8 +175,7 @@ static struct usb_dc_stm32_state usb_dc_stm32_state;
 
 /* Internal functions */
 
-static struct usb_dc_stm32_ep_state *usb_dc_stm32_get_ep_state(uint8_t ep)
-{
+static struct usb_dc_stm32_ep_state* usb_dc_stm32_get_ep_state(uint8_t ep) {
 	struct usb_dc_stm32_ep_state *ep_state_base;
 
 	if (USB_EP_GET_IDX(ep) >= USB_NUM_BIDIR_ENDPOINTS) {
@@ -256,6 +255,23 @@ static int usb_dc_stm32_clock_enable(void)
 #endif
 
 #endif /* RCC_CFGR_OTGFSPRE / RCC_CFGR_USBPRE */
+
+    /* #CUSTOM@NDRS : START */
+    #if defined(CONFIG_SOC_SERIES_STM32H7X)
+    LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL1Q);
+    LL_PWR_EnableUSBVoltageDetector();
+    volatile uint32_t usb_clk_hz;
+    usb_clk_hz = LL_RCC_GetUSBClockFreq(LL_RCC_USB_CLKSOURCE_PLL1Q);
+
+    #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
+    /* Not yet support OTGHS */
+    #else
+    __HAL_RCC_USB_OTG_FS_CLK_ENABLE();
+    __HAL_RCC_USB2_OTG_FS_CLK_SLEEP_ENABLE();
+    __HAL_RCC_USB2_OTG_FS_ULPI_CLK_SLEEP_DISABLE();
+    #endif
+    #endif
+    /* #CUSTOM@NDRS : END */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc)
@@ -445,10 +461,10 @@ static int usb_dc_stm32_init(void)
 	}
 #endif /* USB */
 
-	IRQ_CONNECT(USB_IRQ, USB_IRQ_PRI,
-		    usb_dc_stm32_isr, 0, 0);
+    IRQ_CONNECT(USB_IRQ, USB_IRQ_PRI, usb_dc_stm32_isr, 0, 0);
 	irq_enable(USB_IRQ);
-	return 0;
+
+    return (0);
 }
 
 /* Zephyr USB device controller API implementation */
@@ -726,35 +742,34 @@ int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled)
 	return 0;
 }
 
-int usb_dc_ep_enable(const uint8_t ep)
-{
-	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
+int usb_dc_ep_enable(const uint8_t ep) {
+    struct usb_dc_stm32_ep_state* ep_state;
 	HAL_StatusTypeDef status;
+    int rc;
 
 	LOG_DBG("ep 0x%02x", ep);
 
-	if (!ep_state) {
-		return -EINVAL;
+    rc = 0;
+    ep_state = usb_dc_stm32_get_ep_state(ep);
+    if (ep_state == NULL) {
+        rc = -EINVAL;
 	}
+    else {
+        LOG_DBG("HAL_PCD_EP_Open(0x%02x, %u, %u)", ep, ep_state->ep_mps, ep_state->ep_type);
 
-	LOG_DBG("HAL_PCD_EP_Open(0x%02x, %u, %u)", ep, ep_state->ep_mps,
-		ep_state->ep_type);
-
-	status = HAL_PCD_EP_Open(&usb_dc_stm32_state.pcd, ep,
-				 ep_state->ep_mps, ep_state->ep_type);
+        status = HAL_PCD_EP_Open(&usb_dc_stm32_state.pcd, ep, ep_state->ep_mps, ep_state->ep_type);
 	if (status != HAL_OK) {
-		LOG_ERR("HAL_PCD_EP_Open failed(0x%02x), %d", ep,
-			(int)status);
-		return -EIO;
+            LOG_ERR("HAL_PCD_EP_Open failed(0x%02x), %d", ep, (int )status);
+            rc = -EIO;
 	}
-
-	if (USB_EP_DIR_IS_OUT(ep) && ep != EP0_OUT) {
-		return usb_dc_ep_start_read(ep,
-					  usb_dc_stm32_state.ep_buf[USB_EP_GET_IDX(ep)],
-					  EP_MPS);
+        else {
+            if (USB_EP_DIR_IS_OUT(ep) && (ep != EP0_OUT)) {
+                rc = usb_dc_ep_start_read(ep, usb_dc_stm32_state.ep_buf[USB_EP_GET_IDX(ep)], EP_MPS);
 	}
+        }
+    }
 
-	return 0;
+    return (rc);
 }
 
 int usb_dc_ep_disable(const uint8_t ep)
@@ -1065,7 +1080,7 @@ void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
 	memcpy(&usb_dc_stm32_state.ep_buf[EP0_IDX],
 	       usb_dc_stm32_state.pcd.Setup, ep_state->read_count);
 
-	if (ep_state->cb) {
+    if (ep_state->cb != NULL) {
 		ep_state->cb(EP0_OUT, USB_DC_EP_SETUP);
 
 		if (!(setup->wLength == 0U) &&

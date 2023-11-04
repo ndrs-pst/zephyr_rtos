@@ -116,7 +116,7 @@ manifest:
       groups:
         - babblesim
     - name: cmsis
-      revision: 5a00331455dd74e31e80efa383a489faea0590e3
+      revision: 1855720d555ae239303a44a11005692737356af1
       path: modules/hal/cmsis
       groups:
         - hal
@@ -147,7 +147,7 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: 942d664e48f7a2725933a93facc112b87b1de32b
+      revision: 58cbc50eb9da2779a92bcc83de977481f0af62f7
       path: modules/hal/atmel
       groups:
         - hal
@@ -229,7 +229,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 89ef0a3383edebf661073073bcdf6e2836fe90ee
+      revision: 742c3eccd1c6b6bb5b99d9b7957daa3f6fffe21e
       path: modules/hal/stm32
       groups:
         - hal
@@ -282,7 +282,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 13767d0b72eb14ce42eb8aad1e5a133ef66afc54
+      revision: 68206a38030eec9160155e85f22e43f8ea1d7ffa
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -337,8 +337,13 @@ manifest:
     - name: zcbor
       revision: 67fd8bb88d3136738661fa8bb5f9989103f4599e
       path: modules/lib/zcbor
+    - name: golioth
+      path: modules/lib/golioth
+      revision: main
+      url: https://github.com/DDC-NDRS/golioth-zephyr-sdk.git
+      import: west-external.yml
 
   self:
-    path: zephyr
+    path: zephyr_rtos
     west-commands: scripts/west-commands.yml
     import: submanifests
