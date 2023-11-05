@@ -158,7 +158,7 @@ size_t smp_shell_rx_bytes(struct smp_shell_data* data, uint8_t const* bytes,
             }
         }
 
-        if (data->buf && net_buf_tailroom(data->buf) > 0) {
+        if (data->buf && (net_buf_tailroom(data->buf) > 0)) {
             net_buf_add_u8(data->buf, byte);
         }
 
