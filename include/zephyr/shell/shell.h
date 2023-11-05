@@ -764,7 +764,7 @@ enum shell_signal {
 	SHELL_SIGNAL_RXRDY,
 	SHELL_SIGNAL_LOG_MSG,
 	SHELL_SIGNAL_KILL,
-	SHELL_SIGNAL_TXDONE, /* TXDONE must be last one before SHELL_SIGNALS */
+	SHELL_SIGNAL_TXDONE,                    /* TXDONE must be last one before SHELL_SIGNALS */
 	SHELL_SIGNALS
 };
 
