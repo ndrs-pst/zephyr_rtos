@@ -63,7 +63,7 @@ struct rtc_time {
     int tm_hour;  /**< Hours [0, 23] */
     int tm_mday;  /**< Day of the month [1, 31] */
     int tm_mon;   /**< Month [0, 11] */
-    int tm_year;  /**< Year - 1900 */
+    int tm_year;  /**< Year - 1900 (years since 1900) */
     int tm_wday;  /**< Day of the week [0, 6] (Sunday = 0) (Unknown = -1) */
     int tm_yday;  /**< Day of the year [0, 365] (Unknown = -1) */
     int tm_isdst; /**< Daylight saving time flag [-1] (Unknown = -1) */
