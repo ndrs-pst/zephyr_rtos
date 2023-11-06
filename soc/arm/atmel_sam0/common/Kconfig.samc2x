@@ -22,15 +22,15 @@ choice
 	  clock and AHB clock, will be derived from.
 
 config SOC_ATMEL_SAMC_XOSC32K_AS_MAIN
-	depends on SOC_ATMEL_SAMC_XOSC32K
 	bool "XOSC32K"
+	depends on SOC_ATMEL_SAMC_XOSC32K
 
 config SOC_ATMEL_SAMC_XOSC_AS_MAIN
-	depends on SOC_ATMEL_SAMC_XOSC
 	bool "XOSC"
+	depends on SOC_ATMEL_SAMC_XOSC
 
-config SOC_ATMEL_SAMC_OSC8M_AS_MAIN
-	bool "OSC8M"
+config SOC_ATMEL_SAMC_OSC48M_AS_MAIN
+	bool "OSC48M"
 
 endchoice
 
