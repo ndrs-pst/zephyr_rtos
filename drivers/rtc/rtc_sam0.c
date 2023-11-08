@@ -199,7 +199,7 @@ static void rtc_sam0_isr(const struct device* dev) {
     #endif /* CONFIG_RTC_ALARM */
 
     #if defined(CONFIG_RTC_UPDATE)
-    if ((intf & RTC_MODE2_INTFLAG_PER5) != 0U) {
+    if ((intf & RTC_MODE2_INTFLAG_PER4) != 0U) {
         if (data->update_callback != NULL) {
             data->update_callback(dev, data->update_user_data);
         }
@@ -432,10 +432,10 @@ static int rtc_sam0_update_set_callback(const struct device* dev,
     data->update_user_data = user_data;
 
     if (data->update_callback != NULL) {
-        regs->INTENSET.reg = RTC_MODE2_INTENSET_PER5;
+        regs->INTENSET.reg = RTC_MODE2_INTENSET_PER4;
     }
     else {
-        regs->INTENCLR.reg = RTC_MODE2_INTENCLR_PER5;
+        regs->INTENCLR.reg = RTC_MODE2_INTENCLR_PER4;
     }
 
     irq_enable(config->irq_num);
@@ -569,9 +569,9 @@ static int rtc_sam0_init(const struct device* dev) {
     }
 
     // RTC Mode Register Gregorian calendar, 24-hour mode is selected.
-    regs->CTRLA.reg = (uint16_t)(RTC_MODE2_CTRLA_MODE_CLOCK        |
-                                 RTC_MODE2_CTRLA_PRESCALER_DIV1024 |
-                                 RTC_MODE2_CTRLA_CLOCKSYNC         |
+    regs->CTRLA.reg = (uint16_t)(RTC_MODE2_CTRLA_MODE_CLOCK    |
+                                 RTC_MODE2_CTRLA_PRESCALER(10) |
+                                 RTC_MODE2_CTRLA_CLOCKSYNC     |
                                  RTC_MODE2_CTRLA_ENABLE);
     while (regs->SYNCBUSY.bit.CLOCKSYNC == 1U) {
         /* Wait for Synchronization */
