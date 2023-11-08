@@ -416,8 +416,7 @@ static const struct counter_driver_api counter_sam0_rtc_driver_api = {
                 CONFIG_COUNTER_INIT_PRIORITY,       \
                 &counter_sam0_rtc_driver_api);      \
                                     \
-    static void counter_sam0_rtc_config_##n(const struct device *dev) \
-    {                                               \
+    static void counter_sam0_rtc_config_##n(const struct device *dev) { \
         NVIC_ClearPendingIRQ(DT_INST_IRQN(n));      \
         IRQ_CONNECT(DT_INST_IRQN(n),                \
                 DT_INST_IRQ(n, priority),           \

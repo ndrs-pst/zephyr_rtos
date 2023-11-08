@@ -33,7 +33,8 @@ static char const* consume_char(char const* s, char ch) {
     if (*s != ch) {
         return (NULL);
     }
-    return ++s;
+
+    return (++s);
 }
 
 static char const* consume_date(char const* s, struct tm* tm_time) {
@@ -159,7 +160,7 @@ static int cmd_set(const struct shell* sh, size_t argc, char** argv) {
     struct rtc_time rtctime = {0};
     struct tm*      tm_time = rtc_time_to_tm(&rtctime);
 
-    (void)rtc_get_time(dev, &rtctime);
+    (void) rtc_get_time(dev, &rtctime);
 
     char const* format;
 
