@@ -32,7 +32,6 @@ FUNC_NORETURN __weak void arch_system_halt(unsigned int reason) {
         /* Spin endlessly */
     }
 }
-
 /* LCOV_EXCL_STOP */
 
 /* LCOV_EXCL_START */
@@ -45,7 +44,6 @@ __weak void k_sys_fatal_error_handler(unsigned int reason,
     arch_system_halt(reason);
     CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
-
 /* LCOV_EXCL_STOP */
 
 static char const* thread_name_get(struct k_thread* thread) {

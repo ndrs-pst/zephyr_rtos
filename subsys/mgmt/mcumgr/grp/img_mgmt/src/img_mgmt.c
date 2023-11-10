@@ -177,13 +177,13 @@ int img_mgmt_read_info(int image_slot, struct image_version* ver, uint8_t* hash,
     }
 
     if (ver != NULL) {
-        memset(ver, erased_val, sizeof(*ver));
+        (void) memset(ver, erased_val, sizeof(*ver));
     }
 
     erased_val_32 = ERASED_VAL_32(erased_val);
     if (hdr.ih_magic == IMAGE_MAGIC) {
         if (ver != NULL) {
-            memcpy(ver, &hdr.ih_ver, sizeof(*ver));
+            (void) memcpy(ver, &hdr.ih_ver, sizeof(*ver));
         }
     }
     else if (hdr.ih_magic == erased_val_32) {
