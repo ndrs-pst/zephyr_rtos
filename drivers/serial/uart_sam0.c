@@ -602,7 +602,7 @@ static int uart_sam0_init(const struct device* dev) {
         }
     }
 
-#endif
+    #endif
 
     usart->CTRLA.bit.ENABLE = 1;
     wait_synchronization(usart);

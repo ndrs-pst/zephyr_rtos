@@ -103,7 +103,7 @@ static int dma_sam0_config(const struct device* dev, uint32_t channel, struct dm
      * difference is the presence of the DMAC_CHID_ID macro from the
      * ASF HAL (i.e. it's only defined if indirect access is required).
      */
-#ifdef DMAC_CHID_ID
+    #ifdef DMAC_CHID_ID
     /* Select the channel for configuration */
     DMA_REGS->CHID.reg    = DMAC_CHID_ID(channel);
     DMA_REGS->CHCTRLA.reg = 0U;
@@ -139,7 +139,7 @@ static int dma_sam0_config(const struct device* dev, uint32_t channel, struct dm
     }
 
     DMA_REGS->CHINTFLAG.reg = DMAC_CHINTFLAG_TERR | DMAC_CHINTFLAG_TCMPL;
-#else
+    #else
     /* Channels have separate configuration registers */
     DmacChannel* chcfg = &DMA_REGS->Channel[channel];
 
@@ -193,7 +193,7 @@ static int dma_sam0_config(const struct device* dev, uint32_t channel, struct dm
     }
 
     chcfg->CHINTFLAG.reg = DMAC_CHINTFLAG_TERR | DMAC_CHINTFLAG_TCMPL;
-#endif
+    #endif
 
     /* Set the beat (single transfer) size */
     if (config->source_data_size != config->dest_data_size) {
@@ -282,7 +282,7 @@ static int dma_sam0_start(const struct device* dev, uint32_t channel) {
 
     ARG_UNUSED(dev);
 
-#ifdef DMAC_CHID_ID
+    #ifdef DMAC_CHID_ID
     DMA_REGS->CHID.reg    = (uint8_t)(channel);
     DMA_REGS->CHCTRLA.reg = DMAC_CHCTRLA_ENABLE;
 
@@ -291,7 +291,7 @@ static int dma_sam0_start(const struct device* dev, uint32_t channel) {
         DMA_REGS->SWTRIGCTRL.reg = 1U << channel;
     }
 
-#else
+    #else
     DmacChannel * chcfg = &DMA_REGS->Channel[channel];
 
     chcfg->CHCTRLA.bit.ENABLE = 1;
@@ -300,7 +300,7 @@ static int dma_sam0_start(const struct device* dev, uint32_t channel) {
         /* Trigger via software */
         DMA_REGS->SWTRIGCTRL.reg = 1U << channel;
     }
-#endif
+    #endif
 
     irq_unlock(key);
 
@@ -312,14 +312,14 @@ static int dma_sam0_stop(const struct device* dev, uint32_t channel) {
 
     ARG_UNUSED(dev);
 
-#ifdef DMAC_CHID_ID
+    #ifdef DMAC_CHID_ID
     DMA_REGS->CHID.reg = (uint8_t)(channel);
     DMA_REGS->CHCTRLA.reg = 0;
-#else
-    DmacChannel * chcfg = &DMA_REGS->Channel[channel];
+    #else
+    DmacChannel* chcfg = &DMA_REGS->Channel[channel];
 
     chcfg->CHCTRLA.bit.ENABLE = 0;
-#endif
+    #endif
 
     irq_unlock(key);
 
@@ -417,24 +417,24 @@ static int dma_sam0_get_status(const struct device* dev, uint32_t channel, struc
     return (ret);
 }
 
-#define DMA_SAM0_IRQ_CONNECT(n)						 \
-	do {								 \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, n, irq),		 \
-			    DT_INST_IRQ_BY_IDX(0, n, priority),		 \
-			    dma_sam0_isr, DEVICE_DT_INST_GET(0), 0);	 \
-		irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));		 \
-	} while (false)
+#define DMA_SAM0_IRQ_CONNECT(n)                                 \
+    do {                                                        \
+        IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, n, irq),              \
+                    DT_INST_IRQ_BY_IDX(0, n, priority),         \
+                    dma_sam0_isr, DEVICE_DT_INST_GET(0), 0);    \
+        irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));              \
+    } while (false)
 
 static int dma_sam0_init(const struct device* dev) {
     struct dma_sam0_data* data = dev->data;
 
     /* Enable clocks. */
-#ifdef MCLK
+    #ifdef MCLK
     MCLK->AHBMASK.bit.DMAC_ = 1;
-#else
+    #else
     PM->AHBMASK.bit.DMAC_  = 1;
     PM->APBBMASK.bit.DMAC_ = 1;
-#endif
+    #endif
 
     /* Set up the descriptor and write back addresses */
     DMA_REGS->BASEADDR.reg = (uintptr_t)&data->descriptors;
@@ -447,21 +447,21 @@ static int dma_sam0_init(const struct device* dev) {
     /* Enable the unit and enable all priorities */
     DMA_REGS->CTRL.reg = DMAC_CTRL_DMAENABLE | DMAC_CTRL_LVLEN(0x0F);
 
-#if DT_INST_IRQ_HAS_CELL(0, irq)
+    #if DT_INST_IRQ_HAS_CELL(0, irq)
     DMA_SAM0_IRQ_CONNECT(0);
-#endif
-#if DT_INST_IRQ_HAS_IDX(0, 1)
+    #endif
+    #if DT_INST_IRQ_HAS_IDX(0, 1)
     DMA_SAM0_IRQ_CONNECT(1);
-#endif
-#if DT_INST_IRQ_HAS_IDX(0, 2)
+    #endif
+    #if DT_INST_IRQ_HAS_IDX(0, 2)
     DMA_SAM0_IRQ_CONNECT(2);
-#endif
-#if DT_INST_IRQ_HAS_IDX(0, 3)
+    #endif
+    #if DT_INST_IRQ_HAS_IDX(0, 3)
     DMA_SAM0_IRQ_CONNECT(3);
-#endif
-#if DT_INST_IRQ_HAS_IDX(0, 4)
+    #endif
+    #if DT_INST_IRQ_HAS_IDX(0, 4)
     DMA_SAM0_IRQ_CONNECT(4);
-#endif
+    #endif
 
     return (0);
 }

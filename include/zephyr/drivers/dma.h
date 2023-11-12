@@ -61,8 +61,8 @@ enum dma_addr_adj {
 
 /* channel attributes */
 enum dma_channel_filter {
-    DMA_CHANNEL_NORMAL,   /* normal DMA channel */
-    DMA_CHANNEL_PERIODIC, /* can be triggered by periodic sources */
+    DMA_CHANNEL_NORMAL,     /* normal DMA channel */
+    DMA_CHANNEL_PERIODIC    /* can be triggered by periodic sources */
 };
 
 /* DMA attributes */
@@ -70,7 +70,7 @@ enum dma_attribute_type {
     DMA_ATTR_BUFFER_ADDRESS_ALIGNMENT,
     DMA_ATTR_BUFFER_SIZE_ALIGNMENT,
     DMA_ATTR_COPY_ALIGNMENT,
-    DMA_ATTR_MAX_BLOCK_COUNT,
+    DMA_ATTR_MAX_BLOCK_COUNT
 };
 
 /**
@@ -111,28 +111,28 @@ enum dma_attribute_type {
  *     reserved           [ 13 : 15 ]
  */
 struct dma_block_config {
-#ifdef CONFIG_DMA_64BIT
+    #ifdef CONFIG_DMA_64BIT
     uint64_t source_address;
     uint64_t dest_address;
-#else
+    #else
     uint32_t source_address;
     uint32_t dest_address;
-#endif
-    uint32_t                 source_gather_interval;
-    uint32_t                 dest_scatter_interval;
-    uint16_t                 dest_scatter_count;
-    uint16_t                 source_gather_count;
-    uint32_t                 block_size;
+    #endif
+    uint32_t source_gather_interval;
+    uint32_t dest_scatter_interval;
+    uint16_t dest_scatter_count;
+    uint16_t source_gather_count;
+    uint32_t block_size;
     struct dma_block_config* next_block;
-    uint16_t                 source_gather_en  : 1;
-    uint16_t                 dest_scatter_en   : 1;
-    uint16_t                 source_addr_adj   : 2;
-    uint16_t                 dest_addr_adj     : 2;
-    uint16_t                 source_reload_en  : 1;
-    uint16_t                 dest_reload_en    : 1;
-    uint16_t                 fifo_mode_control : 4;
-    uint16_t                 flow_control_mode : 1;
-    uint16_t                 reserved          : 3;
+    uint16_t source_gather_en  : 1;
+    uint16_t dest_scatter_en   : 1;
+    uint16_t source_addr_adj   : 2;
+    uint16_t dest_addr_adj     : 2;
+    uint16_t source_reload_en  : 1;
+    uint16_t dest_reload_en    : 1;
+    uint16_t fifo_mode_control : 4;
+    uint16_t flow_control_mode : 1;
+    uint16_t reserved          : 3;
 };
 
 #define DMA_STATUS_COMPLETE 0
@@ -200,26 +200,26 @@ typedef void (*dma_callback_t)(const struct device* dev, void* user_data,
  * @param dma_callback see dma_callback_t for details
  */
 struct dma_config {
-    uint32_t                 dma_slot             : 8;
-    uint32_t                 channel_direction    : 3;
-    uint32_t                 complete_callback_en : 1;
-    uint32_t                 error_callback_en    : 1;
-    uint32_t                 source_handshake     : 1;
-    uint32_t                 dest_handshake       : 1;
-    uint32_t                 channel_priority     : 4;
-    uint32_t                 source_chaining_en   : 1;
-    uint32_t                 dest_chaining_en     : 1;
-    uint32_t                 linked_channel       : 7;
-    uint32_t                 cyclic               : 1;
-    uint32_t                 reserved             : 3;
-    uint32_t                 source_data_size     : 16;
-    uint32_t                 dest_data_size       : 16;
-    uint32_t                 source_burst_length  : 16;
-    uint32_t                 dest_burst_length    : 16;
-    uint32_t                 block_count;
+    uint32_t dma_slot             : 8;
+    uint32_t channel_direction    : 3;
+    uint32_t complete_callback_en : 1;
+    uint32_t error_callback_en    : 1;
+    uint32_t source_handshake     : 1;
+    uint32_t dest_handshake       : 1;
+    uint32_t channel_priority     : 4;
+    uint32_t source_chaining_en   : 1;
+    uint32_t dest_chaining_en     : 1;
+    uint32_t linked_channel       : 7;
+    uint32_t cyclic               : 1;
+    uint32_t reserved             : 3;
+    uint32_t source_data_size     : 16;
+    uint32_t dest_data_size       : 16;
+    uint32_t source_burst_length  : 16;
+    uint32_t dest_burst_length    : 16;
+    uint32_t block_count;
     struct dma_block_config* head_block;
-    void*                    user_data;
-    dma_callback_t           dma_callback;
+    void* user_data;
+    dma_callback_t dma_callback;
 };
 
 /**
@@ -235,13 +235,13 @@ struct dma_config {
  *
  */
 struct dma_status {
-    bool                       busy;
+    bool busy;
     enum dma_channel_direction dir;
-    uint32_t                   pending_length;
-    uint32_t                   free;
-    uint32_t                   write_position;
-    uint32_t                   read_position;
-    uint64_t                   total_copied;
+    uint32_t pending_length;
+    uint32_t free;
+    uint32_t write_position;
+    uint32_t read_position;
+    uint64_t total_copied;
 };
 
 /**
@@ -255,8 +255,8 @@ struct dma_status {
  *
  */
 struct dma_context {
-    int32_t   magic;
-    int       dma_channels;
+    int32_t magic;
+    int dma_channels;
     atomic_t* atomic;
 };
 
@@ -340,7 +340,7 @@ static inline int dma_config(const struct device* dev,
                              uint32_t channel, struct dma_config* config) {
     const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
-    return api->config(dev, channel, config);
+    return (api->config(dev, channel, config));
 }
 
 /**
@@ -367,10 +367,10 @@ static inline int dma_reload(const struct device* dev, uint32_t channel,
     const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
     if (api->reload) {
-        return api->reload(dev, channel, src, dst, size);
+        return (api->reload(dev, channel, src, dst, size));
     }
 
-    return -ENOSYS;
+    return (-ENOSYS);
 }
 
 /**
@@ -395,7 +395,7 @@ __syscall int dma_start(const struct device* dev, uint32_t channel);
 static inline int z_impl_dma_start(const struct device* dev, uint32_t channel) {
     const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
-    return api->start(dev, channel);
+    return (api->start(dev, channel));
 }
 
 /**
@@ -419,7 +419,7 @@ __syscall int dma_stop(const struct device* dev, uint32_t channel);
 static inline int z_impl_dma_stop(const struct device* dev, uint32_t channel) {
     const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
-    return api->stop(dev, channel);
+    return (api->stop(dev, channel));
 }
 
 /**
@@ -442,9 +442,10 @@ static inline int z_impl_dma_suspend(const struct device* dev, uint32_t channel)
     const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
     if (api->suspend == NULL) {
-        return -ENOSYS;
+        return (-ENOSYS);
     }
-    return api->suspend(dev, channel);
+
+    return (api->suspend(dev, channel));
 }
 
 /**
@@ -467,9 +468,10 @@ static inline int z_impl_dma_resume(const struct device* dev, uint32_t channel) 
     const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
     if (api->resume == NULL) {
-        return -ENOSYS;
+        return (-ENOSYS);
     }
-    return api->resume(dev, channel);
+
+    return (api->resume(dev, channel));
 }
 
 /**
@@ -558,10 +560,10 @@ static inline int z_impl_dma_chan_filter(const struct device* dev,
     const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
     if (api->chan_filter) {
-        return api->chan_filter(dev, channel, filter_param);
+        return (api->chan_filter(dev, channel, filter_param));
     }
 
-    return -ENOSYS;
+    return (-ENOSYS);
 }
 
 /**
@@ -583,10 +585,10 @@ static inline int dma_get_status(const struct device* dev, uint32_t channel,
     const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
     if (api->get_status) {
-        return api->get_status(dev, channel, stat);
+        return (api->get_status(dev, channel, stat));
     }
 
-    return -ENOSYS;
+    return (-ENOSYS);
 }
 
 /**
@@ -608,10 +610,10 @@ static inline int dma_get_attribute(const struct device* dev, uint32_t type, uin
     const struct dma_driver_api* api = (const struct dma_driver_api*)dev->api;
 
     if (api->get_attribute) {
-        return api->get_attribute(dev, type, value);
+        return (api->get_attribute(dev, type, value));
     }
 
-    return -ENOSYS;
+    return (-ENOSYS);
 }
 
 /**
@@ -630,12 +632,12 @@ static inline int dma_get_attribute(const struct device* dev, uint32_t type, uin
 static inline uint32_t dma_width_index(uint32_t size) {
     /* Check boundaries (max supported width is 32 Bytes) */
     if (size < 1 || size > 32) {
-        return 0; /* Zero is the default (8 Bytes) */
+        return (0); /* Zero is the default (8 Bytes) */
     }
 
     /* Ensure size is a power of 2 */
     if (!is_power_of_two(size)) {
-        return 0; /* Zero is the default (8 Bytes) */
+        return (0); /* Zero is the default (8 Bytes) */
     }
 
     /* Convert to bit pattern for writing to a register */
@@ -658,12 +660,12 @@ static inline uint32_t dma_width_index(uint32_t size) {
 static inline uint32_t dma_burst_index(uint32_t burst) {
     /* Check boundaries (max supported burst length is 256) */
     if (burst < 1 || burst > 256) {
-        return 0; /* Zero is the default (1 burst length) */
+        return (0); /* Zero is the default (1 burst length) */
     }
 
     /* Ensure burst is a power of 2 */
     if (!(burst & (burst - 1))) {
-        return 0; /* Zero is the default (1 burst length) */
+        return (0); /* Zero is the default (1 burst length) */
     }
 
     /* Convert to bit pattern for writing to a register */
