@@ -165,6 +165,7 @@ static int flash_sam0_write_page(const struct device* dev, off_t offset,
     uint32_t* dst = FLASH_MEM(offset);
     int err;
 
+    /* PBC (Page Buffer Clear) - Clears the page buffer. */
     #ifdef NVMCTRL_CTRLA_CMD_PBC
     NVMCTRL->CTRLA.reg = (NVMCTRL_CTRLA_CMD_PBC | NVMCTRL_CTRLA_CMDEX_KEY);
     #else
@@ -177,10 +178,14 @@ static int flash_sam0_write_page(const struct device* dev, off_t offset,
         *dst = UNALIGNED_GET((uint32_t*)src);
     }
 
+    /* WP (Write Page) -
+     * Writes the contents of the page buffer to the page addressed by the ADDR register. */
+    NVMCTRL->ADDR.reg  = ((offset + CONFIG_FLASH_BASE_ADDRESS) >> 1);
+
     #ifdef NVMCTRL_CTRLA_CMD_WP
-    NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_WP | NVMCTRL_CTRLA_CMDEX_KEY;
+    NVMCTRL->CTRLA.reg = (NVMCTRL_CTRLA_CMD_WP | NVMCTRL_CTRLA_CMDEX_KEY);
     #else
-    NVMCTRL->CTRLB.reg = NVMCTRL_CTRLB_CMD_WP | NVMCTRL_CTRLB_CMDEX_KEY;
+    NVMCTRL->CTRLB.reg = (NVMCTRL_CTRLB_CMD_WP | NVMCTRL_CTRLB_CMDEX_KEY);
     #endif
 
     err = flash_sam0_check_status(offset);
@@ -197,12 +202,13 @@ static int flash_sam0_write_page(const struct device* dev, off_t offset,
 }
 
 static int flash_sam0_erase_row(const struct device* dev, off_t offset) {
-    *FLASH_MEM(offset) = 0U;
+    /* ER (Erase Row) - Erases the row addressed by the ADDR register in the NVM main array. */
+    NVMCTRL->ADDR.reg = ((offset + CONFIG_FLASH_BASE_ADDRESS) >> 1);
 
     #ifdef NVMCTRL_CTRLA_CMD_ER
-    NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_ER | NVMCTRL_CTRLA_CMDEX_KEY;
+    NVMCTRL->CTRLA.reg = (NVMCTRL_CTRLA_CMD_ER | NVMCTRL_CTRLA_CMDEX_KEY);
     #else
-    NVMCTRL->CTRLB.reg = NVMCTRL_CTRLB_CMD_EB | NVMCTRL_CTRLB_CMDEX_KEY;
+    NVMCTRL->CTRLB.reg = (NVMCTRL_CTRLB_CMD_EB | NVMCTRL_CTRLB_CMDEX_KEY);
     #endif
 
     return (flash_sam0_check_status(offset));
@@ -255,15 +261,15 @@ static int flash_sam0_write(const struct device* dev, off_t offset,
     size_t pos = 0U;
 
     while ((err == 0) && (pos < len)) {
-        off_t  start    = offset % sizeof(ctx->buf);
-        off_t  base     = offset - start;
-        size_t len_step = sizeof(ctx->buf) - start;
-        size_t len_copy = MIN(len - pos, len_step);
+        off_t  start    = (offset % sizeof(ctx->buf));
+        off_t  base     = (offset - start);
+        size_t len_step = (sizeof(ctx->buf) - start);
+        size_t len_copy = MIN((len - pos), len_step);
 
         if (len_copy < sizeof(ctx->buf)) {
-            memcpy(ctx->buf, (void*)base, sizeof(ctx->buf));
+            (void) memcpy(ctx->buf, (void*)base, sizeof(ctx->buf));
         }
-        memcpy(&(ctx->buf[start]), &(pdata[pos]), len_copy);
+        (void) memcpy(&(ctx->buf[start]), &(pdata[pos]), len_copy);
         err = flash_sam0_commit(dev, base);
 
         offset += len_step;
@@ -308,7 +314,7 @@ static int flash_sam0_write(const struct device* dev, off_t offset,
     err = flash_sam0_write_protection(dev, false);
     if (err == 0) {
         /* Maximum size without crossing a page */
-        size_t eop_len = FLASH_PAGE_SIZE - (offset % FLASH_PAGE_SIZE);
+        size_t eop_len   = (FLASH_PAGE_SIZE - (offset % FLASH_PAGE_SIZE));
         size_t write_len = MIN(len, eop_len);
 
         while (len > 0) {
@@ -346,7 +352,7 @@ static int flash_sam0_read(const struct device* dev,
         return (err);
     }
 
-    memcpy(data, (uint8_t*)CONFIG_FLASH_BASE_ADDRESS + offset, len);
+    (void) memcpy(data, (uint8_t*)CONFIG_FLASH_BASE_ADDRESS + offset, len);
 
     return (0);
 }
@@ -374,7 +380,7 @@ static int flash_sam0_erase(const struct device* dev, off_t offset,
 
     err = flash_sam0_write_protection(dev, false);
     if (err == 0) {
-        for (size_t addr = offset; addr < offset + size;
+        for (size_t addr = offset; addr < (offset + size);
              addr += ROW_SIZE) {
             err = flash_sam0_erase_row(dev, addr);
             if (err != 0) {
@@ -400,7 +406,9 @@ static int flash_sam0_write_protection(const struct device* dev, bool enable) {
 
     for (offset = 0; offset < (CONFIG_FLASH_SIZE * 1024);
          offset += LOCK_REGION_SIZE) {
-        NVMCTRL->ADDR.reg = offset + CONFIG_FLASH_BASE_ADDRESS;
+        /* ADDR drives the hardware half-word offset from the start address of the corresponding NVM section
+         * when a command is executed using CMDEX. */
+        NVMCTRL->ADDR.reg = (offset + CONFIG_FLASH_BASE_ADDRESS) >> 1;
 
         #ifdef NVMCTRL_CTRLA_CMD_LR
         if (enable) {
@@ -441,7 +449,7 @@ static const struct flash_parameters*
 flash_sam0_get_parameters(const struct device* dev) {
     ARG_UNUSED(dev);
 
-    return &flash_sam0_parameters;
+    return (&flash_sam0_parameters);
 }
 
 static int flash_sam0_init(const struct device* dev) {
