@@ -162,6 +162,9 @@ static void xosc32k_init(void) {
 /// When using FDPLL at temperature below 25°C, enable the lock bypass (OSCCTRL.DPLLCTRLB.LBYPASS = 1)
 /// to avoid losing FDPLL clock output during a false unlock status.
 static void fdpll_init(void) {
+    /* Disable DPLL beforehand */
+    OSCCTRL->DPLLCTRLA.bit.ENABLE = 0U;
+
     /****************** DPLL Initialization *********************************/
     #if defined(CONFIG_SOC_ATMEL_SAMC_XOSC32K_AS_MAIN)
     /* Configure DPLL */
@@ -262,6 +265,12 @@ static void wait_gclk_sync(uint32_t sync_bit) {
     }
 }
 
+static void gclks_deinit(void) {
+    // The reset value is 0x00000106 for GCLK0
+    GCLK->GENCTRL[0].reg = (GCLK_GENCTRL_DIV(0UL) | GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_OSC48M_Val) |
+                            GCLK_GENCTRL_GENEN);
+}
+
 static void gclks_init(void) {
     #if defined(CONFIG_SOC_ATMEL_SAMC_XOSC_AS_MAIN)
     if (SOC_ATMEL_SAMC_XOSC_FREQ_HZ == 8000000UL) {
@@ -296,6 +305,7 @@ void z_arm_platform_init(void) {
     osc32k_init();
     xosc_init();
     xosc32k_init();
+    gclks_deinit();
     fdpll_init();
     mclk_init();
     gclks_init();
