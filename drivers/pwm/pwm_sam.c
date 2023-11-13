@@ -31,24 +31,20 @@ struct sam_pwm_config {
 };
 
 static int sam_pwm_get_cycles_per_sec(const struct device *dev,
-				      uint32_t channel, uint64_t *cycles)
-{
+                                      uint32_t channel, uint64_t* cycles) {
 	const struct sam_pwm_config *config = dev->config;
 	uint8_t prescaler = config->prescaler;
 	uint8_t divider = config->divider;
 
-	*cycles = SOC_ATMEL_SAM_MCK_FREQ_HZ /
-		  ((1 << prescaler) * divider);
+    *cycles = SOC_ATMEL_SAM_MCK_FREQ_HZ / ((1 << prescaler) * divider);
 
-	return 0;
+    return (0);
 }
 
 static int sam_pwm_set_cycles(const struct device *dev, uint32_t channel,
 			      uint32_t period_cycles, uint32_t pulse_cycles,
-			      pwm_flags_t flags)
-{
+                              pwm_flags_t flags) {
 	const struct sam_pwm_config *config = dev->config;
-
 	Pwm * const pwm = config->regs;
 	uint32_t cmr;
 
@@ -78,7 +74,8 @@ static int sam_pwm_set_cycles(const struct device *dev, uint32_t channel,
 		pwm->PWM_CH_NUM[channel].PWM_CMR = cmr;
 		pwm->PWM_CH_NUM[channel].PWM_CPRD = period_cycles;
 		pwm->PWM_CH_NUM[channel].PWM_CDTY = pulse_cycles;
-	} else {
+    }
+    else {
 		/* Update period and pulse using the update registers, so that the
 		 * change is triggered at the next PWM period.
 		 */
@@ -89,13 +86,11 @@ static int sam_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	/* Enable the output */
 	pwm->PWM_ENA = 1 << channel;
 
-	return 0;
+    return (0);
 }
 
-static int sam_pwm_init(const struct device *dev)
-{
+static int sam_pwm_init(const struct device* dev) {
 	const struct sam_pwm_config *config = dev->config;
-
 	Pwm * const pwm = config->regs;
 	uint8_t prescaler = config->prescaler;
 	uint8_t divider = config->divider;
@@ -115,7 +110,7 @@ static int sam_pwm_init(const struct device *dev)
 	/* Configure the clock A that will be used by all 4 channels */
 	pwm->PWM_CLK = PWM_CLK_PREA(prescaler) | PWM_CLK_DIVA(divider);
 
-	return 0;
+    return (0);
 }
 
 static const struct pwm_driver_api sam_pwm_driver_api = {
