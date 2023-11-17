@@ -56,12 +56,16 @@ static char const* swap_type_str(uint8_t type) {
     switch (type) {
         case BOOT_SWAP_TYPE_NONE :
             return "none";
+
         case BOOT_SWAP_TYPE_TEST :
             return "test";
+
         case BOOT_SWAP_TYPE_PERM :
             return "perm";
+
         case BOOT_SWAP_TYPE_REVERT :
             return "revert";
+
         case BOOT_SWAP_TYPE_FAIL :
             return "fail";
     }

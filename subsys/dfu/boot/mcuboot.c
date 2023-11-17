@@ -115,6 +115,7 @@ int boot_read_bank_header(uint8_t area_id,
     if (header_size < v1_min_size) {
         return (-ENOMEM);
     }
+
     rc = boot_read_v1_header(area_id, &v1_raw);
     if (rc) {
         return (rc);
@@ -161,6 +162,7 @@ int boot_request_upgrade(int permanent) {
         return (-EFAULT);
     }
     #endif /* FLASH_AREA_IMAGE_SECONDARY */
+
     return (0);
 }
 
@@ -171,22 +173,23 @@ int boot_request_upgrade_multi(int image_index, int permanent) {
     if (rc) {
         return (-EFAULT);
     }
+
     return (0);
 }
 
 bool boot_is_img_confirmed(void) {
-    struct boot_swap_state   state;
+    struct boot_swap_state state;
     const struct flash_area* fa;
-    int                      rc;
+    int rc;
 
     rc = flash_area_open(FLASH_AREA_IMAGE_PRIMARY, &fa);
     if (rc) {
-        return false;
+        return (false);
     }
 
     rc = boot_read_swap_state(fa, &state);
     if (rc != 0) {
-        return false;
+        return (false);
     }
 
     if (state.magic == BOOT_MAGIC_UNSET) {
@@ -195,10 +198,10 @@ bool boot_is_img_confirmed(void) {
          * Treat this image as confirmed which ensures consistency
          * with `boot_write_img_confirmed...()` procedures.
          */
-        return true;
+        return (true);
     }
 
-    return state.image_ok == BOOT_FLAG_SET;
+    return (state.image_ok == BOOT_FLAG_SET);
 }
 
 int boot_write_img_confirmed(void) {
