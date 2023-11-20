@@ -337,6 +337,8 @@ enum z_log_msg_mode {
 
 #define Z_LOG_MSG_STACK_CREATE(_cstr_cnt, _domain_id, _source, _level, _data, _dlen, ...) \
 do { \
+	_Pragma("GCC diagnostic push") \
+	_Pragma("GCC diagnostic ignored \"-Wconversion\"")  \
 	int _plen; \
 	uint32_t _options = Z_LOG_MSG_CBPRINTF_FLAGS(_cstr_cnt) | \
 			  CBPRINTF_PACKAGE_ADD_RW_STR_POS; \
@@ -347,7 +349,7 @@ do { \
 					__VA_ARGS__); \
 	} \
 	TOOLCHAIN_IGNORE_WSHADOW_BEGIN \
-	struct log_msg *_msg; \
+	struct log_msg* _msg; \
 	TOOLCHAIN_IGNORE_WSHADOW_END \
 	Z_LOG_MSG_ON_STACK_ALLOC(_msg, Z_LOG_MSG_LEN(_plen, 0)); \
 	Z_LOG_ARM64_VLA_PROTECT(); \
@@ -362,6 +364,7 @@ do { \
 	LOG_MSG_DBG("creating message on stack: package len: %d, data len: %d\n", \
 			_plen, (int)(_dlen)); \
 	z_log_msg_static_create((void *)_source, _desc, _msg->data, _data); \
+	_Pragma("GCC diagnostic pop") \
 } while (false)
 
 #ifdef CONFIG_LOG_SPEED

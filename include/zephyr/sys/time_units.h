@@ -1194,7 +1194,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void) {
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_ms_floor64(t) \
-    z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_ms, true, false, false)
+    (int64_t)z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_ms, true, false, false)
 
 /** @brief Convert ticks to milliseconds. 32 bits. Round nearest.
  *

@@ -293,7 +293,7 @@ extern "C" {
  *
  * @return The result of @p n / @p d, rounded up.
  */
-#define DIV_ROUND_UP(n, d)      (((n) + (d)-1) / (d))
+#define DIV_ROUND_UP(n, d)      (((n) + (d) - 1) / (d))
 
 /**
  * @brief Divide and round to the nearest integer.
@@ -505,7 +505,7 @@ size_t hex2bin(char const* hex, size_t hexlen, uint8_t* buf, size_t buflen);
  * @return Binary representation of input value.
  */
 static inline uint8_t bcd2bin(uint8_t bcd) {
-    return ((10 * (bcd >> 4)) + (bcd & 0x0F));
+    return (uint8_t)(((10U * (bcd >> 4U)) + (bcd & 0x0FU)));
 }
 
 /**

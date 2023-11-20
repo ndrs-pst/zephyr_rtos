@@ -76,9 +76,9 @@ typedef atomic_ptr_t atomic_ptr_val_t;
  * @cond INTERNAL_HIDDEN
  */
 
-#define ATOMIC_BITS (sizeof(atomic_val_t) * 8)
-#define ATOMIC_MASK(bit) BIT((unsigned long)(bit) & (ATOMIC_BITS - 1U))
-#define ATOMIC_ELEM(addr, bit) ((addr) + ((bit) / ATOMIC_BITS))
+#define ATOMIC_BITS             ((atomic_val_t)sizeof(atomic_val_t) * 8)
+#define ATOMIC_MASK(bit)        BIT((unsigned long)(bit) & (ATOMIC_BITS - 1U))
+#define ATOMIC_ELEM(addr, bit)  ((addr) + ((bit) / ATOMIC_BITS))
 
 /**
  * INTERNAL_HIDDEN @endcond

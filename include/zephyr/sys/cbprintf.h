@@ -546,7 +546,7 @@ static inline int z_cbprintf_cpy(const void *buf, size_t len, void *ctx)
 	memcpy(&((uint8_t *)desc->buf)[desc->off], buf, len);
 	desc->off += len;
 
-	return len;
+	return ((int)len);
 }
 
 /** @brief Copy package with optional appending of strings.
