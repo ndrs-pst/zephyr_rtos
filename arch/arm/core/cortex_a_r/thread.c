@@ -387,7 +387,7 @@ int arch_float_disable(struct k_thread *thread)
 	 * fault to take an outdated thread user_options flag into
 	 * account.
 	 */
-	int key = arch_irq_lock();
+	unsigned int key = arch_irq_lock();
 
 	thread->base.user_options &= ~K_FP_REGS;
 

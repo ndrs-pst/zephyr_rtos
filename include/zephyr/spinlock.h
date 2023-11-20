@@ -32,7 +32,7 @@ extern "C" {
  */
 
 struct z_spinlock_key {
-    int key;
+    unsigned int key;
 };
 
 /**
@@ -227,7 +227,7 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock* l) {
  * @see k_spin_unlock
  */
 static ALWAYS_INLINE int k_spin_trylock(struct k_spinlock* l, k_spinlock_key_t* k) {
-    int key = arch_irq_lock();
+    unsigned int key = arch_irq_lock();
 
     z_spinlock_validate_pre(l);
     #ifdef CONFIG_SMP

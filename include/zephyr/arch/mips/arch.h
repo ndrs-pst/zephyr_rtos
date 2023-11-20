@@ -66,9 +66,10 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 
 	if (status & ST0_IE) {
 		write_c0_status(status & ~ST0_IE);
-		return 1;
+		return 1U;
 	}
-	return 0;
+
+	return 0U;
 }
 
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)

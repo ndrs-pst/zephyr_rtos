@@ -137,7 +137,7 @@ static inline void rtio_mpsc_init(struct rtio_mpsc *q)
 static ALWAYS_INLINE void rtio_mpsc_push(struct rtio_mpsc *q, struct rtio_mpsc_node *n)
 {
     struct rtio_mpsc_node *prev;
-    int key;
+    unsigned int key;
 
     mpsc_ptr_set(n->next, NULL);
 
