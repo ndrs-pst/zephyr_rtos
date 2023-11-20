@@ -76,7 +76,7 @@ static inline void ring_buf_internal_reset(struct ring_buf* buf, int32_t value) 
  * @param size8 Size of ring buffer (in bytes).
  */
 #define RING_BUF_DECLARE(name, size8) \
-    BUILD_ASSERT(size8 < RING_BUFFER_MAX_SIZE,\
+    BUILD_ASSERT(size8 < RING_BUFFER_MAX_SIZE, \
         RING_BUFFER_SIZE_ASSERT_MSG); \
     static uint8_t __noinit _ring_buffer_data_##name[size8]; \
     struct ring_buf name = { \
@@ -213,7 +213,7 @@ static inline void ring_buf_reset(struct ring_buf* buf) {
  * @return Ring buffer free space (in bytes).
  */
 static inline uint32_t ring_buf_space_get(struct ring_buf* buf) {
-    return (buf->size - (buf->put_head - buf->get_tail));
+    return (buf->size - (uint32_t)(buf->put_head - buf->get_tail));
 }
 
 /**
@@ -246,7 +246,7 @@ static inline uint32_t ring_buf_capacity_get(struct ring_buf* buf) {
  * @return Ring buffer space used (in bytes).
  */
 static inline uint32_t ring_buf_size_get(struct ring_buf* buf) {
-    return (buf->put_tail - buf->get_head);
+    return ((uint32_t)(buf->put_tail - buf->get_head));
 }
 
 /**
