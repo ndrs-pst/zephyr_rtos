@@ -81,7 +81,7 @@ void test_main(void)
 			psplim);
 #endif
 
-	int key = arch_irq_lock();
+	unsigned int key = arch_irq_lock();
 	__ASSERT(arch_irq_unlocked(key),
 		"IRQs locked in main()");
 

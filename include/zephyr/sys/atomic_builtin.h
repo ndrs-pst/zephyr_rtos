@@ -160,9 +160,8 @@ static inline atomic_val_t atomic_dec(atomic_t *target)
  *
  * @return Value of @a target.
  */
-static inline atomic_val_t atomic_get(const atomic_t *target)
-{
-	return __atomic_load_n(target, __ATOMIC_SEQ_CST);
+static inline atomic_val_t atomic_get(const atomic_t* target) {
+    return __atomic_load_n(target, __ATOMIC_SEQ_CST);
 }
 
 /**
@@ -178,9 +177,8 @@ static inline atomic_val_t atomic_get(const atomic_t *target)
  *
  * @return Value of @a target.
  */
-static inline atomic_ptr_val_t atomic_ptr_get(const atomic_ptr_t *target)
-{
-	return __atomic_load_n(target, __ATOMIC_SEQ_CST);
+static inline atomic_ptr_val_t atomic_ptr_get(const atomic_ptr_t* target) {
+    return __atomic_load_n(target, __ATOMIC_SEQ_CST);
 }
 
 /**

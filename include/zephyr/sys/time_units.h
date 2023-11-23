@@ -41,29 +41,28 @@ extern "C" {
 /** @brief System-wide macro to convert milliseconds to kernel timeouts
  */
 #define SYS_TIMEOUT_MS(ms) Z_TIMEOUT_TICKS((ms) == SYS_FOREVER_MS ? \
-					   K_TICKS_FOREVER : Z_TIMEOUT_MS_TICKS(ms))
+                                           K_TICKS_FOREVER : Z_TIMEOUT_MS_TICKS(ms))
 
 /* Exhaustively enumerated, highly optimized time unit conversion API */
 
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
 __syscall int sys_clock_hw_cycles_per_sec_runtime_get(void);
 
-static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
-{
-	extern int z_clock_hw_cycles_per_sec;
+static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void) {
+    extern int z_clock_hw_cycles_per_sec;
 
-	return z_clock_hw_cycles_per_sec;
+    return z_clock_hw_cycles_per_sec;
 }
 #endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
 
 #if defined(__cplusplus) && __cplusplus >= 201402L
-  #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
-    #define TIME_CONSTEXPR
-  #else
-    #define TIME_CONSTEXPR constexpr
-  #endif
+#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
+#define TIME_CONSTEXPR
 #else
-  #define TIME_CONSTEXPR
+#define TIME_CONSTEXPR constexpr
+#endif
+#else
+#define TIME_CONSTEXPR
 #endif
 
 /**
@@ -71,9 +70,9 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  * @return system timer frequency in Hz
  */
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
-#define sys_clock_hw_cycles_per_sec() sys_clock_hw_cycles_per_sec_runtime_get()
+#define sys_clock_hw_cycles_per_sec() ((uint32_t)sys_clock_hw_cycles_per_sec_runtime_get())
 #else
-#define sys_clock_hw_cycles_per_sec() CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
+#define sys_clock_hw_cycles_per_sec() ((uint32_t)CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)
 #endif
 
 /** @internal
@@ -88,8 +87,8 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  * @retval false Use algorithm preventing overflow of intermediate value.
  */
 #define z_tmcvt_use_fast_algo(from_hz, to_hz) \
-	((DIV_ROUND_UP(CONFIG_SYS_CLOCK_MAX_TIMEOUT_DAYS * 24ULL * 3600ULL * from_hz, \
-			   UINT32_MAX) * to_hz) <= UINT32_MAX)
+    ((DIV_ROUND_UP(CONFIG_SYS_CLOCK_MAX_TIMEOUT_DAYS * 24ULL * 3600ULL * from_hz, \
+                   UINT32_MAX) * to_hz) <= UINT32_MAX)
 
 /* Time converter generator gadget.  Selects from one of three
  * conversion algorithms: ones that take advantage when the
@@ -116,24 +115,24 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 
 /* true if the conversion is the identity */
 #define z_tmcvt_is_identity(__from_hz, __to_hz) \
-	((__to_hz) == (__from_hz))
+    ((__to_hz) == (__from_hz))
 
 /* true if the conversion requires a simple integer multiply */
-#define z_tmcvt_is_int_mul(__from_hz, __to_hz) \
-	((__to_hz) > (__from_hz) && (__to_hz) % (__from_hz) == 0U)
+#define z_tmcvt_is_int_mul(__from_hz, __to_hz)  \
+    ((__to_hz) > (__from_hz) && (__to_hz) % (__from_hz) == 0U)
 
 /* true if the conversion requires a simple integer division */
-#define z_tmcvt_is_int_div(__from_hz, __to_hz) \
-	((__from_hz) > (__to_hz) && (__from_hz) % (__to_hz) == 0U)
+#define z_tmcvt_is_int_div(__from_hz, __to_hz)  \
+    ((__from_hz) > (__to_hz) && (__from_hz) % (__to_hz) == 0U)
 
 /*
  * Compute the offset needed to round the result correctly when
  * the conversion requires a simple integer division
  */
-#define z_tmcvt_off_div(__from_hz, __to_hz, __round_up, __round_off)	\
-	((__round_off) ? ((__from_hz) / (__to_hz)) / 2 :		\
-	 (__round_up) ? ((__from_hz) / (__to_hz)) - 1 :			\
-	 0)
+#define z_tmcvt_off_div(__from_hz, __to_hz, __round_up, __round_off)    \
+    ((__round_off) ? ((__from_hz) / (__to_hz)) / 2 :                    \
+     (__round_up ) ? ((__from_hz) / (__to_hz)) - 1 :                    \
+     0)
 
 /* Clang emits a divide-by-zero warning even though the int_div macro
  * results are only used when the divisor will not be zero. Work
@@ -149,104 +148,104 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  * Compute the offset needed to round the result correctly when
  * the conversion requires a full mul/div
  */
-#define z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off)	\
-	((__round_off) ? (__from_hz) / 2 :				\
-	 (__round_up) ? (__from_hz) - 1 :				\
-	 0)
+#define z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off)    \
+    ((__round_off) ? (__from_hz) / 2 :                                  \
+     (__round_up ) ? (__from_hz) - 1 :                                  \
+     0)
 
 /* Integer division 32-bit conversion */
 #define z_tmcvt_int_div_32(__t, __from_hz, __to_hz, __round_up, __round_off) \
-	((uint64_t) (__t) <= 0xffffffffU -				\
-	 z_tmcvt_off_div(__from_hz, __to_hz, __round_up, __round_off) ?	\
-	 ((uint32_t)((__t) +						\
-		     z_tmcvt_off_div(__from_hz, __to_hz,		\
-				     __round_up, __round_off)) /	\
-	  z_tmcvt_divisor(__from_hz, __to_hz))				\
-	 :								\
-	 (uint32_t) (((uint64_t) (__t) +				\
-		      z_tmcvt_off_div(__from_hz, __to_hz,		\
-				      __round_up, __round_off)) /	\
-		     z_tmcvt_divisor(__from_hz, __to_hz))		\
-		)
+    ((uint64_t)(__t) <= 0xFFFFFFFFU -                                   \
+     z_tmcvt_off_div(__from_hz, __to_hz, __round_up, __round_off) ?     \
+    ((uint32_t)((__t) +                                                 \
+                z_tmcvt_off_div(__from_hz, __to_hz,                     \
+                __round_up, __round_off)) /                             \
+            z_tmcvt_divisor(__from_hz, __to_hz))                        \
+     :                                                                  \
+     (uint32_t)(((uint64_t)(__t) +                                      \
+                z_tmcvt_off_div(__from_hz, __to_hz,                     \
+                __round_up, __round_off)) /                             \
+                z_tmcvt_divisor(__from_hz, __to_hz))                    \
+    )
 
 /* Integer multiplication 32-bit conversion */
-#define z_tmcvt_int_mul_32(__t, __from_hz, __to_hz)	\
-	(uint32_t) (__t)*((__to_hz) / (__from_hz))
+#define z_tmcvt_int_mul_32(__t, __from_hz, __to_hz) \
+    (uint32_t)(__t) * ((__to_hz) / (__from_hz))
 
 /* General 32-bit conversion */
-#define z_tmcvt_gen_32(__t, __from_hz, __to_hz, __round_up, __round_off) \
-	((uint32_t) (((uint64_t) (__t)*(__to_hz) +			\
-		      z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off)) / (__from_hz)))
+#define z_tmcvt_gen_32(__t, __from_hz, __to_hz, __round_up, __round_off)\
+    ((uint32_t)(((uint64_t)(__t) * (__to_hz) +                          \
+                z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off)) / (__from_hz)))
 
 /* Integer division 64-bit conversion */
 #define z_tmcvt_int_div_64(__t, __from_hz, __to_hz, __round_up, __round_off) \
-	(((uint64_t) (__t) + z_tmcvt_off_div(__from_hz, __to_hz,	\
-					     __round_up, __round_off)) / \
-	z_tmcvt_divisor(__from_hz, __to_hz))
+    (((uint64_t)(__t) + z_tmcvt_off_div(__from_hz, __to_hz,             \
+                                        __round_up, __round_off)) /     \
+                                        z_tmcvt_divisor(__from_hz, __to_hz))
 
 /* Integer multiplcation 64-bit conversion */
-#define z_tmcvt_int_mul_64(__t, __from_hz, __to_hz)	\
-	(uint64_t) (__t)*((__to_hz) / (__from_hz))
+#define z_tmcvt_int_mul_64(__t, __from_hz, __to_hz) \
+    (uint64_t)(__t) * ((__to_hz) / (__from_hz))
 
 /* Fast 64-bit conversion. This relies on the multiply not overflowing */
 #define z_tmcvt_gen_64_fast(__t, __from_hz, __to_hz, __round_up, __round_off) \
-	(((uint64_t) (__t)*(__to_hz) + \
-	  z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off)) / (__from_hz))
+    (((uint64_t)(__t) * (__to_hz) + \
+     z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off)) / (__from_hz))
 
 /* Slow 64-bit conversion. This avoids overflowing the multiply */
 #define z_tmcvt_gen_64_slow(__t, __from_hz, __to_hz, __round_up, __round_off) \
-	(((uint64_t) (__t) / (__from_hz))*(__to_hz) +			\
-	 (((uint64_t) (__t) % (__from_hz))*(__to_hz) +		\
-	  z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off)) / (__from_hz))
+    (((uint64_t)(__t) / (__from_hz)) * (__to_hz) +  \
+     (((uint64_t)(__t) % (__from_hz)) * (__to_hz) + \
+      z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off)) / (__from_hz))
 
 /* General 64-bit conversion. Uses one of the two above macros */
-#define z_tmcvt_gen_64(__t, __from_hz, __to_hz, __round_up, __round_off) \
-	(z_tmcvt_use_fast_algo(__from_hz, __to_hz) ?			\
-	 z_tmcvt_gen_64_fast(__t, __from_hz, __to_hz, __round_up, __round_off) : \
-	 z_tmcvt_gen_64_slow(__t, __from_hz, __to_hz, __round_up, __round_off))
+#define z_tmcvt_gen_64(__t, __from_hz, __to_hz, __round_up, __round_off)        \
+    (z_tmcvt_use_fast_algo(__from_hz, __to_hz) ?                                \
+     z_tmcvt_gen_64_fast(__t, __from_hz, __to_hz, __round_up, __round_off) :    \
+     z_tmcvt_gen_64_slow(__t, __from_hz, __to_hz, __round_up, __round_off))
 
 /* Convert, generating a 32-bit result */
-#define z_tmcvt_32(__t, __from_hz, __to_hz, __const_hz, __round_up, __round_off) \
-	((__const_hz) ?							\
-	 (								\
-		 z_tmcvt_is_identity(__from_hz, __to_hz) ?		\
-		 (uint32_t) (__t)					\
-		 :							\
-		 z_tmcvt_is_int_div(__from_hz, __to_hz) ?		\
-		 z_tmcvt_int_div_32(__t, __from_hz, __to_hz, __round_up, __round_off) \
-		 :							\
-		 z_tmcvt_is_int_mul(__from_hz, __to_hz) ?		\
-		 z_tmcvt_int_mul_32(__t, __from_hz, __to_hz)		\
-		 :							\
-		 z_tmcvt_gen_32(__t, __from_hz, __to_hz, __round_up, __round_off) \
-		 )							\
-	 :								\
-	 z_tmcvt_gen_32(__t, __from_hz, __to_hz, __round_up, __round_off) \
-		)
+#define z_tmcvt_32(__t, __from_hz, __to_hz, __const_hz, __round_up, __round_off)    \
+    ((__const_hz) ?                                             \
+     (                                                          \
+        z_tmcvt_is_identity(__from_hz, __to_hz) ?               \
+        (uint32_t)(__t)                                         \
+        :                                                       \
+        z_tmcvt_is_int_div(__from_hz, __to_hz) ?                \
+        z_tmcvt_int_div_32(__t, __from_hz, __to_hz, __round_up, __round_off) \
+        :                                                       \
+        z_tmcvt_is_int_mul(__from_hz, __to_hz) ?                \
+        z_tmcvt_int_mul_32(__t, __from_hz, __to_hz)             \
+        :                                                       \
+        z_tmcvt_gen_32(__t, __from_hz, __to_hz, __round_up, __round_off) \
+        )                                                       \
+    :                                                           \
+    z_tmcvt_gen_32(__t, __from_hz, __to_hz, __round_up, __round_off) \
+    )
 
 /* Convert, generating a 64-bit result */
-#define z_tmcvt_64(__t, __from_hz, __to_hz, __const_hz, __round_up, __round_off) \
-	((__const_hz) ?							\
-	 (								\
-		 z_tmcvt_is_identity(__from_hz, __to_hz) ?		\
-		 (uint64_t) (__t)					\
-		 :							\
-		 z_tmcvt_is_int_div(__from_hz, __to_hz) ?		\
-		 z_tmcvt_int_div_64(__t, __from_hz, __to_hz, __round_up, __round_off) \
-		 :							\
-		 z_tmcvt_is_int_mul(__from_hz, __to_hz) ?		\
-		 z_tmcvt_int_mul_64(__t, __from_hz, __to_hz)		\
-		 :							\
-		 z_tmcvt_gen_64(__t, __from_hz, __to_hz, __round_up, __round_off) \
-		 )							\
-	 :								\
-	 z_tmcvt_gen_64_slow(__t, __from_hz, __to_hz, __round_up, __round_off) \
-		)
+#define z_tmcvt_64(__t, __from_hz, __to_hz, __const_hz, __round_up, __round_off)    \
+    ((__const_hz) ?                                             \
+     (                                                          \
+        z_tmcvt_is_identity(__from_hz, __to_hz) ?               \
+        (uint64_t)(__t)                                         \
+        :                                                       \
+        z_tmcvt_is_int_div(__from_hz, __to_hz) ?                \
+        z_tmcvt_int_div_64(__t, __from_hz, __to_hz, __round_up, __round_off) \
+        :                                                       \
+        z_tmcvt_is_int_mul(__from_hz, __to_hz) ?                \
+        z_tmcvt_int_mul_64(__t, __from_hz, __to_hz)             \
+        :                                                       \
+        z_tmcvt_gen_64(__t, __from_hz, __to_hz, __round_up, __round_off) \
+    )                                                           \
+    :                                                           \
+    z_tmcvt_gen_64_slow(__t, __from_hz, __to_hz, __round_up, __round_off) \
+    )
 
 #define z_tmcvt(__t, __from_hz, __to_hz, __const_hz, __result32, __round_up, __round_off) \
-	((__result32) ?							\
-	 z_tmcvt_32(__t, __from_hz, __to_hz, __const_hz, __round_up, __round_off) : \
-	 z_tmcvt_64(__t, __from_hz, __to_hz, __const_hz, __round_up, __round_off))
+    ((__result32) ?                                             \
+     z_tmcvt_32(__t, __from_hz, __to_hz, __const_hz, __round_up, __round_off) : \
+     z_tmcvt_64(__t, __from_hz, __to_hz, __const_hz, __round_up, __round_off))
 
 /* The following code is programmatically generated using this perl
  * code, which enumerates all possible combinations of units, rounding
@@ -267,8 +266,8 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  *              "cyc" => "hardware cycles",
  *              "ticks" => "ticks");
  * my %human_round = ("ceil" => "Rounds up",
- *		   "near" => "Round nearest",
- *		   "floor" => "Truncates");
+ *              "near" => "Round nearest",
+ *              "floor" => "Truncates");
  *
  * sub big { return $_[0] eq "us" || $_[0] eq "ns"; }
  * sub prefix { return $_[0] eq "ms" || $_[0] eq "us" || $_[0] eq "ns"; }
@@ -290,7 +289,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  *
  *                 my $hfrom = $human{$from_unit};
  *                 my $hto = $human{$to_unit};
- *		my $hround = $human_round{$round};
+ *                 my $hround = $human_round{$round};
  *                 print "/", "** \@brief Convert $hfrom to $hto. $ret32 bits. $hround.\n";
  *                 print " *\n";
  *                 print " * Converts time values in $hfrom to $hto.\n";
@@ -303,8 +302,8 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  *                     print " * Truncates to the next lowest output unit.\n";
  *                 }
  *                 print " *\n";
- *		print " * \@param t Source time in $hfrom. uint64_t\n";
- *		print " *\n";
+ *                 print " * \@param t Source time in $hfrom. uint64_t\n";
+ *                 print " *\n";
  *                 print " * \@return The converted time value in $hto. $type\n";
  *                 print " *", "/\n";
  *
@@ -322,12 +321,12 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 /* Some more concise declarations to simplify the generator script and
  * save bytes below
  */
-#define Z_HZ_ms 1000
-#define Z_HZ_us 1000000
-#define Z_HZ_ns 1000000000
-#define Z_HZ_cyc sys_clock_hw_cycles_per_sec()
+#define Z_HZ_ms    1000
+#define Z_HZ_us    1000000
+#define Z_HZ_ns    1000000000
+#define Z_HZ_cyc   sys_clock_hw_cycles_per_sec()
 #define Z_HZ_ticks CONFIG_SYS_CLOCK_TICKS_PER_SEC
-#define Z_CCYC (!IS_ENABLED(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME))
+#define Z_CCYC     (!IS_ENABLED(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME))
 
 /** @brief Convert milliseconds to hardware cycles. 32 bits. Truncates.
  *
@@ -341,8 +340,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ms_to_cyc_floor32(t) \
-	z_tmcvt_32(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, false, false)
-
+    z_tmcvt_32(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, false, false)
 
 /** @brief Convert milliseconds to hardware cycles. 64 bits. Truncates.
  *
@@ -356,8 +354,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ms_to_cyc_floor64(t) \
-	z_tmcvt_64(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, false, false)
-
+    z_tmcvt_64(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, false, false)
 
 /** @brief Convert milliseconds to hardware cycles. 32 bits. Round nearest.
  *
@@ -371,8 +368,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ms_to_cyc_near32(t) \
-	z_tmcvt_32(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, false, true)
-
+    z_tmcvt_32(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, false, true)
 
 /** @brief Convert milliseconds to hardware cycles. 64 bits. Round nearest.
  *
@@ -386,8 +382,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ms_to_cyc_near64(t) \
-	z_tmcvt_64(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, false, true)
-
+    z_tmcvt_64(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, false, true)
 
 /** @brief Convert milliseconds to hardware cycles. 32 bits. Rounds up.
  *
@@ -401,8 +396,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ms_to_cyc_ceil32(t) \
-	z_tmcvt_32(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, true, false)
-
+    z_tmcvt_32(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, true, false)
 
 /** @brief Convert milliseconds to hardware cycles. 64 bits. Rounds up.
  *
@@ -416,8 +410,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ms_to_cyc_ceil64(t) \
-	z_tmcvt_64(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, true, false)
-
+    z_tmcvt_64(t, Z_HZ_ms, Z_HZ_cyc, Z_CCYC, true, false)
 
 /** @brief Convert milliseconds to ticks. 32 bits. Truncates.
  *
@@ -431,8 +424,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ms_to_ticks_floor32(t) \
-	z_tmcvt_32(t, Z_HZ_ms, Z_HZ_ticks, true, false, false)
-
+    z_tmcvt_32(t, Z_HZ_ms, Z_HZ_ticks, true, false, false)
 
 /** @brief Convert milliseconds to ticks. 64 bits. Truncates.
  *
@@ -446,8 +438,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ms_to_ticks_floor64(t) \
-	z_tmcvt_64(t, Z_HZ_ms, Z_HZ_ticks, true, false, false)
-
+    z_tmcvt_64(t, Z_HZ_ms, Z_HZ_ticks, true, false, false)
 
 /** @brief Convert milliseconds to ticks. 32 bits. Round nearest.
  *
@@ -461,8 +452,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ms_to_ticks_near32(t) \
-	z_tmcvt_32(t, Z_HZ_ms, Z_HZ_ticks, true, false, true)
-
+    z_tmcvt_32(t, Z_HZ_ms, Z_HZ_ticks, true, false, true)
 
 /** @brief Convert milliseconds to ticks. 64 bits. Round nearest.
  *
@@ -476,8 +466,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ms_to_ticks_near64(t) \
-	z_tmcvt_64(t, Z_HZ_ms, Z_HZ_ticks, true, false, true)
-
+    z_tmcvt_64(t, Z_HZ_ms, Z_HZ_ticks, true, false, true)
 
 /** @brief Convert milliseconds to ticks. 32 bits. Rounds up.
  *
@@ -491,8 +480,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ms_to_ticks_ceil32(t) \
-	z_tmcvt_32(t, Z_HZ_ms, Z_HZ_ticks, true, true, false)
-
+    z_tmcvt_32(t, Z_HZ_ms, Z_HZ_ticks, true, true, false)
 
 /** @brief Convert milliseconds to ticks. 64 bits. Rounds up.
  *
@@ -506,8 +494,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ms_to_ticks_ceil64(t) \
-	z_tmcvt_64(t, Z_HZ_ms, Z_HZ_ticks, true, true, false)
-
+    z_tmcvt_64(t, Z_HZ_ms, Z_HZ_ticks, true, true, false)
 
 /** @brief Convert microseconds to hardware cycles. 32 bits. Truncates.
  *
@@ -521,8 +508,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_us_to_cyc_floor32(t) \
-	z_tmcvt_32(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, false, false)
-
+    z_tmcvt_32(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, false, false)
 
 /** @brief Convert microseconds to hardware cycles. 64 bits. Truncates.
  *
@@ -536,8 +522,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_us_to_cyc_floor64(t) \
-	z_tmcvt_64(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, false, false)
-
+    z_tmcvt_64(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, false, false)
 
 /** @brief Convert microseconds to hardware cycles. 32 bits. Round nearest.
  *
@@ -551,8 +536,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_us_to_cyc_near32(t) \
-	z_tmcvt_32(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, false, true)
-
+    z_tmcvt_32(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, false, true)
 
 /** @brief Convert microseconds to hardware cycles. 64 bits. Round nearest.
  *
@@ -566,8 +550,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_us_to_cyc_near64(t) \
-	z_tmcvt_64(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, false, true)
-
+    z_tmcvt_64(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, false, true)
 
 /** @brief Convert microseconds to hardware cycles. 32 bits. Rounds up.
  *
@@ -581,8 +564,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_us_to_cyc_ceil32(t) \
-	z_tmcvt_32(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, true, false)
-
+    z_tmcvt_32(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, true, false)
 
 /** @brief Convert microseconds to hardware cycles. 64 bits. Rounds up.
  *
@@ -596,8 +578,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_us_to_cyc_ceil64(t) \
-	z_tmcvt_64(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, true, false)
-
+    z_tmcvt_64(t, Z_HZ_us, Z_HZ_cyc, Z_CCYC, true, false)
 
 /** @brief Convert microseconds to ticks. 32 bits. Truncates.
  *
@@ -611,8 +592,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_us_to_ticks_floor32(t) \
-	z_tmcvt_32(t, Z_HZ_us, Z_HZ_ticks, true, false, false)
-
+    z_tmcvt_32(t, Z_HZ_us, Z_HZ_ticks, true, false, false)
 
 /** @brief Convert microseconds to ticks. 64 bits. Truncates.
  *
@@ -626,8 +606,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_us_to_ticks_floor64(t) \
-	z_tmcvt_64(t, Z_HZ_us, Z_HZ_ticks, true, false, false)
-
+    z_tmcvt_64(t, Z_HZ_us, Z_HZ_ticks, true, false, false)
 
 /** @brief Convert microseconds to ticks. 32 bits. Round nearest.
  *
@@ -641,8 +620,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_us_to_ticks_near32(t) \
-	z_tmcvt_32(t, Z_HZ_us, Z_HZ_ticks, true, false, true)
-
+    z_tmcvt_32(t, Z_HZ_us, Z_HZ_ticks, true, false, true)
 
 /** @brief Convert microseconds to ticks. 64 bits. Round nearest.
  *
@@ -656,8 +634,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_us_to_ticks_near64(t) \
-	z_tmcvt_64(t, Z_HZ_us, Z_HZ_ticks, true, false, true)
-
+    z_tmcvt_64(t, Z_HZ_us, Z_HZ_ticks, true, false, true)
 
 /** @brief Convert microseconds to ticks. 32 bits. Rounds up.
  *
@@ -671,8 +648,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_us_to_ticks_ceil32(t) \
-	z_tmcvt_32(t, Z_HZ_us, Z_HZ_ticks, true, true, false)
-
+    z_tmcvt_32(t, Z_HZ_us, Z_HZ_ticks, true, true, false)
 
 /** @brief Convert microseconds to ticks. 64 bits. Rounds up.
  *
@@ -686,8 +662,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_us_to_ticks_ceil64(t) \
-	z_tmcvt_64(t, Z_HZ_us, Z_HZ_ticks, true, true, false)
-
+    z_tmcvt_64(t, Z_HZ_us, Z_HZ_ticks, true, true, false)
 
 /** @brief Convert nanoseconds to hardware cycles. 32 bits. Truncates.
  *
@@ -701,8 +676,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ns_to_cyc_floor32(t) \
-	z_tmcvt_32(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, false, false)
-
+    z_tmcvt_32(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, false, false)
 
 /** @brief Convert nanoseconds to hardware cycles. 64 bits. Truncates.
  *
@@ -716,8 +690,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ns_to_cyc_floor64(t) \
-	z_tmcvt_64(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, false, false)
-
+    z_tmcvt_64(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, false, false)
 
 /** @brief Convert nanoseconds to hardware cycles. 32 bits. Round nearest.
  *
@@ -731,8 +704,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ns_to_cyc_near32(t) \
-	z_tmcvt_32(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, false, true)
-
+    z_tmcvt_32(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, false, true)
 
 /** @brief Convert nanoseconds to hardware cycles. 64 bits. Round nearest.
  *
@@ -746,8 +718,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ns_to_cyc_near64(t) \
-	z_tmcvt_64(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, false, true)
-
+    z_tmcvt_64(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, false, true)
 
 /** @brief Convert nanoseconds to hardware cycles. 32 bits. Rounds up.
  *
@@ -761,8 +732,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ns_to_cyc_ceil32(t) \
-	z_tmcvt_32(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, true, false)
-
+    z_tmcvt_32(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, true, false)
 
 /** @brief Convert nanoseconds to hardware cycles. 64 bits. Rounds up.
  *
@@ -776,8 +746,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ns_to_cyc_ceil64(t) \
-	z_tmcvt_64(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, true, false)
-
+    z_tmcvt_64(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, true, false)
 
 /** @brief Convert nanoseconds to ticks. 32 bits. Truncates.
  *
@@ -791,8 +760,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ns_to_ticks_floor32(t) \
-	z_tmcvt_32(t, Z_HZ_ns, Z_HZ_ticks, true, false, false)
-
+    z_tmcvt_32(t, Z_HZ_ns, Z_HZ_ticks, true, false, false)
 
 /** @brief Convert nanoseconds to ticks. 64 bits. Truncates.
  *
@@ -806,8 +774,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ns_to_ticks_floor64(t) \
-	z_tmcvt_64(t, Z_HZ_ns, Z_HZ_ticks, true, false, false)
-
+    z_tmcvt_64(t, Z_HZ_ns, Z_HZ_ticks, true, false, false)
 
 /** @brief Convert nanoseconds to ticks. 32 bits. Round nearest.
  *
@@ -821,8 +788,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ns_to_ticks_near32(t) \
-	z_tmcvt_32(t, Z_HZ_ns, Z_HZ_ticks, true, false, true)
-
+    z_tmcvt_32(t, Z_HZ_ns, Z_HZ_ticks, true, false, true)
 
 /** @brief Convert nanoseconds to ticks. 64 bits. Round nearest.
  *
@@ -836,8 +802,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ns_to_ticks_near64(t) \
-	z_tmcvt_64(t, Z_HZ_ns, Z_HZ_ticks, true, false, true)
-
+    z_tmcvt_64(t, Z_HZ_ns, Z_HZ_ticks, true, false, true)
 
 /** @brief Convert nanoseconds to ticks. 32 bits. Rounds up.
  *
@@ -851,8 +816,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ns_to_ticks_ceil32(t) \
-	z_tmcvt_32(t, Z_HZ_ns, Z_HZ_ticks, true, true, false)
-
+    z_tmcvt_32(t, Z_HZ_ns, Z_HZ_ticks, true, true, false)
 
 /** @brief Convert nanoseconds to ticks. 64 bits. Rounds up.
  *
@@ -866,8 +830,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ns_to_ticks_ceil64(t) \
-	z_tmcvt_64(t, Z_HZ_ns, Z_HZ_ticks, true, true, false)
-
+    z_tmcvt_64(t, Z_HZ_ns, Z_HZ_ticks, true, true, false)
 
 /** @brief Convert hardware cycles to milliseconds. 32 bits. Truncates.
  *
@@ -881,8 +844,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_ms_floor32(t) \
-	z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, false, false)
-
+    z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, false, false)
 
 /** @brief Convert hardware cycles to milliseconds. 64 bits. Truncates.
  *
@@ -896,8 +858,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_ms_floor64(t) \
-	z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, false, false)
-
+    z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, false, false)
 
 /** @brief Convert hardware cycles to milliseconds. 32 bits. Round nearest.
  *
@@ -911,8 +872,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_ms_near32(t) \
-	z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, false, true)
-
+    z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, false, true)
 
 /** @brief Convert hardware cycles to milliseconds. 64 bits. Round nearest.
  *
@@ -926,8 +886,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_ms_near64(t) \
-	z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, false, true)
-
+    z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, false, true)
 
 /** @brief Convert hardware cycles to milliseconds. 32 bits. Rounds up.
  *
@@ -941,8 +900,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_ms_ceil32(t) \
-	z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, true, false)
-
+    z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, true, false)
 
 /** @brief Convert hardware cycles to milliseconds. 64 bits. Rounds up.
  *
@@ -956,8 +914,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_ms_ceil64(t) \
-	z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, true, false)
-
+    z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_ms, Z_CCYC, true, false)
 
 /** @brief Convert hardware cycles to microseconds. 32 bits. Truncates.
  *
@@ -971,8 +928,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_us_floor32(t) \
-	z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, false, false)
-
+    z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, false, false)
 
 /** @brief Convert hardware cycles to microseconds. 64 bits. Truncates.
  *
@@ -986,8 +942,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_us_floor64(t) \
-	z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, false, false)
-
+    z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, false, false)
 
 /** @brief Convert hardware cycles to microseconds. 32 bits. Round nearest.
  *
@@ -1001,8 +956,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_us_near32(t) \
-	z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, false, true)
-
+    z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, false, true)
 
 /** @brief Convert hardware cycles to microseconds. 64 bits. Round nearest.
  *
@@ -1016,8 +970,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_us_near64(t) \
-	z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, false, true)
-
+    z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, false, true)
 
 /** @brief Convert hardware cycles to microseconds. 32 bits. Rounds up.
  *
@@ -1031,8 +984,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_us_ceil32(t) \
-	z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, true, false)
-
+    z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, true, false)
 
 /** @brief Convert hardware cycles to microseconds. 64 bits. Rounds up.
  *
@@ -1046,8 +998,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_us_ceil64(t) \
-	z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, true, false)
-
+    z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_us, Z_CCYC, true, false)
 
 /** @brief Convert hardware cycles to nanoseconds. 32 bits. Truncates.
  *
@@ -1061,8 +1012,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_ns_floor32(t) \
-	z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, false, false)
-
+    z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, false, false)
 
 /** @brief Convert hardware cycles to nanoseconds. 64 bits. Truncates.
  *
@@ -1076,8 +1026,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_ns_floor64(t) \
-	z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, false, false)
-
+    z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, false, false)
 
 /** @brief Convert hardware cycles to nanoseconds. 32 bits. Round nearest.
  *
@@ -1091,8 +1040,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_ns_near32(t) \
-	z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, false, true)
-
+    z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, false, true)
 
 /** @brief Convert hardware cycles to nanoseconds. 64 bits. Round nearest.
  *
@@ -1106,8 +1054,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_ns_near64(t) \
-	z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, false, true)
-
+    z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, false, true)
 
 /** @brief Convert hardware cycles to nanoseconds. 32 bits. Rounds up.
  *
@@ -1121,8 +1068,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_ns_ceil32(t) \
-	z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, true, false)
-
+    z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, true, false)
 
 /** @brief Convert hardware cycles to nanoseconds. 64 bits. Rounds up.
  *
@@ -1136,8 +1082,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_ns_ceil64(t) \
-	z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, true, false)
-
+    z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_ns, Z_CCYC, true, false)
 
 /** @brief Convert hardware cycles to ticks. 32 bits. Truncates.
  *
@@ -1151,8 +1096,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_ticks_floor32(t) \
-	z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, false, false)
-
+    z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, false, false)
 
 /** @brief Convert hardware cycles to ticks. 64 bits. Truncates.
  *
@@ -1166,8 +1110,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_ticks_floor64(t) \
-	z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, false, false)
-
+    z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, false, false)
 
 /** @brief Convert hardware cycles to ticks. 32 bits. Round nearest.
  *
@@ -1181,8 +1124,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_ticks_near32(t) \
-	z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, false, true)
-
+    z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, false, true)
 
 /** @brief Convert hardware cycles to ticks. 64 bits. Round nearest.
  *
@@ -1196,8 +1138,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_ticks_near64(t) \
-	z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, false, true)
-
+    z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, false, true)
 
 /** @brief Convert hardware cycles to ticks. 32 bits. Rounds up.
  *
@@ -1211,8 +1152,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_ticks_ceil32(t) \
-	z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, true, false)
-
+    z_tmcvt_32(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, true, false)
 
 /** @brief Convert hardware cycles to ticks. 64 bits. Rounds up.
  *
@@ -1226,8 +1166,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_cyc_to_ticks_ceil64(t) \
-	z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, true, false)
-
+    z_tmcvt_64(t, Z_HZ_cyc, Z_HZ_ticks, Z_CCYC, true, false)
 
 /** @brief Convert ticks to milliseconds. 32 bits. Truncates.
  *
@@ -1241,8 +1180,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_ms_floor32(t) \
-	z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_ms, true, false, false)
-
+    z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_ms, true, false, false)
 
 /** @brief Convert ticks to milliseconds. 64 bits. Truncates.
  *
@@ -1256,8 +1194,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_ms_floor64(t) \
-	z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_ms, true, false, false)
-
+    (int64_t)z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_ms, true, false, false)
 
 /** @brief Convert ticks to milliseconds. 32 bits. Round nearest.
  *
@@ -1271,8 +1208,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_ms_near32(t) \
-	z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_ms, true, false, true)
-
+    z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_ms, true, false, true)
 
 /** @brief Convert ticks to milliseconds. 64 bits. Round nearest.
  *
@@ -1286,8 +1222,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_ms_near64(t) \
-	z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_ms, true, false, true)
-
+    z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_ms, true, false, true)
 
 /** @brief Convert ticks to milliseconds. 32 bits. Rounds up.
  *
@@ -1301,8 +1236,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_ms_ceil32(t) \
-	z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_ms, true, true, false)
-
+    z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_ms, true, true, false)
 
 /** @brief Convert ticks to milliseconds. 64 bits. Rounds up.
  *
@@ -1316,8 +1250,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_ms_ceil64(t) \
-	z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_ms, true, true, false)
-
+    z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_ms, true, true, false)
 
 /** @brief Convert ticks to microseconds. 32 bits. Truncates.
  *
@@ -1331,8 +1264,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_us_floor32(t) \
-	z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_us, true, false, false)
-
+    z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_us, true, false, false)
 
 /** @brief Convert ticks to microseconds. 64 bits. Truncates.
  *
@@ -1346,8 +1278,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_us_floor64(t) \
-	z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_us, true, false, false)
-
+    z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_us, true, false, false)
 
 /** @brief Convert ticks to microseconds. 32 bits. Round nearest.
  *
@@ -1361,8 +1292,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_us_near32(t) \
-	z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_us, true, false, true)
-
+    z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_us, true, false, true)
 
 /** @brief Convert ticks to microseconds. 64 bits. Round nearest.
  *
@@ -1376,8 +1306,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_us_near64(t) \
-	z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_us, true, false, true)
-
+    z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_us, true, false, true)
 
 /** @brief Convert ticks to microseconds. 32 bits. Rounds up.
  *
@@ -1391,8 +1320,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_us_ceil32(t) \
-	z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_us, true, true, false)
-
+    z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_us, true, true, false)
 
 /** @brief Convert ticks to microseconds. 64 bits. Rounds up.
  *
@@ -1406,8 +1334,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_us_ceil64(t) \
-	z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_us, true, true, false)
-
+    z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_us, true, true, false)
 
 /** @brief Convert ticks to nanoseconds. 32 bits. Truncates.
  *
@@ -1421,8 +1348,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_ns_floor32(t) \
-	z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_ns, true, false, false)
-
+    z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_ns, true, false, false)
 
 /** @brief Convert ticks to nanoseconds. 64 bits. Truncates.
  *
@@ -1436,8 +1362,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_ns_floor64(t) \
-	z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_ns, true, false, false)
-
+    z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_ns, true, false, false)
 
 /** @brief Convert ticks to nanoseconds. 32 bits. Round nearest.
  *
@@ -1451,8 +1376,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_ns_near32(t) \
-	z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_ns, true, false, true)
-
+    z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_ns, true, false, true)
 
 /** @brief Convert ticks to nanoseconds. 64 bits. Round nearest.
  *
@@ -1466,8 +1390,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_ns_near64(t) \
-	z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_ns, true, false, true)
-
+    z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_ns, true, false, true)
 
 /** @brief Convert ticks to nanoseconds. 32 bits. Rounds up.
  *
@@ -1481,8 +1404,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_ns_ceil32(t) \
-	z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_ns, true, true, false)
-
+    z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_ns, true, true, false)
 
 /** @brief Convert ticks to nanoseconds. 64 bits. Rounds up.
  *
@@ -1496,8 +1418,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_ns_ceil64(t) \
-	z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_ns, true, true, false)
-
+    z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_ns, true, true, false)
 
 /** @brief Convert ticks to hardware cycles. 32 bits. Truncates.
  *
@@ -1511,8 +1432,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_cyc_floor32(t) \
-	z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, false, false)
-
+    z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, false, false)
 
 /** @brief Convert ticks to hardware cycles. 64 bits. Truncates.
  *
@@ -1526,8 +1446,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_cyc_floor64(t) \
-	z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, false, false)
-
+    z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, false, false)
 
 /** @brief Convert ticks to hardware cycles. 32 bits. Round nearest.
  *
@@ -1541,8 +1460,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_cyc_near32(t) \
-	z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, false, true)
-
+    z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, false, true)
 
 /** @brief Convert ticks to hardware cycles. 64 bits. Round nearest.
  *
@@ -1556,8 +1474,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_cyc_near64(t) \
-	z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, false, true)
-
+    z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, false, true)
 
 /** @brief Convert ticks to hardware cycles. 32 bits. Rounds up.
  *
@@ -1571,8 +1488,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_cyc_ceil32(t) \
-	z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, true, false)
-
+    z_tmcvt_32(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, true, false)
 
 /** @brief Convert ticks to hardware cycles. 64 bits. Rounds up.
  *
@@ -1586,7 +1502,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  */
 /* Generated.  Do not edit.  See above. */
 #define k_ticks_to_cyc_ceil64(t) \
-	z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, true, false)
+    z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, true, false)
 
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
 #include <syscalls/time_units.h>
