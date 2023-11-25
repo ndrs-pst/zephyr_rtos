@@ -339,7 +339,7 @@ manifest:
       path: modules/lib/zcbor
     - name: golioth
       path: modules/lib/golioth
-      revision: main
+      revision: 8b006e979e827529ead1443035a1e3dc9f2874c1
       url: https://github.com/DDC-NDRS/golioth-zephyr-sdk.git
       import: west-external.yml
 
