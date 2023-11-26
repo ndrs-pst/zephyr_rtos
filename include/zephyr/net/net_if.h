@@ -473,13 +473,19 @@ struct net_if_ipv4_autoconf {
  * @brief Network interface IP address configuration.
  */
 struct net_if_ip {
-#if defined(CONFIG_NET_NATIVE_IPV6)
+    #if defined(CONFIG_NET_NATIVE_IPV6)
     struct net_if_ipv6* ipv6;
-#endif /* CONFIG_NET_IPV6 */
+    #endif /* CONFIG_NET_IPV6 */
 
-#if defined(CONFIG_NET_NATIVE_IPV4)
+    #if defined(CONFIG_NET_NATIVE_IPV4)
     struct net_if_ipv4* ipv4;
-#endif /* CONFIG_NET_IPV4 */
+    #endif /* CONFIG_NET_IPV4 */
+
+    #if (!defined(CONFIG_NET_NATIVE_IPV6) && \
+         !defined(CONFIG_NET_NATIVE_IPV4) && \
+          defined(_MSC_VER))                /* #CUSTOM@NDRS */
+    void* dummy;
+    #endif
 };
 
 /**
@@ -517,6 +523,10 @@ struct net_if_config {
      * to search a network interface using this name.
      */
     char name[CONFIG_NET_INTERFACE_NAME_LEN + 1];
+    #endif
+
+    #if (!defined(CONFIG_NET_IP) && defined(_MSC_VER))  /* #CUSTOM@NDRS */
+    void* dummy;
     #endif
 };
 
