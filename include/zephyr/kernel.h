@@ -2650,12 +2650,20 @@ struct k_lifo {
  * @param lifo Address of the LIFO queue.
  * @param data Address of the data item.
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+static inline void k_lifo_put(struct k_lifo* lifo, struct net_buf* data) {
+    SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_lifo, put, lifo, data);
+    k_queue_prepend(&lifo->_queue, data);
+    SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_lifo, put, lifo, data);
+}
+#else
 #define k_lifo_put(lifo, data)                                  \
     ({                                                          \
         SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_lifo, put, lifo, data);   \
         k_queue_prepend(&(lifo)->_queue, data);                 \
         SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_lifo, put, lifo, data);\
     })
+#endif
 
 /**
  * @brief Add an element to a LIFO queue.
