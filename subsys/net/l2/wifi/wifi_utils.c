@@ -24,13 +24,13 @@ LOG_MODULE_REGISTER(net_wifi_utils, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 /* Ensure 'strtok_r' is available even with -std=c99. */
 char* strtok_r(char* str, char const* delim, char** saveptr);
 
-static const uint16_t valid_5g_chans_20mhz[] = {
+static const uint8_t valid_5g_chans_20mhz[] = {
      32,  36,  40,  44,  48,  52,  56,  60,  64,  68,  96, 100,
     104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 149,
     153, 157, 159, 161, 163, 165, 167, 169, 171, 173, 175, 177
 };
 
-static enum wifi_frequency_bands wifi_utils_map_band_str_to_idx(char* band_str) {
+static enum wifi_frequency_bands wifi_utils_map_band_str_to_idx(char const* band_str) {
     enum wifi_frequency_bands band = WIFI_FREQ_BAND_UNKNOWN;
 
     if (!strcmp(band_str, "2")) {
@@ -196,7 +196,7 @@ static int wifi_utils_get_all_chans_in_range(uint8_t chan_start,
     return (0);
 }
 
-static int wifi_utils_validate_chan_str(char* chan_str) {
+static int wifi_utils_validate_chan_str(char const* chan_str) {
     uint_fast8_t i;
 
     if ((!chan_str) || (!strlen(chan_str))) {
@@ -214,9 +214,9 @@ static int wifi_utils_validate_chan_str(char* chan_str) {
     return (0);
 }
 
-int wifi_utils_parse_scan_bands(char* scan_bands_str, uint8_t* band_map) {
+int wifi_utils_parse_scan_bands(char const* scan_bands_str, uint8_t* band_map) {
     char  parse_str[WIFI_MGMT_BAND_STR_SIZE_MAX + 1];
-    char* band_str;
+    char const* band_str;
     char* ctx;
     enum wifi_frequency_bands band;
     int len;
@@ -256,7 +256,7 @@ int wifi_utils_parse_scan_bands(char* scan_bands_str, uint8_t* band_map) {
     return (0);
 }
 
-int wifi_utils_parse_scan_ssids(char* scan_ssids_str,
+int wifi_utils_parse_scan_ssids(char const* scan_ssids_str,
                                 char const* ssids[],
                                 uint8_t num_ssids) {
     int len;
@@ -286,7 +286,7 @@ int wifi_utils_parse_scan_ssids(char* scan_ssids_str,
     return (0);
 }
 
-int wifi_utils_parse_scan_chan(char* scan_chan_str,
+int wifi_utils_parse_scan_chan(char const* scan_chan_str,
                                struct wifi_band_channel* band_chan,
                                uint8_t max_channels) {
     char band_str[WIFI_UTILS_MAX_BAND_STR_LEN] = {0};
@@ -354,19 +354,20 @@ int wifi_utils_parse_scan_chan(char* scan_chan_str,
                 return (-EINVAL);
             }
 
-            chan_val = atoi(chan_str);
+            chan_val = (uint8_t)atoi(chan_str);
 
-            memset(chan_str, 0, sizeof(chan_str));
+            (void) memset(chan_str, 0, sizeof(chan_str));
 
             if (chan_start) {
                 if ((chan_idx + (chan_val - chan_start)) >= max_channels) {
                     NET_ERR("Too many channels specified (%d)", max_channels);
                     return (-EINVAL);
                 }
+
                 if (wifi_utils_get_all_chans_in_range(chan_start,
                                                       chan_val,
                                                       band_chan,
-                                                      band,
+                                                      (uint8_t)band,
                                                       &chan_idx)) {
                     NET_ERR("Channel range invalid");
                     return (-EINVAL);
@@ -375,17 +376,18 @@ int wifi_utils_parse_scan_chan(char* scan_chan_str,
                 chan_start = 0;
             }
             else {
-                if (!wifi_utils_validate_chan(band,
+                if (!wifi_utils_validate_chan((uint8_t)band,
                                               chan_val)) {
                     NET_ERR("Invalid channel %d", chan_val);
                     return (-EINVAL);
                 }
+
                 if (chan_idx == max_channels) {
                     NET_ERR("Too many channels specified (%d)", max_channels);
                     return (-EINVAL);
                 }
 
-                band_chan[chan_idx].band    = band;
+                band_chan[chan_idx].band    = (uint8_t)band;
                 band_chan[chan_idx].channel = chan_val;
                 chan_idx++;
             }

@@ -18,13 +18,8 @@
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
 
-#if defined CONFIG_SHELL_GETOPT
+#if defined CONFIG_SHELL_GETOPT || defined(_MSC_VER)
 #include <getopt.h>
-#else
-#if defined(_MSC_VER)           /* #CUSTOM@NDRS */
-#define ARG_REPLACE_GETOPT      1
-#include "bsw/3rd/argtable3/arg_getopt.h"
-#endif
 #endif
 
 #ifdef __cplusplus

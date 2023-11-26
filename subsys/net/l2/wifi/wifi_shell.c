@@ -348,7 +348,7 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback* cb,
 static int __wifi_args_to_params(size_t argc, char* argv[],
                                  struct wifi_connect_req_params* params) {
     char* endptr;
-    int   idx = 1;
+    uint_fast16_t idx = 1U;
 
     if (argc < 1) {
         return (-EINVAL);
@@ -361,14 +361,14 @@ static int __wifi_args_to_params(size_t argc, char* argv[],
 
     /* SSID */
     params->ssid        = argv[0];
-    params->ssid_length = strlen(params->ssid);
+    params->ssid_length = (uint8_t)strlen(params->ssid);
     if (params->ssid_length > WIFI_SSID_MAX_LEN) {
         return (-EINVAL);
     }
 
     /* Channel (optional) */
     if ((idx < argc) && (strlen(argv[idx]) <= 3)) {
-        params->channel = strtol(argv[idx], &endptr, 10);
+        params->channel = (uint8_t)strtol(argv[idx], &endptr, 10);
         if (*endptr != '\0') {
             return (-EINVAL);
         }
@@ -383,7 +383,7 @@ static int __wifi_args_to_params(size_t argc, char* argv[],
     /* PSK (optional) */
     if (idx < argc) {
         params->psk        = argv[idx];
-        params->psk_length = strlen(argv[idx]);
+        params->psk_length = (uint8_t)strlen(argv[idx]);
         /* Defaults */
         params->security = WIFI_SECURITY_TYPE_PSK;
         params->mfp      = WIFI_MFP_OPTIONAL;
@@ -538,7 +538,7 @@ static int wifi_scan_args_to_params(const struct shell* sh,
                     return (-ENOEXEC);
                 }
 
-                params->dwell_time_active = val;
+                params->dwell_time_active = (uint16_t)val;
                 opt_num++;
                 break;
 
@@ -550,7 +550,7 @@ static int wifi_scan_args_to_params(const struct shell* sh,
                     return (-ENOEXEC);
                 }
 
-                params->dwell_time_passive = val;
+                params->dwell_time_passive = (uint16_t)val;
                 opt_num++;
                 break;
 
@@ -573,7 +573,7 @@ static int wifi_scan_args_to_params(const struct shell* sh,
                     return (-ENOEXEC);
                 }
 
-                params->max_bss_cnt = val;
+                params->max_bss_cnt = (uint16_t)val;
                 opt_num++;
                 break;
 
@@ -1223,7 +1223,7 @@ static int cmd_wifi_listen_interval(const struct shell* sh, size_t argc, char* a
         return (-EINVAL);
     }
 
-    params.listen_interval = interval;
+    params.listen_interval = (unsigned short)interval;
     params.type            = WIFI_PS_PARAM_LISTEN_INTERVAL;
 
     if (net_mgmt(NET_REQUEST_WIFI_PS, iface, &params, sizeof(params))) {
