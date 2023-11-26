@@ -25,8 +25,7 @@ static struct k_spinlock rt_clock_base_lock;
  *
  * See IEEE 1003.1
  */
-int z_impl_clock_gettime(clockid_t clock_id, struct timespec *ts)
-{
+int z_impl_clock_gettime(clockid_t clock_id, struct timespec* ts) {
 	struct timespec base;
 	k_spinlock_key_t key;
 
@@ -44,7 +43,7 @@ int z_impl_clock_gettime(clockid_t clock_id, struct timespec *ts)
 
 	default:
 		errno = EINVAL;
-		return -1;
+            return (-1);
 	}
 
 	uint64_t ticks = k_uptime_ticks();
@@ -62,7 +61,7 @@ int z_impl_clock_gettime(clockid_t clock_id, struct timespec *ts)
 		ts->tv_nsec -= NSEC_PER_SEC;
 	}
 
-	return 0;
+    return (0);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -82,19 +81,17 @@ int z_vrfy_clock_gettime(clockid_t clock_id, struct timespec *ts)
  * Note that only the `CLOCK_REALTIME` clock can be set using this
  * call.
  */
-int clock_settime(clockid_t clock_id, const struct timespec *tp)
-{
+int clock_settime(clockid_t clock_id, const struct timespec* tp) {
 	struct timespec base;
 	k_spinlock_key_t key;
 
 	if (clock_id != CLOCK_REALTIME) {
 		errno = EINVAL;
-		return -1;
+        return (-1);
 	}
 
 	uint64_t elapsed_nsecs = k_ticks_to_ns_floor64(k_uptime_ticks());
-	int64_t delta = (int64_t)NSEC_PER_SEC * tp->tv_sec + tp->tv_nsec
-		- elapsed_nsecs;
+    int64_t  delta = (int64_t)NSEC_PER_SEC * tp->tv_sec + tp->tv_nsec - elapsed_nsecs;
 
 	base.tv_sec = delta / NSEC_PER_SEC;
 	base.tv_nsec = delta % NSEC_PER_SEC;
@@ -103,7 +100,7 @@ int clock_settime(clockid_t clock_id, const struct timespec *tp)
 	rt_clock_base = base;
 	k_spin_unlock(&rt_clock_base_lock, key);
 
-	return 0;
+    return (0);
 }
 
 /**
@@ -180,8 +177,7 @@ do_rmtp_update:
  *
  * See IEEE 1003.1
  */
-int gettimeofday(struct timeval *tv, void *tz)
-{
+int gettimeofday(struct timeval* tv, void* tz) {
 	struct timespec ts;
 	int res;
 
@@ -193,5 +189,5 @@ int gettimeofday(struct timeval *tv, void *tz)
 	tv->tv_sec = ts.tv_sec;
 	tv->tv_usec = ts.tv_nsec / NSEC_PER_USEC;
 
-	return res;
+    return (res);
 }
