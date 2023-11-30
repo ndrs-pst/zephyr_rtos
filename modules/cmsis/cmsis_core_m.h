@@ -75,8 +75,12 @@ typedef enum {
 #define __Vendor_SysTickConfig         0 /* Default to standard SysTick */
 #endif /* __NVIC_PRIO_BITS */
 
+#if defined(_MSC_VER)
+// pass
+#else
 #if __NVIC_PRIO_BITS != NUM_IRQ_PRIO_BITS
 #error "NUM_IRQ_PRIO_BITS and __NVIC_PRIO_BITS are not set to the same value"
+#endif
 #endif
 
 #ifdef __cplusplus
