@@ -937,17 +937,6 @@ static inline int ascii_filter(char const data) {
     }
 }
 
-/* #CUSTOM@NDRS : workaround to protect shell when user input only spaces ' ' into command buffers */
-bool utl_is_all_space(char* buf, uint16_t len) {
-    for (uint_fast16_t i = 0; i < len; i++) {
-        if (buf[i] != ' ') {
-            return (false);
-        }
-    }
-
-    return (true);
-}
-
 static void state_collect(const struct shell* sh) {
     size_t count = 0U;
     char data;
@@ -989,10 +978,7 @@ static void state_collect(const struct shell* sh) {
         switch (sh->ctx->receive_state) {
             case SHELL_RECEIVE_DEFAULT :
                 if (process_nl(sh, data)) {
-                    uint16_t cmd_buff_len = sh->ctx->cmd_buff_len;
-
-                    if ((cmd_buff_len == 0U) ||
-                        (utl_is_all_space(sh->ctx->cmd_buff, cmd_buff_len) == true)) {
+                    if (!sh->ctx->cmd_buff_len) {
                         history_mode_exit(sh);
                         z_cursor_next_line_move(sh);
                     }
