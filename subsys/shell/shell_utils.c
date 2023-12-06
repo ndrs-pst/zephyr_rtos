@@ -403,7 +403,7 @@ void z_shell_spaces_trim(char* str) {
     uint_fast16_t len   = z_shell_strlen(str);
     uint_fast16_t shift = 0U;
 
-    if (!str) {
+    if (len == 0U) { /* #CUSTOM@NDRS */
         return;
     }
 
