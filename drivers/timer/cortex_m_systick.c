@@ -258,7 +258,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle) {
     }
     #endif /* CONFIG_CORTEX_M_SYSTICK_IDLE_TIMER */
 
-#if defined(CONFIG_TICKLESS_KERNEL)
+    #if defined(CONFIG_TICKLESS_KERNEL)
     uint32_t delay;
     uint32_t val1;
     uint32_t val2;
@@ -326,12 +326,12 @@ void sys_clock_set_timeout(int32_t ticks, bool idle) {
         cycle_count += (val1 - val2);
     }
     k_spin_unlock(&lock, key);
-#endif
+    #endif
 }
 
 uint32_t sys_clock_elapsed(void) {
     if (!TICKLESS) {
-        return 0;
+        return (0);
     }
 
     k_spinlock_key_t key = k_spin_lock(&lock);
@@ -339,7 +339,7 @@ uint32_t sys_clock_elapsed(void) {
     uint32_t cyc = elapsed() + unannounced;
 
     k_spin_unlock(&lock, key);
-    return cyc / CYC_PER_TICK;
+    return (cyc / CYC_PER_TICK);
 }
 
 uint32_t sys_clock_cycle_get_32(void) {
@@ -434,9 +434,9 @@ void sys_clock_disable(void) {
 static int sys_clock_driver_init(void) {
     NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
     last_load     = CYC_PER_TICK;
-    overflow_cyc  = 0U;
+    overflow_cyc  = 0UL;
     SysTick->LOAD = last_load - 1;
-    SysTick->VAL  = 0; /* resets timer to last_load */
+    SysTick->VAL  = 0UL;                    /* resets timer to last_load */
     SysTick->CTRL |= (SysTick_CTRL_ENABLE_Msk  |
                       SysTick_CTRL_TICKINT_Msk |
                       SysTick_CTRL_CLKSOURCE_Msk);

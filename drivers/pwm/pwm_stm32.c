@@ -891,7 +891,7 @@ static void pwm_stm32_irq_config_func_##index(const struct device* dev) {   \
                                            \
     PINCTRL_DT_INST_DEFINE(index);         \
                                            \
-    static DT_CONST struct pwm_stm32_config pwm_stm32_config_##index = {    \
+    static struct pwm_stm32_config DT_CONST pwm_stm32_config_##index = {    \
         .timer       = (TIM_TypeDef*)DT_REG_ADDR(PWM(index)),   \
         .prescaler   = DT_PROP(PWM(index), st_prescaler),       \
         .countermode = DT_PROP(PWM(index), st_countermode),     \

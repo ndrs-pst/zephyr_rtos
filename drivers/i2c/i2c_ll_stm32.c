@@ -562,7 +562,7 @@ PINCTRL_DT_INST_DEFINE(index);              \
 static const struct stm32_pclken pclken_##index[] = \
                           STM32_DT_INST_CLOCKS(index);  \
                                             \
-static struct DT_CONST i2c_stm32_config i2c_stm32_cfg_##index = {   \
+static struct i2c_stm32_config DT_CONST i2c_stm32_cfg_##index = {   \
     .i2c = (I2C_TypeDef *)DT_INST_REG_ADDR(index),      \
     .pclken = pclken_##index,               \
     .pclk_len = DT_INST_NUM_CLOCKS(index),  \

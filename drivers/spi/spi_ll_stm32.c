@@ -1204,7 +1204,7 @@ PINCTRL_DT_INST_DEFINE(id);                                     \
 static const struct stm32_pclken pclken_##id[] =                \
                           STM32_DT_INST_CLOCKS(id);             \
                                                                 \
-static struct DT_CONST spi_stm32_config spi_stm32_cfg_##id = {  \
+static struct spi_stm32_config DT_CONST spi_stm32_cfg_##id = {  \
     .spi      = (SPI_TypeDef*)DT_INST_REG_ADDR(id),             \
     .pclken   = pclken_##id,                                    \
     .pclk_len = DT_INST_NUM_CLOCKS(id),                         \
