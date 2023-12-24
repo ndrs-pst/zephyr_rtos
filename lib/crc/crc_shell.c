@@ -66,13 +66,13 @@ static void usage(const struct shell* sh) {
 
 static int cmd_crc(const struct shell* sh, size_t argc, char** argv) {
     int rv;
-    size_t size   = -1;
     bool last     = false;
     uint32_t poly = 0;
     bool first    = false;
     uint32_t seed = 0;
     bool reflect  = false;
-    void* addr    = (void*)-1;
+    void* addr;
+    size_t size;
     enum crc_type type = CRC32_IEEE;
 
     optind = 1;
@@ -105,7 +105,7 @@ static int cmd_crc(const struct shell* sh, size_t argc, char** argv) {
 
             case 's' :
                 seed = (size_t)strtoul(optarg, NULL, 16);
-                if (seed == 0 && errno == EINVAL) {
+                if ((seed == 0) && (errno == EINVAL)) {
                     shell_error(sh, "invalid seed '%s'", optarg);
                     return (-EINVAL);
                 }
@@ -149,4 +149,4 @@ static int cmd_crc(const struct shell* sh, size_t argc, char** argv) {
     return (0);
 }
 
-SHELL_CMD_ARG_REGISTER(crc, NULL, NULL, cmd_crc, 0, 12);
+SHELL_CMD_ARG_REGISTER(crc, NULL, "CRC calculation", cmd_crc, 0, 12);
