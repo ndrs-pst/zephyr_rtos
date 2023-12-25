@@ -67,7 +67,7 @@ enum modem_pipe_state {
 
 struct modem_pipe {
 	void *data;
-	struct modem_pipe_api *api;
+	struct modem_pipe_api const* api;
 	modem_pipe_api_callback callback;
 	void *user_data;
 	enum modem_pipe_state state;
@@ -83,7 +83,7 @@ struct modem_pipe {
  * @param data Pipe data to bind to pipe instance
  * @param api Pipe API implementation to bind to pipe instance
  */
-void modem_pipe_init(struct modem_pipe *pipe, void *data, struct modem_pipe_api *api);
+void modem_pipe_init(struct modem_pipe *pipe, void *data, struct modem_pipe_api const* api);
 
 /**
  * @endcond

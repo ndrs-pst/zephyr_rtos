@@ -9,7 +9,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modem_pipe, CONFIG_MODEM_MODULES_LOG_LEVEL);
 
-void modem_pipe_init(struct modem_pipe* pipe, void* data, struct modem_pipe_api* api) {
+void modem_pipe_init(struct modem_pipe* pipe, void* data, struct modem_pipe_api const* api) {
     __ASSERT_NO_MSG(pipe != NULL);
     __ASSERT_NO_MSG(data != NULL);
     __ASSERT_NO_MSG(api != NULL);

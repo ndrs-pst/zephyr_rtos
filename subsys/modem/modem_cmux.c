@@ -975,7 +975,7 @@ static int modem_cmux_dlci_pipe_api_close(void* data) {
     return (0);
 }
 
-struct modem_pipe_api modem_cmux_dlci_pipe_api = {
+static struct modem_pipe_api const modem_cmux_dlci_pipe_api = {
     .open     = modem_cmux_dlci_pipe_api_open,
     .transmit = modem_cmux_dlci_pipe_api_transmit,
     .receive  = modem_cmux_dlci_pipe_api_receive,
