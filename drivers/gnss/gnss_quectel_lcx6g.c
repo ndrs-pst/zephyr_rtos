@@ -209,7 +209,7 @@ static int quectel_lcx6g_suspend(const struct device* dev) {
     struct quectel_lcx6g_data* data = dev->data;
     int ret;
 
-    ret = modem_chat_run_script_run(&data->chat, &suspend_script);
+    ret = modem_chat_run_script(&data->chat, &suspend_script);
     if (ret < 0) {
         modem_pipe_close(data->uart_pipe);
     }
@@ -616,14 +616,14 @@ static int quectel_lcx6g_get_supported_systems(const struct device* dev, gnss_sy
     return (0);
 }
 
-static struct gnss_driver_api gnss_api = {
+static const struct gnss_driver_api gnss_api = {
     .set_fix_rate          = quectel_lcx6g_set_fix_rate,
     .get_fix_rate          = quectel_lcx6g_get_fix_rate,
     .set_navigation_mode   = quectel_lcx6g_set_navigation_mode,
     .get_navigation_mode   = quectel_lcx6g_get_navigation_mode,
     .set_enabled_systems   = quectel_lcx6g_set_enabled_systems,
     .get_enabled_systems   = quectel_lcx6g_get_enabled_systems,
-    .get_supported_systems = quectel_lcx6g_get_supported_systems,
+    .get_supported_systems = quectel_lcx6g_get_supported_systems
 };
 
 static int quectel_lcx6g_init_nmea0183_match(const struct device* dev) {
@@ -643,7 +643,7 @@ static int quectel_lcx6g_init_nmea0183_match(const struct device* dev) {
 
 static void quectel_lcx6g_init_pipe(const struct device* dev) {
     const struct quectel_lcx6g_config* config = dev->config;
-    struct quectel_lcx6g_data*         data   = dev->data;
+    struct quectel_lcx6g_data* data = dev->data;
 
     const struct modem_backend_uart_config uart_backend_config = {
         .uart              = config->uart,
