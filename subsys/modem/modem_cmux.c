@@ -144,7 +144,7 @@ static void modem_cmux_log_received_frame(const struct modem_cmux_frame* frame) 
     LOG_HEXDUMP_DBG(frame->data, frame->data_len, "data:");
 }
 
-static char const* modem_cmux_command_type_to_str(enum modem_cmux_command_types command_type) {
+__maybe_unused static char const* modem_cmux_command_type_to_str(enum modem_cmux_command_types command_type) {
     switch (command_type) {
         case MODEM_CMUX_COMMAND_NSC :
             return "NSC";
