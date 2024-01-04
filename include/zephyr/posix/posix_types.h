@@ -45,8 +45,8 @@ struct pthread_attr {
     uint32_t details[2];
 };
 
-#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) \
-    || defined(CONFIG_ARCMWDT_LIBC)
+#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) ||    \
+    defined(CONFIG_ARCMWDT_LIBC) || defined(_MSC_VER) /* #CUSTOM@NDRS */
 typedef struct pthread_attr pthread_attr_t;
 #endif
 
@@ -64,6 +64,7 @@ typedef uint32_t pthread_mutex_t;
 struct pthread_mutexattr {
     int type;
 };
+
 #if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) ||    \
     defined(CONFIG_ARCMWDT_LIBC) || defined(_MSC_VER) /* #CUSTOM@NDRS */
 typedef struct pthread_mutexattr pthread_mutexattr_t;
