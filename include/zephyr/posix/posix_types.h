@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #endif
 
-#ifdef CONFIG_NEWLIB_LIBC
+#if defined(CONFIG_NEWLIB_LIBC) && !defined(_MSC_VER) /* #CUSTOM@NDRS */
 #include <sys/_pthreadtypes.h>
 #endif
 
@@ -23,6 +23,10 @@ extern "C" {
 
 #ifndef __useconds_t_defined
 typedef unsigned long useconds_t;
+#endif
+
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+typedef uint32_t clockid_t;
 #endif
 
 /* time related attributes */
@@ -37,16 +41,16 @@ typedef unsigned long timer_t;
 
 /* Thread attributes */
 struct pthread_attr {
-	void *stack;
-	uint32_t details[2];
+    void *stack;
+    uint32_t details[2];
 };
 
-#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) \
-	|| defined(CONFIG_ARCMWDT_LIBC)
+#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) ||    \
+    defined(CONFIG_ARCMWDT_LIBC) || defined(_MSC_VER) /* #CUSTOM@NDRS */
 typedef struct pthread_attr pthread_attr_t;
 #endif
 
-BUILD_ASSERT(sizeof(pthread_attr_t) >= sizeof(struct pthread_attr));
+BUILD_ASSERT(sizeof(pthread_attr_t) >= sizeof(struct pthread_attr), "sizeof error !!!");
 
 typedef uint32_t pthread_t;
 typedef uint32_t pthread_spinlock_t;
@@ -58,59 +62,60 @@ typedef struct k_sem sem_t;
 typedef uint32_t pthread_mutex_t;
 
 struct pthread_mutexattr {
-	int type;
+    int type;
 };
-#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) \
-	|| defined(CONFIG_ARCMWDT_LIBC)
+
+#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) ||    \
+    defined(CONFIG_ARCMWDT_LIBC) || defined(_MSC_VER) /* #CUSTOM@NDRS */
 typedef struct pthread_mutexattr pthread_mutexattr_t;
 #endif
-BUILD_ASSERT(sizeof(pthread_mutexattr_t) >= sizeof(struct pthread_mutexattr));
+BUILD_ASSERT(sizeof(pthread_mutexattr_t) >= sizeof(struct pthread_mutexattr), "sizeof error !!!");
 
 /* Condition variables */
 typedef uint32_t pthread_cond_t;
 
 struct pthread_condattr {
-	clockid_t clock;
+    clockid_t clock;
 };
 
-#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) \
-	|| defined(CONFIG_ARCMWDT_LIBC)
+#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) ||    \
+    defined(CONFIG_ARCMWDT_LIBC) || defined(_MSC_VER) /* #CUSTOM@NDRS */
 typedef struct pthread_condattr pthread_condattr_t;
 #endif
-BUILD_ASSERT(sizeof(pthread_condattr_t) >= sizeof(struct pthread_condattr));
+BUILD_ASSERT(sizeof(pthread_condattr_t) >= sizeof(struct pthread_condattr), "sizeof error !!!");
 
 /* Barrier */
 typedef uint32_t pthread_barrier_t;
 
 typedef struct pthread_barrierattr {
-	int pshared;
+    int pshared;
 } pthread_barrierattr_t;
 
 typedef uint32_t pthread_rwlockattr_t;
 
 typedef struct pthread_rwlock_obj {
-	struct k_sem rd_sem;
-	struct k_sem wr_sem;
-	struct k_sem reader_active;/* blocks WR till reader has acquired lock */
-	int32_t status;
-	k_tid_t wr_owner;
+    struct k_sem rd_sem;
+    struct k_sem wr_sem;
+    struct k_sem reader_active; /* blocks WR till reader has acquired lock */
+    int32_t status;
+    k_tid_t wr_owner;
 } pthread_rwlock_t;
 
 struct pthread_once {
-	bool flag;
+    bool flag;
 };
 
-#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) \
-	|| defined(CONFIG_ARCMWDT_LIBC)
+#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) || \
+    defined(CONFIG_ARCMWDT_LIBC) || defined(_MSC_VER) /* #CUSTOM@NDRS */
 typedef uint32_t pthread_key_t;
 typedef struct pthread_once pthread_once_t;
 #endif
 
 /* Newlib typedefs pthread_once_t as a struct with two ints */
-BUILD_ASSERT(sizeof(pthread_once_t) >= sizeof(struct pthread_once));
+BUILD_ASSERT(sizeof(pthread_once_t) >= sizeof(struct pthread_once), "sizeof error !!!");
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif	/* ZEPHYR_INCLUDE_POSIX_TYPES_H_ */
+#endif /* ZEPHYR_INCLUDE_POSIX_TYPES_H_ */
