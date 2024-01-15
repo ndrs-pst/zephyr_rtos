@@ -41,7 +41,7 @@ extern "C" {
  */
 #define TYPE_SECTION_ITERABLE(type, varname, secname, section_postfix) \
 	Z_DECL_ALIGN(type) varname \
-	__in_section(_##secname, static, _CONCAT(section_postfix, _)) __used __noasan
+	__in_section(_##secname, static, Z_CONCAT(section_postfix, _)) __used __noasan
 
 /**
  * @brief iterable section start symbol for a generic type
@@ -52,7 +52,7 @@ extern "C" {
  * would be TYPE_SECTION_START(foobar)
  *
  */
-#define TYPE_SECTION_START(secname) _CONCAT(_##secname, _list_start)
+#define TYPE_SECTION_START(secname) Z_CONCAT(_##secname, _list_start)
 
 /**
  * @brief iterable section end symbol for a generic type
@@ -62,7 +62,7 @@ extern "C" {
  * @param[in]  secname type name of iterable section.  For 'struct foobar' this
  * would be TYPE_SECTION_START(foobar)
  */
-#define TYPE_SECTION_END(secname) _CONCAT(_##secname, _list_end)
+#define TYPE_SECTION_END(secname) Z_CONCAT(_##secname, _list_end)
 
 /**
  * @brief iterable section extern for start symbol for a generic type
