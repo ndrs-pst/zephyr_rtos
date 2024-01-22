@@ -16,28 +16,46 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/toolchain.h>
 
+#if defined(CONFIG_CPU_CORTEX_M)    /* #CUSTOM@NDRS */
+#include "cmsis_compiler.h"
+#endif
+
+/* Internal helpers only used by the sys_* APIs further below */
+#if (defined(CONFIG_CPU_CORTEX_M) && !defined(_MSC_VER))        /* #CUSTOM@NDRS */
+#define BSWAP_16(x) ((uint16_t)__REV16((uint32_t)(x)))
+#define BSWAP_24(x) ((uint32_t)(__REV(x) >> 8))
+#define BSWAP_32(x) ((uint32_t)__REV(x))
+#define BSWAP_48(x) ((uint64_t)(BSWAP_64(x) >> 16U))
+#define BSWAP_64(x) (((uint64_t)BSWAP_32((x) & 0xFFFFFFFFULL) << 32U) | (uint64_t)BSWAP_32((x) >> 32U))
+#else
 #define BSWAP_16(x) ((uint16_t) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
+
 #define BSWAP_24(x) ((uint32_t) ((((x) >> 16) & 0xff) | \
-				   (((x)) & 0xff00) | \
-				   (((x) & 0xff) << 16)))
+                                    (((x)) & 0xff00)  | \
+                                    (((x) & 0xff) << 16)))
+
 #define BSWAP_32(x) ((uint32_t) ((((x) >> 24) & 0xff) | \
-				   (((x) >> 8) & 0xff00) | \
-				   (((x) & 0xff00) << 8) | \
-				   (((x) & 0xff) << 24)))
+                                    (((x) >> 8) & 0xff00) | \
+                                    (((x) & 0xff00) << 8) | \
+                                    (((x) & 0xff) << 24)))
+
 #define BSWAP_48(x) ((uint64_t) ((((x) >> 40) & 0xff) | \
-				   (((x) >> 24) & 0xff00) | \
-				   (((x) >> 8) & 0xff0000) | \
-				   (((x) & 0xff0000) << 8) | \
-				   (((x) & 0xff00) << 24) | \
-				   (((x) & 0xff) << 40)))
+                                    (((x) >> 24) & 0xff00)  | \
+                                    (((x) >> 8) & 0xff0000) | \
+                                    (((x) & 0xff0000) << 8) | \
+                                    (((x) & 0xff00) << 24)  | \
+                                    (((x) & 0xff) << 40)))
+
 #define BSWAP_64(x) ((uint64_t) ((((x) >> 56) & 0xff) | \
-				   (((x) >> 40) & 0xff00) | \
-				   (((x) >> 24) & 0xff0000) | \
-				   (((x) >> 8) & 0xff000000) | \
-				   (((x) & 0xff000000) << 8) | \
-				   (((x) & 0xff0000) << 24) | \
-				   (((x) & 0xff00) << 40) | \
-				   (((x) & 0xff) << 56)))
+                                    (((x) >> 40) & 0xff00)    | \
+                                    (((x) >> 24) & 0xff0000)  | \
+                                    (((x) >> 8) & 0xff000000) | \
+                                    (((x) & 0xff000000) << 8) | \
+                                    (((x) & 0xff0000) << 24)  | \
+                                    (((x) & 0xff00) << 40)    | \
+                                    (((x) & 0xff) << 56)))
+#endif
+
 
 /** @def sys_le16_to_cpu
  *  @brief Convert 16-bit integer from little-endian to host endianness.
@@ -307,8 +325,8 @@
  */
 static inline void sys_put_be16(uint16_t val, uint8_t dst[2])
 {
-	dst[0] = val >> 8;
-	dst[1] = val;
+    dst[0] = (uint8_t)(val >> 8);
+    dst[1] = (uint8_t)val;
 }
 
 /**
@@ -322,8 +340,8 @@ static inline void sys_put_be16(uint16_t val, uint8_t dst[2])
  */
 static inline void sys_put_be24(uint32_t val, uint8_t dst[3])
 {
-	dst[0] = val >> 16;
-	sys_put_be16(val, &dst[1]);
+    dst[0] = (uint8_t)(val >> 16);
+    sys_put_be16((uint16_t)val, &dst[1]);
 }
 
 /**
@@ -337,8 +355,8 @@ static inline void sys_put_be24(uint32_t val, uint8_t dst[3])
  */
 static inline void sys_put_be32(uint32_t val, uint8_t dst[4])
 {
-	sys_put_be16(val >> 16, dst);
-	sys_put_be16(val, &dst[2]);
+    sys_put_be16((uint16_t)(val >> 16), dst);
+    sys_put_be16((uint16_t)val, &dst[2]);
 }
 
 /**
@@ -352,8 +370,8 @@ static inline void sys_put_be32(uint32_t val, uint8_t dst[4])
  */
 static inline void sys_put_be48(uint64_t val, uint8_t dst[6])
 {
-	sys_put_be16(val >> 32, dst);
-	sys_put_be32(val, &dst[2]);
+    sys_put_be16((uint16_t)(val >> 32), dst);
+    sys_put_be32((uint32_t)val, &dst[2]);
 }
 
 /**
@@ -367,8 +385,8 @@ static inline void sys_put_be48(uint64_t val, uint8_t dst[6])
  */
 static inline void sys_put_be64(uint64_t val, uint8_t dst[8])
 {
-	sys_put_be32(val >> 32, dst);
-	sys_put_be32(val, &dst[4]);
+    sys_put_be32(val >> 32, dst);
+    sys_put_be32((uint32_t)val, &dst[4]);
 }
 
 /**
@@ -382,8 +400,8 @@ static inline void sys_put_be64(uint64_t val, uint8_t dst[8])
  */
 static inline void sys_put_le16(uint16_t val, uint8_t dst[2])
 {
-	dst[0] = val;
-	dst[1] = val >> 8;
+    dst[0] = (uint8_t)val;
+    dst[1] = (uint8_t)(val >> 8);
 }
 
 /**
@@ -397,8 +415,8 @@ static inline void sys_put_le16(uint16_t val, uint8_t dst[2])
  */
 static inline void sys_put_le24(uint32_t val, uint8_t dst[3])
 {
-	sys_put_le16(val, dst);
-	dst[2] = val >> 16;
+    sys_put_le16((uint16_t)val, dst);
+    dst[2] = (uint8_t)(val >> 16);
 }
 
 /**
@@ -412,8 +430,8 @@ static inline void sys_put_le24(uint32_t val, uint8_t dst[3])
  */
 static inline void sys_put_le32(uint32_t val, uint8_t dst[4])
 {
-	sys_put_le16(val, dst);
-	sys_put_le16(val >> 16, &dst[2]);
+    sys_put_le16((uint16_t)val, dst);
+    sys_put_le16((uint16_t)(val >> 16), &dst[2]);
 }
 
 /**
@@ -427,8 +445,8 @@ static inline void sys_put_le32(uint32_t val, uint8_t dst[4])
  */
 static inline void sys_put_le48(uint64_t val, uint8_t dst[6])
 {
-	sys_put_le32(val, dst);
-	sys_put_le16(val >> 32, &dst[4]);
+    sys_put_le32((uint32_t)val, dst);
+    sys_put_le16((uint16_t)(val >> 32), &dst[4]);
 }
 
 /**
@@ -442,8 +460,8 @@ static inline void sys_put_le48(uint64_t val, uint8_t dst[6])
  */
 static inline void sys_put_le64(uint64_t val, uint8_t dst[8])
 {
-	sys_put_le32(val, dst);
-	sys_put_le32(val >> 32, &dst[4]);
+    sys_put_le32((uint32_t)val, dst);
+    sys_put_le32((uint32_t)(val >> 32), &dst[4]);
 }
 
 /**
@@ -458,7 +476,7 @@ static inline void sys_put_le64(uint64_t val, uint8_t dst[8])
  */
 static inline uint16_t sys_get_be16(const uint8_t src[2])
 {
-	return ((uint16_t)src[0] << 8) | src[1];
+    return ((uint16_t)src[0] << 8) | src[1];
 }
 
 /**
@@ -473,7 +491,7 @@ static inline uint16_t sys_get_be16(const uint8_t src[2])
  */
 static inline uint32_t sys_get_be24(const uint8_t src[3])
 {
-	return ((uint32_t)src[0] << 16) | sys_get_be16(&src[1]);
+    return ((uint32_t)src[0] << 16) | sys_get_be16(&src[1]);
 }
 
 /**
@@ -488,7 +506,7 @@ static inline uint32_t sys_get_be24(const uint8_t src[3])
  */
 static inline uint32_t sys_get_be32(const uint8_t src[4])
 {
-	return ((uint32_t)sys_get_be16(&src[0]) << 16) | sys_get_be16(&src[2]);
+    return ((uint32_t)sys_get_be16(&src[0]) << 16) | sys_get_be16(&src[2]);
 }
 
 /**
@@ -503,7 +521,7 @@ static inline uint32_t sys_get_be32(const uint8_t src[4])
  */
 static inline uint64_t sys_get_be48(const uint8_t src[6])
 {
-	return ((uint64_t)sys_get_be32(&src[0]) << 16) | sys_get_be16(&src[4]);
+    return ((uint64_t)sys_get_be32(&src[0]) << 16) | sys_get_be16(&src[4]);
 }
 
 /**
@@ -518,7 +536,7 @@ static inline uint64_t sys_get_be48(const uint8_t src[6])
  */
 static inline uint64_t sys_get_be64(const uint8_t src[8])
 {
-	return ((uint64_t)sys_get_be32(&src[0]) << 32) | sys_get_be32(&src[4]);
+    return ((uint64_t)sys_get_be32(&src[0]) << 32) | sys_get_be32(&src[4]);
 }
 
 /**
@@ -533,7 +551,7 @@ static inline uint64_t sys_get_be64(const uint8_t src[8])
  */
 static inline uint16_t sys_get_le16(const uint8_t src[2])
 {
-	return ((uint16_t)src[1] << 8) | src[0];
+    return ((uint16_t)src[1] << 8) | src[0];
 }
 
 /**
@@ -548,7 +566,7 @@ static inline uint16_t sys_get_le16(const uint8_t src[2])
  */
 static inline uint32_t sys_get_le24(const uint8_t src[3])
 {
-	return ((uint32_t)src[2] << 16) | sys_get_le16(&src[0]);
+    return ((uint32_t)src[2] << 16) | sys_get_le16(&src[0]);
 }
 
 /**
@@ -563,7 +581,7 @@ static inline uint32_t sys_get_le24(const uint8_t src[3])
  */
 static inline uint32_t sys_get_le32(const uint8_t src[4])
 {
-	return ((uint32_t)sys_get_le16(&src[2]) << 16) | sys_get_le16(&src[0]);
+    return ((uint32_t)sys_get_le16(&src[2]) << 16) | sys_get_le16(&src[0]);
 }
 
 /**
@@ -578,7 +596,7 @@ static inline uint32_t sys_get_le32(const uint8_t src[4])
  */
 static inline uint64_t sys_get_le48(const uint8_t src[6])
 {
-	return ((uint64_t)sys_get_le32(&src[2]) << 16) | sys_get_le16(&src[0]);
+    return ((uint64_t)sys_get_le32(&src[2]) << 16) | sys_get_le16(&src[0]);
 }
 
 /**
@@ -593,7 +611,7 @@ static inline uint64_t sys_get_le48(const uint8_t src[6])
  */
 static inline uint64_t sys_get_le64(const uint8_t src[8])
 {
-	return ((uint64_t)sys_get_le32(&src[4]) << 32) | sys_get_le32(&src[0]);
+    return ((uint64_t)sys_get_le32(&src[4]) << 32) | sys_get_le32(&src[0]);
 }
 
 /**
@@ -611,18 +629,18 @@ static inline uint64_t sys_get_le64(const uint8_t src[8])
  */
 static inline void sys_memcpy_swap(void *dst, const void *src, size_t length)
 {
-	uint8_t *pdst = (uint8_t *)dst;
-	const uint8_t *psrc = (const uint8_t *)src;
+    uint8_t *pdst = (uint8_t *)dst;
+    const uint8_t *psrc = (const uint8_t *)src;
 
-	__ASSERT(((psrc < pdst && (psrc + length) <= pdst) ||
-		  (psrc > pdst && (pdst + length) <= psrc)),
-		 "Source and destination buffers must not overlap");
+    __ASSERT(((psrc < pdst && (psrc + length) <= pdst) ||
+             (psrc > pdst && (pdst + length) <= psrc)),
+             "Source and destination buffers must not overlap");
 
-	psrc += length - 1;
+    psrc += length - 1;
 
-	for (; length > 0; length--) {
-		*pdst++ = *psrc--;
-	}
+    for (; length > 0; length--) {
+        *pdst++ = *psrc--;
+    }
 }
 
 /**
@@ -637,14 +655,14 @@ static inline void sys_memcpy_swap(void *dst, const void *src, size_t length)
  */
 static inline void sys_mem_swap(void *buf, size_t length)
 {
-	size_t i;
+    size_t i;
 
-	for (i = 0; i < (length/2); i++) {
-		uint8_t tmp = ((uint8_t *)buf)[i];
+    for (i = 0; i < (length/2); i++) {
+        uint8_t tmp = ((uint8_t *)buf)[i];
 
-		((uint8_t *)buf)[i] = ((uint8_t *)buf)[length - 1 - i];
-		((uint8_t *)buf)[length - 1 - i] = tmp;
-	}
+        ((uint8_t *)buf)[i] = ((uint8_t *)buf)[length - 1 - i];
+        ((uint8_t *)buf)[length - 1 - i] = tmp;
+    }
 }
 
 #endif /* ZEPHYR_INCLUDE_SYS_BYTEORDER_H_ */
