@@ -201,6 +201,40 @@ uint16_t crc16_ccitt(uint16_t seed, uint8_t const* src, size_t len);
 uint16_t crc16_itu_t(uint16_t seed, uint8_t const* src, size_t len);
 
 /**
+ * @brief Compute the checksum of a buffer with polynomial 0x8005 (0xA001 reflected),
+ *        reflecting input and output.
+ *
+ * This function is able to calculate any CRC that uses 0x8005 as it polynomial
+ * and requires reflecting both the input and the output.
+ *
+ * The following checksums can, among others, be calculated by this function,
+ * depending on the value provided for the initial seed and the value the final
+ * calculated CRC is XORed with:
+ *
+ * - CRC-16/ARC
+ *   https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-arc
+ *   initial seed: 0x0000, xor output: 0x0000
+ *
+ * - CRC-16/USB
+ *   https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-usb
+ *   initial seed: 0xffff, xor output: 0xffff
+ *
+ * - CRC-16/MAXIM-DOW, CRC-16/MAXIM
+ *   https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-maxim-dow
+ *   initial seed: 0x0000, xor output: 0xffff
+ *
+ * @note To calculate the CRC across non-contiguous blocks use the return
+ *       value from block N-1 as the seed for block N.
+ *
+ * @param seed Value to seed the CRC with
+ * @param src Input bytes for the computation
+ * @param len Length of the input in bytes
+ *
+ * @return The computed CRC16 value (without any XOR applied to it)
+ */
+uint16_t crc16_modbus(uint16_t seed, uint8_t const* src, size_t len);
+
+/**
  * @brief Compute the ANSI (or Modbus) variant of CRC-16
  *
  * The ANSI variant of CRC-16 uses 0x8005 (0xA001 reflected) as its polynomial
@@ -212,7 +246,7 @@ uint16_t crc16_itu_t(uint16_t seed, uint8_t const* src, size_t len);
  * @return The computed CRC16 value
  */
 static inline uint16_t crc16_ansi(uint8_t const* src, size_t len) {
-    return crc16_reflect(0xA001, 0xffff, src, len);
+    return crc16_modbus(0xffff, src, len);
 }
 
 /**
