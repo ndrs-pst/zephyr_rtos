@@ -352,11 +352,11 @@ static int sdhc_spi_send_cmd(const struct device* dev, struct sdhc_command* cmd,
      * the maximum spi response length is 5 bytes, so we provide an
      * additional 5 bytes of data, leaving us with 13 bytes of 0xFF.
      * Finally, we send a padding byte of all 0xFF, to ensure that
-     * the card recives at least one 0xFF byte before next command.
+     * the card receives at least one 0xFF byte before next command.
      */
 
     /* Note: we can discard CMD data as we send it,
-     * so resuse the TX buf as RX
+     * so reuse the TX buf as RX
      */
     struct spi_buf bufs[] = {
         {
@@ -626,7 +626,7 @@ static int sdhc_spi_request(const struct device* dev,
     const struct sdhc_spi_config* config = dev->config;
     struct sdhc_spi_data* dev_data = dev->data;
     int ret, retries = cmd->retries;
-    const struct sdhc_command stop_cmd = {
+    struct sdhc_command stop_cmd = {
         .opcode        = SD_STOP_TRANSMISSION,
         .arg           = 0,
         .response_type = SD_SPI_RSP_TYPE_R1b,
@@ -656,9 +656,7 @@ static int sdhc_spi_request(const struct device* dev,
                 /* CMD12 is required after multiple read, or
                  * to retry failed transfer
                  */
-                sdhc_spi_send_cmd(dev,
-                                  (struct sdhc_command*)&stop_cmd,
-                                  false);
+                sdhc_spi_send_cmd(dev, &stop_cmd, false);
             }
         } while ((ret != 0) && (retries-- > 0));
     }
@@ -679,20 +677,18 @@ static int sdhc_spi_set_io(const struct device* dev, struct sdhc_io* ios) {
         if ((uint32_t)ios->clock > cfg->spi_max_freq) {
             return (-ENOTSUP);
         }
-        /* Because pointer comparision is used, we have to
+        /* Because pointer comparison is used, we have to
          * swap to a new configuration structure to reconfigure SPI.
          */
         if (ios->clock != 0) {
             if (data->spi_cfg == &data->cfg_a) {
                 data->cfg_a.frequency = ios->clock;
-                memcpy(&data->cfg_b, &data->cfg_a,
-                       sizeof(struct spi_config));
+                data->cfg_b = data->cfg_a;
                 data->spi_cfg = &data->cfg_b;
             }
             else {
                 data->cfg_b.frequency = ios->clock;
-                memcpy(&data->cfg_a, &data->cfg_b,
-                       sizeof(struct spi_config));
+                data->cfg_a = data->cfg_b;
                 data->spi_cfg = &data->cfg_a;
             }
         }
