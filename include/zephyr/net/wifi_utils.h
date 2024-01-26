@@ -53,8 +53,7 @@ extern "C" {
  * @retval 0 on success.
  * @retval -errno value in case of failure.
  */
-int wifi_utils_parse_scan_bands(char *scan_bands_str, uint8_t *band_map);
-
+int wifi_utils_parse_scan_bands(char const* scan_bands_str, uint8_t* band_map);
 
 /**
  * @brief Append a string containing an SSID to an array of SSID strings.
@@ -66,10 +65,9 @@ int wifi_utils_parse_scan_bands(char *scan_bands_str, uint8_t *band_map);
  * @retval 0 on success.
  * @retval -errno value in case of failure.
  */
-int wifi_utils_parse_scan_ssids(char *scan_ssids_str,
-				const char *ssids[],
-				uint8_t num_ssids);
-
+int wifi_utils_parse_scan_ssids(char const* scan_ssids_str,
+                                char const* ssids[],
+                                uint8_t num_ssids);
 
 /**
  * @brief Convert a string containing a specification of scan channels to an array.
@@ -99,9 +97,9 @@ int wifi_utils_parse_scan_ssids(char *scan_ssids_str,
  * @retval 0 on success.
  * @retval -errno value in case of failure.
  */
-int wifi_utils_parse_scan_chan(char *scan_chan_str,
-			       struct wifi_band_channel *chan,
-			       uint8_t max_channels);
+int wifi_utils_parse_scan_chan(char const* scan_chan_str,
+                               struct wifi_band_channel* chan,
+                               uint8_t max_channels);
 
 
 /**
