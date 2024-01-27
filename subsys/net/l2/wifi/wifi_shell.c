@@ -298,11 +298,11 @@ static void handle_wifi_twt_event(struct net_mgmt_event_callback* cb) {
 
     if (resp->operation == WIFI_TWT_TEARDOWN) {
         if (resp->teardown_status == WIFI_TWT_TEARDOWN_SUCCESS) {
-            print(context.sh, SHELL_NORMAL, "TWT teardown succeeded for flow ID %d\n",
+            print(sh, SHELL_NORMAL, "TWT teardown succeeded for flow ID %d\n",
                   resp->flow_id);
         }
         else {
-            print(context.sh, SHELL_NORMAL, "TWT teardown failed for flow ID %d\n",
+            print(sh, SHELL_NORMAL, "TWT teardown failed for flow ID %d\n",
                   resp->flow_id);
         }
         return;
@@ -966,7 +966,7 @@ static int cmd_wifi_ps(const struct shell* sh, size_t argc, char* argv[]) {
                     config.twt_flows[i].trigger,
                     config.twt_flows[i].twt_wake_interval,
                     config.twt_flows[i].twt_interval);
-                shell_fprintf(context.sh, SHELL_NORMAL,
+                shell_fprintf(sh, SHELL_NORMAL,
                               "TWT Wake ahead duration : %d us\n",
                               config.twt_flows[i].twt_wake_ahead_duration);
             }

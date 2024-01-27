@@ -349,7 +349,7 @@ static int bt_esp32_close(void) {
     return (0);
 }
 
-static const struct bt_hci_driver drv = {
+static const struct bt_hci_driver hci_esp32_drv = {
     .name           = "BT ESP32",
     .open           = bt_esp32_open,
     .send           = bt_esp32_send,

@@ -75,8 +75,7 @@ bool wifi_utils_validate_chan_6g(uint16_t chan) {
     return (false);
 }
 
-static bool wifi_utils_validate_chan(uint8_t band,
-                                     uint16_t chan) {
+bool wifi_utils_validate_chan(uint8_t band, uint16_t chan) {
     bool result = false;
 
     switch (band) {
