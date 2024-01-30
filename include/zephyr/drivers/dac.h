@@ -29,15 +29,15 @@ extern "C" {
  * @brief Structure for specifying the configuration of a DAC channel.
  */
 struct dac_channel_cfg {
-	/** Channel identifier of the DAC that should be configured. */
-	uint8_t channel_id;
-	/** Desired resolution of the DAC (depends on device capabilities). */
-	uint8_t resolution;
-	/** Enable output buffer for this channel.
-	 * This is relevant for instance if the output is directly connected to the load,
-	 * without an amplifierin between. The actual details on this are hardware dependent.
-	 */
-	bool buffered;
+    /** Channel identifier of the DAC that should be configured. */
+    uint8_t channel_id;
+    /** Desired resolution of the DAC (depends on device capabilities). */
+    uint8_t resolution;
+    /** Enable output buffer for this channel.
+     * This is relevant for instance if the output is directly connected to the load,
+     * without an amplifier in between. The actual details on this are hardware dependent.
+     */
+    bool buffered;
 };
 
 /**
@@ -50,15 +50,15 @@ struct dac_channel_cfg {
  * Type definition of DAC API function for configuring a channel.
  * See dac_channel_setup() for argument descriptions.
  */
-typedef int (*dac_api_channel_setup)(const struct device *dev,
-				     const struct dac_channel_cfg *channel_cfg);
+typedef int (*dac_api_channel_setup)(const struct device* dev,
+                                     const struct dac_channel_cfg* channel_cfg);
 
 /*
  * Type definition of DAC API function for setting a write request.
  * See dac_write_value() for argument descriptions.
  */
-typedef int (*dac_api_write_value)(const struct device *dev,
-				    uint8_t channel, uint32_t value);
+typedef int (*dac_api_write_value)(const struct device* dev,
+                                   uint8_t channel, uint32_t value);
 
 /*
  * DAC driver API
@@ -66,8 +66,8 @@ typedef int (*dac_api_write_value)(const struct device *dev,
  * This is the mandatory API any DAC driver needs to expose.
  */
 __subsystem struct dac_driver_api {
-	dac_api_channel_setup channel_setup;
-	dac_api_write_value   write_value;
+    dac_api_channel_setup channel_setup;
+    dac_api_write_value   write_value;
 };
 
 /**
@@ -87,16 +87,14 @@ __subsystem struct dac_driver_api {
  * @retval -EINVAL   If a parameter with an invalid value has been provided.
  * @retval -ENOTSUP  If the requested resolution is not supported.
  */
-__syscall int dac_channel_setup(const struct device *dev,
-				const struct dac_channel_cfg *channel_cfg);
+__syscall int dac_channel_setup(const struct device* dev,
+                                const struct dac_channel_cfg* channel_cfg);
 
-static inline int z_impl_dac_channel_setup(const struct device *dev,
-					   const struct dac_channel_cfg *channel_cfg)
-{
-	const struct dac_driver_api *api =
-				(const struct dac_driver_api *)dev->api;
+static inline int z_impl_dac_channel_setup(const struct device* dev,
+                                           const struct dac_channel_cfg* channel_cfg) {
+    const struct dac_driver_api* api = (const struct dac_driver_api*)dev->api;
 
-	return api->channel_setup(dev, channel_cfg);
+    return api->channel_setup(dev, channel_cfg);
 }
 
 /**
@@ -109,16 +107,14 @@ static inline int z_impl_dac_channel_setup(const struct device *dev,
  * @retval 0        On success.
  * @retval -EINVAL  If a parameter with an invalid value has been provided.
  */
-__syscall int dac_write_value(const struct device *dev, uint8_t channel,
-			      uint32_t value);
+__syscall int dac_write_value(const struct device* dev, uint8_t channel,
+                              uint32_t value);
 
-static inline int z_impl_dac_write_value(const struct device *dev,
-						uint8_t channel, uint32_t value)
-{
-	const struct dac_driver_api *api =
-				(const struct dac_driver_api *)dev->api;
+static inline int z_impl_dac_write_value(const struct device* dev,
+                                         uint8_t channel, uint32_t value) {
+    const struct dac_driver_api* api = (const struct dac_driver_api*)dev->api;
 
-	return api->write_value(dev, channel, value);
+    return api->write_value(dev, channel, value);
 }
 
 /**
