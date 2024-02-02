@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-//#include <strings.h>
+#include <strings.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/init.h>
@@ -1360,7 +1360,7 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 	unsigned int chan_idx = 0;
 
 	if (argc == 1) {
-		(&regd)->chan_info = &chan_info[0];
+		regd.chan_info = &chan_info[0];
 		regd.oper = WIFI_MGMT_GET;
 	} else if (argc >= 2 && argc <= 3) {
 		regd.oper = WIFI_MGMT_SET;

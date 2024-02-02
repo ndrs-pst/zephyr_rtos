@@ -494,9 +494,7 @@ static void spi_stm32_complete(const struct device* dev, int status) {
 
     #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
     if (cfg->fifo_enabled) {
-        LL_SPI_ClearFlag_TXTF(spi);
-        LL_SPI_ClearFlag_OVR(spi);
-        LL_SPI_ClearFlag_EOT(spi);
+        LL_SPI_ClearFlag(spi, SPI_IFCR_TXTFC | SPI_IFCR_OVRC | SPI_IFCR_EOTC);
         LL_SPI_SetTransferSize(spi, 0);
     }
     #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */

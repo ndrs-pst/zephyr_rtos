@@ -131,7 +131,7 @@ MODEM_CHAT_MATCHES_DEFINE(unsol_matches,
 static int quectel_lcx6g_configure_pps(const struct device* dev) {
     const struct quectel_lcx6g_config* config = dev->config;
     struct quectel_lcx6g_data* data = dev->data;
-    uint8_t pps_mode = 0;
+    uint8_t pps_mode;
     int ret;
 
     switch (config->pps_mode) {
@@ -352,8 +352,8 @@ static void quectel_lcx6g_get_fix_rate_callback(struct modem_chat* chat, char** 
 
 static int quectel_lcx6g_get_fix_rate(const struct device* dev, uint32_t* fix_interval_ms) {
     struct quectel_lcx6g_data* data = dev->data;
-    k_spinlock_key_t           key;
-    int                        ret;
+    k_spinlock_key_t key;
+    int ret;
 
     key = k_spin_lock(&data->lock);
 
@@ -369,7 +369,7 @@ static int quectel_lcx6g_get_fix_rate(const struct device* dev, uint32_t* fix_in
     data->dynamic_match.match_size = sizeof("$PAIR051,") - 1;
     data->dynamic_match.callback   = quectel_lcx6g_get_fix_rate_callback;
 
-    ret                          = modem_chat_run_script(&data->chat, &data->dynamic_script);
+    ret = modem_chat_run_script(&data->chat, &data->dynamic_script);
     data->dynamic_match.callback = NULL;
     if (ret < 0) {
         goto unlock_return;
@@ -491,7 +491,7 @@ static int quectel_lcx6g_get_navigation_mode(const struct device* dev,
     data->dynamic_match.match_size = sizeof("$PAIR081,") - 1;
     data->dynamic_match.callback   = quectel_lcx6g_get_navigation_mode_callback;
 
-    ret                          = modem_chat_run_script(&data->chat, &data->dynamic_script);
+    ret = modem_chat_run_script(&data->chat, &data->dynamic_script);
     data->dynamic_match.callback = NULL;
     if (ret < 0) {
         goto unlock_return;

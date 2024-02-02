@@ -223,7 +223,6 @@ static inline void ll_func_disable_spi(SPI_TypeDef* spi) {
     /* Flush RX buffer */
     while (LL_SPI_IsActiveFlag_RXP(spi)) {
         (void) LL_SPI_ReceiveData8(spi);
-
         if (IS_ENABLED(__GTEST)) {
             break;
         }
