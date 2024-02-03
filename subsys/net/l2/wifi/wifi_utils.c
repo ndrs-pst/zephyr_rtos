@@ -290,7 +290,7 @@ int wifi_utils_parse_scan_chan(char const* scan_chan_str,
                                uint8_t max_channels) {
     char band_str[WIFI_UTILS_MAX_BAND_STR_LEN] = {0};
     char chan_str[WIFI_UTILS_MAX_CHAN_STR_LEN] = {0};
-    enum wifi_frequency_bands band = WIFI_FREQ_BAND_UNKNOWN;
+    enum wifi_frequency_bands band;
     uint_fast16_t band_str_start_idx = 0;
     uint_fast16_t chan_str_start_idx;
     uint8_t  chan_idx   = 0;

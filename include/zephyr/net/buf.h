@@ -947,7 +947,16 @@ struct net_buf {
     };
 
     /** System metadata for this buffer. */
+    #if defined(_MSC_VER)
+    /* This is a workaround for MSVC which does not allow zero-sized
+     * arrays. The size of the array is 1.
+     * This change will effect production code in C when using sizeof()
+     * so it will be used only in MSVC.
+     */
+    uint8_t user_data[1] __net_buf_align;
+    #else
     uint8_t user_data[] __net_buf_align;
+    #endif
 };
 
 struct net_buf_data_cb {
@@ -1421,7 +1430,7 @@ void net_buf_unref_debug(struct net_buf* buf, char const* func, int line);
 #define net_buf_unref(_buf) \
     net_buf_unref_debug(_buf, __func__, __LINE__)
 #else
-void                         net_buf_unref(struct net_buf* buf);
+void net_buf_unref(struct net_buf* buf);
 #endif
 
 /**
@@ -2289,7 +2298,7 @@ struct net_buf* net_buf_frag_del_debug(struct net_buf* parent,
 #define net_buf_frag_del(_parent, _frag) \
     net_buf_frag_del_debug(_parent, _frag, __func__, __LINE__)
 #else
-struct net_buf*              net_buf_frag_del(struct net_buf* parent, struct net_buf* frag);
+struct net_buf* net_buf_frag_del(struct net_buf* parent, struct net_buf* frag);
 #endif
 
 /**
