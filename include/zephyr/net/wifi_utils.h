@@ -112,7 +112,7 @@ int wifi_utils_parse_scan_chan(char const* scan_chan_str,
  * @retval false if the channel is not valid for the band.
  */
 bool wifi_utils_validate_chan(uint8_t band,
-			      uint16_t chan);
+			      uint8_t chan);
 
 /**
  * @brief Validate a channel against the 2.4 GHz band.
@@ -122,7 +122,7 @@ bool wifi_utils_validate_chan(uint8_t band,
  * @retval true if the channel is valid for the band.
  * @retval false if the channel is not valid for the band.
  */
-bool wifi_utils_validate_chan_2g(uint16_t chan);
+bool wifi_utils_validate_chan_2g(uint8_t chan);
 
 /**
  * @brief Validate a channel against the 5 GHz band.
@@ -132,7 +132,7 @@ bool wifi_utils_validate_chan_2g(uint16_t chan);
  * @retval true if the channel is valid for the band.
  * @retval false if the channel is not valid for the band.
  */
-bool wifi_utils_validate_chan_5g(uint16_t chan);
+bool wifi_utils_validate_chan_5g(uint8_t chan);
 
 /**
  * @brief Validate a channel against the 6 GHz band.
@@ -142,7 +142,7 @@ bool wifi_utils_validate_chan_5g(uint16_t chan);
  * @retval true if the channel is valid for the band.
  * @retval false if the channel is not valid for the band.
  */
-bool wifi_utils_validate_chan_6g(uint16_t chan);
+bool wifi_utils_validate_chan_6g(uint8_t chan);
 
 /**
  * @}

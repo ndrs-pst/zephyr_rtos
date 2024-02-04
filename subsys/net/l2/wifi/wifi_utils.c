@@ -46,7 +46,7 @@ static enum wifi_frequency_bands wifi_utils_map_band_str_to_idx(char const* band
     return (band);
 }
 
-bool wifi_utils_validate_chan_2g(uint16_t chan) {
+bool wifi_utils_validate_chan_2g(uint8_t chan) {
     if ((chan >= 1) && (chan <= 14)) {
         return (true);
     }
@@ -54,10 +54,9 @@ bool wifi_utils_validate_chan_2g(uint16_t chan) {
     return (false);
 }
 
-bool wifi_utils_validate_chan_5g(uint16_t chan) {
-    uint_fast16_t i;
+bool wifi_utils_validate_chan_5g(uint8_t chan) {
 
-    for (i = 0; i < ARRAY_SIZE(valid_5g_chans_20mhz); i++) {
+    for (uint_fast8_t i = 0; i < ARRAY_SIZE(valid_5g_chans_20mhz); i++) {
         if (chan == valid_5g_chans_20mhz[i]) {
             return (true);
         }
@@ -66,7 +65,7 @@ bool wifi_utils_validate_chan_5g(uint16_t chan) {
     return (false);
 }
 
-bool wifi_utils_validate_chan_6g(uint16_t chan) {
+bool wifi_utils_validate_chan_6g(uint8_t chan) {
     if (((chan >= 1) && (chan <= 233) && (!((chan - 1) % 4))) ||
          (chan == 2)) {
         return (true);
@@ -75,7 +74,7 @@ bool wifi_utils_validate_chan_6g(uint16_t chan) {
     return (false);
 }
 
-bool wifi_utils_validate_chan(uint8_t band, uint16_t chan) {
+bool wifi_utils_validate_chan(uint8_t band, uint8_t chan) {
     bool result = false;
 
     switch (band) {
@@ -196,14 +195,13 @@ static int wifi_utils_get_all_chans_in_range(uint8_t chan_start,
 }
 
 static int wifi_utils_validate_chan_str(char const* chan_str) {
-    uint_fast8_t i;
 
     if ((!chan_str) || (!strlen(chan_str))) {
         NET_ERR("Null or empty channel string\n");
         return (-EINVAL);
     }
 
-    for (i = 0; i < strlen(chan_str); i++) {
+    for (uint_fast8_t i = 0; i < strlen(chan_str); i++) {
         if (!isdigit((int)chan_str[i])) {
             NET_ERR("Invalid character in channel string %c\n", chan_str[i]);
             return (-EINVAL);
@@ -288,8 +286,8 @@ int wifi_utils_parse_scan_ssids(char const* scan_ssids_str,
 int wifi_utils_parse_scan_chan(char const* scan_chan_str,
                                struct wifi_band_channel* band_chan,
                                uint8_t max_channels) {
-    char band_str[WIFI_UTILS_MAX_BAND_STR_LEN] = {0};
-    char chan_str[WIFI_UTILS_MAX_CHAN_STR_LEN] = {0};
+    char band_str[WIFI_UTILS_MAX_BAND_STR_LEN];
+    char chan_str[WIFI_UTILS_MAX_CHAN_STR_LEN];
     enum wifi_frequency_bands band;
     uint_fast16_t band_str_start_idx = 0;
     uint_fast16_t chan_str_start_idx;
@@ -306,8 +304,8 @@ int wifi_utils_parse_scan_chan(char const* scan_chan_str,
             continue;
         }
 
-        if (((i - band_str_start_idx) <= 0) ||
-            ((i - band_str_start_idx) > WIFI_UTILS_MAX_BAND_STR_LEN)) {
+        uint_fast16_t band_str_len = (i - band_str_start_idx);
+        if (band_str_len >= WIFI_UTILS_MAX_BAND_STR_LEN) {
             NET_ERR("Invalid band value %s",
                     &scan_chan_str[band_str_start_idx]);
             return (-EINVAL);
@@ -315,7 +313,8 @@ int wifi_utils_parse_scan_chan(char const* scan_chan_str,
 
         strncpy(band_str,
                 &scan_chan_str[band_str_start_idx],
-                (i - band_str_start_idx));
+                band_str_len);
+        band_str[band_str_len] = '\0';
 
         band = wifi_utils_map_band_str_to_idx(band_str);
 
@@ -337,8 +336,8 @@ int wifi_utils_parse_scan_chan(char const* scan_chan_str,
                 continue;
             }
 
-            if ((i - chan_str_start_idx) >
-                WIFI_UTILS_MAX_CHAN_STR_LEN) {
+            uint_fast16_t chan_str_len = (i - chan_str_start_idx);
+            if (chan_str_len >= WIFI_UTILS_MAX_CHAN_STR_LEN) {
                 NET_ERR("Invalid chan value %s",
                         &scan_chan_str[chan_str_start_idx]);
                 return (-EINVAL);
@@ -346,7 +345,8 @@ int wifi_utils_parse_scan_chan(char const* scan_chan_str,
 
             strncpy(chan_str,
                     &scan_chan_str[chan_str_start_idx],
-                    (i - chan_str_start_idx));
+                    chan_str_len);
+            chan_str[chan_str_len] = '\0';
 
             if (wifi_utils_validate_chan_str(chan_str)) {
                 NET_ERR("Channel string validation failed");
@@ -354,8 +354,6 @@ int wifi_utils_parse_scan_chan(char const* scan_chan_str,
             }
 
             chan_val = (uint8_t)atoi(chan_str);
-
-            (void) memset(chan_str, 0, sizeof(chan_str));
 
             if (chan_start) {
                 if ((chan_idx + (chan_val - chan_start)) > max_channels) {
@@ -386,9 +384,12 @@ int wifi_utils_parse_scan_chan(char const* scan_chan_str,
                     return (-EINVAL);
                 }
 
-                band_chan[chan_idx].band    = (uint8_t)band;
-                band_chan[chan_idx].channel = chan_val;
-                chan_idx++;
+                if (scan_chan_str[i] != '-') {
+                    /* Only record the channel if it is not a range */
+                    band_chan[chan_idx].band = (uint8_t)band;
+                    band_chan[chan_idx].channel = chan_val;
+                    chan_idx++;
+                }
             }
 
             valid_chan = true;
