@@ -580,7 +580,7 @@ static int imx_usdhc_execute_tuning(const struct device *dev)
 	 * adjustable tuning window
 	 */
 	USDHC_SetStandardTuningCounter(cfg->base, IMX_USDHC_STANDARD_TUNING_COUNTER);
-	/* Reenable standard tuning */
+	/* Re-enable standard tuning */
 	USDHC_EnableStandardTuning(cfg->base, IMX_USDHC_STANDARD_TUNING_START,
 		IMX_USDHC_TUNING_STEP, true);
 
