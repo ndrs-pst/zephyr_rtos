@@ -83,10 +83,10 @@ struct modbus_serial_config {
     uint8_t* uart_buf_ptr;
 
     /* Pointer to driver enable (DE) pin config */
-    struct gpio_dt_spec* de;
+    const struct gpio_dt_spec* de;
 
     /* Pointer to receiver enable (nRE) pin config */
-    struct gpio_dt_spec* re;
+    const struct gpio_dt_spec* re;
 
     /* RTU timer to detect frame end point */
     struct k_timer rtu_timer;
