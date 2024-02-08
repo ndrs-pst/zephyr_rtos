@@ -329,7 +329,11 @@ do {                        \
 #define unlikely(x) (__builtin_expect((bool)!!(x), false) != 0L)
 #endif
 
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define POPCOUNT(x) __popcnt(x)
+#else
 #define POPCOUNT(x) __builtin_popcount(x)
+#endif
 
 #ifndef __no_optimization
 #define __no_optimization __attribute__((optimize("-O0")))

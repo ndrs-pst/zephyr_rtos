@@ -766,6 +766,10 @@ static inline void mem_xor_128(uint8_t dst[16], const uint8_t src1[16], const ui
  *
  * @retval expr As a boolean return, if false then it has timed out.
  */
+#if defined(_MSC_VER)           /* #CUSTOM@NDRS */
+/* During unit-test we can just always return true for WAIT_FOR() */
+#define WAIT_FOR(expr, timeout, delay_stmt)     true
+#else
 #define WAIT_FOR(expr, timeout, delay_stmt)                     \
     ({                                                          \
         uint32_t _wf_cycle_count = k_us_to_cyc_ceil32(timeout); \
@@ -776,6 +780,7 @@ static inline void mem_xor_128(uint8_t dst[16], const uint8_t src1[16], const ui
         }                                                       \
         (expr);                                                 \
     })
+#endif
 
 /**
  * @}
