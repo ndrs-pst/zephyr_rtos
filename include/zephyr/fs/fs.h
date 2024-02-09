@@ -229,10 +229,15 @@ struct fs_statvfs {
  * @param zfp Pointer to file object
  *
  */
-static inline void fs_file_t_init(struct fs_file_t *zfp)
-{
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+static inline void fs_file_t_init(struct fs_file_t* zfp) {
+	memset(zfp, 0, sizeof(*zfp));
+}
+#else
+static inline void fs_file_t_init(struct fs_file_t* zfp) {
 	*zfp = (struct fs_file_t){ 0 };
 }
+#endif
 
 /**
  * @brief Initialize fs_dir_t object
@@ -243,10 +248,15 @@ static inline void fs_file_t_init(struct fs_file_t *zfp)
  * @param zdp Pointer to file object
  *
  */
-static inline void fs_dir_t_init(struct fs_dir_t *zdp)
-{
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+static inline void fs_dir_t_init(struct fs_dir_t* zdp) {
+	memset(zdp, 0, sizeof(*zdp));
+}
+#else
+static inline void fs_dir_t_init(struct fs_dir_t* zdp) {
 	*zdp = (struct fs_dir_t){ 0 };
 }
+#endif
 
 /**
  * @brief Open or create file

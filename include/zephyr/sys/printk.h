@@ -45,6 +45,7 @@ extern "C" {
 #ifdef CONFIG_PRINTK
 
 #if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#include <stdio.h>
 #define printk          printf
 #define vprintk         vprintf
 #else
