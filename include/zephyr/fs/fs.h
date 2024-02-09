@@ -13,6 +13,10 @@
 #include <zephyr/sys/dlist.h>
 #include <zephyr/fs/fs_interface.h>
 
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#include <string.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
