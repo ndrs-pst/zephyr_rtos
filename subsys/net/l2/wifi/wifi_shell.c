@@ -447,7 +447,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 				 enum wifi_iface_mode iface_mode)
 {
 	char *endptr;
-	int idx = 1;
+	uint_fast16_t idx = 1U;
 	const struct shell *sh = context.sh;
 
 	/* Defaults */
@@ -457,7 +457,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 
 	/* SSID */
 	params->ssid = argv[0];
-	params->ssid_length = strlen(params->ssid);
+	params->ssid_length = (uint8_t)strlen(params->ssid);
 	if (params->ssid_length > WIFI_SSID_MAX_LEN) {
 		PR_WARNING("SSID too long (max %d characters)\n",
 			   WIFI_SSID_MAX_LEN);
@@ -523,7 +523,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 				}
 
 				if (wifi_utils_validate_chan(all_bands[band],
-							     channel)) {
+							     (uint16_t)channel)) {
 					found = true;
 					break;
 				}
@@ -536,7 +536,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 				return -EINVAL;
 			}
 
-			params->channel = channel;
+			params->channel = (uint8_t)channel;
 		}
 		idx++;
 	}
@@ -544,7 +544,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 	/* PSK (optional) */
 	if (idx < argc) {
 		params->psk = argv[idx];
-		params->psk_length = strlen(argv[idx]);
+		params->psk_length = (uint8_t)strlen(argv[idx]);
 		/* Defaults */
 		params->security = WIFI_SECURITY_TYPE_PSK;
 		params->mfp = WIFI_MFP_OPTIONAL;
@@ -1360,10 +1360,11 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 {
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_reg_domain regd = {0};
-	int ret, chan_idx = 0;
+	int ret;
+	unsigned int chan_idx = 0;
 
 	if (argc == 1) {
-		(&regd)->chan_info = &chan_info[0];
+		regd.chan_info = &chan_info[0];
 		regd.oper = WIFI_MGMT_GET;
 	} else if (argc >= 2 && argc <= 3) {
 		regd.oper = WIFI_MGMT_SET;
@@ -1409,7 +1410,7 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 		PR("<channel>\t<center frequency>\t<supported(y/n)>\t"
 		   "<max power(dBm)>\t<passive scan supported(y/n)>\t<dfs supported(y/n)>\n");
 		for (chan_idx = 0; chan_idx < regd.num_channels; chan_idx++) {
-			PR("  %d\t\t\t\%d\t\t\t\%s\t\t\t%d\t\t\t%s\t\t\t\t%s\n",
+			PR("  %d\t\t\t%d\t\t\t%s\t\t\t%d\t\t\t%s\t\t\t\t%s\n",
 			   wifi_freq_to_channel(chan_info[chan_idx].center_frequency),
 			   chan_info[chan_idx].center_frequency,
 			   chan_info[chan_idx].supported ? "y" : "n",
@@ -1439,7 +1440,7 @@ static int cmd_wifi_listen_interval(const struct shell *sh, size_t argc, char *a
 		return -EINVAL;
 	}
 
-	params.listen_interval = interval;
+	params.listen_interval = (unsigned short)interval;
 	params.type = WIFI_PS_PARAM_LISTEN_INTERVAL;
 
 	if (net_mgmt(NET_REQUEST_WIFI_PS, iface, &params, sizeof(params))) {

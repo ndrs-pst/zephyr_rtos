@@ -50,39 +50,39 @@ extern "C" {
  * Stores the unicast IP addresses assigned to this network interface.
  */
 struct net_if_addr {
-	/** IP address */
-	struct net_addr address;
+    /** IP address */
+    struct net_addr address;
 
-#if defined(CONFIG_NET_NATIVE_IPV6)
-	struct net_timeout lifetime;
-#endif
+    #if defined(CONFIG_NET_NATIVE_IPV6)
+    struct net_timeout lifetime;
+    #endif
 
-#if defined(CONFIG_NET_IPV6_DAD) && defined(CONFIG_NET_NATIVE_IPV6)
-	/** Duplicate address detection (DAD) timer */
-	sys_snode_t dad_node;
-	uint32_t dad_start;
-#endif
-	/** How the IP address was set */
-	enum net_addr_type addr_type;
+    #if defined(CONFIG_NET_IPV6_DAD) && defined(CONFIG_NET_NATIVE_IPV6)
+    /** Duplicate address detection (DAD) timer */
+    sys_snode_t dad_node;
+    uint32_t    dad_start;
+    #endif
+    /** How the IP address was set */
+    enum net_addr_type addr_type;
 
-	/** What is the current state of the address */
-	enum net_addr_state addr_state;
+    /** What is the current state of the address */
+    enum net_addr_state addr_state;
 
-#if defined(CONFIG_NET_IPV6_DAD) && defined(CONFIG_NET_NATIVE_IPV6)
-	/** How many times we have done DAD */
-	uint8_t dad_count;
-#endif
+    #if defined(CONFIG_NET_IPV6_DAD) && defined(CONFIG_NET_NATIVE_IPV6)
+    /** How many times we have done DAD */
+    uint8_t dad_count;
+    #endif
 
-	/** Is the IP address valid forever */
-	uint8_t is_infinite : 1;
+    /** Is the IP address valid forever */
+    uint8_t is_infinite   : 1;
 
-	/** Is this IP address used or not */
-	uint8_t is_used : 1;
+    /** Is this IP address used or not */
+    uint8_t is_used       : 1;
 
-	/** Is this IP address usage limited to the subnet (mesh) or not */
-	uint8_t is_mesh_local : 1;
+    /** Is this IP address usage limited to the subnet (mesh) or not */
+    uint8_t is_mesh_local : 1;
 
-	uint8_t _unused : 5;
+    uint8_t _unused       : 5;
 };
 
 /**
@@ -91,27 +91,27 @@ struct net_if_addr {
  * Stores the multicast IP addresses assigned to this network interface.
  */
 struct net_if_mcast_addr {
-	/** IP address */
-	struct net_addr address;
+    /** IP address */
+    struct net_addr address;
 
-#if defined(CONFIG_NET_IPV4_IGMPV3)
-	/** Sources to filter on */
-	struct net_addr sources[CONFIG_NET_IF_MCAST_IPV4_SOURCE_COUNT];
+    #if defined(CONFIG_NET_IPV4_IGMPV3)
+    /** Sources to filter on */
+    struct net_addr sources[CONFIG_NET_IF_MCAST_IPV4_SOURCE_COUNT];
 
-	/** Number of sources to be used by the filter */
-	uint16_t sources_len;
+    /** Number of sources to be used by the filter */
+    uint16_t sources_len;
 
-	/** Filter mode (used in IGMPV3) */
-	uint8_t record_type;
-#endif
+    /** Filter mode (used in IGMPV3) */
+    uint8_t record_type;
+    #endif
 
-	/** Is this multicast IP address used or not */
-	uint8_t is_used : 1;
+    /** Is this multicast IP address used or not */
+    uint8_t is_used   : 1;
 
-	/** Did we join to this group */
-	uint8_t is_joined : 1;
+    /** Did we join to this group */
+    uint8_t is_joined : 1;
 
-	uint8_t _unused : 6;
+    uint8_t _unused   : 6;
 };
 
 /**
@@ -120,25 +120,25 @@ struct net_if_mcast_addr {
  * Stores the IPV6 prefixes assigned to this network interface.
  */
 struct net_if_ipv6_prefix {
-	/** Prefix lifetime */
-	struct net_timeout lifetime;
+    /** Prefix lifetime */
+    struct net_timeout lifetime;
 
-	/** IPv6 prefix */
-	struct in6_addr prefix;
+    /** IPv6 prefix */
+    struct in6_addr prefix;
 
-	/** Backpointer to network interface where this prefix is used */
-	struct net_if *iface;
+    /** Backpointer to network interface where this prefix is used */
+    struct net_if* iface;
 
-	/** Prefix length */
-	uint8_t len;
+    /** Prefix length */
+    uint8_t len;
 
-	/** Is the IP prefix valid forever */
-	uint8_t is_infinite : 1;
+    /** Is the IP prefix valid forever */
+    uint8_t is_infinite : 1;
 
-	/** Is this prefix used or not */
-	uint8_t is_used : 1;
+    /** Is this prefix used or not */
+    uint8_t is_used     : 1;
 
-	uint8_t _unused : 6;
+    uint8_t _unused     : 6;
 };
 
 /**
@@ -147,100 +147,100 @@ struct net_if_ipv6_prefix {
  * Stores the router information.
  */
 struct net_if_router {
-	/** Slist lifetime timer node */
-	sys_snode_t node;
+    /** Slist lifetime timer node */
+    sys_snode_t node;
 
-	/** IP address */
-	struct net_addr address;
+    /** IP address */
+    struct net_addr address;
 
-	/** Network interface the router is connected to */
-	struct net_if *iface;
+    /** Network interface the router is connected to */
+    struct net_if* iface;
 
-	/** Router life timer start */
-	uint32_t life_start;
+    /** Router life timer start */
+    uint32_t life_start;
 
-	/** Router lifetime */
-	uint16_t lifetime;
+    /** Router lifetime */
+    uint16_t lifetime;
 
-	/** Is this router used or not */
-	uint8_t is_used : 1;
+    /** Is this router used or not */
+    uint8_t is_used     : 1;
 
-	/** Is default router */
-	uint8_t is_default : 1;
+    /** Is default router */
+    uint8_t is_default  : 1;
 
-	/** Is the router valid forever */
-	uint8_t is_infinite : 1;
+    /** Is the router valid forever */
+    uint8_t is_infinite : 1;
 
-	uint8_t _unused : 5;
+    uint8_t _unused     : 5;
 };
 
 /** Network interface flags. */
 enum net_if_flag {
-	/** Interface is admin up. */
-	NET_IF_UP,
+    /** Interface is admin up. */
+    NET_IF_UP,
 
-	/** Interface is pointopoint */
-	NET_IF_POINTOPOINT,
+    /** Interface is pointopoint */
+    NET_IF_POINTOPOINT,
 
-	/** Interface is in promiscuous mode */
-	NET_IF_PROMISC,
+    /** Interface is in promiscuous mode */
+    NET_IF_PROMISC,
 
-	/** Do not start the interface immediately after initialization.
-	 * This requires that either the device driver or some other entity
-	 * will need to manually take the interface up when needed.
-	 * For example for Ethernet this will happen when the driver calls
-	 * the net_eth_carrier_on() function.
-	 */
-	NET_IF_NO_AUTO_START,
+    /** Do not start the interface immediately after initialization.
+     * This requires that either the device driver or some other entity
+     * will need to manually take the interface up when needed.
+     * For example for Ethernet this will happen when the driver calls
+     * the net_eth_carrier_on() function.
+     */
+    NET_IF_NO_AUTO_START,
 
-	/** Power management specific: interface is being suspended */
-	NET_IF_SUSPENDED,
+    /** Power management specific: interface is being suspended */
+    NET_IF_SUSPENDED,
 
-	/** Flag defines if received multicasts of other interface are
-	 * forwarded on this interface. This activates multicast
-	 * routing / forwarding for this interface.
-	 */
-	NET_IF_FORWARD_MULTICASTS,
+    /** Flag defines if received multicasts of other interface are
+     * forwarded on this interface. This activates multicast
+     * routing / forwarding for this interface.
+     */
+    NET_IF_FORWARD_MULTICASTS,
 
-	/** Interface supports IPv4 */
-	NET_IF_IPV4,
+    /** Interface supports IPv4 */
+    NET_IF_IPV4,
 
-	/** Interface supports IPv6 */
-	NET_IF_IPV6,
+    /** Interface supports IPv6 */
+    NET_IF_IPV6,
 
-	/** Interface up and running (ready to receive and transmit). */
-	NET_IF_RUNNING,
+    /** Interface up and running (ready to receive and transmit). */
+    NET_IF_RUNNING,
 
-	/** Driver signals L1 is up. */
-	NET_IF_LOWER_UP,
+    /** Driver signals L1 is up. */
+    NET_IF_LOWER_UP,
 
-	/** Driver signals dormant. */
-	NET_IF_DORMANT,
+    /** Driver signals dormant. */
+    NET_IF_DORMANT,
 
-	/** IPv6 Neighbor Discovery disabled. */
-	NET_IF_IPV6_NO_ND,
+    /** IPv6 Neighbor Discovery disabled. */
+    NET_IF_IPV6_NO_ND,
 
-	/** IPv6 Multicast Listener Discovery disabled. */
-	NET_IF_IPV6_NO_MLD,
+    /** IPv6 Multicast Listener Discovery disabled. */
+    NET_IF_IPV6_NO_MLD,
 
-	/** Mutex locking on TX data path disabled on the interface. */
-	NET_IF_NO_TX_LOCK,
+    /** Mutex locking on TX data path disabled on the interface. */
+    NET_IF_NO_TX_LOCK,
 
-/** @cond INTERNAL_HIDDEN */
-	/* Total number of flags - must be at the end of the enum */
-	NET_IF_NUM_FLAGS
-/** @endcond */
+    /** @cond INTERNAL_HIDDEN */
+    /* Total number of flags - must be at the end of the enum */
+    NET_IF_NUM_FLAGS
+    /** @endcond */
 };
 
 /** Network interface operational status (RFC 2863). */
 enum net_if_oper_state {
-	NET_IF_OPER_UNKNOWN,
-	NET_IF_OPER_NOTPRESENT,
-	NET_IF_OPER_DOWN,
-	NET_IF_OPER_LOWERLAYERDOWN,
-	NET_IF_OPER_TESTING,
-	NET_IF_OPER_DORMANT,
-	NET_IF_OPER_UP,
+    NET_IF_OPER_UNKNOWN,
+    NET_IF_OPER_NOTPRESENT,
+    NET_IF_OPER_DOWN,
+    NET_IF_OPER_LOWERLAYERDOWN,
+    NET_IF_OPER_TESTING,
+    NET_IF_OPER_DORMANT,
+    NET_IF_OPER_UP,
 } __packed;
 
 #if defined(CONFIG_NET_OFFLOAD)
@@ -249,47 +249,48 @@ struct net_offload;
 
 /** @cond INTERNAL_HIDDEN */
 #if defined(CONFIG_NET_NATIVE_IPV6)
-#define NET_IF_MAX_IPV6_ADDR CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT
-#define NET_IF_MAX_IPV6_MADDR CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT
+#define NET_IF_MAX_IPV6_ADDR   CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT
+#define NET_IF_MAX_IPV6_MADDR  CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT
 #define NET_IF_MAX_IPV6_PREFIX CONFIG_NET_IF_IPV6_PREFIX_COUNT
 #else
-#define NET_IF_MAX_IPV6_ADDR 0
-#define NET_IF_MAX_IPV6_MADDR 0
-#define NET_IF_MAX_IPV6_PREFIX 0
+#define NET_IF_MAX_IPV6_ADDR    1   /* #CUSTOM@NDRS */
+#define NET_IF_MAX_IPV6_MADDR   1   /* #CUSTOM@NDRS */
+#define NET_IF_MAX_IPV6_PREFIX  1   /* #CUSTOM@NDRS */
 #endif
 /* @endcond */
 
 struct net_if_ipv6 {
-	/** Unicast IP addresses */
-	struct net_if_addr unicast[NET_IF_MAX_IPV6_ADDR];
+    /** Unicast IP addresses */
+    struct net_if_addr unicast[NET_IF_MAX_IPV6_ADDR];
 
-	/** Multicast IP addresses */
-	struct net_if_mcast_addr mcast[NET_IF_MAX_IPV6_MADDR];
+    /** Multicast IP addresses */
+    struct net_if_mcast_addr mcast[NET_IF_MAX_IPV6_MADDR];
 
-	/** Prefixes */
-	struct net_if_ipv6_prefix prefix[NET_IF_MAX_IPV6_PREFIX];
+    /** Prefixes */
+    struct net_if_ipv6_prefix prefix[NET_IF_MAX_IPV6_PREFIX];
 
-	/** Default reachable time (RFC 4861, page 52) */
-	uint32_t base_reachable_time;
+    /** Default reachable time (RFC 4861, page 52) */
+    uint32_t base_reachable_time;
 
-	/** Reachable time (RFC 4861, page 20) */
-	uint32_t reachable_time;
+    /** Reachable time (RFC 4861, page 20) */
+    uint32_t reachable_time;
 
-	/** Retransmit timer (RFC 4861, page 52) */
-	uint32_t retrans_timer;
-#if defined(CONFIG_NET_IPV6_ND) && defined(CONFIG_NET_NATIVE_IPV6)
-	/** Router solicitation timer node */
-	sys_snode_t rs_node;
+    /** Retransmit timer (RFC 4861, page 52) */
+    uint32_t retrans_timer;
 
-	/* RS start time */
-	uint32_t rs_start;
+    #if defined(CONFIG_NET_IPV6_ND) && defined(CONFIG_NET_NATIVE_IPV6)
+    /** Router solicitation timer node */
+    sys_snode_t rs_node;
 
-	/** RS count */
-	uint8_t rs_count;
-#endif
+    /* RS start time */
+    uint32_t rs_start;
 
-	/** IPv6 hop limit */
-	uint8_t hop_limit;
+    /** RS count */
+    uint8_t rs_count;
+    #endif
+
+    /** IPv6 hop limit */
+    uint8_t hop_limit;
 
 	/** IPv6 multicast hop limit */
 	uint8_t mcast_hop_limit;
@@ -297,92 +298,92 @@ struct net_if_ipv6 {
 
 #if defined(CONFIG_NET_DHCPV6) && defined(CONFIG_NET_NATIVE_IPV6)
 struct net_if_dhcpv6 {
-	/** Used for timer list. */
-	sys_snode_t node;
+    /** Used for timer list. */
+    sys_snode_t node;
 
-	/** Generated Client ID. */
-	struct net_dhcpv6_duid_storage clientid;
+    /** Generated Client ID. */
+    struct net_dhcpv6_duid_storage clientid;
 
-	/** Server ID of the selected server. */
-	struct net_dhcpv6_duid_storage serverid;
+    /** Server ID of the selected server. */
+    struct net_dhcpv6_duid_storage serverid;
 
-	/** DHCPv6 client state. */
-	enum net_dhcpv6_state state;
+    /** DHCPv6 client state. */
+    enum net_dhcpv6_state state;
 
-	/** DHCPv6 client configuration parameters. */
-	struct net_dhcpv6_params params;
+    /** DHCPv6 client configuration parameters. */
+    struct net_dhcpv6_params params;
 
-	/** Timeout for the next event, absolute time, milliseconds. */
-	uint64_t timeout;
+    /** Timeout for the next event, absolute time, milliseconds. */
+    uint64_t timeout;
 
-	/** Time of the current exchange start, absolute time, milliseconds */
-	uint64_t exchange_start;
+    /** Time of the current exchange start, absolute time, milliseconds */
+    uint64_t exchange_start;
 
-	/** Renewal time, absolute time, milliseconds. */
-	uint64_t t1;
+    /** Renewal time, absolute time, milliseconds. */
+    uint64_t t1;
 
-	/** Rebinding time, absolute time, milliseconds. */
-	uint64_t t2;
+    /** Rebinding time, absolute time, milliseconds. */
+    uint64_t t2;
 
-	/** The time when the last lease expires (terminates rebinding,
-	 *  DHCPv6 RFC8415, ch. 18.2.5). Absolute time, milliseconds.
-	 */
-	uint64_t expire;
+    /** The time when the last lease expires (terminates rebinding,
+     *  DHCPv6 RFC8415, ch. 18.2.5). Absolute time, milliseconds.
+     */
+    uint64_t expire;
 
-	/** Generated IAID for IA_NA. */
-	uint32_t addr_iaid;
+    /** Generated IAID for IA_NA. */
+    uint32_t addr_iaid;
 
-	/** Generated IAID for IA_PD. */
-	uint32_t prefix_iaid;
+    /** Generated IAID for IA_PD. */
+    uint32_t prefix_iaid;
 
-	/** Retransmit timeout for the current message, milliseconds. */
-	uint32_t retransmit_timeout;
+    /** Retransmit timeout for the current message, milliseconds. */
+    uint32_t retransmit_timeout;
 
-	/** Current best server preference received. */
-	int16_t server_preference;
+    /** Current best server preference received. */
+    int16_t server_preference;
 
-	/** Retransmission counter. */
-	uint8_t retransmissions;
+    /** Retransmission counter. */
+    uint8_t retransmissions;
 
-	/** Transaction ID for current exchange. */
-	uint8_t tid[DHCPV6_TID_SIZE];
+    /** Transaction ID for current exchange. */
+    uint8_t tid[DHCPV6_TID_SIZE];
 
-	/** Prefix length. */
-	uint8_t prefix_len;
+    /** Prefix length. */
+    uint8_t prefix_len;
 
-	/** Assigned IPv6 prefix. */
-	struct in6_addr prefix;
+    /** Assigned IPv6 prefix. */
+    struct in6_addr prefix;
 
-	/** Assigned IPv6 address. */
-	struct in6_addr addr;
+    /** Assigned IPv6 address. */
+    struct in6_addr addr;
 };
 #endif /* defined(CONFIG_NET_DHCPV6) && defined(CONFIG_NET_NATIVE_IPV6) */
 
 /** @cond INTERNAL_HIDDEN */
 #if defined(CONFIG_NET_NATIVE_IPV4)
-#define NET_IF_MAX_IPV4_ADDR CONFIG_NET_IF_UNICAST_IPV4_ADDR_COUNT
+#define NET_IF_MAX_IPV4_ADDR  CONFIG_NET_IF_UNICAST_IPV4_ADDR_COUNT
 #define NET_IF_MAX_IPV4_MADDR CONFIG_NET_IF_MCAST_IPV4_ADDR_COUNT
 #else
-#define NET_IF_MAX_IPV4_ADDR 0
-#define NET_IF_MAX_IPV4_MADDR 0
+#define NET_IF_MAX_IPV4_ADDR    1   /* #CUSTOM@NDRS */
+#define NET_IF_MAX_IPV4_MADDR   1   /* #CUSTOM@NDRS */
 #endif
 /** @endcond */
 
 struct net_if_ipv4 {
-	/** Unicast IP addresses */
-	struct net_if_addr unicast[NET_IF_MAX_IPV4_ADDR];
+    /** Unicast IP addresses */
+    struct net_if_addr unicast[NET_IF_MAX_IPV4_ADDR];
 
-	/** Multicast IP addresses */
-	struct net_if_mcast_addr mcast[NET_IF_MAX_IPV4_MADDR];
+    /** Multicast IP addresses */
+    struct net_if_mcast_addr mcast[NET_IF_MAX_IPV4_MADDR];
 
-	/** Gateway */
-	struct in_addr gw;
+    /** Gateway */
+    struct in_addr gw;
 
-	/** Netmask */
-	struct in_addr netmask;
+    /** Netmask */
+    struct in_addr netmask;
 
-	/** IPv4 time-to-live */
-	uint8_t ttl;
+    /** IPv4 time-to-live */
+    uint8_t ttl;
 
 	/** IPv4 time-to-live for multicast packets */
 	uint8_t mcast_ttl;
@@ -390,138 +391,149 @@ struct net_if_ipv4 {
 
 #if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
 struct net_if_dhcpv4 {
-	/** Used for timer lists */
-	sys_snode_t node;
+    /** Used for timer lists */
+    sys_snode_t node;
 
-	/** Timer start */
-	int64_t timer_start;
+    /** Timer start */
+    int64_t timer_start;
 
-	/** Time for INIT, DISCOVER, REQUESTING, RENEWAL */
-	uint32_t request_time;
+    /** Time for INIT, DISCOVER, REQUESTING, RENEWAL */
+    uint32_t request_time;
 
-	uint32_t xid;
+    uint32_t xid;
 
-	/** IP address Lease time */
-	uint32_t lease_time;
+    /** IP address Lease time */
+    uint32_t lease_time;
 
-	/** IP address Renewal time */
-	uint32_t renewal_time;
+    /** IP address Renewal time */
+    uint32_t renewal_time;
 
-	/** IP address Rebinding time */
-	uint32_t rebinding_time;
+    /** IP address Rebinding time */
+    uint32_t rebinding_time;
 
-	/** Server ID */
-	struct in_addr server_id;
+    /** Server ID */
+    struct in_addr server_id;
 
-	/** Requested IP addr */
-	struct in_addr requested_ip;
+    /** Requested IP addr */
+    struct in_addr requested_ip;
 
-	/**
-	 *  DHCPv4 client state in the process of network
-	 *  address allocation.
-	 */
-	enum net_dhcpv4_state state;
+    /**
+     *  DHCPv4 client state in the process of network
+     *  address allocation.
+     */
+    enum net_dhcpv4_state state;
 
-	/** Number of attempts made for REQUEST and RENEWAL messages */
-	uint8_t attempts;
+    /** Number of attempts made for REQUEST and RENEWAL messages */
+    uint8_t attempts;
 
-	/** The address of the server the request is sent to */
-	struct in_addr request_server_addr;
+    /** The address of the server the request is sent to */
+    struct in_addr request_server_addr;
 
-	/** The source address of a received DHCP message */
-	struct in_addr response_src_addr;
+    /** The source address of a received DHCP message */
+    struct in_addr response_src_addr;
 };
 #endif /* CONFIG_NET_DHCPV4 */
 
 #if defined(CONFIG_NET_IPV4_AUTO) && defined(CONFIG_NET_NATIVE_IPV4)
 struct net_if_ipv4_autoconf {
-	/** Used for timer lists */
-	sys_snode_t node;
+    /** Used for timer lists */
+    sys_snode_t node;
 
-	/** Backpointer to correct network interface */
-	struct net_if *iface;
+    /** Backpointer to correct network interface */
+    struct net_if* iface;
 
-	/** Timer start */
-	int64_t timer_start;
+    /** Timer start */
+    int64_t timer_start;
 
-	/** Time for INIT, DISCOVER, REQUESTING, RENEWAL */
-	uint32_t timer_timeout;
+    /** Time for INIT, DISCOVER, REQUESTING, RENEWAL */
+    uint32_t timer_timeout;
 
-	/** Current IP addr */
-	struct in_addr current_ip;
+    /** Current IP addr */
+    struct in_addr current_ip;
 
-	/** Requested IP addr */
-	struct in_addr requested_ip;
+    /** Requested IP addr */
+    struct in_addr requested_ip;
 
-	/** IPV4 Autoconf state in the process of network address allocation.
-	 */
-	enum net_ipv4_autoconf_state state;
+    /** IPV4 Autoconf state in the process of network address allocation.
+     */
+    enum net_ipv4_autoconf_state state;
 
-	/** Number of sent probe requests */
-	uint8_t probe_cnt;
+    /** Number of sent probe requests */
+    uint8_t probe_cnt;
 
-	/** Number of sent announcements */
-	uint8_t announce_cnt;
+    /** Number of sent announcements */
+    uint8_t announce_cnt;
 
-	/** Incoming conflict count */
-	uint8_t conflict_cnt;
+    /** Incoming conflict count */
+    uint8_t conflict_cnt;
 };
 #endif /* CONFIG_NET_IPV4_AUTO */
 
 /** @cond INTERNAL_HIDDEN */
 /* We always need to have at least one IP config */
 #define NET_IF_MAX_CONFIGS 1
+
 /** @endcond */
 
 /**
  * @brief Network interface IP address configuration.
  */
 struct net_if_ip {
-#if defined(CONFIG_NET_NATIVE_IPV6)
-	struct net_if_ipv6 *ipv6;
-#endif /* CONFIG_NET_IPV6 */
+    #if defined(CONFIG_NET_NATIVE_IPV6)
+    struct net_if_ipv6* ipv6;
+    #endif /* CONFIG_NET_IPV6 */
 
-#if defined(CONFIG_NET_NATIVE_IPV4)
-	struct net_if_ipv4 *ipv4;
-#endif /* CONFIG_NET_IPV4 */
+    #if defined(CONFIG_NET_NATIVE_IPV4)
+    struct net_if_ipv4* ipv4;
+    #endif /* CONFIG_NET_IPV4 */
+
+    #if (!defined(CONFIG_NET_NATIVE_IPV6) && \
+         !defined(CONFIG_NET_NATIVE_IPV4) && \
+          defined(_MSC_VER))                /* #CUSTOM@NDRS */
+    void* dummy;
+    #endif
 };
 
 /**
  * @brief IP and other configuration related data for network interface.
  */
 struct net_if_config {
-#if defined(CONFIG_NET_IP)
-	/** IP address configuration setting */
-	struct net_if_ip ip;
-#endif
+    #if defined(CONFIG_NET_IP)
+    /** IP address configuration setting */
+    struct net_if_ip ip;
+    #endif
 
-#if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
-	struct net_if_dhcpv4 dhcpv4;
-#endif /* CONFIG_NET_DHCPV4 */
+    #if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
+    struct net_if_dhcpv4 dhcpv4;
+    #endif /* CONFIG_NET_DHCPV4 */
 
-#if defined(CONFIG_NET_DHCPV6) && defined(CONFIG_NET_NATIVE_IPV6)
-	struct net_if_dhcpv6 dhcpv6;
-#endif /* CONFIG_NET_DHCPV6 */
+    #if defined(CONFIG_NET_DHCPV6) && defined(CONFIG_NET_NATIVE_IPV6)
+    struct net_if_dhcpv6 dhcpv6;
+    #endif /* CONFIG_NET_DHCPV6 */
 
-#if defined(CONFIG_NET_IPV4_AUTO) && defined(CONFIG_NET_NATIVE_IPV4)
-	struct net_if_ipv4_autoconf ipv4auto;
-#endif /* CONFIG_NET_IPV4_AUTO */
+    #if defined(CONFIG_NET_IPV4_AUTO) && defined(CONFIG_NET_NATIVE_IPV4)
+    struct net_if_ipv4_autoconf ipv4auto;
+    #endif /* CONFIG_NET_IPV4_AUTO */
 
-#if defined(CONFIG_NET_L2_VIRTUAL)
-	/**
-	 * This list keeps track of the virtual network interfaces
-	 * that are attached to this network interface.
-	 */
-	sys_slist_t virtual_interfaces;
-#endif /* CONFIG_NET_L2_VIRTUAL */
+    #if defined(CONFIG_NET_L2_VIRTUAL)
+    /**
+     * This list keeps track of the virtual network interfaces
+     * that are attached to this network interface.
+     */
+    sys_slist_t virtual_interfaces;
+    #endif /* CONFIG_NET_L2_VIRTUAL */
 
-#if defined(CONFIG_NET_INTERFACE_NAME)
-	/**
-	 * Network interface can have a name and it is possible
-	 * to search a network interface using this name.
-	 */
-	char name[CONFIG_NET_INTERFACE_NAME_LEN + 1];
-#endif
+    #if defined(CONFIG_NET_INTERFACE_NAME)
+    /**
+     * Network interface can have a name and it is possible
+     * to search a network interface using this name.
+     */
+    char name[CONFIG_NET_INTERFACE_NAME_LEN + 1];
+    #endif
+
+    #if (!defined(CONFIG_NET_IP) && defined(_MSC_VER))  /* #CUSTOM@NDRS */
+    void* dummy;
+    #endif
 };
 
 /**
@@ -534,14 +546,14 @@ struct net_if_config {
  * it.
  */
 struct net_traffic_class {
-	/** Fifo for handling this Tx or Rx packet */
-	struct k_fifo fifo;
+    /** Fifo for handling this Tx or Rx packet */
+    struct k_fifo fifo;
 
-	/** Traffic class handler thread */
-	struct k_thread handler;
+    /** Traffic class handler thread */
+    struct k_thread handler;
 
-	/** Stack for this handler */
-	k_thread_stack_t *stack;
+    /** Stack for this handler */
+    k_thread_stack_t* stack;
 };
 
 /**
@@ -567,42 +579,42 @@ typedef int (*net_socket_create_t)(int, int, int);
  * network device init macros found in net_if.h.
  */
 struct net_if_dev {
-	/** The actually device driver instance the net_if is related to */
-	const struct device *dev;
+    /** The actually device driver instance the net_if is related to */
+    const struct device* dev;
 
-	/** Interface's L2 layer */
-	const struct net_l2 * const l2;
+    /** Interface's L2 layer */
+    const struct net_l2* const l2;
 
-	/** Interface's private L2 data pointer */
-	void *l2_data;
+    /** Interface's private L2 data pointer */
+    void* l2_data;
 
-	/* For internal use */
-	ATOMIC_DEFINE(flags, NET_IF_NUM_FLAGS);
+    /* For internal use */
+    ATOMIC_DEFINE(flags, NET_IF_NUM_FLAGS);
 
-	/** The hardware link address */
-	struct net_linkaddr link_addr;
+    /** The hardware link address */
+    struct net_linkaddr link_addr;
 
-#if defined(CONFIG_NET_OFFLOAD)
-	/** TCP/IP Offload functions.
-	 * If non-NULL, then the TCP/IP stack is located
-	 * in the communication chip that is accessed via this
-	 * network interface.
-	 */
-	struct net_offload *offload;
-#endif /* CONFIG_NET_OFFLOAD */
+    #if defined(CONFIG_NET_OFFLOAD)
+    /** TCP/IP Offload functions.
+     * If non-NULL, then the TCP/IP stack is located
+     * in the communication chip that is accessed via this
+     * network interface.
+     */
+    struct net_offload* offload;
+    #endif /* CONFIG_NET_OFFLOAD */
 
-	/** The hardware MTU */
-	uint16_t mtu;
+    /** The hardware MTU */
+    uint16_t mtu;
 
-#if defined(CONFIG_NET_SOCKETS_OFFLOAD)
-	/** A function pointer to create an offloaded socket.
-	 *  If non-NULL, the interface is considered offloaded at socket level.
-	 */
-	net_socket_create_t socket_offload;
-#endif /* CONFIG_NET_SOCKETS_OFFLOAD */
+    #if defined(CONFIG_NET_SOCKETS_OFFLOAD)
+    /** A function pointer to create an offloaded socket.
+     *  If non-NULL, the interface is considered offloaded at socket level.
+     */
+    net_socket_create_t socket_offload;
+    #endif /* CONFIG_NET_SOCKETS_OFFLOAD */
 
-	/** RFC 2863 operational status */
-	enum net_if_oper_state oper_state;
+    /** RFC 2863 operational status */
+    enum net_if_oper_state oper_state;
 };
 
 /**
@@ -613,66 +625,62 @@ struct net_if_dev {
  *
  */
 struct net_if {
-	/** The net_if_dev instance the net_if is related to */
-	struct net_if_dev *if_dev;
+    /** The net_if_dev instance the net_if is related to */
+    struct net_if_dev* if_dev;
 
-#if defined(CONFIG_NET_STATISTICS_PER_INTERFACE)
-	/** Network statistics related to this network interface */
-	struct net_stats stats;
-#endif /* CONFIG_NET_STATISTICS_PER_INTERFACE */
+    #if defined(CONFIG_NET_STATISTICS_PER_INTERFACE)
+    /** Network statistics related to this network interface */
+    struct net_stats stats;
+    #endif /* CONFIG_NET_STATISTICS_PER_INTERFACE */
 
-	/** Network interface instance configuration */
-	struct net_if_config config;
+    /** Network interface instance configuration */
+    struct net_if_config config;
 
-#if defined(CONFIG_NET_POWER_MANAGEMENT)
-	/** Keep track of packets pending in traffic queues. This is
-	 * needed to avoid putting network device driver to sleep if
-	 * there are packets waiting to be sent.
-	 */
-	int tx_pending;
-#endif
+    #if defined(CONFIG_NET_POWER_MANAGEMENT)
+    /** Keep track of packets pending in traffic queues. This is
+     * needed to avoid putting network device driver to sleep if
+     * there are packets waiting to be sent.
+     */
+    int tx_pending;
+    #endif
 
-	struct k_mutex lock;
-	struct k_mutex tx_lock;
+    struct k_mutex lock;
+    struct k_mutex tx_lock;
 };
 
-static inline void net_if_lock(struct net_if *iface)
-{
-	NET_ASSERT(iface);
+static inline void net_if_lock(struct net_if* iface) {
+    NET_ASSERT(iface);
 
-	(void)k_mutex_lock(&iface->lock, K_FOREVER);
+    (void) k_mutex_lock(&iface->lock, K_FOREVER);
 }
 
-static inline void net_if_unlock(struct net_if *iface)
-{
-	NET_ASSERT(iface);
+static inline void net_if_unlock(struct net_if* iface) {
+    NET_ASSERT(iface);
 
-	k_mutex_unlock(&iface->lock);
+    k_mutex_unlock(&iface->lock);
 }
 
-static inline bool net_if_flag_is_set(struct net_if *iface,
-				      enum net_if_flag value);
+static inline bool net_if_flag_is_set(struct net_if* iface,
+                                      enum net_if_flag value);
 
-static inline void net_if_tx_lock(struct net_if *iface)
-{
-	NET_ASSERT(iface);
+static inline void net_if_tx_lock(struct net_if* iface) {
+    NET_ASSERT(iface);
 
-	if (net_if_flag_is_set(iface, NET_IF_NO_TX_LOCK)) {
-		return;
-	}
+    if (net_if_flag_is_set(iface, NET_IF_NO_TX_LOCK)) {
+        return;
+    }
 
-	(void)k_mutex_lock(&iface->tx_lock, K_FOREVER);
+    (void) k_mutex_lock(&iface->tx_lock, K_FOREVER);
 }
 
-static inline void net_if_tx_unlock(struct net_if *iface)
-{
-	NET_ASSERT(iface);
+static inline void net_if_tx_unlock(struct net_if* iface) {
+    NET_ASSERT(iface);
 
-	if (net_if_flag_is_set(iface, NET_IF_NO_TX_LOCK)) {
-		return;
-	}
+    if (net_if_flag_is_set(iface, NET_IF_NO_TX_LOCK)) {
+        return;
+    }
 
-	k_mutex_unlock(&iface->tx_lock);
+    k_mutex_unlock(&iface->tx_lock);
 }
 
 /**
@@ -681,13 +689,12 @@ static inline void net_if_tx_unlock(struct net_if *iface)
  * @param iface Pointer to network interface
  * @param value Flag value
  */
-static inline void net_if_flag_set(struct net_if *iface,
-				   enum net_if_flag value)
-{
-	NET_ASSERT(iface);
-	NET_ASSERT(iface->if_dev);
+static inline void net_if_flag_set(struct net_if* iface,
+                                   enum net_if_flag value) {
+    NET_ASSERT(iface);
+    NET_ASSERT(iface->if_dev);
 
-	atomic_set_bit(iface->if_dev->flags, value);
+    atomic_set_bit(iface->if_dev->flags, value);
 }
 
 /**
@@ -698,13 +705,12 @@ static inline void net_if_flag_set(struct net_if *iface,
  *
  * @return true if the bit was set, false if it wasn't.
  */
-static inline bool net_if_flag_test_and_set(struct net_if *iface,
-					    enum net_if_flag value)
-{
-	NET_ASSERT(iface);
-	NET_ASSERT(iface->if_dev);
+static inline bool net_if_flag_test_and_set(struct net_if* iface,
+                                            enum net_if_flag value) {
+    NET_ASSERT(iface);
+    NET_ASSERT(iface->if_dev);
 
-	return atomic_test_and_set_bit(iface->if_dev->flags, value);
+    return atomic_test_and_set_bit(iface->if_dev->flags, value);
 }
 
 /**
@@ -713,13 +719,12 @@ static inline bool net_if_flag_test_and_set(struct net_if *iface,
  * @param iface Pointer to network interface
  * @param value Flag value
  */
-static inline void net_if_flag_clear(struct net_if *iface,
-				     enum net_if_flag value)
-{
-	NET_ASSERT(iface);
-	NET_ASSERT(iface->if_dev);
+static inline void net_if_flag_clear(struct net_if* iface,
+                                     enum net_if_flag value) {
+    NET_ASSERT(iface);
+    NET_ASSERT(iface->if_dev);
 
-	atomic_clear_bit(iface->if_dev->flags, value);
+    atomic_clear_bit(iface->if_dev->flags, value);
 }
 
 /**
@@ -730,13 +735,12 @@ static inline void net_if_flag_clear(struct net_if *iface,
  *
  * @return true if the bit was set, false if it wasn't.
  */
-static inline bool net_if_flag_test_and_clear(struct net_if *iface,
-					      enum net_if_flag value)
-{
-	NET_ASSERT(iface);
-	NET_ASSERT(iface->if_dev);
+static inline bool net_if_flag_test_and_clear(struct net_if* iface,
+                                              enum net_if_flag value) {
+    NET_ASSERT(iface);
+    NET_ASSERT(iface->if_dev);
 
-	return atomic_test_and_clear_bit(iface->if_dev->flags, value);
+    return atomic_test_and_clear_bit(iface->if_dev->flags, value);
 }
 
 /**
@@ -747,17 +751,16 @@ static inline bool net_if_flag_test_and_clear(struct net_if *iface,
  *
  * @return True if the value is set, false otherwise
  */
-static inline bool net_if_flag_is_set(struct net_if *iface,
-				      enum net_if_flag value)
-{
-	NET_ASSERT(iface);
-	NET_ASSERT(iface->if_dev);
+static inline bool net_if_flag_is_set(struct net_if* iface,
+                                      enum net_if_flag value) {
+    NET_ASSERT(iface);
+    NET_ASSERT(iface->if_dev);
 
-	if (iface == NULL) {
-		return false;
-	}
+    if (iface == NULL) {
+        return (false);
+    }
 
-	return atomic_test_bit(iface->if_dev->flags, value);
+    return atomic_test_bit(iface->if_dev->flags, value);
 }
 
 /**
@@ -769,16 +772,15 @@ static inline bool net_if_flag_is_set(struct net_if *iface,
  * @return The new operational state of an interface
  */
 static inline enum net_if_oper_state net_if_oper_state_set(
-	struct net_if *iface, enum net_if_oper_state oper_state)
-{
-	NET_ASSERT(iface);
-	NET_ASSERT(iface->if_dev);
+    struct net_if* iface, enum net_if_oper_state oper_state) {
+    NET_ASSERT(iface);
+    NET_ASSERT(iface->if_dev);
 
-	if (oper_state >= NET_IF_OPER_UNKNOWN && oper_state <= NET_IF_OPER_UP) {
-		iface->if_dev->oper_state = oper_state;
-	}
+    if (oper_state >= NET_IF_OPER_UNKNOWN && oper_state <= NET_IF_OPER_UP) {
+        iface->if_dev->oper_state = oper_state;
+    }
 
-	return iface->if_dev->oper_state;
+    return iface->if_dev->oper_state;
 }
 
 /**
@@ -788,12 +790,11 @@ static inline enum net_if_oper_state net_if_oper_state_set(
  *
  * @return Operational state of an interface
  */
-static inline enum net_if_oper_state net_if_oper_state(struct net_if *iface)
-{
-	NET_ASSERT(iface);
-	NET_ASSERT(iface->if_dev);
+static inline enum net_if_oper_state net_if_oper_state(struct net_if* iface) {
+    NET_ASSERT(iface);
+    NET_ASSERT(iface->if_dev);
 
-	return iface->if_dev->oper_state;
+    return iface->if_dev->oper_state;
 }
 
 /**
@@ -804,7 +805,7 @@ static inline enum net_if_oper_state net_if_oper_state(struct net_if *iface)
  *
  * return verdict about the packet
  */
-enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt);
+enum net_verdict net_if_send_data(struct net_if* iface, struct net_pkt* pkt);
 
 /**
  * @brief Get a pointer to the interface L2
@@ -813,13 +814,12 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt);
  *
  * @return a pointer to the iface L2
  */
-static inline const struct net_l2 *net_if_l2(struct net_if *iface)
-{
-	if (!iface || !iface->if_dev) {
-		return NULL;
-	}
+static inline const struct net_l2* net_if_l2(struct net_if* iface) {
+    if (!iface || !iface->if_dev) {
+        return (NULL);
+    }
 
-	return iface->if_dev->l2;
+    return (iface->if_dev->l2);
 }
 
 /**
@@ -830,7 +830,7 @@ static inline const struct net_l2 *net_if_l2(struct net_if *iface)
  *
  * @return verdict about the packet
  */
-enum net_verdict net_if_recv_data(struct net_if *iface, struct net_pkt *pkt);
+enum net_verdict net_if_recv_data(struct net_if* iface, struct net_pkt* pkt);
 
 /**
  * @brief Get a pointer to the interface L2 private data
@@ -839,12 +839,11 @@ enum net_verdict net_if_recv_data(struct net_if *iface, struct net_pkt *pkt);
  *
  * @return a pointer to the iface L2 data
  */
-static inline void *net_if_l2_data(struct net_if *iface)
-{
-	NET_ASSERT(iface);
-	NET_ASSERT(iface->if_dev);
+static inline void* net_if_l2_data(struct net_if* iface) {
+    NET_ASSERT(iface);
+    NET_ASSERT(iface->if_dev);
 
-	return iface->if_dev->l2_data;
+    return (iface->if_dev->l2_data);
 }
 
 /**
@@ -854,12 +853,11 @@ static inline void *net_if_l2_data(struct net_if *iface)
  *
  * @return a pointer to the device driver instance
  */
-static inline const struct device *net_if_get_device(struct net_if *iface)
-{
-	NET_ASSERT(iface);
-	NET_ASSERT(iface->if_dev);
+static inline const struct device* net_if_get_device(struct net_if* iface) {
+    NET_ASSERT(iface);
+    NET_ASSERT(iface->if_dev);
 
-	return iface->if_dev->dev;
+    return (iface->if_dev->dev);
 }
 
 /**
@@ -868,7 +866,7 @@ static inline const struct device *net_if_get_device(struct net_if *iface)
  * @param iface Pointer to a network interface structure
  * @param pkt Pointer to a net packet to queue
  */
-void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt);
+void net_if_queue_tx(struct net_if* iface, struct net_pkt* pkt);
 
 /**
  * @brief Return the IP offload status
@@ -877,16 +875,15 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt);
  *
  * @return True if IP offloading is active, false otherwise.
  */
-static inline bool net_if_is_ip_offloaded(struct net_if *iface)
-{
-#if defined(CONFIG_NET_OFFLOAD)
-	return (iface != NULL && iface->if_dev != NULL &&
-		iface->if_dev->offload != NULL);
-#else
-	ARG_UNUSED(iface);
+static inline bool net_if_is_ip_offloaded(struct net_if* iface) {
+    #if defined(CONFIG_NET_OFFLOAD)
+    return (iface != NULL && iface->if_dev != NULL &&
+            iface->if_dev->offload != NULL);
+    #else
+    ARG_UNUSED(iface);
 
-	return false;
-#endif
+    return (false);
+    #endif
 }
 
 /**
@@ -896,7 +893,7 @@ static inline bool net_if_is_ip_offloaded(struct net_if *iface)
  *
  * @return True if IP or socket offloading is active, false otherwise.
  */
-bool net_if_is_offloaded(struct net_if *iface);
+bool net_if_is_offloaded(struct net_if* iface);
 
 /**
  * @brief Return the IP offload plugin
@@ -905,18 +902,17 @@ bool net_if_is_offloaded(struct net_if *iface);
  *
  * @return NULL if there is no offload plugin defined, valid pointer otherwise
  */
-static inline struct net_offload *net_if_offload(struct net_if *iface)
-{
-#if defined(CONFIG_NET_OFFLOAD)
-	NET_ASSERT(iface);
-	NET_ASSERT(iface->if_dev);
+static inline struct net_offload* net_if_offload(struct net_if* iface) {
+    #if defined(CONFIG_NET_OFFLOAD)
+    NET_ASSERT(iface);
+    NET_ASSERT(iface->if_dev);
 
-	return iface->if_dev->offload;
-#else
-	ARG_UNUSED(iface);
+    return (iface->if_dev->offload);
+    #else
+    ARG_UNUSED(iface);
 
-	return NULL;
-#endif
+    return (NULL);
+    #endif
 }
 
 /**
@@ -926,18 +922,17 @@ static inline struct net_offload *net_if_offload(struct net_if *iface)
  *
  * @return True if socket offloading is active, false otherwise.
  */
-static inline bool net_if_is_socket_offloaded(struct net_if *iface)
-{
-#if defined(CONFIG_NET_SOCKETS_OFFLOAD)
-	NET_ASSERT(iface);
-	NET_ASSERT(iface->if_dev);
+static inline bool net_if_is_socket_offloaded(struct net_if* iface) {
+    #if defined(CONFIG_NET_SOCKETS_OFFLOAD)
+    NET_ASSERT(iface);
+    NET_ASSERT(iface->if_dev);
 
-	return (iface->if_dev->socket_offload != NULL);
-#else
-	ARG_UNUSED(iface);
+    return (iface->if_dev->socket_offload != NULL);
+    #else
+    ARG_UNUSED(iface);
 
-	return false;
-#endif
+    return (false);
+    #endif
 }
 
 /**
@@ -947,17 +942,16 @@ static inline bool net_if_is_socket_offloaded(struct net_if *iface)
  * @param socket_offload A function to create an offloaded socket
  */
 static inline void net_if_socket_offload_set(
-		struct net_if *iface, net_socket_create_t socket_offload)
-{
-#if defined(CONFIG_NET_SOCKETS_OFFLOAD)
-	NET_ASSERT(iface);
-	NET_ASSERT(iface->if_dev);
+    struct net_if* iface, net_socket_create_t socket_offload) {
+    #if defined(CONFIG_NET_SOCKETS_OFFLOAD)
+    NET_ASSERT(iface);
+    NET_ASSERT(iface->if_dev);
 
-	iface->if_dev->socket_offload = socket_offload;
-#else
-	ARG_UNUSED(iface);
-	ARG_UNUSED(socket_offload);
-#endif
+    iface->if_dev->socket_offload = socket_offload;
+    #else
+    ARG_UNUSED(iface);
+    ARG_UNUSED(socket_offload);
+    #endif
 }
 
 /**
@@ -967,18 +961,17 @@ static inline void net_if_socket_offload_set(
  *
  * @return NULL if the interface is not socket offloaded, valid pointer otherwise
  */
-static inline net_socket_create_t net_if_socket_offload(struct net_if *iface)
-{
-#if defined(CONFIG_NET_SOCKETS_OFFLOAD)
-	NET_ASSERT(iface);
-	NET_ASSERT(iface->if_dev);
+static inline net_socket_create_t net_if_socket_offload(struct net_if* iface) {
+    #if defined(CONFIG_NET_SOCKETS_OFFLOAD)
+    NET_ASSERT(iface);
+    NET_ASSERT(iface->if_dev);
 
-	return iface->if_dev->socket_offload;
-#else
-	ARG_UNUSED(iface);
+    return iface->if_dev->socket_offload;
+    #else
+    ARG_UNUSED(iface);
 
-	return NULL;
-#endif
+    return (NULL);
+    #endif
 }
 
 /**
@@ -988,12 +981,11 @@ static inline net_socket_create_t net_if_socket_offload(struct net_if *iface)
  *
  * @return a pointer to the network link address
  */
-static inline struct net_linkaddr *net_if_get_link_addr(struct net_if *iface)
-{
-	NET_ASSERT(iface);
-	NET_ASSERT(iface->if_dev);
+static inline struct net_linkaddr* net_if_get_link_addr(struct net_if* iface) {
+    NET_ASSERT(iface);
+    NET_ASSERT(iface->if_dev);
 
-	return &iface->if_dev->link_addr;
+    return &iface->if_dev->link_addr;
 }
 
 /**
@@ -1003,11 +995,10 @@ static inline struct net_linkaddr *net_if_get_link_addr(struct net_if *iface)
  *
  * @return Pointer to configuration
  */
-static inline struct net_if_config *net_if_get_config(struct net_if *iface)
-{
-	NET_ASSERT(iface);
+static inline struct net_if_config* net_if_get_config(struct net_if* iface) {
+    NET_ASSERT(iface);
 
-	return &iface->config;
+    return &iface->config;
 }
 
 /**
@@ -1016,11 +1007,10 @@ static inline struct net_if_config *net_if_get_config(struct net_if *iface)
  * @param iface Pointer to a network interface structure
  */
 #if defined(CONFIG_NET_IPV6_DAD) && defined(CONFIG_NET_NATIVE_IPV6)
-void net_if_start_dad(struct net_if *iface);
+void net_if_start_dad(struct net_if* iface);
 #else
-static inline void net_if_start_dad(struct net_if *iface)
-{
-	ARG_UNUSED(iface);
+static inline void net_if_start_dad(struct net_if* iface) {
+    ARG_UNUSED(iface);
 }
 #endif
 
@@ -1029,8 +1019,7 @@ static inline void net_if_start_dad(struct net_if *iface)
  *
  * @param iface Pointer to a network interface structure
  */
-void net_if_start_rs(struct net_if *iface);
-
+void net_if_start_rs(struct net_if* iface);
 
 /**
  * @brief Stop neighbor discovery.
@@ -1038,36 +1027,35 @@ void net_if_start_rs(struct net_if *iface);
  * @param iface Pointer to a network interface structure
  */
 #if defined(CONFIG_NET_IPV6_ND) && defined(CONFIG_NET_NATIVE_IPV6)
-void net_if_stop_rs(struct net_if *iface);
+void net_if_stop_rs(struct net_if* iface);
 #else
-static inline void net_if_stop_rs(struct net_if *iface)
-{
-	ARG_UNUSED(iface);
+static inline void net_if_stop_rs(struct net_if* iface) {
+    ARG_UNUSED(iface);
 }
 #endif /* CONFIG_NET_IPV6_ND */
 
 /** @cond INTERNAL_HIDDEN */
 
-static inline int net_if_set_link_addr_unlocked(struct net_if *iface,
-						uint8_t *addr, uint8_t len,
-						enum net_link_type type)
-{
-	if (net_if_flag_is_set(iface, NET_IF_RUNNING)) {
-		return -EPERM;
-	}
+static inline int net_if_set_link_addr_unlocked(struct net_if* iface,
+                                                uint8_t* addr, uint8_t len,
+                                                enum net_link_type type) {
+    if (net_if_flag_is_set(iface, NET_IF_RUNNING)) {
+        return (-EPERM);
+    }
 
-	net_if_get_link_addr(iface)->addr = addr;
-	net_if_get_link_addr(iface)->len = len;
-	net_if_get_link_addr(iface)->type = type;
+    net_if_get_link_addr(iface)->addr = addr;
+    net_if_get_link_addr(iface)->len  = len;
+    net_if_get_link_addr(iface)->type = type;
 
-	net_hostname_set_postfix(addr, len);
+    net_hostname_set_postfix(addr, len);
 
-	return 0;
+    return (0);
 }
 
-int net_if_set_link_addr_locked(struct net_if *iface,
-				uint8_t *addr, uint8_t len,
-				enum net_link_type type);
+int net_if_set_link_addr_locked(struct net_if* iface,
+                                uint8_t* addr, uint8_t len,
+                                enum net_link_type type);
+
 /** @endcond */
 
 /**
@@ -1081,15 +1069,14 @@ int net_if_set_link_addr_locked(struct net_if *iface,
  *
  * @return 0 on success
  */
-static inline int net_if_set_link_addr(struct net_if *iface,
-				       uint8_t *addr, uint8_t len,
-				       enum net_link_type type)
-{
-#if defined(CONFIG_NET_RAW_MODE)
-	return net_if_set_link_addr_unlocked(iface, addr, len, type);
-#else
-	return net_if_set_link_addr_locked(iface, addr, len, type);
-#endif
+static inline int net_if_set_link_addr(struct net_if* iface,
+                                       uint8_t* addr, uint8_t len,
+                                       enum net_link_type type) {
+    #if defined(CONFIG_NET_RAW_MODE)
+    return net_if_set_link_addr_unlocked(iface, addr, len, type);
+    #else
+    return net_if_set_link_addr_locked(iface, addr, len, type);
+    #endif
 }
 
 /**
@@ -1099,15 +1086,14 @@ static inline int net_if_set_link_addr(struct net_if *iface,
  *
  * @return the MTU
  */
-static inline uint16_t net_if_get_mtu(struct net_if *iface)
-{
-	if (iface == NULL) {
-		return 0U;
-	}
+static inline uint16_t net_if_get_mtu(struct net_if* iface) {
+    if (iface == NULL) {
+        return (0U);
+    }
 
-	NET_ASSERT(iface->if_dev);
+    NET_ASSERT(iface->if_dev);
 
-	return iface->if_dev->mtu;
+    return (iface->if_dev->mtu);
 }
 
 /**
@@ -1116,16 +1102,15 @@ static inline uint16_t net_if_get_mtu(struct net_if *iface)
  * @param iface Pointer to a network interface structure
  * @param mtu New MTU, note that we store only 16 bit mtu value.
  */
-static inline void net_if_set_mtu(struct net_if *iface,
-				  uint16_t mtu)
-{
-	if (iface == NULL) {
-		return;
-	}
+static inline void net_if_set_mtu(struct net_if* iface,
+                                  uint16_t mtu) {
+    if (iface == NULL) {
+        return;
+    }
 
-	NET_ASSERT(iface->if_dev);
+    NET_ASSERT(iface->if_dev);
 
-	iface->if_dev->mtu = mtu;
+    iface->if_dev->mtu = mtu;
 }
 
 /**
@@ -1134,12 +1119,11 @@ static inline void net_if_set_mtu(struct net_if *iface,
  * @param ifaddr IP address for network interface
  * @param is_infinite Infinite status
  */
-static inline void net_if_addr_set_lf(struct net_if_addr *ifaddr,
-				      bool is_infinite)
-{
-	NET_ASSERT(ifaddr);
+static inline void net_if_addr_set_lf(struct net_if_addr* ifaddr,
+                                      bool is_infinite) {
+    NET_ASSERT(ifaddr);
 
-	ifaddr->is_infinite = is_infinite;
+    ifaddr->is_infinite = is_infinite;
 }
 
 /**
@@ -1149,7 +1133,7 @@ static inline void net_if_addr_set_lf(struct net_if_addr *ifaddr,
  *
  * @return Network interface or NULL if not found.
  */
-struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr);
+struct net_if* net_if_get_by_link_addr(struct net_linkaddr* ll_addr);
 
 /**
  * @brief Find an interface from it's related device
@@ -1158,7 +1142,7 @@ struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr);
  *
  * @return a valid struct net_if pointer on success, NULL otherwise
  */
-struct net_if *net_if_lookup_by_dev(const struct device *dev);
+struct net_if* net_if_lookup_by_dev(const struct device* dev);
 
 /**
  * @brief Get network interface IP config
@@ -1167,11 +1151,10 @@ struct net_if *net_if_lookup_by_dev(const struct device *dev);
  *
  * @return NULL if not found or pointer to correct config settings.
  */
-static inline struct net_if_config *net_if_config_get(struct net_if *iface)
-{
-	NET_ASSERT(iface);
+static inline struct net_if_config* net_if_config_get(struct net_if* iface) {
+    NET_ASSERT(iface);
 
-	return &iface->config;
+    return &iface->config;
 }
 
 /**
@@ -1179,21 +1162,21 @@ static inline struct net_if_config *net_if_config_get(struct net_if *iface)
  *
  * @param router Pointer to existing router
  */
-void net_if_router_rm(struct net_if_router *router);
+void net_if_router_rm(struct net_if_router* router);
 
 /**
  * @brief Set the default network interface.
  *
  * @param iface New default interface, or NULL to revert to the one set by Kconfig.
  */
-void net_if_set_default(struct net_if *iface);
+void net_if_set_default(struct net_if* iface);
 
 /**
  * @brief Get the default network interface.
  *
  * @return Default interface or NULL if no interfaces are configured.
  */
-struct net_if *net_if_get_default(void);
+struct net_if* net_if_get_default(void);
 
 /**
  * @brief Get the first network interface according to its type.
@@ -1203,7 +1186,7 @@ struct net_if *net_if_get_default(void);
  * @return First network interface of a given type or NULL if no such
  * interfaces was found.
  */
-struct net_if *net_if_get_first_by_type(const struct net_l2 *l2);
+struct net_if* net_if_get_first_by_type(const struct net_l2* l2);
 
 /**
  * @brief Get the first network interface which is up.
@@ -1211,7 +1194,7 @@ struct net_if *net_if_get_first_by_type(const struct net_l2 *l2);
  * @return First network interface which is up or NULL if all
  * interfaces are down.
  */
-struct net_if *net_if_get_first_up(void);
+struct net_if* net_if_get_first_up(void);
 
 #if defined(CONFIG_NET_L2_IEEE802154)
 /**
@@ -1220,9 +1203,8 @@ struct net_if *net_if_get_first_up(void);
  * @return First IEEE 802.15.4 network interface or NULL if no such
  * interfaces was found.
  */
-static inline struct net_if *net_if_get_ieee802154(void)
-{
-	return net_if_get_first_by_type(&NET_L2_GET_NAME(IEEE802154));
+static inline struct net_if* net_if_get_ieee802154(void) {
+    return net_if_get_first_by_type(&NET_L2_GET_NAME(IEEE802154));
 }
 #endif /* CONFIG_NET_L2_IEEE802154 */
 
@@ -1236,8 +1218,8 @@ static inline struct net_if *net_if_get_ieee802154(void)
  *
  * @return 0 if ok, <0 if error
  */
-int net_if_config_ipv6_get(struct net_if *iface,
-			   struct net_if_ipv6 **ipv6);
+int net_if_config_ipv6_get(struct net_if* iface,
+                           struct net_if_ipv6** ipv6);
 
 /**
  * @brief Release network interface IPv6 config.
@@ -1246,7 +1228,7 @@ int net_if_config_ipv6_get(struct net_if *iface,
  *
  * @return 0 if ok, <0 if error
  */
-int net_if_config_ipv6_put(struct net_if *iface);
+int net_if_config_ipv6_put(struct net_if* iface);
 
 /**
  * @brief Check if this IPv6 address belongs to one of the interfaces.
@@ -1256,8 +1238,8 @@ int net_if_config_ipv6_put(struct net_if *iface);
  *
  * @return Pointer to interface address, NULL if not found.
  */
-struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
-					    struct net_if **iface);
+struct net_if_addr* net_if_ipv6_addr_lookup(const struct in6_addr* addr,
+                                            struct net_if** iface);
 
 /**
  * @brief Check if this IPv6 address belongs to this specific interfaces.
@@ -1267,8 +1249,8 @@ struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
  *
  * @return Pointer to interface address, NULL if not found.
  */
-struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(struct net_if *iface,
-						     struct in6_addr *addr);
+struct net_if_addr* net_if_ipv6_addr_lookup_by_iface(struct net_if* iface,
+                                                     struct in6_addr* addr);
 
 /**
  * @brief Check if this IPv6 address belongs to one of the interface indices.
@@ -1278,7 +1260,7 @@ struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(struct net_if *iface,
  * @return >0 if address was found in given network interface index,
  * all other values mean address was not found
  */
-__syscall int net_if_ipv6_addr_lookup_by_index(const struct in6_addr *addr);
+__syscall int net_if_ipv6_addr_lookup_by_index(const struct in6_addr* addr);
 
 /**
  * @brief Add a IPv6 address to an interface
@@ -1290,10 +1272,10 @@ __syscall int net_if_ipv6_addr_lookup_by_index(const struct in6_addr *addr);
  *
  * @return Pointer to interface address, NULL if cannot be added
  */
-struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
-					 struct in6_addr *addr,
-					 enum net_addr_type addr_type,
-					 uint32_t vlifetime);
+struct net_if_addr* net_if_ipv6_addr_add(struct net_if* iface,
+                                         struct in6_addr* addr,
+                                         enum net_addr_type addr_type,
+                                         uint32_t vlifetime);
 
 /**
  * @brief Add a IPv6 address to an interface by index
@@ -1306,9 +1288,9 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
  * @return True if ok, false if address could not be added
  */
 __syscall bool net_if_ipv6_addr_add_by_index(int index,
-					     struct in6_addr *addr,
-					     enum net_addr_type addr_type,
-					     uint32_t vlifetime);
+                                             struct in6_addr* addr,
+                                             enum net_addr_type addr_type,
+                                             uint32_t vlifetime);
 
 /**
  * @brief Update validity lifetime time of an IPv6 address.
@@ -1316,8 +1298,8 @@ __syscall bool net_if_ipv6_addr_add_by_index(int index,
  * @param ifaddr Network IPv6 address
  * @param vlifetime Validity time for this address
  */
-void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
-				      uint32_t vlifetime);
+void net_if_ipv6_addr_update_lifetime(struct net_if_addr* ifaddr,
+                                      uint32_t vlifetime);
 
 /**
  * @brief Remove an IPv6 address from an interface
@@ -1327,7 +1309,7 @@ void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
  *
  * @return True if successfully removed, false otherwise
  */
-bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr);
+bool net_if_ipv6_addr_rm(struct net_if* iface, const struct in6_addr* addr);
 
 /**
  * @brief Remove an IPv6 address from an interface by index
@@ -1338,7 +1320,7 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr);
  * @return True if successfully removed, false otherwise
  */
 __syscall bool net_if_ipv6_addr_rm_by_index(int index,
-					    const struct in6_addr *addr);
+                                            const struct in6_addr* addr);
 
 /**
  * @typedef net_if_ip_addr_cb_t
@@ -1348,9 +1330,9 @@ __syscall bool net_if_ipv6_addr_rm_by_index(int index,
  * @param addr Pointer to current IP address
  * @param user_data A valid pointer to user data or NULL
  */
-typedef void (*net_if_ip_addr_cb_t)(struct net_if *iface,
-				    struct net_if_addr *addr,
-				    void *user_data);
+typedef void (*net_if_ip_addr_cb_t)(struct net_if* iface,
+                                    struct net_if_addr* addr,
+                                    void* user_data);
 
 /**
  * @brief Go through all IPv6 addresses on a network interface and call callback
@@ -1360,8 +1342,8 @@ typedef void (*net_if_ip_addr_cb_t)(struct net_if *iface,
  * @param cb User-supplied callback function to call
  * @param user_data User specified data
  */
-void net_if_ipv6_addr_foreach(struct net_if *iface, net_if_ip_addr_cb_t cb,
-			      void *user_data);
+void net_if_ipv6_addr_foreach(struct net_if* iface, net_if_ip_addr_cb_t cb,
+                              void* user_data);
 
 /**
  * @brief Add a IPv6 multicast address to an interface
@@ -1371,8 +1353,8 @@ void net_if_ipv6_addr_foreach(struct net_if *iface, net_if_ip_addr_cb_t cb,
  *
  * @return Pointer to interface multicast address, NULL if cannot be added
  */
-struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
-						const struct in6_addr *addr);
+struct net_if_mcast_addr* net_if_ipv6_maddr_add(struct net_if* iface,
+                                                const struct in6_addr* addr);
 
 /**
  * @brief Remove an IPv6 multicast address from an interface
@@ -1382,7 +1364,7 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
  *
  * @return True if successfully removed, false otherwise
  */
-bool net_if_ipv6_maddr_rm(struct net_if *iface, const struct in6_addr *addr);
+bool net_if_ipv6_maddr_rm(struct net_if* iface, const struct in6_addr* addr);
 
 /**
  * @brief Check if this IPv6 multicast address belongs to a specific interface
@@ -1394,8 +1376,8 @@ bool net_if_ipv6_maddr_rm(struct net_if *iface, const struct in6_addr *addr);
  *
  * @return Pointer to interface multicast address, NULL if not found.
  */
-struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *addr,
-						   struct net_if **iface);
+struct net_if_mcast_addr* net_if_ipv6_maddr_lookup(const struct in6_addr* addr,
+                                                   struct net_if** iface);
 
 /**
  * @typedef net_if_mcast_callback_t
@@ -1407,9 +1389,9 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *addr,
  * @param addr IP multicast address.
  * @param is_joined True if the multicast group is joined, false if group is left.
  */
-typedef void (*net_if_mcast_callback_t)(struct net_if *iface,
-					const struct net_addr *addr,
-					bool is_joined);
+typedef void (*net_if_mcast_callback_t)(struct net_if* iface,
+                                        const struct net_addr* addr,
+                                        bool is_joined);
 
 /**
  * @brief Multicast monitor handler struct.
@@ -1420,14 +1402,14 @@ typedef void (*net_if_mcast_callback_t)(struct net_if *iface,
  * allocated from stack.
  */
 struct net_if_mcast_monitor {
-	/** Node information for the slist. */
-	sys_snode_t node;
+    /** Node information for the slist. */
+    sys_snode_t node;
 
-	/** Network interface */
-	struct net_if *iface;
+    /** Network interface */
+    struct net_if* iface;
 
-	/** Multicast callback */
-	net_if_mcast_callback_t cb;
+    /** Multicast callback */
+    net_if_mcast_callback_t cb;
 };
 
 /**
@@ -1438,16 +1420,16 @@ struct net_if_mcast_monitor {
  * @param iface Network interface
  * @param cb Monitor callback
  */
-void net_if_mcast_mon_register(struct net_if_mcast_monitor *mon,
-			       struct net_if *iface,
-			       net_if_mcast_callback_t cb);
+void net_if_mcast_mon_register(struct net_if_mcast_monitor* mon,
+                               struct net_if* iface,
+                               net_if_mcast_callback_t cb);
 
 /**
  * @brief Unregister a multicast monitor
  *
  * @param mon Monitor handle
  */
-void net_if_mcast_mon_unregister(struct net_if_mcast_monitor *mon);
+void net_if_mcast_mon_unregister(struct net_if_mcast_monitor* mon);
 
 /**
  * @brief Call registered multicast monitors
@@ -1456,8 +1438,8 @@ void net_if_mcast_mon_unregister(struct net_if_mcast_monitor *mon);
  * @param addr Multicast address
  * @param is_joined Is this multicast address group joined (true) or not (false)
  */
-void net_if_mcast_monitor(struct net_if *iface, const struct net_addr *addr,
-			  bool is_joined);
+void net_if_mcast_monitor(struct net_if* iface, const struct net_addr* addr,
+                          bool is_joined);
 
 /**
  * @brief Mark a given multicast address to be joined.
@@ -1465,8 +1447,8 @@ void net_if_mcast_monitor(struct net_if *iface, const struct net_addr *addr,
  * @param iface Network interface the address belongs to
  * @param addr IPv6 multicast address
  */
-void net_if_ipv6_maddr_join(struct net_if *iface,
-			    struct net_if_mcast_addr *addr);
+void net_if_ipv6_maddr_join(struct net_if* iface,
+                            struct net_if_mcast_addr* addr);
 
 /**
  * @brief Check if given multicast address is joined or not.
@@ -1475,11 +1457,10 @@ void net_if_ipv6_maddr_join(struct net_if *iface,
  *
  * @return True if address is joined, False otherwise.
  */
-static inline bool net_if_ipv6_maddr_is_joined(struct net_if_mcast_addr *addr)
-{
-	NET_ASSERT(addr);
+static inline bool net_if_ipv6_maddr_is_joined(struct net_if_mcast_addr* addr) {
+    NET_ASSERT(addr);
 
-	return addr->is_joined;
+    return addr->is_joined;
 }
 
 /**
@@ -1488,8 +1469,8 @@ static inline bool net_if_ipv6_maddr_is_joined(struct net_if_mcast_addr *addr)
  * @param iface Network interface the address belongs to
  * @param addr IPv6 multicast address
  */
-void net_if_ipv6_maddr_leave(struct net_if *iface,
-			     struct net_if_mcast_addr *addr);
+void net_if_ipv6_maddr_leave(struct net_if* iface,
+                             struct net_if_mcast_addr* addr);
 
 /**
  * @brief Return prefix that corresponds to this IPv6 address.
@@ -1499,8 +1480,8 @@ void net_if_ipv6_maddr_leave(struct net_if *iface,
  *
  * @return Pointer to prefix, NULL if not found.
  */
-struct net_if_ipv6_prefix *net_if_ipv6_prefix_get(struct net_if *iface,
-						  struct in6_addr *addr);
+struct net_if_ipv6_prefix* net_if_ipv6_prefix_get(struct net_if* iface,
+                                                  struct in6_addr* addr);
 
 /**
  * @brief Check if this IPv6 prefix belongs to this interface
@@ -1511,9 +1492,9 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_get(struct net_if *iface,
  *
  * @return Pointer to prefix, NULL if not found.
  */
-struct net_if_ipv6_prefix *net_if_ipv6_prefix_lookup(struct net_if *iface,
-						     struct in6_addr *addr,
-						     uint8_t len);
+struct net_if_ipv6_prefix* net_if_ipv6_prefix_lookup(struct net_if* iface,
+                                                     struct in6_addr* addr,
+                                                     uint8_t len);
 
 /**
  * @brief Add a IPv6 prefix to an network interface.
@@ -1525,10 +1506,10 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_lookup(struct net_if *iface,
  *
  * @return Pointer to prefix, NULL if the prefix was not added.
  */
-struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
-						  struct in6_addr *prefix,
-						  uint8_t len,
-						  uint32_t lifetime);
+struct net_if_ipv6_prefix* net_if_ipv6_prefix_add(struct net_if* iface,
+                                                  struct in6_addr* prefix,
+                                                  uint8_t len,
+                                                  uint32_t lifetime);
 
 /**
  * @brief Remove an IPv6 prefix from an interface
@@ -1539,8 +1520,8 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
  *
  * @return True if successfully removed, false otherwise
  */
-bool net_if_ipv6_prefix_rm(struct net_if *iface, struct in6_addr *addr,
-			   uint8_t len);
+bool net_if_ipv6_prefix_rm(struct net_if* iface, struct in6_addr* addr,
+                           uint8_t len);
 
 /**
  * @brief Set the infinite status of the prefix
@@ -1548,10 +1529,9 @@ bool net_if_ipv6_prefix_rm(struct net_if *iface, struct in6_addr *addr,
  * @param prefix IPv6 address
  * @param is_infinite Infinite status
  */
-static inline void net_if_ipv6_prefix_set_lf(struct net_if_ipv6_prefix *prefix,
-					     bool is_infinite)
-{
-	prefix->is_infinite = is_infinite;
+static inline void net_if_ipv6_prefix_set_lf(struct net_if_ipv6_prefix* prefix,
+                                             bool is_infinite) {
+    prefix->is_infinite = is_infinite;
 }
 
 /**
@@ -1560,15 +1540,15 @@ static inline void net_if_ipv6_prefix_set_lf(struct net_if_ipv6_prefix *prefix,
  * @param prefix IPv6 address
  * @param lifetime Prefix lifetime in seconds
  */
-void net_if_ipv6_prefix_set_timer(struct net_if_ipv6_prefix *prefix,
-				  uint32_t lifetime);
+void net_if_ipv6_prefix_set_timer(struct net_if_ipv6_prefix* prefix,
+                                  uint32_t lifetime);
 
 /**
  * @brief Unset the prefix lifetime timer.
  *
  * @param prefix IPv6 address
  */
-void net_if_ipv6_prefix_unset_timer(struct net_if_ipv6_prefix *prefix);
+void net_if_ipv6_prefix_unset_timer(struct net_if_ipv6_prefix* prefix);
 
 /**
  * @brief Check if this IPv6 address is part of the subnet of our
@@ -1580,7 +1560,7 @@ void net_if_ipv6_prefix_unset_timer(struct net_if_ipv6_prefix *prefix);
  *
  * @return True if address is part of our subnet, false otherwise
  */
-bool net_if_ipv6_addr_onlink(struct net_if **iface, struct in6_addr *addr);
+bool net_if_ipv6_addr_onlink(struct net_if** iface, struct in6_addr* addr);
 
 /**
  * @brief Get the IPv6 address of the given router
@@ -1589,20 +1569,18 @@ bool net_if_ipv6_addr_onlink(struct net_if **iface, struct in6_addr *addr);
  * @return pointer to the IPv6 address, or NULL if none
  */
 #if defined(CONFIG_NET_NATIVE_IPV6)
-static inline struct in6_addr *net_if_router_ipv6(struct net_if_router *router)
-{
-	NET_ASSERT(router);
+static inline struct in6_addr* net_if_router_ipv6(struct net_if_router* router) {
+    NET_ASSERT(router);
 
-	return &router->address.in6_addr;
+    return (&router->address.in6_addr);
 }
 #else
-static inline struct in6_addr *net_if_router_ipv6(struct net_if_router *router)
-{
-	static struct in6_addr addr;
+static inline struct in6_addr* net_if_router_ipv6(struct net_if_router* router) {
+    static struct in6_addr addr;
 
-	ARG_UNUSED(router);
+    ARG_UNUSED(router);
 
-	return &addr;
+    return (&addr);
 }
 #endif
 
@@ -1615,8 +1593,8 @@ static inline struct in6_addr *net_if_router_ipv6(struct net_if_router *router)
  *
  * @return Pointer to router information, NULL if cannot be found
  */
-struct net_if_router *net_if_ipv6_router_lookup(struct net_if *iface,
-						struct in6_addr *addr);
+struct net_if_router* net_if_ipv6_router_lookup(struct net_if* iface,
+                                                struct in6_addr* addr);
 
 /**
  * @brief Find default router for this IPv6 address.
@@ -1627,8 +1605,8 @@ struct net_if_router *net_if_ipv6_router_lookup(struct net_if *iface,
  *
  * @return Pointer to router information, NULL if cannot be found
  */
-struct net_if_router *net_if_ipv6_router_find_default(struct net_if *iface,
-						      struct in6_addr *addr);
+struct net_if_router* net_if_ipv6_router_find_default(struct net_if* iface,
+                                                      struct in6_addr* addr);
 
 /**
  * @brief Update validity lifetime time of a router.
@@ -1636,8 +1614,8 @@ struct net_if_router *net_if_ipv6_router_find_default(struct net_if *iface,
  * @param router Network IPv6 address
  * @param lifetime Lifetime of this router.
  */
-void net_if_ipv6_router_update_lifetime(struct net_if_router *router,
-					uint16_t lifetime);
+void net_if_ipv6_router_update_lifetime(struct net_if_router* router,
+                                        uint16_t lifetime);
 
 /**
  * @brief Add IPv6 router to the system.
@@ -1648,9 +1626,9 @@ void net_if_ipv6_router_update_lifetime(struct net_if_router *router,
  *
  * @return Pointer to router information, NULL if could not be added
  */
-struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
-					     struct in6_addr *addr,
-					     uint16_t router_lifetime);
+struct net_if_router* net_if_ipv6_router_add(struct net_if* iface,
+                                             struct in6_addr* addr,
+                                             uint16_t router_lifetime);
 
 /**
  * @brief Remove IPv6 router from the system.
@@ -1659,7 +1637,7 @@ struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
  *
  * @return True if successfully removed, false otherwise
  */
-bool net_if_ipv6_router_rm(struct net_if_router *router);
+bool net_if_ipv6_router_rm(struct net_if_router* router);
 
 /**
  * @brief Get IPv6 hop limit specified for a given interface. This is the
@@ -1669,7 +1647,7 @@ bool net_if_ipv6_router_rm(struct net_if_router *router);
  *
  * @return Hop limit
  */
-uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface);
+uint8_t net_if_ipv6_get_hop_limit(struct net_if* iface);
 
 /**
  * @brief Set the default IPv6 hop limit of a given interface.
@@ -1677,7 +1655,7 @@ uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface);
  * @param iface Network interface
  * @param hop_limit New hop limit
  */
-void net_if_ipv6_set_hop_limit(struct net_if *iface, uint8_t hop_limit);
+void net_if_ipv6_set_hop_limit(struct net_if* iface, uint8_t hop_limit);
 
 /* The old hop limit setter function is deprecated because the naming
  * of it was incorrect. The API name was missing "_if_" so this function
@@ -1714,18 +1692,17 @@ void net_if_ipv6_set_mcast_hop_limit(struct net_if *iface, uint8_t hop_limit);
  * @param iface Network interface
  * @param reachable_time New reachable time
  */
-static inline void net_if_ipv6_set_base_reachable_time(struct net_if *iface,
-						       uint32_t reachable_time)
-{
-#if defined(CONFIG_NET_NATIVE_IPV6)
-	NET_ASSERT(iface);
+static inline void net_if_ipv6_set_base_reachable_time(struct net_if* iface,
+                                                       uint32_t reachable_time) {
+    #if defined(CONFIG_NET_NATIVE_IPV6)
+    NET_ASSERT(iface);
 
-	if (!iface->config.ip.ipv6) {
-		return;
-	}
+    if (!iface->config.ip.ipv6) {
+        return;
+    }
 
-	iface->config.ip.ipv6->base_reachable_time = reachable_time;
-#endif
+    iface->config.ip.ipv6->base_reachable_time = reachable_time;
+    #endif
 }
 
 /**
@@ -1735,19 +1712,18 @@ static inline void net_if_ipv6_set_base_reachable_time(struct net_if *iface,
  *
  * @return Reachable timeout
  */
-static inline uint32_t net_if_ipv6_get_reachable_time(struct net_if *iface)
-{
-#if defined(CONFIG_NET_NATIVE_IPV6)
-	NET_ASSERT(iface);
+static inline uint32_t net_if_ipv6_get_reachable_time(struct net_if* iface) {
+    #if defined(CONFIG_NET_NATIVE_IPV6)
+    NET_ASSERT(iface);
 
-	if (!iface->config.ip.ipv6) {
-		return 0;
-	}
+    if (!iface->config.ip.ipv6) {
+        return (0);
+    }
 
-	return iface->config.ip.ipv6->reachable_time;
-#else
-	return 0;
-#endif
+    return iface->config.ip.ipv6->reachable_time;
+    #else
+    return (0);
+    #endif
 }
 
 /**
@@ -1757,7 +1733,7 @@ static inline uint32_t net_if_ipv6_get_reachable_time(struct net_if *iface)
  *
  * @return Reachable time
  */
-uint32_t net_if_ipv6_calc_reachable_time(struct net_if_ipv6 *ipv6);
+uint32_t net_if_ipv6_calc_reachable_time(struct net_if_ipv6* ipv6);
 
 /**
  * @brief Set IPv6 reachable time for a given interface. This requires
@@ -1765,15 +1741,14 @@ uint32_t net_if_ipv6_calc_reachable_time(struct net_if_ipv6 *ipv6);
  *
  * @param ipv6 IPv6 address configuration
  */
-static inline void net_if_ipv6_set_reachable_time(struct net_if_ipv6 *ipv6)
-{
-#if defined(CONFIG_NET_NATIVE_IPV6)
-	if (ipv6 == NULL) {
-		return;
-	}
+static inline void net_if_ipv6_set_reachable_time(struct net_if_ipv6* ipv6) {
+    #if defined(CONFIG_NET_NATIVE_IPV6)
+    if (ipv6 == NULL) {
+        return;
+    }
 
-	ipv6->reachable_time = net_if_ipv6_calc_reachable_time(ipv6);
-#endif
+    ipv6->reachable_time = net_if_ipv6_calc_reachable_time(ipv6);
+    #endif
 }
 
 /**
@@ -1782,18 +1757,17 @@ static inline void net_if_ipv6_set_reachable_time(struct net_if_ipv6 *ipv6)
  * @param iface Network interface
  * @param retrans_timer New retransmit timer
  */
-static inline void net_if_ipv6_set_retrans_timer(struct net_if *iface,
-						 uint32_t retrans_timer)
-{
-#if defined(CONFIG_NET_NATIVE_IPV6)
-	NET_ASSERT(iface);
+static inline void net_if_ipv6_set_retrans_timer(struct net_if* iface,
+                                                 uint32_t retrans_timer) {
+    #if defined(CONFIG_NET_NATIVE_IPV6)
+    NET_ASSERT(iface);
 
-	if (!iface->config.ip.ipv6) {
-		return;
-	}
+    if (!iface->config.ip.ipv6) {
+        return;
+    }
 
-	iface->config.ip.ipv6->retrans_timer = retrans_timer;
-#endif
+    iface->config.ip.ipv6->retrans_timer = retrans_timer;
+    #endif
 }
 
 /**
@@ -1803,19 +1777,18 @@ static inline void net_if_ipv6_set_retrans_timer(struct net_if *iface,
  *
  * @return Retransmit timer
  */
-static inline uint32_t net_if_ipv6_get_retrans_timer(struct net_if *iface)
-{
-#if defined(CONFIG_NET_NATIVE_IPV6)
-	NET_ASSERT(iface);
+static inline uint32_t net_if_ipv6_get_retrans_timer(struct net_if* iface) {
+    #if defined(CONFIG_NET_NATIVE_IPV6)
+    NET_ASSERT(iface);
 
-	if (!iface->config.ip.ipv6) {
-		return 0;
-	}
+    if (!iface->config.ip.ipv6) {
+        return (0);
+    }
 
-	return iface->config.ip.ipv6->retrans_timer;
-#else
-	return 0;
-#endif
+    return iface->config.ip.ipv6->retrans_timer;
+    #else
+    return (0);
+    #endif
 }
 
 /**
@@ -1830,16 +1803,15 @@ static inline uint32_t net_if_ipv6_get_retrans_timer(struct net_if *iface)
  * could be found.
  */
 #if defined(CONFIG_NET_NATIVE_IPV6)
-const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *iface,
-						   const struct in6_addr *dst);
+const struct in6_addr* net_if_ipv6_select_src_addr(struct net_if* iface,
+                                                   const struct in6_addr* dst);
 #else
-static inline const struct in6_addr *net_if_ipv6_select_src_addr(
-	struct net_if *iface, const struct in6_addr *dst)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(dst);
+static inline const struct in6_addr* net_if_ipv6_select_src_addr(
+    struct net_if* iface, const struct in6_addr* dst) {
+    ARG_UNUSED(iface);
+    ARG_UNUSED(dst);
 
-	return NULL;
+    return (NULL);
 }
 #endif
 
@@ -1853,14 +1825,13 @@ static inline const struct in6_addr *net_if_ipv6_select_src_addr(
  * could be found.
  */
 #if defined(CONFIG_NET_NATIVE_IPV6)
-struct net_if *net_if_ipv6_select_src_iface(const struct in6_addr *dst);
+struct net_if* net_if_ipv6_select_src_iface(const struct in6_addr* dst);
 #else
-static inline struct net_if *net_if_ipv6_select_src_iface(
-	const struct in6_addr *dst)
-{
-	ARG_UNUSED(dst);
+static inline struct net_if* net_if_ipv6_select_src_iface(
+    const struct in6_addr* dst) {
+    ARG_UNUSED(dst);
 
-	return NULL;
+    return (NULL);
 }
 #endif
 
@@ -1873,8 +1844,8 @@ static inline struct net_if *net_if_ipv6_select_src_iface(
  * @return Pointer to link local IPv6 address, NULL if no proper IPv6 address
  * could be found.
  */
-struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
-				    enum net_addr_state addr_state);
+struct in6_addr* net_if_ipv6_get_ll(struct net_if* iface,
+                                    enum net_addr_state addr_state);
 
 /**
  * @brief Return link local IPv6 address from the first interface that has
@@ -1885,8 +1856,8 @@ struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
  *
  * @return Pointer to IPv6 address, NULL if not found.
  */
-struct in6_addr *net_if_ipv6_get_ll_addr(enum net_addr_state state,
-					 struct net_if **iface);
+struct in6_addr* net_if_ipv6_get_ll_addr(enum net_addr_state state,
+                                         struct net_if** iface);
 
 /**
  * @brief Stop IPv6 Duplicate Address Detection (DAD) procedure if
@@ -1895,7 +1866,7 @@ struct in6_addr *net_if_ipv6_get_ll_addr(enum net_addr_state state,
  * @param iface Interface where the DAD was running.
  * @param addr IPv6 address that failed DAD
  */
-void net_if_ipv6_dad_failed(struct net_if *iface, const struct in6_addr *addr);
+void net_if_ipv6_dad_failed(struct net_if* iface, const struct in6_addr* addr);
 
 /**
  * @brief Return global IPv6 address from the first interface that has
@@ -1908,8 +1879,8 @@ void net_if_ipv6_dad_failed(struct net_if *iface, const struct in6_addr *addr);
  *
  * @return Pointer to IPv6 address, NULL if not found.
  */
-struct in6_addr *net_if_ipv6_get_global_addr(enum net_addr_state state,
-					     struct net_if **iface);
+struct in6_addr* net_if_ipv6_get_global_addr(enum net_addr_state state,
+                                             struct net_if** iface);
 
 /**
  * @brief Allocate network interface IPv4 config.
@@ -1921,8 +1892,8 @@ struct in6_addr *net_if_ipv6_get_global_addr(enum net_addr_state state,
  *
  * @return 0 if ok, <0 if error
  */
-int net_if_config_ipv4_get(struct net_if *iface,
-			   struct net_if_ipv4 **ipv4);
+int net_if_config_ipv4_get(struct net_if* iface,
+                           struct net_if_ipv4** ipv4);
 
 /**
  * @brief Release network interface IPv4 config.
@@ -1931,7 +1902,7 @@ int net_if_config_ipv4_get(struct net_if *iface,
  *
  * @return 0 if ok, <0 if error
  */
-int net_if_config_ipv4_put(struct net_if *iface);
+int net_if_config_ipv4_put(struct net_if* iface);
 
 /**
  * @brief Get IPv4 time-to-live value specified for a given interface
@@ -1940,7 +1911,7 @@ int net_if_config_ipv4_put(struct net_if *iface);
  *
  * @return Time-to-live
  */
-uint8_t net_if_ipv4_get_ttl(struct net_if *iface);
+uint8_t net_if_ipv4_get_ttl(struct net_if* iface);
 
 /**
  * @brief Set IPv4 time-to-live value specified to a given interface
@@ -1948,7 +1919,7 @@ uint8_t net_if_ipv4_get_ttl(struct net_if *iface);
  * @param iface Network interface
  * @param ttl Time-to-live value
  */
-void net_if_ipv4_set_ttl(struct net_if *iface, uint8_t ttl);
+void net_if_ipv4_set_ttl(struct net_if* iface, uint8_t ttl);
 
 /**
  * @brief Get IPv4 multicast time-to-live value specified for a given interface
@@ -1975,8 +1946,8 @@ void net_if_ipv4_set_mcast_ttl(struct net_if *iface, uint8_t ttl);
  *
  * @return Pointer to interface address, NULL if not found.
  */
-struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
-					    struct net_if **iface);
+struct net_if_addr* net_if_ipv4_addr_lookup(const struct in_addr* addr,
+                                            struct net_if** iface);
 
 /**
  * @brief Add a IPv4 address to an interface
@@ -1988,10 +1959,10 @@ struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
  *
  * @return Pointer to interface address, NULL if cannot be added
  */
-struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
-					 struct in_addr *addr,
-					 enum net_addr_type addr_type,
-					 uint32_t vlifetime);
+struct net_if_addr* net_if_ipv4_addr_add(struct net_if* iface,
+                                         struct in_addr* addr,
+                                         enum net_addr_type addr_type,
+                                         uint32_t vlifetime);
 
 /**
  * @brief Remove a IPv4 address from an interface
@@ -2001,7 +1972,7 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
  *
  * @return True if successfully removed, false otherwise
  */
-bool net_if_ipv4_addr_rm(struct net_if *iface, const struct in_addr *addr);
+bool net_if_ipv4_addr_rm(struct net_if* iface, const struct in_addr* addr);
 
 /**
  * @brief Check if this IPv4 address belongs to one of the interface indices.
@@ -2011,7 +1982,7 @@ bool net_if_ipv4_addr_rm(struct net_if *iface, const struct in_addr *addr);
  * @return >0 if address was found in given network interface index,
  * all other values mean address was not found
  */
-__syscall int net_if_ipv4_addr_lookup_by_index(const struct in_addr *addr);
+__syscall int net_if_ipv4_addr_lookup_by_index(const struct in_addr* addr);
 
 /**
  * @brief Add a IPv4 address to an interface by network interface index
@@ -2024,9 +1995,9 @@ __syscall int net_if_ipv4_addr_lookup_by_index(const struct in_addr *addr);
  * @return True if ok, false if the address could not be added
  */
 __syscall bool net_if_ipv4_addr_add_by_index(int index,
-					     struct in_addr *addr,
-					     enum net_addr_type addr_type,
-					     uint32_t vlifetime);
+                                             struct in_addr* addr,
+                                             enum net_addr_type addr_type,
+                                             uint32_t vlifetime);
 
 /**
  * @brief Remove a IPv4 address from an interface by interface index
@@ -2037,7 +2008,7 @@ __syscall bool net_if_ipv4_addr_add_by_index(int index,
  * @return True if successfully removed, false otherwise
  */
 __syscall bool net_if_ipv4_addr_rm_by_index(int index,
-					    const struct in_addr *addr);
+                                            const struct in_addr* addr);
 
 /**
  * @brief Go through all IPv4 addresses on a network interface and call callback
@@ -2047,8 +2018,8 @@ __syscall bool net_if_ipv4_addr_rm_by_index(int index,
  * @param cb User-supplied callback function to call
  * @param user_data User specified data
  */
-void net_if_ipv4_addr_foreach(struct net_if *iface, net_if_ip_addr_cb_t cb,
-			      void *user_data);
+void net_if_ipv4_addr_foreach(struct net_if* iface, net_if_ip_addr_cb_t cb,
+                              void* user_data);
 
 /**
  * @brief Add a IPv4 multicast address to an interface
@@ -2058,8 +2029,8 @@ void net_if_ipv4_addr_foreach(struct net_if *iface, net_if_ip_addr_cb_t cb,
  *
  * @return Pointer to interface multicast address, NULL if cannot be added
  */
-struct net_if_mcast_addr *net_if_ipv4_maddr_add(struct net_if *iface,
-						const struct in_addr *addr);
+struct net_if_mcast_addr* net_if_ipv4_maddr_add(struct net_if* iface,
+                                                const struct in_addr* addr);
 
 /**
  * @brief Remove an IPv4 multicast address from an interface
@@ -2069,7 +2040,7 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_add(struct net_if *iface,
  *
  * @return True if successfully removed, false otherwise
  */
-bool net_if_ipv4_maddr_rm(struct net_if *iface, const struct in_addr *addr);
+bool net_if_ipv4_maddr_rm(struct net_if* iface, const struct in_addr* addr);
 
 /**
  * @brief Check if this IPv4 multicast address belongs to a specific interface
@@ -2081,8 +2052,8 @@ bool net_if_ipv4_maddr_rm(struct net_if *iface, const struct in_addr *addr);
  *
  * @return Pointer to interface multicast address, NULL if not found.
  */
-struct net_if_mcast_addr *net_if_ipv4_maddr_lookup(const struct in_addr *addr,
-						   struct net_if **iface);
+struct net_if_mcast_addr* net_if_ipv4_maddr_lookup(const struct in_addr* addr,
+                                                   struct net_if** iface);
 
 /**
  * @brief Mark a given multicast address to be joined.
@@ -2090,8 +2061,8 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_lookup(const struct in_addr *addr,
  * @param iface Network interface the address belongs to
  * @param addr IPv4 multicast address
  */
-void net_if_ipv4_maddr_join(struct net_if *iface,
-			    struct net_if_mcast_addr *addr);
+void net_if_ipv4_maddr_join(struct net_if* iface,
+                            struct net_if_mcast_addr* addr);
 
 /**
  * @brief Check if given multicast address is joined or not.
@@ -2100,11 +2071,10 @@ void net_if_ipv4_maddr_join(struct net_if *iface,
  *
  * @return True if address is joined, False otherwise.
  */
-static inline bool net_if_ipv4_maddr_is_joined(struct net_if_mcast_addr *addr)
-{
-	NET_ASSERT(addr);
+static inline bool net_if_ipv4_maddr_is_joined(struct net_if_mcast_addr* addr) {
+    NET_ASSERT(addr);
 
-	return addr->is_joined;
+    return (addr->is_joined);
 }
 
 /**
@@ -2113,8 +2083,8 @@ static inline bool net_if_ipv4_maddr_is_joined(struct net_if_mcast_addr *addr)
  * @param iface Network interface the address belongs to
  * @param addr IPv4 multicast address
  */
-void net_if_ipv4_maddr_leave(struct net_if *iface,
-			     struct net_if_mcast_addr *addr);
+void net_if_ipv4_maddr_leave(struct net_if* iface,
+                             struct net_if_mcast_addr* addr);
 
 /**
  * @brief Get the IPv4 address of the given router
@@ -2123,20 +2093,18 @@ void net_if_ipv4_maddr_leave(struct net_if *iface,
  * @return pointer to the IPv4 address, or NULL if none
  */
 #if defined(CONFIG_NET_NATIVE_IPV4)
-static inline struct in_addr *net_if_router_ipv4(struct net_if_router *router)
-{
-	NET_ASSERT(router);
+static inline struct in_addr* net_if_router_ipv4(struct net_if_router* router) {
+    NET_ASSERT(router);
 
-	return &router->address.in_addr;
+    return (&router->address.in_addr);
 }
 #else
-static inline struct in_addr *net_if_router_ipv4(struct net_if_router *router)
-{
-	static struct in_addr addr;
+static inline struct in_addr* net_if_router_ipv4(struct net_if_router* router) {
+    static struct in_addr addr;
 
-	ARG_UNUSED(router);
+    ARG_UNUSED(router);
 
-	return &addr;
+    return (&addr);
 }
 #endif
 
@@ -2149,8 +2117,8 @@ static inline struct in_addr *net_if_router_ipv4(struct net_if_router *router)
  *
  * @return Pointer to router information, NULL if cannot be found
  */
-struct net_if_router *net_if_ipv4_router_lookup(struct net_if *iface,
-						struct in_addr *addr);
+struct net_if_router* net_if_ipv4_router_lookup(struct net_if* iface,
+                                                struct in_addr* addr);
 
 /**
  * @brief Find default router for this IPv4 address.
@@ -2161,8 +2129,8 @@ struct net_if_router *net_if_ipv4_router_lookup(struct net_if *iface,
  *
  * @return Pointer to router information, NULL if cannot be found
  */
-struct net_if_router *net_if_ipv4_router_find_default(struct net_if *iface,
-						      struct in_addr *addr);
+struct net_if_router* net_if_ipv4_router_find_default(struct net_if* iface,
+                                                      struct in_addr* addr);
 /**
  * @brief Add IPv4 router to the system.
  *
@@ -2173,10 +2141,10 @@ struct net_if_router *net_if_ipv4_router_find_default(struct net_if *iface,
  *
  * @return Pointer to router information, NULL if could not be added
  */
-struct net_if_router *net_if_ipv4_router_add(struct net_if *iface,
-					     struct in_addr *addr,
-					     bool is_default,
-					     uint16_t router_lifetime);
+struct net_if_router* net_if_ipv4_router_add(struct net_if* iface,
+                                             struct in_addr* addr,
+                                             bool is_default,
+                                             uint16_t router_lifetime);
 
 /**
  * @brief Remove IPv4 router from the system.
@@ -2185,7 +2153,7 @@ struct net_if_router *net_if_ipv4_router_add(struct net_if *iface,
  *
  * @return True if successfully removed, false otherwise
  */
-bool net_if_ipv4_router_rm(struct net_if_router *router);
+bool net_if_ipv4_router_rm(struct net_if_router* router);
 
 /**
  * @brief Check if the given IPv4 address belongs to local subnet.
@@ -2195,8 +2163,8 @@ bool net_if_ipv4_router_rm(struct net_if_router *router);
  *
  * @return True if address is part of local subnet, false otherwise.
  */
-bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
-			       const struct in_addr *addr);
+bool net_if_ipv4_addr_mask_cmp(struct net_if* iface,
+                               const struct in_addr* addr);
 
 /**
  * @brief Check if the given IPv4 address is a broadcast address.
@@ -2206,8 +2174,8 @@ bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
  *
  * @return True if address is a broadcast address, false otherwise.
  */
-bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
-			       const struct in_addr *addr);
+bool net_if_ipv4_is_addr_bcast(struct net_if* iface,
+                               const struct in_addr* addr);
 
 /**
  * @brief Get a network interface that should be used when sending
@@ -2219,14 +2187,13 @@ bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
  * could be found.
  */
 #if defined(CONFIG_NET_NATIVE_IPV4)
-struct net_if *net_if_ipv4_select_src_iface(const struct in_addr *dst);
+struct net_if* net_if_ipv4_select_src_iface(const struct in_addr* dst);
 #else
-static inline struct net_if *net_if_ipv4_select_src_iface(
-	const struct in_addr *dst)
-{
-	ARG_UNUSED(dst);
+static inline struct net_if* net_if_ipv4_select_src_iface(
+    const struct in_addr* dst) {
+    ARG_UNUSED(dst);
 
-	return NULL;
+    return (NULL);
 }
 #endif
 
@@ -2242,16 +2209,15 @@ static inline struct net_if *net_if_ipv4_select_src_iface(
  * could be found.
  */
 #if defined(CONFIG_NET_NATIVE_IPV4)
-const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *iface,
-						  const struct in_addr *dst);
+const struct in_addr* net_if_ipv4_select_src_addr(struct net_if* iface,
+                                                  const struct in_addr* dst);
 #else
-static inline const struct in_addr *net_if_ipv4_select_src_addr(
-	struct net_if *iface, const struct in_addr *dst)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(dst);
+static inline const struct in_addr* net_if_ipv4_select_src_addr(
+    struct net_if* iface, const struct in_addr* dst) {
+    ARG_UNUSED(iface);
+    ARG_UNUSED(dst);
 
-	return NULL;
+    return (NULL);
 }
 #endif
 
@@ -2264,8 +2230,8 @@ static inline const struct in_addr *net_if_ipv4_select_src_addr(
  * @return Pointer to link local IPv4 address, NULL if no proper IPv4 address
  * could be found.
  */
-struct in_addr *net_if_ipv4_get_ll(struct net_if *iface,
-				   enum net_addr_state addr_state);
+struct in_addr* net_if_ipv4_get_ll(struct net_if* iface,
+                                   enum net_addr_state addr_state);
 
 /**
  * @brief Get a IPv4 global address in a given state.
@@ -2276,8 +2242,8 @@ struct in_addr *net_if_ipv4_get_ll(struct net_if *iface,
  * @return Pointer to link local IPv4 address, NULL if no proper IPv4 address
  * could be found.
  */
-struct in_addr *net_if_ipv4_get_global_addr(struct net_if *iface,
-					    enum net_addr_state addr_state);
+struct in_addr* net_if_ipv4_get_global_addr(struct net_if* iface,
+                                            enum net_addr_state addr_state);
 
 /**
  * @brief Get IPv4 netmask of an interface.
@@ -2294,8 +2260,8 @@ struct in_addr net_if_ipv4_get_netmask(struct net_if *iface);
  * @param iface Interface to use.
  * @param netmask IPv4 netmask
  */
-void net_if_ipv4_set_netmask(struct net_if *iface,
-			     const struct in_addr *netmask);
+void net_if_ipv4_set_netmask(struct net_if* iface,
+                             const struct in_addr* netmask);
 
 /**
  * @brief Set IPv4 netmask for an interface index.
@@ -2306,7 +2272,7 @@ void net_if_ipv4_set_netmask(struct net_if *iface,
  * @return True if netmask was added, false otherwise.
  */
 __syscall bool net_if_ipv4_set_netmask_by_index(int index,
-						const struct in_addr *netmask);
+                                                const struct in_addr* netmask);
 
 /**
  * @brief Set IPv4 gateway for an interface.
@@ -2314,7 +2280,7 @@ __syscall bool net_if_ipv4_set_netmask_by_index(int index,
  * @param iface Interface to use.
  * @param gw IPv4 address of an gateway
  */
-void net_if_ipv4_set_gw(struct net_if *iface, const struct in_addr *gw);
+void net_if_ipv4_set_gw(struct net_if* iface, const struct in_addr* gw);
 
 /**
  * @brief Set IPv4 gateway for an interface index.
@@ -2324,7 +2290,7 @@ void net_if_ipv4_set_gw(struct net_if *iface, const struct in_addr *gw);
  *
  * @return True if gateway was added, false otherwise.
  */
-__syscall bool net_if_ipv4_set_gw_by_index(int index, const struct in_addr *gw);
+__syscall bool net_if_ipv4_set_gw_by_index(int index, const struct in_addr* gw);
 
 /**
  * @brief Get a network interface that should be used when sending
@@ -2336,7 +2302,7 @@ __syscall bool net_if_ipv4_set_gw_by_index(int index, const struct in_addr *gw);
  * will return the default network interface if the best network interface
  * is not found.
  */
-struct net_if *net_if_select_src_iface(const struct sockaddr *dst);
+struct net_if* net_if_select_src_iface(const struct sockaddr* dst);
 
 /**
  * @typedef net_if_link_callback_t
@@ -2346,9 +2312,9 @@ struct net_if *net_if_select_src_iface(const struct sockaddr *dst);
  * @param dst Link layer address of the destination where the network packet was sent.
  * @param status Send status, 0 is ok, < 0 error.
  */
-typedef void (*net_if_link_callback_t)(struct net_if *iface,
-				       struct net_linkaddr *dst,
-				       int status);
+typedef void (*net_if_link_callback_t)(struct net_if* iface,
+                                       struct net_linkaddr* dst,
+                                       int status);
 
 /**
  * @brief Link callback handler struct.
@@ -2359,11 +2325,11 @@ typedef void (*net_if_link_callback_t)(struct net_if *iface,
  * allocated from stack.
  */
 struct net_if_link_cb {
-	/** Node information for the slist. */
-	sys_snode_t node;
+    /** Node information for the slist. */
+    sys_snode_t node;
 
-	/** Link callback */
-	net_if_link_callback_t cb;
+    /** Link callback */
+    net_if_link_callback_t cb;
 };
 
 /**
@@ -2372,15 +2338,15 @@ struct net_if_link_cb {
  * @param link Caller specified handler for the callback.
  * @param cb Callback to register.
  */
-void net_if_register_link_cb(struct net_if_link_cb *link,
-			     net_if_link_callback_t cb);
+void net_if_register_link_cb(struct net_if_link_cb* link,
+                             net_if_link_callback_t cb);
 
 /**
  * @brief Unregister a link callback.
  *
  * @param link Caller specified handler for the callback.
  */
-void net_if_unregister_link_cb(struct net_if_link_cb *link);
+void net_if_unregister_link_cb(struct net_if_link_cb* link);
 
 /**
  * @brief Call a link callback function.
@@ -2389,8 +2355,8 @@ void net_if_unregister_link_cb(struct net_if_link_cb *link);
  * @param lladdr Destination link layer address
  * @param status 0 is ok, < 0 error
  */
-void net_if_call_link_cb(struct net_if *iface, struct net_linkaddr *lladdr,
-			 int status);
+void net_if_call_link_cb(struct net_if* iface, struct net_linkaddr* lladdr,
+                         int status);
 
 /**
  * @brief Check if received network packet checksum calculation can be avoided
@@ -2401,7 +2367,7 @@ void net_if_call_link_cb(struct net_if *iface, struct net_linkaddr *lladdr,
  *
  * @return True if checksum needs to be calculated, false otherwise.
  */
-bool net_if_need_calc_rx_checksum(struct net_if *iface);
+bool net_if_need_calc_rx_checksum(struct net_if* iface);
 
 /**
  * @brief Check if network packet checksum calculation can be avoided or not
@@ -2413,7 +2379,7 @@ bool net_if_need_calc_rx_checksum(struct net_if *iface);
  *
  * @return True if checksum needs to be calculated, false otherwise.
  */
-bool net_if_need_calc_tx_checksum(struct net_if *iface);
+bool net_if_need_calc_tx_checksum(struct net_if* iface);
 
 /**
  * @brief Get interface according to index
@@ -2425,7 +2391,7 @@ bool net_if_need_calc_tx_checksum(struct net_if *iface);
  *
  * @return Pointer to interface or NULL if not found.
  */
-__syscall struct net_if *net_if_get_by_index(int index);
+__syscall struct net_if* net_if_get_by_index(int index);
 
 /**
  * @brief Get interface index according to pointer
@@ -2434,7 +2400,7 @@ __syscall struct net_if *net_if_get_by_index(int index);
  *
  * @return Interface index
  */
-int net_if_get_by_iface(struct net_if *iface);
+int net_if_get_by_iface(struct net_if* iface);
 
 /**
  * @typedef net_if_cb_t
@@ -2443,7 +2409,7 @@ int net_if_get_by_iface(struct net_if *iface);
  * @param iface Pointer to current network interface
  * @param user_data A valid pointer to user data or NULL
  */
-typedef void (*net_if_cb_t)(struct net_if *iface, void *user_data);
+typedef void (*net_if_cb_t)(struct net_if* iface, void* user_data);
 
 /**
  * @brief Go through all the network interfaces and call callback
@@ -2452,7 +2418,7 @@ typedef void (*net_if_cb_t)(struct net_if *iface, void *user_data);
  * @param cb User-supplied callback function to call
  * @param user_data User specified data
  */
-void net_if_foreach(net_if_cb_t cb, void *user_data);
+void net_if_foreach(net_if_cb_t cb, void* user_data);
 
 /**
  * @brief Bring interface up
@@ -2461,7 +2427,7 @@ void net_if_foreach(net_if_cb_t cb, void *user_data);
  *
  * @return 0 on success
  */
-int net_if_up(struct net_if *iface);
+int net_if_up(struct net_if* iface);
 
 /**
  * @brief Check if interface is is up and running.
@@ -2470,12 +2436,11 @@ int net_if_up(struct net_if *iface);
  *
  * @return True if interface is up, False if it is down.
  */
-static inline bool net_if_is_up(struct net_if *iface)
-{
-	NET_ASSERT(iface);
+static inline bool net_if_is_up(struct net_if* iface) {
+    NET_ASSERT(iface);
 
-	return net_if_flag_is_set(iface, NET_IF_UP) &&
-	       net_if_flag_is_set(iface, NET_IF_RUNNING);
+    return (net_if_flag_is_set(iface, NET_IF_UP) &&
+            net_if_flag_is_set(iface, NET_IF_RUNNING));
 }
 
 /**
@@ -2485,7 +2450,7 @@ static inline bool net_if_is_up(struct net_if *iface)
  *
  * @return 0 on success
  */
-int net_if_down(struct net_if *iface);
+int net_if_down(struct net_if* iface);
 
 /**
  * @brief Check if interface was brought up by the administrator.
@@ -2494,11 +2459,10 @@ int net_if_down(struct net_if *iface);
  *
  * @return True if interface is admin up, false otherwise.
  */
-static inline bool net_if_is_admin_up(struct net_if *iface)
-{
-	NET_ASSERT(iface);
+static inline bool net_if_is_admin_up(struct net_if* iface) {
+    NET_ASSERT(iface);
 
-	return net_if_flag_is_set(iface, NET_IF_UP);
+    return net_if_flag_is_set(iface, NET_IF_UP);
 }
 
 /**
@@ -2509,7 +2473,7 @@ static inline bool net_if_is_admin_up(struct net_if *iface)
  *
  * @param iface Pointer to network interface
  */
-void net_if_carrier_on(struct net_if *iface);
+void net_if_carrier_on(struct net_if* iface);
 
 /**
  * @brief Underlying network device has lost the carrier (cable disconnected).
@@ -2519,7 +2483,7 @@ void net_if_carrier_on(struct net_if *iface);
  *
  * @param iface Pointer to network interface
  */
-void net_if_carrier_off(struct net_if *iface);
+void net_if_carrier_off(struct net_if* iface);
 
 /**
  * @brief Check if carrier is present on network device.
@@ -2528,11 +2492,10 @@ void net_if_carrier_off(struct net_if *iface);
  *
  * @return True if carrier is present, false otherwise.
  */
-static inline bool net_if_is_carrier_ok(struct net_if *iface)
-{
-	NET_ASSERT(iface);
+static inline bool net_if_is_carrier_ok(struct net_if* iface) {
+    NET_ASSERT(iface);
 
-	return net_if_flag_is_set(iface, NET_IF_LOWER_UP);
+    return net_if_flag_is_set(iface, NET_IF_LOWER_UP);
 }
 
 /**
@@ -2545,7 +2508,7 @@ static inline bool net_if_is_carrier_ok(struct net_if *iface)
  *
  * @param iface Pointer to network interface
  */
-void net_if_dormant_on(struct net_if *iface);
+void net_if_dormant_on(struct net_if* iface);
 
 /**
  * @brief Mark interface as not dormant.
@@ -2555,7 +2518,7 @@ void net_if_dormant_on(struct net_if *iface);
  *
  * @param iface Pointer to network interface
  */
-void net_if_dormant_off(struct net_if *iface);
+void net_if_dormant_off(struct net_if* iface);
 
 /**
  * @brief Check if the interface is dormant.
@@ -2564,11 +2527,10 @@ void net_if_dormant_off(struct net_if *iface);
  *
  * @return True if interface is dormant, false otherwise.
  */
-static inline bool net_if_is_dormant(struct net_if *iface)
-{
-	NET_ASSERT(iface);
+static inline bool net_if_is_dormant(struct net_if* iface) {
+    NET_ASSERT(iface);
 
-	return net_if_flag_is_set(iface, NET_IF_DORMANT);
+    return net_if_flag_is_set(iface, NET_IF_DORMANT);
 }
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP) && defined(CONFIG_NET_NATIVE)
@@ -2579,7 +2541,7 @@ static inline bool net_if_is_dormant(struct net_if *iface)
  * @param "struct net_pkt *pkt" A pointer on a struct net_pkt which has
  *        been timestamped after being sent.
  */
-typedef void (*net_if_timestamp_callback_t)(struct net_pkt *pkt);
+typedef void (*net_if_timestamp_callback_t)(struct net_pkt* pkt);
 
 /**
  * @brief Timestamp callback handler struct.
@@ -2590,21 +2552,21 @@ typedef void (*net_if_timestamp_callback_t)(struct net_pkt *pkt);
  * allocated from stack.
  */
 struct net_if_timestamp_cb {
-	/** Node information for the slist. */
-	sys_snode_t node;
+    /** Node information for the slist. */
+    sys_snode_t node;
 
-	/** Packet for which the callback is needed.
-	 *  A NULL value means all packets.
-	 */
-	struct net_pkt *pkt;
+    /** Packet for which the callback is needed.
+     *  A NULL value means all packets.
+     */
+    struct net_pkt* pkt;
 
-	/** Net interface for which the callback is needed.
-	 *  A NULL value means all interfaces.
-	 */
-	struct net_if *iface;
+    /** Net interface for which the callback is needed.
+     *  A NULL value means all interfaces.
+     */
+    struct net_if* iface;
 
-	/** Timestamp callback */
-	net_if_timestamp_callback_t cb;
+    /** Timestamp callback */
+    net_if_timestamp_callback_t cb;
 };
 
 /**
@@ -2617,31 +2579,31 @@ struct net_if_timestamp_cb {
  *		interfaces.
  * @param cb Callback to register.
  */
-void net_if_register_timestamp_cb(struct net_if_timestamp_cb *handle,
-				  struct net_pkt *pkt,
-				  struct net_if *iface,
-				  net_if_timestamp_callback_t cb);
+void net_if_register_timestamp_cb(struct net_if_timestamp_cb* handle,
+                                  struct net_pkt* pkt,
+                                  struct net_if* iface,
+                                  net_if_timestamp_callback_t cb);
 
 /**
  * @brief Unregister a timestamp callback.
  *
  * @param handle Caller specified handler for the callback.
  */
-void net_if_unregister_timestamp_cb(struct net_if_timestamp_cb *handle);
+void net_if_unregister_timestamp_cb(struct net_if_timestamp_cb* handle);
 
 /**
  * @brief Call a timestamp callback function.
  *
  * @param pkt Network buffer.
  */
-void net_if_call_timestamp_cb(struct net_pkt *pkt);
+void net_if_call_timestamp_cb(struct net_pkt* pkt);
 
 /*
  * @brief Add timestamped TX buffer to be handled
  *
  * @param pkt Timestamped buffer
  */
-void net_if_add_tx_timestamp(struct net_pkt *pkt);
+void net_if_add_tx_timestamp(struct net_pkt* pkt);
 #endif /* CONFIG_NET_PKT_TIMESTAMP */
 
 /**
@@ -2654,13 +2616,12 @@ void net_if_add_tx_timestamp(struct net_pkt *pkt);
  * @return 0 on success, <0 if error
  */
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
-int net_if_set_promisc(struct net_if *iface);
+int net_if_set_promisc(struct net_if* iface);
 #else
-static inline int net_if_set_promisc(struct net_if *iface)
-{
-	ARG_UNUSED(iface);
+static inline int net_if_set_promisc(struct net_if* iface) {
+    ARG_UNUSED(iface);
 
-	return -ENOTSUP;
+    return (-ENOTSUP);
 }
 #endif
 
@@ -2670,11 +2631,10 @@ static inline int net_if_set_promisc(struct net_if *iface)
  * @param iface Pointer to network interface
  */
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
-void net_if_unset_promisc(struct net_if *iface);
+void net_if_unset_promisc(struct net_if* iface);
 #else
-static inline void net_if_unset_promisc(struct net_if *iface)
-{
-	ARG_UNUSED(iface);
+static inline void net_if_unset_promisc(struct net_if* iface) {
+    ARG_UNUSED(iface);
 }
 #endif
 
@@ -2687,13 +2647,12 @@ static inline void net_if_unset_promisc(struct net_if *iface)
  *         False if interface is not in in promiscuous mode.
  */
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
-bool net_if_is_promisc(struct net_if *iface);
+bool net_if_is_promisc(struct net_if* iface);
 #else
-static inline bool net_if_is_promisc(struct net_if *iface)
-{
-	ARG_UNUSED(iface);
+static inline bool net_if_is_promisc(struct net_if* iface) {
+    ARG_UNUSED(iface);
 
-	return false;
+    return (false);
 }
 #endif
 
@@ -2706,15 +2665,14 @@ static inline bool net_if_is_promisc(struct net_if *iface)
  * @return True if there are pending TX network packets for this network
  *         interface, False otherwise.
  */
-static inline bool net_if_are_pending_tx_packets(struct net_if *iface)
-{
-#if defined(CONFIG_NET_POWER_MANAGEMENT)
-	return !!iface->tx_pending;
-#else
-	ARG_UNUSED(iface);
+static inline bool net_if_are_pending_tx_packets(struct net_if* iface) {
+    #if defined(CONFIG_NET_POWER_MANAGEMENT)
+    return !!iface->tx_pending;
+    #else
+    ARG_UNUSED(iface);
 
-	return false;
-#endif
+    return (false);
+    #endif
 }
 
 #ifdef CONFIG_NET_POWER_MANAGEMENT
@@ -2725,7 +2683,7 @@ static inline bool net_if_are_pending_tx_packets(struct net_if *iface)
  *
  * @return 0 on success, or -EALREADY/-EBUSY as possible errors.
  */
-int net_if_suspend(struct net_if *iface);
+int net_if_suspend(struct net_if* iface);
 
 /**
  * @brief Resume a network interface from a power management perspective
@@ -2734,7 +2692,7 @@ int net_if_suspend(struct net_if *iface);
  *
  * @return 0 on success, or -EALREADY as a possible error.
  */
-int net_if_resume(struct net_if *iface);
+int net_if_resume(struct net_if* iface);
 
 /**
  * @brief Check if the network interface is suspended or not.
@@ -2743,7 +2701,7 @@ int net_if_resume(struct net_if *iface);
  *
  * @return True if interface is suspended, False otherwise.
  */
-bool net_if_is_suspended(struct net_if *iface);
+bool net_if_is_suspended(struct net_if* iface);
 #endif /* CONFIG_NET_POWER_MANAGEMENT */
 
 /**
@@ -2753,14 +2711,14 @@ bool net_if_is_suspended(struct net_if *iface);
  *
  * @return True if interface supports Wi-Fi, False otherwise.
  */
-bool net_if_is_wifi(struct net_if *iface);
+bool net_if_is_wifi(struct net_if* iface);
 
 /**
  * @brief Get first Wi-Fi network interface.
  *
  * @return Pointer to network interface, NULL if not found.
  */
-struct net_if *net_if_get_first_wifi(void);
+struct net_if* net_if_get_first_wifi(void);
 
 /**
  * @brief Get network interface name.
@@ -2776,7 +2734,7 @@ struct net_if *net_if_get_first_wifi(void);
  *         -ERANGE if name cannot be copied to the user supplied buffer,
  *         -ENOTSUP if interface name support is disabled,
  */
-int net_if_get_name(struct net_if *iface, char *buf, int len);
+int net_if_get_name(struct net_if* iface, char* buf, int len);
 
 /**
  * @brief Set network interface name.
@@ -2792,7 +2750,7 @@ int net_if_get_name(struct net_if *iface, char *buf, int len);
  *         -EINVAL if invalid parameters are given,
  *         -ENAMETOOLONG if name is too long
  */
-int net_if_set_name(struct net_if *iface, const char *buf);
+int net_if_set_name(struct net_if* iface, char const* buf);
 
 /**
  * @brief Get interface index according to its name
@@ -2801,11 +2759,11 @@ int net_if_set_name(struct net_if *iface, const char *buf);
  *
  * @return Interface index
  */
-int net_if_get_by_name(const char *name);
+int net_if_get_by_name(char const* name);
 
 /** @cond INTERNAL_HIDDEN */
 struct net_if_api {
-	void (*init)(struct net_if *iface);
+    void (*init)(struct net_if* iface);
 };
 
 #define NET_IF_DHCPV4_INIT						\
@@ -2818,68 +2776,68 @@ struct net_if_api {
 			    IS_ENABLED(CONFIG_NET_NATIVE_IPV6)),	\
 		   (.dhcpv6.state = NET_DHCPV6_DISABLED,))
 
-#define NET_IF_CONFIG_INIT				\
-	.config = {					\
-		IF_ENABLED(CONFIG_NET_IP, (.ip = {},))  \
-		NET_IF_DHCPV4_INIT			\
-		NET_IF_DHCPV6_INIT			\
-	}
+#define NET_IF_CONFIG_INIT                  \
+    .config = {                             \
+        IF_ENABLED(CONFIG_NET_IP, (.ip = {},))  \
+        NET_IF_DHCPV4_INIT                  \
+        NET_IF_DHCPV6_INIT                  \
+    }
 
-#define NET_IF_GET_NAME(dev_id, sfx) __net_if_##dev_id##_##sfx
+#define NET_IF_GET_NAME(dev_id, sfx)     __net_if_##dev_id##_##sfx
 #define NET_IF_DEV_GET_NAME(dev_id, sfx) __net_if_dev_##dev_id##_##sfx
 
-#define NET_IF_GET(dev_id, sfx)						\
-	((struct net_if *)&NET_IF_GET_NAME(dev_id, sfx))
+#define NET_IF_GET(dev_id, sfx)             \
+    ((struct net_if*)&NET_IF_GET_NAME(dev_id, sfx))
 
-#define NET_IF_INIT(dev_id, sfx, _l2, _mtu, _num_configs)		\
-	static STRUCT_SECTION_ITERABLE(net_if_dev,			\
-				NET_IF_DEV_GET_NAME(dev_id, sfx)) = {	\
-		.dev = &(DEVICE_NAME_GET(dev_id)),			\
-		.l2 = &(NET_L2_GET_NAME(_l2)),				\
-		.l2_data = &(NET_L2_GET_DATA(dev_id, sfx)),		\
-		.mtu = _mtu,						\
-		.flags = {BIT(NET_IF_LOWER_UP)},			\
-	};								\
-	static Z_DECL_ALIGN(struct net_if)				\
-		       NET_IF_GET_NAME(dev_id, sfx)[_num_configs]	\
-		       __used __in_section(_net_if, static,		\
-					   dev_id) = {			\
-		[0 ... (_num_configs - 1)] = {				\
-			.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),	\
-			NET_IF_CONFIG_INIT				\
-		}							\
-	}
+#define NET_IF_INIT(dev_id, sfx, _l2, _mtu, _num_configs)       \
+    static STRUCT_SECTION_ITERABLE(net_if_dev,                  \
+                NET_IF_DEV_GET_NAME(dev_id, sfx)) = {           \
+        .dev     = &(DEVICE_NAME_GET(dev_id)),                  \
+        .l2      = &(NET_L2_GET_NAME(_l2)),                     \
+        .l2_data = &(NET_L2_GET_DATA(dev_id, sfx)),             \
+        .mtu     = _mtu,                                        \
+        .flags   = {BIT(NET_IF_LOWER_UP)},                      \
+    };                                                          \
+    static Z_DECL_ALIGN(struct net_if)                          \
+                        NET_IF_GET_NAME(dev_id, sfx)[_num_configs] \
+                        __used __in_section(_net_if, static,    \
+                                            dev_id) = {         \
+        [0 ...(_num_configs - 1)] = {                           \
+            .if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),      \
+            NET_IF_CONFIG_INIT                                  \
+        }                                                       \
+    }
 
-#define NET_IF_OFFLOAD_INIT(dev_id, sfx, _mtu)				\
-	static STRUCT_SECTION_ITERABLE(net_if_dev,			\
-				NET_IF_DEV_GET_NAME(dev_id, sfx)) = {	\
-		.dev = &(DEVICE_NAME_GET(dev_id)),			\
-		.mtu = _mtu,						\
-		.l2 = &(NET_L2_GET_NAME(OFFLOADED_NETDEV)),		\
-		.flags = {BIT(NET_IF_LOWER_UP)},			\
-	};								\
-	static Z_DECL_ALIGN(struct net_if)				\
-		NET_IF_GET_NAME(dev_id, sfx)[NET_IF_MAX_CONFIGS]	\
-		       __used __in_section(_net_if, static,		\
-					   dev_id) = {			\
-		[0 ... (NET_IF_MAX_CONFIGS - 1)] = {			\
-			.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),	\
-			NET_IF_CONFIG_INIT				\
-		}							\
-	}
+#define NET_IF_OFFLOAD_INIT(dev_id, sfx, _mtu)                  \
+    static STRUCT_SECTION_ITERABLE(net_if_dev,                  \
+                NET_IF_DEV_GET_NAME(dev_id, sfx)) = {           \
+        .dev   = &(DEVICE_NAME_GET(dev_id)),                    \
+        .mtu   = _mtu,                                          \
+        .l2    = &(NET_L2_GET_NAME(OFFLOADED_NETDEV)),          \
+        .flags = {BIT(NET_IF_LOWER_UP)},                        \
+    };                                                          \
+    static Z_DECL_ALIGN(struct net_if)                          \
+                        NET_IF_GET_NAME(dev_id, sfx)[NET_IF_MAX_CONFIGS] \
+                        __used __in_section(_net_if, static,    \
+                                            dev_id) = {         \
+        [0 ...(NET_IF_MAX_CONFIGS - 1)] = {                     \
+            .if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),      \
+            NET_IF_CONFIG_INIT                                  \
+        }                                                       \
+    }
 
 /** @endcond */
 
 /* Network device initialization macros */
 
-#define Z_NET_DEVICE_INIT(node_id, dev_id, name, init_fn, pm, data,	\
-			  config, prio, api, l2, l2_ctx_type, mtu)	\
-	Z_DEVICE_STATE_DEFINE(dev_id);					\
-	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,	\
-			config, POST_KERNEL, prio, api,			\
-			&Z_DEVICE_STATE_NAME(dev_id));			\
-	NET_L2_DATA_INIT(dev_id, 0, l2_ctx_type);			\
-	NET_IF_INIT(dev_id, 0, l2, mtu, NET_IF_MAX_CONFIGS)
+#define Z_NET_DEVICE_INIT(node_id, dev_id, name, init_fn, pm, data, \
+                          config, prio, api, l2, l2_ctx_type, mtu)  \
+    Z_DEVICE_STATE_DEFINE(dev_id);                              \
+    Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,   \
+                    config, POST_KERNEL, prio, api,             \
+                    &Z_DEVICE_STATE_NAME(dev_id));              \
+    NET_L2_DATA_INIT(dev_id, 0, l2_ctx_type);                   \
+    NET_IF_INIT(dev_id, 0, l2, mtu, NET_IF_MAX_CONFIGS)
 
 /**
  * @brief Create a network interface and bind it to network device.
@@ -2900,10 +2858,10 @@ struct net_if_api {
  * @param l2_ctx_type Type of L2 context data.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_INIT(dev_id, name, init_fn, pm, data, config, prio,	\
-			api, l2, l2_ctx_type, mtu)			\
-	Z_NET_DEVICE_INIT(DT_INVALID_NODE, dev_id, name, init_fn, pm,	\
-			  data, config, prio, api, l2, l2_ctx_type, mtu)
+#define NET_DEVICE_INIT(dev_id, name, init_fn, pm, data, config, prio,  \
+                        api, l2, l2_ctx_type, mtu)                      \
+    Z_NET_DEVICE_INIT(DT_INVALID_NODE, dev_id, name, init_fn, pm,       \
+                      data, config, prio, api, l2, l2_ctx_type, mtu)
 
 /**
  * @brief Like NET_DEVICE_INIT but taking metadata from a devicetree node.
@@ -2923,11 +2881,11 @@ struct net_if_api {
  * @param l2_ctx_type Type of L2 context data.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_DT_DEFINE(node_id, init_fn, pm, data,		\
-			     config, prio, api, l2, l2_ctx_type, mtu)	\
-	Z_NET_DEVICE_INIT(node_id, Z_DEVICE_DT_DEV_ID(node_id),	\
-			  DEVICE_DT_NAME(node_id), init_fn, pm, data,	\
-			  config, prio, api, l2, l2_ctx_type, mtu)
+#define NET_DEVICE_DT_DEFINE(node_id, init_fn, pm, data,                \
+                             config, prio, api, l2, l2_ctx_type, mtu)   \
+    Z_NET_DEVICE_INIT(node_id, Z_DEVICE_DT_DEV_ID(node_id),             \
+                      DEVICE_DT_NAME(node_id), init_fn, pm, data,       \
+                      config, prio, api, l2, l2_ctx_type, mtu)
 
 /**
  * @brief Like NET_DEVICE_DT_DEFINE for an instance of a DT_DRV_COMPAT compatible
@@ -2938,17 +2896,17 @@ struct net_if_api {
  * @param ... other parameters as expected by NET_DEVICE_DT_DEFINE.
  */
 #define NET_DEVICE_DT_INST_DEFINE(inst, ...) \
-	NET_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+    NET_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
-#define Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, instance,	\
-				   init_fn, pm, data, config, prio,	\
-				   api, l2, l2_ctx_type, mtu)		\
-	Z_DEVICE_STATE_DEFINE(dev_id);					\
-	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,	\
-			config,	POST_KERNEL, prio, api,			\
-			&Z_DEVICE_STATE_NAME(dev_id));			\
-	NET_L2_DATA_INIT(dev_id, instance, l2_ctx_type);		\
-	NET_IF_INIT(dev_id, instance, l2, mtu, NET_IF_MAX_CONFIGS)
+#define Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, instance,     \
+                                   init_fn, pm, data, config, prio,     \
+                                   api, l2, l2_ctx_type, mtu)           \
+    Z_DEVICE_STATE_DEFINE(dev_id);                                      \
+    Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,           \
+                    config, POST_KERNEL, prio, api,                     \
+                    &Z_DEVICE_STATE_NAME(dev_id));                      \
+    NET_L2_DATA_INIT(dev_id, instance, l2_ctx_type);                    \
+    NET_IF_INIT(dev_id, instance, l2, mtu, NET_IF_MAX_CONFIGS)
 
 /**
  * @brief Create multiple network interfaces and bind them to network device.
@@ -2973,12 +2931,12 @@ struct net_if_api {
  * @param l2_ctx_type Type of L2 context data.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_INIT_INSTANCE(dev_id, name, instance, init_fn, pm,	\
-				 data, config, prio, api, l2,		\
-				 l2_ctx_type, mtu)			\
-	Z_NET_DEVICE_INIT_INSTANCE(DT_INVALID_NODE, dev_id, name,	\
-				   instance, init_fn, pm, data, config,	\
-				   prio, api, l2, l2_ctx_type, mtu)
+#define NET_DEVICE_INIT_INSTANCE(dev_id, name, instance, init_fn, pm,   \
+                                 data, config, prio, api, l2,           \
+                                 l2_ctx_type, mtu)                      \
+    Z_NET_DEVICE_INIT_INSTANCE(DT_INVALID_NODE, dev_id, name,           \
+                               instance, init_fn, pm, data, config,     \
+                               prio, api, l2, l2_ctx_type, mtu)
 
 /**
  * @brief Like NET_DEVICE_OFFLOAD_INIT but taking metadata from a devicetree.
@@ -3002,14 +2960,14 @@ struct net_if_api {
  * @param l2_ctx_type Type of L2 context data.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_DT_DEFINE_INSTANCE(node_id, instance, init_fn, pm,	\
-				      data, config, prio, api, l2,	\
-				      l2_ctx_type, mtu)			\
-	Z_NET_DEVICE_INIT_INSTANCE(node_id,				\
-				   Z_DEVICE_DT_DEV_ID(node_id),		\
-				   DEVICE_DT_NAME(node_id), instance,	\
-				   init_fn, pm, data, config, prio,	\
-				   api,	l2, l2_ctx_type, mtu)
+#define NET_DEVICE_DT_DEFINE_INSTANCE(node_id, instance, init_fn, pm,   \
+                                      data, config, prio, api, l2,      \
+                                      l2_ctx_type, mtu)                 \
+    Z_NET_DEVICE_INIT_INSTANCE(node_id,                                 \
+                               Z_DEVICE_DT_DEV_ID(node_id),             \
+                               DEVICE_DT_NAME(node_id), instance,       \
+                               init_fn, pm, data, config, prio,         \
+                               api, l2, l2_ctx_type, mtu)
 
 /**
  * @brief Like NET_DEVICE_DT_DEFINE_INSTANCE for an instance of a DT_DRV_COMPAT
@@ -3021,15 +2979,15 @@ struct net_if_api {
  * @param ... other parameters as expected by NET_DEVICE_DT_DEFINE_INSTANCE.
  */
 #define NET_DEVICE_DT_INST_DEFINE_INSTANCE(inst, ...) \
-	NET_DEVICE_DT_DEFINE_INSTANCE(DT_DRV_INST(inst), __VA_ARGS__)
+    NET_DEVICE_DT_DEFINE_INSTANCE(DT_DRV_INST(inst), __VA_ARGS__)
 
-#define Z_NET_DEVICE_OFFLOAD_INIT(node_id, dev_id, name, init_fn, pm,	\
-				  data, config, prio, api, mtu)		\
-	Z_DEVICE_STATE_DEFINE(dev_id);					\
-	Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,	\
-			config, POST_KERNEL, prio, api,			\
-			&Z_DEVICE_STATE_NAME(dev_id));			\
-	NET_IF_OFFLOAD_INIT(dev_id, 0, mtu)
+#define Z_NET_DEVICE_OFFLOAD_INIT(node_id, dev_id, name, init_fn, pm,   \
+    data, config, prio, api, mtu)                                       \
+    Z_DEVICE_STATE_DEFINE(dev_id);                                      \
+    Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, pm, data,           \
+                    config, POST_KERNEL, prio, api,                     \
+                    &Z_DEVICE_STATE_NAME(dev_id));                      \
+    NET_IF_OFFLOAD_INIT(dev_id, 0, mtu)
 
 /**
  * @brief Create a offloaded network interface and bind it to network device.
@@ -3050,11 +3008,11 @@ struct net_if_api {
  * used by the driver. Can be NULL.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_OFFLOAD_INIT(dev_id, name, init_fn, pm, data,	\
-				config,	prio, api, mtu)			\
-	Z_NET_DEVICE_OFFLOAD_INIT(DT_INVALID_NODE, dev_id, name,	\
-				  init_fn, pm, data, config, prio, api,	\
-				  mtu)
+#define NET_DEVICE_OFFLOAD_INIT(dev_id, name, init_fn, pm, data,        \
+                                config, prio, api, mtu)                 \
+    Z_NET_DEVICE_OFFLOAD_INIT(DT_INVALID_NODE, dev_id, name,            \
+                              init_fn, pm, data, config, prio, api,     \
+                              mtu)
 
 /**
  * @brief Like NET_DEVICE_OFFLOAD_INIT but taking metadata from a devicetree
@@ -3074,11 +3032,11 @@ struct net_if_api {
  * used by the driver. Can be NULL.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_DT_OFFLOAD_DEFINE(node_id, init_fn, pm, data,	\
-				     config, prio, api, mtu)		\
-	Z_NET_DEVICE_OFFLOAD_INIT(node_id, Z_DEVICE_DT_DEV_ID(node_id), \
-				  DEVICE_DT_NAME(node_id), init_fn, pm, \
-				  data, config,	prio, api, mtu)
+#define NET_DEVICE_DT_OFFLOAD_DEFINE(node_id, init_fn, pm, data,        \
+                                     config, prio, api, mtu)            \
+    Z_NET_DEVICE_OFFLOAD_INIT(node_id, Z_DEVICE_DT_DEV_ID(node_id),     \
+                              DEVICE_DT_NAME(node_id), init_fn, pm,     \
+                              data, config, prio, api, mtu)
 
 /**
  * @brief Like NET_DEVICE_DT_OFFLOAD_DEFINE for an instance of a DT_DRV_COMPAT
@@ -3090,21 +3048,21 @@ struct net_if_api {
  * @param ... other parameters as expected by NET_DEVICE_DT_OFFLOAD_DEFINE.
  */
 #define NET_DEVICE_DT_INST_OFFLOAD_DEFINE(inst, ...) \
-	NET_DEVICE_DT_OFFLOAD_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+    NET_DEVICE_DT_OFFLOAD_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
  * @brief Count the number of network interfaces.
  *
  * @param[out] _dst Pointer to location where result is written.
  */
-#define NET_IFACE_COUNT(_dst) \
-		do {							\
-			extern struct net_if _net_if_list_start[];	\
-			extern struct net_if _net_if_list_end[];	\
-			*(_dst) = ((uintptr_t)_net_if_list_end -	\
-				   (uintptr_t)_net_if_list_start) /	\
-				sizeof(struct net_if);			\
-		} while (0)
+#define NET_IFACE_COUNT(_dst)                                   \
+    do {                                                        \
+        extern struct net_if _net_if_list_start[];              \
+        extern struct net_if _net_if_list_end[];                \
+        *(_dst) = ((uintptr_t)_net_if_list_end -                \
+                   (uintptr_t)_net_if_list_start) /             \
+                    sizeof(struct net_if);                      \
+    } while (0)
 
 #ifdef __cplusplus
 }
