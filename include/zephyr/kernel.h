@@ -1461,7 +1461,9 @@ struct k_timer {
     #endif
 };
 
-#if defined(_MSC_VER)           /* #CUSTOM@NDRS */
+#if defined(_MSC_VER)           /* #CUSTOM@NDRS, MSVC seem not support .node = {}
+                                 * which is {} (Uniform Initialization)
+                                 */
 #define Z_TIMER_INITIALIZER(obj, expiry, stop)  \
     {                                           \
         .timeout = {                            \
