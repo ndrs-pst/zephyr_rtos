@@ -17,6 +17,8 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #include <string.h>
 #include <strings.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_uart.h>
+#include <zephyr/shell/shell_rtt.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/init.h>
 
@@ -523,7 +525,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 				}
 
 				if (wifi_utils_validate_chan(all_bands[band],
-							     (uint16_t)channel)) {
+							     (uint8_t)channel)) {
 					found = true;
 					break;
 				}
@@ -598,7 +600,6 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_connect_req_params cnx_params = { 0 };
 
-	context.sh = sh;
 	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params, WIFI_MODE_INFRA)) {
 		shell_help(sh);
 		return -ENOEXEC;
@@ -626,7 +627,6 @@ static int cmd_wifi_disconnect(const struct shell *sh, size_t argc,
 	int status;
 
 	context.disconnecting = true;
-	context.sh = sh;
 
 	status = net_mgmt(NET_REQUEST_WIFI_DISCONNECT, iface, NULL, 0);
 
@@ -768,8 +768,6 @@ static int cmd_wifi_scan(const struct shell *sh, size_t argc, char *argv[])
 	bool do_scan = true;
 	int opt_num;
 
-	context.sh = sh;
-
 	if (argc > 1) {
 		opt_num = wifi_scan_args_to_params(sh, argc, argv, &params, &do_scan);
 
@@ -801,8 +799,6 @@ static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_iface_status status = { 0 };
-
-	context.sh = sh;
 
 	if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &status,
 		     sizeof(struct wifi_iface_status))) {
@@ -894,8 +890,6 @@ static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_ps_params params = { 0 };
 
-	context.sh = sh;
-
 	if (argc > 2) {
 		PR_WARNING("Invalid number of arguments\n");
 		return -ENOEXEC;
@@ -979,8 +973,6 @@ static int cmd_wifi_ps_mode(const struct shell *sh, size_t argc, char *argv[])
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_ps_params params = { 0 };
 
-	context.sh = sh;
-
 	if (!strncasecmp(argv[1], "legacy", 6)) {
 		params.mode = WIFI_PS_MODE_LEGACY;
 	} else if (!strncasecmp(argv[1], "WMM", 3)) {
@@ -1010,8 +1002,6 @@ static int cmd_wifi_ps_timeout(const struct shell *sh, size_t argc, char *argv[]
 	struct wifi_ps_params params = { 0 };
 	long timeout_ms = 0;
 	int err = 0;
-
-	context.sh = sh;
 
 	timeout_ms = shell_strtol(argv[1], 10, &err);
 
@@ -1045,8 +1035,6 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 	struct wifi_twt_params params = { 0 };
 	int idx = 1;
 	long value;
-
-	context.sh = sh;
 
 	/* Sensible defaults */
 	params.operation = WIFI_TWT_SETUP;
@@ -1092,8 +1080,6 @@ static int cmd_wifi_twt_setup(const struct shell *sh, size_t argc,
 	struct wifi_twt_params params = { 0 };
 	int idx = 1;
 	long value;
-
-	context.sh = sh;
 
 	params.operation = WIFI_TWT_SETUP;
 
@@ -1177,7 +1163,6 @@ static int cmd_wifi_twt_teardown(const struct shell *sh, size_t argc,
 	struct wifi_twt_params params = { 0 };
 	long value;
 
-	context.sh = sh;
 	int idx = 1;
 
 	params.operation = WIFI_TWT_TEARDOWN;
@@ -1226,8 +1211,6 @@ static int cmd_wifi_twt_teardown_all(const struct shell *sh, size_t argc,
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_twt_params params = { 0 };
 
-	context.sh = sh;
-
 	params.operation = WIFI_TWT_TEARDOWN;
 	params.teardown.teardown_all = 1;
 
@@ -1253,7 +1236,6 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 	static struct wifi_connect_req_params cnx_params;
 	int ret;
 
-	context.sh = sh;
 	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params, WIFI_MODE_AP)) {
 		shell_help(sh);
 		return -ENOEXEC;
@@ -1432,8 +1414,6 @@ static int cmd_wifi_listen_interval(const struct shell *sh, size_t argc, char *a
 	struct wifi_ps_params params = { 0 };
 	long interval = 0;
 
-	context.sh = sh;
-
 	if (!parse_number(sh, &interval, argv[1],
 			  WIFI_LISTEN_INTERVAL_MIN,
 			  WIFI_LISTEN_INTERVAL_MAX)) {
@@ -1465,8 +1445,6 @@ static int cmd_wifi_ps_wakeup_mode(const struct shell *sh, size_t argc, char *ar
 {
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_ps_params params = { 0 };
-
-	context.sh = sh;
 
 	if (!strncasecmp(argv[1], "dtim", 4)) {
 		params.wakeup_mode = WIFI_PS_WAKEUP_MODE_DTIM;
@@ -1967,20 +1945,17 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		      NULL,
 		      "<val> - PS inactivity timer(in ms).\n",
 		      cmd_wifi_ps_timeout,
-		      2,
-		      0),
+		      2, 0),
 	SHELL_CMD_ARG(ps_listen_interval,
 		      NULL,
 		      "<val> - Listen interval in the range of <0-65535>.\n",
 		      cmd_wifi_listen_interval,
-		      2,
-		      0),
+		      2, 0),
 	SHELL_CMD_ARG(ps_wakeup_mode,
 		     NULL,
 		     "<wakeup_mode: DTIM/Listen Interval>.\n",
 		     cmd_wifi_ps_wakeup_mode,
-		     2,
-		     0),
+		     2, 0),
 	SHELL_SUBCMD_SET_END
 );
 
@@ -1989,7 +1964,13 @@ SHELL_CMD_REGISTER(wifi, &wifi_commands, "Wi-Fi commands", NULL);
 static int wifi_shell_init(void)
 {
 
-	context.sh = NULL;
+#if IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL)
+	context.sh = shell_backend_uart_get_ptr();
+#elif IS_ENABLED(CONFIG_LOG_BACKEND_RTT)
+	context.sh = shell_backend_rtt_get_ptr();
+#else
+	BUILD_ASSERT(0, "Unsupported shell backend");
+#endif
 	context.all = 0U;
 	context.scan_result = 0U;
 
