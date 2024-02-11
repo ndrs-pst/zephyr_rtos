@@ -44,14 +44,15 @@ static void gpio_stm32_isr(int line, void* arg) {
  * @brief Common gpio flags to custom flags
  */
 static int gpio_stm32_flags_to_conf(gpio_flags_t flags, int* pincfg) {
+    int tmp;
 
     if ((flags & GPIO_OUTPUT) != 0) {
         /* Output only or Output/Input */
-        *pincfg = STM32_PINCFG_MODE_OUTPUT;
+        tmp = STM32_PINCFG_MODE_OUTPUT;
 
         if ((flags & GPIO_SINGLE_ENDED) != 0) {
             if (flags & GPIO_LINE_OPEN_DRAIN) {
-                *pincfg |= STM32_PINCFG_OPEN_DRAIN;
+                tmp |= STM32_PINCFG_OPEN_DRAIN;
             }
             else {
                 /* Output can't be open source */
@@ -59,34 +60,36 @@ static int gpio_stm32_flags_to_conf(gpio_flags_t flags, int* pincfg) {
             }
         }
         else {
-            *pincfg |= STM32_PINCFG_PUSH_PULL;
+            tmp |= STM32_PINCFG_PUSH_PULL;
         }
 
         if ((flags & GPIO_PULL_UP) != 0) {
-            *pincfg |= STM32_PINCFG_PULL_UP;
+            tmp |= STM32_PINCFG_PULL_UP;
         }
         else if ((flags & GPIO_PULL_DOWN) != 0) {
-            *pincfg |= STM32_PINCFG_PULL_DOWN;
+            tmp |= STM32_PINCFG_PULL_DOWN;
         }
     }
     else if ((flags & GPIO_INPUT) != 0) {
         /* Input */
-        *pincfg = STM32_PINCFG_MODE_INPUT;
+        tmp = STM32_PINCFG_MODE_INPUT;
 
         if ((flags & GPIO_PULL_UP) != 0) {
-            *pincfg |= STM32_PINCFG_PULL_UP;
+            tmp |= STM32_PINCFG_PULL_UP;
         }
         else if ((flags & GPIO_PULL_DOWN) != 0) {
-            *pincfg |= STM32_PINCFG_PULL_DOWN;
+            tmp |= STM32_PINCFG_PULL_DOWN;
         }
         else {
-            *pincfg |= STM32_PINCFG_FLOATING;
+            tmp |= STM32_PINCFG_FLOATING;
         }
     }
     else {
         /* Deactivated: Analog */
-        *pincfg = STM32_PINCFG_MODE_ANALOG;
+        tmp = STM32_PINCFG_MODE_ANALOG;
     }
+
+    *pincfg = tmp;
 
     return (0);
 }
@@ -164,7 +167,7 @@ static inline uint32_t stm32_pinval_get(int pin) {
 static void gpio_stm32_configure_raw(const struct device* dev, int pin,
                                      int conf, int func) {
     const struct gpio_stm32_config* cfg  = dev->config;
-    GPIO_TypeDef* gpio = (GPIO_TypeDef*)cfg->base;
+    GPIO_TypeDef* gpio = cfg->base;
 
     int pin_ll = stm32_pinval_get(pin);
 
@@ -275,7 +278,7 @@ static void gpio_stm32_configure_raw(const struct device* dev, int pin,
  */
 static int gpio_stm32_clock_request(const struct device* dev, bool on) {
     const struct gpio_stm32_config* cfg = dev->config;
-    int                             ret = 0;
+    int ret;
 
     __ASSERT_NO_MSG(dev != NULL);
 
@@ -289,11 +292,7 @@ static int gpio_stm32_clock_request(const struct device* dev, bool on) {
         ret = clock_control_off(clk, (clock_control_subsys_t)&cfg->pclken);
     }
 
-    if (ret != 0) {
-        return ret;
-    }
-
-    return ret;
+    return (ret);
 }
 
 static inline uint32_t gpio_stm32_pin_to_exti_line(int pin) {
@@ -394,7 +393,7 @@ static int gpio_stm32_enable_int(int port, int pin) {
 
 static int gpio_stm32_port_get_raw(const struct device* dev, uint32_t* value) {
     const struct gpio_stm32_config* cfg  = dev->config;
-    GPIO_TypeDef* gpio = (GPIO_TypeDef*)cfg->base;
+    GPIO_TypeDef* gpio = cfg->base;
 
     *value = LL_GPIO_ReadInputPort(gpio);
 
@@ -405,7 +404,7 @@ static int gpio_stm32_port_set_masked_raw(const struct device* dev,
                                           gpio_port_pins_t mask,
                                           gpio_port_value_t value) {
     const struct gpio_stm32_config* cfg  = dev->config;
-    GPIO_TypeDef* gpio = (GPIO_TypeDef*)cfg->base;
+    GPIO_TypeDef* gpio = cfg->base;
     uint32_t port_value;
 
     z_stm32_hsem_lock(CFG_HW_GPIO_SEMID, HSEM_LOCK_DEFAULT_RETRY);
@@ -421,7 +420,7 @@ static int gpio_stm32_port_set_masked_raw(const struct device* dev,
 static int gpio_stm32_port_set_bits_raw(const struct device* dev,
                                         gpio_port_pins_t pins) {
     const struct gpio_stm32_config* cfg  = dev->config;
-    GPIO_TypeDef* gpio = (GPIO_TypeDef*)cfg->base;
+    GPIO_TypeDef* gpio = cfg->base;
 
     /*
      * On F1 series, using LL API requires a costly pin mask translation.
@@ -435,7 +434,7 @@ static int gpio_stm32_port_set_bits_raw(const struct device* dev,
 static int gpio_stm32_port_clear_bits_raw(const struct device* dev,
                                           gpio_port_pins_t pins) {
     const struct gpio_stm32_config* cfg  = dev->config;
-    GPIO_TypeDef* gpio = (GPIO_TypeDef*)cfg->base;
+    GPIO_TypeDef* gpio = cfg->base;
 
     #ifdef CONFIG_SOC_SERIES_STM32F1X
     /*
@@ -454,7 +453,7 @@ static int gpio_stm32_port_clear_bits_raw(const struct device* dev,
 static int gpio_stm32_port_toggle_bits(const struct device* dev,
                                        gpio_port_pins_t pins) {
     const struct gpio_stm32_config* cfg  = dev->config;
-    GPIO_TypeDef* gpio = (GPIO_TypeDef*)cfg->base;
+    GPIO_TypeDef* gpio = cfg->base;
 
     /*
      * On F1 series, using LL API requires a costly pin mask translation.
@@ -550,7 +549,7 @@ static int gpio_stm32_config(const struct device* dev,
 static int gpio_stm32_get_config(const struct device* dev,
                                  gpio_pin_t pin, gpio_flags_t* flags) {
     const struct gpio_stm32_config* cfg  = dev->config;
-    GPIO_TypeDef* gpio = (GPIO_TypeDef*)cfg->base;
+    GPIO_TypeDef* gpio = cfg->base;
     struct gpio_stm32_pin pin_config;
     int pin_ll;
     int err;
@@ -578,8 +577,8 @@ static int gpio_stm32_pin_interrupt_configure(const struct device* dev,
                                               enum gpio_int_trig trig) {
     const struct gpio_stm32_config* cfg  = dev->config;
     struct gpio_stm32_data* data = dev->data;
-    int edge = 0;
-    int err  = 0;
+    int edge;
+    int err = 0;
 
     #ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
     if (mode == GPIO_INT_MODE_DISABLE_ONLY) {
@@ -627,13 +626,17 @@ static int gpio_stm32_pin_interrupt_configure(const struct device* dev,
         case GPIO_INT_TRIG_BOTH :
             edge = STM32_EXTI_TRIG_BOTH;
             break;
+
+        default :
+            edge = 0;
+            break;
     }
 
     stm32_exti_trigger(pin, edge);
 
     stm32_exti_enable(pin);
 
-exit:
+exit :
     return (err);
 }
 
@@ -724,7 +727,7 @@ static int gpio_stm32_init(const struct device* dev) {
         .common = {                                             \
             .port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(16U),   \
         },                                                      \
-        .base   = (uint32_t*)__base_addr,                       \
+        .base   = (void*)__base_addr,                           \
         .port   = __port,                                       \
         .pclken = {                                             \
             .bus = __bus,                                       \

@@ -224,9 +224,9 @@ struct gpio_stm32_config {
     /* gpio_driver_config needs to be first */
     struct gpio_driver_config common;
     /* port base address */
-    uint32_t* base;
+    void* base;
     /* IO port */
-    int                 port;
+    int port;
     struct stm32_pclken pclken;
 };
 
