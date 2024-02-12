@@ -127,7 +127,8 @@ static inline void add_event(sys_dlist_t* events, struct k_poll_event* event,
         return;
     }
 
-    SYS_DLIST_FOR_EACH_CONTAINER(events, pending, _node) {
+    SYS_DLIST_FOR_EACH_CONTAINER_WITH_TYPE(events, struct k_poll_event,
+                                           pending, _node) {
         if (z_sched_prio_cmp(poller_thread(poller),
                              poller_thread(pending->poller)) > 0) {
             sys_dlist_insert(&pending->_node, &event->_node);
@@ -665,7 +666,7 @@ void k_work_poll_init(struct k_work_poll *work,
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work_poll, init, work);
 
-	*work = (struct k_work_poll) {};
+	*work = (struct k_work_poll) {0};
 	k_work_init(&work->work, triggered_work_handler);
 	work->real_handler = handler;
 	z_init_timeout(&work->timeout);

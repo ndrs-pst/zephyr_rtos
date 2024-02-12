@@ -2395,6 +2395,13 @@ struct k_fifo {
  *
  * @param fifo Address of the FIFO queue.
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+static inline void k_fifo_init(struct k_fifo* fifo) {
+    k_queue_init(&fifo->_queue);
+    K_OBJ_CORE_INIT(K_OBJ_CORE(fifo), _obj_type_fifo);
+    K_OBJ_CORE_LINK(K_OBJ_CORE(fifo));
+}
+#else
 #define k_fifo_init(fifo)                                       \
     ({                                                          \
         SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_fifo, init, fifo);    \
@@ -2403,6 +2410,7 @@ struct k_fifo {
         K_OBJ_CORE_LINK(K_OBJ_CORE(fifo));                      \
         SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_fifo, init, fifo);     \
     })
+#endif
 
 /**
  * @brief Cancel waiting on a FIFO queue.
@@ -2415,12 +2423,18 @@ struct k_fifo {
  *
  * @param fifo Address of the FIFO queue.
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+static inline void k_fifo_cancel_wait(struct k_fifo* fifo) {
+    k_queue_cancel_wait(&fifo->_queue);
+}
+#else
 #define k_fifo_cancel_wait(fifo)                                \
     ({                                                          \
         SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_fifo, cancel_wait, fifo); \
         k_queue_cancel_wait(&(fifo)->_queue);                   \
         SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_fifo, cancel_wait, fifo);  \
     })
+#endif
 
 /**
  * @brief Add an element to a FIFO queue.
@@ -2434,12 +2448,18 @@ struct k_fifo {
  * @param fifo Address of the FIFO.
  * @param data Address of the data item.
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+static inline void k_fifo_put(struct k_fifo* fifo, void* data) {
+    k_queue_append(&fifo->_queue, data);
+}
+#else
 #define k_fifo_put(fifo, data)                                  \
     ({                                                          \
         SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_fifo, put, fifo, data);   \
         k_queue_append(&(fifo)->_queue, data);                  \
         SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_fifo, put, fifo, data);    \
     })
+#endif
 
 /**
  * @brief Add an element to a FIFO queue.
@@ -2523,6 +2543,13 @@ struct k_fifo {
  * @return Address of the data item if successful; NULL if returned
  * without waiting, or waiting period timed out.
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+static inline void* k_fifo_get(struct k_fifo* fifo, k_timeout_t timeout) {
+    void* fg_ret = k_queue_get(&fifo->_queue, timeout);
+
+    return (fg_ret);
+}
+#else
 #define k_fifo_get(fifo, timeout)                               \
     ({                                                          \
         SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_fifo, get, fifo, timeout);    \
@@ -2530,6 +2557,7 @@ struct k_fifo {
         SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_fifo, get, fifo, timeout, fg_ret); \
         fg_ret;                                                 \
     })
+#endif
 
 /**
  * @brief Query a FIFO queue to see if it has data available.
@@ -2560,6 +2588,13 @@ struct k_fifo {
  *
  * @return Head element, or NULL if the FIFO queue is empty.
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+static inline void* k_fifo_peek_head(struct k_fifo* fifo) {
+    void* fph_ret = k_queue_peek_head(&fifo->_queue); 
+
+    return (fph_ret);
+}
+#else
 #define k_fifo_peek_head(fifo)                                  \
     ({                                                          \
         SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_fifo, peek_head, fifo);   \
@@ -2567,6 +2602,7 @@ struct k_fifo {
         SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_fifo, peek_head, fifo, fph_ret);   \
         fph_ret;                                                \
     })
+#endif
 
 /**
  * @brief Peek element at the tail of FIFO queue.
@@ -2579,6 +2615,13 @@ struct k_fifo {
  *
  * @return Tail element, or NULL if a FIFO queue is empty.
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+static inline void* k_fifo_peek_tail(struct k_fifo* fifo) {
+    void* fpt_ret = k_queue_peek_tail(&fifo->_queue);
+
+    return (fpt_ret);
+}
+#else
 #define k_fifo_peek_tail(fifo)                                  \
     ({                                                          \
         SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_fifo, peek_tail, fifo);   \
@@ -2586,6 +2629,7 @@ struct k_fifo {
         SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_fifo, peek_tail, fifo, fpt_ret);   \
         fpt_ret;                                                \
     })
+#endif
 
 /**
  * @brief Statically define and initialize a FIFO queue.

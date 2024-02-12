@@ -51,8 +51,10 @@
 
 #if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
 #include <immintrin.h>
+#include <stdalign.h>
 #define __attribute__(...)
 #define __alignof__             alignof
+#define __builtin_ctz           _tzcnt_u32
 #define __builtin_clz           _lzcnt_u32
 static inline int __builtin_clzll(unsigned long long int x) {
     if (x == 0) {

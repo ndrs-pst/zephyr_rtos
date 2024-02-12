@@ -54,7 +54,12 @@
 #else
 #define tcp_pkt_clone(_pkt) net_pkt_clone(_pkt, TCP_PKT_ALLOC_TIMEOUT)
 #define tcp_pkt_unref(_pkt) net_pkt_unref(_pkt)
+
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define tp_pkt_alloc(...)   tp_pkt_alloc(__VA_ARGS__)
+#else
 #define tp_pkt_alloc(args...)
+#endif
 #endif
 
 #define tcp_pkt_ref(_pkt) net_pkt_ref(_pkt)
@@ -351,8 +356,13 @@ struct tcp { /* TCP connection */
 	result;								\
 })
 
-#define FL(_fl, _op, _mask, _args...)					\
-	_flags(_fl, _op, _mask, sizeof(#_args) > 1 ? _args : true)
+#if defined(_MSC_VER) /* #CUSTOM@NDRs */
+#define FL(_fl, _op, _mask, ...)        \
+    _flags(_fl, _op, _mask, sizeof(#__VA_ARGS__) > 1 ? __VA_ARGS__ : true)
+#else
+#define FL(_fl, _op, _mask, _args...)   \
+    _flags(_fl, _op, _mask, sizeof(#_args) > 1 ? _args : true)
+#endif
 
 typedef void (*net_tcp_cb_t)(struct tcp *conn, void *user_data);
 
