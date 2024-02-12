@@ -89,6 +89,7 @@ LOG_MODULE_REGISTER(adc_stm32);
 
 /* reference voltage for the ADC */
 #define STM32_ADC_VREF_MV DT_INST_PROP(0, vref_mv)
+#define DEVICE_STM32_GET_ADC(dev)   (((const struct adc_stm32_cfg*)(dev)->config)->base)
 
 #if ANY_ADC_SEQUENCER_TYPE_IS(FULLY_CONFIGURABLE)
 #define RANK(n) LL_ADC_REG_RANK_##n
@@ -199,7 +200,7 @@ struct adc_stm32_data {
 };
 
 struct adc_stm32_cfg {
-    ADC_TypeDef* base;
+    void* base;
     void (*irq_cfg_func)(void);
     const struct stm32_pclken* pclken;
     size_t pclk_len;
@@ -248,7 +249,7 @@ static void adc_stm32_enable_dma_support(ADC_TypeDef* adc) {
 
 static int adc_stm32_dma_start(const struct device* dev, void* buffer, size_t channel_count) {
     const struct adc_stm32_cfg* config = dev->config;
-    ADC_TypeDef* adc = (ADC_TypeDef*)config->base;
+    ADC_TypeDef* adc = config->base;
     struct adc_stm32_data* data = dev->data;
     struct dma_block_config* blk_cfg;
     int ret;
@@ -399,8 +400,7 @@ static int adc_stm32_enable(ADC_TypeDef* adc) {
 }
 
 static void adc_stm32_start_conversion(const struct device* dev) {
-    const struct adc_stm32_cfg* config = dev->config;
-    ADC_TypeDef* adc = (ADC_TypeDef*)config->base;
+    ADC_TypeDef* adc = DEVICE_STM32_GET_ADC(dev);
 
     LOG_DBG("Starting conversion");
 
@@ -503,8 +503,7 @@ static void adc_stm32_calibration_delay(const struct device* dev) {
 }
 
 static void adc_stm32_calibration_start(const struct device* dev) {
-    const struct adc_stm32_cfg* config = (const struct adc_stm32_cfg*)dev->config;
-    ADC_TypeDef* adc = config->base;
+    ADC_TypeDef* adc = DEVICE_STM32_GET_ADC(dev);
 
     #if defined(STM32F3X_ADC_V1_1) || \
         defined(CONFIG_SOC_SERIES_STM32L4X) || \
@@ -535,8 +534,7 @@ static void adc_stm32_calibration_start(const struct device* dev) {
 }
 
 static int adc_stm32_calibrate(const struct device* dev) {
-    const struct adc_stm32_cfg* config = (const struct adc_stm32_cfg*)dev->config;
-    ADC_TypeDef* adc = config->base;
+    ADC_TypeDef* adc = DEVICE_STM32_GET_ADC(dev);
     int err;
 
     #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
@@ -730,7 +728,7 @@ static void dma_callback(const struct device* dev, void* user_data,
     /* user_data directly holds the adc device */
     struct adc_stm32_data* data = user_data;
     const struct adc_stm32_cfg* config = data->dev->config;
-    ADC_TypeDef* adc = (ADC_TypeDef*)config->base;
+    ADC_TypeDef* adc = config->base;
 
     LOG_DBG("dma callback");
 
@@ -908,9 +906,8 @@ static int set_sequencer(const struct device* dev) {
 
 static int start_read(const struct device* dev,
                       const struct adc_sequence* sequence) {
-    const struct adc_stm32_cfg* config = dev->config;
+    ADC_TypeDef* adc = DEVICE_STM32_GET_ADC(dev);
     struct adc_stm32_data* data = dev->data;
-    ADC_TypeDef* adc = config->base;
     int err;
 
     data->buffer        = sequence->buffer;
@@ -1033,9 +1030,8 @@ static void adc_context_update_buffer_pointer(struct adc_context* ctx, bool repe
 
 #ifndef CONFIG_ADC_STM32_DMA
 static void adc_stm32_isr(const struct device* dev) {
+    ADC_TypeDef* adc = DEVICE_STM32_GET_ADC(dev);
     struct adc_stm32_data* data = dev->data;
-    const struct adc_stm32_cfg* config = (const struct adc_stm32_cfg*)dev->config;
-    ADC_TypeDef* adc = config->base;
 
     #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
     if (LL_ADC_IsActiveFlag_EOS(adc) == 1) {
@@ -1064,8 +1060,7 @@ static void adc_stm32_isr(const struct device* dev) {
 
 static void adc_context_on_complete(struct adc_context* ctx, int status) {
     struct adc_stm32_data* data = CONTAINER_OF(ctx, struct adc_stm32_data, ctx);
-    const struct adc_stm32_cfg* config = data->dev->config;
-    ADC_TypeDef* adc = config->base;
+    ADC_TypeDef* adc = DEVICE_STM32_GET_ADC(data->dev);
 
     ARG_UNUSED(status);
 
@@ -1119,7 +1114,7 @@ static int adc_stm32_read_async(const struct device* dev,
 #endif
 
 static int adc_stm32_sampling_time_check(const struct device* dev, uint16_t acq_time) {
-    const struct adc_stm32_cfg* config = (const struct adc_stm32_cfg*)dev->config;
+    const struct adc_stm32_cfg* config = dev->config;
 
     if (acq_time == ADC_ACQ_TIME_DEFAULT) {
         return (0);
@@ -1141,7 +1136,7 @@ static int adc_stm32_sampling_time_check(const struct device* dev, uint16_t acq_
 }
 
 static int adc_stm32_sampling_time_setup(const struct device* dev, uint8_t id, uint16_t acq_time) {
-    const struct adc_stm32_cfg* config = (const struct adc_stm32_cfg*)dev->config;
+    const struct adc_stm32_cfg* config = dev->config;
     ADC_TypeDef* adc = config->base;
     struct adc_stm32_data* data = dev->data;
 
@@ -1661,7 +1656,7 @@ static const struct stm32_pclken pclken_##index[] = \
     STM32_DT_INST_CLOCKS(index);                    \
                                                     \
 static const struct adc_stm32_cfg adc_stm32_cfg_##index = {     \
-    .base = (ADC_TypeDef *)DT_INST_REG_ADDR(index),             \
+    .base = (void*)DT_INST_REG_ADDR(index),             \
     ADC_STM32_IRQ_FUNC(index)                       \
     .pclken = pclken_##index,                       \
     .pclk_len = DT_INST_NUM_CLOCKS(index),          \
