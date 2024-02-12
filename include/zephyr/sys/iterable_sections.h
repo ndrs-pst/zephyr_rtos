@@ -102,15 +102,24 @@ extern "C" {
  * list of struct objects to iterate over. This is normally done using
  * ITERABLE_SECTION_ROM() or ITERABLE_SECTION_RAM() in the linker script.
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
 #define TYPE_SECTION_FOREACH(type, secname, iterator)		\
 	TYPE_SECTION_START_EXTERN(type, secname);		\
-	TYPE_SECTION_END_EXTERN(type, secname);		\
+	TYPE_SECTION_END_EXTERN(type, secname);			\
+	for (type * iterator = TYPE_SECTION_START(secname);	\
+	     iterator < TYPE_SECTION_END(secname);		\
+	     iterator++)
+#else
+#define TYPE_SECTION_FOREACH(type, secname, iterator)		\
+	TYPE_SECTION_START_EXTERN(type, secname);		\
+	TYPE_SECTION_END_EXTERN(type, secname);			\
 	for (type * iterator = TYPE_SECTION_START(secname); ({	\
 		__ASSERT(iterator <= TYPE_SECTION_END(secname),\
 			      "unexpected list end location");	\
 		     iterator < TYPE_SECTION_END(secname);	\
 	     });						\
 	     iterator++)
+#endif
 
 /**
  * @brief Get element from section for a generic type.

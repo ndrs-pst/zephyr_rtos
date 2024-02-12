@@ -54,6 +54,26 @@
 #define __attribute__(...)
 #define __alignof__             alignof
 #define __builtin_clz           _lzcnt_u32
+static inline int __builtin_clzll(unsigned long long int x) {
+    if (x == 0) {
+        // If x is 0, return 64.
+        return 64;
+    }
+
+    // Split the 64-bit integer into two 32-bit integers.
+    unsigned int upper = x >> 32;
+    unsigned int lower = x & 0xFFFFFFFF;
+
+    if (upper != 0) {
+        // If the upper 32 bits are not all zero, apply __builtin_clz to them.
+        return __builtin_clz(upper);
+    }
+    else {
+        // Otherwise, apply __builtin_clz to the lower 32 bits and add 32 to the result.
+        return __builtin_clz(lower) + 32;
+    }
+}
+
 #endif
 
 #else

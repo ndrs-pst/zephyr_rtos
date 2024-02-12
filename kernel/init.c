@@ -503,7 +503,7 @@ void __weak z_early_rand_get(uint8_t* buf, size_t length) {
 
     if ((entropy != NULL) && device_is_ready(entropy)) {
         /* Try to see if driver provides an ISR-specific API */
-        rc = entropy_get_entropy_isr(entropy, buf, length, ENTROPY_BUSYWAIT);
+        rc = entropy_get_entropy_isr(entropy, buf, (uint16_t)length, ENTROPY_BUSYWAIT);
         if (rc > 0) {
             length -= rc;
             buf += rc;

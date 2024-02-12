@@ -611,6 +611,7 @@ char* utf8_lcpy(char* dst, char const* src, size_t n);
 #define __z_log2d(x) (32 - __builtin_clz(x) - 1)
 #define __z_log2q(x) (64 - __builtin_clzll(x) - 1)
 #define __z_log2(x)  (sizeof(__typeof__(x)) > 4 ? __z_log2q(x) : __z_log2d(x))
+#define __z_log2_with_type(x, type)  (sizeof(type) > 4 ? __z_log2q(x) : __z_log2d(x))
 
 /**
  * @brief Compute log2(x)
@@ -623,6 +624,7 @@ char* utf8_lcpy(char* dst, char const* src, size_t n);
  * @return log2(x) when 1 <= x <= max(x), -1 when x < 1
  */
 #define LOG2(x) ((x) < 1 ? -1 : __z_log2(x))
+#define LOG2_WITH_TYPE(x, type) ((x) < 1 ? -1 : __z_log2_with_type(x, type))
 
 /**
  * @brief Compute ceil(log2(x))

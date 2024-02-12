@@ -187,6 +187,9 @@ typedef struct _slist sys_slist_t;
 #define SYS_SLIST_FOR_EACH_CONTAINER_SAFE(__sl, __cn, __cns, __n)	\
 	Z_GENLIST_FOR_EACH_CONTAINER_SAFE(slist, __sl, __cn, __cns, __n)
 
+/* #CUSTOM@NDRS */
+#define SYS_SLIST_FOR_EACH_CONTAINER_SAFE_WITH_TYPE(__sl, __type, __cn, __cns, __n)	\
+	Z_GENLIST_FOR_EACH_CONTAINER_SAFE_WITH_TYPE(slist, __sl, __type, __cn, __cns, __n)
 
 /*
  * Required function definitions for the list_gen.h interface

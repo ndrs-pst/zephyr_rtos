@@ -76,6 +76,13 @@
 	     __cn != NULL; __cn = __cns,				\
 	     __cns = Z_GENLIST_PEEK_NEXT_CONTAINER(__lname, __cn, __n))
 
+/* #CUSTOM@NDRS */
+#define Z_GENLIST_FOR_EACH_CONTAINER_SAFE_WITH_TYPE(__lname, __l, __type, __cn, __cns, __n)     \
+	for (__cn = Z_GENLIST_PEEK_HEAD_CONTAINER_WITH_TYPE(__lname, __l, __type, __cn, __n),   \
+	     __cns = Z_GENLIST_PEEK_NEXT_CONTAINER_WITH_TYPE(__lname, __type, __cn, __n); \
+	     __cn != NULL; __cn = __cns,				\
+	     __cns = Z_GENLIST_PEEK_NEXT_CONTAINER_WITH_TYPE(__lname, __type, __cn, __n))
+
 #define Z_GENLIST_IS_EMPTY(__lname)					\
 	static inline bool						\
 	sys_ ## __lname ## _is_empty(sys_ ## __lname ## _t *list)	\
