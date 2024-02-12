@@ -191,7 +191,7 @@ static int mcp251xfd_write(const struct device* dev, uint16_t addr, int len) {
 
 static int mcp251xfd_fifo_write(const struct device* dev, int mailbox_idx,
                                 const struct can_frame* msg) {
-    uint32_t* regs;
+    uint32_t const* regs;
     struct mcp251xfd_txobj* txobj;
     uint8_t* reg_byte;
     uint16_t address;
@@ -210,7 +210,7 @@ static int mcp251xfd_fifo_write(const struct device* dev, int mailbox_idx,
         return (-ENOMEM);
     }
 
-    address = MCP251XFD_RAM_START_ADDR + regs[1];
+    address = (uint16_t)(MCP251XFD_RAM_START_ADDR + regs[1]);
 
     txobj = mcp251xfd_get_spi_buf_ptr(dev);
     mcp251xfd_canframe_to_txobj(msg, mailbox_idx, txobj);
@@ -226,8 +226,8 @@ static int mcp251xfd_fifo_write(const struct device* dev, int mailbox_idx,
     }
 
     reg_byte  = mcp251xfd_get_spi_buf_ptr(dev);
-    *reg_byte = MCP251XFD_UINT32_FLAG_TO_BYTE_MASK(MCP251XFD_REG_TXQCON_UINC |
-                                                   MCP251XFD_REG_TXQCON_TXREQ);
+    *reg_byte = (uint8_t)MCP251XFD_UINT32_FLAG_TO_BYTE_MASK(MCP251XFD_REG_TXQCON_UINC |
+                                                            MCP251XFD_REG_TXQCON_TXREQ);
 
     return mcp251xfd_write(dev, MCP251XFD_REG_TXQCON + 1, 1);
 }
@@ -272,7 +272,7 @@ static void mcp251xfd_rxobj_to_canframe(struct mcp251xfd_rxobj* src, struct can_
 }
 
 static int mcp251xfd_get_mode_internal(const struct device* dev, uint8_t* mode) {
-    uint8_t* reg_byte;
+    uint8_t const* reg_byte;
     uint32_t mask = MCP251XFD_UINT32_FLAG_TO_BYTE_MASK(MCP251XFD_REG_CON_OPMOD_MASK);
 
     reg_byte = mcp251xfd_read_crc(dev, MCP251XFD_REG_CON_B2, 1);
@@ -280,7 +280,7 @@ static int mcp251xfd_get_mode_internal(const struct device* dev, uint8_t* mode) 
         return (-EINVAL);
     }
 
-    *mode = FIELD_GET(mask, *reg_byte);
+    *mode = (uint8_t)FIELD_GET(mask, *reg_byte);
 
     return (0);
 }
@@ -717,8 +717,8 @@ static int mcp251xfd_get_state(const struct device* dev, enum can_state* state,
     tmp = sys_le32_to_cpu(*reg);
 
     if (err_cnt != NULL) {
-        err_cnt->tx_err_cnt = FIELD_GET(MCP251XFD_REG_TREC_TEC_MASK, tmp);
-        err_cnt->rx_err_cnt = FIELD_GET(MCP251XFD_REG_TREC_REC_MASK, tmp);
+        err_cnt->tx_err_cnt = (uint8_t)FIELD_GET(MCP251XFD_REG_TREC_TEC_MASK, tmp);
+        err_cnt->rx_err_cnt = (uint8_t)FIELD_GET(MCP251XFD_REG_TREC_REC_MASK, tmp);
     }
 
     if (state == NULL) {
@@ -784,7 +784,7 @@ static int mcp251xfd_recover(const struct device* dev, k_timeout_t timeout) {
 static int mcp251xfd_handle_fifo_read(const struct device* dev, const struct mcp251xfd_fifo* fifo,
                                       uint8_t fifo_type) {
     struct mcp251xfd_data* dev_data = dev->data;
-    uint32_t* regs;
+    uint32_t const* regs;
     uint32_t  fifosta;
     uint32_t  ua;
     uint8_t*  reg_byte;
@@ -822,7 +822,7 @@ static int mcp251xfd_handle_fifo_read(const struct device* dev, const struct mcp
          * fifo_head_index points where the next message will be written.
          * It points to one past the end of the fifo.
          */
-        fifo_head_index = FIELD_GET(MCP251XFD_REG_FIFOSTA_FIFOCI_MASK, fifosta);
+        fifo_head_index = (uint8_t)FIELD_GET(MCP251XFD_REG_FIFOSTA_FIFOCI_MASK, fifosta);
         if (fifo_head_index == 0) {
             fifo_head_index = fifo->capacity - 1;
         }
@@ -841,7 +841,7 @@ static int mcp251xfd_handle_fifo_read(const struct device* dev, const struct mcp
     }
     else if (fifo_type == MCP251XFD_FIFO_TYPE_TEF) {
         /* FIFOCI doesn't exist for TEF queues, so fetch one message at a time */
-        fifo_head_index = fifo_tail_index;
+        fifo_head_index = (uint8_t)fifo_tail_index;
         fetch_total     = 1;
     }
     else {
@@ -860,8 +860,9 @@ static int mcp251xfd_handle_fifo_read(const struct device* dev, const struct mcp
             len = fifo_head_index - fifo_tail_index + 1;
         }
 
-        memory_addr = MCP251XFD_RAM_START_ADDR + fifo->ram_start_addr +
-                      (fifo_tail_index * fifo->item_size);
+        memory_addr = (uint16_t)(MCP251XFD_RAM_START_ADDR +
+                                 fifo->ram_start_addr     +
+                                 (fifo_tail_index * fifo->item_size));
 
         data = mcp251xfd_read_reg(dev, memory_addr, len * fifo->item_size);
         if (!data) {
@@ -880,7 +881,7 @@ static int mcp251xfd_handle_fifo_read(const struct device* dev, const struct mcp
     }
 
     reg_byte  = mcp251xfd_get_spi_buf_ptr(dev);
-    *reg_byte = MCP251XFD_UINT32_FLAG_TO_BYTE_MASK(MCP251XFD_REG_FIFOCON_UINC);
+    *reg_byte = (uint8_t)MCP251XFD_UINT32_FLAG_TO_BYTE_MASK(MCP251XFD_REG_FIFOCON_UINC);
 
     for (int i = 0; i < ui_inc; i++) {
         ret = mcp251xfd_write(dev, fifo->reg_fifocon_addr + 1, 1);
@@ -1231,7 +1232,7 @@ static int mcp251xfd_stop(const struct device* dev) {
 
     /* abort all transmissions */
     reg_byte  = mcp251xfd_get_spi_buf_ptr(dev);
-    *reg_byte = MCP251XFD_UINT32_FLAG_TO_BYTE_MASK(MCP251XFD_REG_CON_ABAT);
+    *reg_byte = (uint8_t)MCP251XFD_UINT32_FLAG_TO_BYTE_MASK(MCP251XFD_REG_CON_ABAT);
 
     ret = mcp251xfd_write(dev, MCP251XFD_REG_CON_B3, 1);
     if (ret < 0) {
@@ -1293,12 +1294,12 @@ static void mcp251xfd_rx_fifo_handler(const struct device* dev, void* data) {
 }
 
 static void mcp251xfd_tef_fifo_handler(const struct device* dev, void* data) {
-    struct mcp251xfd_data*   dev_data = dev->data;
-    struct mcp251xfd_tefobj* tefobj = data;
+    struct mcp251xfd_data* dev_data = dev->data;
+    struct mcp251xfd_tefobj const* tefobj = data;
     can_tx_callback_t callback;
     uint8_t mailbox_idx;
 
-    mailbox_idx = FIELD_GET(MCP251XFD_OBJ_FLAGS_SEQ_MASK, tefobj->flags);
+    mailbox_idx = (uint8_t)FIELD_GET(MCP251XFD_OBJ_FLAGS_SEQ_MASK, tefobj->flags);
     if (mailbox_idx >= MCP251XFD_TX_QUEUE_ITEMS) {
         mcp251xfd_reset_tx_fifos(dev, -EIO);
         LOG_ERR("Invalid mailbox index");
@@ -1629,7 +1630,7 @@ static int mcp251xfd_init(const struct device* dev) {
 
     *reg = sys_le32_to_cpu(*reg);
 
-    opmod = FIELD_GET(MCP251XFD_REG_CON_OPMOD_MASK, *reg);
+    opmod = (uint8_t)FIELD_GET(MCP251XFD_REG_CON_OPMOD_MASK, *reg);
 
     if (opmod != MCP251XFD_REG_CON_MODE_CONFIG) {
         LOG_ERR("Device did not reset into configuration mode [%d]", opmod);

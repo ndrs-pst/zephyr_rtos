@@ -14,8 +14,14 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
 
+/* This macro will convert a flag to a byte mask in the step of byte unit (not nibble) */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define MCP251XFD_UINT32_FLAG_TO_BYTE_MASK(flag_u32)            \
+    ((flag_u32) >> ROUND_DOWN(LOG2_WITH_TYPE((flag_u32), uint32_t), 8))
+#else
 #define MCP251XFD_UINT32_FLAG_TO_BYTE_MASK(flag_u32)            \
     ((flag_u32) >> ROUND_DOWN(LOG2((flag_u32)), 8))
+#endif
 
 #define MCP251XFD_RAM_START_ADDR 0x400
 #define MCP251XFD_RAM_SIZE       2048
