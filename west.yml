@@ -116,7 +116,7 @@ manifest:
       groups:
         - babblesim
     - name: cmsis
-      revision: 4b96cbb174678dcd3ca86e11e1f24bc5f8726da0
+      revision: 1e30dc71511020b81c0f1948ad0382119fa9e941
       path: modules/hal/cmsis
       groups:
         - hal
@@ -132,7 +132,7 @@ manifest:
       groups:
         - tools
     - name: fatfs
-      revision: 427159bf95ea49b7680facffaa29ad506b42709b
+      revision: 1c156b2db4d4d2f9289ef0aa1876e4a0f864b9ea
       path: modules/fs/fatfs
       groups:
         - fs
@@ -147,7 +147,7 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: aad79bf530b69b72712d18873df4120ad052d921
+      revision: 825ea5bd60f7a4944744c6bd3fe2f288a9566633
       path: modules/hal/atmel
       groups:
         - hal
@@ -229,7 +229,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 60c9634f61c697e1c310ec648d33529712806069
+      revision: cdcd5780508975b890963341c921975a3f6f1b9b
       path: modules/hal/stm32
       groups:
         - hal
@@ -282,7 +282,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: a4eda30f5b0cfd0cf15512be9dcd559239dbfc91
+      revision: 51519711d4324352bd6342bd54c0584b1c83f5ce
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -337,8 +337,13 @@ manifest:
     - name: zcbor
       revision: d3093b5684f62268c7f27f8a5079f166772619de
       path: modules/lib/zcbor
+    - name: golioth
+      path: modules/lib/golioth
+      revision: 758d507de48fdf733157569915e3439dd6d07032
+      url: https://github.com/DDC-NDRS/golioth-zephyr-sdk.git
+      import: west-external.yml
 
   self:
-    path: zephyr
+    path: zephyr_rtos
     west-commands: scripts/west-commands.yml
     import: submanifests
