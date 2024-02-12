@@ -98,6 +98,9 @@ static __aligned(32) uint32_t dummy_rx_tx_buffer
 static __aligned(32) uint32_t dummy_rx_tx_buffer;
 #endif /* CONFIG_NOCACHE_MEMORY */
 
+/* #CUSTOM@NDRS */
+#define DEVICE_STM32_GET_SPI(dev)         (((const struct spi_stm32_config*)(dev)->config)->spi)
+
 /* This function is executed in the interrupt context */
 static void dma_callback(const struct device* dev, void* arg,
                          uint32_t channel, int status) {
@@ -130,7 +133,7 @@ static void dma_callback(const struct device* dev, void* arg,
 
 static int spi_stm32_dma_tx_load(const struct device* dev, uint8_t const* buf,
                                  size_t len) {
-    const struct spi_stm32_config* cfg = dev->config;
+    SPI_TypeDef* spi = DEVICE_STM32_GET_SPI(dev);
     struct spi_stm32_data* data = dev->data;
     struct dma_block_config* blk_cfg;
     int ret;
@@ -164,7 +167,7 @@ static int spi_stm32_dma_tx_load(const struct device* dev, uint8_t const* buf,
         }
     }
 
-    blk_cfg->dest_address = ll_func_dma_get_reg_addr(cfg->spi, SPI_STM32_DMA_TX);
+    blk_cfg->dest_address = ll_func_dma_get_reg_addr(spi, SPI_STM32_DMA_TX);
     /* fifo mode NOT USED there */
     if (data->dma_tx.dst_addr_increment) {
         blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
@@ -196,7 +199,7 @@ static int spi_stm32_dma_tx_load(const struct device* dev, uint8_t const* buf,
 
 static int spi_stm32_dma_rx_load(const struct device* dev, uint8_t* buf,
                                  size_t len) {
-    const struct spi_stm32_config* cfg = dev->config;
+    SPI_TypeDef* spi = DEVICE_STM32_GET_SPI(dev);
     struct spi_stm32_data* data = dev->data;
     struct dma_block_config* blk_cfg;
     int ret;
@@ -226,7 +229,7 @@ static int spi_stm32_dma_rx_load(const struct device* dev, uint8_t* buf,
         }
     }
 
-    blk_cfg->source_address = ll_func_dma_get_reg_addr(cfg->spi, SPI_STM32_DMA_RX);
+    blk_cfg->source_address = ll_func_dma_get_reg_addr(spi, SPI_STM32_DMA_RX);
     if (data->dma_rx.src_addr_increment) {
         blk_cfg->source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
     }
@@ -354,21 +357,23 @@ static void spi_stm32_shift_fifo(SPI_TypeDef* spi, struct spi_stm32_data* data) 
 /* Shift a SPI frame as master. */
 static void spi_stm32_shift_m(const struct spi_stm32_config* cfg,
                               struct spi_stm32_data* data) {
+    SPI_TypeDef* spi = cfg->spi;
+
     if (cfg->fifo_enabled) {
-        spi_stm32_shift_fifo(cfg->spi, data);
+        spi_stm32_shift_fifo(spi, data);
     }
     else {
-        while (!ll_func_tx_is_not_full(cfg->spi)) {
+        while (!ll_func_tx_is_not_full(spi)) {
             /* NOP */
         }
 
-        spi_stm32_send_next_frame(cfg->spi, data);
+        spi_stm32_send_next_frame(spi, data);
 
-        while (!ll_func_rx_is_not_empty(cfg->spi)) {
+        while (!ll_func_rx_is_not_empty(spi)) {
             /* NOP */
         }
 
-        spi_stm32_read_next_frame(cfg->spi, data);
+        spi_stm32_read_next_frame(spi, data);
     }
 }
 
@@ -417,16 +422,17 @@ static void spi_stm32_shift_s(SPI_TypeDef* spi, struct spi_stm32_data* data) {
  */
 static int spi_stm32_shift_frames(const struct spi_stm32_config* cfg,
                                   struct spi_stm32_data* data) {
+    SPI_TypeDef* spi = cfg->spi;
     uint16_t operation = data->ctx.config->operation;
 
     if (SPI_OP_MODE_GET(operation) == SPI_OP_MODE_MASTER) {
         spi_stm32_shift_m(cfg, data);
     }
     else {
-        spi_stm32_shift_s(cfg->spi, data);
+        spi_stm32_shift_s(spi, data);
     }
 
-    return spi_stm32_get_err(cfg->spi);
+    return spi_stm32_get_err(spi);
 }
 
 static void spi_stm32_cs_control(const struct device* dev, bool on) {
