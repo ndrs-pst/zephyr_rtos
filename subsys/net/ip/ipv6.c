@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 #include "route.h"
 #include "net_stats.h"
 
-BUILD_ASSERT(sizeof(struct in6_addr) == NET_IPV6_ADDR_SIZE);
+BUILD_ASSERT(sizeof(struct in6_addr) == NET_IPV6_ADDR_SIZE, "sizeof error !!!");
 
 /* Timeout value to be used when allocating net buffer during various
  * neighbor discovery procedures.
@@ -642,7 +642,7 @@ enum net_verdict net_ipv6_input(struct net_pkt* pkt, bool is_loopback) {
         }
 
         /* Offset of "nexthdr" in the Extension Header */
-        prev_hdr_offset = net_pkt_get_current_offset(pkt);
+        prev_hdr_offset = (uint_fast8_t)net_pkt_get_current_offset(pkt);
 
         if (net_pkt_read_u8(pkt, &nexthdr)) {
             goto drop;

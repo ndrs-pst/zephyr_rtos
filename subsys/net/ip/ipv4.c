@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include "dhcpv4/dhcpv4_internal.h"
 #include "ipv4.h"
 
-BUILD_ASSERT(sizeof(struct in_addr) == NET_IPV4_ADDR_SIZE);
+BUILD_ASSERT(sizeof(struct in_addr) == NET_IPV4_ADDR_SIZE, "sizeof error !!!");
 
 /* Timeout for various buffer allocations in this file. */
 #define NET_BUF_TIMEOUT K_MSEC(50)
@@ -49,10 +49,10 @@ int net_ipv4_create_full(struct net_pkt* pkt,
     ipv4_hdr->vhl       = 0x45;
     ipv4_hdr->tos       = tos;
     ipv4_hdr->len       = 0U;
-    ipv4_hdr->id[0]     = id >> 8;
-    ipv4_hdr->id[1]     = id;
-    ipv4_hdr->offset[0] = (offset >> 8) | (flags << 5);
-    ipv4_hdr->offset[1] = offset;
+    ipv4_hdr->id[0]     = (uint8_t)(id >> 8);
+    ipv4_hdr->id[1]     = (uint8_t)id;
+    ipv4_hdr->offset[0] = (uint8_t)((offset >> 8) | (flags << 5));
+    ipv4_hdr->offset[1] = (uint8_t)offset;
 
     ipv4_hdr->ttl = net_pkt_ipv4_ttl(pkt);
     if (ipv4_hdr->ttl == 0U) {

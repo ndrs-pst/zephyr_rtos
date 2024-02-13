@@ -479,7 +479,7 @@ struct net_if_ipv4_autoconf {
  * @brief Network interface IP address configuration.
  */
 struct net_if_ip {
-    #if defined(CONFIG_NET_NATIVE_IPV6)
+    #if defined(CONFIG_NET_NATIVE_IPV6) || defined(_MSC_VER) /* #CUSTOM@NDRS */
     struct net_if_ipv6* ipv6;
     #endif /* CONFIG_NET_IPV6 */
 

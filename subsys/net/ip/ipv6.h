@@ -154,7 +154,7 @@ static inline bool net_ipv6_is_nexthdr_upper_layer(uint8_t nexthdr) {
  *
  * @return 0 on success, negative errno otherwise.
  */
-#if defined(CONFIG_NET_NATIVE_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6) || defined(_MSC_VER) /* #CUSTOM@NDRS */
 int net_ipv6_create(struct net_pkt* pkt,
                     const struct in6_addr* src,
                     const struct in6_addr* dst);
@@ -181,7 +181,7 @@ static inline int net_ipv6_create(struct net_pkt* pkt,
  *
  * @return 0 on success, negative errno otherwise.
  */
-#if defined(CONFIG_NET_NATIVE_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6) || defined(_MSC_VER) /* #CUSTOM@NDRS */
 int net_ipv6_finalize(struct net_pkt* pkt, uint8_t next_header_proto);
 #else
 static inline int net_ipv6_finalize(struct net_pkt* pkt,
@@ -510,7 +510,7 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt* pkt,
 }
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 
-#if defined(CONFIG_NET_NATIVE_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6) || defined(_MSC_VER) /* #CUSTOM@NDRS */
 void net_ipv6_init(void);
 void net_ipv6_nbr_init(void);
 #if defined(CONFIG_NET_IPV6_MLD)

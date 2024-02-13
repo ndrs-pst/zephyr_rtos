@@ -168,7 +168,7 @@ bool tp_tap_input(struct net_pkt *pkt);
 #define tp_input(_pkt) false
 
 #if defined(_MSC_VER)
-#define tp_out(...)     tp_out(__VA_ARGS__)
+#define tp_out(...)
 #else
 #define tp_out(args...)
 #endif
