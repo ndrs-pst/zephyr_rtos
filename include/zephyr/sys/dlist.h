@@ -215,6 +215,13 @@ typedef struct _dnode sys_dnode_t;
 	     __cn != NULL; __cn = __cns,				\
 	     __cns = SYS_DLIST_PEEK_NEXT_CONTAINER(__dl, __cn, __n))
 
+ /** #CUSTOM@NDRS */
+#define SYS_DLIST_FOR_EACH_CONTAINER_SAFE_WITH_TYPE(__dl, __type, __cn, __cns, __n) \
+	for (__cn = SYS_DLIST_PEEK_HEAD_CONTAINER_WITH_TYPE(__dl, __type, __cn, __n),   \
+	     __cns = SYS_DLIST_PEEK_NEXT_CONTAINER_WITH_TYPE(__dl, __type, __cn, __n);  \
+	     __cn != NULL; __cn = __cns,				\
+	     __cns = SYS_DLIST_PEEK_NEXT_CONTAINER_WITH_TYPE(__dl, __type, __cn, __n))
+
 /**
  * @brief initialize list to its empty state
  *

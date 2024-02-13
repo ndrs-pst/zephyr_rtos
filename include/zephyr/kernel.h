@@ -1839,11 +1839,11 @@ struct k_queue {
 /**
  * @cond INTERNAL_HIDDEN
  */
-
+/* #CUSTOM@NDRS .lock = {} -> {0} */
 #define Z_QUEUE_INITIALIZER(obj)    \
     {                               \
         .data_q = SYS_SFLIST_STATIC_INIT(&obj.data_q), \
-        .lock = {},                 \
+        .lock = {0},                \
         .wait_q = Z_WAIT_Q_INIT(&obj.wait_q),   \
         Z_POLL_EVENT_OBJ_INIT(obj)  \
     }
@@ -5119,11 +5119,12 @@ struct k_mem_slab {
     #endif
 };
 
+/** #CUSTOM@NDRS {} -> {0} */
 #define Z_MEM_SLAB_INITIALIZER(_slab, _slab_buffer, _slab_block_size, \
                                _slab_num_blocks)                \
     {                                                           \
         .wait_q = Z_WAIT_Q_INIT(&(_slab).wait_q),               \
-        .lock = {},                                             \
+        .lock = {0},                                            \
         .buffer = _slab_buffer,                                 \
         .free_list = NULL,                                      \
         .info = {_slab_num_blocks, _slab_block_size, 0}         \

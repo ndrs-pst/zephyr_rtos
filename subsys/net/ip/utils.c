@@ -350,7 +350,7 @@ int z_impl_net_addr_pton(sa_family_t family, const char *src,
 		for (i = 0; i < sizeof(struct in_addr); i++) {
 			char *endptr;
 
-			addr->s4_addr[i] = strtol(src, &endptr, 10);
+			addr->s4_addr[i] = (uint8_t)strtol(src, &endptr, 10);
 
 			src = ++endptr;
 		}
@@ -444,7 +444,7 @@ int z_impl_net_addr_pton(sa_family_t family, const char *src,
 					return -EINVAL;
 				}
 
-				addr->s6_addr[12 + i] = strtol(src, NULL, 10);
+				addr->s6_addr[12 + i] = (uint8_t)strtol(src, NULL, 10);
 
 				src = strchr(src, '.');
 				if (src) {
@@ -593,7 +593,7 @@ uint16_t calc_chksum(uint16_t sum_in, const uint8_t *data, size_t len)
 	if (odd_start == CHECKSUM_BIG_ENDIAN) {
 		return BSWAP_16((uint16_t)sum);
 	} else {
-		return sum;
+		return (uint16_t)sum;
 	}
 }
 

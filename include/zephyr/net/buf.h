@@ -1016,13 +1016,14 @@ struct net_buf_pool {
 
 /** @cond INTERNAL_HIDDEN */
 #define NET_BUF_POOL_USAGE_INIT(_pool, _count) \
-	IF_ENABLED(CONFIG_NET_BUF_POOL_USAGE, (.avail_count = ATOMIC_INIT(_count),)) \
-	IF_ENABLED(CONFIG_NET_BUF_POOL_USAGE, (.name = STRINGIFY(_pool),))
+    IF_ENABLED(CONFIG_NET_BUF_POOL_USAGE, (.avail_count = ATOMIC_INIT(_count),)) \
+    IF_ENABLED(CONFIG_NET_BUF_POOL_USAGE, (.name = STRINGIFY(_pool),))
 
+/* #CUSTOM@NDRS .lock = {} -> {0} */
 #define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _ud_size, _destroy) \
     {                                                           \
         .free = Z_LIFO_INITIALIZER(_pool.free),                 \
-        .lock = { },                                            \
+        .lock = {0},                                            \
         .buf_count = _count,                                    \
         .uninit_count = _count,                                 \
         .user_data_size = _ud_size,                             \
@@ -1032,6 +1033,14 @@ struct net_buf_pool {
         .__bufs = (struct net_buf *)_bufs,                      \
     }
 
+#if defined(_MSC_VER) /* #CUSTOM@NDRS omit BUILD_ASSERT */
+#define _NET_BUF_ARRAY_DEFINE(_name, _count, _ud_size)          \
+    struct _net_buf_##_name {                                   \
+        uint8_t b[sizeof(struct net_buf)];                      \
+        uint8_t ud[_ud_size];                                   \
+    } __net_buf_align;                                          \
+    static struct _net_buf_##_name _net_buf_##_name[_count] __noinit
+#else
 #define _NET_BUF_ARRAY_DEFINE(_name, _count, _ud_size)          \
     struct _net_buf_##_name {                                   \
         uint8_t b[sizeof(struct net_buf)];                      \
@@ -1046,6 +1055,7 @@ struct net_buf_pool {
                  ROUND_UP(sizeof(struct net_buf) + _ud_size, __alignof__(struct net_buf)), \
                  "Size cannot be determined");                  \
     static struct _net_buf_##_name _net_buf_##_name[_count] __noinit
+#endif
 
 extern const struct net_buf_data_alloc net_buf_heap_alloc;
 /** @endcond */

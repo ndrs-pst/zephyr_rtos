@@ -601,7 +601,7 @@ static void triggered_work_handler(struct k_work *work)
 	twork->real_handler(work);
 }
 
-static void triggered_work_expiration_handler(struct _timeout *timeout)
+static void triggered_work_expiration_handler(struct _timeout const* timeout)
 {
 	struct k_work_poll *twork =
 		CONTAINER_OF(timeout, struct k_work_poll, timeout);

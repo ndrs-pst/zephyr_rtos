@@ -1180,7 +1180,7 @@ int k_thread_runtime_stats_get(k_tid_t thread,
 #ifdef CONFIG_SCHED_THREAD_USAGE
 	z_sched_thread_usage(thread, stats);
 #else
-	*stats = (k_thread_runtime_stats_t) {};
+	*stats = (k_thread_runtime_stats_t){0};
 #endif
 
 	return 0;
@@ -1196,7 +1196,7 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats)
 		return -EINVAL;
 	}
 
-	*stats = (k_thread_runtime_stats_t) {};
+	*stats = (k_thread_runtime_stats_t){0};
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
 	/* Retrieve the usage stats for each core and amalgamate them. */
