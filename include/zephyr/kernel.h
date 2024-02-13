@@ -5999,7 +5999,7 @@ void z_init_static_threads(void);
 /**
  * @internal
  */
-void z_timer_expiration_handler(struct _timeout* t);
+void z_timer_expiration_handler(struct _timeout const* t);
 /**
  * INTERNAL_HIDDEN @endcond
  */

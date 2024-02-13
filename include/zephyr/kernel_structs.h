@@ -252,7 +252,7 @@ typedef struct {
 /* kernel timeout record */
 
 struct _timeout;
-typedef void (*_timeout_func_t)(struct _timeout *t);
+typedef void (*_timeout_func_t)(struct _timeout const* t);
 
 struct _timeout {
 	sys_dnode_t node;

@@ -279,6 +279,13 @@ static inline void arch_irq_unlock(unsigned int key);
  */
 static inline bool arch_irq_unlocked(unsigned int key);
 
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+static inline bool arch_irq_unlocked(unsigned int key) {
+    /* This convention works for both PRIMASK and BASEPRI */
+    return (key == 0U);
+}
+#endif
+
 /**
  * Disable the specified interrupt line
  *

@@ -171,6 +171,10 @@ extern "C" {
         (__typeof__((array)[0])*)(ptr) - (array);               \
     })
 
+/* #CUSTOM@NDRS */
+#define ARRAY_INDEX_WITH_TYPE(array, __type, ptr)               \
+    (__type*)((ptr) - (array))
+
 /**
  * @brief Check if a pointer @p ptr lies within @p array.
  *
@@ -270,7 +274,7 @@ extern "C" {
  */
 #if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
 #define CONTAINER_OF(ptr, type, field) \
-    ((type *)(((char *)(ptr)) - offsetof(type, field)))
+    ((type*)(((char*)(ptr)) - offsetof(type, field)))
 #else
 #define CONTAINER_OF(ptr, type, field) \
     ({  \

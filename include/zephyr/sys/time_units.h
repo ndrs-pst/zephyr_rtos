@@ -336,7 +336,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void) {
 #define Z_HZ_us    1000000
 #define Z_HZ_ns    1000000000
 #define Z_HZ_cyc   sys_clock_hw_cycles_per_sec()
-#define Z_HZ_ticks CONFIG_SYS_CLOCK_TICKS_PER_SEC
+#define Z_HZ_ticks (uint32_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC
 #define Z_CCYC     (!IS_ENABLED(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME))
 
 /** @brief Convert milliseconds to hardware cycles. 32 bits. Truncates.
