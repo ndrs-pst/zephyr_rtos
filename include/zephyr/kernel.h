@@ -2757,6 +2757,15 @@ static inline void k_lifo_put(struct k_lifo* lifo, struct net_buf* data) {
  * @return Address of the data item if successful; NULL if returned
  * without waiting, or waiting period timed out.
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+static inline void* k_lifo_get(struct k_lifo* lifo, k_timeout_t timeout) {
+    SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_lifo, get, lifo, timeout);
+    void* lg_ret = k_queue_get(&lifo->_queue, timeout);
+    SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_lifo, get, lifo, timeout, lg_ret);
+
+    return (lg_ret);
+}
+#else
 #define k_lifo_get(lifo, timeout)                               \
     ({                                                          \
         SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_lifo, get, lifo, timeout);    \
@@ -2764,6 +2773,7 @@ static inline void k_lifo_put(struct k_lifo* lifo, struct net_buf* data) {
         SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_lifo, get, lifo, timeout, lg_ret); \
         lg_ret;                                                 \
     })
+#endif
 
 /**
  * @brief Statically define and initialize a LIFO queue.

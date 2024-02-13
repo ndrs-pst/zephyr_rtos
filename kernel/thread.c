@@ -1171,51 +1171,57 @@ void z_thread_mark_switched_out(void)
 #endif /* CONFIG_INSTRUMENT_THREAD_SWITCHING */
 
 int k_thread_runtime_stats_get(k_tid_t thread,
-			       k_thread_runtime_stats_t *stats)
-{
-	if ((thread == NULL) || (stats == NULL)) {
-		return -EINVAL;
-	}
+                               k_thread_runtime_stats_t* stats) {
+    if ((thread == NULL) || (stats == NULL)) {
+        return (-EINVAL);
+    }
 
-#ifdef CONFIG_SCHED_THREAD_USAGE
-	z_sched_thread_usage(thread, stats);
-#else
-	*stats = (k_thread_runtime_stats_t){0};
-#endif
+    #ifdef CONFIG_SCHED_THREAD_USAGE
+    z_sched_thread_usage(thread, stats);
+    #else
+    #if defined(_MSC_VER) /* #CUSTOM@NDRS */
+    *stats = (k_thread_runtime_stats_t){0};
+    #else
+    *stats = (k_thread_runtime_stats_t){ };
+    #endif
+    #endif
 
-	return 0;
+    return (0);
 }
 
-int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats)
-{
-#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
-	k_thread_runtime_stats_t  tmp_stats;
-#endif
+int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t* stats) {
+    #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+    k_thread_runtime_stats_t  tmp_stats;
+    #endif
 
-	if (stats == NULL) {
-		return -EINVAL;
-	}
+    if (stats == NULL) {
+        return (-EINVAL);
+    }
 
-	*stats = (k_thread_runtime_stats_t){0};
+    #if defined(_MSC_VER) /* #CUSTOM@NDRS */
+    *stats = (k_thread_runtime_stats_t){0};
+    #else
+    *stats = (k_thread_runtime_stats_t){ };
+    #endif
 
-#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
-	/* Retrieve the usage stats for each core and amalgamate them. */
+    #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+    /* Retrieve the usage stats for each core and amalgamate them. */
 
-	unsigned int num_cpus = arch_num_cpus();
+    unsigned int num_cpus = arch_num_cpus();
 
-	for (uint8_t i = 0; i < num_cpus; i++) {
-		z_sched_cpu_usage(i, &tmp_stats);
+    for (uint8_t i = 0; i < num_cpus; i++) {
+        z_sched_cpu_usage(i, &tmp_stats);
 
-		stats->execution_cycles += tmp_stats.execution_cycles;
-		stats->total_cycles     += tmp_stats.total_cycles;
-#ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
-		stats->current_cycles   += tmp_stats.current_cycles;
-		stats->peak_cycles      += tmp_stats.peak_cycles;
-		stats->average_cycles   += tmp_stats.average_cycles;
-#endif
-		stats->idle_cycles      += tmp_stats.idle_cycles;
-	}
-#endif
+        stats->execution_cycles += tmp_stats.execution_cycles;
+        stats->total_cycles     += tmp_stats.total_cycles;
+        #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
+        stats->current_cycles   += tmp_stats.current_cycles;
+        stats->peak_cycles      += tmp_stats.peak_cycles;
+        stats->average_cycles   += tmp_stats.average_cycles;
+        #endif
+        stats->idle_cycles      += tmp_stats.idle_cycles;
+    }
+    #endif
 
-	return 0;
+    return (0);
 }

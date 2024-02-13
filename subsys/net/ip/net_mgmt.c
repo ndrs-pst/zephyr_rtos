@@ -146,7 +146,8 @@ static inline void mgmt_add_event_mask(uint32_t event_mask) {
 }
 
 static inline void mgmt_rebuild_global_event_mask(void) {
-    struct net_mgmt_event_callback *cb, *tmp;
+    struct net_mgmt_event_callback* cb;
+    struct net_mgmt_event_callback* tmp;
 
     global_event_mask = 0U;
 
@@ -154,7 +155,9 @@ static inline void mgmt_rebuild_global_event_mask(void) {
         mgmt_add_event_mask(it->event_mask);
     }
 
-    SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&event_callbacks, cb, tmp, node) {
+    SYS_SLIST_FOR_EACH_CONTAINER_SAFE_WITH_TYPE(&event_callbacks,
+                                                struct net_mgmt_event_callback,
+                                                cb, tmp, node) {
         mgmt_add_event_mask(cb->event_mask);
     }
 }
@@ -181,7 +184,9 @@ static inline void mgmt_run_slist_callbacks(const struct mgmt_event_entry* const
         NET_MGMT_GET_LAYER_CODE(mgmt_event->event),
         NET_MGMT_GET_COMMAND(mgmt_event->event));
 
-    SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&event_callbacks, cb, tmp, node) {
+    SYS_SLIST_FOR_EACH_CONTAINER_SAFE_WITH_TYPE(&event_callbacks,
+                                                struct net_mgmt_event_callback,
+                                                cb, tmp, node) {
         if (!(NET_MGMT_GET_LAYER(mgmt_event->event) ==
               NET_MGMT_GET_LAYER(cb->event_mask)) ||
             !(NET_MGMT_GET_LAYER_CODE(mgmt_event->event) ==

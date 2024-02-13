@@ -1720,9 +1720,7 @@ static int context_write_data(struct net_pkt *pkt, const void *buf,
 	int ret = 0;
 
 	if (msghdr) {
-		int i;
-
-		for (i = 0; i < msghdr->msg_iovlen; i++) {
+		for (size_t i = 0U; i < msghdr->msg_iovlen; i++) {
 			int len = MIN(msghdr->msg_iov[i].iov_len, buf_len);
 
 			ret = net_pkt_write(pkt, msghdr->msg_iov[i].iov_base,
