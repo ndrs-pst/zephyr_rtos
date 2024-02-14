@@ -54,7 +54,12 @@
 #else
 #define tcp_pkt_clone(_pkt) net_pkt_clone(_pkt, TCP_PKT_ALLOC_TIMEOUT)
 #define tcp_pkt_unref(_pkt) net_pkt_unref(_pkt)
+
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define tp_pkt_alloc(...)
+#else
 #define tp_pkt_alloc(args...)
+#endif
 #endif
 
 #define tcp_pkt_ref(_pkt) net_pkt_ref(_pkt)
@@ -135,6 +140,9 @@
 					    : NET_TCP_DEFAULT_MSS,	\
 	    net_tcp_get_supported_mss(_conn))
 
+#if defined(_MSC_VER) /* #CUSTOM@NDRs */
+#define conn_state(_conn, _s)		(_conn)->state = _s
+#else
 #define conn_state(_conn, _s)						\
 ({									\
 	NET_DBG("%s->%s",						\
@@ -142,7 +150,11 @@
 		tcp_state_to_str((_s), false));				\
 	(_conn)->state = _s;						\
 })
+#endif
 
+#if defined(_MSC_VER) /* #CUSTOM@NDRs */
+#define conn_send_data_dump(_conn)	/* noused */
+#else
 #define conn_send_data_dump(_conn)                                             \
 	({                                                                     \
 		NET_DBG("conn: %p total=%zd, unacked_len=%d, "                 \
@@ -157,6 +169,7 @@
 					&(_conn)->send_data_timer)),           \
 			(_conn)->send_data_retries);                           \
 	})
+#endif
 
 enum pkt_addr {
 	TCP_EP_SRC = 1,
@@ -351,8 +364,13 @@ struct tcp { /* TCP connection */
 	result;								\
 })
 
-#define FL(_fl, _op, _mask, _args...)					\
-	_flags(_fl, _op, _mask, sizeof(#_args) > 1 ? _args : true)
+#if defined(_MSC_VER) /* #CUSTOM@NDRs */
+#define FL(_fl, _op, _mask, ...)        \
+    _flags(_fl, _op, _mask, sizeof(#__VA_ARGS__) > 1 ? __VA_ARGS__ : true)
+#else
+#define FL(_fl, _op, _mask, _args...)   \
+    _flags(_fl, _op, _mask, sizeof(#_args) > 1 ? _args : true)
+#endif
 
 typedef void (*net_tcp_cb_t)(struct tcp *conn, void *user_data);
 

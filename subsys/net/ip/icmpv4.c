@@ -433,9 +433,9 @@ static int icmpv4_handle_echo_request(struct net_icmp_ctx *ctx,
 		net_sprint_ipv4_addr(&ip_hdr->src),
 		net_sprint_ipv4_addr(&ip_hdr->dst));
 
-	payload_len = net_pkt_get_len(pkt) -
-		      net_pkt_ip_hdr_len(pkt) -
-		      net_pkt_ipv4_opts_len(pkt) - NET_ICMPH_LEN;
+	payload_len = (int16_t)(net_pkt_get_len(pkt) -
+						net_pkt_ip_hdr_len(pkt) -
+						net_pkt_ipv4_opts_len(pkt) - NET_ICMPH_LEN);
 	if (payload_len < NET_ICMPV4_UNUSED_LEN) {
 		/* No identifier or sequence number present */
 		goto drop;
