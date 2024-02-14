@@ -43,11 +43,11 @@ struct layout_data {
 static bool should_bail(const struct flash_pages_info* info,
                         struct layout_data* data,
                         bool* bail_value) {
-    if (info->start_offset < data->area_off) {
+    if ((uint32_t)info->start_offset < data->area_off) {
         *bail_value = true;
         return (true);
     }
-    else if (info->start_offset >= data->area_off + data->area_len) {
+    else if ((uint32_t)info->start_offset >= (data->area_off + data->area_len)) {
         *bail_value = false;
         return (true);
     }
@@ -72,7 +72,7 @@ static int flash_area_layout(int idx, uint32_t* cnt, void* ret,
     const struct flash_area* fa;
     int rc;
 
-    rc = flash_area_open(idx, &fa);
+    rc = flash_area_open((uint8_t)idx, &fa);
     if ((rc < 0) || (fa == NULL)) {
         return (-EINVAL);
     }
