@@ -1141,7 +1141,7 @@ static void mcp251xfd_int_thread(const struct device* dev) {
         mcp251xfd_handle_interrupts(dev);
 
         /* Re-enable pin interrupts */
-        ret = gpio_pin_interrupt_configure_dt(&dev_cfg->int_gpio_dt, GPIO_INT_LEVEL_ACTIVE);
+        ret = gpio_pin_interrupt_configure_dt(&dev_cfg->int_gpio_dt, GPIO_INT_EDGE_FALLING);
         if (ret < 0) {
             LOG_ERR("Couldn't enable pin interrupt [%d]", ret);
             k_oops();
@@ -1546,13 +1546,15 @@ static int mcp251xfd_init(const struct device* dev) {
     #if defined(CONFIG_CAN_FD_MODE)
     struct can_timing timing_data = {0};
     #endif
+    bool is_ok;
 
     dev_data->dev = dev;
 
     if (dev_cfg->clk_dev != NULL) {
         uint32_t clk_id = dev_cfg->clk_id;
 
-        if (!device_is_ready(dev_cfg->clk_dev)) {
+        is_ok = device_is_ready(dev_cfg->clk_dev);
+        if (is_ok == false) {
             LOG_ERR("Clock controller not ready");
             return (-ENODEV);
         }
@@ -1569,17 +1571,20 @@ static int mcp251xfd_init(const struct device* dev) {
 
     k_mutex_init(&dev_data->mutex);
 
-    if (!spi_is_ready_dt(&dev_cfg->bus)) {
+    is_ok = spi_is_ready_dt(&dev_cfg->bus);
+    if (is_ok == false) {
         LOG_ERR("SPI bus %s not ready", dev_cfg->bus.bus->name);
         return (-ENODEV);
     }
 
-    if (!gpio_is_ready_dt(&dev_cfg->int_gpio_dt)) {
+    is_ok = gpio_is_ready_dt(&dev_cfg->int_gpio_dt);
+    if (is_ok == false) {
         LOG_ERR("GPIO port not ready");
         return (-ENODEV);
     }
 
-    if (gpio_pin_configure_dt(&dev_cfg->int_gpio_dt, GPIO_INPUT) < 0) {
+    ret = gpio_pin_configure_dt(&dev_cfg->int_gpio_dt, GPIO_INPUT);
+    if (ret < 0) {
         LOG_ERR("Unable to configure GPIO pin");
         return (-EINVAL);
     }
@@ -1587,11 +1592,13 @@ static int mcp251xfd_init(const struct device* dev) {
     gpio_init_callback(&dev_data->int_gpio_cb, mcp251xfd_int_gpio_callback,
                        BIT(dev_cfg->int_gpio_dt.pin));
 
-    if (gpio_add_callback_dt(&dev_cfg->int_gpio_dt, &dev_data->int_gpio_cb) < 0) {
+    ret = gpio_add_callback_dt(&dev_cfg->int_gpio_dt, &dev_data->int_gpio_cb);
+    if (ret < 0) {
         return (-EINVAL);
     }
 
-    if (gpio_pin_interrupt_configure_dt(&dev_cfg->int_gpio_dt, GPIO_INT_LEVEL_ACTIVE) < 0) {
+    ret = gpio_pin_interrupt_configure_dt(&dev_cfg->int_gpio_dt, GPIO_INT_EDGE_FALLING);
+    if (ret < 0) {
         return (-EINVAL);
     }
 
@@ -1614,13 +1621,13 @@ static int mcp251xfd_init(const struct device* dev) {
         goto done;
     }
 
-#if defined(CONFIG_CAN_FD_MODE)
+    #if defined(CONFIG_CAN_FD_MODE)
     ret = mcp251xfd_init_timing_struct_data(&timing_data, dev, &dev_cfg->timing_params_data);
     if (ret < 0) {
         LOG_ERR("Can't find data timing for given param");
         goto done;
     }
-#endif
+    #endif
 
     reg = mcp251xfd_read_crc(dev, MCP251XFD_REG_CON, MCP251XFD_REG_SIZE);
     if (!reg) {
@@ -1631,7 +1638,6 @@ static int mcp251xfd_init(const struct device* dev) {
     *reg = sys_le32_to_cpu(*reg);
 
     opmod = (uint8_t)FIELD_GET(MCP251XFD_REG_CON_OPMOD_MASK, *reg);
-
     if (opmod != MCP251XFD_REG_CON_MODE_CONFIG) {
         LOG_ERR("Device did not reset into configuration mode [%d]", opmod);
         ret = -EIO;
