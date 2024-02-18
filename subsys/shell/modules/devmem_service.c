@@ -19,6 +19,8 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>
 
+extern void getopt_init(void);
+
 static inline bool is_ascii(uint8_t data)
 {
 	return (data >= 0x30 && data <= 0x39) || (data >= 0x61 && data <= 0x66) ||
@@ -100,7 +102,7 @@ static int cmd_dump(const struct shell *sh, size_t argc, char **argv)
 	size_t width = 32;
 	mem_addr_t addr = -1;
 
-	optind = 1;
+	getopt_init();
 	while ((rv = getopt(argc, argv, "a:s:w:")) != -1) {
 		switch (rv) {
 		case 'a':
@@ -305,14 +307,19 @@ static int memory_write(const struct shell *sh, mem_addr_t addr, uint8_t width, 
 static int cmd_devmem(const struct shell *sh, size_t argc, char **argv)
 {
 	mem_addr_t phys_addr, addr;
-	uint32_t value = 0;
+	uint32_t value;
 	uint8_t width;
+	char *endptr;
 
 	if (argc < 2 || argc > 4) {
 		return -EINVAL;
 	}
 
-	phys_addr = strtoul(argv[1], NULL, 16);
+	phys_addr = strtoul(argv[1], &endptr, 16);
+	if (*endptr != '\0') {
+		shell_fprintf(sh, SHELL_NORMAL, "Invalid physical address format\n");
+		return -EINVAL;
+	}
 
 #if defined(CONFIG_MMU) || defined(CONFIG_PCIE)
 	device_map((mm_reg_t *)&addr, phys_addr, 0x100, K_MEM_CACHE_NONE);
@@ -338,7 +345,11 @@ static int cmd_devmem(const struct shell *sh, size_t argc, char **argv)
 	 * this value at the address provided
 	 */
 
-	value = strtoul(argv[3], NULL, 16);
+	value = strtoul(argv[3], &endptr, 16);
+	if (*endptr != '\0') {
+		shell_fprintf(sh, SHELL_NORMAL, "Invalid value format\n");
+		return -EINVAL;
+	}
 
 	shell_fprintf(sh, SHELL_NORMAL, "Writing value 0x%x\n", value);
 
@@ -349,7 +360,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_devmem,
 			       SHELL_CMD_ARG(dump, NULL,
 					     "Usage:\n"
 					     "devmem dump -a <address> -s <size> [-w <width>]\n",
-					     cmd_dump, 4, 6),
+					     cmd_dump, 5, 2),
 			       SHELL_CMD_ARG(load, NULL,
 					     "Usage:\n"
 					     "devmem load [options] [address]\n"
