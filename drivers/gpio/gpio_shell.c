@@ -590,7 +590,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_gpio,
                   "<i|o> - input|output\n"
                   "[u|d] - pull up|pull down, otherwise open\n"
                   "[h|l] - active high|active low, otherwise defaults to active high\n"
-                  "[0|1] - initialise to logic 0|logic 1, otherwise defaults to logic 0\n"
+                  "[0|1] - initialize to logic 0|logic 1, otherwise defaults to logic 0\n"
                   "[vendor specific] - configuration flags within the mask 0xFF00\n"
                   "                    see include/zephyr/dt-bindings/gpio/",
                   cmd_gpio_conf, 4, 1),

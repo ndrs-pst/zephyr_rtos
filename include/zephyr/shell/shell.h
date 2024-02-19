@@ -18,7 +18,7 @@
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
 
-#if defined CONFIG_SHELL_GETOPT || defined(_MSC_VER)
+#if defined(CONFIG_SHELL_GETOPT) || defined(_MSC_VER)
 #include <getopt.h>
 #endif
 
