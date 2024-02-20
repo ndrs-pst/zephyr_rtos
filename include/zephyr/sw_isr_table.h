@@ -84,10 +84,21 @@ struct _isr_list {
 struct _isr_list_sname {
 	/** IRQ line number */
 	int32_t irq;
+
 	/** Flags for this IRQ, see ISR_FLAG_* definitions */
 	int32_t flags;
+
 	/** The section name */
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	/* This is a workaround for MSVC which does not allow zero-sized
+	 * arrays. The size of the array is 1.
+	 * This change will effect production code in C when using sizeof()
+	 * so it will be used only in MSVC.
+	 */
+	const char sname[1];
+	#else
 	const char sname[];
+	#endif
 };
 
 #ifdef CONFIG_SHARED_INTERRUPTS
