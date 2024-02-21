@@ -592,3 +592,19 @@ static int stm32_flash_init(struct device const* dev) {
 DEVICE_DT_INST_DEFINE(0, stm32_flash_init, NULL,
                       &flash_data, NULL, POST_KERNEL,
                       CONFIG_FLASH_INIT_PRIORITY, &flash_stm32_api);
+
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+void zephyr_gtest_flash_stm32(void) {
+    flash_data.regs = (FLASH_TypeDef*)ut_mcu_flash_r_ptr;
+
+    flash_data.regs->OPTR = FLASH_STM32_DBANK;
+
+    // @see STM32U5 76.2 Flash size data register
+    if (IS_ENABLED(CONFIG_SOC_SERIES_STM32U5X)) {
+        *((uint16_t*)FLASHSIZE_BASE) = CONFIG_FLASH_SIZE;
+    }
+}
+#endif
+

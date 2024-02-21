@@ -161,8 +161,8 @@ static int write_nwords(struct device const* dev, off_t offset, uint32_t const* 
                                             + FLASH_STM32_BASE_ADDRESS);
     bool full_zero = true;
     uint32_t tmp;
+    size_t i;
     int rc;
-    int i;
 
     /* if the non-secure control register is locked,do not fail silently */
     if (regs->NSCR & FLASH_STM32_NSLOCK) {
@@ -344,7 +344,7 @@ int flash_stm32_block_erase_loop(struct device const* dev,
 
 int flash_stm32_write_range(struct device const* dev, unsigned int offset,
                             void const* data, unsigned int len) {
-    int  i, rc = 0;
+    int  rc = 0;
     bool icache_enabled = LL_ICACHE_IsEnabled();
 
     if (icache_enabled) {
@@ -359,7 +359,7 @@ int flash_stm32_write_range(struct device const* dev, unsigned int offset,
         }
     }
 
-    for (i = 0; i < len; i += FLASH_STM32_WRITE_BLOCK_SIZE) {
+    for (size_t i = 0U; i < len; i += FLASH_STM32_WRITE_BLOCK_SIZE) {
         rc = write_nwords(dev, offset + i, ((uint32_t const*)data + (i >> 2)),
                           FLASH_STM32_WRITE_BLOCK_SIZE / 4);
         if (rc < 0) {
