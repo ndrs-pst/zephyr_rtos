@@ -58,7 +58,7 @@ static int can_sam0_read_reg(const struct device* dev, uint16_t reg, uint32_t* v
 
 static int can_sam0_write_reg(const struct device* dev, uint16_t reg, uint32_t val) {
     const struct can_mcan_config* mcan_cfg = dev->config;
-    const struct can_sam0_config* sam0_cfg  = mcan_cfg->custom;
+    const struct can_sam0_config* sam0_cfg = mcan_cfg->custom;
     int ret;
 
     switch (reg) {
@@ -75,7 +75,7 @@ static int can_sam0_write_reg(const struct device* dev, uint16_t reg, uint32_t v
         default :
             /* No field remap needed */
             break;
-    };
+    }
 
     ret = can_mcan_sys_write_reg(sam0_cfg->base, reg, val);
 
@@ -114,7 +114,7 @@ static int can_sam0_clear_mram(const struct device *dev, uint16_t offset, size_t
 
 static void can_sam0_line_x_isr(const struct device *dev) {
     struct can_mcan_data* data = dev->data;
-    struct can_mcan_config const * config = dev->config;
+    struct can_mcan_config const* config = dev->config;
     uint32_t ir;
     int err;
 
@@ -190,7 +190,7 @@ static void can_sam0_line_x_isr(const struct device *dev) {
             // All of flag already handle then can break from this loop !!!
             break;
         }
-    };
+    }
 }
 
 static int can_sam0_get_core_clock(const struct device* dev, uint32_t* rate) {
@@ -237,19 +237,19 @@ static int can_sam0_init(const struct device* dev) {
     ret = pinctrl_apply_state(sam0_cfg->pcfg, PINCTRL_STATE_DEFAULT);
     if (ret < 0) {
         LOG_ERR("failed to apply pinctrl");
-        return ret;
+        return (ret);
     }
 
     ret = can_mcan_configure_mram(dev, 0U, sam0_cfg->mram);
     if (ret != 0) {
         LOG_ERR("failed to configure message ram");
-        return ret;
+        return (ret);
     }
 
     ret = can_mcan_init(dev);
     if (ret != 0) {
         LOG_ERR("failed to mcan init");
-        return ret;
+        return (ret);
     }
 
     sam0_cfg->config_irq();
@@ -283,11 +283,11 @@ static const struct can_driver_api can_sam0_driver_api = {
 };
 
 static const struct can_mcan_ops can_sam0_ops = {
-    .read_reg =  can_sam0_read_reg,
+    .read_reg   = can_sam0_read_reg,
     .write_reg  = can_sam0_write_reg,
     .read_mram  = can_sam0_read_mram,
     .write_mram = can_sam0_write_mram,
-    .clear_mram = can_sam0_clear_mram,
+    .clear_mram = can_sam0_clear_mram
 };
 
 #define CAN_SAM0_IRQ_CFG_FUNCTION(inst)                                             \

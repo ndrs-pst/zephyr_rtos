@@ -32,17 +32,17 @@ static void can_tx_default_cb(const struct device* dev, int error, void* user_da
 int z_impl_can_send(const struct device* dev, const struct can_frame* frame,
                     k_timeout_t timeout, can_tx_callback_t callback,
                     void* user_data) {
-    const struct can_driver_api* api = (const struct can_driver_api*)dev->api;
+    const struct can_driver_api* api = dev->api;
 
     if (callback == NULL) {
         struct can_tx_default_cb_ctx ctx;
-        int                          err;
+        int err;
 
         k_sem_init(&ctx.done, 0, 1);
 
         err = api->send(dev, frame, timeout, can_tx_default_cb, &ctx);
         if (err != 0) {
-            return err;
+            return (err);
         }
 
         k_sem_take(&ctx.done, K_FOREVER);
@@ -54,7 +54,7 @@ int z_impl_can_send(const struct device* dev, const struct can_frame* frame,
 }
 
 static void can_msgq_put(const struct device* dev, struct can_frame* frame, void* user_data) {
-    struct k_msgq* msgq = (struct k_msgq*)user_data;
+    struct k_msgq* msgq = user_data;
     int ret;
 
     ARG_UNUSED(dev);
@@ -106,7 +106,8 @@ static int update_sampling_pnt(uint32_t total_tq, uint32_t sample_pnt,
     uint16_t tseg1_max = max->phase_seg1 + max->prop_seg;
     uint16_t tseg1_min = min->phase_seg1 + min->prop_seg;
     uint32_t sample_pnt_res;
-    uint16_t tseg1, tseg2;
+    uint16_t tseg1;
+    uint16_t tseg2;
 
     /* Calculate number of time quanta in tseg2 for given sample point */
     tseg2 = total_tq - (total_tq * sample_pnt) / 1000;
@@ -165,7 +166,7 @@ static int can_calc_timing_int(uint32_t core_clock, struct can_timing* res,
     uint32_t ts = max->prop_seg + max->phase_seg1 + max->phase_seg2 + CAN_SYNC_SEG;
     uint16_t sp_err_min = UINT16_MAX;
     int sp_err;
-    struct can_timing tmp_res = {0};
+    struct can_timing tmp_res;
 
     if ((bitrate == 0) || (sp >= 1000)) {
         return (-EINVAL);
@@ -312,21 +313,21 @@ static int check_timing_in_range(const struct can_timing* timing,
 
 int z_impl_can_set_timing(const struct device* dev,
                           const struct can_timing* timing) {
-    const struct can_driver_api* api = (const struct can_driver_api*)dev->api;
+    const struct can_driver_api* api = dev->api;
     const struct can_timing* min = can_get_timing_min(dev);
     const struct can_timing* max = can_get_timing_max(dev);
     int err;
 
     err = check_timing_in_range(timing, min, max);
     if (err != 0) {
-        return err;
+        return (err);
     }
 
     return api->set_timing(dev, timing);
 }
 
 int z_impl_can_set_bitrate(const struct device* dev, uint32_t bitrate) {
-    struct can_timing timing = {0};
+    struct can_timing timing;
     uint32_t max_bitrate;
     uint16_t sample_pnt;
     int ret;
@@ -354,13 +355,15 @@ int z_impl_can_set_bitrate(const struct device* dev, uint32_t bitrate) {
         return (-ERANGE);
     }
 
-    return can_set_timing(dev, &timing);
+    ret = can_set_timing(dev, &timing);
+
+    return (ret);
 }
 
 #ifdef CONFIG_CAN_FD_MODE
 int z_impl_can_set_timing_data(const struct device* dev,
                                const struct can_timing* timing_data) {
-    const struct can_driver_api* api = (const struct can_driver_api*)dev->api;
+    const struct can_driver_api* api = dev->api;
     const struct can_timing* min = can_get_timing_data_min(dev);
     const struct can_timing* max = can_get_timing_data_max(dev);
     int err;
@@ -378,7 +381,7 @@ int z_impl_can_set_timing_data(const struct device* dev,
 }
 
 int z_impl_can_set_bitrate_data(const struct device* dev, uint32_t bitrate_data) {
-    struct can_timing timing_data = { 0 };
+    struct can_timing timing_data;
     uint32_t max_bitrate;
     uint16_t sample_pnt;
     int ret;
@@ -406,6 +409,8 @@ int z_impl_can_set_bitrate_data(const struct device* dev, uint32_t bitrate_data)
         return (-ERANGE);
     }
 
-    return can_set_timing_data(dev, &timing_data);
+    ret = can_set_timing_data(dev, &timing_data);
+
+    return (ret);
 }
 #endif /* CONFIG_CAN_FD_MODE */
