@@ -248,7 +248,7 @@ static void handle_wifi_disconnect_result(struct net_mgmt_event_callback *cb)
 		if (status->status) {
 			PR_WARNING("Disconnection request failed (%d)\n", status->status);
 		} else {
-			PR("Disconnection request done (%d)\n", status->status);
+			PR("Disconnection request done\n");
 		}
 		context.disconnecting = false;
 	} else {
@@ -406,10 +406,6 @@ static void handle_wifi_ap_sta_disconnected(struct net_mgmt_event_callback *cb)
 static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 				    uint32_t mgmt_event, struct net_if *iface)
 {
-	if (context.sh == NULL) {
-		return;
-	}
-
 	switch (mgmt_event) {
 	case NET_EVENT_WIFI_SCAN_RESULT:
 		handle_wifi_scan_result(cb);
@@ -658,15 +654,15 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 {
 	struct getopt_state *state;
 	int opt;
-	static struct option long_options[] = {{"type", required_argument, 0, 't'},
-					       {"bands", required_argument, 0, 'b'},
-					       {"dwell_time_active", required_argument, 0, 'a'},
-					       {"dwell_time_passive", required_argument, 0, 'p'},
-					       {"ssid", required_argument, 0, 's'},
-					       {"max_bss", required_argument, 0, 'm'},
-					       {"chans", required_argument, 0, 'c'},
-					       {"help", no_argument, 0, 'h'},
-					       {0, 0, 0, 0}};
+	static const struct option long_options[] = {{"type", required_argument, 0, 't'},
+						     {"bands", required_argument, 0, 'b'},
+						     {"dwell_time_active", required_argument, 0, 'a'},
+						     {"dwell_time_passive", required_argument, 0, 'p'},
+						     {"ssid", required_argument, 0, 's'},
+						     {"max_bss", required_argument, 0, 'm'},
+						     {"chans", required_argument, 0, 'c'},
+						     {"help", no_argument, 0, 'h'},
+						     {0, 0, 0, 0}};
 	int opt_index = 0;
 	int val;
 	int opt_num = 0;
@@ -1037,7 +1033,6 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 {
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_twt_params params = { 0 };
-	int idx = 1;
 	long value;
 
 	/* Sensible defaults */
@@ -1051,12 +1046,12 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 	params.setup.trigger = 0;
 	params.setup.announce = 0;
 
-	if (!parse_number(sh, &value, argv[idx++], 1, WIFI_MAX_TWT_WAKE_INTERVAL_US)) {
+	if (!parse_number(sh, &value, argv[1], 1, WIFI_MAX_TWT_WAKE_INTERVAL_US)) {
 		return -EINVAL;
 	}
 	params.setup.twt_wake_interval = (uint32_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 1, WIFI_MAX_TWT_INTERVAL_US)) {
+	if (!parse_number(sh, &value, argv[2], 1, WIFI_MAX_TWT_INTERVAL_US)) {
 		return -EINVAL;
 	}
 	params.setup.twt_interval = (uint64_t)value;
@@ -1082,64 +1077,63 @@ static int cmd_wifi_twt_setup(const struct shell *sh, size_t argc,
 {
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_twt_params params = { 0 };
-	int idx = 1;
 	long value;
 
 	params.operation = WIFI_TWT_SETUP;
 
-	if (!parse_number(sh, &value, argv[idx++], WIFI_TWT_INDIVIDUAL,
+	if (!parse_number(sh, &value, argv[1], WIFI_TWT_INDIVIDUAL,
 			  WIFI_TWT_WAKE_TBTT)) {
 		return -EINVAL;
 	}
 	params.negotiation_type = (enum wifi_twt_negotiation_type)value;
 
-	if (!parse_number(sh, &value, argv[idx++], WIFI_TWT_SETUP_CMD_REQUEST,
+	if (!parse_number(sh, &value, argv[2], WIFI_TWT_SETUP_CMD_REQUEST,
 			  WIFI_TWT_SETUP_CMD_DEMAND)) {
 		return -EINVAL;
 	}
 	params.setup_cmd = (enum wifi_twt_setup_cmd)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 1, 255)) {
+	if (!parse_number(sh, &value, argv[3], 1, 255)) {
 		return -EINVAL;
 	}
 	params.dialog_token = (uint8_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 0, (WIFI_MAX_TWT_FLOWS - 1))) {
+	if (!parse_number(sh, &value, argv[4], 0, (WIFI_MAX_TWT_FLOWS - 1))) {
 		return -EINVAL;
 	}
 	params.flow_id = (uint8_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
+	if (!parse_number(sh, &value, argv[5], 0, 1)) {
 		return -EINVAL;
 	}
 	params.setup.responder = (bool)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
+	if (!parse_number(sh, &value, argv[6], 0, 1)) {
 		return -EINVAL;
 	}
 	params.setup.trigger = (bool)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
+	if (!parse_number(sh, &value, argv[7], 0, 1)) {
 		return -EINVAL;
 	}
 	params.setup.implicit = (bool)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
+	if (!parse_number(sh, &value, argv[8], 0, 1)) {
 		return -EINVAL;
 	}
 	params.setup.announce = (bool)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 1, WIFI_MAX_TWT_WAKE_INTERVAL_US)) {
+	if (!parse_number(sh, &value, argv[9], 1, WIFI_MAX_TWT_WAKE_INTERVAL_US)) {
 		return -EINVAL;
 	}
 	params.setup.twt_wake_interval = (uint32_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 1, WIFI_MAX_TWT_INTERVAL_US)) {
+	if (!parse_number(sh, &value, argv[10], 1, WIFI_MAX_TWT_INTERVAL_US)) {
 		return -EINVAL;
 	}
 	params.setup.twt_interval = (uint64_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 0, WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US)) {
+	if (!parse_number(sh, &value, argv[11], 0, WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US)) {
 		return -EINVAL;
 	}
 	params.setup.twt_wake_ahead_duration = (uint32_t)value;
@@ -1167,28 +1161,26 @@ static int cmd_wifi_twt_teardown(const struct shell *sh, size_t argc,
 	struct wifi_twt_params params = { 0 };
 	long value;
 
-	int idx = 1;
-
 	params.operation = WIFI_TWT_TEARDOWN;
 
-	if (!parse_number(sh, &value, argv[idx++], WIFI_TWT_INDIVIDUAL,
+	if (!parse_number(sh, &value, argv[1], WIFI_TWT_INDIVIDUAL,
 			  WIFI_TWT_WAKE_TBTT)) {
 		return -EINVAL;
 	}
 	params.negotiation_type = (enum wifi_twt_negotiation_type)value;
 
-	if (!parse_number(sh, &value, argv[idx++], WIFI_TWT_SETUP_CMD_REQUEST,
+	if (!parse_number(sh, &value, argv[2], WIFI_TWT_SETUP_CMD_REQUEST,
 			  WIFI_TWT_SETUP_CMD_DEMAND)) {
 		return -EINVAL;
 	}
 	params.setup_cmd = (enum wifi_twt_setup_cmd)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 1, 255)) {
+	if (!parse_number(sh, &value, argv[3], 1, 255)) {
 		return -EINVAL;
 	}
 	params.dialog_token = (uint8_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], 0, (WIFI_MAX_TWT_FLOWS - 1))) {
+	if (!parse_number(sh, &value, argv[4], 0, (WIFI_MAX_TWT_FLOWS - 1))) {
 		return -EINVAL;
 	}
 	params.flow_id = (uint8_t)value;
@@ -1481,14 +1473,14 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 	int opt;
 	int option_index = 0;
 
-	static struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
-					       {"sta", no_argument, 0, 's'},
-					       {"monitor", no_argument, 0, 'm'},
-					       {"ap", no_argument, 0, 'a'},
-					       {"softap", no_argument, 0, 'k'},
-					       {"get", no_argument, 0, 'g'},
-					       {"help", no_argument, 0, 'h'},
-					       {0, 0, 0, 0}};
+	static const struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
+						     {"sta", no_argument, 0, 's'},
+						     {"monitor", no_argument, 0, 'm'},
+						     {"ap", no_argument, 0, 'a'},
+						     {"softap", no_argument, 0, 'k'},
+						     {"get", no_argument, 0, 'g'},
+						     {"help", no_argument, 0, 'h'},
+						     {0, 0, 0, 0}};
 
 	while ((opt = getopt_long(argc, argv, "i:smtpakgh", long_options, &option_index)) != -1) {
 		switch (opt) {
@@ -1580,11 +1572,11 @@ void parse_channel_args_to_params(const struct shell *sh, int argc,
 	int opt;
 	int option_index = 0;
 
-	static struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
-					       {"channel", required_argument, 0, 'c'},
-					       {"get", no_argument, 0, 'g'},
-					       {"help", no_argument, 0, 'h'},
-					       {0, 0, 0, 0}};
+	static const struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
+						     {"channel", required_argument, 0, 'c'},
+						     {"get", no_argument, 0, 'g'},
+						     {"help", no_argument, 0, 'h'},
+						     {0, 0, 0, 0}};
 
 	while ((opt = getopt_long(argc, argv, "i:c:gh", long_options, &option_index)) != -1) {
 		switch (opt) {
@@ -1675,15 +1667,15 @@ void parse_filter_args_to_params(const struct shell *sh, int argc,
 	int opt;
 	int option_index = 0;
 
-	static struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
-					       {"capture-len", optional_argument, 0, 'b'},
-					       {"all", no_argument, 0, 'a'},
-					       {"mgmt", no_argument, 0, 'm'},
-					       {"ctrl", no_argument, 0, 'c'},
-					       {"data", no_argument, 0, 'd'},
-					       {"get", no_argument, 0, 'g'},
-					       {"help", no_argument, 0, 'h'},
-					       {0, 0, 0, 0}};
+	static const struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
+						     {"capture-len", optional_argument, 0, 'b'},
+						     {"all", no_argument, 0, 'a'},
+						     {"mgmt", no_argument, 0, 'm'},
+						     {"ctrl", no_argument, 0, 'c'},
+						     {"data", no_argument, 0, 'd'},
+						     {"get", no_argument, 0, 'g'},
+						     {"help", no_argument, 0, 'h'},
+						     {0, 0, 0, 0}};
 
 	while ((opt = getopt_long(argc, argv, "i:b:amcdgh", long_options, &option_index)) != -1) {
 		switch (opt) {

@@ -77,18 +77,18 @@ int wifi_utils_parse_scan_ssids(char const* scan_ssids_str,
  *
  * The channel string has to be formatted using the colon (:), comma(,), hyphen (-) and
  * underscore (_) delimiters as follows:
- *	- A colon identifies the value preceding it as a band. A band value
- *	  (2: 2.4 GHz, 5: 5 GHz 6: 6 GHz) has to precede the channels in that band (e.g. 2: etc)
- *	- Hyphens (-) are used to identify channel ranges (e.g. 2-7, 32-48 etc)
- *	- Commas are used to separate channel values within a band. Channels can be specified
- *	  as individual values (2,6,48 etc) or channel ranges using hyphens (1-14, 32-48 etc)
- *	- Underscores (_) are used to specify multiple band-channel sets (e.g. 2:1,2_5:36,40 etc)
- *	- No spaces should be used anywhere, i.e. before/after commas,
- *	  before/after hyphens etc.
+ * - A colon identifies the value preceding it as a band. A band value
+ *   (2: 2.4 GHz, 5: 5 GHz 6: 6 GHz) has to precede the channels in that band (e.g. 2: etc)
+ * - Hyphens (-) are used to identify channel ranges (e.g. 2-7, 32-48 etc)
+ * - Commas are used to separate channel values within a band. Channels can be specified
+ *   as individual values (2,6,48 etc) or channel ranges using hyphens (1-14, 32-48 etc)
+ * - Underscores (_) are used to specify multiple band-channel sets (e.g. 2:1,2_5:36,40 etc)
+ * - No spaces should be used anywhere, i.e. before/after commas,
+ *   before/after hyphens etc.
  *
  * An example channel specification specifying channels in the 2.4 GHz and 5 GHz bands is
  * as below:
- *	2:1,5,7,9-11_5:36-48,100,163-167
+ * 2:1,5,7,9-11_5:36-48,100,163-167
  *
  * @param scan_chan_str List of channels expressed in the format described above.
  * @param chan Pointer to an array where the parsed channels are to be stored.
@@ -101,7 +101,6 @@ int wifi_utils_parse_scan_chan(char const* scan_chan_str,
                                struct wifi_band_channel* chan,
                                uint8_t max_channels);
 
-
 /**
  * @brief Validate a channel against a band.
  *
@@ -112,7 +111,7 @@ int wifi_utils_parse_scan_chan(char const* scan_chan_str,
  * @retval false if the channel is not valid for the band.
  */
 bool wifi_utils_validate_chan(uint8_t band,
-			      uint8_t chan);
+                              uint16_t chan);
 
 /**
  * @brief Validate a channel against the 2.4 GHz band.
@@ -122,7 +121,7 @@ bool wifi_utils_validate_chan(uint8_t band,
  * @retval true if the channel is valid for the band.
  * @retval false if the channel is not valid for the band.
  */
-bool wifi_utils_validate_chan_2g(uint8_t chan);
+bool wifi_utils_validate_chan_2g(uint16_t chan);
 
 /**
  * @brief Validate a channel against the 5 GHz band.
@@ -132,7 +131,7 @@ bool wifi_utils_validate_chan_2g(uint8_t chan);
  * @retval true if the channel is valid for the band.
  * @retval false if the channel is not valid for the band.
  */
-bool wifi_utils_validate_chan_5g(uint8_t chan);
+bool wifi_utils_validate_chan_5g(uint16_t chan);
 
 /**
  * @brief Validate a channel against the 6 GHz band.
@@ -142,7 +141,7 @@ bool wifi_utils_validate_chan_5g(uint8_t chan);
  * @retval true if the channel is valid for the band.
  * @retval false if the channel is not valid for the band.
  */
-bool wifi_utils_validate_chan_6g(uint8_t chan);
+bool wifi_utils_validate_chan_6g(uint16_t chan);
 
 /**
  * @}
