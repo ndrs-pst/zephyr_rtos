@@ -1019,7 +1019,20 @@ struct net_buf_pool {
     IF_ENABLED(CONFIG_NET_BUF_POOL_USAGE, (.avail_count = ATOMIC_INIT(_count),)) \
     IF_ENABLED(CONFIG_NET_BUF_POOL_USAGE, (.name = STRINGIFY(_pool),))
 
-/* #CUSTOM@NDRS .lock = {} -> {0} */
+#if (__GTEST == 0U)
+#define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _ud_size, _destroy) \
+    {                                                           \
+        .free = Z_LIFO_INITIALIZER(_pool.free),                 \
+        .lock = {},                                             \
+        .buf_count = _count,                                    \
+        .uninit_count = _count,                                 \
+        .user_data_size = _ud_size,                             \
+        NET_BUF_POOL_USAGE_INIT(_pool, _count)                  \
+        .destroy = _destroy,                                    \
+        .alloc = _alloc,                                        \
+        .__bufs = (struct net_buf *)_bufs,                      \
+    }
+#else /* #CUSTOM@NDRS .lock = {} -> {0} */
 #define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _ud_size, _destroy) \
     {                                                           \
         .free = Z_LIFO_INITIALIZER(_pool.free),                 \
@@ -1032,6 +1045,7 @@ struct net_buf_pool {
         .alloc = _alloc,                                        \
         .__bufs = (struct net_buf *)_bufs,                      \
     }
+#endif
 
 #if defined(_MSC_VER) /* #CUSTOM@NDRS omit BUILD_ASSERT */
 #define _NET_BUF_ARRAY_DEFINE(_name, _count, _ud_size)          \

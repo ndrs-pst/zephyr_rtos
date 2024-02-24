@@ -29,12 +29,11 @@ int settings_subsys_init(void) {
     err = 0;
     k_mutex_lock(&settings_lock, K_FOREVER);
 
-    if (!settings_subsys_initialized) {
+    if (settings_subsys_initialized == false) {
         settings_init();
 
         err = settings_backend_init();
-
-        if (!err) {
+        if (err == 0) {
             settings_subsys_initialized = true;
         }
     }
