@@ -137,7 +137,9 @@ static void finalize_cancel_locked(struct k_work *work)
 	 * appear multiple times in the list if multiple threads
 	 * attempt to cancel it.
 	 */
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&pending_cancels, wc, tmp, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE_WITH_TYPE(&pending_cancels,
+						    struct z_work_canceller,
+						    wc, tmp, node) {
 		if (wc->work == work) {
 			sys_slist_remove(&pending_cancels, prev, &wc->node);
 			k_sem_give(&wc->sem);
@@ -192,7 +194,8 @@ static void queue_flusher_locked(struct k_work_q *queue,
 	struct k_work *wn;
 
 	/* Determine whether the work item is still queued. */
-	SYS_SLIST_FOR_EACH_CONTAINER(&queue->pending, wn, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_WITH_TYPE(&queue->pending, struct k_work,
+					       wn, node) {
 		if (wn == work) {
 			in_list = true;
 			break;
@@ -826,7 +829,7 @@ int k_work_queue_unplug(struct k_work_q *queue)
  * Takes and releases work lock.
  * Conditionally reschedules.
  */
-static void work_timeout(struct _timeout *to)
+static void work_timeout(struct _timeout const* to)
 {
 	struct k_work_delayable *dw
 		= CONTAINER_OF(to, struct k_work_delayable, timeout);
@@ -849,9 +852,8 @@ static void work_timeout(struct _timeout *to)
 	k_spin_unlock(&lock, key);
 }
 
-void k_work_init_delayable(struct k_work_delayable *dwork,
-			    k_work_handler_t handler)
-{
+void k_work_init_delayable(struct k_work_delayable* dwork,
+                           k_work_handler_t handler) {
 	__ASSERT_NO_MSG(dwork != NULL);
 	__ASSERT_NO_MSG(handler != NULL);
 
