@@ -21,9 +21,9 @@ LOG_MODULE_REGISTER(can_sam0, CONFIG_CAN_LOG_LEVEL);
 #define DT_DRV_COMPAT atmel_sam0_can
 
 // ---------- EXTERNAL METHOD --------------------------------------------------------------------------------------- //
-extern void can_mcan_state_change_handler(const struct device* dev);
-extern void can_mcan_tx_event_handler(const struct device* dev);
-extern void can_mcan_get_message(const struct device* dev, uint16_t fifo_offset,
+extern void can_mcan_state_change_handler(struct device const* dev);
+extern void can_mcan_tx_event_handler(struct device const* dev);
+extern void can_mcan_get_message(struct device const* dev, uint16_t fifo_offset,
                                  uint16_t fifo_status_reg, uint16_t fifo_ack_reg);
 
 #define CAN_MCAN_IR_ISR_MSK_BIT     (CAN_MCAN_IR_BO   | CAN_MCAN_IR_EW   | CAN_MCAN_IR_EP |     \
@@ -46,9 +46,9 @@ struct can_sam0_config {
 };
 
 // ---------- PRIVATE PROGRAMMING DEFINE / CONSTEXPR ---------------------------------------------------------------- //
-static int can_sam0_read_reg(const struct device* dev, uint16_t reg, uint32_t* val) {
-    const struct can_mcan_config* mcan_cfg = dev->config;
-    const struct can_sam0_config* sam0_cfg = mcan_cfg->custom;
+static int can_sam0_read_reg(struct device const* dev, uint16_t reg, uint32_t* val) {
+    struct can_mcan_config const* mcan_cfg = dev->config;
+    struct can_sam0_config const* sam0_cfg = mcan_cfg->custom;
     int ret;
 
     ret = can_mcan_sys_read_reg(sam0_cfg->base, reg, val);
@@ -56,9 +56,9 @@ static int can_sam0_read_reg(const struct device* dev, uint16_t reg, uint32_t* v
     return (ret);
 }
 
-static int can_sam0_write_reg(const struct device* dev, uint16_t reg, uint32_t val) {
-    const struct can_mcan_config* mcan_cfg = dev->config;
-    const struct can_sam0_config* sam0_cfg = mcan_cfg->custom;
+static int can_sam0_write_reg(struct device const* dev, uint16_t reg, uint32_t val) {
+    struct can_mcan_config const* mcan_cfg = dev->config;
+    struct can_sam0_config const* sam0_cfg = mcan_cfg->custom;
     int ret;
 
     switch (reg) {
@@ -82,9 +82,9 @@ static int can_sam0_write_reg(const struct device* dev, uint16_t reg, uint32_t v
     return (ret);
 }
 
-static int can_sam0_read_mram(const struct device* dev, uint16_t offset, void* dst, size_t len) {
-    const struct can_mcan_config* mcan_cfg = dev->config;
-    const struct can_sam0_config* sam0_cfg = mcan_cfg->custom;
+static int can_sam0_read_mram(struct device const* dev, uint16_t offset, void* dst, size_t len) {
+    struct can_mcan_config const* mcan_cfg = dev->config;
+    struct can_sam0_config const* sam0_cfg = mcan_cfg->custom;
     int ret;
 
     ret = can_mcan_sys_read_mram(sam0_cfg->mram, offset, dst, len);
@@ -92,9 +92,9 @@ static int can_sam0_read_mram(const struct device* dev, uint16_t offset, void* d
     return (ret);
 }
 
-static int can_sam0_write_mram(const struct device* dev, uint16_t offset, const void* src, size_t len) {
-    const struct can_mcan_config* mcan_cfg = dev->config;
-    const struct can_sam0_config* sam0_cfg = mcan_cfg->custom;
+static int can_sam0_write_mram(struct device const* dev, uint16_t offset, const void* src, size_t len) {
+    struct can_mcan_config const* mcan_cfg = dev->config;
+    struct can_sam0_config const* sam0_cfg = mcan_cfg->custom;
     int ret;
 
     ret = can_mcan_sys_write_mram(sam0_cfg->mram, offset, src, len);
@@ -102,9 +102,9 @@ static int can_sam0_write_mram(const struct device* dev, uint16_t offset, const 
     return (ret);
 }
 
-static int can_sam0_clear_mram(const struct device *dev, uint16_t offset, size_t len) {
-    const struct can_mcan_config* mcan_cfg = dev->config;
-    const struct can_sam0_config* sam0_cfg = mcan_cfg->custom;
+static int can_sam0_clear_mram(struct device const* dev, uint16_t offset, size_t len) {
+    struct can_mcan_config const* mcan_cfg = dev->config;
+    struct can_sam0_config const* sam0_cfg = mcan_cfg->custom;
     int ret;
 
     ret = can_mcan_sys_clear_mram(sam0_cfg->mram, offset, len);
@@ -112,7 +112,7 @@ static int can_sam0_clear_mram(const struct device *dev, uint16_t offset, size_t
     return (ret);
 }
 
-static void can_sam0_line_x_isr(const struct device *dev) {
+static void can_sam0_line_x_isr(struct device const* dev) {
     struct can_mcan_data* data = dev->data;
     struct can_mcan_config const* config = dev->config;
     uint32_t ir;
@@ -193,9 +193,9 @@ static void can_sam0_line_x_isr(const struct device *dev) {
     }
 }
 
-static int can_sam0_get_core_clock(const struct device* dev, uint32_t* rate) {
-    const struct can_mcan_config* mcan_cfg = dev->config;
-    const struct can_sam0_config* sam0_cfg = mcan_cfg->custom;
+static int can_sam0_get_core_clock(struct device const* dev, uint32_t* rate) {
+    struct can_mcan_config const* mcan_cfg = dev->config;
+    struct can_sam0_config const* sam0_cfg = mcan_cfg->custom;
 
     #if defined(CONFIG_SOC_SERIES_SAME51) || defined(CONFIG_SOC_SERIES_SAME54)
     /*DFFL has to be used as clock source for the ATSAME51/54 family of SoCs*/
@@ -208,7 +208,7 @@ static int can_sam0_get_core_clock(const struct device* dev, uint32_t* rate) {
     return (0);
 }
 
-static void can_sam0_clock_enable(const struct can_sam0_config* cfg) {
+static void can_sam0_clock_enable(struct can_sam0_config const* cfg) {
     /* Enable the GLCK7 with DIV*/
     #if defined(CONFIG_SOC_SERIES_SAME51) || defined(CONFIG_SOC_SERIES_SAME54)
     /*DFFL has to be used as clock source for the ATSAME51/54 family of SoCs*/
@@ -227,9 +227,9 @@ static void can_sam0_clock_enable(const struct can_sam0_config* cfg) {
     *cfg->mclk |= cfg->mclk_mask;
 }
 
-static int can_sam0_init(const struct device* dev) {
-    const struct can_mcan_config* mcan_cfg = dev->config;
-    const struct can_sam0_config* sam0_cfg = mcan_cfg->custom;
+static int can_sam0_init(struct device const* dev) {
+    struct can_mcan_config const* mcan_cfg = dev->config;
+    struct can_sam0_config const* sam0_cfg = mcan_cfg->custom;
     int ret;
 
     can_sam0_clock_enable(sam0_cfg);
@@ -257,7 +257,7 @@ static int can_sam0_init(const struct device* dev) {
     return (ret);
 }
 
-static const struct can_driver_api can_sam0_driver_api = {
+static struct can_driver_api const can_sam0_driver_api = {
     .get_capabilities = can_mcan_get_capabilities,
     .start            = can_mcan_start,
     .stop             = can_mcan_stop,
@@ -282,7 +282,7 @@ static const struct can_driver_api can_sam0_driver_api = {
     #endif /* CONFIG_CAN_FD_MODE */
 };
 
-static const struct can_mcan_ops can_sam0_ops = {
+static struct can_mcan_ops const can_sam0_ops = {
     .read_reg   = can_sam0_read_reg,
     .write_reg  = can_sam0_write_reg,
     .read_mram  = can_sam0_read_mram,
