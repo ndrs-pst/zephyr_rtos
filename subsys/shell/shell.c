@@ -91,7 +91,7 @@ static int cmd_precheck(const struct shell* sh,
 static inline void state_set(const struct shell* sh, enum shell_state state) {
     sh->ctx->state = state;
 
-    if (state == SHELL_STATE_ACTIVE && !sh->ctx->bypass) {
+    if ((state == SHELL_STATE_ACTIVE) && !sh->ctx->bypass) {
         cmd_buffer_clear(sh);
         if (z_flag_print_noinit_get(sh)) {
             z_shell_fprintf(sh, SHELL_WARNING, "%s",
@@ -120,6 +120,7 @@ selected_cmd_get(const struct shell* sh) {
 static void tab_item_print(const struct shell* sh, char const* option,
                            uint16_t longest_option) {
     static char const* tab = "  ";
+    static uint16_t const tab_len = 2U;
     uint16_t columns;
     uint16_t diff;
 
@@ -129,9 +130,9 @@ static void tab_item_print(const struct shell* sh, char const* option,
         return;
     }
 
-    longest_option += z_shell_strlen(tab);
+    longest_option += tab_len;
 
-    columns = (sh->ctx->vt100_ctx.cons.terminal_wid - z_shell_strlen(tab)) / longest_option;
+    columns = (sh->ctx->vt100_ctx.cons.terminal_wid - tab_len) / longest_option;
     diff    = longest_option - z_shell_strlen(option);
 
     if (sh->ctx->vt100_ctx.printed_cmd++ % columns == 0U) {
@@ -479,9 +480,9 @@ static void partial_autocomplete(const struct shell* sh,
                                  char const* arg,
                                  size_t first, size_t cnt) {
     char const* completion;
-    uint16_t    arg_len = z_shell_strlen(arg);
-    uint16_t    common  = common_beginning_find(sh, cmd, &completion, first,
-                                                cnt, arg_len);
+    uint16_t arg_len = z_shell_strlen(arg);
+    uint16_t common  = common_beginning_find(sh, cmd, &completion, first,
+                                             cnt, arg_len);
 
     if (!IS_ENABLED(CONFIG_SHELL_TAB_AUTOCOMPLETION)) {
         return;
@@ -516,10 +517,10 @@ static int exec_cmd(const struct shell* sh, size_t argc, char const** argv,
     }
 
     if (sh->ctx->active_cmd.args.mandatory) {
-        uint32_t   mand     = sh->ctx->active_cmd.args.mandatory;
-        uint8_t    opt8     = sh->ctx->active_cmd.args.optional;
-        uint32_t   opt      = (opt8 == SHELL_OPT_ARG_CHECK_SKIP) ?
-                              UINT16_MAX : opt8;
+        uint32_t mand = sh->ctx->active_cmd.args.mandatory;
+        uint8_t  opt8 = sh->ctx->active_cmd.args.optional;
+        uint32_t opt  = (opt8 == SHELL_OPT_ARG_CHECK_SKIP) ?
+                        UINT16_MAX : opt8;
         bool const in_range = IN_RANGE(argc, mand, mand + opt);
 
         /* Check if argc is within allowed range */
@@ -563,6 +564,7 @@ static void active_cmd_prepare(const struct shell_static_entry* entry,
             *args_left = entry->args.mandatory - 1;
         }
     }
+
     if (entry->help) {
         *help_entry = *entry;
     }
@@ -602,7 +604,7 @@ static bool wildcard_check_report(const struct shell* sh, bool found,
  */
 static int execute(const struct shell* sh) {
     struct shell_static_entry dloc;                             /* Memory for dynamic commands. */
-    char const* argv[CONFIG_SHELL_ARGC_MAX + 1] = {0};          /* +1 reserved for NULL */
+    char const* argv[CONFIG_SHELL_ARGC_MAX + 1];                /* +1 reserved for NULL */
     const struct shell_static_entry* parent = selected_cmd_get(sh);
     const struct shell_static_entry* entry  = NULL;
     struct shell_static_entry help_entry;
@@ -772,13 +774,14 @@ static int execute(const struct shell* sh) {
          * we have a remaining unprocessed non-null string,
          * then increment command level so handler receives raw string
          */
-        if (parent->args.optional == SHELL_OPT_ARG_RAW && argv[cmd_lvl] != NULL) {
+        if ((parent->args.optional == SHELL_OPT_ARG_RAW) &&
+            (argv[cmd_lvl] != NULL)) {
             cmd_lvl++;
         }
     }
 
     /* Executing the deepest found handler. */
-    return exec_cmd(sh, cmd_lvl - cmd_with_handler_lvl,
+    return exec_cmd(sh, (cmd_lvl - cmd_with_handler_lvl),
                     &argv[cmd_with_handler_lvl], &help_entry);
 }
 
@@ -820,6 +823,7 @@ static void alt_metakeys_handle(const struct shell* sh, char data) {
     if (!IS_ENABLED(CONFIG_SHELL_METAKEYS)) {
         return;
     }
+
     if (data == SHELL_VT100_ASCII_ALT_B) {
         z_shell_op_cursor_word_move(sh, -1);
     }
@@ -1139,7 +1143,7 @@ static void state_collect(const struct shell* sh) {
 }
 
 static void transport_evt_handler(enum shell_transport_evt evt_type, void* ctx) {
-    struct shell*         sh = (struct shell*)ctx;
+    struct shell* sh = ctx;
     struct k_poll_signal* signal;
 
     signal = (evt_type == SHELL_TRANSPORT_EVT_RX_RDY) ? &sh->ctx->signals[SHELL_SIGNAL_RXRDY]
@@ -1399,7 +1403,7 @@ int shell_start(const struct shell* sh) {
 
     if (IS_ENABLED(CONFIG_SHELL_LOG_BACKEND) && z_flag_handle_log_get(sh)
         && !z_flag_obscure_get(sh)) {
-        z_shell_log_backend_enable(sh->log_backend, (void *)sh, sh->ctx->log_level);
+        z_shell_log_backend_enable(sh->log_backend, (void*)sh, sh->ctx->log_level);
     }
 
     k_mutex_lock(&sh->ctx->wr_mtx, K_FOREVER);
@@ -1452,6 +1456,7 @@ void shell_process(const struct shell* sh) {
         case SHELL_STATE_ACTIVE :
             state_collect(sh);
             break;
+
         default :
             break;
     }
@@ -1463,7 +1468,7 @@ void shell_process(const struct shell* sh) {
 const struct shell* shell_backend_get_by_name(char const* backend_name) {
     STRUCT_SECTION_FOREACH(shell, backend) {
         if (strcmp(backend_name, backend->name) == 0) {
-            return backend;
+            return (backend);
         }
     }
 
@@ -1565,7 +1570,7 @@ void shell_hexdump(const struct shell* sh, uint8_t const* data, size_t len) {
     while (len) {
         line_len = MIN(len, SHELL_HEXDUMP_BYTES_IN_LINE);
 
-        shell_hexdump_line(sh, p - data, p, line_len);
+        shell_hexdump_line(sh, (p - data), p, line_len);
 
         len -= line_len;
         p += line_len;
@@ -1593,7 +1598,7 @@ void shell_help(const struct shell* sh) {
 
 int shell_execute_cmd(const struct shell* sh, char const* cmd) {
     uint16_t cmd_len = z_shell_strlen(cmd);
-    int      ret_val;
+    int ret_val;
 
     if (cmd == NULL) {
         return (-ENOEXEC);

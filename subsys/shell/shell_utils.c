@@ -137,11 +137,11 @@ static char make_argv(char** ppcmd, uint8_t c) {
                 uint_fast8_t i;
                 uint_fast8_t v = 0U;
 
-                for (i = 2U; i < (2 + 3); i++) {
+                for (i = 2U; i < (2U + 3U); i++) {
                     t = *(cmd + i);
 
-                    if (t >= '0' && t <= '7') {
-                        v = (v << 3) | (t - '0');
+                    if ((t >= '0') && (t <= '7')) {
+                        v = (uint_fast8_t)((v << 3) | (t - '0'));
                     }
                     else {
                         break;
@@ -159,24 +159,24 @@ static char make_argv(char** ppcmd, uint8_t c) {
                 uint_fast8_t i;
                 uint_fast8_t v = 0U;
 
-                for (i = 2U; i < (2 + 2); i++) {
+                for (i = 2U; i < (2U + 2U); i++) {
                     t = *(cmd + i);
 
-                    if (t >= '0' && t <= '9') {
-                        v = (v << 4) | (t - '0');
+                    if ((t >= '0') && (t <= '9')) {
+                        v = (uint_fast8_t)((v << 4) | (t - '0'));
                     }
                     else if ((t >= 'a') && (t <= 'f')) {
-                        v = (v << 4) | (t - 'a' + 10);
+                        v = (uint_fast8_t)((v << 4) | (t - 'a' + 10));
                     }
                     else if ((t >= 'A') && (t <= 'F')) {
-                        v = (v << 4) | (t - 'A' + 10);
+                        v = (uint_fast8_t)((v << 4) | (t - 'A' + 10));
                     }
                     else {
                         break;
                     }
                 }
 
-                if (i > 2) {
+                if (i > 2U) {
                     memmove(cmd, cmd + (i - 1), z_shell_strlen(cmd) - (i - 2));
                     *cmd++ = v;
                     continue;
@@ -190,6 +190,7 @@ static char make_argv(char** ppcmd, uint8_t c) {
 
         cmd += 1;
     }
+
     *ppcmd = cmd;
 
     return (quote);
@@ -212,7 +213,8 @@ char z_shell_make_argv(size_t* argc, char const** argv, char* cmd,
             continue;
         }
 
-        argv[(*argc)++] = cmd;
+        argv[*argc] = cmd;
+        ++(*argc);
         if (*argc == max_argc) {
             break;
         }
@@ -223,7 +225,7 @@ char z_shell_make_argv(size_t* argc, char const** argv, char* cmd,
 }
 
 void z_shell_pattern_remove(char const* buff, uint16_t* buff_len, char const* pattern) {
-    char*    pattern_addr = strstr(buff, pattern);
+    char* pattern_addr = strstr(buff, pattern);
     uint16_t shift;
     uint16_t pattern_len = z_shell_strlen(pattern);
 
@@ -254,7 +256,7 @@ static inline uint32_t shell_root_cmd_count(void) {
 
 /* Function returning pointer to parent command matching requested syntax. */
 const struct shell_static_entry* root_cmd_find(char const* syntax) {
-    const size_t                 cmd_count = shell_root_cmd_count();
+    const size_t cmd_count = shell_root_cmd_count();
     const union shell_cmd_entry* cmd;
 
     for (size_t cmd_idx = 0; cmd_idx < cmd_count; ++cmd_idx) {
@@ -320,8 +322,8 @@ const struct shell_static_entry* z_shell_find_cmd(const struct shell_static_entr
                                                   char const* cmd_str,
                                                   struct shell_static_entry* dloc) {
     const struct shell_static_entry* entry;
-    struct shell_static_entry        parent_cpy;
-    size_t                           idx = 0;
+    struct shell_static_entry parent_cpy;
+    size_t idx = 0;
 
     /* Dynamic command operates on shared memory. If we are processing two
      * dynamic commands at the same time (current and subcommand) they
@@ -349,7 +351,7 @@ const struct shell_static_entry* z_shell_get_last_command(const struct shell_sta
                                                           size_t* match_arg,
                                                           struct shell_static_entry* dloc,
                                                           bool only_static) {
-    const struct shell_static_entry* prev_entry = NULL;
+    const struct shell_static_entry* prev_entry;
 
     *match_arg = Z_SHELL_CMD_ROOT_LVL;
 
