@@ -846,7 +846,7 @@ static int spi_nor_erase(const struct device* dev, off_t addr, size_t size) {
             const struct jesd216_erase_type* erase_types = dev_erase_types(dev);
             const struct jesd216_erase_type* bet = NULL;
 
-            for (uint8_t ei = 0; ei < JESD216_NUM_ERASE_TYPES; ++ei) {
+            for (uint_fast8_t ei = 0; ei < JESD216_NUM_ERASE_TYPES; ++ei) {
                 const struct jesd216_erase_type* etp = &erase_types[ei];
 
                 if ((etp->exp != 0)                    &&
@@ -1031,7 +1031,7 @@ static int spi_nor_process_bfp(const struct device *dev,
      * Sector Map Parameter table references them by index.)
      */
     memset(data->erase_types, 0, sizeof(data->erase_types));
-    for (uint8_t ti = 1; ti <= ARRAY_SIZE(data->erase_types); ++ti) {
+    for (uint_fast8_t ti = 1; ti <= ARRAY_SIZE(data->erase_types); ++ti) {
         if (jesd216_bfp_erase(bfp, ti, etp) == 0) {
             LOG_DBG("Erase %u with %02x", (uint32_t)BIT(etp->exp), etp->cmd);
         }
@@ -1149,10 +1149,8 @@ static int spi_nor_process_sfdp(const struct device* dev) {
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static int setup_pages_layout(const struct device* dev) {
-    int rv = 0;
-
     #if defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
-    struct spi_nor_data *data = dev->data;
+    struct spi_nor_data* data = dev->data;
     const size_t flash_size = dev_flash_size(dev);
     const uint32_t layout_page_size = CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE;
     uint8_t exp = 0;
@@ -1208,7 +1206,7 @@ static int setup_pages_layout(const struct device* dev) {
     #error Unhandled SFDP choice
     #endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
 
-    return (rv);
+    return (0);
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 #endif /* CONFIG_SPI_NOR_SFDP_MINIMAL */
@@ -1221,7 +1219,7 @@ static int setup_pages_layout(const struct device* dev) {
  * @return 0 on success, negative errno code otherwise
  */
 static int spi_nor_configure(const struct device* dev) {
-    const struct spi_nor_config *cfg = dev->config;
+    const struct spi_nor_config* cfg = dev->config;
     uint8_t jedec_id[SPI_NOR_MAX_ID_LEN];
     int rc;
 
@@ -1419,9 +1417,9 @@ static int spi_nor_pm_control(const struct device* dev, enum pm_device_action ac
  */
 static int spi_nor_init(const struct device* dev) {
     if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-        struct spi_nor_data *const driver_data = dev->data;
+        struct spi_nor_data *const data = dev->data;
 
-        k_sem_init(&driver_data->sem, 1, K_SEM_MAX_LIMIT);
+        k_sem_init(&data->sem, 1, K_SEM_MAX_LIMIT);
     }
 
     #if ANY_INST_HAS_WP_GPIOS
@@ -1462,7 +1460,7 @@ static void spi_nor_pages_layout(const struct device* dev,
                                  size_t* layout_size) {
     /* Data for runtime, const for devicetree and minimal. */
     #ifdef CONFIG_SPI_NOR_SFDP_RUNTIME
-    const struct spi_nor_data *data = dev->data;
+    struct spi_nor_data *const data = dev->data;
 
     *layout = &data->layout;
     #else /* CONFIG_SPI_NOR_SFDP_RUNTIME */
