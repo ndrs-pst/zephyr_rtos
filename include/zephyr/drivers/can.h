@@ -42,27 +42,27 @@ extern "C" {
 /**
  * @brief Bit mask for a standard (11-bit) CAN identifier.
  */
-#define CAN_STD_ID_MASK 0x7FFU
+#define /**/CAN_STD_ID_MASK     0x7FFU
 /**
  * @brief Maximum value for a standard (11-bit) CAN identifier.
  */
-#define CAN_MAX_STD_ID  CAN_STD_ID_MASK
+#define /**/CAN_MAX_STD_ID      CAN_STD_ID_MASK
 /**
  * @brief Bit mask for an extended (29-bit) CAN identifier.
  */
-#define CAN_EXT_ID_MASK 0x1FFFFFFFU
+#define /**/CAN_EXT_ID_MASK     0x1FFFFFFFU
 /**
  * @brief Maximum value for an extended (29-bit) CAN identifier.
  */
-#define CAN_MAX_EXT_ID  CAN_EXT_ID_MASK
+#define /**/CAN_MAX_EXT_ID      CAN_EXT_ID_MASK
 /**
  * @brief Maximum data length code for CAN 2.0A/2.0B.
  */
-#define CAN_MAX_DLC     8U
+#define /**/CAN_MAX_DLC         8U
 /**
  * @brief Maximum data length code for CAN FD.
  */
-#define CANFD_MAX_DLC   15U
+#define /**/CANFD_MAX_DLC       15U
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -86,22 +86,22 @@ extern "C" {
  */
 
 /** Normal mode. */
-#define CAN_MODE_NORMAL     0
+#define /**/CAN_MODE_NORMAL     0
 
 /** Controller is in loopback mode (receives own frames). */
-#define CAN_MODE_LOOPBACK   BIT(0)
+#define /**/CAN_MODE_LOOPBACK   BIT(0)
 
 /** Controller is not allowed to send dominant bits. */
-#define CAN_MODE_LISTENONLY BIT(1)
+#define /**/CAN_MODE_LISTENONLY BIT(1)
 
 /** Controller allows transmitting/receiving CAN FD frames. */
-#define CAN_MODE_FD         BIT(2)
+#define /**/CAN_MODE_FD         BIT(2)
 
 /** Controller does not retransmit in case of lost arbitration or missing ACK */
-#define CAN_MODE_ONE_SHOT   BIT(3)
+#define /**/CAN_MODE_ONE_SHOT   BIT(3)
 
 /** Controller uses triple sampling mode */
-#define CAN_MODE_3_SAMPLES  BIT(4)
+#define /**/CAN_MODE_3_SAMPLES  BIT(4)
 
 /** @} */
 

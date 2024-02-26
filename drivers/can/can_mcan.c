@@ -1083,7 +1083,7 @@ static int can_mcan_add_rx_filter_ext(const struct device* dev, can_rx_callback_
     struct can_mcan_ext_filter filter_element = {
         .efid2 = filter->mask,
         .efid1 = filter->id,
-        .eft = CAN_MCAN_EFT_CLASSIC
+        .eft   = CAN_MCAN_EFT_CLASSIC
     };
     int filter_id = -ENOSPC;
     int err;
