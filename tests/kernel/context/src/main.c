@@ -844,7 +844,7 @@ static void busy_wait_thread(void *mseconds, void *arg2, void *arg3)
 
 	/* FIXME: Broken on Nios II, see #22956 */
 #ifndef CONFIG_NIOS2
-	int key = arch_irq_lock();
+	unsigned int key = arch_irq_lock();
 
 	k_busy_wait(usecs);
 	arch_irq_unlock(key);
