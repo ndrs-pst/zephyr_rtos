@@ -198,11 +198,11 @@ static int can_sam0_get_core_clock(struct device const* dev, uint32_t* rate) {
     struct can_sam0_config const* sam0_cfg = mcan_cfg->custom;
 
     #if defined(CONFIG_SOC_SERIES_SAME51) || defined(CONFIG_SOC_SERIES_SAME54)
-    /*DFFL has to be used as clock source for the ATSAME51/54 family of SoCs*/
+    /* DFFL has to be used as clock source for the ATSAME51/54 family of SoCs */
     *rate = SOC_ATMEL_SAM0_DFLL48_FREQ_HZ / (sam0_cfg->divider);
     #elif defined(CONFIG_SOC_SERIES_SAMC21)
-    /*OSC48M has to be used as clock source for the ATSAMC21 family of SoCs*/
-    *rate = SOC_ATMEL_SAM0_OSC48M_FREQ_HZ / (sam0_cfg->divider);
+    /* OSC48M has to be used as clock source for the ATSAMC21 family of SoCs */
+    *rate = SOC_ATMEL_SAM0_OSC48M_FREQ_OUT_HZ / (sam0_cfg->divider);
     #endif
 
     return (0);

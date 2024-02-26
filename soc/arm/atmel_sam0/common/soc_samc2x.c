@@ -64,7 +64,7 @@ static void flash_waitstates_init(void) {
  * @note
  * CFDPRESC: Since we're using CFD feature, care should be taken to set prescaler value large enough
  * so that CFD clock is less than XOSC clock. With the 2^4 = (16) prescaler,
- * CFD clock is 1 MHz (OSC48M which smaller than XOSC clock of 8 and 16 MHz.
+ * CFD clock is 1 MHz (OSC48M which smaller than XOSC clock of 8 and 16 MHz).
  */
 static void osc48m_init(void) {
     uint32_t cal_val;
@@ -78,8 +78,8 @@ static void osc48m_init(void) {
     cal_val = (uint32_t)(((*(uint64_t*)0x806020UL) >> 41) & 0x3FFFFFUL);
     OSCCTRL->CAL48M.reg = cal_val;
 
-    /* Selection of the Division Value (48 MHz / 3 = 16 MHz) */
-    OSCCTRL->OSC48MDIV.reg = (uint8_t)OSCCTRL_OSC48MDIV_DIV(2UL);
+    /* Selection of the Division Value (48 MHz / 3 = 16 MHz) when OSC48M_DIV is 3 */
+    OSCCTRL->OSC48MDIV.reg = (uint8_t)OSCCTRL_OSC48MDIV_DIV(SOC_ATMEL_SAM0_OSC48M_DIV - 1U);
 
     while (OSCCTRL->OSC48MSYNCBUSY.bit.OSC48MDIV == 1) {
         /* Waiting for the synchronization */
@@ -274,14 +274,14 @@ static void gclks_deinit(void) {
 static void gclks_init(void) {
     #if defined(CONFIG_SOC_ATMEL_SAMC_XOSC_AS_MAIN)
     if (SOC_ATMEL_SAMC_XOSC_FREQ_HZ == 8000000UL) {
-        /* XOSC(8M)/1 -> GCLK2 */
+        /* XOSC(8M)/1 -> GCLK2 (8 MHz) */
         GCLK->GENCTRL[2].reg = (GCLK_GENCTRL_DIV(1UL) | GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_XOSC_Val) |
                                 GCLK_GENCTRL_IDC      | GCLK_GENCTRL_RUNSTDBY | GCLK_GENCTRL_GENEN);
         wait_gclk_sync(GCLK_SYNCBUSY_GENCTRL_GCLK2);
     }
 
     if (SOC_ATMEL_SAMC_XOSC_FREQ_HZ == 16000000UL) {
-        /* XOSC(16M)/2 -> GCLK2 */
+        /* XOSC(16M)/2 -> GCLK2 (8 MHz) */
         GCLK->GENCTRL[2].reg = (GCLK_GENCTRL_DIV(2UL) | GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_XOSC_Val) |
                                 GCLK_GENCTRL_IDC      | GCLK_GENCTRL_RUNSTDBY | GCLK_GENCTRL_GENEN);
         wait_gclk_sync(GCLK_SYNCBUSY_GENCTRL_GCLK2);
