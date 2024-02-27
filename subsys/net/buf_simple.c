@@ -34,8 +34,8 @@ void net_buf_simple_init_with_data(struct net_buf_simple *buf,
 {
 	buf->__buf = data;
 	buf->data  = data;
-	buf->size  = size;
-	buf->len   = size;
+	buf->size  = (uint16_t)size;
+	buf->len   = (uint16_t)size;
 }
 
 void net_buf_simple_reserve(struct net_buf_simple *buf, size_t reserve)
@@ -61,7 +61,7 @@ void *net_buf_simple_add(struct net_buf_simple *buf, size_t len)
 
 	__ASSERT_NO_MSG(net_buf_simple_tailroom(buf) >= len);
 
-	buf->len += len;
+	buf->len += (uint16_t)len;
 	return tail;
 }
 
@@ -161,7 +161,7 @@ void *net_buf_simple_remove_mem(struct net_buf_simple *buf, size_t len)
 
 	__ASSERT_NO_MSG(buf->len >= len);
 
-	buf->len -= len;
+	buf->len -= (uint16_t)len;
 	return buf->data + buf->len;
 }
 
@@ -301,7 +301,7 @@ void *net_buf_simple_push(struct net_buf_simple *buf, size_t len)
 	__ASSERT_NO_MSG(net_buf_simple_headroom(buf) >= len);
 
 	buf->data -= len;
-	buf->len += len;
+	buf->len += (uint16_t)len;
 	return buf->data;
 }
 
@@ -396,7 +396,7 @@ void *net_buf_simple_pull(struct net_buf_simple *buf, size_t len)
 
 	__ASSERT_NO_MSG(buf->len >= len);
 
-	buf->len -= len;
+	buf->len -= (uint16_t)len;
 	return buf->data += len;
 }
 
@@ -408,7 +408,7 @@ void *net_buf_simple_pull_mem(struct net_buf_simple *buf, size_t len)
 
 	__ASSERT_NO_MSG(buf->len >= len);
 
-	buf->len -= len;
+	buf->len -= (uint16_t)len;
 	buf->data += len;
 
 	return data;
@@ -544,5 +544,5 @@ size_t net_buf_simple_tailroom(struct net_buf_simple *buf)
 
 uint16_t net_buf_simple_max_len(struct net_buf_simple *buf)
 {
-	return buf->size - net_buf_simple_headroom(buf);
+	return buf->size - (uint16_t)net_buf_simple_headroom(buf);
 }
