@@ -39,15 +39,15 @@ int net_udp_finalize(struct net_pkt *pkt, bool force_chksum)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
 	struct net_udp_hdr *udp_hdr;
-	uint16_t length = 0;
+	uint16_t length;
 
 	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data(pkt, &udp_access);
 	if (!udp_hdr) {
 		return -ENOBUFS;
 	}
 
-	length = net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
-		 net_pkt_ip_opts_len(pkt);
+	length = (uint16_t)(net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
+		 net_pkt_ip_opts_len(pkt));
 
 	udp_hdr->len = htons(length);
 

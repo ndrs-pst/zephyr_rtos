@@ -102,7 +102,7 @@ static int shtcx_read_words(const struct device *dev, uint16_t cmd, uint16_t *da
 		return -EIO;
 	}
 
-	for (int i = 0; i < raw_len; i += (SHTCX_WORD_LEN + SHTCX_CRC8_LEN)) {
+	for (uint32_t i = 0; i < raw_len; i += (SHTCX_WORD_LEN + SHTCX_CRC8_LEN)) {
 		temp16 = sys_get_be16(&rx_buf[i]);
 		if (shtcx_compute_crc(temp16) != rx_buf[i+2]) {
 			LOG_DBG("invalid received invalid crc");
