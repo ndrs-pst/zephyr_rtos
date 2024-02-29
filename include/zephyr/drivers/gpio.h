@@ -64,17 +64,17 @@ extern "C" {
 /** @endcond */
 
 /** Configures GPIO pin as output and initializes it to a low state. */
-#define GPIO_OUTPUT_LOW         (GPIO_OUTPUT | GPIO_OUTPUT_INIT_LOW)
+#define /**/GPIO_OUTPUT_LOW         (GPIO_OUTPUT | GPIO_OUTPUT_INIT_LOW)
 /** Configures GPIO pin as output and initializes it to a high state. */
-#define GPIO_OUTPUT_HIGH        (GPIO_OUTPUT | GPIO_OUTPUT_INIT_HIGH)
+#define /**/GPIO_OUTPUT_HIGH        (GPIO_OUTPUT | GPIO_OUTPUT_INIT_HIGH)
 /** Configures GPIO pin as output and initializes it to a logic 0. */
-#define GPIO_OUTPUT_INACTIVE    (GPIO_OUTPUT |              \
-                                 GPIO_OUTPUT_INIT_LOW |     \
-                                 GPIO_OUTPUT_INIT_LOGICAL)
+#define /**/GPIO_OUTPUT_INACTIVE    (GPIO_OUTPUT |              \
+                                     GPIO_OUTPUT_INIT_LOW |     \
+                                     GPIO_OUTPUT_INIT_LOGICAL)
 /** Configures GPIO pin as output and initializes it to a logic 1. */
-#define GPIO_OUTPUT_ACTIVE      (GPIO_OUTPUT |              \
-                                 GPIO_OUTPUT_INIT_HIGH |    \
-                                 GPIO_OUTPUT_INIT_LOGICAL)
+#define /**/GPIO_OUTPUT_ACTIVE      (GPIO_OUTPUT |              \
+                                     GPIO_OUTPUT_INIT_HIGH |    \
+                                     GPIO_OUTPUT_INIT_LOGICAL)
 
 /** @} */
 
@@ -155,66 +155,66 @@ extern "C" {
 
 /** Configures GPIO interrupt to be triggered on pin rising edge and enables it.
  */
-#define GPIO_INT_EDGE_RISING    (GPIO_INT_ENABLE |  \
-                                 GPIO_INT_EDGE   |  \
-                                 GPIO_INT_HIGH_1)
+#define /**/GPIO_INT_EDGE_RISING    (GPIO_INT_ENABLE |  \
+                                     GPIO_INT_EDGE   |  \
+                                     GPIO_INT_HIGH_1)
 
 /** Configures GPIO interrupt to be triggered on pin falling edge and enables
  * it.
  */
-#define GPIO_INT_EDGE_FALLING   (GPIO_INT_ENABLE |  \
-                                 GPIO_INT_EDGE   |  \
-                                 GPIO_INT_LOW_0)
+#define /**/GPIO_INT_EDGE_FALLING   (GPIO_INT_ENABLE |  \
+                                     GPIO_INT_EDGE   |  \
+                                     GPIO_INT_LOW_0)
 
 /** Configures GPIO interrupt to be triggered on pin rising or falling edge and
  * enables it.
  */
-#define GPIO_INT_EDGE_BOTH      (GPIO_INT_ENABLE |  \
-                                 GPIO_INT_EDGE   |  \
-                                 GPIO_INT_LOW_0  |  \
-                                 GPIO_INT_HIGH_1)
+#define /**/GPIO_INT_EDGE_BOTH      (GPIO_INT_ENABLE |  \
+                                     GPIO_INT_EDGE   |  \
+                                     GPIO_INT_LOW_0  |  \
+                                     GPIO_INT_HIGH_1)
 
 /** Configures GPIO interrupt to be triggered on pin physical level low and
  * enables it.
  */
-#define GPIO_INT_LEVEL_LOW      (GPIO_INT_ENABLE |  \
-                                 GPIO_INT_LOW_0)
+#define /**/GPIO_INT_LEVEL_LOW      (GPIO_INT_ENABLE |  \
+                                     GPIO_INT_LOW_0)
 
 /** Configures GPIO interrupt to be triggered on pin physical level high and
  * enables it.
  */
-#define GPIO_INT_LEVEL_HIGH     (GPIO_INT_ENABLE |  \
-                                 GPIO_INT_HIGH_1)
+#define /**/GPIO_INT_LEVEL_HIGH     (GPIO_INT_ENABLE |  \
+                                     GPIO_INT_HIGH_1)
 
 /** Configures GPIO interrupt to be triggered on pin state change to logical
  * level 0 and enables it.
  */
-#define GPIO_INT_EDGE_TO_INACTIVE   (GPIO_INT_ENABLE |          \
-                                     GPIO_INT_LEVELS_LOGICAL |  \
-                                     GPIO_INT_EDGE |            \
-                                     GPIO_INT_LOW_0)
+#define /**/GPIO_INT_EDGE_TO_INACTIVE   (GPIO_INT_ENABLE |          \
+                                         GPIO_INT_LEVELS_LOGICAL |  \
+                                         GPIO_INT_EDGE |            \
+                                         GPIO_INT_LOW_0)
 
 /** Configures GPIO interrupt to be triggered on pin state change to logical
  * level 1 and enables it.
  */
-#define GPIO_INT_EDGE_TO_ACTIVE     (GPIO_INT_ENABLE |          \
-                                     GPIO_INT_LEVELS_LOGICAL |  \
-                                     GPIO_INT_EDGE |            \
-                                     GPIO_INT_HIGH_1)
+#define /**/GPIO_INT_EDGE_TO_ACTIVE     (GPIO_INT_ENABLE |          \
+                                         GPIO_INT_LEVELS_LOGICAL |  \
+                                         GPIO_INT_EDGE |            \
+                                         GPIO_INT_HIGH_1)
 
 /** Configures GPIO interrupt to be triggered on pin logical level 0 and enables
  * it.
  */
-#define GPIO_INT_LEVEL_INACTIVE     (GPIO_INT_ENABLE |          \
-                                     GPIO_INT_LEVELS_LOGICAL |  \
-                                     GPIO_INT_LOW_0)
+#define /**/GPIO_INT_LEVEL_INACTIVE     (GPIO_INT_ENABLE |          \
+                                         GPIO_INT_LEVELS_LOGICAL |  \
+                                         GPIO_INT_LOW_0)
 
 /** Configures GPIO interrupt to be triggered on pin logical level 1 and enables
  * it.
  */
-#define GPIO_INT_LEVEL_ACTIVE       (GPIO_INT_ENABLE |          \
-                                     GPIO_INT_LEVELS_LOGICAL |  \
-                                     GPIO_INT_HIGH_1)
+#define /**/GPIO_INT_LEVEL_ACTIVE       (GPIO_INT_ENABLE |          \
+                                         GPIO_INT_LEVELS_LOGICAL |  \
+                                         GPIO_INT_HIGH_1)
 
 /** @} */
 
