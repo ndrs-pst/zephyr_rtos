@@ -63,7 +63,7 @@ int i2c_stm32_runtime_configure(const struct device* dev, uint32_t config) {
     struct i2c_stm32_data* data = dev->data;
     const struct device* clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
     I2C_TypeDef* i2c = cfg->i2c;
-    uint32_t i2c_clock = 0U;
+    uint32_t i2c_clock;
     int ret;
 
     if (IS_ENABLED(STM32_I2C_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
@@ -134,7 +134,7 @@ static int i2c_stm32_transfer(const struct device* dev, struct i2c_msg* msg,
      */
     current->flags |= I2C_MSG_RESTART;
 
-    for (uint8_t i = 1; i <= num_msgs; i++) {
+    for (uint_fast8_t i = 1; i <= num_msgs; i++) {
         if (i < num_msgs) {
             next = current + 1;
 
@@ -460,25 +460,25 @@ void i2c_stm32_set_smbus_mode(const struct device* dev, enum i2c_stm32_mode mode
     data->mode = mode;
 
     switch (mode) {
-        case I2CSTM32MODE_I2C:
+        case I2CSTM32MODE_I2C :
             LL_I2C_SetMode(i2c, LL_I2C_MODE_I2C);
             return;
 
         #ifdef CONFIG_SMBUS_STM32
-        case I2CSTM32MODE_SMBUSHOST:
+        case I2CSTM32MODE_SMBUSHOST :
             LL_I2C_SetMode(i2c, LL_I2C_MODE_SMBUS_HOST);
             return;
 
-        case I2CSTM32MODE_SMBUSDEVICE:
+        case I2CSTM32MODE_SMBUSDEVICE :
             LL_I2C_SetMode(i2c, LL_I2C_MODE_SMBUS_DEVICE);
             return;
 
-        case I2CSTM32MODE_SMBUSDEVICEARP:
+        case I2CSTM32MODE_SMBUSDEVICEARP :
             LL_I2C_SetMode(i2c, LL_I2C_MODE_SMBUS_DEVICE_ARP);
             return;
             #endif
 
-        default:
+        default :
             LOG_ERR("%s: invalid mode %i", dev->name, mode);
             return;
     }

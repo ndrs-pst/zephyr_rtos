@@ -289,7 +289,7 @@ static int mcp251xfd_reg_check_value_wtimeout(const struct device* dev, uint16_t
                                               uint32_t value, uint32_t mask,
                                               uint32_t timeout_usec, int retries, bool allow_yield) {
     uint32_t* reg;
-    uint32_t  delay = timeout_usec / retries;
+    uint32_t  delay = (timeout_usec / retries);
 
     for (;;) {
         reg = mcp251xfd_read_crc(dev, addr, MCP251XFD_REG_SIZE);
@@ -515,7 +515,7 @@ static int mcp251xfd_send(const struct device* dev, const struct can_frame* msg,
                           k_timeout_t timeout, can_tx_callback_t callback, void* callback_arg) {
     struct mcp251xfd_data* dev_data = dev->data;
     uint8_t mailbox_idx;
-    int ret = 0;
+    int ret;
 
     LOG_DBG("Sending %d bytes. Id: 0x%x, ID type: %s %s %s %s", can_dlc_to_bytes(msg->dlc),
             msg->id, msg->flags & CAN_FRAME_IDE ? "extended" : "standard",
@@ -533,7 +533,7 @@ static int mcp251xfd_send(const struct device* dev, const struct can_frame* msg,
         return (-ENETUNREACH);
     }
 
-    if ((msg->flags & CAN_FRAME_FDF) == 0 && msg->dlc > CAN_MAX_DLC) {
+    if (((msg->flags & CAN_FRAME_FDF) == 0) && msg->dlc > CAN_MAX_DLC) {
         LOG_ERR("DLC of %d without fd flag set.", msg->dlc);
         return (-EINVAL);
     }
