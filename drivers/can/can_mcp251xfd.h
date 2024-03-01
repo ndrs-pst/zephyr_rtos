@@ -440,7 +440,7 @@ struct mcp251xfd_txobj {
     uint32_t id;
     uint32_t flags;
     uint8_t  data[CAN_MAX_DLEN];
-} __packed;
+};
 
 struct mcp251xfd_rxobj {
     uint32_t id;
@@ -449,12 +449,12 @@ struct mcp251xfd_rxobj {
     uint32_t timestamp;
     #endif
     uint8_t data[CAN_MAX_DLEN];
-} __packed;
+};
 
 struct mcp251xfd_tefobj {
     uint32_t id;
     uint32_t flags;
-} __packed;
+};
 
 #define MCP251XFD_MAX_READ_FIFO_BUF_SIZE                        \
     MAX((MCP251XFD_RX_FIFO_ITEM_SIZE * MCP251XFD_RX_FIFO_ITEMS),\

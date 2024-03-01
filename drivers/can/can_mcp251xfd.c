@@ -27,18 +27,18 @@ LOG_MODULE_REGISTER(can_mcp251xfd, CONFIG_CAN_LOG_LEVEL);
  */
 #define USE_SP_ALGO (DT_INST_FOREACH_STATUS_OKAY(SP_IS_SET) 0)
 
+BUILD_ASSERT(sizeof(struct mcp251xfd_txobj) == (CAN_MAX_DLEN + 8U), "sizeof error !!!");
+
 static void mcp251xfd_canframe_to_txobj(const struct can_frame* src, int mailbox_idx,
                                         struct mcp251xfd_txobj* dst) {
-    (void) memset(dst, 0, sizeof(*dst));
-
     if ((src->flags & CAN_FRAME_IDE) != 0) {
         dst->id  = FIELD_PREP(MCP251XFD_OBJ_ID_SID_MASK, src->id >> 18);
         dst->id |= FIELD_PREP(MCP251XFD_OBJ_ID_EID_MASK, src->id);
-
-        dst->flags |= MCP251XFD_OBJ_FLAGS_IDE;
+        dst->flags = MCP251XFD_OBJ_FLAGS_IDE;
     }
     else {
         dst->id = FIELD_PREP(MCP251XFD_OBJ_ID_SID_MASK, src->id);
+        dst->flags = 0UL;
     }
 
     if ((src->flags & CAN_FRAME_BRS) != 0) {
@@ -235,18 +235,17 @@ static int mcp251xfd_fifo_write(const struct device* dev, int mailbox_idx,
 }
 
 static void mcp251xfd_rxobj_to_canframe(struct mcp251xfd_rxobj* src, struct can_frame* dst) {
-    (void) memset(dst, 0, sizeof(*dst));
-
     src->id    = sys_le32_to_cpu(src->id);
     src->flags = sys_le32_to_cpu(src->flags);
 
     if ((src->flags & MCP251XFD_OBJ_FLAGS_IDE) != 0) {
-        dst->id     = FIELD_GET(MCP251XFD_OBJ_ID_EID_MASK, src->id);
-        dst->id    |= FIELD_GET(MCP251XFD_OBJ_ID_SID_MASK, src->id) << 18;
-        dst->flags |= CAN_FRAME_IDE;
+        dst->id  = FIELD_GET(MCP251XFD_OBJ_ID_EID_MASK, src->id);
+        dst->id |= FIELD_GET(MCP251XFD_OBJ_ID_SID_MASK, src->id) << 18;
+        dst->flags = CAN_FRAME_IDE;
     }
     else {
         dst->id = FIELD_GET(MCP251XFD_OBJ_ID_SID_MASK, src->id);
+        dst->flags = 0U;
     }
 
     if ((src->flags & MCP251XFD_OBJ_FLAGS_BRS) != 0) {
@@ -867,7 +866,7 @@ static int mcp251xfd_handle_fifo_read(const struct device* dev, const struct mcp
                                  fifo->ram_start_addr     +
                                  (fifo_tail_index * fifo->item_size));
 
-        data = mcp251xfd_read_reg(dev, memory_addr, len * fifo->item_size);
+        data = mcp251xfd_read_reg(dev, memory_addr, (len * fifo->item_size));
         if (!data) {
             LOG_ERR("Error fetching batch message");
             ret = -EINVAL;
@@ -1277,8 +1276,8 @@ static int mcp251xfd_stop(const struct device* dev) {
 
 static void mcp251xfd_rx_fifo_handler(const struct device* dev, void* data) {
     struct can_frame dst;
-    struct mcp251xfd_data*  dev_data = dev->data;
-    struct mcp251xfd_rxobj* rxobj    = data;
+    struct mcp251xfd_data* dev_data = dev->data;
+    struct mcp251xfd_rxobj* rxobj = data;
     uint32_t filhit;
 
     mcp251xfd_rxobj_to_canframe(rxobj, &dst);
