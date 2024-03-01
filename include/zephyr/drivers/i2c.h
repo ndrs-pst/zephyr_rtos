@@ -36,22 +36,22 @@ extern "C" {
  */
 
 /** I2C Standard Speed: 100 kHz */
-#define I2C_SPEED_STANDARD      (0x01U)
+#define /**/I2C_SPEED_STANDARD  (0x01U)
 
 /** I2C Fast Speed: 400 kHz */
-#define I2C_SPEED_FAST          (0x02U)
+#define /**/I2C_SPEED_FAST      (0x02U)
 
 /** I2C Fast Plus Speed: 1 MHz */
-#define I2C_SPEED_FAST_PLUS     (0x03U)
+#define /**/I2C_SPEED_FAST_PLUS (0x03U)
 
 /** I2C High Speed: 3.4 MHz */
-#define I2C_SPEED_HIGH          (0x04U)
+#define /**/I2C_SPEED_HIGH      (0x04U)
 
 /** I2C Ultra Fast Speed: 5 MHz */
-#define I2C_SPEED_ULTRA         (0x05U)
+#define /**/I2C_SPEED_ULTRA     (0x05U)
 
 /** Device Tree specified speed */
-#define I2C_SPEED_DT            (0x07U)
+#define /**/I2C_SPEED_DT        (0x07U)
 
 #define I2C_SPEED_SHIFT         (1U)
 #define I2C_SPEED_SET(speed)    (((speed) << I2C_SPEED_SHIFT) & I2C_SPEED_MASK)
@@ -62,7 +62,7 @@ extern "C" {
 #define I2C_ADDR_10_BITS        BIT(0)
 
 /** Peripheral to act as Controller. */
-#define I2C_MODE_CONTROLLER     BIT(4)
+#define /**/I2C_MODE_CONTROLLER BIT(4)
 
 /**
  * @brief Complete I2C DT information
@@ -136,17 +136,17 @@ struct i2c_dt_spec {
  */
 
 /** Write message to I2C bus. */
-#define I2C_MSG_WRITE           (0U << 0U)
+#define /**/I2C_MSG_WRITE           (0U << 0U)
 
 /** Read message from I2C bus. */
-#define I2C_MSG_READ            BIT(0)
+#define /**/I2C_MSG_READ            BIT(0)
 
 /** @cond INTERNAL_HIDDEN */
-#define I2C_MSG_RW_MASK         BIT(0)
+#define I2C_MSG_RW_MASK             BIT(0)
 /** @endcond  */
 
 /** Send STOP after this message. */
-#define I2C_MSG_STOP            BIT(1)
+#define /**/I2C_MSG_STOP            BIT(1)
 
 /** RESTART I2C transaction for this message.
  *
@@ -155,12 +155,12 @@ struct i2c_dt_spec {
  * that follows a write, or vice-versa.  Some drivers will merge
  * adjacent fragments into a single transaction using this flag; some
  * will not. */
-#define I2C_MSG_RESTART         BIT(2)
+#define /**/I2C_MSG_RESTART         BIT(2)
 
 /** Use 10-bit addressing for this message.
  *
  * @note Not all SoC I2C implementations support this feature. */
-#define I2C_MSG_ADDR_10_BITS    BIT(3)
+#define /**/I2C_MSG_ADDR_10_BITS    BIT(3)
 
 /**
  * @brief One I2C Message.
