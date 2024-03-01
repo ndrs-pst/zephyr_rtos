@@ -60,7 +60,8 @@ static void mcp251xfd_canframe_to_txobj(const struct can_frame* src, int mailbox
         dst->flags |= MCP251XFD_OBJ_FLAGS_RTR;
     }
     else {
-        (void) memcpy(dst->data, src->data, MIN(can_dlc_to_bytes(src->dlc), CAN_MAX_DLEN));
+        (void) memcpy(dst->data, src->data,
+                      MIN(can_dlc_to_bytes(src->dlc), CAN_MAX_DLEN));
     }
 }
 
@@ -138,9 +139,8 @@ static void* mcp251xfd_read_crc(const struct device* dev, uint16_t addr, int len
          * Evaluate initial crc over spi_cmd and length as these value will change after
          * spi transaction is finished.
          */
-        crc_in = crc16(MCP251XFD_CRC_POLY, MCP251XFD_CRC_SEED,
-                       (uint8_t*)(&spi_data->header[0]),
-                       MCP251XFD_SPI_CMD_LEN + MCP251XFD_SPI_LEN_FIELD_LEN);
+        crc_in = crc16_cms(MCP251XFD_CRC_SEED, (uint8_t*)(&spi_data->header[0]),
+                           MCP251XFD_SPI_CMD_LEN + MCP251XFD_SPI_LEN_FIELD_LEN);
 
         ret = spi_transceive_dt(&dev_cfg->bus, &tx, &rx);
         if (ret < 0) {
@@ -148,8 +148,8 @@ static void* mcp251xfd_read_crc(const struct device* dev, uint16_t addr, int len
         }
 
         /* Continue crc calculation over the data field and the crc field */
-        crc = crc16(MCP251XFD_CRC_POLY, crc_in, &spi_data->buf[0],
-                    (len + MCP251XFD_SPI_CRC_LEN));
+        crc = crc16_cms(crc_in, &spi_data->buf[0],
+                        (len + MCP251XFD_SPI_CRC_LEN));
         if (crc == 0) {
             return (&spi_data->buf[0]);
         }
@@ -229,7 +229,9 @@ static int mcp251xfd_fifo_write(const struct device* dev, int mailbox_idx,
     *reg_byte = (uint8_t)MCP251XFD_UINT32_FLAG_TO_BYTE_MASK(MCP251XFD_REG_TXQCON_UINC |
                                                             MCP251XFD_REG_TXQCON_TXREQ);
 
-    return mcp251xfd_write(dev, MCP251XFD_REG_TXQCON + 1, 1);
+    ret = mcp251xfd_write(dev, (MCP251XFD_REG_TXQCON + 1), 1);
+
+    return (ret);
 }
 
 static void mcp251xfd_rxobj_to_canframe(struct mcp251xfd_rxobj* src, struct can_frame* dst) {
@@ -267,7 +269,8 @@ static void mcp251xfd_rxobj_to_canframe(struct mcp251xfd_rxobj* src, struct can_
         dst->flags |= CAN_FRAME_RTR;
     }
     else {
-        memcpy(dst->data, src->data, MIN(can_dlc_to_bytes(dst->dlc), CAN_MAX_DLEN));
+        (void) memcpy(dst->data, src->data,
+                      MIN(can_dlc_to_bytes(dst->dlc), CAN_MAX_DLEN));
     }
 }
 
@@ -276,7 +279,7 @@ static int mcp251xfd_get_mode_internal(const struct device* dev, uint8_t* mode) 
     uint32_t mask = MCP251XFD_UINT32_FLAG_TO_BYTE_MASK(MCP251XFD_REG_CON_OPMOD_MASK);
 
     reg_byte = mcp251xfd_read_crc(dev, MCP251XFD_REG_CON_B2, 1);
-    if (!reg_byte) {
+    if (reg_byte == NULL) {
         return (-EINVAL);
     }
 
@@ -514,7 +517,7 @@ static int mcp251xfd_set_timing_data(const struct device* dev, const struct can_
 static int mcp251xfd_send(const struct device* dev, const struct can_frame* msg,
                           k_timeout_t timeout, can_tx_callback_t callback, void* callback_arg) {
     struct mcp251xfd_data* dev_data = dev->data;
-    uint8_t mailbox_idx;
+    uint_fast8_t mailbox_idx;
     int ret;
 
     LOG_DBG("Sending %d bytes. Id: 0x%x, ID type: %s %s %s %s", can_dlc_to_bytes(msg->dlc),
@@ -649,7 +652,7 @@ static int mcp251xfd_add_rx_filter(const struct device* dev, can_rx_callback_t r
     dev_data->rx_cb[filter_idx]  = rx_cb;
     dev_data->cb_arg[filter_idx] = cb_arg;
 
-done:
+done :
     k_mutex_unlock(&dev_data->mutex);
 
     return (filter_idx);
@@ -785,9 +788,9 @@ static int mcp251xfd_handle_fifo_read(const struct device* dev, const struct mcp
                                       uint8_t fifo_type) {
     struct mcp251xfd_data* dev_data = dev->data;
     uint32_t const* regs;
-    uint32_t  fifosta;
-    uint32_t  ua;
-    uint8_t*  reg_byte;
+    uint32_t fifosta;
+    uint32_t ua;
+    uint8_t* reg_byte;
     int ret = 0;
 
     int len;
@@ -795,7 +798,7 @@ static int mcp251xfd_handle_fifo_read(const struct device* dev, const struct mcp
     int ui_inc = 0;
     uint32_t fifo_tail_index;
     uint32_t fifo_tail_addr;
-    uint8_t  fifo_head_index;
+    uint_fast8_t fifo_head_index;
 
     k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
@@ -822,7 +825,7 @@ static int mcp251xfd_handle_fifo_read(const struct device* dev, const struct mcp
          * fifo_head_index points where the next message will be written.
          * It points to one past the end of the fifo.
          */
-        fifo_head_index = (uint8_t)FIELD_GET(MCP251XFD_REG_FIFOSTA_FIFOCI_MASK, fifosta);
+        fifo_head_index = (uint_fast8_t)FIELD_GET(MCP251XFD_REG_FIFOSTA_FIFOCI_MASK, fifosta);
         if (fifo_head_index == 0) {
             fifo_head_index = fifo->capacity - 1;
         }
@@ -841,7 +844,7 @@ static int mcp251xfd_handle_fifo_read(const struct device* dev, const struct mcp
     }
     else if (fifo_type == MCP251XFD_FIFO_TYPE_TEF) {
         /* FIFOCI doesn't exist for TEF queues, so fetch one message at a time */
-        fifo_head_index = (uint8_t)fifo_tail_index;
+        fifo_head_index = (uint_fast8_t)fifo_tail_index;
         fetch_total     = 1;
     }
     else {
@@ -1039,7 +1042,7 @@ static void mcp251xfd_handle_interrupts(const struct device* dev) {
     uint16_t* reg_int_hw;
     uint32_t reg_int;
     int ret;
-    uint8_t consecutive_calls = 0;
+    uint_fast8_t consecutive_calls = 0;
 
     while (1) {
         k_mutex_lock(&dev_data->mutex, K_FOREVER);
@@ -1297,9 +1300,9 @@ static void mcp251xfd_tef_fifo_handler(const struct device* dev, void* data) {
     struct mcp251xfd_data* dev_data = dev->data;
     struct mcp251xfd_tefobj const* tefobj = data;
     can_tx_callback_t callback;
-    uint8_t mailbox_idx;
+    uint_fast8_t mailbox_idx;
 
-    mailbox_idx = (uint8_t)FIELD_GET(MCP251XFD_OBJ_FLAGS_SEQ_MASK, tefobj->flags);
+    mailbox_idx = (uint_fast8_t)FIELD_GET(MCP251XFD_OBJ_FLAGS_SEQ_MASK, tefobj->flags);
     if (mailbox_idx >= MCP251XFD_TX_QUEUE_ITEMS) {
         mcp251xfd_reset_tx_fifos(dev, -EIO);
         LOG_ERR("Invalid mailbox index");
@@ -1323,7 +1326,7 @@ static int mcp251xfd_init_timing_struct_data(struct can_timing* timing,
     const struct mcp251xfd_config* dev_cfg = dev->config;
     int ret;
 
-    if (USE_SP_ALGO && dev_cfg->common.sample_point_data > 0) {
+    if (USE_SP_ALGO && (dev_cfg->common.sample_point_data > 0)) {
         ret = can_calc_timing_data(dev, timing, dev_cfg->common.bus_speed_data,
                                    dev_cfg->common.sample_point_data);
         if (ret < 0) {
@@ -1355,18 +1358,18 @@ static int mcp251xfd_init_timing_struct(struct can_timing* timing,
     const struct mcp251xfd_config* dev_cfg = dev->config;
     int ret;
 
-    if (USE_SP_ALGO && dev_cfg->common.sample_point > 0) {
+    if (USE_SP_ALGO && (dev_cfg->common.sample_point > 0)) {
         ret = can_calc_timing(dev, timing, dev_cfg->common.bus_speed,
                               dev_cfg->common.sample_point);
         if (ret < 0) {
             return (ret);
         }
         LOG_DBG("Presc: %d, BS1: %d, BS2: %d", timing->prescaler, timing->phase_seg1,
-            timing->phase_seg2);
+                timing->phase_seg2);
         LOG_DBG("Sample-point err : %d", ret);
     } else {
-        timing->sjw = timing_params->sjw;
-        timing->prop_seg = timing_params->prop_seg;
+        timing->sjw        = timing_params->sjw;
+        timing->prop_seg   = timing_params->prop_seg;
         timing->phase_seg1 = timing_params->phase_seg1;
         timing->phase_seg2 = timing_params->phase_seg2;
         ret = can_calc_prescaler(dev, timing, dev_cfg->common.bus_speed);
@@ -1542,9 +1545,9 @@ static int mcp251xfd_init(const struct device* dev) {
     uint32_t* reg;
     uint8_t opmod;
     int ret;
-    struct can_timing timing = {0};
+    struct can_timing timing;
     #if defined(CONFIG_CAN_FD_MODE)
-    struct can_timing timing_data = {0};
+    struct can_timing timing_data;
     #endif
     bool is_ok;
 
@@ -1630,7 +1633,7 @@ static int mcp251xfd_init(const struct device* dev) {
     #endif
 
     reg = mcp251xfd_read_crc(dev, MCP251XFD_REG_CON, MCP251XFD_REG_SIZE);
-    if (!reg) {
+    if (reg == NULL) {
         ret = -EINVAL;
         goto done;
     }
@@ -1730,7 +1733,7 @@ static const struct can_driver_api mcp251xfd_api_funcs = {
     #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
     .recover = mcp251xfd_recover,
     #endif
-    .get_state       = mcp251xfd_get_state,
+    .get_state = mcp251xfd_get_state,
     .set_state_change_callback = mcp251xfd_set_state_change_callback,
     .get_core_clock  = mcp251xfd_get_core_clock,
     .get_max_filters = mcp251xfd_get_max_filters,
@@ -1770,8 +1773,8 @@ static const struct can_driver_api mcp251xfd_api_funcs = {
     .timing_params##type = {                                    \
         .sjw        = DT_INST_PROP(inst, sjw##type),            \
         .prop_seg   = DT_INST_PROP_OR(inst, prop_seg##type, 0), \
-        .phase_seg1 = DT_INST_PROP_OR(inst, phase_seg1##type, 0),       \
-        .phase_seg2 = DT_INST_PROP_OR(inst, phase_seg2##type, 0),       \
+        .phase_seg1 = DT_INST_PROP_OR(inst, phase_seg1##type, 0),   \
+        .phase_seg2 = DT_INST_PROP_OR(inst, phase_seg2##type, 0),   \
     }
 
 #if defined(CONFIG_CAN_FD_MODE)

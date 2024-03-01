@@ -23,7 +23,7 @@ uint16_t crc16(uint16_t poly, uint16_t seed, uint8_t const* src, size_t len) {
     size_t j;
 
     for (i = 0; i < len; i++) {
-        crc ^= (uint16_t)(src[i] << 8U);
+        crc ^= ((uint16_t)src[i] << 8U);
 
         for (j = 0; j < 8; j++) {
             if (crc & 0x8000UL) {
@@ -75,7 +75,7 @@ uint16_t crc16_cms(uint16_t seed, const uint8_t* src, size_t len) {
     uint8_t const* p = src;
 
     for (size_t i = 0; i < len; i++) {
-        seed ^= (uint16_t)(p[i] << 8);
+        seed ^= ((uint16_t)p[i] << 8);
         seed = (uint16_t)(seed << 4) ^ crc16_cms_small_table[(seed >> 12) & 0x0F];
         seed = (uint16_t)(seed << 4) ^ crc16_cms_small_table[(seed >> 12) & 0x0F];
     }
