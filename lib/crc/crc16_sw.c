@@ -12,6 +12,11 @@ static const uint16_t crc16_modbus_small_table[16] = {
     0xA001U, 0x6C00U, 0x7800U, 0xB401U, 0x5000U, 0x9C01U, 0x8801U, 0x4400U
 };
 
+static const uint16_t crc16_cms_small_table[16] = {
+    0x0000U, 0x8005U, 0x800FU, 0x000AU, 0x801BU, 0x001EU, 0x0014U, 0x8011U,
+    0x8033U, 0x0036U, 0x003CU, 0x8039U, 0x0028U, 0x802DU, 0x8027U, 0x0022U
+};
+
 uint16_t crc16(uint16_t poly, uint16_t seed, uint8_t const* src, size_t len) {
     uint16_t crc = seed;
     size_t i;
@@ -61,6 +66,18 @@ uint16_t crc16_ccitt(uint16_t seed, uint8_t const* src, size_t len) {
         e    = seed ^ *src++;
         f    = e ^ (e << 4);
         seed = (seed >> 8) ^ ((uint16_t)f << 8) ^ ((uint16_t)f << 3) ^ ((uint16_t)f >> 4);
+    }
+
+    return (seed);
+}
+
+uint16_t crc16_cms(uint16_t seed, const uint8_t* src, size_t len) {
+    uint8_t const* p = src;
+
+    for (size_t i = 0; i < len; i++) {
+        seed ^= (uint16_t)(p[i] << 8);
+        seed = (uint16_t)(seed << 4) ^ crc16_cms_small_table[(seed >> 12) & 0x0F];
+        seed = (uint16_t)(seed << 4) ^ crc16_cms_small_table[(seed >> 12) & 0x0F];
     }
 
     return (seed);
