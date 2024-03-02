@@ -222,7 +222,7 @@ static inline int stm32_clock_control_on(const struct device* dev,
     ARG_UNUSED(dev);
 
     if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
-        /* Attemp to change a wrong periph clock bit */
+        /* Attempt to change a wrong periph clock bit */
         return (-ENOTSUP);
     }
 
@@ -238,7 +238,7 @@ static inline int stm32_clock_control_off(const struct device* dev,
     ARG_UNUSED(dev);
 
     if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
-        /* Attemp to toggle a wrong periph clock bit */
+        /* Attempt to toggle a wrong periph clock bit */
         return (-ENOTSUP);
     }
 
@@ -801,7 +801,7 @@ int stm32_clock_control_init(const struct device* dev) {
     }
     #endif /* FLASH_ACR_LATENCY */
 
-    /* Set up indiviual enabled clocks */
+    /* Set up individual enabled clocks */
     set_up_fixed_clock_sources();
 
     /* Set up PLLs */
