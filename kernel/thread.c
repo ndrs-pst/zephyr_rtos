@@ -1182,7 +1182,7 @@ int k_thread_runtime_stats_get(k_tid_t thread,
     #if defined(_MSC_VER) /* #CUSTOM@NDRS */
     *stats = (k_thread_runtime_stats_t){0};
     #else
-    *stats = (k_thread_runtime_stats_t){ };
+    *stats = (k_thread_runtime_stats_t){};
     #endif
     #endif
 

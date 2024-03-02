@@ -804,7 +804,7 @@ static int mcp251xfd_handle_fifo_read(const struct device* dev, const struct mcp
     /* read in FIFOSTA and FIFOUA at the same time */
     regs = mcp251xfd_read_crc(dev, MCP251XFD_REG_FIFOCON_TO_STA(fifo->reg_fifocon_addr),
                               (2 * MCP251XFD_REG_SIZE));
-    if (!regs) {
+    if (regs == NULL) {
         ret = -EINVAL;
         goto done;
     }
@@ -886,7 +886,7 @@ static int mcp251xfd_handle_fifo_read(const struct device* dev, const struct mcp
     *reg_byte = (uint8_t)MCP251XFD_UINT32_FLAG_TO_BYTE_MASK(MCP251XFD_REG_FIFOCON_UINC);
 
     for (int i = 0; i < ui_inc; i++) {
-        ret = mcp251xfd_write(dev, fifo->reg_fifocon_addr + 1, 1);
+        ret = mcp251xfd_write(dev, (fifo->reg_fifocon_addr + 1), 1);
         if (ret < 0) {
             LOG_ERR("Failed to increment pointer");
             goto done;
@@ -1186,7 +1186,7 @@ static int mcp251xfd_start(const struct device* dev) {
     const struct mcp251xfd_config* dev_cfg = dev->config;
     int ret;
 
-    if (dev_data->common.started) {
+    if (dev_data->common.started == true) {
         return (-EALREADY);
     }
 
@@ -1226,7 +1226,7 @@ static int mcp251xfd_stop(const struct device* dev) {
     uint8_t* reg_byte;
     int ret;
 
-    if (!dev_data->common.started) {
+    if (dev_data->common.started == false) {
         return (-EALREADY);
     }
 
@@ -1246,7 +1246,7 @@ static int mcp251xfd_stop(const struct device* dev) {
     while (1) {
         reg_byte = mcp251xfd_read_crc(dev, MCP251XFD_REG_CON_B3, 1);
 
-        if (!reg_byte ||
+        if ((reg_byte == NULL) ||
             (*reg_byte & MCP251XFD_UINT32_FLAG_TO_BYTE_MASK(MCP251XFD_REG_CON_ABAT)) == 0) {
             break;
         }
@@ -1366,7 +1366,8 @@ static int mcp251xfd_init_timing_struct(struct can_timing* timing,
         LOG_DBG("Presc: %d, BS1: %d, BS2: %d", timing->prescaler, timing->phase_seg1,
                 timing->phase_seg2);
         LOG_DBG("Sample-point err : %d", ret);
-    } else {
+    }
+    else {
         timing->sjw        = timing_params->sjw;
         timing->prop_seg   = timing_params->prop_seg;
         timing->phase_seg1 = timing_params->phase_seg1;
@@ -1382,7 +1383,8 @@ static int mcp251xfd_init_timing_struct(struct can_timing* timing,
 
 static inline int mcp251xfd_init_con_reg(const struct device* dev) {
     uint32_t* reg;
-    uint32_t  tmp;
+    uint32_t tmp;
+    int ret;
 
     reg = mcp251xfd_get_spi_buf_ptr(dev);
     tmp = MCP251XFD_REG_CON_ISOCRCEN | MCP251XFD_REG_CON_WAKFIL | MCP251XFD_REG_CON_TXQEN |
@@ -1391,7 +1393,9 @@ static inline int mcp251xfd_init_con_reg(const struct device* dev) {
             FIELD_PREP(MCP251XFD_REG_CON_REQOP_MASK, MCP251XFD_REG_CON_MODE_CONFIG);
     *reg = tmp;
 
-    return mcp251xfd_write(dev, MCP251XFD_REG_CON, MCP251XFD_REG_SIZE);
+    ret = mcp251xfd_write(dev, MCP251XFD_REG_CON, MCP251XFD_REG_SIZE);
+
+    return (ret);
 }
 
 static inline int mcp251xfd_init_osc_reg(const struct device* dev) {
@@ -1414,9 +1418,11 @@ static inline int mcp251xfd_init_osc_reg(const struct device* dev) {
         return (ret);
     }
 
-    return mcp251xfd_reg_check_value_wtimeout(dev, MCP251XFD_REG_OSC, reg_value, reg_value,
-                                              MCP251XFD_PLLRDY_TIMEOUT_USEC,
-                                              MCP251XFD_PLLRDY_RETRIES, false);
+    ret = mcp251xfd_reg_check_value_wtimeout(dev, MCP251XFD_REG_OSC, reg_value, reg_value,
+                                             MCP251XFD_PLLRDY_TIMEOUT_USEC,
+                                             MCP251XFD_PLLRDY_RETRIES, false);
+
+    return (ret);
 }
 
 static inline int mcp251xfd_init_iocon_reg(const struct device* dev) {
@@ -1425,15 +1431,14 @@ static inline int mcp251xfd_init_iocon_reg(const struct device* dev) {
     uint32_t tmp;
 
     /*
-     *         MCP2518FD Errata: DS80000789
-     *         Writing Byte 2/3 of the IOCON register using single SPI write cleat LAT0 and LAT1.
-     *         This has no effect in the current version since LAT0/1 are set to zero anyway.
-     *         However, it needs to be properly handled if other values are needed. Errata suggests
-     *         to do single byte writes instead.
+     * MCP2518FD Errata: DS80000789
+     * Writing Byte 2/3 of the IOCON register using single SPI write clear LAT0 and LAT1.
+     * This has no effect in the current version since LAT0/1 are set to zero anyway.
+     * However, it needs to be properly handled if other values are needed. Errata suggests
+     * to do single byte writes instead.
      */
-
-    tmp = MCP251XFD_REG_IOCON_TRIS0 | MCP251XFD_REG_IOCON_TRIS1 | MCP251XFD_REG_IOCON_PM0 |
-          MCP251XFD_REG_IOCON_PM1;
+    tmp = (MCP251XFD_REG_IOCON_TRIS0 | MCP251XFD_REG_IOCON_TRIS1 | MCP251XFD_REG_IOCON_PM0 |
+           MCP251XFD_REG_IOCON_PM1);
 
     if (dev_cfg->sof_on_clko) {
         tmp |= MCP251XFD_REG_IOCON_SOF;
@@ -1448,8 +1453,8 @@ static inline int mcp251xfd_init_int_reg(const struct device* dev) {
     uint32_t* reg = mcp251xfd_get_spi_buf_ptr(dev);
     uint32_t tmp;
 
-    tmp = MCP251XFD_REG_INT_RXIE | MCP251XFD_REG_INT_MODIE | MCP251XFD_REG_INT_TEFIE |
-          MCP251XFD_REG_INT_CERRIE;
+    tmp = (MCP251XFD_REG_INT_RXIE | MCP251XFD_REG_INT_MODIE | MCP251XFD_REG_INT_TEFIE |
+           MCP251XFD_REG_INT_CERRIE);
 
     *reg = sys_cpu_to_le32(tmp);
 

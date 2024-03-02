@@ -303,7 +303,7 @@ int z_impl_k_msgq_peek(struct k_msgq* msgq, void* data) {
 
     if (msgq->used_msgs > 0U) {
         /* take first available message from queue */
-        (void)memcpy(data, msgq->read_ptr, msgq->msg_size);
+        (void) memcpy(data, msgq->read_ptr, msgq->msg_size);
         result = 0;
     }
     else {
