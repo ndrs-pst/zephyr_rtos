@@ -1200,7 +1200,7 @@ static int eth_initialize(const struct device *dev)
 	if (hal_ret == HAL_TIMEOUT) {
 		/* HAL Init time out. This could be linked to */
 		/* a recoverable error. Log the issue and continue */
-		/* driver initialisation */
+		/* driver initialization */
 		LOG_ERR("HAL_ETH_Init Timed out");
 	} else if (hal_ret != HAL_OK) {
 		LOG_ERR("HAL_ETH_Init failed: %d", hal_ret);

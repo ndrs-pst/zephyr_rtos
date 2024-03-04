@@ -365,7 +365,7 @@
 #define STM32_HSE_ENABLED       1
 #define STM32_HSE_BYPASS        DT_PROP(DT_NODELABEL(clk_hse), hse_bypass)
 #define STM32_HSE_FREQ          DT_PROP(DT_NODELABEL(clk_hse), clock_frequency)
-#define STM32_HSE_CSS		DT_PROP(DT_NODELABEL(clk_hse), css_enabled)
+#define STM32_HSE_CSS           DT_PROP(DT_NODELABEL(clk_hse), css_enabled)
 #elif DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hse), st_stm32wl_hse_clock, okay)
 #define STM32_HSE_ENABLED       1
 #define STM32_HSE_TCXO          DT_PROP(DT_NODELABEL(clk_hse), hse_tcxo)
