@@ -372,7 +372,7 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device* dev,
     stream->user_data    = config->user_data;
     stream->src_size     = config->source_data_size;
     stream->dst_size     = config->dest_data_size;
-    stream->cyclic       = config->head_block->source_reload_en;
+    stream->cyclic       = (bool)config->head_block->source_reload_en;
 
     /* Check dest or source memory address, warn if 0 */
     if (config->head_block->source_address == 0) {

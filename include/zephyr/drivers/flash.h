@@ -122,20 +122,23 @@ typedef int (*flash_api_ex_op)(const struct device* dev, uint16_t code,
                                const uintptr_t in, void* out);
 
 __subsystem struct flash_driver_api {
-    flash_api_read           read;
-    flash_api_write          write;
-    flash_api_erase          erase;
+    flash_api_read  read;
+    flash_api_write write;
+    flash_api_erase erase;
     flash_api_get_parameters get_parameters;
-#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+
+    #if defined(CONFIG_FLASH_PAGE_LAYOUT)
     flash_api_pages_layout page_layout;
-#endif /* CONFIG_FLASH_PAGE_LAYOUT */
-#if defined(CONFIG_FLASH_JESD216_API)
+    #endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
+    #if defined(CONFIG_FLASH_JESD216_API)
     flash_api_sfdp_read     sfdp_read;
     flash_api_read_jedec_id read_jedec_id;
-#endif /* CONFIG_FLASH_JESD216_API */
-#if defined(CONFIG_FLASH_EX_OP_ENABLED)
+    #endif /* CONFIG_FLASH_JESD216_API */
+
+    #if defined(CONFIG_FLASH_EX_OP_ENABLED)
     flash_api_ex_op ex_op;
-#endif /* CONFIG_FLASH_EX_OP_ENABLED */
+    #endif /* CONFIG_FLASH_EX_OP_ENABLED */
 };
 
 /**

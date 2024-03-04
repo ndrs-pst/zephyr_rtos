@@ -116,7 +116,7 @@ manifest:
       groups:
         - babblesim
     - name: cmsis
-      revision: 1e30dc71511020b81c0f1948ad0382119fa9e941
+      revision: b3ee8bf66a62ae6b13c7a1edf7ae4223d9365c1a
       path: modules/hal/cmsis
       groups:
         - hal
@@ -229,7 +229,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: c657324e64f1dc8be3a378246690d553f9af5503
+      revision: 89b582e5df5b4aba624e7eea1e0b8e94ae19a8d8
       path: modules/hal/stm32
       groups:
         - hal

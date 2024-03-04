@@ -977,8 +977,8 @@ static int transceive_dma(const struct device* dev,
     }
 
     #ifdef CONFIG_SOC_SERIES_STM32H7X
-    if ((tx_bufs != NULL && !spi_buf_set_in_nocache(tx_bufs)) ||
-        (rx_bufs != NULL && !spi_buf_set_in_nocache(rx_bufs))) {
+    if (((tx_bufs != NULL) && !spi_buf_set_in_nocache(tx_bufs)) ||
+        ((rx_bufs != NULL) && !spi_buf_set_in_nocache(rx_bufs))) {
         return (-EFAULT);
     }
     #endif /* CONFIG_SOC_SERIES_STM32H7X */
