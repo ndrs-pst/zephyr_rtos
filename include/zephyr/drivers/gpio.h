@@ -1622,6 +1622,11 @@ static inline int gpio_pin_set_dt(const struct gpio_dt_spec* spec, int value) {
     return gpio_pin_set(spec->port, spec->pin, value);
 }
 
+/* #CUSTOM@NDRS */
+static inline int gpio_pin_set_raw_dt(const struct gpio_dt_spec* spec, int value) {
+    return gpio_pin_set_raw(spec->port, spec->pin, value);
+}
+
 /**
  * @brief Toggle pin level.
  *
