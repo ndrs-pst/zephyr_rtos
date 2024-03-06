@@ -12,7 +12,7 @@
  *################################################################################
  *|Confirmation code	|		Definition |
  *################################################################################
- *|0x00			|commad execution complete |
+ *|0x00			|command execution complete |
  *--------------------------------------------------------------------------------
  *|0x01			|error when receiving data package |
  *--------------------------------------------------------------------------------
@@ -60,7 +60,7 @@
  *--------------------------------------------------------------------------------
  */
 
-#define R502A_OK 0x00 /*commad execution complete*/
+#define R502A_OK 0x00 /*command execution complete*/
 #define R502A_NOT_FOUND 0x09 /*fail to find the matching finger*/
 
 /*Package Identifier's definition*/
