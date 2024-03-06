@@ -116,7 +116,7 @@ manifest:
       groups:
         - babblesim
     - name: cmsis
-      revision: b3ee8bf6662ae6b13c7a1edf7ae4223d9365c1a
+      revision: b3ee8bf66a62ae6b13c7a1edf7ae4223d9365c1a
       path: modules/hal/cmsis
       groups:
         - hal
