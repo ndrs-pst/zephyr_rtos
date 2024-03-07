@@ -454,14 +454,13 @@ static inline bool sliceable(struct k_thread *thread)
 	return ret;
 }
 
-static void slice_timeout(struct _timeout* timeout)
-{
-    int cpu = ARRAY_INDEX(slice_timeouts, timeout);
+static void slice_timeout(struct _timeout const* timeout) {
+    int cpu;
 
 	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
-	cpu = (int)ARRAY_INDEX_WITH_TYPE(slice_timeouts, struct _timeout, t);
+	cpu = (int)ARRAY_INDEX_WITH_TYPE(slice_timeouts, struct _timeout, timeout);
 	#else
-	cpu = ARRAY_INDEX(slice_timeouts, t);
+	cpu = ARRAY_INDEX(slice_timeouts, timeout);
 	#endif
 
 	slice_expired[cpu] = true;

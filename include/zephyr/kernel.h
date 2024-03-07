@@ -6018,7 +6018,7 @@ static inline void k_cpu_atomic_idle(unsigned int key) {
 /**
  * @internal
  */
-void z_timer_expiration_handler(struct _timeout *timeout);
+void z_timer_expiration_handler(struct _timeout const* timeout);
 /**
  * INTERNAL_HIDDEN @endcond
  */
