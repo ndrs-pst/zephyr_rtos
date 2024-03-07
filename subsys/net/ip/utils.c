@@ -350,7 +350,7 @@ int z_impl_net_addr_pton(sa_family_t family, const char *src,
 		for (i = 0; i < sizeof(struct in_addr); i++) {
 			char *endptr;
 
-			addr->s4_addr[i] = strtol(src, &endptr, 10);
+			addr->s4_addr[i] = (uint8_t)strtol(src, &endptr, 10);
 
 			src = ++endptr;
 		}
@@ -444,7 +444,7 @@ int z_impl_net_addr_pton(sa_family_t family, const char *src,
 					return -EINVAL;
 				}
 
-				addr->s6_addr[12 + i] = strtol(src, NULL, 10);
+				addr->s6_addr[12 + i] = (uint8_t)strtol(src, NULL, 10);
 
 				src = strchr(src, '.');
 				if (src) {
@@ -593,7 +593,7 @@ uint16_t calc_chksum(uint16_t sum_in, const uint8_t *data, size_t len)
 	if (odd_start == CHECKSUM_BIG_ENDIAN) {
 		return BSWAP_16((uint16_t)sum);
 	} else {
-		return sum;
+		return (uint16_t)sum;
 	}
 }
 
@@ -646,16 +646,16 @@ uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto)
 	    net_pkt_family(pkt) == AF_INET) {
 		if (proto != IPPROTO_ICMP && proto != IPPROTO_IGMP) {
 			len = 2 * sizeof(struct in_addr);
-			sum = net_pkt_get_len(pkt) -
+			sum = (uint16_t)(net_pkt_get_len(pkt) -
 				net_pkt_ip_hdr_len(pkt) -
-				net_pkt_ipv4_opts_len(pkt) + proto;
+				net_pkt_ipv4_opts_len(pkt) + proto);
 		}
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		   net_pkt_family(pkt) == AF_INET6) {
 		len = 2 * sizeof(struct in6_addr);
-		sum =  net_pkt_get_len(pkt) -
+		sum = (uint16_t)(net_pkt_get_len(pkt) -
 			net_pkt_ip_hdr_len(pkt) -
-			net_pkt_ipv6_ext_len(pkt) + proto;
+			net_pkt_ipv6_ext_len(pkt) + proto);
 	} else {
 		NET_DBG("Unknown protocol family %d", net_pkt_family(pkt));
 		return 0;
@@ -719,7 +719,7 @@ static bool convert_port(const char *buf, uint16_t *port)
 		return false;
 	}
 
-	*port = tmp;
+	*port = (uint16_t)tmp;
 
 	return true;
 }
@@ -889,7 +889,8 @@ static inline bool parse_ipv4(const char *str, size_t str_len,
 
 bool net_ipaddr_parse(const char *str, size_t str_len, struct sockaddr *addr)
 {
-	int i, count;
+	size_t i;
+	size_t count;
 
 	if (!str || str_len == 0) {
 		return false;
@@ -953,7 +954,7 @@ int net_port_set_default(struct sockaddr *addr, uint16_t default_port)
 
 int net_bytes_from_str(uint8_t *buf, int buf_len, const char *src)
 {
-	unsigned int i;
+	size_t i;
 	char *endptr;
 
 	for (i = 0U; i < strlen(src); i++) {
@@ -965,10 +966,10 @@ int net_bytes_from_str(uint8_t *buf, int buf_len, const char *src)
 		}
 	}
 
-	(void)memset(buf, 0, buf_len);
+	(void) memset(buf, 0, buf_len);
 
-	for (i = 0U; i < buf_len; i++) {
-		buf[i] = strtol(src, &endptr, 16);
+	for (i = 0U; i < (size_t)buf_len; i++) {
+		buf[i] = (uint8_t)strtol(src, &endptr, 16);
 		src = ++endptr;
 	}
 

@@ -1017,7 +1017,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 	const struct flash_stm32_qspi_config *dev_cfg = dev->config;
 	struct flash_stm32_qspi_data *data = dev->data;
 	struct jesd216_erase_type *etp = data->erase_types;
-	const size_t flash_size = jesd216_bfp_density(bfp) / 8U;
+	const size_t flash_size = (size_t)(jesd216_bfp_density(bfp) / 8U);
 	uint8_t addr_mode;
 	int rc;
 
@@ -1025,7 +1025,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 		LOG_ERR("Unexpected flash size: %u", flash_size);
 	}
 
-	LOG_INF("%s: %u MiBy flash", dev->name, (uint32_t)(flash_size >> 20));
+	LOG_INF("%s: %u MiB flash", dev->name, (uint32_t)(flash_size >> 20));
 
 	/* Copy over the erase types, preserving their order.  (The
 	 * Sector Map Parameter table references them by index.)
@@ -1305,12 +1305,12 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	const uint8_t decl_nph = 2;
 	union {
 		/* We only process BFP so use one parameter block */
-		uint8_t raw[JESD216_SFDP_SIZE(decl_nph)];
+		uint8_t raw[JESD216_SFDP_SIZE(2U)];                     /* @see Use value from decl_nph */
 		struct jesd216_sfdp_header sfdp;
-	} u;
-	const struct jesd216_sfdp_header *hp = &u.sfdp;
+	} u_header;
+	const struct jesd216_sfdp_header* hp = &u_header.sfdp;
 
-	ret = qspi_read_sfdp(dev, 0, u.raw, sizeof(u.raw));
+	ret = qspi_read_sfdp(dev, 0, u_header.raw, sizeof(u_header.raw));
 	if (ret != 0) {
 		LOG_ERR("SFDP read failed: %d", ret);
 		return ret;

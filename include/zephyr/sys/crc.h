@@ -29,6 +29,7 @@ extern "C" {
  * computation.
  */
 #define CRC8_CCITT_INITIAL_VALUE 0xFF
+#define CRC8_ROHC_INITIAL_VALUE  0xFF
 
 /**
  * @defgroup checksum Checksum
@@ -47,17 +48,18 @@ extern "C" {
  * These values should be used with the @ref crc dispatch function.
  */
 enum crc_type {
-	CRC4,        /**< Use @ref crc4 */
-	CRC4_TI,     /**< Use @ref crc4_ti */
-	CRC7_BE,     /**< Use @ref crc7_be */
-	CRC8,	     /**< Use @ref crc8 */
-	CRC8_CCITT,  /**< Use @ref crc8_ccitt */
-	CRC16,	     /**< Use @ref crc16 */
-	CRC16_ANSI,  /**< Use @ref crc16_ansi */
-	CRC16_CCITT, /**< Use @ref crc16_ccitt */
-	CRC16_ITU_T, /**< Use @ref crc16_itu_t */
-	CRC32_C,     /**< Use @ref crc32_c */
-	CRC32_IEEE,  /**< Use @ref crc32_ieee */
+    CRC4,        /**< Use @ref crc4 */
+    CRC4_TI,     /**< Use @ref crc4_ti */
+    CRC7_BE,     /**< Use @ref crc7_be */
+    CRC8,        /**< Use @ref crc8 */
+    CRC8_CCITT,  /**< Use @ref crc8_ccitt */
+    CRC8_ROHC,   /**< Use @ref crc8_rohc */
+    CRC16,       /**< Use @ref crc16 */
+    CRC16_ANSI,  /**< Use @ref crc16_ansi */
+    CRC16_CCITT, /**< Use @ref crc16_ccitt */
+    CRC16_ITU_T, /**< Use @ref crc16_itu_t */
+    CRC32_C,     /**< Use @ref crc32_c */
+    CRC32_IEEE,  /**< Use @ref crc32_ieee */
 };
 
 /**
@@ -79,7 +81,7 @@ enum crc_type {
  *
  * @return The computed CRC16 value (without any XOR applied to it)
  */
-uint16_t crc16(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len);
+uint16_t crc16(uint16_t poly, uint16_t seed, uint8_t const* src, size_t len);
 
 /**
  * @brief Generic function for computing a CRC-16 with input and output
@@ -109,7 +111,7 @@ uint16_t crc16(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len);
  *
  * @return The computed CRC16 value (without any XOR applied to it)
  */
-uint16_t crc16_reflect(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len);
+uint16_t crc16_reflect(uint16_t poly, uint16_t seed, uint8_t const* src, size_t len);
 /**
  * @brief Generic function for computing CRC 8
  *
@@ -125,8 +127,8 @@ uint16_t crc16_reflect(uint16_t poly, uint16_t seed, const uint8_t *src, size_t 
  *
  * @return The computed CRC8 value
  */
-uint8_t crc8(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial_value,
-	  bool reversed);
+uint8_t crc8(uint8_t const* src, size_t len, uint8_t polynomial, uint8_t initial_value,
+             bool reversed);
 
 /**
  * @brief Compute the checksum of a buffer with polynomial 0x1021, reflecting
@@ -159,14 +161,44 @@ uint8_t crc8(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial
  *
  * @return The computed CRC16 value (without any XOR applied to it)
  */
-uint16_t crc16_ccitt(uint16_t seed, const uint8_t *src, size_t len);
+uint16_t crc16_ccitt(uint16_t seed, uint8_t const* src, size_t len);
+
+/**
+ * @brief Compute the checksum of a buffer with polynomial 0x8005, no
+ *        reflecting input and output.
+ *
+ * This function is able to calculate any CRC that uses 0x8005 as it polynomial
+ * and requires no reflection on both the input and the output.
+ *
+ * The following checksums can, among others, be calculated by this function,
+ * depending on the value provided for the initial seed and the value the final
+ * calculated CRC is XORed with:
+ *
+ * - CRC-16/DDS-110
+ *   https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-dds-110
+ *   initial seed: 0x800d, xor output: 0x0000
+ *
+ * - CRC-16/UMTS
+ *   https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-umts
+ *   initial seed: 0x0000, xor output: 0x0000
+ *
+ * @note To calculate the CRC across non-contiguous blocks use the return
+ *       value from block N-1 as the seed for block N.
+ *
+ * @param seed Value to seed the CRC with
+ * @param src Input bytes for the computation
+ * @param len Length of the input in bytes
+ *
+ * @return The computed CRC16 value (without any XOR applied to it)
+ */
+uint16_t crc16_cms(uint16_t seed, uint8_t const* src, size_t len);
 
 /**
  * @brief Compute the checksum of a buffer with polynomial 0x1021, no
  *        reflection of input or output.
  *
  * This function is able to calculate any CRC that uses 0x1021 as it polynomial
- * and requires no reflection on  both the input and the output. It is a fast
+ * and requires no reflection on both the input and the output. It is a fast
  * variant that runs in O(n) time, where n is the length of the input buffer.
  *
  * The following checksums can, among others, be calculated by this function,
@@ -196,7 +228,41 @@ uint16_t crc16_ccitt(uint16_t seed, const uint8_t *src, size_t len);
  *
  * @return The computed CRC16 value (without any XOR applied to it)
  */
-uint16_t crc16_itu_t(uint16_t seed, const uint8_t *src, size_t len);
+uint16_t crc16_itu_t(uint16_t seed, uint8_t const* src, size_t len);
+
+/**
+ * @brief Compute the checksum of a buffer with polynomial 0x8005 (0xA001 reflected),
+ *        reflecting input and output.
+ *
+ * This function is able to calculate any CRC that uses 0x8005 as it polynomial
+ * and requires reflecting both the input and the output.
+ *
+ * The following checksums can, among others, be calculated by this function,
+ * depending on the value provided for the initial seed and the value the final
+ * calculated CRC is XORed with:
+ *
+ * - CRC-16/ARC
+ *   https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-arc
+ *   initial seed: 0x0000, xor output: 0x0000
+ *
+ * - CRC-16/USB
+ *   https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-usb
+ *   initial seed: 0xffff, xor output: 0xffff
+ *
+ * - CRC-16/MAXIM-DOW, CRC-16/MAXIM
+ *   https://reveng.sourceforge.io/crc-catalogue/16.htm#crc.cat.crc-16-maxim-dow
+ *   initial seed: 0x0000, xor output: 0xffff
+ *
+ * @note To calculate the CRC across non-contiguous blocks use the return
+ *       value from block N-1 as the seed for block N.
+ *
+ * @param seed Value to seed the CRC with
+ * @param src Input bytes for the computation
+ * @param len Length of the input in bytes
+ *
+ * @return The computed CRC16 value (without any XOR applied to it)
+ */
+uint16_t crc16_modbus(uint16_t seed, uint8_t const* src, size_t len);
 
 /**
  * @brief Compute the ANSI (or Modbus) variant of CRC-16
@@ -209,9 +275,8 @@ uint16_t crc16_itu_t(uint16_t seed, const uint8_t *src, size_t len);
  *
  * @return The computed CRC16 value
  */
-static inline uint16_t crc16_ansi(const uint8_t *src, size_t len)
-{
-	return crc16_reflect(0xA001, 0xffff, src, len);
+static inline uint16_t crc16_ansi(uint8_t const* src, size_t len) {
+    return crc16_modbus(0xffff, src, len);
 }
 
 /**
@@ -223,7 +288,7 @@ static inline uint16_t crc16_ansi(const uint8_t *src, size_t len)
  * @return CRC32 value.
  *
  */
-uint32_t crc32_ieee(const uint8_t *data, size_t len);
+uint32_t crc32_ieee(uint8_t const* data, size_t len);
 
 /**
  * @brief Update an IEEE conforming CRC32 checksum.
@@ -235,7 +300,7 @@ uint32_t crc32_ieee(const uint8_t *data, size_t len);
  * @return CRC32 value.
  *
  */
-uint32_t crc32_ieee_update(uint32_t crc, const uint8_t *data, size_t len);
+uint32_t crc32_ieee_update(uint32_t crc, uint8_t const* data, size_t len);
 
 /**
  * @brief Calculate CRC32C (Castagnoli) checksum.
@@ -249,8 +314,8 @@ uint32_t crc32_ieee_update(uint32_t crc, const uint8_t *data, size_t len);
  * @return CRC32 value.
  *
  */
-uint32_t crc32_c(uint32_t crc, const uint8_t *data,
-		 size_t len, bool first_pkt, bool last_pkt);
+uint32_t crc32_c(uint32_t crc, uint8_t const* data,
+                 size_t len, bool first_pkt, bool last_pkt);
 
 /**
  * @brief Compute CCITT variant of CRC 8
@@ -263,7 +328,21 @@ uint32_t crc32_c(uint32_t crc, const uint8_t *data,
  *
  * @return The computed CRC8 value
  */
-uint8_t crc8_ccitt(uint8_t initial_value, const void *buf, size_t len);
+uint8_t crc8_ccitt(uint8_t initial_value, void const* buf, size_t len);
+
+/**
+ * @brief Compute ROHC variant of CRC 8
+ *
+ * ROHC (Robust Header Compression) variant of CRC 8.
+ * Uses 0x07 as the polynomial with reflection.
+ *
+ * @param initial_value Initial value for the CRC computation
+ * @param buf Input bytes for the computation
+ * @param len Length of the input in bytes
+ *
+ * @return The computed CRC8 value
+ */
+uint8_t crc8_rohc(uint8_t val, void const* buf, size_t cnt);
 
 /**
  * @brief Compute the CRC-7 checksum of a buffer.
@@ -278,7 +357,7 @@ uint8_t crc8_ccitt(uint8_t initial_value, const void *buf, size_t len);
  *
  * @return The computed CRC7 value
  */
-uint8_t crc7_be(uint8_t seed, const uint8_t *src, size_t len);
+uint8_t crc7_be(uint8_t seed, uint8_t const* src, size_t len);
 
 /**
  * @brief Compute the CRC-4 checksum of a buffer.
@@ -293,7 +372,7 @@ uint8_t crc7_be(uint8_t seed, const uint8_t *src, size_t len);
  *
  * @return The computed CRC4 value
  */
-uint8_t crc4_ti(uint8_t seed, const uint8_t *src, size_t len);
+uint8_t crc4_ti(uint8_t seed, uint8_t const* src, size_t len);
 
 /**
  * @brief Generic function for computing CRC 4
@@ -312,8 +391,8 @@ uint8_t crc4_ti(uint8_t seed, const uint8_t *src, size_t len);
  *
  * @return The computed CRC4 value
  */
-uint8_t crc4(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial_value,
-	  bool reversed);
+uint8_t crc4(uint8_t const* src, size_t len, uint8_t polynomial, uint8_t initial_value,
+             bool reversed);
 
 /**
  * @brief Compute a CRC checksum, in a generic way.
@@ -337,43 +416,57 @@ uint8_t crc4(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial
  * @param last Whether this is the last packet in the stream.
  * @return uint32_t the computed CRC value
  */
-static inline uint32_t crc_by_type(enum crc_type type, const uint8_t *src, size_t len,
-				   uint32_t seed, uint32_t poly, bool reflect, bool first,
-				   bool last)
-{
-	switch (type) {
-	case CRC4:
-		return crc4(src, len, poly, seed, reflect);
-	case CRC4_TI:
-		return crc4_ti(seed, src, len);
-	case CRC7_BE:
-		return crc7_be(seed, src, len);
-	case CRC8:
-		return crc8(src, len, poly, seed, reflect);
-	case CRC8_CCITT:
-		return crc8_ccitt(seed, src, len);
-	case CRC16:
-		if (reflect) {
-			return crc16_reflect(poly, seed, src, len);
-		} else {
-			return crc16(poly, seed, src, len);
-		}
-	case CRC16_ANSI:
-		return crc16_ansi(src, len);
-	case CRC16_CCITT:
-		return crc16_ccitt(seed, src, len);
-	case CRC16_ITU_T:
-		return crc16_itu_t(seed, src, len);
-	case CRC32_C:
-		return crc32_c(seed, src, len, first, last);
-	case CRC32_IEEE:
-		return crc32_ieee_update(seed, src, len);
-	default:
-		break;
-	}
+static inline uint32_t crc_by_type(enum crc_type type, uint8_t const* src, size_t len,
+                                   uint32_t seed, uint32_t poly, bool reflect, bool first,
+                                   bool last) {
+    switch (type) {
+        case CRC4 :
+            return crc4(src, len, poly, seed, reflect);
 
-	__ASSERT_NO_MSG(false);
-	return -1;
+        case CRC4_TI :
+            return crc4_ti(seed, src, len);
+
+        case CRC7_BE :
+            return crc7_be(seed, src, len);
+
+        case CRC8 :
+            return crc8(src, len, poly, seed, reflect);
+
+        case CRC8_CCITT :
+            return crc8_ccitt(seed, src, len);
+
+        case CRC8_ROHC :
+            return crc8_rohc(seed, src, len);
+
+        case CRC16 :
+            if (reflect) {
+                return crc16_reflect(poly, seed, src, len);
+            }
+            else {
+                return crc16(poly, seed, src, len);
+            }
+
+        case CRC16_ANSI :
+            return crc16_ansi(src, len);
+
+        case CRC16_CCITT :
+            return crc16_ccitt(seed, src, len);
+
+        case CRC16_ITU_T :
+            return crc16_itu_t(seed, src, len);
+
+        case CRC32_C :
+            return crc32_c(seed, src, len, first, last);
+
+        case CRC32_IEEE :
+            return crc32_ieee_update(seed, src, len);
+
+        default :
+            break;
+    }
+
+    __ASSERT_NO_MSG(false);
+    return (-1);
 }
 
 /**
