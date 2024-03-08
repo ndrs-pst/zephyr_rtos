@@ -31,8 +31,16 @@
 #define Z_GENLIST_CONTAINER(__ln, __cn, __n)				\
 	((__ln) ? CONTAINER_OF((__ln), __typeof__(*(__cn)), __n) : NULL)
 
+/* #CUSTOM@NDRS */
+#define Z_GENLIST_CONTAINER_WITH_TYPE(__ln, __type, __cn, __n)		\
+	((__ln) ? CONTAINER_OF((__ln), __type, __n) : NULL)
+
 #define Z_GENLIST_PEEK_HEAD_CONTAINER(__lname, __l, __cn, __n)		\
 	Z_GENLIST_CONTAINER(sys_ ## __lname ## _peek_head(__l), __cn, __n)
+
+/* #CUSTOM@NDRS */
+#define Z_GENLIST_PEEK_HEAD_CONTAINER_WITH_TYPE(__lname, __l, __type, __cn, __n)		\
+	Z_GENLIST_CONTAINER_WITH_TYPE(sys_ ## __lname ## _peek_head(__l), __type, __cn, __n)
 
 #define Z_GENLIST_PEEK_TAIL_CONTAINER(__lname, __l, __cn, __n)		\
 	Z_GENLIST_CONTAINER(sys_ ## __lname ## _peek_tail(__l), __cn, __n)
@@ -42,17 +50,38 @@
 			sys_ ## __lname ## _peek_next(&((__cn)->__n)),	\
 			__cn, __n) : NULL)
 
+/* #CUSTOM@NDRS */
+#define Z_GENLIST_PEEK_NEXT_CONTAINER_WITH_TYPE(__lname, __type, __cn, __n)	\
+	((__cn) ? Z_GENLIST_CONTAINER_WITH_TYPE(					\
+			sys_ ## __lname ## _peek_next(&((__cn)->__n)),	\
+			__type, __cn, __n) : NULL)
+
 #define Z_GENLIST_FOR_EACH_CONTAINER(__lname, __l, __cn, __n)		\
 	for (__cn = Z_GENLIST_PEEK_HEAD_CONTAINER(__lname, __l, __cn,	\
 						  __n);			\
 	     __cn != NULL;						\
 	     __cn = Z_GENLIST_PEEK_NEXT_CONTAINER(__lname, __cn, __n))
 
+/* #CUSTOM@NDRS */
+#define Z_GENLIST_FOR_EACH_CONTAINER_WITH_TYPE(__lname, __l, __type, __cn, __n)		\
+	for (__cn = Z_GENLIST_PEEK_HEAD_CONTAINER_WITH_TYPE(__lname, __l, __type, __cn,	\
+						  __n);			\
+	     __cn != NULL;						\
+	     __cn = Z_GENLIST_PEEK_NEXT_CONTAINER_WITH_TYPE(__lname, __type, __cn, __n))
+
+
 #define Z_GENLIST_FOR_EACH_CONTAINER_SAFE(__lname, __l, __cn, __cns, __n)     \
 	for (__cn = Z_GENLIST_PEEK_HEAD_CONTAINER(__lname, __l, __cn, __n),   \
 	     __cns = Z_GENLIST_PEEK_NEXT_CONTAINER(__lname, __cn, __n); \
 	     __cn != NULL; __cn = __cns,				\
 	     __cns = Z_GENLIST_PEEK_NEXT_CONTAINER(__lname, __cn, __n))
+
+/* #CUSTOM@NDRS */
+#define Z_GENLIST_FOR_EACH_CONTAINER_SAFE_WITH_TYPE(__lname, __l, __type, __cn, __cns, __n)     \
+	for (__cn = Z_GENLIST_PEEK_HEAD_CONTAINER_WITH_TYPE(__lname, __l, __type, __cn, __n),   \
+	     __cns = Z_GENLIST_PEEK_NEXT_CONTAINER_WITH_TYPE(__lname, __type, __cn, __n); \
+	     __cn != NULL; __cn = __cns,				\
+	     __cns = Z_GENLIST_PEEK_NEXT_CONTAINER_WITH_TYPE(__lname, __type, __cn, __n))
 
 #define Z_GENLIST_IS_EMPTY(__lname)					\
 	static inline bool						\
