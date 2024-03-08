@@ -189,11 +189,13 @@ static const struct jesd216_erase_type minimal_erase_types[JESD216_NUM_ERASE_TYP
 #endif /* CONFIG_SPI_NOR_SFDP_MINIMAL */
 
 /* Register writes should be ready extremely quickly */
-#define WAIT_READY_REGISTER K_NO_WAIT
+#define WAIT_READY_REGISTER     K_NO_WAIT
+
 /* Page writes range from sub-ms to 10ms */
-#define WAIT_READY_WRITE K_TICKS(1)
+#define WAIT_READY_WRITE        K_TICKS(1)
+
 /* Erases can range from 45ms to 240sec */
-#define WAIT_READY_ERASE K_MSEC(50)
+#define WAIT_READY_ERASE        K_MSEC(50)
 
 static int spi_nor_write_protection_set(const struct device *dev,
                                         bool write_protect);
@@ -217,7 +219,7 @@ dev_erase_types(const struct device* dev) {
  */
 static inline uint32_t dev_flash_size(const struct device* dev) {
     #ifdef CONFIG_SPI_NOR_SFDP_RUNTIME
-    const struct spi_nor_data *data = dev->data;
+    const struct spi_nor_data* data = dev->data;
 
     return (data->flash_size);
     #else /* CONFIG_SPI_NOR_SFDP_RUNTIME */
@@ -268,7 +270,7 @@ static inline void record_entered_dpd(const struct device* const dev) {
  */
 static inline void delay_until_exit_dpd_ok(const struct device* const dev) {
     #if DT_INST_NODE_HAS_PROP(0, has_dpd)
-    struct spi_nor_data *const driver_data = dev->data;
+    struct spi_nor_data* const driver_data = dev->data;
     int32_t since;
 
     since = (int32_t)(k_uptime_get_32() - driver_data->ts_enter_dpd);
@@ -299,22 +301,22 @@ static inline void delay_until_exit_dpd_ok(const struct device* const dev) {
 /* Indicates that an access command includes bytes for the address.
  * If not provided the opcode is not followed by address bytes.
  */
-#define NOR_ACCESS_ADDRESSED BIT(0)
+#define NOR_ACCESS_ADDRESSED    BIT(0)
 
 /* Indicates that addressed access uses a 24-bit address regardless of
  * spi_nor_data::flag_32bit_addr.
  */
-#define NOR_ACCESS_24BIT_ADDR BIT(1)
+#define NOR_ACCESS_24BIT_ADDR   BIT(1)
 
 /* Indicates that addressed access uses a 32-bit address regardless of
  * spi_nor_data::flag_32bit_addr.
  */
-#define NOR_ACCESS_32BIT_ADDR BIT(2)
+#define NOR_ACCESS_32BIT_ADDR   BIT(2)
 
 /* Indicates that an access command is performing a write.  If not
  * provided access is a read.
  */
-#define NOR_ACCESS_WRITE BIT(7)
+#define NOR_ACCESS_WRITE        BIT(7)
 
 /*
  * @brief Send an SPI command
@@ -450,7 +452,7 @@ static int spi_nor_wait_until_ready(const struct device *dev, k_timeout_t poll_d
  * @param length The size of the buffer
  * @return 0 on success, negative errno code otherwise
  */
-static int read_sfdp(const struct device *const dev,
+static int read_sfdp(const struct device* const dev,
                      off_t addr, void* data, size_t length) {
     /* READ_SFDP requires a 24-bit address followed by a single
      * byte for a wait state.  This is effected by using 32-bit
@@ -517,7 +519,7 @@ static int exit_dpd(const struct device* const dev) {
  */
 static void acquire_device(const struct device* dev) {
     if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-        struct spi_nor_data *const driver_data = dev->data;
+        struct spi_nor_data* const driver_data = dev->data;
 
         k_sem_take(&driver_data->sem, K_FOREVER);
     }
@@ -538,7 +540,7 @@ static void release_device(const struct device* dev) {
     }
 
     if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-        struct spi_nor_data *const driver_data = dev->data;
+        struct spi_nor_data* const driver_data = dev->data;
 
         k_sem_give(&driver_data->sem);
     }
@@ -794,7 +796,7 @@ static int /**/spi_nor_write(const struct device* dev, off_t addr,
             }
 
             size -= to_write;
-            src = (const uint8_t *)src + to_write;
+            src   = (const uint8_t*)src + to_write;
             addr += to_write;
 
             spi_nor_wait_until_ready(dev, WAIT_READY_WRITE);
@@ -803,7 +805,8 @@ static int /**/spi_nor_write(const struct device* dev, off_t addr,
 
     int ret2 = spi_nor_write_protection_set(dev, true);
 
-    if (!ret) {
+    if (ret == 0) {
+        /* In case of no error from ret then override with ret2 */
         ret = ret2;
     }
 
@@ -1111,7 +1114,7 @@ static int spi_nor_process_sfdp(const struct device* dev) {
 
         if (id == JESD216_SFDP_PARAM_ID_BFP) {
             union {
-                uint32_t dw[20];
+                uint32_t dw[20];                                        /* The maximum size of BFP is 20 DWORD */
                 struct jesd216_bfp bfp;
             } u_param;
             const struct jesd216_bfp* bfp = &u_param.bfp;
@@ -1417,7 +1420,7 @@ static int spi_nor_pm_control(const struct device* dev, enum pm_device_action ac
  */
 static int spi_nor_init(const struct device* dev) {
     if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-        struct spi_nor_data *const data = dev->data;
+        struct spi_nor_data* const data = dev->data;
 
         k_sem_init(&data->sem, 1, K_SEM_MAX_LIMIT);
     }
@@ -1460,7 +1463,7 @@ static void spi_nor_pages_layout(const struct device* dev,
                                  size_t* layout_size) {
     /* Data for runtime, const for devicetree and minimal. */
     #ifdef CONFIG_SPI_NOR_SFDP_RUNTIME
-    struct spi_nor_data *const data = dev->data;
+    struct spi_nor_data* const data = dev->data;
 
     *layout = &data->layout;
     #else /* CONFIG_SPI_NOR_SFDP_RUNTIME */
