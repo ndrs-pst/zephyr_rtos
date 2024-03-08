@@ -131,6 +131,11 @@ typedef struct _dnode sys_dnode_t;
  */
 #define SYS_DLIST_CONTAINER(__dn, __cn, __n) \
 	((__dn != NULL) ? CONTAINER_OF(__dn, __typeof__(*__cn), __n) : NULL)
+
+/** #CUSTOM@NDRS */
+#define SYS_DLIST_CONTAINER_WITH_TYPE(__dn, __type, __cn, __n) \
+	((__dn != NULL) ? CONTAINER_OF(__dn, __type, __n) : NULL)
+
 /**
  * @brief Provide the primitive to peek container of the list head
  *
@@ -140,6 +145,10 @@ typedef struct _dnode sys_dnode_t;
  */
 #define SYS_DLIST_PEEK_HEAD_CONTAINER(__dl, __cn, __n) \
 	SYS_DLIST_CONTAINER(sys_dlist_peek_head(__dl), __cn, __n)
+
+ /** #CUSTOM@NDRS */
+#define SYS_DLIST_PEEK_HEAD_CONTAINER_WITH_TYPE(__dl, __type, __cn, __n) \
+	SYS_DLIST_CONTAINER_WITH_TYPE(sys_dlist_peek_head(__dl), __type, __cn, __n)
 
 /**
  * @brief Provide the primitive to peek the next container
@@ -152,6 +161,12 @@ typedef struct _dnode sys_dnode_t;
 	((__cn != NULL) ? \
 	 SYS_DLIST_CONTAINER(sys_dlist_peek_next(__dl, &(__cn->__n)),	\
 				      __cn, __n) : NULL)
+
+ /** #CUSTOM@NDRS */
+#define SYS_DLIST_PEEK_NEXT_CONTAINER_WITH_TYPE(__dl, __type, __cn, __n) \
+	((__cn != NULL) ? \
+	 SYS_DLIST_CONTAINER_WITH_TYPE(sys_dlist_peek_next(__dl, &(__cn->__n)),	\
+				      __type, __cn, __n) : NULL)
 
 /**
  * @brief Provide the primitive to iterate on a list under a container
@@ -171,6 +186,12 @@ typedef struct _dnode sys_dnode_t;
 	for (__cn = SYS_DLIST_PEEK_HEAD_CONTAINER(__dl, __cn, __n);     \
 	     __cn != NULL;                                              \
 	     __cn = SYS_DLIST_PEEK_NEXT_CONTAINER(__dl, __cn, __n))
+
+/** #CUSTOM@NDRS */
+#define SYS_DLIST_FOR_EACH_CONTAINER_WITH_TYPE(__dl, __type, __cn, __n)	\
+	for (__cn = SYS_DLIST_PEEK_HEAD_CONTAINER_WITH_TYPE(__dl, __type, __cn, __n);     \
+	     __cn != NULL;                                              \
+	     __cn = SYS_DLIST_PEEK_NEXT_CONTAINER_WITH_TYPE(__dl, __type, __cn, __n))
 
 /**
  * @brief Provide the primitive to safely iterate on a list under a container
@@ -192,6 +213,13 @@ typedef struct _dnode sys_dnode_t;
 	     __cns = SYS_DLIST_PEEK_NEXT_CONTAINER(__dl, __cn, __n);    \
 	     __cn != NULL; __cn = __cns,				\
 	     __cns = SYS_DLIST_PEEK_NEXT_CONTAINER(__dl, __cn, __n))
+
+ /** #CUSTOM@NDRS */
+#define SYS_DLIST_FOR_EACH_CONTAINER_SAFE_WITH_TYPE(__dl, __type, __cn, __cns, __n) \
+	for (__cn = SYS_DLIST_PEEK_HEAD_CONTAINER_WITH_TYPE(__dl, __type, __cn, __n),   \
+	     __cns = SYS_DLIST_PEEK_NEXT_CONTAINER_WITH_TYPE(__dl, __type, __cn, __n);  \
+	     __cn != NULL; __cn = __cns,				\
+	     __cns = SYS_DLIST_PEEK_NEXT_CONTAINER_WITH_TYPE(__dl, __type, __cn, __n))
 
 /**
  * @brief initialize list to its empty state

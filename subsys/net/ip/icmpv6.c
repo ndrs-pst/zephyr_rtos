@@ -378,8 +378,8 @@ drop:
 	return NET_DROP;
 }
 
-void net_icmpv6_init(void)
-{
+#if defined(CONFIG_NET_NATIVE_IPV6)
+void net_icmpv6_init(void) {
 	static struct net_icmp_ctx ctx;
 	int ret;
 
@@ -389,3 +389,4 @@ void net_icmpv6_init(void)
 			ret);
 	}
 }
+#endif
