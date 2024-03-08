@@ -43,7 +43,7 @@ struct fram_cy15x_config {
 #ifdef CONFIG_FRAM_CY15XJ
         struct i2c_dt_spec i2c;
 #endif /* CONFIG_FRAM_CY15XJ */
-#ifdef CONFIG_FRAM_CY15XQ
+#if (defined(CONFIG_FRAM_CY15XQ) || defined(_MSC_VER)) /* #CUSTOM@NDRS */
         struct spi_dt_spec spi;
 #endif /* CONFIG_FRAM_CY15XQ */
     } bus;
@@ -327,7 +327,7 @@ static int fram_cy15xj_write(const struct device* dev, off_t offset,
 }
 #endif /* CONFIG_FRAM_CY15XJ */
 
-#ifdef CONFIG_FRAM_CY15XQ
+#if (defined(CONFIG_FRAM_CY15XQ) || defined(_MSC_VER)) /* #CUSTOM@NDRS */
 
 static bool fram_cy15xq_bus_is_ready(const struct device* dev) {
     const struct fram_cy15x_config* config = dev->config;
@@ -571,6 +571,6 @@ static const struct fram_driver_api fram_cy15x_api = {
 INST_DT_CY15X_FOREACH(j, FRAM_CY15XJ_DEVICE);
 #endif
 
-#ifdef CONFIG_FRAM_CY15XQ
+#if (defined(CONFIG_FRAM_CY15XQ) || defined(_MSC_VER)) /* #CUSTOM@NDRS */
 INST_DT_CY15X_FOREACH(q, FRAM_CY15XQ_DEVICE);
 #endif

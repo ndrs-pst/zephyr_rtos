@@ -1744,9 +1744,11 @@ void zephyr_gtest_spi_nor(void) {
     struct device const* dev;
 
     dev = DEVICE_DT_GET(DT_NODELABEL(is25lp080));
+    (void) dev;
     zephyr_gpio_sam0_set_regs(&spi_nor_config_0.spi.config.cs.gpio, ut_mcu_port_ptr);
 
     // Setup spi_nor_data_0 data parameter
+    #if defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
     spi_nor_data_0.flash_size = (16UL * 1024UL * 1024UL);
     spi_nor_data_0.page_size  = 4096U;
 
@@ -1759,6 +1761,7 @@ void zephyr_gtest_spi_nor(void) {
 
     spi_nor_data_0.layout.pages_count = 4096U;
     spi_nor_data_0.layout.pages_size  = 4096U;
+    #endif
 }
 #endif
 
