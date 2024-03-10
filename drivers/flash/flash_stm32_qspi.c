@@ -36,6 +36,7 @@
 #define STM32_QSPI_RESET_CMD  DT_INST_NODE_HAS_PROP(0, reset_cmd)
 
 #include <stm32_ll_dma.h>
+#include <stm32_ll_mdma.h>
 
 #include "spi_nor.h"
 #include "jesd216.h"
@@ -44,8 +45,10 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(flash_stm32_qspi, CONFIG_FLASH_LOG_LEVEL);
 
-#define STM32_QSPI_FIFO_THRESHOLD      8
-#define STM32_QSPI_CLOCK_PRESCALER_MAX 255
+#define STM32_QSPI_MDMA_FEATURE         0                       /* #CUSTOM@NDRS */
+
+#define STM32_QSPI_FIFO_THRESHOLD       8
+#define STM32_QSPI_CLOCK_PRESCALER_MAX  255
 
 #define STM32_QSPI_UNKNOWN_MODE (0xFF)
 
@@ -54,6 +57,7 @@ LOG_MODULE_REGISTER(flash_stm32_qspi, CONFIG_FLASH_LOG_LEVEL);
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_qspi_nor)
 
 #if STM32_QSPI_USE_DMA
+#if (defined(CONFIG_SOC_SERIES_STM32H7X) && (STM32_QSPI_MDMA_FEATURE == 1)) /* #CUSTOM@NDRS */
 static const uint32_t table_m_size[] = {
     LL_DMA_MDATAALIGN_BYTE,
     LL_DMA_MDATAALIGN_HALFWORD,
@@ -73,12 +77,37 @@ static const uint32_t table_priority[] = {
     DMA_PRIORITY_HIGH,
     DMA_PRIORITY_VERY_HIGH,
 };
+#else
+static const uint32_t table_m_size[] = {
+    LL_DMA_MDATAALIGN_BYTE,
+    LL_DMA_MDATAALIGN_HALFWORD,
+    LL_DMA_MDATAALIGN_WORD,
+};
+
+static const uint32_t table_p_size[] = {
+    LL_DMA_PDATAALIGN_BYTE,
+    LL_DMA_PDATAALIGN_HALFWORD,
+    LL_DMA_PDATAALIGN_WORD,
+};
+
+/* Lookup table to set dma priority from the DTS */
+static const uint32_t table_priority[] = {
+    DMA_PRIORITY_LOW,
+    DMA_PRIORITY_MEDIUM,
+    DMA_PRIORITY_HIGH,
+    DMA_PRIORITY_VERY_HIGH,
+};
+#endif
 #endif /* STM32_QSPI_USE_DMA */
 
 typedef void (*irq_config_func_t)(struct device const* dev);
 
 struct stm32_dma_stream {
+    #if CONFIG_SOC_SERIES_STM32H7X
+    MDMA_TypeDef* reg;
+    #else
     DMA_TypeDef* reg;
+    #endif  
     struct device const* dev;
     uint32_t channel;
     struct dma_config cfg;
@@ -185,7 +214,7 @@ static inline int qspi_prepare_quad_program(struct device const* dev,
 /*
  * Send a command over QSPI bus.
  */
-static int qspi_send_cmd(struct device const* dev, QSPI_CommandTypeDef* cmd) {
+static int qspi_send_cmd(struct device const* dev, QSPI_CommandTypeDef const* cmd) {
     const struct flash_stm32_qspi_config* dev_cfg  = dev->config;
     struct flash_stm32_qspi_data* dev_data = dev->data;
     HAL_StatusTypeDef hal_ret;
@@ -610,6 +639,20 @@ static void flash_stm32_qspi_isr(struct device const* dev) {
 
 /* This function is executed in the interrupt context */
 #if STM32_QSPI_USE_DMA
+#if (defined(CONFIG_SOC_SERIES_STM32H7X) && (STM32_QSPI_MDMA_FEATURE == 1)) /* #CUSTOM@NDRS */
+static void qspi_dma_callback(struct device const* dev, void* arg,
+                              uint32_t channel, int status) {
+    MDMA_HandleTypeDef* hmdma = arg;
+
+    ARG_UNUSED(dev);
+
+    if (status < 0) {
+        LOG_ERR("DMA callback error with channel %d.", channel);
+    }
+
+    HAL_MDMA_IRQHandler(hmdma);
+}
+#else
 static void qspi_dma_callback(struct device const* dev, void* arg,
                               uint32_t channel, int status) {
     DMA_HandleTypeDef* hdma = arg;
@@ -622,6 +665,7 @@ static void qspi_dma_callback(struct device const* dev, void* arg,
 
     HAL_DMA_IRQHandler(hdma);
 }
+#endif
 #endif
 
 __weak HAL_StatusTypeDef HAL_DMA_Abort(DMA_HandleTypeDef* hdma) {
@@ -732,7 +776,6 @@ static int setup_pages_layout(struct device const* dev) {
     const size_t flash_size   = dev_cfg->flash_size;
     uint32_t layout_page_size = data->page_size;
     uint8_t exp = 0;
-    int rv = 0;
 
     /* Find the smallest erase size. */
     for (size_t i = 0; i < ARRAY_SIZE(data->erase_types); ++i) {
@@ -771,7 +814,7 @@ static int setup_pages_layout(struct device const* dev) {
     LOG_DBG("layout %u x %u By pages", data->layout.pages_count,
                                        data->layout.pages_size);
 
-    return (rv);
+    return (0);
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
@@ -837,7 +880,7 @@ static int qspi_read_status_register(struct device const* dev, uint8_t reg_num, 
 static int qspi_write_status_register(struct device const* dev, uint8_t reg_num, uint8_t reg) {
     struct flash_stm32_qspi_data const* dev_data = dev->data;
     size_t size;
-    uint8_t regs[4] = {0};
+    uint8_t regs[4];
     uint8_t const* regs_p;
     int ret;
 
@@ -873,6 +916,7 @@ static int qspi_write_status_register(struct device const* dev, uint8_t reg_num,
             if (ret < 0) {
                 return (ret);
             }
+
             cmd.Instruction = SPI_NOR_CMD_WRSR;
             size            = 2U;
             regs_p          = &regs[0];
@@ -1010,7 +1054,7 @@ static int spi_nor_process_bfp(struct device const* dev,
     for (uint8_t ti = 1; ti <= ARRAY_SIZE(data->erase_types); ++ti) {
         if (jesd216_bfp_erase(bfp, ti, etp) == 0) {
             LOG_DBG("Erase %u with %02x",
-                            (uint32_t)BIT(etp->exp), etp->cmd);
+                    (uint32_t)BIT(etp->exp), etp->cmd);
         }
         ++etp;
     }
@@ -1150,6 +1194,204 @@ static int flash_stm32_qspi_send_reset(struct device const* dev) {
 }
 #endif
 
+#if (defined(CONFIG_SOC_SERIES_STM32H7X) && (STM32_QSPI_MDMA_FEATURE == 1)) /* #CUSTOM@NDRS */
+static int flash_stm32_qspi_init(struct device const* dev) {
+    const struct flash_stm32_qspi_config* dev_cfg = dev->config;
+    struct flash_stm32_qspi_data* dev_data = dev->data;
+    uint32_t ahb_clock_freq;
+    uint32_t prescaler = 0;
+    int ret;
+
+    /* Signals configuration */
+    ret = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
+    if (ret < 0) {
+        LOG_ERR("QSPI pinctrl setup failed (%d)", ret);
+        return (ret);
+    }
+
+    #if STM32_QSPI_RESET_GPIO
+    flash_stm32_qspi_gpio_reset(dev);
+    #endif
+
+    #if STM32_QSPI_USE_DMA
+    /*
+     * DMA configuration
+     * Due to use of QSPI HAL API in current driver,
+     * both HAL and Zephyr DMA drivers should be configured.
+     * The required configuration for Zephyr DMA driver should only provide
+     * the minimum information to inform the DMA slot will be in used and
+     * how to route callbacks.
+     */
+    struct dma_config dma_cfg = dev_data->dma.cfg;
+    static MDMA_HandleTypeDef hmdma;
+
+    if (!device_is_ready(dev_data->dma.dev)) {
+        LOG_ERR("%s device not ready", dev_data->dma.dev->name);
+        return (-ENODEV);
+    }
+
+    /* Proceed to the minimum Zephyr DMA driver init */
+    dma_cfg.user_data = &hmdma;
+    /* HACK: This field is used to inform driver that it is overridden */
+    dma_cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
+    ret = dma_config(dev_data->dma.dev, dev_data->dma.channel, &dma_cfg);
+    if (ret != 0) {
+        return (ret);
+    }
+
+    /* Proceed to the HAL DMA driver init */
+    if (dma_cfg.source_data_size != dma_cfg.dest_data_size) {
+        LOG_ERR("Source and destination data sizes not aligned");
+        return (-EINVAL);
+    }
+
+    int index = find_lsb_set(dma_cfg.source_data_size) - 1;
+
+    hmdma.Init.Request             = MDMA_REQUEST_QUADSPI_TC;  // MDMA_REQUEST_QUADSPI_TC, MDMA_REQUEST_QUADSPI_FIFO_TH
+    hmdma.Init.TransferTriggerMode = MDMA_FULL_TRANSFER;
+    hmdma.Init.Priority            = MDMA_PRIORITY_MEDIUM;      // @see table_priority[dma_cfg.channel_priority];
+    hmdma.Init.Endianness          = MDMA_LITTLE_ENDIANNESS_PRESERVE;
+    hmdma.Init.SourceInc           = MDMA_SRC_INC_DISABLE;
+    hmdma.Init.DestinationInc      = MDMA_DEST_INC_DISABLE;
+    hmdma.Init.SourceDataSize      = MDMA_SRC_DATASIZE_BYTE;
+    hmdma.Init.DestDataSize        = MDMA_DEST_DATASIZE_BYTE;
+    hmdma.Init.DataAlignment       = MDMA_DATAALIGN_PACKENABLE;
+    hmdma.Init.SourceBurst         = MDMA_SOURCE_BURST_SINGLE;
+    hmdma.Init.DestBurst           = MDMA_DEST_BURST_SINGLE;
+    hmdma.Init.BufferTransferLength = 4;
+    hmdma.Init.SourceBlockAddressOffset = 0;
+    hmdma.Init.DestBlockAddressOffset = 0;
+
+    hmdma.Instance = LL_MDMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg, dev_data->dma.channel);
+
+    /* Initialize DMA HAL */
+    __HAL_LINKDMA(&dev_data->hqspi, hmdma, hmdma);
+    HAL_MDMA_Init(&hmdma);
+
+    #endif /* STM32_QSPI_USE_DMA */
+
+    /* Clock configuration */
+    if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+                         (clock_control_subsys_t)&dev_cfg->pclken) != 0) {
+        LOG_DBG("Could not enable QSPI clock");
+        return (-EIO);
+    }
+
+    if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+                                             (clock_control_subsys_t)&dev_cfg->pclken,
+                               &ahb_clock_freq) < 0) {
+        LOG_DBG("Failed to get AHB clock frequency");
+        return (-EIO);
+    }
+
+    for (; prescaler <= STM32_QSPI_CLOCK_PRESCALER_MAX; prescaler++) {
+        uint32_t clk = ahb_clock_freq / (prescaler + 1);
+
+        if (clk <= dev_cfg->max_frequency) {
+            break;
+        }
+    }
+
+    __ASSERT_NO_MSG(prescaler <= STM32_QSPI_CLOCK_PRESCALER_MAX);
+    /* Initialize QSPI HAL */
+    dev_data->hqspi.Init.ClockPrescaler = prescaler;
+    /* Give a bit position from 0 to 31 to the HAL init minus 1 for the DCR1 reg */
+    dev_data->hqspi.Init.FlashSize = find_lsb_set(dev_cfg->flash_size) - 2;
+
+    HAL_QSPI_Init(&dev_data->hqspi);
+
+    #if DT_NODE_HAS_PROP(DT_NODELABEL(quadspi), flash_id)
+    uint8_t qspi_flash_id = DT_PROP(DT_NODELABEL(quadspi), flash_id);
+
+    HAL_QSPI_SetFlashID(&dev_data->hqspi,
+                        (qspi_flash_id - 1) << QUADSPI_CR_FSEL_Pos);
+    #endif
+
+    /* Initialize semaphores */
+    k_sem_init(&dev_data->sem, 1, 1);
+    k_sem_init(&dev_data->sync, 0, 1);
+
+    /* Run IRQ init */
+    dev_cfg->irq_config(dev);
+
+    #if STM32_QSPI_RESET_CMD
+    flash_stm32_qspi_send_reset(dev);
+    k_busy_wait(DT_INST_PROP(0, reset_cmd_wait));
+    #endif
+
+    /* Run NOR init */
+    const uint8_t decl_nph = 2;
+
+    union {
+        /* We only process BFP so use one parameter block */
+        uint8_t raw[JESD216_SFDP_SIZE(2U)];                     /* @see Use value from decl_nph */
+        struct jesd216_sfdp_header sfdp;
+    } u_header;
+    const struct jesd216_sfdp_header* hp = &u_header.sfdp;
+
+    ret = qspi_read_sfdp(dev, 0, u_header.raw, sizeof(u_header.raw));
+    if (ret != 0) {
+        LOG_ERR("SFDP read failed: %d", ret);
+        return (ret);
+    }
+
+    uint32_t magic = jesd216_sfdp_magic(hp);
+
+    if (magic != JESD216_SFDP_MAGIC) {
+        LOG_ERR("SFDP magic %08x invalid", magic);
+        return (-EINVAL);
+    }
+
+    LOG_INF("%s: SFDP v %u.%u AP %x with %u PH", dev->name,
+            hp->rev_major, hp->rev_minor, hp->access, 1 + hp->nph);
+
+    const struct jesd216_param_header* php  = hp->phdr;
+    const struct jesd216_param_header* phpe = php + MIN(decl_nph, 1 + hp->nph);
+
+    while (php != phpe) {
+        uint16_t id = jesd216_param_id(php);
+
+        LOG_INF("PH%u: %04x rev %u.%u: %u DW @ %x",
+                (php - hp->phdr), id, php->rev_major, php->rev_minor,
+                php->len_dw, jesd216_param_addr(php));
+
+        if (id == JESD216_SFDP_PARAM_ID_BFP) {
+            union {
+                uint32_t dw[20];
+                struct jesd216_bfp bfp;
+            } u2_header;
+            const struct jesd216_bfp* bfp = &u2_header.bfp;
+
+            ret = qspi_read_sfdp(dev, jesd216_param_addr(php),
+                                 (uint8_t*)u2_header.dw,
+                                 MIN(sizeof(uint32_t) * php->len_dw, sizeof(u2_header.dw)));
+            if (ret == 0) {
+                ret = spi_nor_process_bfp(dev, php, bfp);
+            }
+
+            if (ret != 0) {
+                LOG_ERR("SFDP BFP failed: %d", ret);
+                break;
+            }
+        }
+        ++php;
+    }
+
+    #if defined(CONFIG_FLASH_PAGE_LAYOUT)
+    ret = setup_pages_layout(dev);
+    if (ret != 0) {
+        LOG_ERR("layout setup failed: %d", ret);
+        return (-ENODEV);
+    }
+    #endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
+    LOG_INF("NOR quad-flash at 0x%lx (0x%x bytes)",
+            (long)(STM32_QSPI_BASE_ADDRESS),
+            dev_cfg->flash_size);
+
+    return (0);
+}
+#else
 static int flash_stm32_qspi_init(struct device const* dev) {
     const struct flash_stm32_qspi_config* dev_cfg = dev->config;
     struct flash_stm32_qspi_data* dev_data = dev->data;
@@ -1353,6 +1595,7 @@ static int flash_stm32_qspi_init(struct device const* dev) {
 
     return (0);
 }
+#endif
 
 #define DMA_CHANNEL_CONFIG(node, dir)                                   \
     DT_DMAS_CELL_BY_NAME(node, dir, channel_config)
