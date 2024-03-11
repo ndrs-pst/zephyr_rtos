@@ -85,6 +85,14 @@ bool mdma_stm32_is_gi_active(MDMA_TypeDef* MDMAx, uint32_t id) {
     return (is_active);
 }
 
+bool mdma_stm32_is_ctc_active(MDMA_TypeDef* MDMAx, uint32_t id) {
+    bool is_active;
+
+    is_active = LL_MDMA_IsActiveFlag_CTC(MDMAx, id);
+
+    return (is_active);
+}
+
 bool mdma_stm32_is_te_active(MDMA_TypeDef* MDMAx, uint32_t id) {
     bool is_active;
 
@@ -101,9 +109,18 @@ bool mdma_stm32_is_tc_active(MDMA_TypeDef* MDMAx, uint32_t id) {
     return (is_active);
 }
 
+bool mdma_stm32_is_bt_active(MDMA_TypeDef* MDMAx, uint32_t id) {
+    bool is_active;
+
+    is_active = LL_MDMA_IsActiveFlag_BT(MDMAx, id);
+
+    return (is_active);
+}
+
 void stm32_mdma_dump_channel_irq(MDMA_TypeDef* dma, uint32_t id) {
-    LOG_INF("te: %d, tc: %d, gi: %d",
+    LOG_INF("te: %d, bt: %d, tc: %d, gi: %d",
             mdma_stm32_is_te_active(dma, id),
+            mdma_stm32_is_bt_active(dma, id),
             mdma_stm32_is_tc_active(dma, id),
             mdma_stm32_is_gi_active(dma, id));
 }
@@ -113,9 +130,19 @@ inline bool stm32_mdma_is_tc_irq_active(MDMA_TypeDef* dma, uint32_t id) {
            mdma_stm32_is_tc_active(dma, id);
 }
 
+static inline bool stm32_mdma_is_bt_irq_active(MDMA_TypeDef* dma, uint32_t id) {
+    return LL_MDMA_IsEnabledIT_BT(dma, mdma_stm32_id_to_channel(id)) &&
+           mdma_stm32_is_bt_active(dma, id);
+}
+
 static inline bool stm32_mdma_is_te_irq_active(MDMA_TypeDef* dma, uint32_t id) {
     return LL_MDMA_IsEnabledIT_TE(dma, mdma_stm32_id_to_channel(id)) &&
            mdma_stm32_is_te_active(dma, id);
+}
+
+static inline bool stm32_mdma_is_ctc_irq_active(MDMA_TypeDef* dma, uint32_t id) {
+    return LL_MDMA_IsEnabledIT_CTC(dma, mdma_stm32_id_to_channel(id)) &&
+           mdma_stm32_is_ctc_active(dma, id);
 }
 
 bool stm32_mdma_is_irq_active(MDMA_TypeDef* dma, uint32_t id) {
@@ -124,6 +151,7 @@ bool stm32_mdma_is_irq_active(MDMA_TypeDef* dma, uint32_t id) {
 }
 
 void stm32_mdma_clear_channel_irq(MDMA_TypeDef* dma, uint32_t id) {
+    mdma_stm32_clear_ctc(dma, id);
     mdma_stm32_clear_tc(dma, id);
     mdma_stm32_clear_te(dma, id);
 }
@@ -193,6 +221,13 @@ static void mdma_stm32_irq_handler(const struct device* dev, uint32_t id) {
         /* Let HAL DMA handle flags on its own */
         if (!channel->hal_override) {
             mdma_stm32_clear_tc(dma, id);
+        }
+        channel->dma_callback(dev, channel->user_data, callback_arg, 0);
+    }
+    else if (stm32_mdma_is_ctc_irq_active(dma, id)) {
+        /* Let HAL DMA handle flags on its own */
+        if (!channel->hal_override) {
+            mdma_stm32_clear_ctc(dma, id);
         }
         channel->dma_callback(dev, channel->user_data, callback_arg, 0);
     }

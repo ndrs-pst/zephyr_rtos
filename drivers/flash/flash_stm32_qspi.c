@@ -1650,7 +1650,7 @@ static void flash_stm32_qspi_irq_config_func(struct device const* dev);
 
 PINCTRL_DT_DEFINE(STM32_QSPI_NODE);
 
-static const struct flash_stm32_qspi_config flash_stm32_qspi_cfg = {
+static struct flash_stm32_qspi_config DT_CONST flash_stm32_qspi_cfg = {
     .regs = (QUADSPI_TypeDef*)DT_REG_ADDR(STM32_QSPI_NODE),
     .pclken = {
         .enr = DT_CLOCKS_CELL(STM32_QSPI_NODE, bits),
