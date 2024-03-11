@@ -7,6 +7,12 @@
 
 /**
  * @brief Common part of MDMA drivers for stm32.
+ * @note Table 105. MDMA interrupt requests
+ * Channel transfer completed : CTCIF
+ * Block-transfer repeat completed : BTRIF
+ * Block-transfer completed : BTIF
+ * Buffer transfer completed : TCIF
+ * Transfer error : TEIF
  */
 
 #include "dma_stm32_mdma.h"
@@ -22,7 +28,7 @@ LOG_MODULE_REGISTER(dma_stm32_mdma, CONFIG_DMA_LOG_LEVEL);
 
 #define DT_DRV_COMPAT st_stm32_mdma
 
-#define MDMA_STM32_0_CHANNEL_COUNT 8
+#define MDMA_STM32_0_CHANNEL_COUNT 16
 
 static const uint32_t table_src_size[] = {
     LL_MDMA_SRC_DATA_SIZE_BYTE,
@@ -179,22 +185,11 @@ static void mdma_stm32_irq_handler(const struct device* dev, uint32_t id) {
         return;
     }
 
-    #ifdef CONFIG_DMAMUX_STM32
-    callback_arg = channel->mux_channel;
-    #else
     callback_arg = id;
-    #endif /* CONFIG_DMAMUX_STM32 */
-
-    if (!IS_ENABLED(CONFIG_DMAMUX_STM32)) {
-        channel->busy = false;
-    }
+    channel->busy = false;
 
     /* the dma channel id is in range from 0..<dma-requests> */
     if (stm32_mdma_is_tc_irq_active(dma, id)) {
-        #ifdef CONFIG_DMAMUX_STM32
-        channel->busy = false;
-        #endif
-
         /* Let HAL DMA handle flags on its own */
         if (!channel->hal_override) {
             mdma_stm32_clear_tc(dma, id);
@@ -338,9 +333,9 @@ static bool mdma_stm32_is_valid_memory_address(const uint32_t address, const uin
     return (true);
 }
 
-MDMA_STM32_EXPORT_API int mdma_stm32_configure(const struct device* dev,
-                                               uint32_t id,
-                                               struct dma_config* config) {
+int mdma_stm32_configure(const struct device* dev,
+                         uint32_t id,
+                         struct dma_config* config) {
     const struct mdma_stm32_config* dev_config = dev->config;
     struct mdma_stm32_channel* channel = &dev_config->channels[id];
     MDMA_TypeDef* mdma = (MDMA_TypeDef*)dev_config->base;
@@ -370,13 +365,6 @@ MDMA_STM32_EXPORT_API int mdma_stm32_configure(const struct device* dev,
         LOG_ERR("Data size too big: %d\n",
                 config->head_block->block_size);
         return (-EINVAL);
-    }
-
-    if ((config->channel_direction == MEMORY_TO_MEMORY) &&
-        (!dev_config->support_m2m)) {
-        LOG_ERR("Memcopy not supported for device %s",
-                dev->name);
-        return (-ENOTSUP);
     }
 
     /* support only the same data width for source and dest */
@@ -528,9 +516,9 @@ MDMA_STM32_EXPORT_API int mdma_stm32_configure(const struct device* dev,
     return (ret);
 }
 
-MDMA_STM32_EXPORT_API int mdma_stm32_reload(const struct device* dev, uint32_t id,
-                                            uint32_t src, uint32_t dst,
-                                            size_t size) {
+int mdma_stm32_reload(const struct device* dev, uint32_t id,
+                      uint32_t src, uint32_t dst,
+                      size_t size) {
     const struct mdma_stm32_config* config = dev->config;
     MDMA_TypeDef* mdma = (MDMA_TypeDef*)(config->base);
     struct mdma_stm32_channel* channel;
@@ -580,7 +568,7 @@ MDMA_STM32_EXPORT_API int mdma_stm32_reload(const struct device* dev, uint32_t i
     return (0);
 }
 
-MDMA_STM32_EXPORT_API int mdma_stm32_start(const struct device* dev, uint32_t id) {
+int mdma_stm32_start(const struct device* dev, uint32_t id) {
     const struct mdma_stm32_config* config = dev->config;
     MDMA_TypeDef* mdma = (MDMA_TypeDef*)(config->base);
     struct mdma_stm32_channel* channel;
@@ -605,7 +593,7 @@ MDMA_STM32_EXPORT_API int mdma_stm32_start(const struct device* dev, uint32_t id
     return (0);
 }
 
-MDMA_STM32_EXPORT_API int mdma_stm32_stop(const struct device* dev, uint32_t id) {
+int mdma_stm32_stop(const struct device* dev, uint32_t id) {
     const struct mdma_stm32_config* config  = dev->config;
     struct mdma_stm32_channel* channel = &config->channels[id];
     MDMA_TypeDef* mdma = (MDMA_TypeDef*)(config->base);
@@ -650,10 +638,6 @@ static int mdma_stm32_init(const struct device* dev) {
 
     for (uint32_t i = 0; i < config->max_channels; i++) {
         config->channels[i].busy = false;
-        #ifdef CONFIG_DMAMUX_STM32
-        /* each further channel->mux_channel is fixed here */
-        config->channels[i].mux_channel = (i + config->offset);
-        #endif /* CONFIG_DMAMUX_STM32 */
     }
 
     ((struct mdma_stm32_data*)dev->data)->dma_ctx.magic        = 0;
@@ -679,11 +663,11 @@ static int mdma_stm32_init(const struct device* dev) {
     return (0);
 }
 
-MDMA_STM32_EXPORT_API int mdma_stm32_get_status(const struct device* dev,
-                                                uint32_t id, struct dma_status* stat) {
+int mdma_stm32_get_status(const struct device* dev,
+                          uint32_t id, struct dma_status* stat) {
     const struct mdma_stm32_config* config = dev->config;
     MDMA_TypeDef* mdma = (MDMA_TypeDef*)(config->base);
-    struct mdma_stm32_channel* channel;
+    struct mdma_stm32_channel const* channel;
 
     if (id >= config->max_channels) {
         return (-EINVAL);
@@ -705,13 +689,6 @@ static const struct dma_driver_api dma_funcs = {
     .get_status = mdma_stm32_get_status,
 };
 
-#ifdef CONFIG_DMAMUX_STM32
-#define MDMA_STM32_OFFSET_INIT(index)       \
-    .offset = DT_INST_PROP(index, dma_offset),
-#else
-#define MDMA_STM32_OFFSET_INIT(index)
-#endif /* CONFIG_DMAMUX_STM32 */
-
 #define MDMA_STM32_INIT_DEV(index)                              \
 static struct mdma_stm32_channel                                \
         mdma_stm32_channels_##index[MDMA_STM32_##index##_CHANNEL_COUNT]; \
@@ -721,10 +698,8 @@ const struct mdma_stm32_config mdma_stm32_config_##index = {    \
                      .enr = DT_INST_CLOCKS_CELL(index, bits)},  \
     .config_irq   = mdma_stm32_config_irq_##index,              \
     .base         = DT_INST_REG_ADDR(index),                    \
-    .support_m2m  = DT_INST_PROP(index, st_mem2mem),            \
     .max_channels = MDMA_STM32_##index##_CHANNEL_COUNT,         \
     .channels     = mdma_stm32_channels_##index,                \
-    MDMA_STM32_OFFSET_INIT(index)                               \
 };                                                              \
                                                                 \
 static struct mdma_stm32_data mdma_stm32_data_##index = {       \

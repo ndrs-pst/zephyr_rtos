@@ -45,7 +45,7 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(flash_stm32_qspi, CONFIG_FLASH_LOG_LEVEL);
 
-#define STM32_QSPI_MDMA_FEATURE         0                       /* #CUSTOM@NDRS */
+#define STM32_QSPI_MDMA_FEATURE         1                       /* #CUSTOM@NDRS */
 
 #define STM32_QSPI_FIFO_THRESHOLD       8
 #define STM32_QSPI_CLOCK_PRESCALER_MAX  255
@@ -1247,7 +1247,7 @@ static int flash_stm32_qspi_init(struct device const* dev) {
 
     int index = find_lsb_set(dma_cfg.source_data_size) - 1;
 
-    hmdma.Init.Request             = MDMA_REQUEST_QUADSPI_TC;  // MDMA_REQUEST_QUADSPI_TC, MDMA_REQUEST_QUADSPI_FIFO_TH
+    hmdma.Init.Request             = MDMA_REQUEST_SW;
     hmdma.Init.TransferTriggerMode = MDMA_FULL_TRANSFER;
     hmdma.Init.Priority            = MDMA_PRIORITY_MEDIUM;      // @see table_priority[dma_cfg.channel_priority];
     hmdma.Init.Endianness          = MDMA_LITTLE_ENDIANNESS_PRESERVE;
