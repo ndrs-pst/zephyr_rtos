@@ -955,7 +955,7 @@
 			reg = <0x52000000 0x1000>;
 			interrupts = <122 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000001>;
-			#dma-cells = <4>;
+			#dma-cells = <3>;
 			dma-channels = <16>;
 			dma-requests = <32>;
 		};

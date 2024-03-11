@@ -58,24 +58,24 @@ LOG_MODULE_REGISTER(flash_stm32_qspi, CONFIG_FLASH_LOG_LEVEL);
 
 #if STM32_QSPI_USE_DMA
 #if (defined(CONFIG_SOC_SERIES_STM32H7X) && (STM32_QSPI_MDMA_FEATURE == 1)) /* #CUSTOM@NDRS */
-static const uint32_t table_m_size[] = {
-    LL_DMA_MDATAALIGN_BYTE,
-    LL_DMA_MDATAALIGN_HALFWORD,
-    LL_DMA_MDATAALIGN_WORD,
+static const uint32_t table_src_size[] = {
+    MDMA_SRC_DATASIZE_BYTE,
+    MDMA_SRC_DATASIZE_HALFWORD,
+    MDMA_SRC_DATASIZE_WORD
 };
 
-static const uint32_t table_p_size[] = {
-    LL_DMA_PDATAALIGN_BYTE,
-    LL_DMA_PDATAALIGN_HALFWORD,
-    LL_DMA_PDATAALIGN_WORD,
+static const uint32_t table_dst_size[] = {
+    MDMA_DEST_DATASIZE_BYTE,
+    MDMA_DEST_DATASIZE_HALFWORD,
+    MDMA_DEST_DATASIZE_WORD
 };
 
 /* Lookup table to set dma priority from the DTS */
 static const uint32_t table_priority[] = {
-    DMA_PRIORITY_LOW,
-    DMA_PRIORITY_MEDIUM,
-    DMA_PRIORITY_HIGH,
-    DMA_PRIORITY_VERY_HIGH,
+    MDMA_PRIORITY_LOW,
+    MDMA_PRIORITY_MEDIUM,
+    MDMA_PRIORITY_HIGH,
+    MDMA_PRIORITY_VERY_HIGH,
 };
 #else
 static const uint32_t table_m_size[] = {
@@ -1246,19 +1246,26 @@ static int flash_stm32_qspi_init(struct device const* dev) {
     }
 
     int index = find_lsb_set(dma_cfg.source_data_size) - 1;
+    if (index < ARRAY_SIZE(table_src_size) &&
+        index < ARRAY_SIZE(table_dst_size)) {
+        hmdma.Init.SourceDataSize = table_src_size[index];
+        hmdma.Init.DestDataSize   = table_dst_size[index];
+    }
+    else {
+        LOG_ERR("Invalid data size");
+        return (-EINVAL);
+    }
 
     hmdma.Init.Request             = MDMA_REQUEST_SW;
-    hmdma.Init.TransferTriggerMode = MDMA_FULL_TRANSFER;
-    hmdma.Init.Priority            = MDMA_PRIORITY_MEDIUM;      // @see table_priority[dma_cfg.channel_priority];
+    hmdma.Init.TransferTriggerMode = MDMA_BLOCK_TRANSFER;
+    hmdma.Init.Priority            = table_priority[dma_cfg.channel_priority];
     hmdma.Init.Endianness          = MDMA_LITTLE_ENDIANNESS_PRESERVE;
     hmdma.Init.SourceInc           = MDMA_SRC_INC_DISABLE;
     hmdma.Init.DestinationInc      = MDMA_DEST_INC_DISABLE;
-    hmdma.Init.SourceDataSize      = MDMA_SRC_DATASIZE_BYTE;
-    hmdma.Init.DestDataSize        = MDMA_DEST_DATASIZE_BYTE;
-    hmdma.Init.DataAlignment       = MDMA_DATAALIGN_PACKENABLE;
+    hmdma.Init.DataAlignment       = MDMA_DATAALIGN_RIGHT;
     hmdma.Init.SourceBurst         = MDMA_SOURCE_BURST_SINGLE;
     hmdma.Init.DestBurst           = MDMA_DEST_BURST_SINGLE;
-    hmdma.Init.BufferTransferLength = 4;
+    hmdma.Init.BufferTransferLength = 0;
     hmdma.Init.SourceBlockAddressOffset = 0;
     hmdma.Init.DestBlockAddressOffset = 0;
 
@@ -1603,7 +1610,7 @@ static int flash_stm32_qspi_init(struct device const* dev) {
 #define QSPI_DMA_CHANNEL_INIT(node, dir)                                \
     .dev = DEVICE_DT_GET(DT_DMAS_CTLR(node)),                           \
     .channel = DT_DMAS_CELL_BY_NAME(node, dir, channel),                \
-    .reg = (DMA_TypeDef*)DT_REG_ADDR(                                   \
+    .reg = (void*)DT_REG_ADDR(                                          \
                             DT_PHANDLE_BY_NAME(node, dmas, dir)),       \
     .cfg = {                                                            \
         .dma_slot         = DT_DMAS_CELL_BY_NAME(node, dir, slot),      \

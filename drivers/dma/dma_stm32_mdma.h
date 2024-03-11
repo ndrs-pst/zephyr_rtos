@@ -24,7 +24,7 @@ struct mdma_stm32_channel {
     uint32_t src_size;
     uint32_t dst_size;
     void* user_data;            /* holds the client data */
-    dma_callback_t mdma_callback;
+    dma_callback_t dma_callback;
 };
 
 struct mdma_stm32_data {
@@ -34,7 +34,7 @@ struct mdma_stm32_data {
 struct mdma_stm32_config {
     struct stm32_pclken pclken;
     void (*config_irq)(const struct device* dev);
-    uint32_t base;
+    void* base;
     uint32_t max_channels;
     struct mdma_stm32_channel* channels;
 };
