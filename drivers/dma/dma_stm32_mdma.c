@@ -156,7 +156,6 @@ static void mdma_stm32_clear_channel_irq(const struct device* dev, uint32_t id) 
     MDMA_TypeDef* dma = (MDMA_TypeDef*)(config->base);
 
     mdma_stm32_clear_tc(dma, id);
-    mdma_stm32_clear_ht(dma, id);
     stm32_mdma_clear_channel_irq(dma, id);
 }
 
@@ -191,14 +190,7 @@ static void mdma_stm32_irq_handler(const struct device* dev, uint32_t id) {
     }
 
     /* the dma channel id is in range from 0..<dma-requests> */
-    if (stm32_mdma_is_ht_irq_active(dma, id)) {
-        /* Let HAL DMA handle flags on its own */
-        if (!channel->hal_override) {
-            mdma_stm32_clear_ht(dma, id);
-        }
-        channel->mdma_callback(dev, channel->user_data, callback_arg, 0);
-    }
-    else if (stm32_mdma_is_tc_irq_active(dma, id)) {
+    if (stm32_mdma_is_tc_irq_active(dma, id)) {
         #ifdef CONFIG_DMAMUX_STM32
         channel->busy = false;
         #endif

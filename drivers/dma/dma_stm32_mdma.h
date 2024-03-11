@@ -58,7 +58,6 @@ bool mdma_stm32_is_gi_active(MDMA_TypeDef* DMAx, uint32_t id);
 void mdma_stm32_clear_gi(MDMA_TypeDef* DMAx, uint32_t id);
 
 void mdma_stm32_clear_tc(MDMA_TypeDef* DMAx, uint32_t id);
-void mdma_stm32_clear_ht(MDMA_TypeDef* DMAx, uint32_t id);
 bool mdma_stm32_is_te_active(MDMA_TypeDef* DMAx, uint32_t id);
 void mdma_stm32_clear_te(MDMA_TypeDef* DMAx, uint32_t id);
 
