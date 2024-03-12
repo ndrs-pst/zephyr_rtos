@@ -22,47 +22,6 @@
 #include <zephyr/drivers/dma/dma_stm32.h>
 #include <zephyr/drivers/gpio.h>
 
-#ifdef CONFIG_SOC_SERIES_STM32H7X
-#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
-#endif
-
-#ifdef CONFIG_NOCACHE_MEMORY
-#include <zephyr/linker/linker-defs.h>
-#elif defined(CONFIG_CACHE_MANAGEMENT)
-#include <zephyr/arch/cache.h>
-#endif /* CONFIG_NOCACHE_MEMORY */
-
-/*
- * Check defined(CONFIG_DCACHE) because some platforms disable it in the tests
- * e.g. nucleo_f746zg
- */
-#if (defined(CONFIG_CPU_HAS_DCACHE) &&      \
-     defined(CONFIG_DCACHE) &&              \
-     !defined(CONFIG_NOCACHE_MEMORY))
-#define SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED   1
-#else
-#define SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED   0
-#endif /* defined(CONFIG_CPU_HAS_DCACHE) && !defined(CONFIG_NOCACHE_MEMORY) */
-
-
-#ifdef CONFIG_SOC_SERIES_STM32H7X
-static bool buf_in_nocache(uintptr_t buf, size_t len_bytes) {
-    bool buf_within_nocache = false;
-
-    #ifdef CONFIG_NOCACHE_MEMORY
-    buf_within_nocache = ((buf >= ((uintptr_t)_nocache_ram_start)) &&
-                          ((buf + len_bytes - 1) <= ((uintptr_t)_nocache_ram_end)));
-    if (buf_within_nocache) {
-        return (true);
-    }
-    #endif /* CONFIG_NOCACHE_MEMORY */
-
-    buf_within_nocache = (mem_attr_check_buf((void*)buf, len_bytes, DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0);
-
-    return (buf_within_nocache);
-}
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
-
 #if DT_INST_NODE_HAS_PROP(0, spi_bus_width) && \
         (DT_INST_PROP(0, spi_bus_width) == 4)
 #define STM32_QSPI_USE_QUAD_IO 1
@@ -86,19 +45,18 @@ static bool buf_in_nocache(uintptr_t buf, size_t len_bytes) {
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(flash_stm32_qspi, CONFIG_FLASH_LOG_LEVEL);
 
-#define STM32_QSPI_MDMA_FEATURE         1                       /* #CUSTOM@NDRS */
-
 #define STM32_QSPI_FIFO_THRESHOLD       8
 #define STM32_QSPI_CLOCK_PRESCALER_MAX  255
 
 #define STM32_QSPI_UNKNOWN_MODE         (0xFF)
 
-#define STM32_QSPI_USE_DMA DT_NODE_HAS_PROP(DT_INST_PARENT(0), dmas)
+#define STM32_QSPI_USE_DMA              DT_NODE_HAS_PROP(DT_INST_PARENT(0), dmas)
+#define STM32_QSPI_DMA_THRESHOLD        32      /* Threshold value in bytes for DMA use */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_qspi_nor)
 
 #if STM32_QSPI_USE_DMA
-#if (defined(CONFIG_SOC_SERIES_STM32H7X) && (STM32_QSPI_MDMA_FEATURE == 1)) /* #CUSTOM@NDRS */
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
 static const uint32_t table_src_size[] = {
     MDMA_SRC_DATASIZE_BYTE,
     MDMA_SRC_DATASIZE_HALFWORD,
@@ -138,17 +96,13 @@ static const uint32_t table_priority[] = {
     DMA_PRIORITY_HIGH,
     DMA_PRIORITY_VERY_HIGH,
 };
-#endif
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
 #endif /* STM32_QSPI_USE_DMA */
 
 typedef void (*irq_config_func_t)(struct device const* dev);
 
 struct stm32_dma_stream {
-    #if defined(CONFIG_SOC_SERIES_STM32H7X)
-    MDMA_TypeDef* reg;
-    #else
-    DMA_TypeDef* reg;
-    #endif  
+    void* reg;                  /* MDMA_TypeDef, DMA_TypeDef */
     struct device const* dev;
     uint32_t channel;
     struct dma_config cfg;
@@ -302,7 +256,8 @@ static int qspi_read_access(struct device const* dev, QSPI_CommandTypeDef* cmd,
         return (-EIO);
     }
 
-    if (STM32_QSPI_USE_DMA == 1) {
+    if ((STM32_QSPI_USE_DMA == 1) &&
+        (size >= STM32_QSPI_DMA_THRESHOLD)) {
         hal_ret = HAL_QSPI_Receive_DMA(&dev_data->hqspi, data);
     }
     else {
@@ -342,7 +297,8 @@ static int qspi_write_access(struct device const* dev, QSPI_CommandTypeDef* cmd,
         return (-EIO);
     }
 
-    if (STM32_QSPI_USE_DMA == 1) {
+    if ((STM32_QSPI_USE_DMA == 1) &&
+        (size >= STM32_QSPI_DMA_THRESHOLD)) {
         hal_ret = HAL_QSPI_Transmit_DMA(&dev_data->hqspi, (uint8_t*)data);
     }
     else {
@@ -673,7 +629,7 @@ static int flash_stm32_qspi_erase(struct device const* dev, off_t addr,
 
 static struct flash_parameters const flash_stm32_qspi_parameters = {
     .write_block_size = 1,
-    .erase_value      = 0xFF
+    .erase_value = 0xFF
 };
 
 static struct flash_parameters const*
@@ -970,15 +926,15 @@ static int qspi_write_status_register(struct device const* dev, uint8_t reg_num,
             }
 
             cmd.Instruction = SPI_NOR_CMD_WRSR;
-            size            = 2U;
-            regs_p          = &regs[0];
+            size   = 2U;
+            regs_p = &regs[0];
         }
     }
     else if (reg_num == 3) {
         cmd.Instruction = SPI_NOR_CMD_WRSR3;
-        size            = 1U;
-        regs[2]         = reg;
-        regs_p          = &regs[2];
+        size    = 1U;
+        regs[2] = reg;
+        regs_p  = &regs[2];
     }
     else {
         return (-EINVAL);
@@ -1111,7 +1067,7 @@ static int spi_nor_process_bfp(struct device const* dev,
         ++etp;
     }
 
-    data->page_size = jesd216_bfp_page_size(php, bfp);
+    data->page_size = (uint16_t)jesd216_bfp_page_size(php, bfp);
 
     LOG_DBG("Page size %u bytes", data->page_size);
     LOG_DBG("Flash size %u bytes", flash_size);
@@ -1128,7 +1084,7 @@ static int spi_nor_process_bfp(struct device const* dev,
              * write enable to switch to 4 bytes addressing mode.
              * If bit 1 is set, a write enable is needed.
              */
-            if (dw16.enter_4ba & 0x3) {
+            if (dw16.enter_4ba & 0x03) {
                 rc = qspi_program_addr_4b(dev, dw16.enter_4ba & 2);
                 if (rc == 0) {
                     data->flag_access_32bit = true;
@@ -1152,7 +1108,7 @@ static int spi_nor_process_bfp(struct device const* dev,
      * is supported - other modes are not.
      */
     if (IS_ENABLED(STM32_QSPI_USE_QUAD_IO)) {
-        const enum jesd216_mode_type supported_modes[] = {JESD216_MODE_114,
+        enum jesd216_mode_type const supported_modes[] = {JESD216_MODE_114,
                                                           JESD216_MODE_144};
         struct jesd216_bfp_dw15 dw15;
         struct jesd216_instr res;
@@ -1167,8 +1123,8 @@ static int spi_nor_process_bfp(struct device const* dev,
                 LOG_INF("Quad read mode %d instr [0x%x] supported",
                         supported_modes[i], res.instr);
 
-                data->mode                  = supported_modes[i];
-                data->qspi_read_cmd         = res.instr;
+                data->mode = supported_modes[i];
+                data->qspi_read_cmd = res.instr;
                 data->qspi_read_cmd_latency = res.wait_states;
 
                 if (res.mode_clocks) {
@@ -1247,7 +1203,7 @@ static int flash_stm32_qspi_send_reset(struct device const* dev) {
 #endif
 
 #if STM32_QSPI_USE_DMA
-#if (defined(CONFIG_SOC_SERIES_STM32H7X) && (STM32_QSPI_MDMA_FEATURE == 1)) /* #CUSTOM@NDRS */
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
 static int flash_stm32_qspi_mdma_init(struct flash_stm32_qspi_data* dev_data) {
     /*
      * DMA configuration
@@ -1259,9 +1215,11 @@ static int flash_stm32_qspi_mdma_init(struct flash_stm32_qspi_data* dev_data) {
      */
     struct dma_config dma_cfg = dev_data->dma.cfg;
     static MDMA_HandleTypeDef hmdma;
+    bool is_ready;
     int ret;
 
-    if (!device_is_ready(dev_data->dma.dev)) {
+    is_ready = device_is_ready(dev_data->dma.dev);
+    if (is_ready == false) {
         LOG_ERR("%s device not ready", dev_data->dma.dev->name);
         return (-ENODEV);
     }
@@ -1315,11 +1273,15 @@ static int flash_stm32_qspi_mdma_init(struct flash_stm32_qspi_data* dev_data) {
 }
 
 static int flash_stm32_qspi_dma_init(struct flash_stm32_qspi_data* dev_data) {
+    ARG_UNUSED(dev_data);
+
     return (-ENOTSUP);
 }
 
 #else
 static int flash_stm32_qspi_mdma_init(struct flash_stm32_qspi_data* dev_data) {
+    ARG_UNUSED(dev_data);
+
     return (-ENOTSUP);
 }
 
@@ -1387,7 +1349,19 @@ static int flash_stm32_qspi_dma_init(struct flash_stm32_qspi_data* dev_data) {
     HAL_DMA_Init(&hdma);
 
 }
-#endif /* #if (defined(CONFIG_SOC_SERIES_STM32H7X) && (STM32_QSPI_MDMA_FEATURE == 1)) */
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#else
+static int flash_stm32_qspi_mdma_init(struct flash_stm32_qspi_data* dev_data) {
+    ARG_UNUSED(dev_data);
+
+    return (-ENOTSUP);
+}
+
+static int flash_stm32_qspi_dma_init(struct flash_stm32_qspi_data* dev_data) {
+    ARG_UNUSED(dev_data);
+
+    return (-ENOTSUP);
+}
 #endif /* STM32_QSPI_USE_DMA */
 
 static int flash_stm32_qspi_init(struct device const* dev) {
