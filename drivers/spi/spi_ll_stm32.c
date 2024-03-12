@@ -102,8 +102,8 @@ static __aligned(32) uint32_t dummy_rx_tx_buffer;
 #define DEVICE_STM32_GET_SPI(dev)         (((const struct spi_stm32_config*)(dev)->config)->spi)
 
 /* This function is executed in the interrupt context */
-static void dma_callback(const struct device* dev, void* arg,
-                         uint32_t channel, int status) {
+__maybe_unused static void spi_stm32_dma_callback(const struct device* dev, void* arg,
+                                                  uint32_t channel, int status) {
     /* arg directly holds the spi device */
     struct spi_stm32_data* data = arg;
 
@@ -1249,7 +1249,7 @@ static void spi_stm32_irq_config_func_##id(const struct device* dev) {  \
         .dest_burst_length   = 1, /* SINGLE transfer */         \
         .channel_priority    = STM32_DMA_CONFIG_PRIORITY(       \
                                   STM32_DMA_CHANNEL_CONFIG(index, dir)),\
-        .dma_callback        = dma_callback,\
+        .dma_callback        = spi_stm32_dma_callback,\
         .block_count         = 2,           \
     },                                      \
     .src_addr_increment = STM32_DMA_CONFIG_##src_dev##_ADDR_INC(\
