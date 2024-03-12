@@ -25,10 +25,23 @@
  */
 BUILD_ASSERT(BUF_ARRAY_CNT >= 1);
 
-static const struct device *const zephyr_flash_controller =
+static const struct device* const zephyr_flash_controller =
     DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_flash_controller));
 
-static uint8_t __aligned(4) test_arr[CONFIG_FLASH_SHELL_BUFFER_SIZE];
+static uint8_t __aligned(4) m_test_arr[CONFIG_FLASH_SHELL_BUFFER_SIZE]
+__attribute__((__section__(".nocache")));
+
+static uint8_t __aligned(4) m_cmp_arr[CONFIG_FLASH_SHELL_BUFFER_SIZE]
+__attribute__((__section__(".nocache")));
+
+static uint8_t __aligned(4) m_flash_buf[SHELL_HEXDUMP_BYTES_IN_LINE]
+__attribute__((__section__(".nocache")));
+
+static uint32_t __aligned(4) m_check_arr[BUF_ARRAY_CNT]
+__attribute__((__section__(".nocache")));
+
+static uint32_t __aligned(4) m_buf_arr[BUF_ARRAY_CNT]
+__attribute__((__section__(".nocache")));
 
 static int parse_helper(const struct shell* sh, size_t* argc,
                         char** argv[], const struct device** flash_dev,
@@ -76,7 +89,7 @@ static int parse_helper(const struct shell* sh, size_t* argc,
     return (0);
 }
 
-static int cmd_erase(const struct shell* sh, size_t argc, char* argv[]) {
+static int cmd_flash_shell_erase(const struct shell* sh, size_t argc, char* argv[]) {
     const struct device* flash_dev;
     uint32_t page_addr;
     int result;
@@ -113,9 +126,7 @@ static int cmd_erase(const struct shell* sh, size_t argc, char* argv[]) {
     return (result);
 }
 
-static int cmd_write(const struct shell* sh, size_t argc, char* argv[]) {
-    uint32_t __aligned(4) check_array[BUF_ARRAY_CNT];
-    uint32_t __aligned(4) buf_array[BUF_ARRAY_CNT];
+static int cmd_flash_shell_write(const struct shell* sh, size_t argc, char* argv[]) {
     const struct device *flash_dev;
     uint32_t w_addr;
     int ret;
@@ -135,25 +146,25 @@ static int cmd_write(const struct shell* sh, size_t argc, char* argv[]) {
     for (int i = 2; i < argc; i++) {
         int j = (i - 2);
 
-        buf_array[j] = strtoul(argv[i], NULL, 16);
-        check_array[j] = ~buf_array[j];
+        m_buf_arr[j]   = strtoul(argv[i], NULL, 16);
+        m_check_arr[j] = ~m_buf_arr[j];
 
-        op_size += sizeof(buf_array[0]);
+        op_size += sizeof(m_buf_arr[0]);
     }
 
-    if (flash_write(flash_dev, w_addr, buf_array, op_size) != 0) {
+    if (flash_write(flash_dev, w_addr, m_buf_arr, op_size) != 0) {
         shell_error(sh, "Write internal ERROR!");
         return (-EIO);
     }
 
     shell_print(sh, "Write OK.");
 
-    if (flash_read(flash_dev, w_addr, check_array, op_size) < 0) {
+    if (flash_read(flash_dev, w_addr, m_check_arr, op_size) < 0) {
         shell_print(sh, "Verification read ERROR!");
         return (-EIO);
     }
 
-    if (memcmp(buf_array, check_array, op_size) == 0) {
+    if (memcmp(m_buf_arr, m_check_arr, op_size) == 0) {
         shell_print(sh, "Verified.");
     }
     else {
@@ -164,7 +175,7 @@ static int cmd_write(const struct shell* sh, size_t argc, char* argv[]) {
     return (0);
 }
 
-static int cmd_read(const struct shell* sh, size_t argc, char* argv[]) {
+static int cmd_flash_shell_read(const struct shell* sh, size_t argc, char* argv[]) {
     const struct device* flash_dev;
     uint32_t addr;
     int todo;
@@ -185,15 +196,13 @@ static int cmd_read(const struct shell* sh, size_t argc, char* argv[]) {
     }
 
     for (upto = 0; upto < cnt; upto += todo) {
-        uint8_t data[SHELL_HEXDUMP_BYTES_IN_LINE];
-
         todo = MIN((cnt - upto), SHELL_HEXDUMP_BYTES_IN_LINE);
-        ret = flash_read(flash_dev, addr, data, todo);
+        ret = flash_read(flash_dev, addr, &m_flash_buf[0], todo);
         if (ret != 0) {
             shell_error(sh, "Read ERROR!");
             return (-EIO);
         }
-        shell_hexdump_line(sh, addr, data, todo);
+        shell_hexdump_line(sh, addr, &m_flash_buf[0], todo);
         addr += todo;
     }
 
@@ -202,21 +211,19 @@ static int cmd_read(const struct shell* sh, size_t argc, char* argv[]) {
     return (0);
 }
 
-static int cmd_test(const struct shell* sh, size_t argc, char* argv[]) {
+static int cmd_flash_shell_test(const struct shell* sh, size_t argc, char* argv[]) {
     const struct device* flash_dev;
     uint32_t repeat;
     int result;
     uint32_t addr;
     uint32_t size;
 
-    static uint8_t __aligned(4) check_arr[CONFIG_FLASH_SHELL_BUFFER_SIZE];
-
     result = parse_helper(sh, &argc, &argv, &flash_dev, &addr);
     if (result != 0) {
         return (result);
     }
 
-    size = strtoul(argv[2], NULL, 16);
+    size   = strtoul(argv[2], NULL, 16);
     repeat = strtoul(argv[3], NULL, 16);
     if (size > CONFIG_FLASH_SHELL_BUFFER_SIZE) {
         shell_error(sh, "<size> must be at most 0x%x.", CONFIG_FLASH_SHELL_BUFFER_SIZE);
@@ -228,7 +235,7 @@ static int cmd_test(const struct shell* sh, size_t argc, char* argv[]) {
     }
 
     for (uint32_t i = 0; i < size; i++) {
-        test_arr[i] = (uint8_t)i;
+        m_test_arr[i] = (uint8_t)i;
     }
 
     result = 0;
@@ -243,7 +250,7 @@ static int cmd_test(const struct shell* sh, size_t argc, char* argv[]) {
 
         shell_print(sh, "Erase OK.");
 
-        result = flash_write(flash_dev, addr, test_arr, size);
+        result = flash_write(flash_dev, addr, m_test_arr, size);
         if (result != 0) {
             shell_error(sh, "Write failed, code %d", result);
             break;
@@ -251,14 +258,14 @@ static int cmd_test(const struct shell* sh, size_t argc, char* argv[]) {
 
         shell_print(sh, "Write OK.");
 
-        result = flash_read(flash_dev, addr, check_arr, size);
+        result = flash_read(flash_dev, addr, m_cmp_arr, size);
 
         if (result < 0) {
             shell_print(sh, "Verification read failed, code: %d", result);
             break;
         }
 
-        if (memcmp(test_arr, check_arr, size) != 0) {
+        if (memcmp(m_test_arr, m_cmp_arr, size) != 0) {
             shell_error(sh, "Verification ERROR!");
             break;
         }
@@ -342,7 +349,7 @@ static int cmd_read_test(const struct shell* sh, size_t argc, char* argv[]) {
 
     while (repeat--) {
         start_time = k_uptime_get();
-        result = flash_read(flash_dev, addr, test_arr, size);
+        result = flash_read(flash_dev, addr, m_test_arr, size);
         loop_time = k_uptime_delta(&start_time);
 
         if (result) {
@@ -384,12 +391,12 @@ static int cmd_write_test(const struct shell* sh, size_t argc, char* argv[]) {
     }
 
     for (uint32_t i = 0; i < size; i++) {
-        test_arr[i] = (uint8_t)i;
+        m_test_arr[i] = (uint8_t)i;
     }
 
     while (repeat--) {
         start_time = k_uptime_get();
-        result = flash_write(flash_dev, addr, test_arr, size);
+        result = flash_write(flash_dev, addr, m_test_arr, size);
         loop_time = k_uptime_delta(&start_time);
 
         if (result) {
@@ -431,7 +438,7 @@ static int cmd_erase_test(const struct shell* sh, size_t argc, char* argv[]) {
     }
 
     for (uint32_t i = 0; i < size; i++) {
-        test_arr[i] = (uint8_t)i;
+        m_test_arr[i] = (uint8_t)i;
     }
 
     while (repeat--) {
@@ -480,13 +487,13 @@ static int cmd_erase_write_test(const struct shell *sh, size_t argc, char *argv[
     }
 
     for (uint32_t i = 0; i < size; i++) {
-        test_arr[i] = (uint8_t)i;
+        m_test_arr[i] = (uint8_t)i;
     }
 
     while (repeat--) {
         start_time = k_uptime_get();
         result_erase = flash_erase(flash_dev, addr, size);
-        result_write = flash_write(flash_dev, addr, test_arr, size);
+        result_write = flash_write(flash_dev, addr, m_test_arr, size);
         loop_time = k_uptime_delta(&start_time);
 
         if (result_erase) {
@@ -535,7 +542,7 @@ static int set_bypass(const struct shell* sh, shell_bypass_cb_t bypass) {
 
 #define FLASH_LOAD_BUF_MAX 256
 
-static const struct device *flash_load_dev;
+static const struct device* flash_load_dev;
 static uint32_t flash_load_buf_size;
 static uint32_t flash_load_addr;
 static uint32_t flash_load_total;
@@ -543,7 +550,8 @@ static uint32_t flash_load_written;
 static uint32_t flash_load_chunk;
 
 static uint32_t flash_load_boff;
-static uint8_t flash_load_buf[FLASH_LOAD_BUF_MAX];
+static uint8_t  flash_load_buf[FLASH_LOAD_BUF_MAX]
+__attribute__((__section__(".nocache")));
 
 static void bypass_cb(const struct shell* sh, uint8_t* recv, size_t len) {
     uint32_t left_to_read = flash_load_total - flash_load_written - flash_load_boff;
@@ -605,7 +613,7 @@ static void bypass_cb(const struct shell* sh, uint8_t* recv, size_t len) {
     }
 }
 
-static int cmd_load(const struct shell* sh, size_t argc, char* argv[]) {
+static int cmd_flash_shell_load(const struct shell* sh, size_t argc, char* argv[]) {
     const struct device* flash_dev;
     int result;
     uint32_t addr;
@@ -660,7 +668,7 @@ static int cmd_load(const struct shell* sh, size_t argc, char* argv[]) {
     return (0);
 }
 
-static int cmd_page_info(const struct shell* sh, size_t argc, char* argv[]) {
+static int cmd_flash_shell_page_info(const struct shell* sh, size_t argc, char* argv[]) {
     const struct device *flash_dev;
     struct flash_pages_info info;
     int result;
@@ -698,31 +706,33 @@ static void device_name_get(size_t idx, struct shell_static_entry* entry) {
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(flash_cmds,
-    SHELL_CMD_ARG(erase, &dsub_device_name, "[<device>] <page address> [<size>]"  , cmd_erase, 2, 2),
-    SHELL_CMD_ARG(read , &dsub_device_name, "[<device>] <address> [<Dword count>]", cmd_read , 2, 2),
-    SHELL_CMD_ARG(test , &dsub_device_name, "[<device>] <address> <size> <repeat count>", cmd_test, 4, 1),
-    SHELL_CMD_ARG(write, &dsub_device_name, "[<device>] <address> <dword> [<dword>...]" , cmd_write, 3, BUF_ARRAY_CNT),
+    SHELL_CMD_ARG(erase, &dsub_device_name,
+                  "[<device>] <page address> [<size>]", cmd_flash_shell_erase, 2, 2),
+    SHELL_CMD_ARG(read , &dsub_device_name,
+                  "[<device>] <address> [<Dword count>]", cmd_flash_shell_read , 2, 2),
+    SHELL_CMD_ARG(test , &dsub_device_name,
+                  "[<device>] <address> <size> <repeat count>", cmd_flash_shell_test, 4, 1),
+    SHELL_CMD_ARG(write, &dsub_device_name,
+                  "[<device>] <address> <dword> [<dword>...]", cmd_flash_shell_write, 3, BUF_ARRAY_CNT),
     SHELL_CMD_ARG(load , &dsub_device_name,
-        "[<device>] <address> <size>",
-        cmd_load, 3, 1),
+                  "[<device>] <address> <size>", cmd_flash_shell_load, 3, 1),
     SHELL_CMD_ARG(page_info, &dsub_device_name,
-        "[<device>] <address>",
-        cmd_page_info, 2, 1),
+                  "[<device>] <address>", cmd_flash_shell_page_info, 2, 1),
 
-#ifdef CONFIG_FLASH_SHELL_TEST_COMMANDS
+    #ifdef CONFIG_FLASH_SHELL_TEST_COMMANDS
     SHELL_CMD_ARG(read_test, &dsub_device_name,
-        "[<device>] <address> <size> <repeat count>",
-        cmd_read_test, 4, 1),
+                  "[<device>] <address> <size> <repeat count>",
+                  cmd_read_test, 4, 1),
     SHELL_CMD_ARG(write_test, &dsub_device_name,
-        "[<device>] <address> <size> <repeat count>",
-        cmd_write_test, 4, 1),
+                  "[<device>] <address> <size> <repeat count>",
+                  cmd_write_test, 4, 1),
     SHELL_CMD_ARG(erase_test, &dsub_device_name,
-        "[<device>] <address> <size> <repeat count>",
-        cmd_erase_test, 4, 1),
+                  "[<device>] <address> <size> <repeat count>",
+                  cmd_erase_test, 4, 1),
     SHELL_CMD_ARG(erase_write_test, &dsub_device_name,
-        "[<device>] <address> <size> <repeat count>",
-        cmd_erase_write_test, 4, 1),
-#endif
+                  "[<device>] <address> <size> <repeat count>",
+                  cmd_erase_write_test, 4, 1),
+    #endif
 
     SHELL_SUBCMD_SET_END
 );
