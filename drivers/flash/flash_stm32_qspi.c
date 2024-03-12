@@ -406,9 +406,11 @@ static bool qspi_address_is_valid(struct device const* dev, off_t addr,
 
 static int flash_stm32_qspi_read(struct device const* dev, off_t addr,
                                  void* data, size_t size) {
+    bool is_valid;
     int ret;
 
-    if (!qspi_address_is_valid(dev, addr, size)) {
+    is_valid = qspi_address_is_valid(dev, addr, size);
+    if (is_valid == false) {
         LOG_DBG("Error: address or size exceeds expected values: "
                 "addr 0x%lx, size %zu", (long)addr, size);
         return (-EINVAL);

@@ -32,7 +32,7 @@ extern "C" {
 #endif
 
 struct flash_pages_layout {
-    size_t pages_count; /* count of pages sequence of the same size */
+    size_t pages_count;         /* count of pages sequence of the same size */
     size_t pages_size;
 };
 
@@ -54,7 +54,7 @@ struct flash_pages_layout {
  */
 struct flash_parameters {
     const size_t write_block_size;
-    uint8_t      erase_value; /* Byte value of erased flash */
+    uint8_t erase_value;        /* Byte value of erased flash */
 };
 
 /**
@@ -169,7 +169,7 @@ __syscall int flash_read(const struct device* dev,
 static inline int z_impl_flash_read(const struct device* dev,
                                     off_t offset, void* data, size_t len) {
     const struct flash_driver_api* api = (const struct flash_driver_api*)dev->api;
-    int                            rc;
+    int rc;
 
     rc = api->read(dev, offset, data, len);
 
@@ -234,7 +234,7 @@ __syscall int flash_erase(const struct device* dev, off_t offset, size_t size);
 
 static inline int z_impl_flash_erase(const struct device* dev, off_t offset, size_t size) {
     const struct flash_driver_api* api = (const struct flash_driver_api*)dev->api;
-    int                            rc;
+    int rc;
 
     rc = api->erase(dev, offset, size);
 
@@ -335,7 +335,7 @@ __syscall int flash_sfdp_read(const struct device* dev,
 
 static inline int z_impl_flash_sfdp_read(const struct device* dev,
                                          off_t offset, void* data, size_t len) {
-    int                            rv  = -ENOTSUP;
+    int rv = -ENOTSUP;
     const struct flash_driver_api* api = (const struct flash_driver_api*)dev->api;
 
     if (api->sfdp_read != NULL) {
@@ -359,7 +359,7 @@ static inline int z_impl_flash_sfdp_read(const struct device* dev,
 __syscall int flash_read_jedec_id(const struct device* dev, uint8_t* id);
 
 static inline int z_impl_flash_read_jedec_id(const struct device* dev, uint8_t* id) {
-    int                            rv  = -ENOTSUP;
+    int rv = -ENOTSUP;
     const struct flash_driver_api* api = (const struct flash_driver_api*)dev->api;
 
     if (api->read_jedec_id != NULL) {
