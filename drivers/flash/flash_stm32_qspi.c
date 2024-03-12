@@ -22,6 +22,47 @@
 #include <zephyr/drivers/dma/dma_stm32.h>
 #include <zephyr/drivers/gpio.h>
 
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#endif
+
+#ifdef CONFIG_NOCACHE_MEMORY
+#include <zephyr/linker/linker-defs.h>
+#elif defined(CONFIG_CACHE_MANAGEMENT)
+#include <zephyr/arch/cache.h>
+#endif /* CONFIG_NOCACHE_MEMORY */
+
+/*
+ * Check defined(CONFIG_DCACHE) because some platforms disable it in the tests
+ * e.g. nucleo_f746zg
+ */
+#if (defined(CONFIG_CPU_HAS_DCACHE) &&      \
+     defined(CONFIG_DCACHE) &&              \
+     !defined(CONFIG_NOCACHE_MEMORY))
+#define SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED   1
+#else
+#define SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED   0
+#endif /* defined(CONFIG_CPU_HAS_DCACHE) && !defined(CONFIG_NOCACHE_MEMORY) */
+
+
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+static bool buf_in_nocache(uintptr_t buf, size_t len_bytes) {
+    bool buf_within_nocache = false;
+
+    #ifdef CONFIG_NOCACHE_MEMORY
+    buf_within_nocache = ((buf >= ((uintptr_t)_nocache_ram_start)) &&
+                          ((buf + len_bytes - 1) <= ((uintptr_t)_nocache_ram_end)));
+    if (buf_within_nocache) {
+        return (true);
+    }
+    #endif /* CONFIG_NOCACHE_MEMORY */
+
+    buf_within_nocache = (mem_attr_check_buf((void*)buf, len_bytes, DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0);
+
+    return (buf_within_nocache);
+}
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
+
 #if DT_INST_NODE_HAS_PROP(0, spi_bus_width) && \
         (DT_INST_PROP(0, spi_bus_width) == 4)
 #define STM32_QSPI_USE_QUAD_IO 1
