@@ -150,10 +150,11 @@ bool stm32_mdma_is_irq_active(MDMA_TypeDef* dma, uint32_t id) {
            stm32_mdma_is_te_irq_active(dma, id);
 }
 
+/**
+ * @brief This function will clear any kind of dma error flags.
+ */
 void stm32_mdma_clear_channel_irq(MDMA_TypeDef* dma, uint32_t id) {
-    mdma_stm32_clear_ctc(dma, id);
-    mdma_stm32_clear_tc(dma, id);
-    mdma_stm32_clear_te(dma, id);
+    mdma_stm32_clear_te(dma, id);           /* Transfer error */
 }
 
 bool stm32_mdma_is_enabled_channel(MDMA_TypeDef* dma, uint32_t id) {
@@ -189,7 +190,10 @@ static void mdma_stm32_clear_channel_irq(const struct device* dev, uint32_t id) 
     const struct mdma_stm32_config* config = dev->config;
     MDMA_TypeDef* dma = config->base;
 
-    mdma_stm32_clear_tc(dma, id);
+    mdma_stm32_clear_tc(dma, id);           /* Transfer Complete */
+    mdma_stm32_clear_bt(dma, id);           /* Block Transfer complete */
+    mdma_stm32_clear_brt(dma, id);          /* Block Repeat Transfer complete */
+    mdma_stm32_clear_ctc(dma, id);          /* Channel Transfer Complete */
     stm32_mdma_clear_channel_irq(dma, id);
 }
 
@@ -217,19 +221,12 @@ static void mdma_stm32_irq_handler(const struct device* dev, uint32_t id) {
     channel->busy = false;
 
     /* the dma channel id is in range from 0..<dma-requests> */
-    if (stm32_mdma_is_tc_irq_active(dma, id)) {
-        /* Let HAL DMA handle flags on its own */
-        if (!channel->hal_override) {
-            mdma_stm32_clear_tc(dma, id);
-        }
-        channel->dma_callback(dev, channel->user_data, callback_arg, 0);
-    }
-    else if (stm32_mdma_is_ctc_irq_active(dma, id)) {
+    if (stm32_mdma_is_ctc_irq_active(dma, id)) {
         /* Let HAL DMA handle flags on its own */
         if (!channel->hal_override) {
             mdma_stm32_clear_ctc(dma, id);
         }
-        channel->dma_callback(dev, channel->user_data, callback_arg, 0);
+        channel->dma_callback(dev, channel->user_data, callback_arg, DMA_STATUS_COMPLETE);
     }
     else {
         LOG_ERR("Transfer Error.");
@@ -313,8 +310,9 @@ static int mdma_stm32_get_destination_increment(enum dma_addr_adj increment,
 }
 
 static int mdma_stm32_disable_channel(MDMA_TypeDef* mdma, uint32_t id) {
-    int count = 0;
+    int count;
 
+    count = 0;
     for (;;) {
         if (stm32_mdma_disable_channel(mdma, id) == 0) {
             return (0);
@@ -326,26 +324,6 @@ static int mdma_stm32_disable_channel(MDMA_TypeDef* mdma, uint32_t id) {
         }
         k_sleep(K_MSEC(1));
     }
-
-    return (0);
-}
-
-// FIXME need to be implemented
-static bool mdma_stm32_is_valid_memory_address(const uint32_t address, const uint32_t size) {
-    /* The MDMA can only access memory addresses in SRAM4 */
-
-    const uint32_t sram4_start = DT_REG_ADDR(DT_NODELABEL(sram4));
-    const uint32_t sram4_end   = sram4_start + DT_REG_SIZE(DT_NODELABEL(sram4));
-
-    if (address < sram4_start) {
-        return (false);
-    }
-
-    if (address + size > sram4_end) {
-        return (false);
-    }
-
-    return (true);
 }
 
 int mdma_stm32_configure(const struct device* dev,
@@ -357,7 +335,6 @@ int mdma_stm32_configure(const struct device* dev,
     LL_MDMA_InitTypeDef MDMA_InitStruct;
     int index;
     int ret;
-    bool is_valid;
 
     LL_MDMA_StructInit(&MDMA_InitStruct);
 
@@ -428,6 +405,7 @@ int mdma_stm32_configure(const struct device* dev,
     channel->user_data    = config->user_data;
     channel->src_size     = config->source_data_size;
     channel->dst_size     = config->dest_data_size;
+    channel->cyclic       = (bool)config->head_block->source_reload_en;
 
     /* check dest or source memory address, warn if 0 */
     if (config->head_block->source_address == 0) {
@@ -438,26 +416,9 @@ int mdma_stm32_configure(const struct device* dev,
         LOG_WRN("dest_buffer address is null.");
     }
 
-    /* ensure all memory addresses are in valid range */
-    if ((channel->direction == MEMORY_TO_PERIPHERAL) ||
-        (channel->direction == MEMORY_TO_MEMORY)) {
-        is_valid = mdma_stm32_is_valid_memory_address(config->head_block->source_address,
-                                                      config->head_block->block_size);
-        if (is_valid == false) {
-            LOG_ERR("invalid source address");
-            return (-EINVAL);
-        }
-    }
-
-    if ((channel->direction == PERIPHERAL_TO_MEMORY) ||
-        (channel->direction == MEMORY_TO_MEMORY)) {
-        is_valid = mdma_stm32_is_valid_memory_address(config->head_block->dest_address,
-                                                      config->head_block->block_size);
-        if (is_valid == false) {
-            LOG_ERR("invalid destination address");
-            return (-EINVAL);
-        }
-    }
+    /* Since MDMA can access all of memory addresses, 
+     * there is no need to check the address range.
+     */
 
     MDMA_InitStruct.SrcAddress = config->head_block->source_address;
     MDMA_InitStruct.DstAddress = config->head_block->dest_address;
@@ -510,7 +471,7 @@ int mdma_stm32_configure(const struct device* dev,
         return (ret);
     }
 
-    if (config->head_block->source_reload_en) {
+    if (channel->cyclic) {
         MDMA_InitStruct.RequestMode = LL_MDMA_REPEAT_BLOCK_TRANSFER;
     }
     else {
@@ -522,6 +483,7 @@ int mdma_stm32_configure(const struct device* dev,
     /* set the data width, when source_data_size equals dest_data_size */
     index = find_lsb_set(config->source_data_size) - 1;
     MDMA_InitStruct.SrcDataSize = table_src_size[index];
+
     index = find_lsb_set(config->dest_data_size) - 1;
     MDMA_InitStruct.DestDataSize = table_dst_size[index];
 
@@ -536,13 +498,13 @@ int mdma_stm32_configure(const struct device* dev,
 
     MDMA_InitStruct.HWTrigger = config->dma_slot;
 
-    LL_MDMA_Init(mdma, mdma_stm32_id_to_channel(id), &MDMA_InitStruct);
+    uint32_t ch = mdma_stm32_id_to_channel(id);
+    LL_MDMA_Init(mdma, ch, &MDMA_InitStruct);
+    LL_MDMA_EnableIT_TC(mdma, ch);
 
-    LL_MDMA_EnableIT_TC(mdma, mdma_stm32_id_to_channel(id));
-
-    /* Enable Half-Transfer irq if circular mode is enabled */
-    if (config->head_block->source_reload_en) {
-        LL_MDMA_EnableIT_BRT(mdma, mdma_stm32_id_to_channel(id));
+    /* Enable Block Repeat Transfer irq if circular mode is enabled */
+    if (channel->cyclic) {
+        LL_MDMA_EnableIT_BRT(mdma, ch);
     }
 
     return (ret);
@@ -552,7 +514,7 @@ int mdma_stm32_reload(const struct device* dev, uint32_t id,
                       uint32_t src, uint32_t dst,
                       size_t size) {
     const struct mdma_stm32_config* config = dev->config;
-    MDMA_TypeDef* mdma = (MDMA_TypeDef*)(config->base);
+    MDMA_TypeDef* mdma = config->base;
     struct mdma_stm32_channel* channel;
 
     if (id >= config->max_channels) {
@@ -565,32 +527,23 @@ int mdma_stm32_reload(const struct device* dev, uint32_t id,
         return (-EBUSY);
     }
 
-#if (0) // FIXME
     switch (channel->direction) {
-        case MEMORY_TO_PERIPHERAL :
-            LL_MDMA_SetMemoryAddress(mdma, mdma_stm32_id_to_channel(id), src);
-            LL_MDMA_SetPeriphAddress(mdma, mdma_stm32_id_to_channel(id), dst);
-            break;
-
         case MEMORY_TO_MEMORY :
+        case MEMORY_TO_PERIPHERAL :
         case PERIPHERAL_TO_MEMORY :
-            LL_MDMA_SetPeriphAddress(mdma, mdma_stm32_id_to_channel(id), src);
-            LL_MDMA_SetMemoryAddress(mdma, mdma_stm32_id_to_channel(id), dst);
+        case PERIPHERAL_TO_PERIPHERAL :
+            LL_MDMA_SetSourceAddress(mdma, mdma_stm32_id_to_channel(id), src);
+            LL_MDMA_SetDestinationAddress(mdma, mdma_stm32_id_to_channel(id), dst);
             break;
 
         default :
             return (-EINVAL);
     }
 
-    if (channel->source_periph) {
-        LL_MDMA_SetDataLength(mdma, mdma_stm32_id_to_channel(id),
-                              size / channel->src_size);
-    }
-    else {
-        LL_MDMA_SetDataLength(mdma, mdma_stm32_id_to_channel(id),
-                              size / channel->dst_size);
-    }
-#endif
+    /* Since BNDT is Number of bytes to be transferred (0 up to 65536) in the current block.
+     * No need to divide the size by the data size.
+     */
+    LL_MDMA_SetBlkDataLength(mdma, mdma_stm32_id_to_channel(id), size);
 
     /* When reloading the dma, the channel is busy again before enabling */
     channel->busy = true;
@@ -602,7 +555,7 @@ int mdma_stm32_reload(const struct device* dev, uint32_t id,
 
 int mdma_stm32_start(const struct device* dev, uint32_t id) {
     const struct mdma_stm32_config* config = dev->config;
-    MDMA_TypeDef* mdma = (MDMA_TypeDef*)(config->base);
+    MDMA_TypeDef* mdma = config->base;
     struct mdma_stm32_channel* channel;
 
     /* Only M2P or M2M mode can be started manually. */
@@ -628,7 +581,7 @@ int mdma_stm32_start(const struct device* dev, uint32_t id) {
 int mdma_stm32_stop(const struct device* dev, uint32_t id) {
     const struct mdma_stm32_config* config  = dev->config;
     struct mdma_stm32_channel* channel = &config->channels[id];
-    MDMA_TypeDef* mdma = (MDMA_TypeDef*)(config->base);
+    MDMA_TypeDef* mdma = config->base;
 
     if (id >= config->max_channels) {
         return (-EINVAL);
@@ -642,8 +595,8 @@ int mdma_stm32_stop(const struct device* dev, uint32_t id) {
     /* in mdma_stm32_configure, enabling is done regardless of defines */
     LL_MDMA_DisableIT_TC(mdma, mdma_stm32_id_to_channel(id));
 
-    mdma_stm32_disable_channel(mdma, id);
     mdma_stm32_clear_channel_irq(dev, id);
+    mdma_stm32_disable_channel(mdma, id);
 
     /* Finally, flag channel as free */
     channel->busy = false;
@@ -698,7 +651,7 @@ static int mdma_stm32_init(const struct device* dev) {
 int mdma_stm32_get_status(const struct device* dev,
                           uint32_t id, struct dma_status* stat) {
     const struct mdma_stm32_config* config = dev->config;
-    MDMA_TypeDef* mdma = (MDMA_TypeDef*)(config->base);
+    MDMA_TypeDef* mdma = config->base;
     struct mdma_stm32_channel const* channel;
 
     if (id >= config->max_channels) {

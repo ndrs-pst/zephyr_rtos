@@ -37,8 +37,8 @@ struct dma_stm32_data {
 struct dma_stm32_config {
     struct stm32_pclken pclken;
     void (*config_irq)(const struct device* dev);
-    bool     support_m2m;
-    uint32_t base;
+    bool  support_m2m;
+    void* base;
     uint32_t max_streams;
 #ifdef CONFIG_DMAMUX_STM32
     uint8_t offset; /* position in the list of dmamux channel list */

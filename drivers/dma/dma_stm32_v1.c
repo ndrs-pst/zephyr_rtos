@@ -267,10 +267,13 @@ bool stm32_dma_is_irq_active(DMA_TypeDef* dma, uint32_t id) {
            stm32_dma_is_fe_irq_active(dma, id);
 }
 
+/**
+ * @brief This function will clear any kind of dma error flags.
+ */
 void stm32_dma_clear_stream_irq(DMA_TypeDef* dma, uint32_t id) {
-    dma_stm32_clear_te(dma, id);
-    dma_stm32_clear_dme(dma, id);
-    dma_stm32_clear_fe(dma, id);
+    dma_stm32_clear_te(dma, id);            /* Transfer error */
+    dma_stm32_clear_dme(dma, id);           /* Direct mode error */
+    dma_stm32_clear_fe(dma, id);            /* FIFO error */
 }
 
 bool stm32_dma_is_irq_happened(DMA_TypeDef* dma, uint32_t id) {

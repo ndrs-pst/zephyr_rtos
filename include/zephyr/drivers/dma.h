@@ -72,7 +72,7 @@ enum dma_addr_adj {
     /** Decrement the address */
     DMA_ADDR_ADJ_DECREMENT,
     /** No change the address */
-    DMA_ADDR_ADJ_NO_CHANGE,
+    DMA_ADDR_ADJ_NO_CHANGE
 };
 
 /**

@@ -642,7 +642,7 @@ static void flash_stm32_qspi_isr(struct device const* dev) {
 
 /* This function is executed in the interrupt context */
 #if STM32_QSPI_USE_DMA
-#if (defined(CONFIG_SOC_SERIES_STM32H7X) && (STM32_QSPI_MDMA_FEATURE == 1)) /* #CUSTOM@NDRS */
+#if defined(CONFIG_SOC_SERIES_STM32H7X) /* #CUSTOM@NDRS */
 static void qspi_dma_callback(struct device const* dev, void* arg,
                               uint32_t channel, int status) {
     MDMA_HandleTypeDef* hmdma = arg;
