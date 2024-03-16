@@ -45,14 +45,14 @@ static const uint32_t table_priority[4] = {
 
 static void dma_stm32_dump_stream_irq(const struct device* dev, uint32_t id) {
     const struct dma_stm32_config* config = dev->config;
-    DMA_TypeDef* dma = (DMA_TypeDef*)(config->base);
+    DMA_TypeDef* dma = config->base;
 
     stm32_dma_dump_stream_irq(dma, id);
 }
 
 static void dma_stm32_clear_stream_irq(const struct device* dev, uint32_t id) {
     const struct dma_stm32_config* config = dev->config;
-    DMA_TypeDef* dma = (DMA_TypeDef*)(config->base);
+    DMA_TypeDef* dma = config->base;
 
     dma_stm32_clear_tc(dma, id);
     dma_stm32_clear_ht(dma, id);
@@ -208,7 +208,7 @@ void stm32_dma_set_periph_mem_address(DMA_TypeDef* dma,
 
 static void dma_stm32_irq_handler(const struct device* dev, uint32_t id) {
     const struct dma_stm32_config* config = dev->config;
-    DMA_TypeDef* dma = (DMA_TypeDef*)(config->base);
+    DMA_TypeDef* dma = config->base;
     struct dma_stm32_stream* stream;
     uint32_t callback_arg;
 
@@ -308,7 +308,7 @@ static int dma_stm32_configure(const struct device* dev,
                                struct dma_config* config) {
     const struct dma_stm32_config* dev_config = dev->config;
     struct dma_stm32_stream* stream = &dev_config->streams[id - STM32_DMA_STREAM_OFFSET];
-    DMA_TypeDef* dma = (DMA_TypeDef*)dev_config->base;
+    DMA_TypeDef* dma = dev_config->base;
     LL_DMA_InitTypeDef DMA_InitStruct;
     int ret;
 
@@ -488,7 +488,7 @@ static int dma_stm32_reload(const struct device* dev, uint32_t id,
                             uint32_t src, uint32_t dst,
                             size_t size) {
     const struct dma_stm32_config* config = dev->config;
-    DMA_TypeDef* dma = (DMA_TypeDef*)(config->base);
+    DMA_TypeDef* dma = config->base;
     struct dma_stm32_stream* stream;
 
     /* Give channel from index 0 */
@@ -530,7 +530,7 @@ static int dma_stm32_reload(const struct device* dev, uint32_t id,
 
 static int dma_stm32_start(const struct device* dev, uint32_t id) {
     const struct dma_stm32_config* config = dev->config;
-    DMA_TypeDef* dma = (DMA_TypeDef*)(config->base);
+    DMA_TypeDef* dma = config->base;
     struct dma_stm32_stream* stream;
 
     /* Give channel from index 0 */
@@ -559,7 +559,7 @@ static int dma_stm32_start(const struct device* dev, uint32_t id) {
 
 static int dma_stm32_suspend(const struct device* dev, uint32_t id) {
     const struct dma_stm32_config* config = dev->config;
-    DMA_TypeDef* dma = (DMA_TypeDef*)(config->base);
+    DMA_TypeDef* dma = config->base;
 
     /* Give channel from index 0 */
     id = (id - STM32_DMA_STREAM_OFFSET);
@@ -580,7 +580,7 @@ static int dma_stm32_suspend(const struct device* dev, uint32_t id) {
 
 static int dma_stm32_resume(const struct device* dev, uint32_t id) {
     const struct dma_stm32_config* config = dev->config;
-    DMA_TypeDef* dma = (DMA_TypeDef*)(config->base);
+    DMA_TypeDef* dma = config->base;
 
     /* Give channel from index 0 */
     id = (id - STM32_DMA_STREAM_OFFSET);
@@ -597,7 +597,7 @@ static int dma_stm32_resume(const struct device* dev, uint32_t id) {
 static int dma_stm32_stop(const struct device* dev, uint32_t id) {
     const struct dma_stm32_config* config = dev->config;
     struct dma_stm32_stream* stream = &config->streams[id - STM32_DMA_STREAM_OFFSET];
-    DMA_TypeDef* dma = (DMA_TypeDef*)(config->base);
+    DMA_TypeDef* dma = config->base;
 
     /* Give channel from index 0 */
     id = (id - STM32_DMA_STREAM_OFFSET);
@@ -649,7 +649,7 @@ static int dma_stm32_init(const struct device* dev) {
 static int dma_stm32_get_status(const struct device* dev,
                                 uint32_t id, struct dma_status* stat) {
     const struct dma_stm32_config* config = dev->config;
-    DMA_TypeDef* dma = (DMA_TypeDef*)(config->base);
+    DMA_TypeDef* dma = config->base;
     struct dma_stm32_stream* stream;
 
     /* Give channel from index 0 */
@@ -730,7 +730,7 @@ const struct dma_stm32_config dma_stm32_config_##index = {      \
     .pclken      = { .bus = DT_INST_CLOCKS_CELL(index, bus),    \
                      .enr = DT_INST_CLOCKS_CELL(index, bits)},  \
     .config_irq  = dma_stm32_config_irq_##index,                \
-    .base        = DT_INST_REG_ADDR(index),                     \
+    .base        = (void*)DT_INST_REG_ADDR(index),              \
     .max_streams = DT_INST_PROP_OR(index, dma_channels, DT_NUM_IRQS(DT_DRV_INST(index))),   \
     .streams     = dma_stm32_streams_##index,                   \
 };                                                              \
