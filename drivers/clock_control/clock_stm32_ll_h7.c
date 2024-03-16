@@ -142,7 +142,7 @@
 #error "SYS clock frequency for M7 core doesn't match CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC"
 #endif
 
-/* end of clock feasability check */
+/* end of clock feasibility check */
 #endif /* CONFIG_CPU_CORTEX_M7 */
 
 
@@ -256,6 +256,9 @@ static int32_t prepare_regulator_voltage_scale(void)
 	/* Highest voltage is SCALE0 */
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
 	while (LL_PWR_IsActiveFlag_VOS() == 0) {
+		if (IS_ENABLED(__GTEST)) {
+			break;
+		}
 	}
 	return 0;
 }
@@ -291,6 +294,9 @@ static int32_t optimize_regulator_voltage_scale(uint32_t sysclk_freq)
 #endif
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
 	while (LL_PWR_IsActiveFlag_VOS() == 0) {
+		if (IS_ENABLED(__GTEST)) {
+			break;
+		}
 	}
 	return 0;
 }
@@ -329,7 +335,7 @@ static uint32_t get_vco_output_range(uint32_t vco_input_range)
 
 #endif /* ! CONFIG_CPU_CORTEX_M4 */
 
-/** @brief Verifies clock is part of actve clock configuration */
+/** @brief Verifies clock is part of active clock configuration */
 static int enabled_clock(uint32_t src_clk)
 {
 
@@ -364,7 +370,7 @@ static inline int stm32_clock_control_on(const struct device *dev,
 	ARG_UNUSED(dev);
 
 	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
-		/* Attemp to toggle a wrong periph clock bit */
+		/* Attempt to toggle a wrong periph clock bit */
 		return -ENOTSUP;
 	}
 
@@ -385,7 +391,7 @@ static inline int stm32_clock_control_off(const struct device *dev,
 	ARG_UNUSED(dev);
 
 	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
-		/* Attemp to toggle a wrong periph clock bit */
+		/* Attempt to toggle a wrong periph clock bit */
 		return -ENOTSUP;
 	}
 
@@ -410,7 +416,7 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 
 	err = enabled_clock(pclken->bus);
 	if (err < 0) {
-		/* Attemp to configure a src clock not available or not valid */
+		/* Attempt to configure a src clock not available or not valid */
 		return err;
 	}
 
@@ -564,7 +570,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 	return 0;
 }
 
-static struct clock_control_driver_api stm32_clock_control_api = {
+static struct clock_control_driver_api const stm32_clock_control_api = {
 	.on = stm32_clock_control_on,
 	.off = stm32_clock_control_off,
 	.get_rate = stm32_clock_control_get_subsys_rate,
@@ -585,6 +591,10 @@ static void set_up_fixed_clock_sources(void)
 
 		LL_RCC_HSE_Enable();
 		while (LL_RCC_HSE_IsReady() != 1) {
+			/* Wait for HSE ready */
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 		/* Check if we need to enable HSE clock security system or not */
 #if STM32_HSE_CSS
@@ -597,6 +607,10 @@ static void set_up_fixed_clock_sources(void)
 		/* Enable HSI oscillator */
 		LL_RCC_HSI_Enable();
 		while (LL_RCC_HSI_IsReady() != 1) {
+			/* Wait for HSI ready */
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 		/* HSI divider configuration */
 		LL_RCC_HSI_SetDivider(hsi_divider(STM32_HSI_DIVISOR));
@@ -606,6 +620,9 @@ static void set_up_fixed_clock_sources(void)
 		/* Enable CSI oscillator */
 		LL_RCC_CSI_Enable();
 		while (LL_RCC_CSI_IsReady() != 1) {
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	}
 
@@ -613,6 +630,9 @@ static void set_up_fixed_clock_sources(void)
 		/* Enable LSI oscillator */
 		LL_RCC_LSI_Enable();
 		while (LL_RCC_LSI_IsReady() != 1) {
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	}
 
@@ -631,12 +651,18 @@ static void set_up_fixed_clock_sources(void)
 		/* Enable LSE oscillator */
 		LL_RCC_LSE_Enable();
 		while (LL_RCC_LSE_IsReady() != 1) {
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	}
 
 	if (IS_ENABLED(STM32_HSI48_ENABLED)) {
 		LL_RCC_HSI48_Enable();
 		while (LL_RCC_HSI48_IsReady() != 1) {
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	}
 }
@@ -653,12 +679,18 @@ static void stm32_clock_switch_to_hsi(void)
 		LL_RCC_HSI_Enable();
 		while (LL_RCC_HSI_IsReady() != 1) {
 			/* Wait for HSI ready */
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	}
 
 	/* Set HSI as SYSCLCK source */
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
+		if (IS_ENABLED(__GTEST)) {
+			break;
+		}
 	}
 }
 
@@ -735,6 +767,9 @@ static int set_up_plls(void)
 
 	LL_RCC_PLL1_Enable();
 	while (LL_RCC_PLL1_IsReady() != 1U) {
+		if (IS_ENABLED(__GTEST)) {
+			break;
+		}
 	}
 
 #endif /* STM32_PLL_ENABLED */
@@ -846,7 +881,7 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Configure MCO1/MCO2 based on Kconfig */
 	stm32_clock_control_mco_init();
 
-	/* Set up indiviual enabled clocks */
+	/* Set up individual enabled clocks */
 	set_up_fixed_clock_sources();
 
 	/* Set up PLLs */
@@ -871,7 +906,7 @@ int stm32_clock_control_init(const struct device *dev)
 		LL_SetFlashLatency(new_hclk_freq);
 	}
 
-	/* Preset the prescalers prior to chosing SYSCLK */
+	/* Preset the prescalers prior to choosing SYSCLK */
 	/* Prevents APB clock to go over limits */
 	/* Set buses (Sys,AHB, APB1, APB2 & APB4) prescalers */
 	LL_RCC_SetSysPrescaler(sysclk_prescaler(STM32_D1CPRE));
@@ -886,12 +921,18 @@ int stm32_clock_control_init(const struct device *dev)
 		/* Set PLL1 as System Clock Source */
 		LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PLL1);
 		while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_PLL1) {
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	} else if (IS_ENABLED(STM32_SYSCLK_SRC_HSE)) {
 		/* Set sysclk source to HSE */
 		LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSE);
 		while (LL_RCC_GetSysClkSource() !=
 					LL_RCC_SYS_CLKSOURCE_STATUS_HSE) {
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	} else if (IS_ENABLED(STM32_SYSCLK_SRC_HSI)) {
 		/* Set sysclk source to HSI */
@@ -901,6 +942,9 @@ int stm32_clock_control_init(const struct device *dev)
 		LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_CSI);
 		while (LL_RCC_GetSysClkSource() !=
 					LL_RCC_SYS_CLKSOURCE_STATUS_CSI) {
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	} else {
 		return -ENOTSUP;

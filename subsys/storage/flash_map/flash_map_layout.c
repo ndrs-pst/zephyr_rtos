@@ -18,13 +18,13 @@
 #include <zephyr/init.h>
 
 struct layout_data {
-	uint32_t area_idx;
-	uint32_t area_off;
-	uint32_t area_len;
-	void *ret;        /* struct flash_area* or struct flash_sector* */
-	uint32_t ret_idx;
-	uint32_t ret_len;
-	int status;
+    uint32_t area_idx;
+    uint32_t area_off;
+    uint32_t area_len;
+    void*    ret;        /* struct flash_area* or struct flash_sector* */
+    uint32_t ret_idx;
+    uint32_t ret_len;
+    int      status;
 };
 
 /*
@@ -40,23 +40,24 @@ struct layout_data {
  * The value to return to flash_page_foreach() is stored in
  * "bail_value" if the callback should exit early.
  */
-static bool should_bail(const struct flash_pages_info *info,
-						struct layout_data *data,
-						bool *bail_value)
-{
-	if (info->start_offset < data->area_off) {
-		*bail_value = true;
-		return true;
-	} else if (info->start_offset >= data->area_off + data->area_len) {
-		*bail_value = false;
-		return true;
-	} else if (data->ret_idx >= data->ret_len) {
-		data->status = -ENOMEM;
-		*bail_value = false;
-		return true;
-	}
+static bool should_bail(const struct flash_pages_info* info,
+                        struct layout_data* data,
+                        bool* bail_value) {
+    if ((uint32_t)info->start_offset < data->area_off) {
+        *bail_value = true;
+        return (true);
+    }
+    else if ((uint32_t)info->start_offset >= (data->area_off + data->area_len)) {
+        *bail_value = false;
+        return (true);
+    }
+    else if (data->ret_idx >= data->ret_len) {
+        data->status = -ENOMEM;
+        *bail_value  = false;
+        return (true);
+    }
 
-	return false;
+    return (false);
 }
 
 /*
@@ -65,61 +66,62 @@ static bool should_bail(const struct flash_pages_info *info,
  * flash_area_get_sectors(). A lot of this can be inlined once
  * flash_area_to_sectors() is removed.
  */
-static int flash_area_layout(int idx, uint32_t *cnt, void *ret,
-flash_page_cb cb, struct layout_data *cb_data)
-{
-	const struct device *flash_dev;
-	const struct flash_area *fa;
-	int rc = flash_area_open(idx, &fa);
+static int flash_area_layout(int idx, uint32_t* cnt, void* ret,
+                             flash_page_cb cb, struct layout_data* cb_data) {
+    const struct device* flash_dev;
+    const struct flash_area* fa;
+    int rc;
 
-	if (rc < 0 || fa == NULL) {
-		return -EINVAL;
-	}
+    rc = flash_area_open((uint8_t)idx, &fa);
+    if ((rc < 0) || (fa == NULL)) {
+        return (-EINVAL);
+    }
 
-	cb_data->area_idx = idx;
-	cb_data->area_off = fa->fa_off;
-	cb_data->area_len = fa->fa_size;
+    cb_data->area_idx = idx;
+    cb_data->area_off = fa->fa_off;
+    cb_data->area_len = fa->fa_size;
 
-	cb_data->ret = ret;
-	cb_data->ret_idx = 0U;
-	cb_data->ret_len = *cnt;
-	cb_data->status = 0;
+    cb_data->ret     = ret;
+    cb_data->ret_idx = 0U;
+    cb_data->ret_len = *cnt;
+    cb_data->status  = 0;
 
-	flash_dev = fa->fa_dev;
-	flash_area_close(fa);
-	if (flash_dev == NULL) {
-		return -ENODEV;
-	}
+    flash_dev = fa->fa_dev;
+    flash_area_close(fa);
+    if (flash_dev == NULL) {
+        return (-ENODEV);
+    }
 
-	flash_page_foreach(flash_dev, cb, cb_data);
+    flash_page_foreach(flash_dev, cb, cb_data);
 
-	if (cb_data->status == 0) {
-		*cnt = cb_data->ret_idx;
-	}
+    if (cb_data->status == 0) {
+        *cnt = cb_data->ret_idx;
+    }
 
-	return cb_data->status;
+    return (cb_data->status);
 }
 
-static bool get_sectors_cb(const struct flash_pages_info *info, void *datav)
-{
-	struct layout_data *data = datav;
-	struct flash_sector *ret = data->ret;
-	bool bail;
+static bool get_sectors_cb(const struct flash_pages_info* info, void* datav) {
+    struct layout_data*  data = datav;
+    struct flash_sector* ret  = data->ret;
+    bool bail;
 
-	if (should_bail(info, data, &bail)) {
-		return bail;
-	}
+    if (should_bail(info, data, &bail)) {
+        return (bail);
+    }
 
-	ret[data->ret_idx].fs_off = info->start_offset - data->area_off;
-	ret[data->ret_idx].fs_size = info->size;
-	data->ret_idx++;
+    ret[data->ret_idx].fs_off  = (info->start_offset - data->area_off);
+    ret[data->ret_idx].fs_size = info->size;
+    data->ret_idx++;
 
-	return true;
+    return (true);
 }
 
-int flash_area_get_sectors(int idx, uint32_t *cnt, struct flash_sector *ret)
-{
-	struct layout_data data;
+int flash_area_get_sectors(int idx, uint32_t* cnt, struct flash_sector* ret) {
+    struct layout_data data;
+    int rc;
 
-	return flash_area_layout(idx, cnt, ret, get_sectors_cb, &data);
+    rc = flash_area_layout(idx, cnt, ret, get_sectors_cb, &data);
+
+    return (rc);
 }

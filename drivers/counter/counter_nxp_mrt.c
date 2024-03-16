@@ -250,7 +250,7 @@ static void nxp_mrt_isr(const struct device *dev)
 	}
 }
 
-struct counter_driver_api nxp_mrt_api = {
+static const struct counter_driver_api nxp_mrt_api = {
 	.get_value = nxp_mrt_get_value,
 	.start = nxp_mrt_start,
 	.stop = nxp_mrt_stop,
