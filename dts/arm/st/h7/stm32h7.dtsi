@@ -1029,6 +1029,13 @@
 				 <&rcc STM32_CLOCK_BUS_AHB1 0x00010000>,
 				 <&rcc STM32_CLOCK_BUS_AHB1 0x00020000>;
 			status = "disabled";
+
+			eth_mdio: mdio {
+				compatible = "st,stm32-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 
 		fmc: memory-controller@52004000 {

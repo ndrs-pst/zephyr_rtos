@@ -345,7 +345,7 @@ static inline int pinctrl_apply_state(const struct pinctrl_dev_config* config, u
 
 	ret = pinctrl_lookup_state(config, id, &state);
 	if (ret < 0) {
-		return ret;
+		return (ret);
 	}
 
 	return pinctrl_apply_state_direct(config, state);
