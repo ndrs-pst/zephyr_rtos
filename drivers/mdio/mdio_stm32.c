@@ -19,110 +19,148 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mdio_stm32, CONFIG_MDIO_LOG_LEVEL);
 
+/* #CUSTOM@NDRS */
+#define DEVICE_STM32_GET_ETH_HNDL(dev)         (ETH_HandleTypeDef*)(&(((struct mdio_stm32_dev_data*)(dev)->data)->heth))
+
 struct ETH_HandlePrivTypeDef {
     ETH_TypeDef* Instance;                  /*!< Register base address       */
 };
 
 struct mdio_stm32_dev_data {
+    struct ETH_HandlePrivTypeDef heth;
     struct k_sem sem;
 };
 
 struct mdio_stm32_dev_config {
-    struct ETH_HandlePrivTypeDef heth;
     const struct pinctrl_dev_config* pcfg;
 };
 
-static int mdio_stm32_transfer(const struct device* dev,
-                               uint8_t prtad, uint8_t regad,
-                               enum mdio_opcode op, bool c45,
-                               uint16_t data_in, uint16_t* data_out) {
-    const struct mdio_stm32_dev_config* const cfg = dev->config;
-    struct mdio_stm32_dev_data* const data = dev->data;
-    int timeout = 50;
-
-    k_sem_take(&data->sem, K_FOREVER);
-
-#if (0)
-    /* Write mdio transaction */
-    cfg->regs->GMAC_MAN = (c45 ? 0U : GMAC_MAN_CLTTO) | GMAC_MAN_OP(op) | GMAC_MAN_WTN(0x02) | GMAC_MAN_PHYA(prtad) |
-                          GMAC_MAN_REGA(regad) | GMAC_MAN_DATA(data_in);
-
-    /* Wait until done */
-    while (!(cfg->regs->GMAC_NSR & GMAC_NSR_IDLE)) {
-        if (timeout-- == 0U) {
-            LOG_ERR("transfer timedout %s", dev->name);
-            k_sem_give(&data->sem);
-
-            return -ETIMEDOUT;
-        }
-
-        k_sleep(K_MSEC(5));
-    }
-
-    if (data_out) {
-        *data_out = cfg->regs->GMAC_MAN & GMAC_MAN_DATA_Msk;
-    }
-#endif
-
-    k_sem_give(&data->sem);
-
-    return 0;
-}
-
+/**
+ * @brief Read a PHY register using the MDIO bus clause 22
+ * @param[in] dev   MDIO device
+ * @param[in] prtad PHY port address
+ * @param[in] regad PHY register address
+ * @param[out] data Pointer to the data to be read
+ * @return 0 on success, negative errno code on fail
+ */
 static int mdio_stm32_read(const struct device* dev, uint8_t prtad, uint8_t regad, uint16_t* data) {
-    return mdio_stm32_transfer(dev, prtad, regad, MDIO_OP_C22_READ, false, 0, data);
+    ETH_HandleTypeDef* heth = DEVICE_STM32_GET_ETH_HNDL(dev);
+    HAL_StatusTypeDef hal_sts;
+    uint32_t reg_val;
+    int ret;
+
+    hal_sts = HAL_ETH_ReadPHYRegister(heth, prtad, regad, &reg_val);
+    if (hal_sts != HAL_OK) {
+        ret = -EIO;
+    }
+    else {
+        *data = (uint16_t)reg_val;
+        ret = 0;
+    }
+
+    return (ret);
 }
 
+/**
+ * @brief Write a PHY register using the MDIO bus clause 22
+ * @param[in] dev MDIO device
+ * @param[in] prtad PHY port address
+ * @param[in] regad PHY register address
+ * @param[in] data  Data to be written
+ * @return 0 on success, negative errno code on fail
+ */
 static int mdio_stm32_write(const struct device* dev, uint8_t prtad, uint8_t regad, uint16_t data) {
-    return mdio_stm32_transfer(dev, prtad, regad, MDIO_OP_C22_WRITE, false, data, NULL);
+    ETH_HandleTypeDef* heth = DEVICE_STM32_GET_ETH_HNDL(dev);
+    HAL_StatusTypeDef hal_sts;
+    int ret;
+
+    hal_sts = HAL_ETH_WritePHYRegister(heth, prtad, regad, data);
+    if (hal_sts != HAL_OK) {
+        ret = -EIO;
+    }
+    else {
+        ret = 0;
+    }
+
+    return (ret);
 }
 
+/**
+ * @brief Read a PHY register using the MDIO bus clause 45
+ * @param[in] dev   MDIO device
+ * @param[in] prtad PHY port address
+ * @param[in] devad PHY device address
+ * @param[in] regad PHY register address
+ * @param[out] data Pointer to the data to be read
+ * @return 0 on success, negative errno code on fail
+ */
 static int mdio_stm32_read_c45(const struct device* dev, uint8_t prtad, uint8_t devad, uint16_t regad, uint16_t* data) {
-    int err;
+    ARG_UNUSED(dev);
+    ARG_UNUSED(prtad);
+    ARG_UNUSED(devad);
+    ARG_UNUSED(regad);
+    ARG_UNUSED(data);
 
-    err = mdio_stm32_transfer(dev, prtad, devad, MDIO_OP_C45_ADDRESS, true, regad, NULL);
-    if (!err) {
-        err = mdio_stm32_transfer(dev, prtad, devad, MDIO_OP_C45_READ, true, 0, data);
-    }
-
-    return err;
+    return (-ENOTSUP);
 }
 
+/**
+ * @brief Write a PHY register using the MDIO bus clause 45
+ * @param[in] dev MDIO device
+ * @param[in] prtad PHY port address
+ * @param[in] devad PHY device address
+ * @param[in] regad PHY register address
+ * @param[in] data  Data to be written
+ * @return 0 on success, negative errno code on fail
+ */
 static int mdio_stm32_write_c45(const struct device* dev, uint8_t prtad, uint8_t devad, uint16_t regad, uint16_t data) {
-    int err;
+    ARG_UNUSED(dev);
+    ARG_UNUSED(prtad);
+    ARG_UNUSED(devad);
+    ARG_UNUSED(regad);
+    ARG_UNUSED(data);
 
-    err = mdio_stm32_transfer(dev, prtad, devad, MDIO_OP_C45_ADDRESS, true, regad, NULL);
-    if (!err) {
-        err = mdio_stm32_transfer(dev, prtad, devad, MDIO_OP_C45_WRITE, true, data, NULL);
-    }
-
-    return err;
+    return (-ENOTSUP);
 }
 
 static void mdio_stm32_bus_enable(const struct device* dev) {
-    const struct mdio_stm32_dev_config* const cfg = dev->config;
+    ARG_UNUSED(dev);
 
-    //cfg->regs->GMAC_NCR |= GMAC_NCR_MPE;
+    /*
+     * MDIO bus device is actually part of ethernet device, and
+     * does not support ability to disable/enable MDIO bus hardware
+     * independently of the ethernet/MAC hardware, so do nothing.
+     */
 }
 
 static void mdio_stm32_bus_disable(const struct device* dev) {
-    const struct mdio_stm32_dev_config* const cfg = dev->config;
+    ARG_UNUSED(dev);
 
-    //cfg->regs->GMAC_NCR &= ~GMAC_NCR_MPE;
+    /*
+     * MDIO bus device is actually part of ethernet device, and
+     * does not support ability to disable/enable MDIO bus hardware
+     * independently of the ethernet/MAC hardware, so do nothing.
+     */
 }
 
+/**
+ * @brief Initialize the MDIO bus device
+ * @param[in] dev MDIO device
+ * @return 0 on success, negative errno code on fail
+ */
 static int mdio_stm32_initialize(const struct device* dev) {
-    struct mdio_stm32_dev_config const* cfg  = dev->config;
+    struct mdio_stm32_dev_config const* cfg = dev->config;
     struct mdio_stm32_dev_data* const data = dev->data;
-    int retval;
+    ETH_HandleTypeDef* heth = DEVICE_STM32_GET_ETH_HNDL(dev);
+    int ret;
 
     k_sem_init(&data->sem, 1, 1);
 
-    HAL_ETH_SetMDIOClockRange((ETH_HandleTypeDef*)&cfg->heth);
+    HAL_ETH_SetMDIOClockRange(heth);
 
-    retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+    ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
-    return retval;
+    return (ret);
 }
 
 static struct mdio_driver_api const mdio_stm32_driver_api = {
@@ -134,24 +172,23 @@ static struct mdio_driver_api const mdio_stm32_driver_api = {
     .bus_disable = mdio_stm32_bus_disable
 };
 
-#define MDIO_SAM_CLOCK(n) COND_CODE_1(CONFIG_SOC_FAMILY_ATMEL_SAM, (.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n), ), ())
-
-#define MDIO_STM32_CONFIG(n)                                                \
+#define MDIO_STM32_CONFIG(n)                                    \
     static struct mdio_stm32_dev_config DT_CONST mdio_stm32_dev_config_##n = { \
-        .heth = {                                                           \
-            .Instance = (ETH_TypeDef*)DT_REG_ADDR(DT_INST_PARENT(n)),       \
-        },                                                                  \
-        .pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n)                           \
+        .pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n)               \
     }
 
 #define MDIO_STM32_DEVICE(n)                                    \
     PINCTRL_DT_INST_DEFINE(n);                                  \
     MDIO_STM32_CONFIG(n);                                       \
-    static struct mdio_stm32_dev_data mdio_stm32_dev_data##n;   \
+    static struct mdio_stm32_dev_data mdio_stm32_dev_data_##n = {     \
+        .heth = {                                               \
+            .Instance = (ETH_TypeDef*)DT_REG_ADDR(DT_INST_PARENT(n)), \
+        }                                                       \
+    };                                                          \
     DEVICE_DT_INST_DEFINE(n,                                    \
                           &mdio_stm32_initialize,               \
                           NULL,                                 \
-                          &mdio_stm32_dev_data##n,              \
+                          &mdio_stm32_dev_data_##n,             \
                           &mdio_stm32_dev_config_##n,           \
                           POST_KERNEL,                          \
                           CONFIG_MDIO_INIT_PRIORITY,            \
@@ -163,7 +200,7 @@ DT_INST_FOREACH_STATUS_OKAY(MDIO_STM32_DEVICE)
 #include "mcu_reg_stub.h"
 
 void zephyr_gtest_mdio_stm32(void) {
-    mdio_stm32_dev_config_0.heth.Instance = (ETH_TypeDef*)ut_mcu_eth_ptr;
+    mdio_stm32_dev_data_0.heth.Instance = (ETH_TypeDef*)ut_mcu_eth_ptr;
 }
 
 void zephyr_gtest_mdio_stm32_init(const struct device* dev) {
