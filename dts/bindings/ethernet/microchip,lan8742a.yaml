@@ -16,3 +16,21 @@ properties:
     type: phandle-array
     specifier-space: gpio
     description: GPIO for interrupt signal indicating PHY state change.
+  mc,led1-function-select:
+    type: string
+    default: "link-activity"
+    description: LED1 Function Select
+    enum:
+      - "link-activity"
+      - "#int"
+      - "#pme"
+      - "link-speed"
+  mc,led2-function-select:
+    type: string
+    default: "link-speed"
+    description: LED1 Function Select
+    enum:
+      - "link-activity"
+      - "#int"
+      - "#pme"
+      - "link-speed"
