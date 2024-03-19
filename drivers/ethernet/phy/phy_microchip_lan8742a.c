@@ -50,12 +50,30 @@ struct mc_lan8742a_data {
     struct k_work_delayable phy_monitor_work;
 };
 
+static int phy_link_state_cmp(struct phy_link_state const* a_state, struct phy_link_state const* b_state) {
+    int ret;
+
+    if ((a_state->is_up == b_state->is_up) &&
+        (a_state->speed == b_state->speed)) {
+        ret = 0;
+    }
+    else {
+        ret = 1;
+    }
+
+    return (ret);
+}
+
 static int phy_mc_lan8742a_read(const struct device* dev,
                                 uint16_t reg_addr, uint32_t* data) {
     const struct mc_lan8742a_config* config = dev->config;
+    uint16_t tmp16;
     int ret;
 
-    ret = mdio_read(config->mdio_dev, config->addr, (uint8_t)reg_addr, (uint16_t*)data);
+    ret = mdio_read(config->mdio_dev, config->addr, (uint8_t)reg_addr, &tmp16);
+    if (ret == 0) {
+        *data = tmp16;
+    }
 
     return (ret);
 }
@@ -120,9 +138,9 @@ static int phy_mc_lan8742a_get_link(const struct device* dev,
     struct mc_lan8742a_config const* config = dev->config;
     struct mc_lan8742a_data* data = dev->data;
     int ret;
-    uint32_t bmsr = 0;
-    uint32_t anar = 0;
-    uint32_t anlpar = 0;
+    uint32_t bmsr;
+    uint32_t anar;
+    uint32_t anlpar;
     struct phy_link_state old_state = data->state;
 
     /* Lock mutex */
@@ -139,7 +157,7 @@ static int phy_mc_lan8742a_get_link(const struct device* dev,
         k_mutex_unlock(&data->mutex);
         return (ret);
     }
-    state->is_up = bmsr & MII_BMSR_LINK_STATUS;
+    state->is_up = (bmsr & MII_BMSR_LINK_STATUS) ? true : false;
     state->speed = LINK_UNDEFINED;
 
     if (state->is_up == false) {
@@ -165,7 +183,7 @@ static int phy_mc_lan8742a_get_link(const struct device* dev,
     /* Unlock mutex */
     k_mutex_unlock(&data->mutex);
 
-    uint32_t mutual_capabilities = anar & anlpar;
+    uint32_t mutual_capabilities = (anar & anlpar);
 
     if (mutual_capabilities & MII_ADVERTISE_100_FULL) {
         state->speed = LINK_FULL_100BASE_T;
@@ -184,8 +202,7 @@ static int phy_mc_lan8742a_get_link(const struct device* dev,
     }
 
 result :
-    if ((old_state.speed != state->speed) ||
-        (old_state.is_up != state->is_up)) {
+    if (phy_link_state_cmp(&old_state, state) != 0) {
         LOG_DBG("PHY %d is %s", config->addr, state->is_up ? "up" : "down");
         LOG_DBG("PHY (%d) Link speed %s Mb, %s duplex\n", config->addr,
                 (PHY_LINK_IS_SPEED_100M(state->speed) ? "100" : "10"),
@@ -340,8 +357,8 @@ static void phy_mc_lan8742a_monitor_work_handler(struct k_work* work) {
     rc = phy_mc_lan8742a_get_link(dev, &state);
 
     if ((rc == 0) &&
-        (memcmp(&state, &data->state, sizeof(struct phy_link_state)) != 0)) {
-        memcpy(&data->state, &state, sizeof(struct phy_link_state));
+        (phy_link_state_cmp(&state, &data->state) != 0)) {
+        data->state = state;
         if (data->cb) {
             data->cb(dev, &data->state, data->cb_data);
         }

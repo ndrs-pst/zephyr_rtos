@@ -218,7 +218,7 @@ static HAL_StatusTypeDef read_eth_phy_register(ETH_HandleTypeDef* heth,
     #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2 */
 }
 
-static inline void setup_mac_filter(ETH_HandleTypeDef* heth) {
+static inline void eth_stm32_setup_mac_filter(ETH_HandleTypeDef* heth) {
     __ASSERT_NO_MSG(heth != NULL);
 
     #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
@@ -304,7 +304,7 @@ void HAL_ETH_TxPtpCallback(uint32_t* buff, ETH_TimeStampTypeDef* timestamp) {
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
-static int eth_tx(const struct device* dev, struct net_pkt* pkt) {
+static int eth_stm32_tx(const struct device* dev, struct net_pkt* pkt) {
     struct eth_stm32_hal_dev_data* dev_data = dev->data;
     ETH_HandleTypeDef* heth;
     int res;
@@ -609,7 +609,7 @@ static struct net_if* get_iface(struct eth_stm32_hal_dev_data* ctx,
     #endif
 }
 
-static struct net_pkt* eth_rx(const struct device* dev, uint16_t* vlan_tag) {
+static struct net_pkt* eth_stm32_rx(const struct device* dev, uint16_t* vlan_tag) {
     struct eth_stm32_hal_dev_data* dev_data;
     ETH_HandleTypeDef* heth;
     struct net_pkt* pkt;
@@ -851,7 +851,7 @@ out :
     return (pkt);
 }
 
-static void rx_thread(void* arg1, void* unused1, void* unused2) {
+static void eth_stm32_rx_thread(void* arg1, void* unused1, void* unused2) {
     uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
     const struct device* dev;
     struct eth_stm32_hal_dev_data* dev_data;
@@ -881,7 +881,7 @@ static void rx_thread(void* arg1, void* unused1, void* unused2) {
                                              vlan_tag));
             }
 
-            while ((pkt = eth_rx(dev, &vlan_tag)) != NULL) {
+            while ((pkt = eth_stm32_rx(dev, &vlan_tag)) != NULL) {
                 iface = net_pkt_iface(pkt);
                 #if defined(CONFIG_NET_DSA)
                 iface = dsa_net_recv(iface, &pkt);
@@ -922,7 +922,7 @@ static void rx_thread(void* arg1, void* unused1, void* unused2) {
     }
 }
 
-static void eth_isr(const struct device* dev) {
+static void eth_stm32_isr(const struct device* dev) {
     struct eth_stm32_hal_dev_data* dev_data;
     ETH_HandleTypeDef* heth;
 
@@ -1087,7 +1087,7 @@ void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef* heth_handle) {
     k_sem_give(&dev_data->rx_int_sem);
 }
 
-static void generate_mac(uint8_t* mac_addr) {
+static void eth_stm32_generate_mac(uint8_t* mac_addr) {
     #if defined(ETH_STM32_RANDOM_MAC)
     /* Either CONFIG_ETH_STM32_HAL_RANDOM_MAC or device tree property */
     /* "zephyr,random-mac-address" is set, generate a random mac address */
@@ -1117,11 +1117,12 @@ static void generate_mac(uint8_t* mac_addr) {
     #endif
 }
 
-static int eth_initialize(const struct device* dev) {
+static int /**/eth_stm32_initialize(const struct device* dev) {
     struct eth_stm32_hal_dev_data* dev_data;
     const struct eth_stm32_hal_dev_cfg* cfg;
     ETH_HandleTypeDef* heth;
     HAL_StatusTypeDef hal_ret;
+    bool is_ready;
     int ret;
 
     __ASSERT_NO_MSG(dev != NULL);
@@ -1134,7 +1135,8 @@ static int eth_initialize(const struct device* dev) {
 
     dev_data->clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-    if (!device_is_ready(dev_data->clock)) {
+    is_ready = device_is_ready(dev_data->clock);
+    if (is_ready == false) {
         LOG_ERR("clock control device not ready");
         return (-ENODEV);
     }
@@ -1151,7 +1153,7 @@ static int eth_initialize(const struct device* dev) {
             (clock_control_subsys_t)&cfg->pclken_ptp);
     #endif
 
-    if (ret) {
+    if (ret != 0) {
         LOG_ERR("Failed to enable ethernet clock");
         return (-EIO);
     }
@@ -1165,7 +1167,7 @@ static int eth_initialize(const struct device* dev) {
 
     heth = &dev_data->heth;
 
-    generate_mac(dev_data->mac_addr);
+    eth_stm32_generate_mac(dev_data->mac_addr);
 
     heth->Init.MACAddr = dev_data->mac_addr;
 
@@ -1186,6 +1188,9 @@ static int eth_initialize(const struct device* dev) {
     else if (hal_ret != HAL_OK) {
         LOG_ERR("HAL_ETH_Init failed: %d", hal_ret);
         return (-EINVAL);
+    }
+    else {
+        /* pass */
     }
 
     #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
@@ -1231,9 +1236,9 @@ static int eth_initialize(const struct device* dev) {
 
     HAL_ETH_GetMACConfig(heth, &mac_config);
     mac_config.DuplexMode = IS_ENABLED(CONFIG_ETH_STM32_MODE_HALFDUPLEX) ?
-                                ETH_HALFDUPLEX_MODE : ETH_FULLDUPLEX_MODE;
+                                       ETH_HALFDUPLEX_MODE : ETH_FULLDUPLEX_MODE;
     mac_config.Speed = IS_ENABLED(CONFIG_ETH_STM32_SPEED_10M) ?
-                            ETH_SPEED_10M : ETH_SPEED_100M;
+                                  ETH_SPEED_10M : ETH_SPEED_100M;
     hal_ret = HAL_ETH_SetMACConfig(heth, &mac_config);
     if (hal_ret != HAL_OK) {
         LOG_ERR("HAL_ETH_SetMACConfig: failed: %d", hal_ret);
@@ -1262,9 +1267,9 @@ static int eth_initialize(const struct device* dev) {
     hal_ret = HAL_ETH_Start_IT(heth);
     #else
     HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab,
-            &dma_tx_buffer[0][0], ETH_TXBUFNB);
+                              &dma_tx_buffer[0][0], ETH_TXBUFNB);
     HAL_ETH_DMARxDescListInit(heth, dma_rx_desc_tab,
-            &dma_rx_buffer[0][0], ETH_RXBUFNB);
+                              &dma_rx_buffer[0][0], ETH_RXBUFNB);
 
     hal_ret = HAL_ETH_Start(heth);
     #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
@@ -1273,7 +1278,7 @@ static int eth_initialize(const struct device* dev) {
         LOG_ERR("HAL_ETH_Start{_IT} failed");
     }
 
-    setup_mac_filter(heth);
+    eth_stm32_setup_mac_filter(heth);
 
     LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",
             dev_data->mac_addr[0], dev_data->mac_addr[1],
@@ -1379,7 +1384,7 @@ static void eth_iface_init(struct net_if* iface) {
         /* Start interruption-poll thread */
         k_thread_create(&dev_data->rx_thread, dev_data->rx_thread_stack,
                         K_KERNEL_STACK_SIZEOF(dev_data->rx_thread_stack),
-                        rx_thread, (void*)dev, NULL, NULL,
+                        eth_stm32_rx_thread, (void*)dev, NULL, NULL,
                         K_PRIO_COOP(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO),
                         0, K_NO_WAIT);
 
@@ -1490,7 +1495,7 @@ static struct net_stats_eth* eth_stm32_hal_get_stats(const struct device* dev) {
 }
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
 
-static const struct ethernet_api eth_api = {
+static const struct ethernet_api eth_stm32_api = {
     .iface_api.init = eth_iface_init,
 
     #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
@@ -1503,7 +1508,7 @@ static const struct ethernet_api eth_api = {
     #if defined(CONFIG_NET_DSA)
     .send = dsa_tx,
     #else
-    .send = eth_tx,
+    .send = eth_stm32_tx,
     #endif
 
     #if defined(CONFIG_NET_STATISTICS_ETHERNET)
@@ -1512,7 +1517,7 @@ static const struct ethernet_api eth_api = {
 };
 
 static void eth0_irq_config(void) {
-    IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), eth_isr,
+    IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), eth_stm32_isr,
                 DEVICE_DT_INST_GET(0), 0);
     irq_enable(DT_INST_IRQN(0));
 }
@@ -1560,9 +1565,9 @@ static struct eth_stm32_hal_dev_data eth0_data = {
     },
 };
 
-ETH_NET_DEVICE_DT_INST_DEFINE(0, eth_initialize,
+ETH_NET_DEVICE_DT_INST_DEFINE(0, eth_stm32_initialize,
                               NULL, &eth0_data, &eth0_config,
-                              CONFIG_ETH_INIT_PRIORITY, &eth_api, ETH_STM32_HAL_MTU);
+                              CONFIG_ETH_INIT_PRIORITY, &eth_stm32_api, ETH_STM32_HAL_MTU);
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 
