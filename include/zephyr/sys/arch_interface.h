@@ -216,7 +216,7 @@ void arch_cpu_atomic_idle(unsigned int key);
  *
  * @param data context parameter, implementation specific
  */
-typedef void (*arch_cpustart_t)(void *data);
+typedef void (*arch_cpustart_t)(void* data);
 
 /**
  * @brief Start a numbered CPU on a MP-capable system
@@ -278,6 +278,13 @@ static inline void arch_irq_unlock(unsigned int key);
  * call that produced the key argument.
  */
 static inline bool arch_irq_unlocked(unsigned int key);
+
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+static inline bool arch_irq_unlocked(unsigned int key) {
+    /* This convention works for both PRIMASK and BASEPRI */
+    return (key == 0U);
+}
+#endif
 
 /**
  * Disable the specified interrupt line
@@ -1244,7 +1251,11 @@ void arch_spin_relax(void);
 }
 #endif /* __cplusplus */
 
+#if defined(CONFIG_SEGGER_SYSTEMVIEW)
+/* #CUSTOM@NDRS : cannot include arch_inlines.h when CONFIG_SEGGER_SYSTEMVIEW=y */
+#else
 #include <zephyr/arch/arch_inlines.h>
+#endif
 
 #endif /* _ASMLANGUAGE */
 

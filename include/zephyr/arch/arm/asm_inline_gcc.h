@@ -40,45 +40,43 @@ extern "C" {
  * except NMI.
  */
 
-static ALWAYS_INLINE unsigned int arch_irq_lock(void)
-{
-	unsigned int key;
+static ALWAYS_INLINE unsigned int arch_irq_lock(void) {
+    unsigned int key;
 
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-#if CONFIG_MP_MAX_NUM_CPUS == 1 || defined(CONFIG_ARMV8_M_BASELINE)
-	__asm__ volatile("mrs %0, PRIMASK;"
-		"cpsid i"
-		: "=r" (key)
-		:
-		: "memory");
-#else
-#error "Cortex-M0 and Cortex-M0+ require SoC specific support for cross core synchronisation."
-#endif
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	unsigned int tmp;
+    #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    #if ((CONFIG_MP_MAX_NUM_CPUS == 1) || defined(CONFIG_ARMV8_M_BASELINE))
+    __asm__ volatile("mrs %0, PRIMASK;"
+        "cpsid i"
+        : "=r" (key)
+        :
+        : "memory");
+    #else
+    #error "Cortex-M0 and Cortex-M0+ require SoC specific support for cross core synchronisation."
+    #endif
+    #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+    unsigned int tmp;
 
-	__asm__ volatile(
-		"mov %1, %2;"
-		"mrs %0, BASEPRI;"
-		"msr BASEPRI_MAX, %1;"
-		"isb;"
-		: "=r"(key), "=r"(tmp)
-		: "i"(_EXC_IRQ_DEFAULT_PRIO)
-		: "memory");
-#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
-	|| defined(CONFIG_ARMV7_A)
-	__asm__ volatile(
-		"mrs %0, cpsr;"
-		"and %0, #" STRINGIFY(I_BIT) ";"
-		"cpsid i;"
-		: "=r" (key)
-		:
-		: "memory", "cc");
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+    __asm__ volatile(
+        "mov %1, %2;"
+        "mrs %0, BASEPRI;"
+        "msr BASEPRI_MAX, %1;"
+        "isb;"
+        : "=r"(key), "=r"(tmp)
+        : "i"(_EXC_IRQ_DEFAULT_PRIO)
+        : "memory");
+    #elif (defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) || defined(CONFIG_ARMV7_A))
+    __asm__ volatile(
+        "mrs %0, cpsr;"
+        "and %0, #" STRINGIFY(I_BIT) ";"
+        "cpsid i;"
+        : "=r" (key)
+        :
+        : "memory", "cc");
+    #else
+    #error Unknown ARM architecture
+    #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
-	return key;
+    return (key);
 }
 
 
@@ -86,38 +84,36 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
  * previously disabled.
  */
 
-static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
-{
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-	if (key != 0U) {
-		return;
-	}
-	__asm__ volatile(
-		"cpsie i;"
-		"isb"
-		: : : "memory");
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	__asm__ volatile(
-		"msr BASEPRI, %0;"
-		"isb;"
-		:  : "r"(key) : "memory");
-#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
-	|| defined(CONFIG_ARMV7_A)
-	if (key != 0U) {
-		return;
-	}
-	__asm__ volatile(
-		"cpsie i;"
-		: : : "memory", "cc");
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+static ALWAYS_INLINE void arch_irq_unlock(unsigned int key) {
+    #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    if (key != 0U) {
+        return;
+    }
+
+    __asm__ volatile(
+        "cpsie i;"
+        "isb"
+        : : : "memory");
+    #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+    __asm__ volatile(
+        "msr BASEPRI, %0;"
+        "isb;"
+        :  : "r"(key) : "memory");
+    #elif (defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) || defined(CONFIG_ARMV7_A))
+    if (key != 0U) {
+        return;
+    }
+    __asm__ volatile(
+        "cpsie i;"
+        : : : "memory", "cc");
+    #else
+    #error Unknown ARM architecture
+    #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 }
 
-static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
-{
-	/* This convention works for both PRIMASK and BASEPRI */
-	return key == 0U;
+static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key) {
+    /* This convention works for both PRIMASK and BASEPRI */
+    return (key == 0U);
 }
 
 #ifdef __cplusplus

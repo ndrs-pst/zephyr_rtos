@@ -45,19 +45,19 @@ extern "C" {
 
 /* Network subsystem logging helpers */
 #ifdef CONFIG_THREAD_NAME
-#define NET_DBG(fmt, ...) LOG_DBG("(%s): " fmt,				\
-			k_thread_name_get(k_current_get()), \
-			##__VA_ARGS__)
+#define NET_DBG(fmt, ...) LOG_DBG("(%s): " fmt,     \
+            k_thread_name_get(k_current_get()),     \
+            ##__VA_ARGS__)
 #else
-#define NET_DBG(fmt, ...) LOG_DBG("(%p): " fmt, k_current_get(),	\
-				  ##__VA_ARGS__)
+#define NET_DBG(fmt, ...) LOG_DBG("(%p): " fmt, k_current_get(), \
+                                  ##__VA_ARGS__)
 #endif /* CONFIG_THREAD_NAME */
-#define NET_ERR(fmt, ...) LOG_ERR(fmt, ##__VA_ARGS__)
+#define NET_ERR(fmt, ...)  LOG_ERR(fmt, ##__VA_ARGS__)
 #define NET_WARN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
-#define NET_INFO(fmt, ...) LOG_INF(fmt,  ##__VA_ARGS__)
+#define NET_INFO(fmt, ...) LOG_INF(fmt, ##__VA_ARGS__)
 
-#define NET_HEXDUMP_DBG(_data, _length, _str) LOG_HEXDUMP_DBG(_data, _length, _str)
-#define NET_HEXDUMP_ERR(_data, _length, _str) LOG_HEXDUMP_ERR(_data, _length, _str)
+#define NET_HEXDUMP_DBG(_data, _length, _str)  LOG_HEXDUMP_DBG(_data, _length, _str)
+#define NET_HEXDUMP_ERR(_data, _length, _str)  LOG_HEXDUMP_ERR(_data, _length, _str)
 #define NET_HEXDUMP_WARN(_data, _length, _str) LOG_HEXDUMP_WRN(_data, _length, _str)
 #define NET_HEXDUMP_INFO(_data, _length, _str) LOG_HEXDUMP_INF(_data, _length, _str)
 
@@ -67,7 +67,7 @@ extern "C" {
  * net_pkt.h and net_if.h
  */
 #if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL) || \
-	defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)
+    defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)
 #if !defined(NET_PKT_DETAIL_STATS_COUNT)
 #if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)
 
@@ -83,7 +83,7 @@ extern "C" {
 
 #endif /* !NET_PKT_DETAIL_STATS_COUNT */
 #endif /* CONFIG_NET_PKT_TXTIME_STATS_DETAIL ||
-	  CONFIG_NET_PKT_RXTIME_STATS_DETAIL */
+          CONFIG_NET_PKT_RXTIME_STATS_DETAIL */
 
 /** @endcond */
 
@@ -96,14 +96,16 @@ struct net_if;
  * @brief Net Verdict
  */
 enum net_verdict {
-	/** Packet has been taken care of. */
-	NET_OK,
-	/** Packet has not been touched, other part should decide about its
-	 * fate.
-	 */
-	NET_CONTINUE,
-	/** Packet must be dropped. */
-	NET_DROP,
+    /** Packet has been taken care of. */
+    NET_OK,
+
+    /** Packet has not been touched, other part should decide about its
+     * fate.
+     */
+    NET_CONTINUE,
+
+    /** Packet must be dropped. */
+    NET_DROP,
 };
 
 /**
@@ -116,7 +118,7 @@ enum net_verdict {
  *
  * @return 0 if ok, <0 if error.
  */
-int net_recv_data(struct net_if *iface, struct net_pkt *pkt);
+int net_recv_data(struct net_if* iface, struct net_pkt* pkt);
 
 /**
  * @brief Send data to network.
@@ -130,7 +132,7 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt);
  * @return 0 if ok, <0 if error. If <0 is returned, then the caller needs
  * to unref the pkt in order to avoid memory leak.
  */
-int net_send_data(struct net_pkt *pkt);
+int net_send_data(struct net_pkt* pkt);
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -145,9 +147,9 @@ int net_send_data(struct net_pkt *pkt);
 #define NET_TC_COUNT NET_TC_RX_COUNT
 #endif
 #else /* CONFIG_NET_TC_TX_COUNT && CONFIG_NET_TC_RX_COUNT */
-#define NET_TC_TX_COUNT 0
-#define NET_TC_RX_COUNT 0
-#define NET_TC_COUNT 0
+#define NET_TC_TX_COUNT 1   /* #CUSTOM@NDRS */
+#define NET_TC_RX_COUNT 1   /* #CUSTOM@NDRS */
+#define NET_TC_COUNT    1   /* #CUSTOM@NDRS */
 #endif /* CONFIG_NET_TC_TX_COUNT && CONFIG_NET_TC_RX_COUNT */
 
 /* @endcond */

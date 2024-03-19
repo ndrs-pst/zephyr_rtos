@@ -1,0 +1,18 @@
+# Copyright (c) 2024 NDR Solution (Thailand) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip LAN8742A Ethernet PHY device
+
+compatible: "microchip,lan8742a"
+
+include: ethernet-phy.yaml
+
+properties:
+  mc,reset-gpio:
+    type: phandle-array
+    specifier-space: gpio
+    description: GPIO connected to PHY reset signal pin. Reset is active low.
+  mc,interrupt-gpio:
+    type: phandle-array
+    specifier-space: gpio
+    description: GPIO for interrupt signal indicating PHY state change.
