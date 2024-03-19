@@ -31,6 +31,7 @@ struct eth_stm32_hal_dev_cfg {
     struct stm32_pclken pclken_ptp;
     #endif
 
+    const struct device* phy_dev;
     const struct pinctrl_dev_config* pcfg;
 };
 
@@ -43,6 +44,7 @@ struct eth_stm32_hal_dev_data {
     const struct device *clock;
     struct k_mutex tx_mutex;
     struct k_sem rx_int_sem;
+
     #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
         defined(CONFIG_ETH_STM32_HAL_API_V2)
     struct k_sem tx_int_sem;
@@ -51,6 +53,7 @@ struct eth_stm32_hal_dev_data {
                           CONFIG_ETH_STM32_HAL_RX_THREAD_STACK_SIZE);
     struct k_thread rx_thread;
     bool link_up;
+    bool if_suspended;
     #if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
     uint8_t hash_index_cnt[64];
     #endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */

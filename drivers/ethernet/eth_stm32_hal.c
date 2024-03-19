@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <stdbool.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/phy.h>
 #include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
 #include <soc.h>
@@ -1225,59 +1226,6 @@ static int /**/eth_stm32_initialize(const struct device* dev) {
     k_sem_init(&dev_data->tx_int_sem, 0, K_SEM_MAX_LIMIT);
     #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2 */
 
-    #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
-        defined(CONFIG_ETH_STM32_HAL_API_V2)
-    /* Adjust MDC clock range depending on HCLK frequency: */
-    HAL_ETH_SetMDIOClockRange(heth);
-
-    /* @TODO: read duplex mode and speed from PHY and set it to ETH */
-
-    ETH_MACConfigTypeDef mac_config;
-
-    HAL_ETH_GetMACConfig(heth, &mac_config);
-    mac_config.DuplexMode = IS_ENABLED(CONFIG_ETH_STM32_MODE_HALFDUPLEX) ?
-                                       ETH_HALFDUPLEX_MODE : ETH_FULLDUPLEX_MODE;
-    mac_config.Speed = IS_ENABLED(CONFIG_ETH_STM32_SPEED_10M) ?
-                                  ETH_SPEED_10M : ETH_SPEED_100M;
-    hal_ret = HAL_ETH_SetMACConfig(heth, &mac_config);
-    if (hal_ret != HAL_OK) {
-        LOG_ERR("HAL_ETH_SetMACConfig: failed: %d", hal_ret);
-    }
-    #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2 */
-
-    #if defined(CONFIG_ETH_STM32_HAL_API_V2)
-
-    /* prepare tx buffer header */
-    for (uint16_t i = 0; i < ETH_TXBUFNB; ++i) {
-        dma_tx_buffer_header[i].tx_buff.buffer = dma_tx_buffer[i];
-    }
-
-    hal_ret = HAL_ETH_Start_IT(heth);
-    #elif defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
-    for (uint32_t i = 0; i < ETH_RX_DESC_CNT; i++) {
-        hal_ret = HAL_ETH_DescAssignMemory(heth, i, dma_rx_buffer[i],
-                                           NULL);
-        if (hal_ret != HAL_OK) {
-            LOG_ERR("HAL_ETH_DescAssignMemory: failed: %d, i: %d",
-                    hal_ret, i);
-            return (-EINVAL);
-        }
-    }
-
-    hal_ret = HAL_ETH_Start_IT(heth);
-    #else
-    HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab,
-                              &dma_tx_buffer[0][0], ETH_TXBUFNB);
-    HAL_ETH_DMARxDescListInit(heth, dma_rx_desc_tab,
-                              &dma_rx_buffer[0][0], ETH_RXBUFNB);
-
-    hal_ret = HAL_ETH_Start(heth);
-    #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
-
-    if (hal_ret != HAL_OK) {
-        LOG_ERR("HAL_ETH_Start{_IT} failed");
-    }
-
     eth_stm32_setup_mac_filter(heth);
 
     LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",
@@ -1338,7 +1286,7 @@ static void eth_stm32_mcast_filter(const struct device* dev, const struct ethern
 
 #endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
 
-static void eth_iface_init(struct net_if* iface) {
+static void eth_stm32_iface_init(struct net_if* iface) {
     const struct device* dev;
     struct eth_stm32_hal_dev_data* dev_data;
     bool is_first_init = false;
@@ -1376,11 +1324,6 @@ static void eth_iface_init(struct net_if* iface) {
     net_lldp_set_lldpdu(iface);
 
     if (is_first_init == true) {
-        const struct eth_stm32_hal_dev_cfg* cfg = dev->config;
-        /* Now that the iface is setup, we are safe to enable IRQs. */
-        __ASSERT_NO_MSG(cfg->config_func != NULL);
-        cfg->config_func();
-
         /* Start interruption-poll thread */
         k_thread_create(&dev_data->rx_thread, dev_data->rx_thread_stack,
                         K_KERNEL_STACK_SIZEOF(dev_data->rx_thread_stack),
@@ -1391,6 +1334,133 @@ static void eth_iface_init(struct net_if* iface) {
         k_thread_name_set(&dev_data->rx_thread, "stm_eth");
     }
 }
+
+static int eth_stm32_start(const struct device* dev) {
+    const struct eth_stm32_hal_dev_cfg* cfg = dev->config;
+    struct eth_stm32_hal_dev_data* ctx = dev->data;
+    ETH_HandleTypeDef* heth;
+    struct phy_link_state state;
+    HAL_StatusTypeDef hal_ret;
+
+    heth = &ctx->heth;
+
+    #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
+        defined(CONFIG_ETH_STM32_HAL_API_V2)
+    /* Adjust MDC clock range depending on HCLK frequency: */
+    HAL_ETH_SetMDIOClockRange(heth);
+
+    /* @TODO: read duplex mode and speed from PHY and set it to ETH */
+
+    ETH_MACConfigTypeDef mac_config;
+
+    HAL_ETH_GetMACConfig(heth, &mac_config);
+    mac_config.DuplexMode = IS_ENABLED(CONFIG_ETH_STM32_MODE_HALFDUPLEX) ?
+                                       ETH_HALFDUPLEX_MODE : ETH_FULLDUPLEX_MODE;
+    mac_config.Speed = IS_ENABLED(CONFIG_ETH_STM32_SPEED_10M) ?
+                                  ETH_SPEED_10M : ETH_SPEED_100M;
+    hal_ret = HAL_ETH_SetMACConfig(heth, &mac_config);
+    if (hal_ret != HAL_OK) {
+        LOG_ERR("HAL_ETH_SetMACConfig: failed: %d", hal_ret);
+    }
+    #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2 */
+
+    #if defined(CONFIG_ETH_STM32_HAL_API_V2)
+
+    /* prepare tx buffer header */
+    for (uint16_t i = 0; i < ETH_TXBUFNB; ++i) {
+        dma_tx_buffer_header[i].tx_buff.buffer = dma_tx_buffer[i];
+    }
+
+    hal_ret = HAL_ETH_Start_IT(heth);
+    #elif defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
+    for (uint32_t i = 0; i < ETH_RX_DESC_CNT; i++) {
+        hal_ret = HAL_ETH_DescAssignMemory(heth, i, dma_rx_buffer[i],
+                                           NULL);
+        if (hal_ret != HAL_OK) {
+            LOG_ERR("HAL_ETH_DescAssignMemory: failed: %d, i: %d",
+                    hal_ret, i);
+            return (-EINVAL);
+        }
+    }
+
+    hal_ret = HAL_ETH_Start_IT(heth);
+    #else
+    HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab,
+                              &dma_tx_buffer[0][0], ETH_TXBUFNB);
+    HAL_ETH_DMARxDescListInit(heth, dma_rx_desc_tab,
+                              &dma_rx_buffer[0][0], ETH_RXBUFNB);
+
+    hal_ret = HAL_ETH_Start(heth);
+    #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
+
+    if (hal_ret != HAL_OK) {
+        LOG_ERR("HAL_ETH_Start{_IT} failed");
+    }
+
+    /* Now that the iface is setup, we are safe to enable IRQs. */
+    __ASSERT_NO_MSG(cfg->config_func != NULL);
+    cfg->config_func();
+
+    /* If upper layers enable the net iface then mark it as
+     * not suspended so that PHY Link changes can have the impact
+     */
+    ctx->if_suspended = false;
+
+    if (cfg->phy_dev) {
+        phy_get_link_state(cfg->phy_dev, &state);
+
+        /* Enable net_iface only when Ethernet PHY link is up or else
+         * if net_iface is enabled when link is down and tx happens
+         * in this state then the used tx buffers will never be recovered back.
+         */
+        if (state.is_up == true) {
+            net_eth_carrier_on(ctx->iface);
+        }
+    }
+    else {
+        net_eth_carrier_on(ctx->iface);
+    }
+
+    LOG_DBG("ETH%d started", cfg->instance);
+
+    return 0;
+}
+
+static int eth_stm32_stop(const struct device* dev) {
+    const struct eth_stm32_hal_dev_cfg* cfg = dev->config;
+    struct eth_stm32_hal_dev_data* ctx = dev->data;
+    ETH_HandleTypeDef* heth;
+    HAL_StatusTypeDef hal_ret;
+    int err = 0;
+
+    heth = &ctx->heth;
+
+    irq_disable(DT_INST_IRQN(0));
+
+    /* If upper layers disable the net iface then mark it as suspended
+     * in order to save it from the PHY link state changes
+     */
+    ctx->if_suspended = true;
+
+    net_eth_carrier_off(ctx->iface);
+
+    #if defined(CONFIG_ETH_STM32_HAL_API_V2) || \
+        defined(CONFIG_SOC_SERIES_STM32H7X)  || defined(CONFIG_SOC_SERIES_STM32H5X)
+    hal_ret = HAL_ETH_Stop_IT(heth);
+    #else
+    hal_ret = HAL_ETH_Start(heth);
+    #endif
+
+    if (hal_ret != HAL_OK) {
+        LOG_ERR("Failed to disable controller ETH%d (%d)", cfg->instance, hal_ret);
+        err = -EIO;
+    }
+
+    LOG_DBG("ETH%d stopped", cfg->instance);
+
+    return (err);
+}
+
 
 static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device* dev) {
     ARG_UNUSED(dev);
@@ -1496,12 +1566,14 @@ static struct net_stats_eth* eth_stm32_hal_get_stats(const struct device* dev) {
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
 
 static const struct ethernet_api eth_stm32_api = {
-    .iface_api.init = eth_iface_init,
+    .iface_api.init = eth_stm32_iface_init,
 
     #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
     .get_ptp_clock = eth_stm32_get_ptp_clock,
     #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
+    .start = eth_stm32_start,
+    .stop  = eth_stm32_stop,
     .get_capabilities = eth_stm32_hal_get_capabilities,
     .set_config = eth_stm32_hal_set_config,
 
