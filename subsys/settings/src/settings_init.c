@@ -23,24 +23,22 @@ void settings_init(void);
 
 int settings_backend_init(void);
 
-int settings_subsys_init(void)
-{
+int settings_subsys_init(void) {
+    int err;
 
-	int err = 0;
+    err = 0;
+    k_mutex_lock(&settings_lock, K_FOREVER);
 
-	k_mutex_lock(&settings_lock, K_FOREVER);
+    if (settings_subsys_initialized == false) {
+        settings_init();
 
-	if (!settings_subsys_initialized) {
-		settings_init();
+        err = settings_backend_init();
+        if (err == 0) {
+            settings_subsys_initialized = true;
+        }
+    }
 
-		err = settings_backend_init();
+    k_mutex_unlock(&settings_lock);
 
-		if (!err) {
-			settings_subsys_initialized = true;
-		}
-	}
-
-	k_mutex_unlock(&settings_lock);
-
-	return err;
+    return (err);
 }

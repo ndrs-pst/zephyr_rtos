@@ -114,7 +114,9 @@ static inline void pm_state_notify(bool entering_state)
 	void (*callback)(enum pm_state state);
 
 	pm_notifier_key = k_spin_lock(&pm_notifier_lock);
-	SYS_SLIST_FOR_EACH_CONTAINER(&pm_notifiers, notifier, _node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_WITH_TYPE(&pm_notifiers,
+					       struct pm_notifier,
+					       notifier, _node) {
 		if (entering_state) {
 			callback = notifier->state_entry;
 		} else {
