@@ -402,7 +402,7 @@ skip_int_gpio :
     }
 
     /* Start reset */
-    ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
+    ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
     if (ret) {
         return (ret);
     }
@@ -411,7 +411,7 @@ skip_int_gpio :
     k_busy_wait(USEC_PER_MSEC * 500);
 
     /* Reset over */
-    ret = gpio_pin_set_dt(&config->reset_gpio, 1);
+    ret = gpio_pin_set_dt(&config->reset_gpio, 0);
     if (ret) {
         return (ret);
     }
