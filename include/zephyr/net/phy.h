@@ -121,8 +121,7 @@ __subsystem struct ethphy_driver_api {
  */
 static inline int phy_configure_link(const struct device* dev,
                                      enum phy_link_speed speeds) {
-    const struct ethphy_driver_api* api =
-            (const struct ethphy_driver_api*)dev->api;
+    const struct ethphy_driver_api* api = dev->api;
 
     return api->cfg_link(dev, speeds);
 }
@@ -142,8 +141,7 @@ static inline int phy_configure_link(const struct device* dev,
  */
 static inline int phy_get_link_state(const struct device* dev,
                                      struct phy_link_state* state) {
-    const struct ethphy_driver_api* api =
-            (const struct ethphy_driver_api*)dev->api;
+    const struct ethphy_driver_api* api = dev->api;
 
     return api->get_link(dev, state);
 }
@@ -165,8 +163,7 @@ static inline int phy_get_link_state(const struct device* dev,
 static inline int phy_link_callback_set(const struct device* dev,
                                         phy_callback_t callback,
                                         void* user_data) {
-    const struct ethphy_driver_api* api =
-            (const struct ethphy_driver_api*)dev->api;
+    const struct ethphy_driver_api* api = dev->api;
 
     return api->link_cb_set(dev, callback, user_data);
 }
@@ -185,8 +182,7 @@ static inline int phy_link_callback_set(const struct device* dev,
  */
 static inline int phy_read(const struct device* dev, uint16_t reg_addr,
                            uint32_t* value) {
-    const struct ethphy_driver_api* api =
-            (const struct ethphy_driver_api*)dev->api;
+    const struct ethphy_driver_api* api = dev->api;
 
     return api->read(dev, reg_addr, value);
 }
@@ -205,8 +201,7 @@ static inline int phy_read(const struct device* dev, uint16_t reg_addr,
  */
 static inline int phy_write(const struct device* dev, uint16_t reg_addr,
                             uint32_t value) {
-    const struct ethphy_driver_api* api =
-            (const struct ethphy_driver_api*)dev->api;
+    const struct ethphy_driver_api* api = dev->api;
 
     return api->write(dev, reg_addr, value);
 }

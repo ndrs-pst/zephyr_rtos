@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/phy.h>
+#include <zephyr/net/mii.h>
 #include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
 #include <soc.h>
@@ -205,6 +206,76 @@ static inline uint16_t allocate_tx_buffer(void) {
     defined(CONFIG_ETH_STM32_HAL_API_V2)
 static __noinit ETH_TxPacketConfig tx_config;
 #endif
+
+/*
+ ****************************
+ * PHY management functions *
+ ****************************
+ */
+static int eth_stm32_phy_reset_and_configure(const struct device* phy) {
+    int ret;
+
+    /* Reset the PHY */
+    ret = phy_write(phy, MII_BMCR, MII_BMCR_RESET);
+    if (ret == 0) {
+        /* 802.3u standard says reset takes up to 0.5s */
+        k_busy_wait(500000);
+
+        /* Configure the PHY */
+        ret = phy_configure_link(phy, (LINK_HALF_10BASE_T  | LINK_FULL_10BASE_T |
+                                       LINK_HALF_100BASE_T | LINK_FULL_100BASE_T));
+    }
+
+    return (ret);
+}
+
+static void eth_stm32_phy_link_callback(const struct device* pdev,
+    struct phy_link_state* state,
+    void* user_data) {
+    const struct device* dev = user_data;
+    const struct eth_stm32_hal_dev_cfg* cfg = dev->config;
+    struct eth_stm32_hal_dev_data* ctx = dev->data;
+
+    ARG_UNUSED(pdev);
+
+    if (state->is_up == true) {
+        /* Porting phy link config to mac */
+        // convert_phy_to_mac_config(&gmac_cfg, state->speed);
+
+        /* Set MAC configuration */
+        // Gmac_Ip_SetSpeed(cfg->instance, gmac_cfg.Speed);
+
+        // cfg->base->MAC_CONFIGURATION |= GMAC_MAC_CONFIGURATION_DM(gmac_cfg.Duplex);
+
+        /* net iface should be down even if PHY link state is up
+         * till the upper network layers have suspended the iface.
+         */
+        if (ctx->if_suspended) {
+            return;
+        }
+
+        LOG_DBG("Link up");
+        net_eth_carrier_on(ctx->iface);
+    }
+    else {
+        LOG_DBG("Link down");
+        net_eth_carrier_off(ctx->iface);
+    }
+}
+
+static int eth_stm32_phy_init(const struct device* dev) {
+    struct eth_stm32_hal_dev_cfg const* cfg = dev->config;
+    int ret;
+
+    ret = eth_stm32_phy_reset_and_configure(cfg->phy_dev);
+    if (ret == 0) {
+        ret = phy_link_callback_set(cfg->phy_dev, 
+                                    eth_stm32_phy_link_callback,
+                                    (void*)dev);
+    }
+
+    return (ret);
+}
 
 static HAL_StatusTypeDef read_eth_phy_register(ETH_HandleTypeDef* heth,
                                                uint32_t PHYAddr,
@@ -922,7 +993,7 @@ static void eth_stm32_rx_thread(void* p1, void* p2, void* p3) {
     }
 }
 
-static void eth_stm32_isr(const struct device* dev) {
+static void /**/eth_stm32_isr(const struct device* dev) {
     struct eth_stm32_hal_dev_data* dev_data;
     ETH_HandleTypeDef* heth;
 
@@ -1087,7 +1158,7 @@ void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef* heth_handle) {
     k_sem_give(&dev_data->rx_int_sem);
 }
 
-static void eth_stm32_generate_mac(uint8_t* mac_addr) {
+static void /**/eth_stm32_generate_mac(uint8_t* mac_addr) {
     #if defined(ETH_STM32_RANDOM_MAC)
     /* Either CONFIG_ETH_STM32_HAL_RANDOM_MAC or device tree property */
     /* "zephyr,random-mac-address" is set, generate a random mac address */
@@ -1105,12 +1176,12 @@ static void eth_stm32_generate_mac(uint8_t* mac_addr) {
     mac_addr[4] = CONFIG_ETH_STM32_HAL_MAC4;
     mac_addr[5] = CONFIG_ETH_STM32_HAL_MAC5;
     #else
-    uint8_t  unique_device_ID_12_bytes[12];
+    uint8_t  unique_dev_id_12_bytes[12];
     uint32_t result_mac_32_bits;
 
     /* Nothing defined by the user, use device id */
-    hwinfo_get_device_id(unique_device_ID_12_bytes, 12);
-    result_mac_32_bits = crc32_ieee((uint8_t*)unique_device_ID_12_bytes, 12);
+    hwinfo_get_device_id(unique_dev_id_12_bytes, 12);
+    result_mac_32_bits = crc32_ieee(unique_dev_id_12_bytes, 12);
     memcpy(&mac_addr[3], &result_mac_32_bits, 3);
 
     #endif /* NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))) */
@@ -1207,11 +1278,11 @@ static int /**/eth_stm32_initialize(const struct device* dev) {
     #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
         defined(CONFIG_ETH_STM32_HAL_API_V2)
     /* Tx config init: */
-    memset(&tx_config, 0, sizeof(ETH_TxPacketConfig));
+    (void) memset(&tx_config, 0, sizeof(ETH_TxPacketConfig));
     tx_config.Attributes = ETH_TX_PACKETS_FEATURES_CSUM |
                            ETH_TX_PACKETS_FEATURES_CRCPAD;
     tx_config.ChecksumCtrl = IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM) ?
-                    ETH_CHECKSUM_IPHDR_PAYLOAD_INSERT_PHDR_CALC : ETH_CHECKSUM_DISABLE;
+                             ETH_CHECKSUM_IPHDR_PAYLOAD_INSERT_PHDR_CALC : ETH_CHECKSUM_DISABLE;
     tx_config.CRCPadCtrl = ETH_CRC_PAD_INSERT;
     #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2 */
 
@@ -1285,32 +1356,44 @@ static void eth_stm32_mcast_filter(const struct device* dev, const struct ethern
 
 #endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
 
-static void eth_stm32_iface_init(struct net_if* iface) {
+static void /**/eth_stm32_iface_init(struct net_if* iface) {
     const struct device* dev;
-    struct eth_stm32_hal_dev_data* dev_data;
+    const struct eth_stm32_hal_dev_cfg* cfg;
+    struct eth_stm32_hal_dev_data* ctx;
     bool is_first_init = false;
+    bool is_ready;
 
     __ASSERT_NO_MSG(iface != NULL);
 
     dev = net_if_get_device(iface);
     __ASSERT_NO_MSG(dev != NULL);
 
-    dev_data = dev->data;
-    __ASSERT_NO_MSG(dev_data != NULL);
+    cfg = dev->config;
+    ctx = dev->data;
+    __ASSERT_NO_MSG(ctx != NULL);
 
     /* For VLAN, this value is only used to get the correct L2 driver.
      * The iface pointer in context should contain the main interface
      * if the VLANs are enabled.
      */
-    if (dev_data->iface == NULL) {
-        dev_data->iface = iface;
-        is_first_init   = true;
+    if (ctx->iface == NULL) {
+        ctx->iface = iface;
+        is_first_init = true;
     }
 
     /* Register Ethernet MAC Address with the upper layer */
-    net_if_set_link_addr(iface, dev_data->mac_addr,
-                         sizeof(dev_data->mac_addr),
+    net_if_set_link_addr(iface, ctx->mac_addr,
+                         sizeof(ctx->mac_addr),
                          NET_LINK_ETHERNET);
+
+    LOG_INF("ETH0 MAC address %02x:%02x:%02x:%02x:%02x:%02x",
+            ctx->mac_addr[0], ctx->mac_addr[1], ctx->mac_addr[2],
+            ctx->mac_addr[3], ctx->mac_addr[4], ctx->mac_addr[5]);
+
+    /* Make sure that the net iface state is not suspended unless
+     * upper layers explicitly stop the iface
+     */
+    ctx->if_suspended = false;
 
     #if defined(CONFIG_NET_DSA)
     dsa_register_master_tx(iface, &eth_tx);
@@ -1324,14 +1407,28 @@ static void eth_stm32_iface_init(struct net_if* iface) {
 
     if (is_first_init == true) {
         /* Start interruption-poll thread */
-        k_thread_create(&dev_data->rx_thread, dev_data->rx_thread_stack,
-                        K_KERNEL_STACK_SIZEOF(dev_data->rx_thread_stack),
+        k_thread_create(&ctx->rx_thread, ctx->rx_thread_stack,
+                        K_KERNEL_STACK_SIZEOF(ctx->rx_thread_stack),
                         eth_stm32_rx_thread, (void*)dev, NULL, NULL,
                         K_PRIO_COOP(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO),
                         0, K_NO_WAIT);
 
-        k_thread_name_set(&dev_data->rx_thread, "stm_eth");
+        k_thread_name_set(&ctx->rx_thread, "stm_eth");
     }
+
+    /*
+     * ETH controls the PHY. If PHY is configured either as fixed
+     * link or autoneg, the callback is executed at least once
+     * immediately after setting it.
+     */
+    is_ready = device_is_ready(cfg->phy_dev);
+    if (is_ready == false) {
+        LOG_ERR("PHY device (%p) is not ready, cannot init iface",
+                cfg->phy_dev);
+        return;
+    }
+
+    eth_stm32_phy_init(dev);
 }
 
 static int eth_stm32_start(const struct device* dev) {
@@ -1400,12 +1497,7 @@ static int eth_stm32_start(const struct device* dev) {
     __ASSERT_NO_MSG(cfg->config_func != NULL);
     cfg->config_func();
 
-    /* If upper layers enable the net iface then mark it as
-     * not suspended so that PHY Link changes can have the impact
-     */
-    ctx->if_suspended = false;
-
-    if (cfg->phy_dev) {
+    if (cfg->phy_dev != NULL) {
         phy_get_link_state(cfg->phy_dev, &state);
 
         /* Enable net_iface only when Ethernet PHY link is up or else
@@ -1422,14 +1514,14 @@ static int eth_stm32_start(const struct device* dev) {
 
     LOG_DBG("ETH0 started");
 
-    return 0;
+    return (0);
 }
 
 static int eth_stm32_stop(const struct device* dev) {
     struct eth_stm32_hal_dev_data* ctx = dev->data;
     ETH_HandleTypeDef* heth;
     HAL_StatusTypeDef hal_ret;
-    int err = 0;
+    int err;
 
     heth = &ctx->heth;
 
@@ -1446,10 +1538,13 @@ static int eth_stm32_stop(const struct device* dev) {
         defined(CONFIG_SOC_SERIES_STM32H7X)  || defined(CONFIG_SOC_SERIES_STM32H5X)
     hal_ret = HAL_ETH_Stop_IT(heth);
     #else
-    hal_ret = HAL_ETH_Start(heth);
+    hal_ret = HAL_ETH_Stop(heth);
     #endif
 
-    if (hal_ret != HAL_OK) {
+    if (hal_ret == HAL_OK) {
+        err = 0;
+    }
+    else {
         LOG_ERR("Failed to disable controller ETH0 (%d)", hal_ret);
         err = -EIO;
     }
@@ -1497,7 +1592,7 @@ static int eth_stm32_hal_set_config(const struct device* dev,
     ETH_HandleTypeDef* heth;
 
     dev_data = dev->data;
-    heth     = &dev_data->heth;
+    heth = &dev_data->heth;
 
     switch (type) {
         case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
