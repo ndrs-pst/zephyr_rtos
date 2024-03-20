@@ -592,8 +592,8 @@ error :
     return (res);
 }
 
-static struct net_if* get_iface(struct eth_stm32_hal_dev_data* ctx,
-                                uint16_t vlan_tag) {
+static struct net_if* eth_stm32_get_iface(struct eth_stm32_hal_dev_data* ctx,
+                                          uint16_t vlan_tag) {
     #if defined(CONFIG_NET_VLAN)
     struct net_if* iface;
 
@@ -610,7 +610,7 @@ static struct net_if* get_iface(struct eth_stm32_hal_dev_data* ctx,
     #endif
 }
 
-static struct net_pkt* eth_stm32_rx(const struct device* dev, uint16_t* vlan_tag) {
+static struct net_pkt* /**/eth_stm32_rx(const struct device* dev, uint16_t* vlan_tag) {
     struct eth_stm32_hal_dev_data* dev_data;
     ETH_HandleTypeDef* heth;
     struct net_pkt* pkt;
@@ -740,7 +740,7 @@ static struct net_pkt* eth_stm32_rx(const struct device* dev, uint16_t* vlan_tag
     #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X */
     #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
-    pkt = net_pkt_rx_alloc_with_buffer(get_iface(dev_data, *vlan_tag),
+    pkt = net_pkt_rx_alloc_with_buffer(eth_stm32_get_iface(dev_data, *vlan_tag),
                                        total_len, AF_UNSPEC, 0, K_MSEC(100));
     if (pkt == NULL) {
         LOG_ERR("Failed to obtain RX buffer");
@@ -833,7 +833,7 @@ release_desc :
     #endif /* CONFIG_NET_VLAN */
 
     #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-    if (eth_is_ptp_pkt(get_iface(dev_data, *vlan_tag), pkt)) {
+    if (eth_is_ptp_pkt(eth_stm32_get_iface(dev_data, *vlan_tag), pkt)) {
         pkt->timestamp.second     = timestamp.second;
         pkt->timestamp.nanosecond = timestamp.nanosecond;
     }
@@ -846,40 +846,39 @@ release_desc :
 
 out :
     if (pkt == NULL) {
-        eth_stats_update_errors_rx(get_iface(dev_data, *vlan_tag));
+        eth_stats_update_errors_rx(eth_stm32_get_iface(dev_data, *vlan_tag));
     }
 
     return (pkt);
 }
 
-static void eth_stm32_rx_thread(void* arg1, void* unused1, void* unused2) {
+static void eth_stm32_rx_thread(void* p1, void* p2, void* p3) {
     uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
     const struct device* dev;
-    struct eth_stm32_hal_dev_data* dev_data;
+    struct eth_stm32_hal_dev_data* ctx;
     struct net_if* iface;
     struct net_pkt* pkt;
     int res;
     uint32_t status;
     HAL_StatusTypeDef hal_ret = HAL_OK;
 
-    __ASSERT_NO_MSG(arg1 != NULL);
-    ARG_UNUSED(unused1);
-    ARG_UNUSED(unused2);
+    __ASSERT_NO_MSG(p1 != NULL);
+    ARG_UNUSED(p2);
+    ARG_UNUSED(p3);
 
-    dev = (const struct device*)arg1;
-    dev_data = dev->data;
+    dev = p1;
+    ctx = dev->data;
 
-    __ASSERT_NO_MSG(dev_data != NULL);
+    __ASSERT_NO_MSG(ctx != NULL);
 
     while (1) {
-        res = k_sem_take(&dev_data->rx_int_sem,
+        res = k_sem_take(&ctx->rx_int_sem,
                          K_MSEC(CONFIG_ETH_STM32_CARRIER_CHECK_RX_IDLE_TIMEOUT_MS));
         if (res == 0) {
             /* semaphore taken, update link status and receive packets */
-            if (dev_data->link_up != true) {
-                dev_data->link_up = true;
-                net_eth_carrier_on(get_iface(dev_data,
-                                             vlan_tag));
+            if (ctx->link_up != true) {
+                ctx->link_up = true;
+                net_eth_carrier_on(eth_stm32_get_iface(ctx, vlan_tag));
             }
 
             while ((pkt = eth_stm32_rx(dev, &vlan_tag)) != NULL) {
@@ -899,22 +898,22 @@ static void eth_stm32_rx_thread(void* arg1, void* unused1, void* unused2) {
         }
         else if (res == -EAGAIN) {
             /* semaphore timeout period expired, check link status */
-            hal_ret = read_eth_phy_register(&dev_data->heth,
-                                            PHY_ADDR, PHY_BSR, (uint32_t*)&status);
+            hal_ret = read_eth_phy_register(&ctx->heth,
+                                            PHY_ADDR, PHY_BSR, &status);
             if (hal_ret == HAL_OK) {
                 if ((status & PHY_LINKED_STATUS) == PHY_LINKED_STATUS) {
-                    if (dev_data->link_up != true) {
-                        dev_data->link_up = true;
+                    if (ctx->link_up != true) {
+                        ctx->link_up = true;
                         net_eth_carrier_on(
-                                get_iface(dev_data,
+                                eth_stm32_get_iface(ctx,
                                           vlan_tag));
                     }
                 }
                 else {
-                    if (dev_data->link_up != false) {
-                        dev_data->link_up = false;
+                    if (ctx->link_up != false) {
+                        ctx->link_up = false;
                         net_eth_carrier_off(
-                                get_iface(dev_data,
+                                eth_stm32_get_iface(ctx,
                                           vlan_tag));
                     }
                 }
@@ -1238,7 +1237,7 @@ static int /**/eth_stm32_initialize(const struct device* dev) {
 
 #if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
 static void eth_stm32_mcast_filter(const struct device* dev, const struct ethernet_filter* filter) {
-    struct eth_stm32_hal_dev_data* dev_data = (struct eth_stm32_hal_dev_data *)dev->data;
+    struct eth_stm32_hal_dev_data* dev_data = dev->data;
     ETH_HandleTypeDef* heth;
     uint32_t crc;
     uint32_t hash_table[2];
@@ -1421,13 +1420,12 @@ static int eth_stm32_start(const struct device* dev) {
         net_eth_carrier_on(ctx->iface);
     }
 
-    LOG_DBG("ETH%d started", cfg->instance);
+    LOG_DBG("ETH0 started");
 
     return 0;
 }
 
 static int eth_stm32_stop(const struct device* dev) {
-    const struct eth_stm32_hal_dev_cfg* cfg = dev->config;
     struct eth_stm32_hal_dev_data* ctx = dev->data;
     ETH_HandleTypeDef* heth;
     HAL_StatusTypeDef hal_ret;
@@ -1452,11 +1450,11 @@ static int eth_stm32_stop(const struct device* dev) {
     #endif
 
     if (hal_ret != HAL_OK) {
-        LOG_ERR("Failed to disable controller ETH%d (%d)", cfg->instance, hal_ret);
+        LOG_ERR("Failed to disable controller ETH0 (%d)", hal_ret);
         err = -EIO;
     }
 
-    LOG_DBG("ETH%d stopped", cfg->instance);
+    LOG_DBG("ETH0 stopped");
 
     return (err);
 }
@@ -1536,6 +1534,7 @@ static int eth_stm32_hal_set_config(const struct device* dev,
             ret = 0;
             #endif /* CONFIG_NET_PROMISCUOUS_MODE */
             break;
+
         #if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
         case ETHERNET_CONFIG_TYPE_FILTER:
             eth_stm32_mcast_filter(dev, &config->filter);
