@@ -167,7 +167,8 @@ static struct net_conn *conn_find_handler(struct net_if *iface,
 
 	k_mutex_lock(&conn_lock, K_FOREVER);
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn_used, conn, tmp, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE_WITH_TYPE(&conn_used, struct net_conn,
+						    conn, tmp, node) {
 		if (conn->proto != proto) {
 			continue;
 		}
@@ -698,7 +699,8 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 
 	k_mutex_lock(&conn_lock, K_FOREVER);
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_used, conn, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_WITH_TYPE(&conn_used, struct net_conn, 
+					       conn, node) {
 		/* Is the candidate connection matching the packet's interface? */
 		if (conn->context != NULL &&
 		    net_context_is_bound_to_iface(conn->context) &&
@@ -939,7 +941,8 @@ void net_conn_foreach(net_conn_foreach_cb_t cb, void *user_data)
 
 	k_mutex_lock(&conn_lock, K_FOREVER);
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_used, conn, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_WITH_TYPE(&conn_used, struct net_conn,
+					       conn, node) {
 		cb(conn, user_data);
 	}
 

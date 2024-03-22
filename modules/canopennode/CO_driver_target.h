@@ -60,8 +60,7 @@ typedef struct canopen_rx_msg {
 	uint8_t DLC;
 } CO_CANrxMsg_t;
 
-typedef void (*CO_CANrxBufferCallback_t)(void *object,
-					 const CO_CANrxMsg_t *message);
+typedef void (*CO_CANrxBufferCallback_t)(void *object, const CO_CANrxMsg_t *message);
 
 typedef struct canopen_rx {
 	int filter_id;

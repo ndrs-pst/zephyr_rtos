@@ -128,7 +128,7 @@ static int unpack_data(uint32_t length, struct buf_ctx *buf,
 {
 	NET_DBG(">> cur:%p, end:%p", (void *)buf->cur, (void *)buf->end);
 
-	if ((buf->end - buf->cur) < length) {
+	if ((uintptr_t)(buf->end - buf->cur) < length) {
 		return -EINVAL;
 	}
 

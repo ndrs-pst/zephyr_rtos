@@ -17,11 +17,10 @@ extern func_ptr __zephyr_init_array_end[];
 /**
  * @brief Execute initialization routines referenced in .init_array section
  */
-void __do_init_array_aux(void)
-{
-	for (func_ptr *func = __zephyr_init_array_start;
-		func < __zephyr_init_array_end;
-		func++) {
-		(*func)();
-	}
+void __do_init_array_aux(void) {
+    for (func_ptr* func = __zephyr_init_array_start;
+        func < __zephyr_init_array_end;
+        func++) {
+        (*func)();
+    }
 }

@@ -1775,7 +1775,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 		LOG_DBG("Unexpected flash size: %u", flash_size);
 	}
 
-	LOG_DBG("%s: %u MiBy flash", dev->name, (uint32_t)(flash_size >> 20));
+	LOG_DBG("%s: %u MiB flash", dev->name, (uint32_t)(flash_size >> 20));
 
 	/* Copy over the erase types, preserving their order.  (The
 	 * Sector Map Parameter table references them by index.)
