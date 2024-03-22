@@ -206,4 +206,11 @@ endif()
 
 add_dependencies(kernel zephyr_generated_headers)
 
+#CUSTOM@NDRS kernel code always be speed optimization !!!
+set_source_files_properties(
+  ${kernel_files}
+  PROPERTIES
+  COMPILE_FLAGS ${OPTIMIZE_FOR_SPEED_FLAG}
+  )
+
 unset(libkernel)
