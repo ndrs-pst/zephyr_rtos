@@ -95,7 +95,7 @@ int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev,
  *
  * @return Number of payload bytes written to flash.
  */
-size_t stream_flash_bytes_written(struct stream_flash_ctx *ctx);
+size_t stream_flash_bytes_written(struct stream_flash_ctx const* ctx);
 
 /**
  * @brief  Process input buffers to be written to flash device in single blocks.

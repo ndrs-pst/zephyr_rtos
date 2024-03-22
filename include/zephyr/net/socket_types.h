@@ -19,7 +19,11 @@
 
 #ifdef CONFIG_NEWLIB_LIBC
 
+#if defined(_MSC_VER)   /* #CUSTOM@NDRS */
+typedef int32_t suseconds_t;
+#else
 #include <newlib.h>
+#endif
 
 #ifdef __NEWLIB__
 #include <sys/_timeval.h>

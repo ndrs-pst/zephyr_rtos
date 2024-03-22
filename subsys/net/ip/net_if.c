@@ -754,8 +754,9 @@ static void iface_router_update_timer(uint32_t now)
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&active_router_timers,
-					 router, next, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE_WITH_TYPE(&active_router_timers,
+						    struct net_if_router,
+						    router, next, node) {
 		int32_t ends = iface_router_ends(router, now);
 
 		if (ends <= 0) {
@@ -785,8 +786,9 @@ static void iface_router_expired(struct k_work *work)
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&active_router_timers,
-					  router, next, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE_WITH_TYPE(&active_router_timers,
+						    struct net_if_router,
+						    router, next, node) {
 		int32_t ends = iface_router_ends(router, current_time);
 
 		if (ends > 0) {
@@ -992,8 +994,9 @@ void net_if_mcast_monitor(struct net_if *iface,
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&mcast_monitor_callbacks,
-					  mon, tmp, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE_WITH_TYPE(&mcast_monitor_callbacks,
+						    struct net_if_mcast_monitor,
+						    mon, tmp, node) {
 		if (iface == mon->iface || mon->iface == NULL) {
 			mon->cb(iface, addr, is_joined);
 		}
@@ -4518,7 +4521,9 @@ void net_if_call_link_cb(struct net_if *iface, struct net_linkaddr *lladdr,
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&link_callbacks, link, tmp, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE_WITH_TYPE(&link_callbacks,
+						    struct net_if_link_cb,
+						    link, tmp, node) {
 		link->cb(iface, lladdr, status);
 	}
 
