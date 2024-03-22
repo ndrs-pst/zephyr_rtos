@@ -81,8 +81,8 @@ int flash_area_get_sectors(int idx, uint32_t* cnt, struct flash_sector* ret) {
     int rc;
     const struct device* flash_dev;
     const struct flash_area *fa;
-    int rc = flash_area_open(idx, &fa);
 
+    rc = flash_area_open(idx, &fa);
     if ((rc < 0) || (fa == NULL)) {
         return (-EINVAL);
     }

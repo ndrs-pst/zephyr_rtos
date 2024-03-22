@@ -218,13 +218,15 @@ result :
  * to configure the phy will ensure this configuration will be redone
  */
 static int phy_mc_lan8742a_static_cfg(const struct device* dev) {
-    const struct mc_lan8742a_config* config = dev->config;
-    uint32_t omso  = 0;
-    int ret = 0;
+    const struct mc_lan8742a_config* cfg = dev->config;
+    uint32_t omso;
+    int ret;
+
+    ARG_UNUSED(cfg);
 
     /* Force normal operation in the case of factory mode */
     ret = phy_mc_lan8742a_read(dev, PHY_MC_LAN8742A_OMSO_REG, &omso);
-    if (ret) {
+    if (ret != 0) {
         return (ret);
     }
 
