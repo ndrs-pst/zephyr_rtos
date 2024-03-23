@@ -1030,7 +1030,7 @@ struct net_buf_pool {
         NET_BUF_POOL_USAGE_INIT(_pool, _count)                  \
         .destroy = _destroy,                                    \
         .alloc = _alloc,                                        \
-        .__bufs = (struct net_buf *)_bufs,                      \
+        .__bufs = (struct net_buf*)_bufs,                       \
     }
 #else /* #CUSTOM@NDRS .lock = {} -> {0} */
 #define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _ud_size, _destroy) \
@@ -1043,7 +1043,7 @@ struct net_buf_pool {
         NET_BUF_POOL_USAGE_INIT(_pool, _count)                  \
         .destroy = _destroy,                                    \
         .alloc = _alloc,                                        \
-        .__bufs = (struct net_buf *)_bufs,                      \
+        .__bufs = (struct net_buf*)_bufs,                       \
     }
 #endif
 

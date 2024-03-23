@@ -30,7 +30,7 @@ int dns_msg_pack_qname(uint16_t *len, uint8_t *buf, uint16_t size,
 
 	lb_start = 0U;
 	lb_index = 1U;
-	lb_size = 0U;
+	lb_size  = 0U;
 
 	dn_size = dns_strlen(domain_name);
 	if (dn_size == 0U) {
@@ -49,12 +49,12 @@ int dns_msg_pack_qname(uint16_t *len, uint8_t *buf, uint16_t size,
 			lb_size += 1U;
 			break;
 		case '.':
-			buf[lb_start] = lb_size;
+			buf[lb_start] = (uint8_t)lb_size;
 			lb_size = 0U;
 			lb_start = lb_index;
 			break;
 		case '\0':
-			buf[lb_start] = lb_size;
+			buf[lb_start] = (uint8_t)lb_size;
 			buf[lb_index] = 0U;
 			break;
 		}
