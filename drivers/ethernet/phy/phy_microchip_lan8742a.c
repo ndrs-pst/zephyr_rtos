@@ -138,9 +138,9 @@ static int phy_mc_lan8742a_get_link(const struct device* dev,
     struct mc_lan8742a_config const* cfg = dev->config;
     struct mc_lan8742a_data* ctx = dev->data;
     int ret;
-    uint32_t bmsr;
-    uint32_t anar;
-    uint32_t anlpar;
+    uint32_t bmsr;                          /* Basic Mode Status Register */
+    uint32_t anar;                          /* Auto-Negotiation Advertisement Register */
+    uint32_t anlpar;                        /* Auto-Negotiation Link Partner Ability Register */
     struct phy_link_state old_state = ctx->state;
 
     /* Lock mutex */
