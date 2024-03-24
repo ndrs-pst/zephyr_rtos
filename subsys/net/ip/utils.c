@@ -335,7 +335,8 @@ int z_impl_net_addr_pton(sa_family_t family, const char *src,
 {
 	if (family == AF_INET) {
 		struct in_addr *addr = (struct in_addr *)dst;
-		size_t i, len;
+		size_t i;
+		size_t len;
 
 		len = strlen(src);
 		for (i = 0; i < len; i++) {
@@ -345,7 +346,7 @@ int z_impl_net_addr_pton(sa_family_t family, const char *src,
 			}
 		}
 
-		(void)memset(addr, 0, sizeof(struct in_addr));
+		(void) memset(addr, 0, sizeof(struct in_addr));
 
 		for (i = 0; i < sizeof(struct in_addr); i++) {
 			char *endptr;
@@ -361,7 +362,8 @@ int z_impl_net_addr_pton(sa_family_t family, const char *src,
 		 */
 		int expected_groups = strchr(src, '.') ? 6 : 8;
 		struct in6_addr *addr = (struct in6_addr *)dst;
-		int i, len;
+		int i;
+		int len;
 
 		if (*src == ':') {
 			/* Ignore a leading colon, makes parsing neater */
@@ -379,7 +381,7 @@ int z_impl_net_addr_pton(sa_family_t family, const char *src,
 		}
 
 		for (i = 0; i < expected_groups; i++) {
-			char *tmp;
+			char const* tmp;
 
 			if (!src || *src == '\0') {
 				return -EINVAL;

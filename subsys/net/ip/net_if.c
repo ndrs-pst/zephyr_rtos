@@ -49,7 +49,7 @@ static K_MUTEX_DEFINE(lock);
 extern struct net_if _net_if_list_start[];
 extern struct net_if _net_if_list_end[];
 
-static struct net_if *default_iface;
+static struct net_if* default_iface;
 
 #if defined(CONFIG_NET_NATIVE_IPV4) || defined(CONFIG_NET_NATIVE_IPV6)
 static struct net_if_router routers[CONFIG_NET_MAX_ROUTERS];
@@ -134,18 +134,20 @@ static sys_slist_t timestamp_callbacks;
 #define debug_check_packet(...)
 #endif /* CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG */
 
-struct net_if *z_impl_net_if_get_by_index(int index)
-{
-	if (index <= 0) {
-		return NULL;
-	}
+struct net_if* z_impl_net_if_get_by_index(int index) {
+    struct net_if* iface;
 
-	if (&_net_if_list_start[index - 1] >= _net_if_list_end) {
-		NET_DBG("Index %d is too large", index);
-		return NULL;
-	}
+    if (index <= 0) {
+        return (NULL);
+    }
 
-	return &_net_if_list_start[index - 1];
+    iface = &_net_if_list_start[index - 1];
+    if (iface >= _net_if_list_end) {
+        NET_DBG("Index %d is too large", index);
+        return (NULL);
+    }
+
+    return (iface);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -566,9 +568,8 @@ struct net_if *net_if_lookup_by_dev(const struct device *dev)
 	return NULL;
 }
 
-void net_if_set_default(struct net_if *iface)
-{
-	default_iface = iface;
+void net_if_set_default(struct net_if* iface) {
+    default_iface = iface;
 }
 
 struct net_if *net_if_get_default(void)
