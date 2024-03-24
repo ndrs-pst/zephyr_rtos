@@ -150,7 +150,7 @@ char const* iface2str(struct net_if* iface, char const** extra) {
 
     #ifdef CONFIG_NET_L2_ETHERNET
     if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
-        struct ethernet_context* eth_ctx = net_if_l2_data(iface);
+        struct ethernet_context const* eth_ctx = net_if_l2_data(iface);
 
         if (eth_ctx->eth_if_type == L2_ETH_IF_TYPE_WIFI) {
             if (extra) {
