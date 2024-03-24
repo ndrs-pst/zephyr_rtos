@@ -475,7 +475,8 @@ static int icmp_call_handlers(struct net_pkt *pkt,
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&handlers, ctx, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_WITH_TYPE(&handlers, struct net_icmp_ctx,
+					       ctx, node) {
 		if (ctx->type == icmp_hdr->type &&
 		    (ctx->code == icmp_hdr->code || ctx->code == 0U)) {
 			/* Do not use a handler that is expecting data from different
