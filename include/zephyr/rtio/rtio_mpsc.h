@@ -39,8 +39,8 @@ extern "C" {
 
 typedef atomic_ptr_t mpsc_ptr_t;
 
-#define mpsc_ptr_get(ptr)	   atomic_ptr_get(&(ptr))
-#define mpsc_ptr_set(ptr, val)	   atomic_ptr_set(&(ptr), val)
+#define mpsc_ptr_get(ptr)      atomic_ptr_get(&(ptr))
+#define mpsc_ptr_set(ptr, val)     atomic_ptr_set(&(ptr), val)
 #define mpsc_ptr_set_get(ptr, val) atomic_ptr_set(&(ptr), val)
 
 #else
@@ -49,12 +49,21 @@ typedef struct rtio_mpsc_node *mpsc_ptr_t;
 
 #define mpsc_ptr_get(ptr)      ptr
 #define mpsc_ptr_set(ptr, val) ptr = val
-#define mpsc_ptr_set_get(ptr, val)                                                                 \
-	({                                                                                         \
-		mpsc_ptr_t tmp = ptr;                                                              \
-		ptr = val;                                                                         \
-		tmp;                                                                               \
-	})
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+static inline mpsc_ptr_t mpsc_ptr_set_get(mpsc_ptr_t ptr, struct rtio_mpsc_node* val) {
+    mpsc_ptr_t tmp = ptr;
+    ptr = val;
+
+    return (tmp);
+}
+#else
+#define mpsc_ptr_set_get(ptr, val)          \
+    ({                                      \
+        mpsc_ptr_t tmp = ptr;               \
+        ptr = val;                          \
+        tmp;                                \
+    })
+#endif
 
 #endif
 
@@ -78,16 +87,16 @@ typedef struct rtio_mpsc_node *mpsc_ptr_t;
  * @brief Queue member
  */
 struct rtio_mpsc_node {
-	mpsc_ptr_t next;
+    mpsc_ptr_t next;
 };
 
 /**
  * @brief MPSC Queue
  */
 struct rtio_mpsc {
-	mpsc_ptr_t head;
-	struct rtio_mpsc_node *tail;
-	struct rtio_mpsc_node stub;
+    mpsc_ptr_t head;
+    struct rtio_mpsc_node *tail;
+    struct rtio_mpsc_node stub;
 };
 
 /**
@@ -98,13 +107,13 @@ struct rtio_mpsc {
  * @param symbol name of the queue
  */
 #define RTIO_MPSC_INIT(symbol)                                                                     \
-	{                                                                                          \
-		.head = (struct rtio_mpsc_node *)&symbol.stub,                                     \
-		.tail = (struct rtio_mpsc_node *)&symbol.stub,                                     \
-		.stub = {                                                                          \
-			.next = NULL,                                                              \
-		},                                                                                 \
-	}
+    {                                                                                          \
+        .head = (struct rtio_mpsc_node *)&symbol.stub,                                     \
+        .tail = (struct rtio_mpsc_node *)&symbol.stub,                                     \
+        .stub = {                                                                          \
+            .next = NULL,                                                              \
+        },                                                                                 \
+    }
 
 /**
  * @brief Initialize queue
@@ -113,9 +122,9 @@ struct rtio_mpsc {
  */
 static inline void rtio_mpsc_init(struct rtio_mpsc *q)
 {
-	mpsc_ptr_set(q->head, &q->stub);
-	q->tail = &q->stub;
-	mpsc_ptr_set(q->stub.next, NULL);
+    mpsc_ptr_set(q->head, &q->stub);
+    q->tail = &q->stub;
+    mpsc_ptr_set(q->stub.next, NULL);
 }
 
 /**
@@ -126,15 +135,15 @@ static inline void rtio_mpsc_init(struct rtio_mpsc *q)
  */
 static ALWAYS_INLINE void rtio_mpsc_push(struct rtio_mpsc *q, struct rtio_mpsc_node *n)
 {
-	struct rtio_mpsc_node *prev;
-	int key;
+    struct rtio_mpsc_node *prev;
+    unsigned int key;
 
-	mpsc_ptr_set(n->next, NULL);
+    mpsc_ptr_set(n->next, NULL);
 
-	key = arch_irq_lock();
-	prev = (struct rtio_mpsc_node *)mpsc_ptr_set_get(q->head, n);
-	mpsc_ptr_set(prev->next, n);
-	arch_irq_unlock(key);
+    key = arch_irq_lock();
+    prev = (struct rtio_mpsc_node*)mpsc_ptr_set_get(q->head, n);
+    mpsc_ptr_set(prev->next, n);
+    arch_irq_unlock(key);
 }
 
 /**
@@ -143,48 +152,47 @@ static ALWAYS_INLINE void rtio_mpsc_push(struct rtio_mpsc *q, struct rtio_mpsc_n
  * @retval NULL When no node is available
  * @retval node When node is available
  */
-static inline struct rtio_mpsc_node *rtio_mpsc_pop(struct rtio_mpsc *q)
-{
-	struct rtio_mpsc_node *head;
-	struct rtio_mpsc_node *tail = q->tail;
-	struct rtio_mpsc_node *next = (struct rtio_mpsc_node *)mpsc_ptr_get(tail->next);
+static inline struct rtio_mpsc_node* rtio_mpsc_pop(struct rtio_mpsc* q) {
+    struct rtio_mpsc_node *head;
+    struct rtio_mpsc_node *tail = q->tail;
+    struct rtio_mpsc_node *next = (struct rtio_mpsc_node *)mpsc_ptr_get(tail->next);
 
-	/* Skip over the stub/sentinel */
-	if (tail == &q->stub) {
-		if (next == NULL) {
-			return NULL;
-		}
+    /* Skip over the stub/sentinel */
+    if (tail == &q->stub) {
+        if (next == NULL) {
+            return NULL;
+        }
 
-		q->tail = next;
-		tail = next;
-		next = (struct rtio_mpsc_node *)mpsc_ptr_get(next->next);
-	}
+        q->tail = next;
+        tail = next;
+        next = (struct rtio_mpsc_node *)mpsc_ptr_get(next->next);
+    }
 
-	/* If next is non-NULL then a valid node is found, return it */
-	if (next != NULL) {
-		q->tail = next;
-		return tail;
-	}
+    /* If next is non-NULL then a valid node is found, return it */
+    if (next != NULL) {
+        q->tail = next;
+        return tail;
+    }
 
-	head = (struct rtio_mpsc_node *)mpsc_ptr_get(q->head);
+    head = (struct rtio_mpsc_node *)mpsc_ptr_get(q->head);
 
-	/* If next is NULL, and the tail != HEAD then the queue has pending
-	 * updates that can't yet be accessed.
-	 */
-	if (tail != head) {
-		return NULL;
-	}
+    /* If next is NULL, and the tail != HEAD then the queue has pending
+     * updates that can't yet be accessed.
+     */
+    if (tail != head) {
+        return NULL;
+    }
 
-	rtio_mpsc_push(q, &q->stub);
+    rtio_mpsc_push(q, &q->stub);
 
-	next = (struct rtio_mpsc_node *)mpsc_ptr_get(tail->next);
+    next = (struct rtio_mpsc_node *)mpsc_ptr_get(tail->next);
 
-	if (next != NULL) {
-		q->tail = next;
-		return tail;
-	}
+    if (next != NULL) {
+        q->tail = next;
+        return tail;
+    }
 
-	return NULL;
+    return NULL;
 }
 
 /**

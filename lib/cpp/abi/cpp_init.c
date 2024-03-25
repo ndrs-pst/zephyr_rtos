@@ -11,10 +11,9 @@
 void __do_global_ctors_aux(void);
 void __do_init_array_aux(void);
 
-void z_cpp_init_static(void)
-{
-	__do_global_ctors_aux();
-	__do_init_array_aux();
+void z_cpp_init_static(void) {
+    __do_global_ctors_aux();
+    __do_init_array_aux();
 }
 
 #else
@@ -22,9 +21,8 @@ void z_cpp_init_static(void)
 #ifdef __CCAC__
 void __do_global_ctors_aux(void);
 
-void z_cpp_init_static(void)
-{
-	__do_global_ctors_aux();
+void z_cpp_init_static(void) {
+    __do_global_ctors_aux();
 }
 #endif /* __CCAC__ */
 
