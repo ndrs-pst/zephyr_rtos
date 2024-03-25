@@ -1656,7 +1656,7 @@ static inline struct in6_addr* net_if_router_ipv6(struct net_if_router* router) 
  *
  * @return Pointer to router information, NULL if cannot be found
  */
-struct net_if_router* net_if_ipv6_router_lookup(struct net_if* iface,
+struct net_if_router* net_if_ipv6_router_lookup(struct net_if const* iface,
                                                 struct in6_addr* addr);
 
 /**
@@ -2191,7 +2191,7 @@ static inline struct in_addr* net_if_router_ipv4(struct net_if_router* router) {
  *
  * @return Pointer to router information, NULL if cannot be found
  */
-struct net_if_router* net_if_ipv4_router_lookup(struct net_if* iface,
+struct net_if_router* net_if_ipv4_router_lookup(struct net_if const* iface,
                                                 struct in_addr* addr);
 
 /**
@@ -2518,7 +2518,7 @@ __syscall struct net_if* net_if_get_by_index(int index);
  *
  * @return Interface index
  */
-int net_if_get_by_iface(struct net_if* iface);
+int net_if_get_by_iface(struct net_if const* iface);
 
 /**
  * @typedef net_if_cb_t
