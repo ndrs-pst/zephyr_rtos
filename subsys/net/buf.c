@@ -331,7 +331,7 @@ success:
 	buf->ref   = 1U;
 	buf->flags = 0U;
 	buf->frags = NULL;
-	buf->size  = size;
+	buf->size  = (uint16_t)size;
 	net_buf_reset(buf);
 
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
@@ -534,7 +534,7 @@ struct net_buf *net_buf_clone(struct net_buf *buf, k_timeout_t timeout)
 			return NULL;
 		}
 
-		clone->size = size;
+		clone->size = (uint16_t)size;
 		clone->data = clone->__buf + net_buf_headroom(buf);
 		net_buf_add_mem(clone, buf->data, buf->len);
 	}
@@ -677,7 +677,7 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
 	size_t max_size;
 
 	do {
-		uint16_t count = MIN(len, net_buf_tailroom(frag));
+		size_t count = MIN(len, net_buf_tailroom(frag));
 
 		net_buf_add_mem(frag, value8, count);
 		len -= count;

@@ -113,7 +113,7 @@ struct virtual_interface_api {
 /* Make sure that the network interface API is properly setup inside
  * Virtual API struct (it is the first one).
  */
-BUILD_ASSERT(offsetof(struct virtual_interface_api, iface_api) == 0);
+BUILD_ASSERT(offsetof(struct virtual_interface_api, iface_api) == 0, "offsetof error !!!");
 
 /** Virtual L2 context that is needed to binding to the real network interface
  */

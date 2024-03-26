@@ -57,16 +57,26 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 /* See dns_unpack_answer, and also see:
  * https://tools.ietf.org/html/rfc1035#section-4.1.2
  */
-#define DNS_QUERY_POS		0x0c
+#define DNS_QUERY_POS       0x0C
 
-#define DNS_IPV4_LEN		sizeof(struct in_addr)
-#define DNS_IPV6_LEN		sizeof(struct in6_addr)
+#define DNS_IPV4_LEN        sizeof(struct in_addr)
+#define DNS_IPV6_LEN        sizeof(struct in6_addr)
 
+#if defined(_MSC_VER) /* #CUSTOM@NDRS, _ud_size from 0 -> 4 */
 NET_BUF_POOL_DEFINE(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
-		    DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);
+                    DNS_RESOLVER_MAX_BUF_SIZE, 4, NULL);
 
-NET_BUF_POOL_DEFINE(dns_qname_pool, DNS_RESOLVER_BUF_CTR, CONFIG_DNS_RESOLVER_MAX_QUERY_LEN,
-		    0, NULL);
+NET_BUF_POOL_DEFINE(dns_qname_pool, DNS_RESOLVER_BUF_CTR,
+                    CONFIG_DNS_RESOLVER_MAX_QUERY_LEN, 4, NULL);
+
+#define EPFNOSUPPORT        135
+#else
+NET_BUF_POOL_DEFINE(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
+                    DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);
+
+NET_BUF_POOL_DEFINE(dns_qname_pool, DNS_RESOLVER_BUF_CTR,
+                    CONFIG_DNS_RESOLVER_MAX_QUERY_LEN, 0, NULL);
+#endif
 
 #ifdef CONFIG_DNS_RESOLVER_CACHE
 DNS_CACHE_DEFINE(dns_cache, CONFIG_DNS_RESOLVER_CACHE_MAX_ENTRIES);

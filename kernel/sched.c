@@ -147,7 +147,8 @@ static ALWAYS_INLINE struct k_thread *_priq_dumb_mask_best(sys_dlist_t *pq)
 	 */
 	struct k_thread *thread;
 
-	SYS_DLIST_FOR_EACH_CONTAINER(pq, thread, base.qnode_dlist) {
+	SYS_DLIST_FOR_EACH_CONTAINER_WITH_TYPE(pq, struct k_thread,
+					       thread, base.qnode_dlist) {
 		if ((thread->base.cpu_mask & BIT(_current_cpu->id)) != 0) {
 			return thread;
 		}
@@ -164,7 +165,8 @@ static ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq,
 
 	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
 
-	SYS_DLIST_FOR_EACH_CONTAINER(pq, t, base.qnode_dlist) {
+	SYS_DLIST_FOR_EACH_CONTAINER_WITH_TYPE(pq, struct k_thread,
+					       t, base.qnode_dlist) {
 		if (z_sched_prio_cmp(thread, t) > 0) {
 			sys_dlist_insert(&t->base.qnode_dlist,
 					 &thread->base.qnode_dlist);
@@ -455,9 +457,14 @@ static inline bool sliceable(struct k_thread *thread)
 	return ret;
 }
 
-static void slice_timeout(struct _timeout *timeout)
-{
-	int cpu = ARRAY_INDEX(slice_timeouts, timeout);
+static void slice_timeout(struct _timeout const* timeout) {
+    int cpu;
+
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	cpu = (int)ARRAY_INDEX_WITH_TYPE(slice_timeouts, struct _timeout, timeout);
+	#else
+	cpu = ARRAY_INDEX(slice_timeouts, timeout);
+	#endif
 
 	slice_expired[cpu] = true;
 
@@ -898,7 +905,7 @@ void z_sched_wake_thread(struct k_thread *thread, bool is_timeout)
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 /* Timeout handler for *_thread_timeout() APIs */
-void z_thread_timeout(struct _timeout *timeout)
+void z_thread_timeout(struct _timeout const* timeout)
 {
 	struct k_thread *thread = CONTAINER_OF(timeout,
 					       struct k_thread, base.timeout);
@@ -1369,9 +1376,9 @@ static int32_t z_tick_sleep(k_ticks_t ticks)
 #endif /* CONFIG_MULTITHREADING */
 
 	if (Z_TICK_ABS(ticks) <= 0) {
-		expected_wakeup_ticks = ticks + sys_clock_tick_get_32();
+		expected_wakeup_ticks = (uint32_t)ticks + sys_clock_tick_get_32();
 	} else {
-		expected_wakeup_ticks = Z_TICK_ABS(ticks);
+		expected_wakeup_ticks = (uint32_t)Z_TICK_ABS(ticks);
 	}
 
 #ifdef CONFIG_MULTITHREADING
@@ -1391,7 +1398,7 @@ static int32_t z_tick_sleep(k_ticks_t ticks)
 
 	ticks = (k_ticks_t)expected_wakeup_ticks - sys_clock_tick_get_32();
 	if (ticks > 0) {
-		return ticks;
+		return (int32_t)ticks;
 	}
 #else
 	/* busy wait to be time coherent since subsystems may depend on it */
@@ -1426,7 +1433,7 @@ int32_t z_impl_k_sleep(k_timeout_t timeout)
 
 	ticks = z_tick_sleep(ticks);
 
-	int32_t ret = k_ticks_to_ms_ceil64(ticks);
+	int32_t ret = (int32_t)k_ticks_to_ms_ceil64(ticks);
 
 	SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep, timeout, ret);
 
@@ -1803,7 +1810,7 @@ int z_sched_waitq_walk(_wait_q_t  *wait_q,
 	int  status = 0;
 
 	K_SPINLOCK(&_sched_spinlock) {
-		_WAIT_Q_FOR_EACH(wait_q, thread) {
+		_WAIT_Q_FOR_EACH_WITH_TYPE(wait_q, struct k_thread, thread) {
 
 			/*
 			 * Invoke the callback function on each waiting thread
