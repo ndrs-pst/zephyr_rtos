@@ -423,7 +423,7 @@ static void spi_stm32_shift_s(SPI_TypeDef* spi, struct spi_stm32_data* data) {
 static int spi_stm32_shift_frames(const struct spi_stm32_config* cfg,
                                   struct spi_stm32_data* data) {
     SPI_TypeDef* spi = cfg->spi;
-    uint16_t operation = data->ctx.config->operation;
+    uint16_t operation = (uint16_t)data->ctx.config->operation;
 
     if (SPI_OP_MODE_GET(operation) == SPI_OP_MODE_MASTER) {
         spi_stm32_shift_m(cfg, data);
@@ -457,7 +457,7 @@ static void spi_stm32_cs_control(const struct device* dev, bool on) {
 static void spi_stm32_complete(const struct device* dev, int status) {
     const struct spi_stm32_config* cfg = dev->config;
     SPI_TypeDef* spi = cfg->spi;
-    struct spi_stm32_data *data = dev->data;
+    struct spi_stm32_data* data = dev->data;
 
     #ifdef CONFIG_SPI_STM32_INTERRUPT
     ll_func_disable_int_tx_empty(spi);
@@ -892,9 +892,51 @@ end :
 }
 
 int spi_stpm3x_transceive_dt(struct spi_dt_spec const* spec,
-                             uint8_t const tx_buf[],
-                             uint8_t rx_buf[]) {
-    return (-ENOTSUP);
+                             uint8_t const tx[],
+                             uint8_t rx[]) {
+    struct spi_stm32_config const* cfg = spec->bus->config;
+    SPI_TypeDef* spi = cfg->spi;
+
+    // Register the thunking handler
+    IRQn_Type irq_n = cfg->irq;
+
+    // Enable the interrupt
+    NVIC_DisableIRQ(irq_n);
+    NVIC_ClearPendingIRQ(irq_n);
+    NVIC_EnableIRQ(irq_n);
+
+    // Flush FIFO
+    #if defined(SPI_FLAG_FRLVL)             // STM32F0 STM32F3 STM32F7 STM32L4
+    LL_SPIEx_FlushRxFifo(spi);
+    #endif
+
+    // Set the function for IT treatment
+    // @note already set in _spi_init_direct with HAL_SPI_Set_TxISR_Rx_ISR_8BIT
+
+    // Set the number of data at current transfer
+    MODIFY_REG(spi->CR2, SPI_CR2_TSIZE, 4U);
+
+    /* Enable SPI peripheral */
+    LL_SPI_Enable(spi);
+
+    __IO uint8_t* ptxdr_8bits = (__IO uint8_t*)(&(spi->TXDR));
+
+    // Transmit data in 8 Bit mode and put in TxFIFO
+    *ptxdr_8bits = tx[0];
+    *ptxdr_8bits = tx[1];
+    *ptxdr_8bits = tx[2];
+    *ptxdr_8bits = tx[3];
+
+    // Enable EOT, RXP, DXP, UDR, OVR, FRE, MODF and TSERF interrupts
+    // No TXP since we already put all of data into TxFIFO
+    LL_SPI_EnableIT(spi, (SPI_IT_EOT | SPI_IT_RXP  |
+                          SPI_IT_DXP | SPI_IT_UDR  | SPI_IT_OVR |
+                          SPI_IT_FRE | SPI_IT_MODF | SPI_IT_TSERF));
+
+    // Master transfer start
+    SET_BIT(spi->CR1, SPI_CR1_CSTART);
+
+    return (0);
 }
 
 #ifdef CONFIG_SPI_STM32_DMA
@@ -1240,10 +1282,12 @@ static void spi_stm32_irq_config_func_##id(const struct device* dev) {  \
                 spi_stm32_isr, DEVICE_DT_INST_GET(id), 0);  \
     irq_enable(DT_INST_IRQN(id));           \
 }
+#define STM32_SPI_IRQ_NUM(id)   DT_INST_IRQN(id),
 #else
 #define STM32_SPI_IRQ_HANDLER_DECL(id)
 #define STM32_SPI_IRQ_HANDLER_FUNC(id)
 #define STM32_SPI_IRQ_HANDLER(id)
+#define STM32_SPI_IRQ_NUM(id)
 #endif
 
 #define SPI_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)    \
@@ -1306,6 +1350,7 @@ static struct spi_stm32_config DT_CONST spi_stm32_cfg_##id = {  \
     .pcfg     = PINCTRL_DT_INST_DEV_CONFIG_GET(id),             \
     .fifo_enabled = SPI_FIFO_ENABLED(id),                       \
     STM32_SPI_IRQ_HANDLER_FUNC(id)                              \
+    STM32_SPI_IRQ_NUM(id)                                       \
     IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz),  \
         (.use_subghzspi_nss =                                   \
             DT_INST_PROP_OR(id, use_subghzspi_nss, false),))    \

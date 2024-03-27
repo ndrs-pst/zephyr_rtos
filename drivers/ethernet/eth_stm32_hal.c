@@ -248,8 +248,8 @@ static int eth_stm32_phy_reset_and_configure(const struct device* phy) {
 }
 
 static void eth_stm32_phy_link_callback(const struct device* pdev,
-    struct phy_link_state* state,
-    void* user_data) {
+                                        struct phy_link_state* state,
+                                        void* user_data) {
     const struct device* dev = user_data;
     const struct eth_stm32_hal_dev_cfg* cfg = dev->config;
     struct eth_stm32_hal_dev_data* ctx = dev->data;

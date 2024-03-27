@@ -809,15 +809,15 @@ static inline int spi_transceive_dt(const struct spi_dt_spec* spec,
 
 /**
  * @brief SPI transceive function for STPM3x devices.
- * @param[in] spec    SPI specification from devicetree
- * @param[in] tx_buf  Data to be sent
- * @param[out] rx_buf Data to be read or NULL if none
+ * @param[in] spec SPI specification from devicetree
+ * @param[in] tx   Data to be sent
+ * @param[out] rx  Data to be read or NULL if none
  * @return 0 if successful, -errno on failure
  * @note This function is not handle the CS line, it is expected to be handled by the caller.
  */
 int spi_stpm3x_transceive_dt(struct spi_dt_spec const* spec,
-                             uint8_t const tx_buf[],
-                             uint8_t rx_buf[]);
+                             uint8_t const tx[],
+                             uint8_t rx[]);
 
 /**
  * @brief Read the specified amount of data from the SPI driver.
