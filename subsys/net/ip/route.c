@@ -108,12 +108,12 @@ static void net_route_entries_table_clear(struct net_nbr_table *table)
  * This pool contains routing table entries.
  */
 NET_NBR_POOL_INIT(net_route_entries_pool,
-		  CONFIG_NET_MAX_ROUTES,
-		  sizeof(struct net_route_entry),
-		  net_route_entry_remove);
+				  CONFIG_NET_MAX_ROUTES,
+				  sizeof(struct net_route_entry),
+				  net_route_entry_remove);
 
 NET_NBR_TABLE_INIT(NET_NBR_LOCAL, nbr_routes, net_route_entries_pool,
-		   net_route_entries_table_clear);
+                   net_route_entries_table_clear);
 
 static inline struct net_nbr *get_nbr(int idx)
 {
@@ -1014,13 +1014,12 @@ int net_route_packet_if(struct net_pkt *pkt, struct net_if *iface)
 
 	net_pkt_lladdr_src(pkt)->addr = net_pkt_lladdr_if(pkt)->addr;
 	net_pkt_lladdr_src(pkt)->type = net_pkt_lladdr_if(pkt)->type;
-	net_pkt_lladdr_src(pkt)->len = net_pkt_lladdr_if(pkt)->len;
+	net_pkt_lladdr_src(pkt)->len  = net_pkt_lladdr_if(pkt)->len;
 
 	return net_send_data(pkt);
 }
 
-void net_route_init(void)
-{
+void net_route_init(void) {
 	NET_DBG("Allocated %d routing entries (%zu bytes)",
 		CONFIG_NET_MAX_ROUTES, sizeof(net_route_entries_pool));
 
@@ -1028,4 +1027,11 @@ void net_route_init(void)
 		CONFIG_NET_MAX_NEXTHOPS, sizeof(net_route_nexthop_pool));
 
 	k_work_init_delayable(&route_lifetime_timer, route_lifetime_timeout);
+
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	net_route_entries_pool_init(net_route_entries_pool, 
+				    CONFIG_NET_MAX_ROUTES,
+				    sizeof(struct net_route_entry),
+				    net_route_entry_remove);
+	#endif
 }

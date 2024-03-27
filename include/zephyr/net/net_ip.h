@@ -250,7 +250,16 @@ struct cmsghdr {
 	int       cmsg_level;  /* Originating protocol */
 	int       cmsg_type;   /* Protocol-specific type */
 	/* Flexible array member to force alignment of cmsghdr */
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	/* This is a workaround for MSVC which does not allow zero-sized
+	 * arrays. The size of the array is 1.
+	 * This change will effect production code in C when using sizeof()
+	 * so it will be used only in MSVC.
+	*/
+	z_max_align_t cmsg_data[1];
+	#else
 	z_max_align_t cmsg_data[];
+	#endif
 };
 
 /* Alignment for headers and data. These are arch specific but define
@@ -523,7 +532,17 @@ struct net_tcp_hdr {
 	uint8_t wnd[2];
 	uint16_t chksum;
 	uint8_t urg[2];
+
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	/* This is a workaround for MSVC which does not allow zero-sized
+	 * arrays. The size of the array is 1.
+	 * This change will effect production code in C when using sizeof()
+	 * so it will be used only in MSVC.
+	 */
+	uint8_t optdata[1];
+	#else
 	uint8_t optdata[0];
+	#endif
 } __packed;
 
 static inline const char *net_addr_type2str(enum net_addr_type type)
