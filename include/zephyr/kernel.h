@@ -1347,7 +1347,7 @@ char const* k_thread_state_str(k_tid_t thread_id, char* buf, size_t buf_size);
  *
  * @return Timeout delay value.
  */
-#define K_FOREVER Z_FOREVER
+#define K_FOREVER      Z_FOREVER
 
 #ifdef CONFIG_TIMEOUT_64BIT
 

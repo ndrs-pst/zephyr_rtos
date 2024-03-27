@@ -891,9 +891,15 @@ end :
     return (ret);
 }
 
+int spi_stpm3x_transceive_dt(struct spi_dt_spec const* spec,
+                             uint8_t const tx_buf[],
+                             uint8_t rx_buf[]) {
+    return (-ENOTSUP);
+}
+
 #ifdef CONFIG_SPI_STM32_DMA
 static int wait_dma_rx_tx_done(const struct device* dev) {
-    struct spi_stm32_data *data = dev->data;
+    struct spi_stm32_data* data = dev->data;
     int res;
     k_timeout_t timeout;
 
@@ -901,7 +907,8 @@ static int wait_dma_rx_tx_done(const struct device* dev) {
      * In slave mode we do not know when the transaction will start. Hence,
      * it doesn't make sense to have timeout in this case.
      */
-    if (IS_ENABLED(CONFIG_SPI_SLAVE) && spi_context_is_slave(&data->ctx)) {
+    if (IS_ENABLED(CONFIG_SPI_SLAVE) &&
+        spi_context_is_slave(&data->ctx)) {
         timeout = K_FOREVER;
     }
     else {

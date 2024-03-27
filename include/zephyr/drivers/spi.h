@@ -349,12 +349,35 @@ struct spi_config {
         .frequency = DT_PROP(node_id, spi_max_frequency),   \
         .operation = (operation_)    |      \
             DT_PROP(node_id, duplex) |      \
-            DT_PROP(node_id, frame_format) | \
+            DT_PROP(node_id, frame_format) |\
             COND_CODE_1(DT_PROP(node_id, spi_cpol), SPI_MODE_CPOL, (0)) |   \
             COND_CODE_1(DT_PROP(node_id, spi_cpha), SPI_MODE_CPHA, (0)) |   \
-            COND_CODE_1(DT_PROP(node_id, spi_hold_cs), SPI_HOLD_ON_CS, (0)), \
+            COND_CODE_1(DT_PROP(node_id, spi_hold_cs), SPI_HOLD_ON_CS, (0)),\
         .slave = DT_REG_ADDR(node_id),      \
         .cs = SPI_CS_CONTROL_INIT(node_id, delay_), \
+    }
+
+/**
+ * @brief Structure initializer for spi_config from devicetree (without CS)
+ */
+#define SPI_CONFIG_WITHOUT_CS_DT(node_id, operation_, delay_)   \
+    {                                       \
+        .frequency = DT_PROP(node_id, spi_max_frequency),       \
+        .operation = (operation_)    |      \
+            DT_PROP(node_id, duplex) |      \
+            DT_PROP(node_id, frame_format) |\
+            COND_CODE_1(DT_PROP(node_id, spi_cpol), SPI_MODE_CPOL, (0)) |   \
+            COND_CODE_1(DT_PROP(node_id, spi_cpha), SPI_MODE_CPHA, (0)) |   \
+            COND_CODE_1(DT_PROP(node_id, spi_hold_cs), SPI_HOLD_ON_CS, (0)),\
+        .slave = DT_REG_ADDR(node_id),      \
+        .cs = {                             \
+            .gpio = {                       \
+                .port     = NULL,           \
+                .pin      = 0,              \
+                .dt_flags = 0,              \
+            },                              \
+            .delay = (delay_)               \
+        }                                   \
     }
 
 /**
@@ -785,6 +808,18 @@ static inline int spi_transceive_dt(const struct spi_dt_spec* spec,
 }
 
 /**
+ * @brief SPI transceive function for STPM3x devices.
+ * @param[in] spec    SPI specification from devicetree
+ * @param[in] tx_buf  Data to be sent
+ * @param[out] rx_buf Data to be read or NULL if none
+ * @return 0 if successful, -errno on failure
+ * @note This function is not handle the CS line, it is expected to be handled by the caller.
+ */
+int spi_stpm3x_transceive_dt(struct spi_dt_spec const* spec,
+                             uint8_t const tx_buf[],
+                             uint8_t rx_buf[]);
+
+/**
  * @brief Read the specified amount of data from the SPI driver.
  *
  * @note This function is synchronous.
@@ -1046,7 +1081,6 @@ __deprecated static inline int spi_write_async(const struct device* dev,
 #endif /* CONFIG_POLL */
 
 #endif /* CONFIG_SPI_ASYNC */
-
 
 #if defined(CONFIG_SPI_RTIO) || defined(__DOXYGEN__)
 
