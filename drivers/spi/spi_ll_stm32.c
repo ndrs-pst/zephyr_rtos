@@ -323,7 +323,7 @@ static void spi_stm32_read_next_frame(SPI_TypeDef* spi,
 }
 
 static bool spi_stm32_transfer_ongoing(struct spi_stm32_data* data) {
-    return spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx);
+    return (spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx));
 }
 
 static int spi_stm32_get_err(SPI_TypeDef* spi) {
@@ -531,18 +531,27 @@ static void spi_stm32_isr(const struct device* dev) {
     }
 
     err = spi_stm32_get_err(spi);
-    if (err) {
+    if (err != 0) {
         spi_stm32_complete(dev, err);
         return;
     }
 
-    if (spi_stm32_transfer_ongoing(data)) {
+    if (spi_stm32_transfer_ongoing(data) == true) {
         err = spi_stm32_shift_frames(cfg, data);
     }
 
-    if (err || !spi_stm32_transfer_ongoing(data)) {
+    if ((err != 0) ||
+        (spi_stm32_transfer_ongoing(data) == false)) {
         spi_stm32_complete(dev, err);
     }
+}
+
+static void spi_stpm3x_isr(const struct device* dev) {
+    const struct spi_stm32_config* cfg = dev->config;
+    struct spi_stm32_data* data = dev->data;
+    SPI_TypeDef* spi = cfg->spi;
+
+    /* FIXME add implementation */
 }
 #endif
 
@@ -1271,19 +1280,29 @@ static int spi_stm32_init(const struct device* dev) {
 }
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
+#define STM32_SPI_IRQ_CONNECT(id)                   \
+    COND_CODE_1(DT_INST_PROP(id, stpm3x_isr),       \
+        (IRQ_CONNECT(DT_INST_IRQN(id),              \
+                     DT_INST_IRQ(id, priority),     \
+                     spi_stpm3x_isr,                \
+                     DEVICE_DT_INST_GET(id), 0)),   \
+        (IRQ_CONNECT(DT_INST_IRQN(id),              \
+                     DT_INST_IRQ(id, priority),     \
+                     spi_stm32_isr,                 \
+                     DEVICE_DT_INST_GET(id), 0))    \
+    )
 #define STM32_SPI_IRQ_HANDLER_DECL(id)      \
         static void spi_stm32_irq_config_func_##id(const struct device* dev)
 #define STM32_SPI_IRQ_HANDLER_FUNC(id)      \
         .irq_config = spi_stm32_irq_config_func_##id,
 #define STM32_SPI_IRQ_HANDLER(id)           \
 static void spi_stm32_irq_config_func_##id(const struct device* dev) {  \
-    IRQ_CONNECT(DT_INST_IRQN(id),           \
-                DT_INST_IRQ(id, priority),  \
-                spi_stm32_isr, DEVICE_DT_INST_GET(id), 0);  \
+    STM32_SPI_IRQ_CONNECT(id);              \
     irq_enable(DT_INST_IRQN(id));           \
 }
-#define STM32_SPI_IRQ_NUM(id)   DT_INST_IRQN(id),
+#define STM32_SPI_IRQ_NUM(id)   .irq = DT_INST_IRQN(id),
 #else
+#define STM32_SPI_IRQ_CONNECT(id)
 #define STM32_SPI_IRQ_HANDLER_DECL(id)
 #define STM32_SPI_IRQ_HANDLER_FUNC(id)
 #define STM32_SPI_IRQ_HANDLER(id)

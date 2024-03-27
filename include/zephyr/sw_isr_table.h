@@ -209,7 +209,7 @@ extern struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 #define Z_ISR_DECLARE(irq, flags, func, param) \
 	static Z_DECL_ALIGN(struct _isr_list) Z_GENERIC_SECTION(.intList) \
 		__used _MK_ISR_NAME(func, __COUNTER__) = \
-			{irq, flags, (void *)&func, (const void *)param}
+			{irq, flags, (void *)&func, (const void*)param}
 
 /* The version of the Z_ISR_DECLARE that should be used for direct ISR declaration.
  * It is here for the API match the version with CONFIG_ISR_TABLES_LOCAL_DECLARATION enabled.

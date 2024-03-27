@@ -820,6 +820,16 @@ int spi_stpm3x_transceive_dt(struct spi_dt_spec const* spec,
                              uint8_t rx[]);
 
 /**
+ * @brief Initialize the SPI driver for using with STPM3x devices.
+ * @param[in] spec SPI specification from devicetree
+ * @param[in] cb Callback function to be called when the transaction is completed
+ * @param[in] userdata Userdata passed to the callback
+ */
+int spi_stpm3x_init(struct spi_dt_spec const* spec,
+                    spi_callback_t cb,
+                    void* userdata);
+
+/**
  * @brief Read the specified amount of data from the SPI driver.
  *
  * @note This function is synchronous.
