@@ -146,8 +146,12 @@ extern "C" {
 #define SPI_LINES_OCTAL     (3U << 16)     /**< Octal lines */
 
 #define SPI_LINES_MASK      (0x3U << 16)   /**< Mask for MISO lines in spi_operation_t */
-
 /** @} */
+
+/**
+ * CRC Calcuation: if set, enable hardware CRC computation.
+ */
+#define SPI_CRC_ENABLE      BIT(18)        /**< Enable CRC calculation */
 
 /**
  * @brief SPI Chip Select control structure
@@ -319,7 +323,8 @@ struct spi_config {
      * If @kconfig{CONFIG_SPI_EXTENDED_MODES} is enabled:
      *
      * - 16..17: MISO lines (Single/Dual/Quad/Octal).
-     * - 18..31: Reserved for future use.
+     * - 18:     Enable CRC calculation.
+     * - 19..31: Reserved for future use.
      */
     spi_operation_t operation;
     /** @brief Slave number from 0 to host controller slave limit. */

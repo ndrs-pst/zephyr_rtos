@@ -37,7 +37,7 @@ struct spi_context {
 
     #ifdef CONFIG_SPI_ASYNC
     spi_callback_t callback;
-    void *callback_data;
+    void* callback_data;
     bool asynchronous;
     #endif /* CONFIG_SPI_ASYNC */
     const struct spi_buf* current_tx;

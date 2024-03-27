@@ -515,7 +515,7 @@ static void spi_stm32_complete(const struct device* dev, int status) {
 }
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_isr(const struct device* dev) {
+__maybe_unused static void /**/spi_stm32_isr(const struct device* dev) {
     const struct spi_stm32_config* cfg = dev->config;
     struct spi_stm32_data* data = dev->data;
     SPI_TypeDef* spi = cfg->spi;
@@ -546,7 +546,12 @@ static void spi_stm32_isr(const struct device* dev) {
     }
 }
 
-static void spi_stpm3x_isr(const struct device* dev) {
+/**
+ * @brief SPI interrupt handler for STPM3x devices
+ * 
+ * @param[in] dev SPI device struct
+ */
+__maybe_unused static void /**/spi_stpm3x_isr(const struct device* dev) {
     const struct spi_stm32_config* cfg = dev->config;
     struct spi_stm32_data* data = dev->data;
     SPI_TypeDef* spi = cfg->spi;
@@ -660,7 +665,12 @@ static int spi_stm32_configure(const struct device* dev,
         LL_SPI_SetTransferBitOrder(spi, LL_SPI_MSB_FIRST);
     }
 
-    LL_SPI_DisableCRC(spi);
+    if (config->operation & SPI_CRC_ENABLE) {
+        LL_SPI_EnableCRC(spi);
+    }
+    else {
+        LL_SPI_DisableCRC(spi);
+    }
 
     if (spi_cs_is_gpio(config) || !IS_ENABLED(CONFIG_SPI_STM32_USE_HW_SS)) {
         #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
@@ -946,6 +956,21 @@ int spi_stpm3x_transceive_dt(struct spi_dt_spec const* spec,
     SET_BIT(spi->CR1, SPI_CR1_CSTART);
 
     return (0);
+}
+
+int spi_stpm3x_init(struct spi_dt_spec const* spec,
+                    spi_callback_t cb,
+                    void* userdata) {
+    struct spi_stm32_data* data = spec->bus->data;
+    int ret;
+
+    ret = spi_stm32_configure(spec->bus, &spec->config);
+    if (ret == 0) {
+        data->ctx.callback = cb;
+        data->ctx.callback_data = userdata;
+    }
+
+    return (ret);
 }
 
 #ifdef CONFIG_SPI_STM32_DMA
