@@ -1720,10 +1720,8 @@ static int context_write_data(struct net_pkt *pkt, const void *buf,
 	int ret = 0;
 
 	if (msghdr) {
-		int i;
-
-		for (i = 0; i < msghdr->msg_iovlen; i++) {
-			int len = MIN(msghdr->msg_iov[i].iov_len, buf_len);
+		for (size_t i = 0U; i < msghdr->msg_iovlen; i++) {
+			int len = MIN((int)msghdr->msg_iov[i].iov_len, buf_len);
 
 			ret = net_pkt_write(pkt, msghdr->msg_iov[i].iov_base,
 					    len);
@@ -1807,9 +1805,9 @@ static void context_finalize_packet(struct net_context *context,
 	net_pkt_cursor_init(pkt);
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
-		net_ipv6_finalize(pkt, net_context_get_proto(context));
+		net_ipv6_finalize(pkt, (uint8_t)net_context_get_proto(context));
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
-		net_ipv4_finalize(pkt, net_context_get_proto(context));
+		net_ipv4_finalize(pkt, (uint8_t)net_context_get_proto(context));
 	}
 }
 
@@ -2098,9 +2096,7 @@ static int context_sendto(struct net_context *context,
 	}
 
 	if (msghdr && len == 0) {
-		int i;
-
-		for (i = 0; i < msghdr->msg_iovlen; i++) {
+		for (size_t i = 0U; i < msghdr->msg_iovlen; i++) {
 			len += msghdr->msg_iov[i].iov_len;
 		}
 	}
@@ -2453,7 +2449,7 @@ static int recv_udp(struct net_context *context,
 	context->recv_cb = cb;
 
 	ret = net_conn_register(net_context_get_proto(context),
-				net_context_get_family(context),
+				(uint8_t)net_context_get_family(context),
 				context->flags & NET_CONTEXT_REMOTE_ADDR_SET ?
 							&context->remote : NULL,
 				laddr,
@@ -2538,7 +2534,7 @@ static int recv_raw(struct net_context *context,
 	context->recv_cb = cb;
 
 	ret = net_conn_register(net_context_get_proto(context),
-				net_context_get_family(context),
+				(uint8_t)net_context_get_family(context),
 				NULL, local_addr, 0, 0,
 				context,
 				net_context_raw_packet_received,
