@@ -825,6 +825,13 @@ int spi_stpm3x_transceive_dt(struct spi_dt_spec const* spec,
                              uint8_t rx[]);
 
 /**
+ * @brief Check if the SPI bus is active. (intend to use with STPM3x devices)
+ * @param[in] spec SPI specification from devicetree
+ * @return true if the SPI bus is active, false otherwise
+ */
+bool spi_stpm3x_is_active(struct spi_dt_spec const* spec);
+
+/**
  * @brief Initialize the SPI driver for using with STPM3x devices.
  * @param[in] spec SPI specification from devicetree
  * @param[in] cb Callback function to be called when the transaction is completed

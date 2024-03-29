@@ -910,6 +910,16 @@ end :
     return (ret);
 }
 
+bool spi_stpm3x_is_active(struct spi_dt_spec const* spec) {
+    struct spi_stm32_config const* cfg = spec->bus->config;
+    SPI_TypeDef* spi = cfg->spi;
+    bool is_active;
+
+    is_active = (bool)LL_SPI_IsActiveMasterTransfer(spi);
+
+    return (is_active);
+}
+
 int spi_stpm3x_transceive_dt(struct spi_dt_spec const* spec,
                              uint8_t const tx[],
                              uint8_t rx[]) {
