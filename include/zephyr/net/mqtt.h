@@ -162,8 +162,12 @@ struct mqtt_utf8 {
  *
  * @param[in] literal Literal string from which to generate mqtt_utf8 object.
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define MQTT_UTF8_LITERAL(literal)	{literal, sizeof(literal) - 1}
+#else
 #define MQTT_UTF8_LITERAL(literal)				\
 	((struct mqtt_utf8) {literal, sizeof(literal) - 1})
+#endif
 
 /** @brief Abstracts binary strings. */
 struct mqtt_binstr {

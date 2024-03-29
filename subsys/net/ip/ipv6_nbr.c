@@ -1181,7 +1181,7 @@ static int handle_ns_input(struct net_icmp_ctx *ctx,
 					      struct net_icmpv6_ns_hdr);
 	NET_PKT_DATA_ACCESS_DEFINE(nd_access, struct net_icmpv6_nd_opt_hdr);
 	struct net_ipv6_hdr *ip_hdr = hdr->ipv6;
-	uint16_t length = net_pkt_get_len(pkt);
+	uint16_t length = (uint16_t)net_pkt_get_len(pkt);
 	uint8_t flags = 0U;
 	bool routing = false;
 	struct net_icmpv6_nd_opt_hdr *nd_opt_hdr;
@@ -1385,6 +1385,8 @@ nexthop_found:
 
 	if (routing) {
 		/* No need to do NUD here when the target is being routed. */
+		na_src = NULL;
+		na_dst = NULL;
 		goto send_na;
 	}
 
@@ -1443,7 +1445,7 @@ static void ipv6_nd_restart_reachable_timer(struct net_nbr *nbr, int64_t time)
 
 	if (nbr) {
 		net_ipv6_nbr_data(nbr)->reachable = k_uptime_get();
-		net_ipv6_nbr_data(nbr)->reachable_timeout = time;
+		net_ipv6_nbr_data(nbr)->reachable_timeout = (int32_t)time;
 	}
 
 	remaining = k_ticks_to_ms_ceil32(
@@ -1800,7 +1802,7 @@ static int handle_na_input(struct net_icmp_ctx *ctx,
 					      struct net_icmpv6_na_hdr);
 	NET_PKT_DATA_ACCESS_DEFINE(nd_access, struct net_icmpv6_nd_opt_hdr);
 	struct net_ipv6_hdr *ip_hdr = hdr->ipv6;
-	uint16_t length = net_pkt_get_len(pkt);
+	uint16_t length = (uint16_t)net_pkt_get_len(pkt);
 	uint16_t tllao_offset = 0U;
 	struct net_icmpv6_nd_opt_hdr *nd_opt_hdr;
 	struct net_icmpv6_na_hdr *na_hdr;
@@ -2483,7 +2485,7 @@ static int handle_ra_input(struct net_icmp_ctx *ctx,
 					      struct net_icmpv6_ra_hdr);
 	NET_PKT_DATA_ACCESS_DEFINE(nd_access, struct net_icmpv6_nd_opt_hdr);
 	struct net_ipv6_hdr *ip_hdr = hdr->ipv6;
-	uint16_t length = net_pkt_get_len(pkt);
+	uint16_t length = (uint16_t)net_pkt_get_len(pkt);
 	struct net_nbr *nbr = NULL;
 	struct net_icmpv6_nd_opt_hdr *nd_opt_hdr;
 	struct net_icmpv6_ra_hdr *ra_hdr;

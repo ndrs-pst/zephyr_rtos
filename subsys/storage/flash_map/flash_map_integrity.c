@@ -43,6 +43,7 @@ int flash_area_check_int_sha256(const struct flash_area *fa,
 	int pos;
 	int rc;
 
+	rc = -EINVAL;
 	if (fa == NULL || fac == NULL || fac->match == NULL ||
 	    fac->rbuf == NULL || fac->clen == 0 || fac->rblen == 0) {
 		return -EINVAL;
