@@ -470,9 +470,33 @@ int zsock_bind_ctx(struct net_context *ctx, const struct sockaddr *addr,
 	return 0;
 }
 
-int z_impl_zsock_bind(int sock, const struct sockaddr *addr, socklen_t addrlen)
-{
+int z_impl_zsock_bind(int sock, const struct sockaddr *addr, socklen_t addrlen) {
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
+
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->bind == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->bind(obj, addr, addrlen);
+
+	k_mutex_unlock(lock);
+
+	return (ret);
+	#else
 	return VTABLE_CALL(bind, sock, addr, addrlen);
+	#endif
 }
 
 #ifdef CONFIG_USERSPACE
@@ -549,9 +573,33 @@ int zsock_connect_ctx(struct net_context *ctx, const struct sockaddr *addr,
 }
 
 int z_impl_zsock_connect(int sock, const struct sockaddr *addr,
-			socklen_t addrlen)
-{
+			 socklen_t addrlen) {
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
+
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->connect == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->connect(obj, addr, addrlen);
+
+	k_mutex_unlock(lock);
+
+	return (ret);
+	#else
 	return VTABLE_CALL(connect, sock, addr, addrlen);
+	#endif
 }
 
 #ifdef CONFIG_USERSPACE
@@ -577,9 +625,33 @@ int zsock_listen_ctx(struct net_context *ctx, int backlog)
 	return 0;
 }
 
-int z_impl_zsock_listen(int sock, int backlog)
-{
+int z_impl_zsock_listen(int sock, int backlog) {
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
+
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->listen == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->listen(obj, backlog);
+
+	k_mutex_unlock(lock);
+
+	return (ret);
+	#else
 	return VTABLE_CALL(listen, sock, backlog);
+	#endif
 }
 
 #ifdef CONFIG_USERSPACE
@@ -678,9 +750,34 @@ int z_impl_zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
 {
 	int new_sock;
 
-	new_sock = VTABLE_CALL(accept, sock, addr, addrlen);
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
 
-	(void)sock_obj_core_alloc_find(sock, new_sock, SOCK_STREAM);
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->accept == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->accept(obj, addr, addrlen);
+
+	k_mutex_unlock(lock);
+
+	new_sock = ret;
+	#else
+	new_sock = VTABLE_CALL(accept, sock, addr, addrlen);
+	#endif
+
+	(void) sock_obj_core_alloc_find(sock, new_sock, SOCK_STREAM);
 
 	return new_sock;
 }
@@ -844,11 +941,36 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 }
 
 ssize_t z_impl_zsock_sendto(int sock, const void *buf, size_t len, int flags,
-			   const struct sockaddr *dest_addr, socklen_t addrlen)
+			    const struct sockaddr *dest_addr, socklen_t addrlen)
 {
 	int bytes_sent;
 
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
+
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->sendto == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->sendto(obj, buf, len, flags, dest_addr, addrlen);
+
+	k_mutex_unlock(lock);
+
+	bytes_sent = ret;
+	#else
 	bytes_sent = VTABLE_CALL(sendto, sock, buf, len, flags, dest_addr, addrlen);
+	#endif
 
 	sock_obj_core_update_send_stats(sock, bytes_sent);
 
@@ -931,7 +1053,32 @@ ssize_t z_impl_zsock_sendmsg(int sock, const struct msghdr *msg, int flags)
 {
 	int bytes_sent;
 
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
+
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->sendmsg == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->sendmsg(obj, msg, flags);
+
+	k_mutex_unlock(lock);
+
+	bytes_sent = ret;
+	#else
 	bytes_sent = VTABLE_CALL(sendmsg, sock, msg, flags);
+	#endif
 
 	sock_obj_core_update_send_stats(sock, bytes_sent);
 
@@ -1766,7 +1913,32 @@ ssize_t z_impl_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 {
 	int bytes_received;
 
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
+
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->recvfrom == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->recvfrom(obj, buf, max_len, flags, src_addr, addrlen);
+
+	k_mutex_unlock(lock);
+
+	bytes_received = ret;
+	#else
 	bytes_received = VTABLE_CALL(recvfrom, sock, buf, max_len, flags, src_addr, addrlen);
+	#endif
 
 	sock_obj_core_update_recv_stats(sock, bytes_received);
 
@@ -1843,7 +2015,32 @@ ssize_t z_impl_zsock_recvmsg(int sock, struct msghdr *msg, int flags)
 {
 	int bytes_received;
 
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
+
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->recvmsg == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->recvmsg(obj, msg, flags);
+
+	k_mutex_unlock(lock);
+
+	bytes_received = ret;
+	#else
 	bytes_received = VTABLE_CALL(recvmsg, sock, msg, flags);
+	#endif
 
 	sock_obj_core_update_recv_stats(sock, bytes_received);
 
@@ -2741,7 +2938,32 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 int z_impl_zsock_getsockopt(int sock, int level, int optname,
 			    void *optval, socklen_t *optlen)
 {
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
+
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->getsockopt == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->getsockopt(obj, level, optname, optval, optlen);
+
+	k_mutex_unlock(lock);
+
+	return (ret);
+	#else
 	return VTABLE_CALL(getsockopt, sock, level, optname, optval, optlen);
+	#endif
 }
 
 #ifdef CONFIG_USERSPACE
@@ -3341,7 +3563,32 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 int z_impl_zsock_setsockopt(int sock, int level, int optname,
 			    const void *optval, socklen_t optlen)
 {
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
+
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->setsockopt == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->setsockopt(obj, level, optname, optval, optlen);
+
+	k_mutex_unlock(lock);
+
+	return (ret);
+	#else
 	return VTABLE_CALL(setsockopt, sock, level, optname, optval, optlen);
+	#endif
 }
 
 #ifdef CONFIG_USERSPACE
@@ -3415,7 +3662,32 @@ int zsock_getpeername_ctx(struct net_context *ctx, struct sockaddr *addr,
 int z_impl_zsock_getpeername(int sock, struct sockaddr *addr,
 			     socklen_t *addrlen)
 {
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
+
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->getpeername == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->getpeername(obj, addr, addrlen);
+
+	k_mutex_unlock(lock);
+
+	return (ret);
+	#else
 	return VTABLE_CALL(getpeername, sock, addr, addrlen);
+	#endif
 }
 
 #ifdef CONFIG_USERSPACE
@@ -3494,7 +3766,32 @@ int zsock_getsockname_ctx(struct net_context *ctx, struct sockaddr *addr,
 int z_impl_zsock_getsockname(int sock, struct sockaddr *addr,
 			     socklen_t *addrlen)
 {
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
+
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->getsockname == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->getsockname(obj, addr, addrlen);
+
+	k_mutex_unlock(lock);
+
+	return (ret);
+	#else
 	return VTABLE_CALL(getsockname, sock, addr, addrlen);
+	#endif
 }
 
 #ifdef CONFIG_USERSPACE

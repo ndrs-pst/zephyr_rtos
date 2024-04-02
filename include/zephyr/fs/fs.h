@@ -13,6 +13,10 @@
 #include <zephyr/sys/dlist.h>
 #include <zephyr/fs/fs_interface.h>
 
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#include <string.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -231,12 +235,17 @@ struct fs_statvfs {
  * @param zfp Pointer to file object
  *
  */
-static inline void fs_file_t_init(struct fs_file_t *zfp)
-{
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+static inline void fs_file_t_init(struct fs_file_t* zfp) {
+	memset(zfp, 0, sizeof(*zfp));
+}
+#else
+static inline void fs_file_t_init(struct fs_file_t* zfp) {
 	zfp->filep = NULL;
 	zfp->mp = NULL;
 	zfp->flags = 0;
 }
+#endif
 
 /**
  * @brief Initialize fs_dir_t object
@@ -247,11 +256,16 @@ static inline void fs_file_t_init(struct fs_file_t *zfp)
  * @param zdp Pointer to file object
  *
  */
-static inline void fs_dir_t_init(struct fs_dir_t *zdp)
-{
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+static inline void fs_dir_t_init(struct fs_dir_t* zdp) {
+	memset(zdp, 0, sizeof(*zdp));
+}
+#else
+static inline void fs_dir_t_init(struct fs_dir_t* zdp) {
 	zdp->dirp = NULL;
 	zdp->mp = NULL;
 }
+#endif
 
 /**
  * @brief Open or create file
@@ -418,6 +432,13 @@ int fs_seek(struct fs_file_t *zfp, off_t offset, int whence);
  * The current revision does not validate the file object.
  */
 off_t fs_tell(struct fs_file_t *zfp);
+
+/** Get the size of the file.
+ *
+ *  @param file     File handle.
+ *  @return         Size of the file in bytes.
+ */
+off_t fs_size(struct fs_file_t* zfp);       /* #CUSTOM@NDRS */
 
 /**
  * @brief Truncate or extend an open file to a given size

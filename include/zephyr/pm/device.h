@@ -194,8 +194,8 @@ struct pm_device_isr {
 };
 
 /* Base part must be the first element. */
-BUILD_ASSERT(offsetof(struct pm_device, base) == 0);
-BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
+BUILD_ASSERT((offsetof(struct pm_device, base) == 0), "offset error");
+BUILD_ASSERT((offsetof(struct pm_device_isr, base) == 0), "offset error");
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -272,7 +272,7 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
  *
  * @param dev_id Device id.
  */
-#define Z_PM_DEVICE_NAME(dev_id) _CONCAT(__pm_device_, dev_id)
+#define Z_PM_DEVICE_NAME(dev_id) Z_CONCAT(__pm_device_, dev_id)
 
 #ifdef CONFIG_PM
 /**
@@ -288,7 +288,7 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
  */
 #define Z_PM_DEVICE_DEFINE_SLOT(dev_id)					\
 	static STRUCT_SECTION_ITERABLE_ALTERNATE(pm_device_slots, device, \
-			_CONCAT(__pm_slot_, dev_id))
+			Z_CONCAT(__pm_slot_, dev_id))
 #else
 #define Z_PM_DEVICE_DEFINE_SLOT(dev_id)
 #endif /* CONFIG_PM */

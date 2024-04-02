@@ -86,7 +86,8 @@ int mqtt_client_tcp_write_msg(struct mqtt_client *client,
 			      const struct msghdr *message)
 
 {
-	int ret, i;
+	int ret;
+	size_t i;
 	size_t offset = 0;
 	size_t total_len = 0;
 
@@ -107,7 +108,7 @@ int mqtt_client_tcp_write_msg(struct mqtt_client *client,
 
 		/* Update msghdr for the next iteration. */
 		for (i = 0; i < message->msg_iovlen; i++) {
-			if (ret < message->msg_iov[i].iov_len) {
+			if (ret < (int)message->msg_iov[i].iov_len) {
 				message->msg_iov[i].iov_len -= ret;
 				message->msg_iov[i].iov_base =
 					(uint8_t *)message->msg_iov[i].iov_base + ret;
