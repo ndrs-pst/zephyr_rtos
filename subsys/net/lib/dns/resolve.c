@@ -57,16 +57,26 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 /* See dns_unpack_answer, and also see:
  * https://tools.ietf.org/html/rfc1035#section-4.1.2
  */
-#define DNS_QUERY_POS		0x0c
+#define DNS_QUERY_POS       0x0C
 
-#define DNS_IPV4_LEN		sizeof(struct in_addr)
-#define DNS_IPV6_LEN		sizeof(struct in6_addr)
+#define DNS_IPV4_LEN        sizeof(struct net_in_addr)
+#define DNS_IPV6_LEN        sizeof(struct net_in6_addr)
 
+#if defined(_MSC_VER) /* #CUSTOM@NDRS, _ud_size from 0 -> 4 */
 NET_BUF_POOL_DEFINE(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
-		    DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);
+                    DNS_RESOLVER_MAX_BUF_SIZE, 4, NULL);
 
-NET_BUF_POOL_DEFINE(dns_qname_pool, DNS_RESOLVER_BUF_CTR, CONFIG_DNS_RESOLVER_MAX_QUERY_LEN,
-		    0, NULL);
+NET_BUF_POOL_DEFINE(dns_qname_pool, DNS_RESOLVER_BUF_CTR,
+                    CONFIG_DNS_RESOLVER_MAX_QUERY_LEN, 4, NULL);
+
+#define EPFNOSUPPORT        135
+#else
+NET_BUF_POOL_DEFINE(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
+                    DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);
+
+NET_BUF_POOL_DEFINE(dns_qname_pool, DNS_RESOLVER_BUF_CTR,
+                    CONFIG_DNS_RESOLVER_MAX_QUERY_LEN, 0, NULL);
+#endif
 
 #ifdef CONFIG_DNS_RESOLVER_CACHE
 DNS_CACHE_DEFINE(dns_cache, CONFIG_DNS_RESOLVER_CACHE_MAX_ENTRIES);
@@ -82,9 +92,9 @@ static int dns_write(struct dns_resolve_context *ctx,
 		     struct net_buf *dns_qname,
 		     int hop_limit);
 
-static bool server_is_mdns(sa_family_t family, struct sockaddr *addr)
+static bool server_is_mdns(sa_family_t family, struct net_sockaddr *addr)
 {
-	if (family == AF_INET) {
+	if (family == NET_AF_INET) {
 		if (net_ipv4_is_addr_mcast(&net_sin(addr)->sin_addr) &&
 		    net_sin(addr)->sin_addr.s4_addr[3] == 251U) {
 			return true;
@@ -93,7 +103,7 @@ static bool server_is_mdns(sa_family_t family, struct sockaddr *addr)
 		return false;
 	}
 
-	if (family == AF_INET6) {
+	if (family == NET_AF_INET6) {
 		if (net_ipv6_is_addr_mcast(&net_sin6(addr)->sin6_addr) &&
 		    net_sin6(addr)->sin6_addr.s6_addr[15] == 0xfb) {
 			return true;
@@ -105,9 +115,9 @@ static bool server_is_mdns(sa_family_t family, struct sockaddr *addr)
 	return false;
 }
 
-static bool server_is_llmnr(sa_family_t family, struct sockaddr *addr)
+static bool server_is_llmnr(sa_family_t family, struct net_sockaddr *addr)
 {
-	if (family == AF_INET) {
+	if (family == NET_AF_INET) {
 		if (net_ipv4_is_addr_mcast(&net_sin(addr)->sin_addr) &&
 		    net_sin(addr)->sin_addr.s4_addr[3] == 252U) {
 			return true;
@@ -116,7 +126,7 @@ static bool server_is_llmnr(sa_family_t family, struct sockaddr *addr)
 		return false;
 	}
 
-	if (family == AF_INET6) {
+	if (family == NET_AF_INET6) {
 		if (net_ipv6_is_addr_mcast(&net_sin6(addr)->sin6_addr) &&
 		    net_sin6(addr)->sin6_addr.s6_addr[15] == 0x03) {
 			return true;
@@ -130,13 +140,13 @@ static bool server_is_llmnr(sa_family_t family, struct sockaddr *addr)
 
 static void dns_postprocess_server(struct dns_resolve_context *ctx, int idx)
 {
-	struct sockaddr *addr = &ctx->servers[idx].dns_server;
+	struct net_sockaddr *addr = &ctx->servers[idx].dns_server;
 
-	if (addr->sa_family == AF_INET) {
-		ctx->servers[idx].is_mdns = server_is_mdns(AF_INET, addr);
+	if (addr->sa_family == NET_AF_INET) {
+		ctx->servers[idx].is_mdns = server_is_mdns(NET_AF_INET, addr);
 		if (!ctx->servers[idx].is_mdns) {
 			ctx->servers[idx].is_llmnr =
-				server_is_llmnr(AF_INET, addr);
+				server_is_llmnr(NET_AF_INET, addr);
 		}
 
 		if (net_sin(addr)->sin_port == 0U) {
@@ -161,10 +171,10 @@ static void dns_postprocess_server(struct dns_resolve_context *ctx, int idx)
 			}
 		}
 	} else {
-		ctx->servers[idx].is_mdns = server_is_mdns(AF_INET6, addr);
+		ctx->servers[idx].is_mdns = server_is_mdns(NET_AF_INET6, addr);
 		if (!ctx->servers[idx].is_mdns) {
 			ctx->servers[idx].is_llmnr =
-				server_is_llmnr(AF_INET6, addr);
+				server_is_llmnr(NET_AF_INET6, addr);
 		}
 
 		if (net_sin6(addr)->sin6_port == 0U) {
@@ -184,21 +194,21 @@ static void dns_postprocess_server(struct dns_resolve_context *ctx, int idx)
 /* Must be invoked with context lock held */
 static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 				   const char *servers[],
-				   const struct sockaddr *servers_sa[])
+				   const struct net_sockaddr *servers_sa[])
 {
 #if defined(CONFIG_NET_IPV6)
-	struct sockaddr_in6 local_addr6 = {
-		.sin6_family = AF_INET6,
+	struct net_sockaddr_in6 local_addr6 = {
+		.sin6_family = NET_AF_INET6,
 		.sin6_port = 0,
 	};
 #endif
 #if defined(CONFIG_NET_IPV4)
-	struct sockaddr_in local_addr4 = {
-		.sin_family = AF_INET,
+	struct net_sockaddr_in local_addr4 = {
+		.sin_family = NET_AF_INET,
 		.sin_port = 0,
 	};
 #endif
-	struct sockaddr *local_addr = NULL;
+	struct net_sockaddr *local_addr = NULL;
 	socklen_t addr_len = 0;
 	int i = 0, idx = 0;
 	struct net_if *iface;
@@ -215,7 +225,7 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 
 	if (servers) {
 		for (i = 0; idx < SERVER_COUNT && servers[i]; i++) {
-			struct sockaddr *addr = &ctx->servers[idx].dns_server;
+			struct net_sockaddr *addr = &ctx->servers[idx].dns_server;
 
 			(void)memset(addr, 0, sizeof(*addr));
 
@@ -249,10 +259,10 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 	for (i = 0, count = 0;
 	     i < SERVER_COUNT && ctx->servers[i].dns_server.sa_family; i++) {
 
-		if (ctx->servers[i].dns_server.sa_family == AF_INET6) {
+		if (ctx->servers[i].dns_server.sa_family == NET_AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
-			local_addr = (struct sockaddr *)&local_addr6;
-			addr_len = sizeof(struct sockaddr_in6);
+			local_addr = (struct net_sockaddr *)&local_addr6;
+			addr_len = sizeof(struct net_sockaddr_in6);
 
 			if (IS_ENABLED(CONFIG_MDNS_RESOLVER) &&
 			    ctx->servers[i].is_mdns) {
@@ -263,10 +273,10 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 #endif
 		}
 
-		if (ctx->servers[i].dns_server.sa_family == AF_INET) {
+		if (ctx->servers[i].dns_server.sa_family == NET_AF_INET) {
 #if defined(CONFIG_NET_IPV4)
-			local_addr = (struct sockaddr *)&local_addr4;
-			addr_len = sizeof(struct sockaddr_in);
+			local_addr = (struct net_sockaddr *)&local_addr4;
+			addr_len = sizeof(struct net_sockaddr_in);
 
 			if (IS_ENABLED(CONFIG_MDNS_RESOLVER) &&
 			    ctx->servers[i].is_mdns) {
@@ -284,7 +294,7 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 		}
 
 		ret = net_context_get(ctx->servers[i].dns_server.sa_family,
-				      SOCK_DGRAM, IPPROTO_UDP,
+				      NET_SOCK_DGRAM, NET_IPPROTO_UDP,
 				      &ctx->servers[i].net_ctx);
 		if (ret < 0) {
 			NET_DBG("Cannot get net_context (%d)", ret);
@@ -304,7 +314,7 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 			net_mgmt_event_notify_with_info(
 				NET_EVENT_DNS_SERVER_ADD,
 				iface, (void *)&ctx->servers[i].dns_server,
-				sizeof(struct sockaddr));
+				sizeof(struct net_sockaddr));
 		} else {
 			net_mgmt_event_notify(NET_EVENT_DNS_SERVER_ADD, iface);
 		}
@@ -336,7 +346,7 @@ fail:
 }
 
 int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
-		     const struct sockaddr *servers_sa[])
+		     const struct net_sockaddr *servers_sa[])
 {
 	if (!ctx) {
 		return -ENOENT;
@@ -583,9 +593,9 @@ query_known:
 				address_size = DNS_IPV4_LEN;
 				addr = (uint8_t *)&net_sin(&info.ai_addr)->
 								sin_addr;
-				info.ai_family = AF_INET;
-				info.ai_addr.sa_family = AF_INET;
-				info.ai_addrlen = sizeof(struct sockaddr_in);
+				info.ai_family = NET_AF_INET;
+				info.ai_addr.sa_family = NET_AF_INET;
+				info.ai_addrlen = sizeof(struct net_sockaddr_in);
 
 			} else if (ctx->queries[*query_idx].query_type ==
 							DNS_QUERY_TYPE_AAAA) {
@@ -596,16 +606,16 @@ query_known:
 
 				/* We cannot resolve IPv6 address if IPv6 is
 				 * disabled. The reason being that
-				 * "struct sockaddr" does not have enough space
+				 * "struct net_sockaddr" does not have enough space
 				 * for IPv6 address in that case.
 				 */
 #if defined(CONFIG_NET_IPV6)
 				address_size = DNS_IPV6_LEN;
 				addr = (uint8_t *)&net_sin6(&info.ai_addr)->
 								sin6_addr;
-				info.ai_family = AF_INET6;
-				info.ai_addr.sa_family = AF_INET6;
-				info.ai_addrlen = sizeof(struct sockaddr_in6);
+				info.ai_family = NET_AF_INET6;
+				info.ai_addr.sa_family = NET_AF_INET6;
+				info.ai_addrlen = sizeof(struct net_sockaddr_in6);
 #else
 				ret = DNS_EAI_FAMILY;
 				goto quit;
@@ -883,7 +893,7 @@ static int dns_write(struct dns_resolve_context *ctx,
 {
 	enum dns_query_type query_type;
 	struct net_context *net_ctx;
-	struct sockaddr *server;
+	struct net_sockaddr *server;
 	int server_addr_len;
 	uint16_t dns_id;
 	int ret;
@@ -908,11 +918,11 @@ static int dns_write(struct dns_resolve_context *ctx,
 			   dns_qname->len + 2);
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
-	    net_context_get_family(net_ctx) == AF_INET6 &&
+	    net_context_get_family(net_ctx) == NET_AF_INET6 &&
 	    hop_limit > 0) {
 		net_context_set_ipv6_hop_limit(net_ctx, hop_limit);
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
-		   net_context_get_family(net_ctx) == AF_INET &&
+		   net_context_get_family(net_ctx) == NET_AF_INET &&
 		   hop_limit > 0) {
 		net_context_set_ipv4_ttl(net_ctx, hop_limit);
 	}
@@ -923,10 +933,10 @@ static int dns_write(struct dns_resolve_context *ctx,
 		return ret;
 	}
 
-	if (server->sa_family == AF_INET) {
-		server_addr_len = sizeof(struct sockaddr_in);
+	if (server->sa_family == NET_AF_INET) {
+		server_addr_len = sizeof(struct net_sockaddr_in);
 	} else {
-		server_addr_len = sizeof(struct sockaddr_in6);
+		server_addr_len = sizeof(struct net_sockaddr_in6);
 	}
 
 	ret = k_work_reschedule(&ctx->queries[query_idx].timer,
@@ -1120,7 +1130,7 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 	k_timeout_t tout;
 	struct net_buf *dns_data = NULL;
 	struct net_buf *dns_qname = NULL;
-	struct sockaddr addr;
+	struct net_sockaddr addr;
 	int ret, i = -1, j = 0;
 	int failure = 0;
 	bool mdns_query = false;
@@ -1149,15 +1159,15 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 		struct dns_addrinfo info = { 0 };
 
 		if (type == DNS_QUERY_TYPE_A) {
-			if (net_sin(&addr)->sin_family == AF_INET6) {
+			if (net_sin(&addr)->sin_family == NET_AF_INET6) {
 				return -EPFNOSUPPORT;
 			}
 
 			memcpy(net_sin(&info.ai_addr), net_sin(&addr),
-			       sizeof(struct sockaddr_in));
-			info.ai_family = AF_INET;
-			info.ai_addr.sa_family = AF_INET;
-			info.ai_addrlen = sizeof(struct sockaddr_in);
+			       sizeof(struct net_sockaddr_in));
+			info.ai_family = NET_AF_INET;
+			info.ai_addr.sa_family = NET_AF_INET;
+			info.ai_addrlen = sizeof(struct net_sockaddr_in);
 		} else if (type == DNS_QUERY_TYPE_AAAA) {
 			/* We do not support AI_V4MAPPED atm, so if the user
 			 * asks an IPv6 address but it is an IPv4 one, then
@@ -1165,16 +1175,16 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 			 * the error to EINVAL, the EPFNOSUPPORT is returned
 			 * here so that we can find it easily.
 			 */
-			if (net_sin(&addr)->sin_family == AF_INET) {
+			if (net_sin(&addr)->sin_family == NET_AF_INET) {
 				return -EPFNOSUPPORT;
 			}
 
 #if defined(CONFIG_NET_IPV6)
 			memcpy(net_sin6(&info.ai_addr), net_sin6(&addr),
-			       sizeof(struct sockaddr_in6));
-			info.ai_family = AF_INET6;
-			info.ai_addr.sa_family = AF_INET6;
-			info.ai_addrlen = sizeof(struct sockaddr_in6);
+			       sizeof(struct net_sockaddr_in6));
+			info.ai_family = NET_AF_INET6;
+			info.ai_addr.sa_family = NET_AF_INET6;
+			info.ai_addrlen = sizeof(struct net_sockaddr_in6);
 #else
 			return -EAFNOSUPPORT;
 #endif
@@ -1379,7 +1389,7 @@ static int dns_resolve_close_locked(struct dns_resolve_context *ctx)
 					NET_EVENT_DNS_SERVER_DEL,
 					iface,
 					(void *)&ctx->servers[i].dns_server,
-					sizeof(struct sockaddr));
+					sizeof(struct net_sockaddr));
 			} else {
 				net_mgmt_event_notify(NET_EVENT_DNS_SERVER_DEL,
 						      iface);
@@ -1409,19 +1419,19 @@ int dns_resolve_close(struct dns_resolve_context *ctx)
 }
 
 static bool dns_server_exists(struct dns_resolve_context *ctx,
-			      const struct sockaddr *addr)
+			      const struct net_sockaddr *addr)
 {
 	for (int i = 0; i < SERVER_COUNT; i++) {
-		if (IS_ENABLED(CONFIG_NET_IPV4) && (addr->sa_family == AF_INET) &&
-		    (ctx->servers[i].dns_server.sa_family == AF_INET)) {
+		if (IS_ENABLED(CONFIG_NET_IPV4) && (addr->sa_family == NET_AF_INET) &&
+		    (ctx->servers[i].dns_server.sa_family == NET_AF_INET)) {
 			if (net_ipv4_addr_cmp(&net_sin(addr)->sin_addr,
 					      &net_sin(&ctx->servers[i].dns_server)->sin_addr)) {
 				return true;
 			}
 		}
 
-		if (IS_ENABLED(CONFIG_NET_IPV6) && (addr->sa_family == AF_INET6) &&
-		    (ctx->servers[i].dns_server.sa_family == AF_INET6)) {
+		if (IS_ENABLED(CONFIG_NET_IPV6) && (addr->sa_family == NET_AF_INET6) &&
+		    (ctx->servers[i].dns_server.sa_family == NET_AF_INET6)) {
 			if (net_ipv6_addr_cmp(&net_sin6(addr)->sin6_addr,
 					      &net_sin6(&ctx->servers[i].dns_server)->sin6_addr)) {
 				return true;
@@ -1434,11 +1444,11 @@ static bool dns_server_exists(struct dns_resolve_context *ctx,
 
 static bool dns_servers_exists(struct dns_resolve_context *ctx,
 			       const char *servers[],
-			       const struct sockaddr *servers_sa[])
+			       const struct net_sockaddr *servers_sa[])
 {
 	if (servers) {
 		for (int i = 0; i < SERVER_COUNT && servers[i]; i++) {
-			struct sockaddr addr;
+			struct net_sockaddr addr;
 
 			if (!net_ipaddr_parse(servers[i], strlen(servers[i]), &addr)) {
 				continue;
@@ -1463,7 +1473,7 @@ static bool dns_servers_exists(struct dns_resolve_context *ctx,
 
 int dns_resolve_reconfigure(struct dns_resolve_context *ctx,
 			    const char *servers[],
-			    const struct sockaddr *servers_sa[])
+			    const struct net_sockaddr *servers_sa[])
 {
 	int err;
 

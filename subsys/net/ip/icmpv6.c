@@ -103,7 +103,7 @@ static int icmpv6_handle_echo_request(struct net_icmp_ctx *ctx,
 {
 	struct net_pkt *reply = NULL;
 	struct net_ipv6_hdr *ip_hdr = hdr->ipv6;
-	const struct in6_addr *src;
+	const struct net_in6_addr *src;
 	int16_t payload_len;
 
 	ARG_UNUSED(user_data);
@@ -121,23 +121,23 @@ static int icmpv6_handle_echo_request(struct net_icmp_ctx *ctx,
 	}
 
 	reply = net_pkt_alloc_with_buffer(net_pkt_iface(pkt), payload_len,
-					  AF_INET6, IPPROTO_ICMPV6,
+					  NET_AF_INET6, NET_IPPROTO_ICMPV6,
 					  PKT_WAIT_TIME);
 	if (!reply) {
 		NET_DBG("DROP: No buffer");
 		goto drop;
 	}
 
-	if (net_ipv6_is_addr_mcast((struct in6_addr *)ip_hdr->dst)) {
+	if (net_ipv6_is_addr_mcast((struct net_in6_addr *)ip_hdr->dst)) {
 		src = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
-						  (struct in6_addr *)ip_hdr->src);
+						  (struct net_in6_addr *)ip_hdr->src);
 
 		if (net_ipv6_is_addr_unspecified(src)) {
 			NET_DBG("DROP: No src address match");
 			goto drop;
 		}
 	} else {
-		src = (struct in6_addr *)ip_hdr->dst;
+		src = (struct net_in6_addr *)ip_hdr->dst;
 	}
 
 	/* We must not set the destination ll address here but trust
@@ -150,7 +150,7 @@ static int icmpv6_handle_echo_request(struct net_icmp_ctx *ctx,
 	net_pkt_set_ip_dscp(reply, net_pkt_ip_dscp(pkt));
 	net_pkt_set_ip_ecn(reply, net_pkt_ip_ecn(pkt));
 
-	if (net_ipv6_create(reply, src, (struct in6_addr *)ip_hdr->src)) {
+	if (net_ipv6_create(reply, src, (struct net_in6_addr *)ip_hdr->src)) {
 		NET_DBG("DROP: wrong buffer");
 		goto drop;
 	}
@@ -162,7 +162,7 @@ static int icmpv6_handle_echo_request(struct net_icmp_ctx *ctx,
 	}
 
 	net_pkt_cursor_init(reply);
-	net_ipv6_finalize(reply, IPPROTO_ICMPV6);
+	net_ipv6_finalize(reply, NET_IPPROTO_ICMPV6);
 
 	NET_DBG("Sending Echo Reply from %s to %s",
 		net_sprint_ipv6_addr(src),
@@ -192,7 +192,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
 	int err = -EIO;
 	struct net_ipv6_hdr *ip_hdr;
-	const struct in6_addr *src;
+	const struct net_in6_addr *src;
 	struct net_pkt *pkt;
 	size_t copy_len;
 	int ret;
@@ -204,7 +204,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 		goto drop_no_pkt;
 	}
 
-	if (ip_hdr->nexthdr == IPPROTO_ICMPV6) {
+	if (ip_hdr->nexthdr == NET_IPPROTO_ICMPV6) {
 		NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmpv6_access,
 						      struct net_icmp_hdr);
 		struct net_icmp_hdr *icmp_hdr;
@@ -222,10 +222,10 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 		net_pkt_cursor_init(orig);
 	}
 
-	if (ip_hdr->nexthdr == IPPROTO_UDP) {
+	if (ip_hdr->nexthdr == NET_IPPROTO_UDP) {
 		copy_len = sizeof(struct net_ipv6_hdr) +
 			sizeof(struct net_udp_hdr);
-	} else if (ip_hdr->nexthdr == IPPROTO_TCP) {
+	} else if (ip_hdr->nexthdr == NET_IPPROTO_TCP) {
 		copy_len = sizeof(struct net_ipv6_hdr) +
 			sizeof(struct net_tcp_hdr);
 	} else {
@@ -235,7 +235,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 	pkt = net_pkt_alloc_with_buffer(net_pkt_iface(orig),
 					net_pkt_lladdr_src(orig)->len * 2 +
 					copy_len + NET_ICMPV6_UNUSED_LEN,
-					AF_INET6, IPPROTO_ICMPV6,
+					NET_AF_INET6, NET_IPPROTO_ICMPV6,
 					PKT_WAIT_TIME);
 	if (!pkt) {
 		err = -ENOMEM;
@@ -281,14 +281,14 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 	net_pkt_lladdr_src(pkt)->len = net_pkt_lladdr_dst(orig)->len;
 	net_pkt_lladdr_dst(pkt)->len = net_pkt_lladdr_src(orig)->len;
 
-	if (net_ipv6_is_addr_mcast((struct in6_addr *)ip_hdr->dst)) {
+	if (net_ipv6_is_addr_mcast((struct net_in6_addr *)ip_hdr->dst)) {
 		src = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
-						  (struct in6_addr *)ip_hdr->dst);
+						  (struct net_in6_addr *)ip_hdr->dst);
 	} else {
-		src = (struct in6_addr *)ip_hdr->dst;
+		src = (struct net_in6_addr *)ip_hdr->dst;
 	}
 
-	if (net_ipv6_create(pkt, src, (struct in6_addr *)ip_hdr->src) ||
+	if (net_ipv6_create(pkt, src, (struct net_in6_addr *)ip_hdr->src) ||
 	    net_icmpv6_create(pkt, type, code)) {
 		goto drop;
 	}
@@ -311,7 +311,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 	}
 
 	net_pkt_cursor_init(pkt);
-	net_ipv6_finalize(pkt, IPPROTO_ICMPV6);
+	net_ipv6_finalize(pkt, NET_IPPROTO_ICMPV6);
 
 	NET_DBG("Sending ICMPv6 Error Message type %d code %d param %d"
 		" from %s to %s", type, code, param,
@@ -378,8 +378,8 @@ drop:
 	return NET_DROP;
 }
 
-void net_icmpv6_init(void)
-{
+#if defined(CONFIG_NET_NATIVE_IPV6)
+void net_icmpv6_init(void) {
 	static struct net_icmp_ctx ctx;
 	int ret;
 
@@ -389,3 +389,4 @@ void net_icmpv6_init(void)
 			ret);
 	}
 }
+#endif

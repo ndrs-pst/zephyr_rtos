@@ -15,25 +15,23 @@
 #include <sys/types.h>
 #include <zephyr/device.h>
 
-extern const struct flash_area *flash_map;
+extern const struct flash_area* flash_map;
 extern const int flash_map_entries;
 
-static inline struct flash_area const *get_flash_area_from_id(int idx)
-{
-	for (int i = 0; i < flash_map_entries; i++) {
-		if (flash_map[i].fa_id == idx) {
-			return &flash_map[i];
-		}
-	}
+static inline struct flash_area const* get_flash_area_from_id(int idx) {
+    for (int i = 0; i < flash_map_entries; i++) {
+        if (flash_map[i].fa_id == idx) {
+            return (&flash_map[i]);
+        }
+    }
 
-	return NULL;
+    return (NULL);
 }
 
 
-static inline bool is_in_flash_area_bounds(const struct flash_area *fa,
-					   off_t off, size_t len)
-{
-	return (off >= 0) && ((off + len) <= fa->fa_size);
+static inline bool is_in_flash_area_bounds(const struct flash_area* fa,
+                                           off_t off, size_t len) {
+    return ((off >= 0) && ((off + len) <= fa->fa_size));
 }
 
 #endif /* ZEPHYR_SUBSYS_STORAGE_FLASH_MAP_PRIV_H_ */

@@ -240,7 +240,7 @@ enum net_event_l4_cmd {
  * information.
  */
 struct net_event_ipv6_addr {
-	struct in6_addr addr;
+	struct net_in6_addr addr;
 };
 
 /**
@@ -253,7 +253,7 @@ struct net_event_ipv6_addr {
  * @note: idx will be '-1' in case of NET_EVENT_IPV6_NBR_DEL event.
  */
 struct net_event_ipv6_nbr {
-	struct in6_addr addr;
+	struct net_in6_addr addr;
 	int idx; /* NBR index*/
 };
 
@@ -266,8 +266,8 @@ struct net_event_ipv6_nbr {
  * information.
  */
 struct net_event_ipv6_route {
-	struct in6_addr nexthop;
-	struct in6_addr addr; /* addr/prefix */
+	struct net_in6_addr nexthop;
+	struct net_in6_addr addr; /* addr/prefix */
 	uint8_t prefix_len;
 };
 
@@ -280,7 +280,7 @@ struct net_event_ipv6_route {
  * information.
  */
 struct net_event_ipv6_prefix {
-	struct in6_addr addr; /* prefix */
+	struct net_in6_addr addr; /* prefix */
 	uint8_t len;
 	uint32_t lifetime;
 };
