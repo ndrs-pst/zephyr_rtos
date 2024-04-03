@@ -35,11 +35,11 @@ LOG_MODULE_DECLARE(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #define IGMPV3_ALLOW_NEW_SOURCES      0x05
 #define IGMPV3_BLOCK_OLD_SOURCES      0x06
 
-static const struct in_addr all_systems = { { { 224, 0, 0, 1 } } };
+static const struct net_in_addr all_systems = { { { 224, 0, 0, 1 } } };
 #if defined(CONFIG_NET_IPV4_IGMPV3)
-static const struct in_addr igmp_multicast_addr = { { { 224, 0, 0, 22 } } };
+static const struct net_in_addr igmp_multicast_addr = { { { 224, 0, 0, 22 } } };
 #else
-static const struct in_addr all_routers = { { { 224, 0, 0, 2 } } };
+static const struct net_in_addr all_routers = { { { 224, 0, 0, 2 } } };
 #endif
 
 #define dbg_addr(action, pkt_str, src, dst)				\
@@ -56,7 +56,7 @@ enum igmp_version {
 	IGMPV3,
 };
 
-static int igmp_v2_create(struct net_pkt *pkt, const struct in_addr *addr,
+static int igmp_v2_create(struct net_pkt *pkt, const struct net_in_addr *addr,
 			  uint8_t type)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(igmp_access,
@@ -165,8 +165,8 @@ static int igmp_v3_create(struct net_pkt *pkt, uint8_t type, struct net_if_mcast
 		}
 
 		for (int j = 0; j < mcast[i].sources_len; j++) {
-			if (net_pkt_write(pkt, &mcast[i].sources[j].in_addr.s_addr,
-					  sizeof(mcast[i].sources[j].in_addr.s_addr))) {
+			if (net_pkt_write(pkt, &mcast[i].sources[j].in_addr.s_addr_be,
+					  sizeof(mcast[i].sources[j].in_addr.s_addr_be))) {
 				return -ENOBUFS;
 			}
 		}
@@ -186,8 +186,8 @@ static int igmp_v3_create(struct net_pkt *pkt, uint8_t type, struct net_if_mcast
 }
 #endif
 
-static int igmp_v2_create_packet(struct net_pkt *pkt, const struct in_addr *dst,
-				 const struct in_addr *group, uint8_t type)
+static int igmp_v2_create_packet(struct net_pkt *pkt, const struct net_in_addr *dst,
+				 const struct net_in_addr *group, uint8_t type)
 {
 	const uint32_t router_alert = 0x94040000; /* RFC 2213 ch 2.1 */
 	int ret;
@@ -219,7 +219,7 @@ static int igmp_v2_create_packet(struct net_pkt *pkt, const struct in_addr *dst,
 }
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
-static int igmp_v3_create_packet(struct net_pkt *pkt, const struct in_addr *dst,
+static int igmp_v3_create_packet(struct net_pkt *pkt, const struct net_in_addr *dst,
 				 struct net_if_mcast_addr mcast[], size_t mcast_len, uint8_t type)
 {
 	const uint32_t router_alert = 0x94040000; /* RFC 2213 ch 2.1 */
@@ -250,7 +250,7 @@ static int igmp_send(struct net_pkt *pkt)
 	int ret;
 
 	net_pkt_cursor_init(pkt);
-	net_ipv4_finalize(pkt, IPPROTO_IGMP);
+	net_ipv4_finalize(pkt, NET_IPPROTO_IGMP);
 
 	ret = net_send_data(pkt);
 	if (ret < 0) {
@@ -311,7 +311,7 @@ static int send_igmp_report(struct net_if *iface,
 		pkt = net_pkt_alloc_with_buffer(iface,
 					IPV4_OPT_HDR_ROUTER_ALERT_LEN +
 					sizeof(struct net_ipv4_igmp_v2_report),
-					AF_INET, IPPROTO_IGMP,
+					NET_AF_INET, NET_IPPROTO_IGMP,
 					PKT_WAIT_TIME);
 		if (!pkt) {
 			return -ENOMEM;
@@ -381,8 +381,8 @@ static int send_igmp_v3_report(struct net_if *iface, struct net_ipv4_igmp_v3_que
 		iface,
 		IPV4_OPT_HDR_ROUTER_ALERT_LEN + sizeof(struct net_ipv4_igmp_v3_report) +
 			sizeof(struct net_ipv4_igmp_v3_group_record) * group_count +
-			sizeof(struct in_addr) * source_count,
-		AF_INET, IPPROTO_IGMP, PKT_WAIT_TIME);
+			sizeof(struct net_in_addr) * source_count,
+		NET_AF_INET, NET_IPPROTO_IGMP, PKT_WAIT_TIME);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -507,7 +507,7 @@ drop:
 
 #if !defined(CONFIG_NET_IPV4_IGMPV3)
 static int igmp_send_generic(struct net_if *iface,
-			     const struct in_addr *addr,
+			     const struct net_in_addr *addr,
 			     bool join)
 {
 	struct net_pkt *pkt;
@@ -516,7 +516,7 @@ static int igmp_send_generic(struct net_if *iface,
 	pkt = net_pkt_alloc_with_buffer(iface,
 					IPV4_OPT_HDR_ROUTER_ALERT_LEN +
 					sizeof(struct net_ipv4_igmp_v2_report),
-					AF_INET, IPPROTO_IGMP,
+					NET_AF_INET, NET_IPPROTO_IGMP,
 					PKT_WAIT_TIME);
 	if (!pkt) {
 		return -ENOMEM;
@@ -557,8 +557,8 @@ static int igmpv3_send_generic(struct net_if *iface, struct net_if_mcast_addr *m
 					IPV4_OPT_HDR_ROUTER_ALERT_LEN +
 						sizeof(struct net_ipv4_igmp_v3_report) +
 						sizeof(struct net_ipv4_igmp_v3_group_record) +
-						sizeof(struct in_addr) * mcast->sources_len,
-					AF_INET, IPPROTO_IGMP, PKT_WAIT_TIME);
+						sizeof(struct net_in_addr) * mcast->sources_len,
+					NET_AF_INET, NET_IPPROTO_IGMP, PKT_WAIT_TIME);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -582,7 +582,7 @@ drop:
 }
 #endif
 
-int net_ipv4_igmp_join(struct net_if *iface, const struct in_addr *addr,
+int net_ipv4_igmp_join(struct net_if *iface, const struct net_in_addr *addr,
 		       const struct igmp_param *param)
 {
 	struct net_if_mcast_addr *maddr;
@@ -614,8 +614,8 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct in_addr *addr,
 						    : IGMPV3_CHANGE_TO_EXCLUDE_MODE;
 		maddr->sources_len = param->sources_len;
 		for (int i = 0; i < param->sources_len; i++) {
-			net_ipaddr_copy(&maddr->sources[i].in_addr.s_addr,
-					&param->source_list[i].s_addr);
+			net_ipaddr_copy(&maddr->sources[i].in_addr.s_addr_be,
+					&param->source_list[i].s_addr_be);
 		}
 	} else {
 		maddr->record_type = IGMPV3_CHANGE_TO_EXCLUDE_MODE;
@@ -645,12 +645,12 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct in_addr *addr,
 	net_if_mcast_monitor(iface, &maddr->address, true);
 
 	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_MCAST_JOIN, iface, &maddr->address.in_addr,
-					sizeof(struct in_addr));
+					sizeof(struct net_in_addr));
 
 	return ret;
 }
 
-int net_ipv4_igmp_leave(struct net_if *iface, const struct in_addr *addr)
+int net_ipv4_igmp_leave(struct net_if *iface, const struct net_in_addr *addr)
 {
 	struct net_if_mcast_addr *maddr;
 	int ret;
@@ -681,7 +681,7 @@ int net_ipv4_igmp_leave(struct net_if *iface, const struct in_addr *addr)
 	net_if_mcast_monitor(iface, &maddr->address, false);
 
 	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_MCAST_LEAVE, iface, &maddr->address.in_addr,
-					sizeof(struct in_addr));
+					sizeof(struct net_in_addr));
 	return ret;
 }
 

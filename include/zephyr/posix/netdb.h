@@ -78,7 +78,7 @@ static inline const char *gai_strerror(int errcode)
 	return zsock_gai_strerror(errcode);
 }
 
-static inline int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
+static inline int getnameinfo(const struct net_sockaddr *addr, socklen_t addrlen,
 			      char *host, socklen_t hostlen,
 			      char *serv, socklen_t servlen, int flags)
 {

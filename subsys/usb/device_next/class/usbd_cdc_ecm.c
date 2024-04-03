@@ -211,7 +211,7 @@ static int cdc_ecm_acl_out_cb(struct usbd_class_node *const c_nd,
 	}
 
 	pkt = net_pkt_rx_alloc_with_buffer(data->iface, buf->len,
-					   AF_UNSPEC, 0, K_FOREVER);
+					   NET_AF_UNSPEC, 0, K_FOREVER);
 	if (!pkt) {
 		LOG_ERR("No memory for net_pkt");
 		goto restart_out_transfer;

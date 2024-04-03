@@ -51,7 +51,7 @@ bool thread_is_sliceable(struct k_thread *thread)
 	return ret;
 }
 
-static void slice_timeout(struct _timeout *timeout)
+static void slice_timeout(struct _timeout const *timeout)
 {
 	int cpu = ARRAY_INDEX(slice_timeouts, timeout);
 

@@ -151,9 +151,9 @@ extern enum net_verdict net_promisc_mode_input(struct net_pkt* pkt);
 
 char* net_sprint_addr(sa_family_t af, void const* addr);
 
-#define net_sprint_ipv4_addr(_addr) net_sprint_addr(AF_INET, _addr)
+#define net_sprint_ipv4_addr(_addr) net_sprint_addr(NET_AF_INET, _addr)
 
-#define net_sprint_ipv6_addr(_addr) net_sprint_addr(AF_INET6, _addr)
+#define net_sprint_ipv6_addr(_addr) net_sprint_addr(NET_AF_INET6, _addr)
 
 #if defined(CONFIG_COAP)
 /**
@@ -266,25 +266,25 @@ enum net_verdict net_ipv4_igmp_input(struct net_pkt* pkt,
 #endif /* CONFIG_NET_IPV4_IGMP */
 
 static inline uint16_t net_calc_chksum_icmpv6(struct net_pkt* pkt) {
-    return net_calc_chksum(pkt, IPPROTO_ICMPV6);
+    return net_calc_chksum(pkt, NET_IPPROTO_ICMPV6);
 }
 
 static inline uint16_t net_calc_chksum_icmpv4(struct net_pkt* pkt) {
-    return net_calc_chksum(pkt, IPPROTO_ICMP);
+    return net_calc_chksum(pkt, NET_IPPROTO_ICMP);
 }
 
 static inline uint16_t net_calc_chksum_udp(struct net_pkt* pkt) {
-    uint16_t chksum = net_calc_chksum(pkt, IPPROTO_UDP);
+    uint16_t chksum = net_calc_chksum(pkt, NET_IPPROTO_UDP);
 
     return (chksum == 0U) ? 0xffff : chksum;
 }
 
 static inline uint16_t net_calc_verify_chksum_udp(struct net_pkt* pkt) {
-    return net_calc_chksum(pkt, IPPROTO_UDP);
+    return net_calc_chksum(pkt, NET_IPPROTO_UDP);
 }
 
 static inline uint16_t net_calc_chksum_tcp(struct net_pkt* pkt) {
-    return net_calc_chksum(pkt, IPPROTO_TCP);
+    return net_calc_chksum(pkt, NET_IPPROTO_TCP);
 }
 
 static inline char* net_sprint_ll_addr(uint8_t const* ll, uint8_t ll_len) {

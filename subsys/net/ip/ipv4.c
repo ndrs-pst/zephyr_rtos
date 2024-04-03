@@ -26,14 +26,14 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include "dhcpv4/dhcpv4_internal.h"
 #include "ipv4.h"
 
-BUILD_ASSERT(sizeof(struct in_addr) == NET_IPV4_ADDR_SIZE, "sizeof error !!!");
+BUILD_ASSERT(sizeof(struct net_in_addr) == NET_IPV4_ADDR_SIZE, "sizeof error !!!");
 
 /* Timeout for various buffer allocations in this file. */
 #define NET_BUF_TIMEOUT K_MSEC(50)
 
 int net_ipv4_create_full(struct net_pkt* pkt,
-                         const struct in_addr* src,
-                         const struct in_addr* dst,
+                         const struct net_in_addr* src,
+                         const struct net_in_addr* dst,
                          uint8_t tos,
                          uint16_t id,
                          uint8_t flags,
@@ -88,8 +88,8 @@ int net_ipv4_create_full(struct net_pkt* pkt,
 }
 
 int net_ipv4_create(struct net_pkt* pkt,
-                    const struct in_addr* src,
-                    const struct in_addr* dst) {
+                    const struct net_in_addr* src,
+                    const struct net_in_addr* dst) {
     uint8_t tos = 0;
 
     if (IS_ENABLED(CONFIG_NET_IP_DSCP_ECN)) {
@@ -129,14 +129,14 @@ int net_ipv4_finalize(struct net_pkt* pkt, uint8_t next_header_proto) {
     net_pkt_set_data(pkt, &ipv4_access);
 
     if (IS_ENABLED(CONFIG_NET_UDP) &&
-        (next_header_proto == IPPROTO_UDP)) {
+        (next_header_proto == NET_IPPROTO_UDP)) {
         return net_udp_finalize(pkt, false);
     }
     else if (IS_ENABLED(CONFIG_NET_TCP) &&
-             (next_header_proto == IPPROTO_TCP)) {
+             (next_header_proto == NET_IPPROTO_TCP)) {
         return net_tcp_finalize(pkt, false);
     }
-    else if (next_header_proto == IPPROTO_ICMP) {
+    else if (next_header_proto == NET_IPPROTO_ICMP) {
         return net_icmpv4_finalize(pkt, false);
     }
 
@@ -294,31 +294,31 @@ enum net_verdict net_ipv4_input(struct net_pkt* pkt, bool is_loopback) {
     }
 
     if (!is_loopback) {
-        if (net_ipv4_is_addr_loopback((struct in_addr *)hdr->dst) ||
-            net_ipv4_is_addr_loopback((struct in_addr *)hdr->src)) {
+        if (net_ipv4_is_addr_loopback((struct net_in_addr *)hdr->dst) ||
+            net_ipv4_is_addr_loopback((struct net_in_addr *)hdr->src)) {
             NET_DBG("DROP: localhost packet");
             goto drop;
         }
 
-        if (net_ipv4_is_my_addr((struct in_addr *)hdr->src)) {
+        if (net_ipv4_is_my_addr((struct net_in_addr *)hdr->src)) {
             NET_DBG("DROP: src addr is %s", "mine");
             goto drop;
         }
     }
 
-    if (net_ipv4_is_addr_mcast((struct in_addr *)hdr->src)) {
+    if (net_ipv4_is_addr_mcast((struct net_in_addr *)hdr->src)) {
         NET_DBG("DROP: src addr is %s", "mcast");
         goto drop;
     }
 
-    if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt), (struct in_addr*)hdr->src)) {
+    if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt), (struct net_in_addr*)hdr->src)) {
         NET_DBG("DROP: src addr is %s", "bcast");
         goto drop;
     }
 
-    if (net_ipv4_is_addr_unspecified((struct in_addr*)hdr->src) &&
-        !net_ipv4_is_addr_bcast(net_pkt_iface(pkt), (struct in_addr*)hdr->dst) &&
-        (hdr->proto != IPPROTO_IGMP)) {
+    if (net_ipv4_is_addr_unspecified((struct net_in_addr*)hdr->src) &&
+        !net_ipv4_is_addr_bcast(net_pkt_iface(pkt), (struct net_in_addr*)hdr->dst) &&
+        (hdr->proto != NET_IPPROTO_IGMP)) {
         NET_DBG("DROP: src addr is %s", "unspecified");
         goto drop;
     }
@@ -331,24 +331,24 @@ enum net_verdict net_ipv4_input(struct net_pkt* pkt, bool is_loopback) {
 
     net_pkt_set_ipv4_ttl(pkt, hdr->ttl);
 
-    net_pkt_set_family(pkt, PF_INET);
+    net_pkt_set_family(pkt, NET_PF_INET);
 
     if (!net_pkt_filter_ip_recv_ok(pkt)) {
         /* drop the packet */
         return (NET_DROP);
     }
 
-    if ((!net_ipv4_is_my_addr((struct in_addr*)hdr->dst) &&
-         !net_ipv4_is_addr_mcast((struct in_addr*)hdr->dst) &&
-         !(hdr->proto == IPPROTO_UDP &&
-           (net_ipv4_addr_cmp((struct in_addr*)hdr->dst, net_ipv4_broadcast_address()) ||
+    if ((!net_ipv4_is_my_addr((struct net_in_addr*)hdr->dst) &&
+         !net_ipv4_is_addr_mcast((struct net_in_addr*)hdr->dst) &&
+         !(hdr->proto == NET_IPPROTO_UDP &&
+           (net_ipv4_addr_cmp((struct net_in_addr*)hdr->dst, net_ipv4_broadcast_address()) ||
             /* RFC 1122 ch. 3.3.6 The 0.0.0.0 is non-standard bcast addr */
             (IS_ENABLED(CONFIG_NET_IPV4_ACCEPT_ZERO_BROADCAST) &&
-             net_ipv4_addr_cmp((struct in_addr*)hdr->dst,
+             net_ipv4_addr_cmp((struct net_in_addr*)hdr->dst,
                         net_ipv4_unspecified_address())) ||
             net_dhcpv4_accept_unicast(pkt)))) ||
-        (hdr->proto == IPPROTO_TCP &&
-         net_ipv4_is_addr_bcast(net_pkt_iface(pkt), (struct in_addr*)hdr->dst))) {
+        (hdr->proto == NET_IPPROTO_TCP &&
+         net_ipv4_is_addr_bcast(net_pkt_iface(pkt), (struct net_in_addr*)hdr->dst))) {
         NET_DBG("DROP: not for me");
         goto drop;
     }
@@ -376,7 +376,7 @@ enum net_verdict net_ipv4_input(struct net_pkt* pkt, bool is_loopback) {
             net_sprint_ipv4_addr(&hdr->dst));
 
     switch (hdr->proto) {
-        case IPPROTO_ICMP :
+        case NET_IPPROTO_ICMP :
             verdict = net_icmpv4_input(pkt, hdr);
             if (verdict == NET_DROP) {
                 goto drop;
@@ -384,7 +384,7 @@ enum net_verdict net_ipv4_input(struct net_pkt* pkt, bool is_loopback) {
             return (verdict);
 
         #if defined(CONFIG_NET_IPV4_IGMP)
-        case IPPROTO_IGMP:
+        case NET_IPPROTO_IGMP:
             verdict = net_ipv4_igmp_input(pkt, hdr);
             if (verdict == NET_DROP) {
                 goto drop;
@@ -392,14 +392,14 @@ enum net_verdict net_ipv4_input(struct net_pkt* pkt, bool is_loopback) {
             return (verdict);
         #endif
 
-        case IPPROTO_TCP:
+        case NET_IPPROTO_TCP:
             proto_hdr.tcp = net_tcp_input(pkt, &tcp_access);
             if (proto_hdr.tcp) {
                 verdict = NET_OK;
             }
             break;
 
-        case IPPROTO_UDP:
+        case NET_IPPROTO_UDP:
             proto_hdr.udp = net_udp_input(pkt, &udp_access);
             if (proto_hdr.udp) {
                 verdict = NET_OK;
@@ -407,16 +407,16 @@ enum net_verdict net_ipv4_input(struct net_pkt* pkt, bool is_loopback) {
             break;
 
         #if defined(CONFIG_NET_L2_IPIP)
-        case IPPROTO_IPV6:
-        case IPPROTO_IPIP: {
-            struct sockaddr_in remote_addr = { 0 };
+        case NET_IPPROTO_IPV6:
+        case NET_IPPROTO_IPIP: {
+            struct net_sockaddr_in remote_addr = { 0 };
             struct net_if* tunnel_iface;
 
-        remote_addr.sin_family = AF_INET;
+        remote_addr.sin_family = NET_AF_INET;
         net_ipv4_addr_copy_raw((uint8_t *)&remote_addr.sin_addr, hdr->src);
 
-        net_pkt_set_remote_address(pkt, (struct sockaddr *)&remote_addr,
-                                         sizeof(struct sockaddr_in));
+        net_pkt_set_remote_address(pkt, (struct net_sockaddr *)&remote_addr,
+                                         sizeof(struct net_sockaddr_in));
 
         /* Get rid of the old IP header */
         net_pkt_cursor_restore(pkt, &hdr_start);

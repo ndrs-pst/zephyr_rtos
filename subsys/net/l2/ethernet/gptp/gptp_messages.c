@@ -157,11 +157,11 @@ static struct net_pkt *setup_gptp_frame(struct net_if *iface,
 
 #if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
 	pkt = net_pkt_alloc_with_buffer_debug(iface, sizeof(struct gptp_hdr) +
-					      extra_header, AF_UNSPEC, 0,
+					      extra_header, NET_AF_UNSPEC, 0,
 					      NET_BUF_TIMEOUT, caller, line);
 #else
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct gptp_hdr) +
-					extra_header, AF_UNSPEC, 0,
+					extra_header, NET_AF_UNSPEC, 0,
 					NET_BUF_TIMEOUT);
 #endif
 	if (!pkt) {

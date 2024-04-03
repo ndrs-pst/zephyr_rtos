@@ -49,13 +49,13 @@ static sys_dlist_t nsos_sockets = SYS_DLIST_STATIC_INIT(&nsos_sockets);
 static int socket_family_to_nsos_mid(int family, int *family_mid)
 {
 	switch (family) {
-	case AF_UNSPEC:
+	case NET_AF_UNSPEC:
 		*family_mid = NSOS_MID_AF_UNSPEC;
 		break;
-	case AF_INET:
+	case NET_AF_INET:
 		*family_mid = NSOS_MID_AF_INET;
 		break;
-	case AF_INET6:
+	case NET_AF_INET6:
 		*family_mid = NSOS_MID_AF_INET6;
 		break;
 	default:
@@ -68,28 +68,28 @@ static int socket_family_to_nsos_mid(int family, int *family_mid)
 static int socket_proto_to_nsos_mid(int proto, int *proto_mid)
 {
 	switch (proto) {
-	case IPPROTO_IP:
+	case NET_IPPROTO_IP:
 		*proto_mid = NSOS_MID_IPPROTO_IP;
 		break;
-	case IPPROTO_ICMP:
+	case NET_IPPROTO_ICMP:
 		*proto_mid = NSOS_MID_IPPROTO_ICMP;
 		break;
-	case IPPROTO_IGMP:
+	case NET_IPPROTO_IGMP:
 		*proto_mid = NSOS_MID_IPPROTO_IGMP;
 		break;
-	case IPPROTO_IPIP:
+	case NET_IPPROTO_IPIP:
 		*proto_mid = NSOS_MID_IPPROTO_IPIP;
 		break;
-	case IPPROTO_TCP:
+	case NET_IPPROTO_TCP:
 		*proto_mid = NSOS_MID_IPPROTO_TCP;
 		break;
-	case IPPROTO_UDP:
+	case NET_IPPROTO_UDP:
 		*proto_mid = NSOS_MID_IPPROTO_UDP;
 		break;
-	case IPPROTO_IPV6:
+	case NET_IPPROTO_IPV6:
 		*proto_mid = NSOS_MID_IPPROTO_IPV6;
 		break;
-	case IPPROTO_RAW:
+	case NET_IPPROTO_RAW:
 		*proto_mid = NSOS_MID_IPPROTO_RAW;
 		break;
 	default:
@@ -102,13 +102,13 @@ static int socket_proto_to_nsos_mid(int proto, int *proto_mid)
 static int socket_type_to_nsos_mid(int type, int *type_mid)
 {
 	switch (type) {
-	case SOCK_STREAM:
+	case NET_SOCK_STREAM:
 		*type_mid = NSOS_MID_SOCK_STREAM;
 		break;
-	case SOCK_DGRAM:
+	case NET_SOCK_DGRAM:
 		*type_mid = NSOS_MID_SOCK_DGRAM;
 		break;
-	case SOCK_RAW:
+	case NET_SOCK_RAW:
 		*type_mid = NSOS_MID_SOCK_RAW;
 		break;
 	default:
@@ -367,7 +367,7 @@ static int nsos_ioctl(void *obj, unsigned int request, va_list args)
 	return -EINVAL;
 }
 
-static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t *addrlen,
+static int sockaddr_to_nsos_mid(const struct net_sockaddr *addr, socklen_t *addrlen,
 				struct nsos_mid_sockaddr **addr_mid, size_t *addrlen_mid)
 {
 	if (!addr || !addrlen) {
@@ -378,9 +378,9 @@ static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t *addrlen,
 	}
 
 	switch (addr->sa_family) {
-	case AF_INET: {
-		const struct sockaddr_in *addr_in =
-			(const struct sockaddr_in *)addr;
+	case NET_AF_INET: {
+		const struct net_sockaddr_in *addr_in =
+			(const struct net_sockaddr_in *)addr;
 		struct nsos_mid_sockaddr_in *addr_in_mid =
 			(struct nsos_mid_sockaddr_in *)*addr_mid;
 
@@ -390,15 +390,15 @@ static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t *addrlen,
 
 		addr_in_mid->sin_family = NSOS_MID_AF_INET;
 		addr_in_mid->sin_port = addr_in->sin_port;
-		addr_in_mid->sin_addr = addr_in->sin_addr.s_addr;
+		addr_in_mid->sin_addr = addr_in->sin_addr.s_addr_be;
 
 		*addrlen_mid = sizeof(*addr_in_mid);
 
 		return 0;
 	}
-	case AF_INET6: {
-		const struct sockaddr_in6 *addr_in =
-			(const struct sockaddr_in6 *)addr;
+	case NET_AF_INET6: {
+		const struct net_sockaddr_in6 *addr_in =
+			(const struct net_sockaddr_in6 *)addr;
 		struct nsos_mid_sockaddr_in6 *addr_in_mid =
 			(struct nsos_mid_sockaddr_in6 *)*addr_mid;
 
@@ -421,7 +421,7 @@ static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t *addrlen,
 	return -NSOS_MID_EINVAL;
 }
 
-static int sockaddr_from_nsos_mid(struct sockaddr *addr, socklen_t *addrlen,
+static int sockaddr_from_nsos_mid(struct net_sockaddr *addr, socklen_t *addrlen,
 				  const struct nsos_mid_sockaddr *addr_mid, size_t addrlen_mid)
 {
 	if (!addr || !addrlen) {
@@ -432,11 +432,11 @@ static int sockaddr_from_nsos_mid(struct sockaddr *addr, socklen_t *addrlen,
 	case NSOS_MID_AF_INET: {
 		const struct nsos_mid_sockaddr_in *addr_in_mid =
 			(const struct nsos_mid_sockaddr_in *)addr_mid;
-		struct sockaddr_in addr_in;
+		struct net_sockaddr_in addr_in;
 
-		addr_in.sin_family = AF_INET;
+		addr_in.sin_family = NET_AF_INET;
 		addr_in.sin_port = addr_in_mid->sin_port;
-		addr_in.sin_addr.s_addr = addr_in_mid->sin_addr;
+		addr_in.sin_addr.s_addr_be = addr_in_mid->sin_addr;
 
 		memcpy(addr, &addr_in, MIN(*addrlen, sizeof(addr_in)));
 		*addrlen = sizeof(addr_in);
@@ -446,9 +446,9 @@ static int sockaddr_from_nsos_mid(struct sockaddr *addr, socklen_t *addrlen,
 	case NSOS_MID_AF_INET6: {
 		const struct nsos_mid_sockaddr_in6 *addr_in_mid =
 			(const struct nsos_mid_sockaddr_in6 *)addr_mid;
-		struct sockaddr_in6 addr_in;
+		struct net_sockaddr_in6 addr_in;
 
-		addr_in.sin6_family = AF_INET6;
+		addr_in.sin6_family = NET_AF_INET6;
 		addr_in.sin6_port = addr_in_mid->sin6_port;
 		memcpy(addr_in.sin6_addr.s6_addr, addr_in_mid->sin6_addr,
 		       sizeof(addr_in.sin6_addr.s6_addr));
@@ -464,7 +464,7 @@ static int sockaddr_from_nsos_mid(struct sockaddr *addr, socklen_t *addrlen,
 	return -NSOS_MID_EINVAL;
 }
 
-static int nsos_bind(void *obj, const struct sockaddr *addr, socklen_t addrlen)
+static int nsos_bind(void *obj, const struct net_sockaddr *addr, socklen_t addrlen)
 {
 	struct nsos_socket *sock = obj;
 	struct nsos_mid_sockaddr_storage addr_storage_mid;
@@ -488,7 +488,7 @@ return_ret:
 	return ret;
 }
 
-static int nsos_connect(void *obj, const struct sockaddr *addr, socklen_t addrlen)
+static int nsos_connect(void *obj, const struct net_sockaddr *addr, socklen_t addrlen)
 {
 	struct nsos_socket *sock = obj;
 	struct nsos_mid_sockaddr_storage addr_storage_mid;
@@ -579,7 +579,7 @@ static int nsos_accept_with_poll(struct nsos_socket *sock,
 	return ret;
 }
 
-static int nsos_accept(void *obj, struct sockaddr *addr, socklen_t *addrlen)
+static int nsos_accept(void *obj, struct net_sockaddr *addr, socklen_t *addrlen)
 {
 	struct nsos_socket *accept_sock = obj;
 	struct nsos_mid_sockaddr_storage addr_storage_mid;
@@ -632,7 +632,7 @@ close_adapt_fd:
 }
 
 static ssize_t nsos_sendto(void *obj, const void *buf, size_t len, int flags,
-			   const struct sockaddr *addr, socklen_t addrlen)
+			   const struct net_sockaddr *addr, socklen_t addrlen)
 {
 	struct nsos_socket *sock = obj;
 	struct nsos_mid_sockaddr_storage addr_storage_mid;
@@ -702,7 +702,7 @@ static int nsos_recvfrom_with_poll(struct nsos_socket *sock, void *buf, size_t l
 }
 
 static ssize_t nsos_recvfrom(void *obj, void *buf, size_t len, int flags,
-			     struct sockaddr *addr, socklen_t *addrlen)
+			     struct net_sockaddr *addr, socklen_t *addrlen)
 {
 	struct nsos_socket *sock = obj;
 	struct nsos_mid_sockaddr_storage addr_storage_mid;
@@ -781,12 +781,12 @@ static bool nsos_is_supported(int family, int type, int proto)
 	return true;
 }
 
-NET_SOCKET_OFFLOAD_REGISTER(nsos, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, AF_UNSPEC,
+NET_SOCKET_OFFLOAD_REGISTER(nsos, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, NET_AF_UNSPEC,
 			    nsos_is_supported, nsos_socket_create);
 
 struct zsock_addrinfo_wrap {
 	struct zsock_addrinfo addrinfo;
-	struct sockaddr_storage addr_storage;
+	struct net_sockaddr_storage addr_storage;
 	struct nsos_mid_addrinfo *addrinfo_mid;
 };
 
@@ -837,7 +837,7 @@ static int addrinfo_from_nsos_mid(struct nsos_mid_addrinfo *nsos_res,
 		wrap->addrinfo.ai_protocol = res_p->ai_protocol;
 
 		wrap->addrinfo.ai_addr =
-			(struct sockaddr *)&wrap->addr_storage;
+			(struct net_sockaddr *)&wrap->addr_storage;
 		wrap->addrinfo.ai_addrlen = sizeof(wrap->addr_storage);
 
 		sockaddr_from_nsos_mid(wrap->addrinfo.ai_addr, &wrap->addrinfo.ai_addrlen,

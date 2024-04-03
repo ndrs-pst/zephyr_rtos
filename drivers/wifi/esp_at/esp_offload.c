@@ -28,7 +28,7 @@ static int _sock_connect(struct esp_data* dev, struct esp_socket* sock) {
     char connect_msg[sizeof("AT+CIPSTART=000,\"TCP\",\"\",65535,7200") +
                      NET_IPV4_ADDR_LEN];
     char addr_str[NET_IPV4_ADDR_LEN];
-    struct sockaddr dst;
+    struct net_sockaddr dst;
     int ret;
 
     if (!esp_flags_are_set(dev, EDF_STA_CONNECTED | EDF_AP_ENABLED)) {
@@ -43,7 +43,7 @@ static int _sock_connect(struct esp_data* dev, struct esp_socket* sock) {
                   &net_sin(&dst)->sin_addr,
                   addr_str, sizeof(addr_str));
 
-    if (esp_socket_ip_proto(sock) == IPPROTO_TCP) {
+    if (esp_socket_ip_proto(sock) == NET_IPPROTO_TCP) {
         snprintk(connect_msg, sizeof(connect_msg),
                  "AT+CIPSTART=%d,\"TCP\",\"%s\",%d,7200",
                  sock->link_id, addr_str,
@@ -57,13 +57,13 @@ static int _sock_connect(struct esp_data* dev, struct esp_socket* sock) {
     }
 
     LOG_DBG("link %d, ip_proto %s, addr %s", sock->link_id,
-            (esp_socket_ip_proto(sock) == IPPROTO_TCP) ? "TCP" : "UDP",
+            (esp_socket_ip_proto(sock) == NET_IPPROTO_TCP) ? "TCP" : "UDP",
             addr_str);
 
     ret = esp_cmd_send(dev, NULL, 0, connect_msg, ESP_CMD_TIMEOUT);
     if (ret == 0) {
         esp_socket_flags_set(sock, ESP_SOCK_CONNECTED);
-        if (esp_socket_type(sock) == SOCK_STREAM) {
+        if (esp_socket_type(sock) == NET_SOCK_STREAM) {
             net_context_set_state(sock->context,
                                   NET_CONTEXT_CONNECTED);
         }
@@ -95,7 +95,7 @@ void esp_connect_work(struct k_work* work) {
     k_mutex_unlock(&sock->lock);
 }
 
-static int esp_bind(struct net_context *context, const struct sockaddr *addr,
+static int esp_bind(struct net_context *context, const struct net_sockaddr *addr,
                     socklen_t addrlen) {
     struct esp_socket* sock;
     struct esp_data* dev;
@@ -103,11 +103,11 @@ static int esp_bind(struct net_context *context, const struct sockaddr *addr,
     sock = (struct esp_socket *)context->offload_context;
     dev = esp_socket_to_dev(sock);
 
-    if (esp_socket_ip_proto(sock) == IPPROTO_TCP) {
+    if (esp_socket_ip_proto(sock) == NET_IPPROTO_TCP) {
         return (0);
     }
 
-    if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == AF_INET) {
+    if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == NET_AF_INET) {
         LOG_DBG("link %d", sock->link_id);
 
         if (esp_socket_connected(sock)) {
@@ -129,7 +129,7 @@ static int esp_bind(struct net_context *context, const struct sockaddr *addr,
 }
 
 static int esp_connect(struct net_context* context,
-                       const struct sockaddr* addr,
+                       const struct net_sockaddr* addr,
                        socklen_t addrlen,
                        net_context_connect_cb_t cb,
                        int32_t timeout,
@@ -143,7 +143,7 @@ static int esp_connect(struct net_context* context,
 
     LOG_DBG("link %d, timeout %d", sock->link_id, timeout);
 
-    if (!IS_ENABLED(CONFIG_NET_IPV4) || addr->sa_family != AF_INET) {
+    if (!IS_ENABLED(CONFIG_NET_IPV4) || addr->sa_family != NET_AF_INET) {
         return (-EAFNOSUPPORT);
     }
 
@@ -221,7 +221,7 @@ static int _sock_send(struct esp_socket* sock, struct net_pkt* pkt) {
         MODEM_CMD("SEND OK"  , on_cmd_send_ok  , 0U, ""),
         MODEM_CMD("SEND FAIL", on_cmd_send_fail, 0U, ""),
     };
-    struct sockaddr dst;
+    struct net_sockaddr dst;
 
     if (!esp_flags_are_set(dev, EDF_STA_CONNECTED | EDF_AP_ENABLED)) {
         return (-ENETUNREACH);
@@ -231,7 +231,7 @@ static int _sock_send(struct esp_socket* sock, struct net_pkt* pkt) {
 
     LOG_DBG("link %d, len %d", sock->link_id, pkt_len);
 
-    if (esp_socket_ip_proto(sock) == IPPROTO_TCP) {
+    if (esp_socket_ip_proto(sock) == NET_IPPROTO_TCP) {
         snprintk(cmd_buf, sizeof(cmd_buf),
                  "AT+CIPSEND=%d,%d", sock->link_id, pkt_len);
     }
@@ -333,7 +333,7 @@ static int esp_socket_send_one_pkt(struct esp_socket* sock) {
          * more to this socket, as there will be a hole in the data
          * stream, which application layer is not expecting.
          */
-        if (esp_socket_type(sock) == SOCK_STREAM) {
+        if (esp_socket_type(sock) == NET_SOCK_STREAM) {
             if (!esp_socket_flags_test_and_set(sock,
                                                ESP_SOCK_CLOSE_PENDING)) {
                 esp_socket_work_submit(sock, &sock->close_work);
@@ -361,7 +361,7 @@ void esp_send_work(struct k_work* work) {
 }
 
 static int esp_sendto(struct net_pkt* pkt,
-                      const struct sockaddr* dst_addr,
+                      const struct net_sockaddr* dst_addr,
                       socklen_t addrlen,
                       net_context_send_cb_t cb,
                       int32_t timeout,
@@ -381,7 +381,7 @@ static int esp_sendto(struct net_pkt* pkt,
         return (-ENETUNREACH);
     }
 
-    if (esp_socket_type(sock) == SOCK_STREAM) {
+    if (esp_socket_type(sock) == NET_SOCK_STREAM) {
         atomic_val_t flags = esp_socket_flags(sock);
 
         if (!(flags & ESP_SOCK_CONNECTED) ||
@@ -405,7 +405,7 @@ static int esp_sendto(struct net_pkt* pkt,
                 return (ret);
             }
         }
-        else if (esp_socket_type(sock) == SOCK_DGRAM) {
+        else if (esp_socket_type(sock) == NET_SOCK_DGRAM) {
             memcpy(&sock->dst, dst_addr, addrlen);
         }
     }
@@ -519,11 +519,11 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata) {
     }
 
     #if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
-    struct sockaddr_in* recv_addr =
-            (struct sockaddr_in*)&sock->context->remote;
+    struct net_sockaddr_in* recv_addr =
+            (struct net_sockaddr_in*)&sock->context->remote;
 
     recv_addr->sin_port = ntohs(port);
-    recv_addr->sin_family = AF_INET;
+    recv_addr->sin_family = NET_AF_INET;
 
     /* IP addr comes within quotation marks, which is disliked by
      * conv function. So we remove them by subtraction 2 from
@@ -537,7 +537,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata) {
     strncpy(remote_ip_addr, &raw_remote_ip[1], remote_ip_str_len);
     remote_ip_addr[remote_ip_str_len] = '\0';
 
-    if (net_addr_pton(AF_INET, remote_ip_addr, &recv_addr->sin_addr) < 0) {
+    if (net_addr_pton(NET_AF_INET, remote_ip_addr, &recv_addr->sin_addr) < 0) {
         LOG_ERR("Invalid src addr %s", remote_ip_addr);
         err = -EIO;
         return (err);
@@ -670,7 +670,7 @@ static int esp_get(sa_family_t family,
 
     LOG_DBG("");
 
-    if (family != AF_INET) {
+    if (family != NET_AF_INET) {
         return (-EAFNOSUPPORT);
     }
 

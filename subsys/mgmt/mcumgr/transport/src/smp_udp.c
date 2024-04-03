@@ -37,8 +37,8 @@ BUILD_ASSERT(0, "Either IPv4 or IPv6 SMP must be enabled for the MCUmgr UDP SMP 
                 "CONFIG_MCUMGR_TRANSPORT_UDP_IPV4 or CONFIG_MCUMGR_TRANSPORT_UDP_IPV6");
 #endif
 
-BUILD_ASSERT(sizeof(struct sockaddr) <= CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE,
-             "CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE must be >= sizeof(struct sockaddr)");
+BUILD_ASSERT(sizeof(struct net_sockaddr) <= CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE,
+             "CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE must be >= sizeof(struct net_sockaddr)");
 
 #define IS_THREAD_RUNNING(thread)                    \
     (thread.base.thread_state & (_THREAD_PENDING   | \
@@ -99,7 +99,7 @@ static char const* smp_udp_proto_to_name(enum proto_type proto) {
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
 static int smp_udp4_tx(struct net_buf* nb) {
     int ret;
-    struct sockaddr* addr = net_buf_user_data(nb);
+    struct net_sockaddr* addr = net_buf_user_data(nb);
 
     ret = zsock_sendto(smp_udp_configs.ipv4.sock, nb->data, nb->len, 0, addr, sizeof(*addr));
 
@@ -124,7 +124,7 @@ static int smp_udp4_tx(struct net_buf* nb) {
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
 static int smp_udp6_tx(struct net_buf* nb) {
     int ret;
-    struct sockaddr* addr = net_buf_user_data(nb);
+    struct net_sockaddr* addr = net_buf_user_data(nb);
 
     ret = zsock_sendto(smp_udp_configs.ipv6.sock, nb->data, nb->len, 0, addr, sizeof(*addr));
 
@@ -153,8 +153,8 @@ static uint16_t smp_udp_get_mtu(const struct net_buf* nb) {
 }
 
 static int smp_udp_ud_copy(struct net_buf* dst, const struct net_buf* src) {
-    struct sockaddr* src_ud = net_buf_user_data(src);
-    struct sockaddr* dst_ud = net_buf_user_data(dst);
+    struct net_sockaddr* src_ud = net_buf_user_data(src);
+    struct net_sockaddr* dst_ud = net_buf_user_data(dst);
 
     net_ipaddr_copy(dst_ud, src_ud);
 
@@ -164,37 +164,37 @@ static int smp_udp_ud_copy(struct net_buf* dst, const struct net_buf* src) {
 static int create_socket(enum proto_type proto, int* sock) {
     int tmp_sock;
     int err;
-    struct sockaddr* addr;
+    struct net_sockaddr* addr;
 
     #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
-    struct sockaddr_in addr4;
+    struct net_sockaddr_in addr4;
     #endif
 
     #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
-    struct sockaddr_in6 addr6;
+    struct net_sockaddr_in6 addr6;
     #endif
 
     #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
     if (proto == PROTOCOL_IPV4) {
         memset(&addr4, 0, sizeof(addr4));
-        addr4.sin_family      = AF_INET;
+        addr4.sin_family      = NET_AF_INET;
         addr4.sin_port        = htons(CONFIG_MCUMGR_TRANSPORT_UDP_PORT);
-        addr4.sin_addr.s_addr = htonl(INADDR_ANY);
-        addr                  = (struct sockaddr*)&addr4;
+        addr4.sin_addr.s_addr_be = htonl(INADDR_ANY);
+        addr                  = (struct net_sockaddr*)&addr4;
     }
     #endif
 
     #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
     if (proto == PROTOCOL_IPV6) {
         memset(&addr6, 0, sizeof(addr6));
-        addr6.sin6_family = AF_INET6;
+        addr6.sin6_family = NET_AF_INET6;
         addr6.sin6_port   = htons(CONFIG_MCUMGR_TRANSPORT_UDP_PORT);
         addr6.sin6_addr   = in6addr_any;
-        addr              = (struct sockaddr*)&addr6;
+        addr              = (struct net_sockaddr*)&addr6;
     }
     #endif
 
-    tmp_sock = zsock_socket(addr->sa_family, SOCK_DGRAM, IPPROTO_UDP);
+    tmp_sock = zsock_socket(addr->sa_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
     err = errno;
 
     if (tmp_sock < 0) {
@@ -237,14 +237,14 @@ static void smp_udp_receive_thread(void* p1, void* p2, void* p3) {
     LOG_INF("Started (%s)", smp_udp_proto_to_name(conf->proto));
 
     while (1) {
-        struct sockaddr addr;
+        struct net_sockaddr addr;
         socklen_t       addr_len = sizeof(addr);
 
         int len = zsock_recvfrom(conf->sock, conf->recv_buffer,
                                  CONFIG_MCUMGR_TRANSPORT_UDP_MTU, 0, &addr, &addr_len);
 
         if (len > 0) {
-            struct sockaddr* ud;
+            struct net_sockaddr* ud;
             struct net_buf*  nb;
 
             /* Store sender address in user data for reply */

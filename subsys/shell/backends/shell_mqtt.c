@@ -131,8 +131,8 @@ static int wait(int timeout)
 static int get_mqtt_broker_addrinfo(void)
 {
 	int rc;
-	struct zsock_addrinfo hints = { .ai_family = AF_INET,
-					.ai_socktype = SOCK_STREAM,
+	struct zsock_addrinfo hints = { .ai_family = NET_AF_INET,
+					.ai_socktype = NET_SOCK_STREAM,
 					.ai_protocol = 0 };
 
 	if (sh_mqtt->haddr != NULL) {
@@ -184,9 +184,9 @@ static void sh_mqtt_close_and_cleanup(void)
 
 static void broker_init(void)
 {
-	struct sockaddr_in *broker4 = (struct sockaddr_in *)&sh_mqtt->broker;
+	struct net_sockaddr_in *broker4 = (struct net_sockaddr_in *)&sh_mqtt->broker;
 
-	broker4->sin_family = AF_INET;
+	broker4->sin_family = NET_AF_INET;
 	broker4->sin_port = htons(CONFIG_SHELL_MQTT_SERVER_PORT);
 
 	net_ipaddr_copy(&broker4->sin_addr, &net_sin(sh_mqtt->haddr->ai_addr)->sin_addr);

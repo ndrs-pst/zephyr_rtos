@@ -89,7 +89,7 @@ char const* addrstate2str(enum net_addr_state addr_state) {
 void get_addresses(struct net_context const* context,
                    char addr_local[], int local_len,
                    char addr_remote[], int remote_len) {
-    if (IS_ENABLED(CONFIG_NET_IPV6) && context->local.family == AF_INET6) {
+    if (IS_ENABLED(CONFIG_NET_IPV6) && context->local.family == NET_AF_INET6) {
         snprintk(addr_local, local_len, "[%s]:%u",
                  net_sprint_ipv6_addr(
                         net_sin6_ptr(&context->local)->sin6_addr),
@@ -99,7 +99,7 @@ void get_addresses(struct net_context const* context,
                         &net_sin6(&context->remote)->sin6_addr),
                  ntohs(net_sin6(&context->remote)->sin6_port));
     }
-    else if (IS_ENABLED(CONFIG_NET_IPV4) && context->local.family == AF_INET) {
+    else if (IS_ENABLED(CONFIG_NET_IPV4) && context->local.family == NET_AF_INET) {
         snprintk(addr_local, local_len, "%s:%d",
                  net_sprint_ipv4_addr(
                         net_sin_ptr(&context->local)->sin_addr),
@@ -107,7 +107,7 @@ void get_addresses(struct net_context const* context,
 
         /* Check if we need to print the v4-mapping-to-v6 address */
         if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)       &&
-            net_sin(&context->remote)->sin_family == AF_INET6 &&
+            net_sin(&context->remote)->sin_family == NET_AF_INET6 &&
             net_ipv6_addr_is_v4_mapped(&net_sin6(&context->remote)->sin6_addr)) {
             snprintk(addr_remote, remote_len, "[%s]:%d",
                      net_sprint_ipv6_addr(
@@ -121,13 +121,13 @@ void get_addresses(struct net_context const* context,
                      ntohs(net_sin(&context->remote)->sin_port));
         }
     }
-    else if (context->local.family == AF_UNSPEC) {
+    else if (context->local.family == NET_AF_UNSPEC) {
         snprintk(addr_local, local_len, "AF_UNSPEC");
     }
-    else if (context->local.family == AF_PACKET) {
+    else if (context->local.family == NET_AF_PACKET) {
         snprintk(addr_local, local_len, "AF_PACKET");
     }
-    else if (context->local.family == AF_CAN) {
+    else if (context->local.family == NET_AF_CAN) {
         snprintk(addr_local, local_len, "AF_CAN");
     }
     else {

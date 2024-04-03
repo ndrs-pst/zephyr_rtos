@@ -463,7 +463,7 @@ struct mqtt_transport {
 
 #if defined(CONFIG_SOCKS)
 	struct {
-		struct sockaddr addr;
+		struct net_sockaddr addr;
 		socklen_t addrlen;
 	} proxy;
 #endif
@@ -589,7 +589,7 @@ void mqtt_client_init(struct mqtt_client *client);
  * @note Must be called before calling mqtt_connect().
  */
 int mqtt_client_set_proxy(struct mqtt_client *client,
-			  struct sockaddr *proxy_addr,
+			  struct net_sockaddr *proxy_addr,
 			  socklen_t addrlen);
 #endif
 

@@ -800,7 +800,7 @@ static struct net_pkt* /**/eth_stm32_rx(const struct device* dev) {
     #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
     pkt = net_pkt_rx_alloc_with_buffer(eth_stm32_get_iface(ctx),
-                                       total_len, AF_UNSPEC, 0, K_MSEC(100));
+                                       total_len, NET_AF_UNSPEC, 0, K_MSEC(100));
     if (pkt == NULL) {
         LOG_ERR("Failed to obtain RX buffer");
         goto release_desc;

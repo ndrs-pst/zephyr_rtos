@@ -27,12 +27,12 @@ static void dns_result_cb(enum dns_resolve_status status,
 	if (status == DNS_EAI_INPROGRESS && info) {
 		char addr[NET_IPV6_ADDR_LEN];
 
-		if (info->ai_family == AF_INET) {
-			net_addr_ntop(AF_INET,
+		if (info->ai_family == NET_AF_INET) {
+			net_addr_ntop(NET_AF_INET,
 				      &net_sin(&info->ai_addr)->sin_addr,
 				      addr, NET_IPV4_ADDR_LEN);
-		} else if (info->ai_family == AF_INET6) {
-			net_addr_ntop(AF_INET6,
+		} else if (info->ai_family == NET_AF_INET6) {
+			net_addr_ntop(NET_AF_INET6,
 				      &net_sin6(&info->ai_addr)->sin6_addr,
 				      addr, NET_IPV6_ADDR_LEN);
 		} else {
@@ -68,14 +68,14 @@ static void print_dns_info(const struct shell *sh,
 
 	for (i = 0; i < CONFIG_DNS_RESOLVER_MAX_SERVERS +
 		     DNS_MAX_MCAST_SERVERS; i++) {
-		if (ctx->servers[i].dns_server.sa_family == AF_INET) {
+		if (ctx->servers[i].dns_server.sa_family == NET_AF_INET) {
 			PR("\t%s:%u\n",
 			   net_sprint_ipv4_addr(
 				   &net_sin(&ctx->servers[i].dns_server)->
 				   sin_addr),
 			   ntohs(net_sin(
 				 &ctx->servers[i].dns_server)->sin_port));
-		} else if (ctx->servers[i].dns_server.sa_family == AF_INET6) {
+		} else if (ctx->servers[i].dns_server.sa_family == NET_AF_INET6) {
 			PR("\t[%s]:%u\n",
 			   net_sprint_ipv6_addr(
 				   &net_sin6(&ctx->servers[i].dns_server)->

@@ -40,8 +40,8 @@ extern "C" {
 struct virtual_interface_req_params {
 	sa_family_t family;
 	union {
-		struct in_addr peer4addr;
-		struct in6_addr peer6addr;
+		struct net_in_addr peer4addr;
+		struct net_in6_addr peer6addr;
 		int mtu;
 	};
 };

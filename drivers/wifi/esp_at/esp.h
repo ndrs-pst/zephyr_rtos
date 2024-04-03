@@ -50,10 +50,10 @@ extern "C" {
  */
 #if defined(CONFIG_WIFI_ESP_AT_PASSIVE_MODE)
 #if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
-#define ESP_PROTO_PASSIVE(proto) (proto == IPPROTO_TCP)
+#define ESP_PROTO_PASSIVE(proto) (proto == NET_IPPROTO_TCP)
 #else
 #define ESP_PROTO_PASSIVE(proto) \
-        (proto == IPPROTO_TCP || proto == IPPROTO_UDP)
+        (proto == NET_IPPROTO_TCP || proto == NET_IPPROTO_UDP)
 #endif /* CONFIG_WIFI_ESP_AT_VERSION_1_7 */
 #else
 #define ESP_PROTO_PASSIVE(proto) 0
@@ -175,7 +175,7 @@ struct esp_socket {
     atomic_t flags;
 
     /* socket info */
-    struct sockaddr dst;
+    struct net_sockaddr dst;
 
     /* sem */
     union {
@@ -222,12 +222,12 @@ struct esp_data {
     char conn_cmd[CONN_CMD_MAX_LEN];
 
     /* addresses  */
-    struct in_addr ip;
-    struct in_addr gw;
-    struct in_addr nm;
+    struct net_in_addr ip;
+    struct net_in_addr gw;
+    struct net_in_addr nm;
     uint8_t mac_addr[6];
     #if defined(ESP_MAX_DNS)
-    struct sockaddr_in dns_addresses[ESP_MAX_DNS];
+    struct net_sockaddr_in dns_addresses[ESP_MAX_DNS];
     #endif
 
     /* modem context */

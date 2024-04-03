@@ -183,7 +183,7 @@ void mqtt_client_init(struct mqtt_client *client)
 
 #if defined(CONFIG_SOCKS)
 int mqtt_client_set_proxy(struct mqtt_client *client,
-			  struct sockaddr *proxy_addr,
+			  struct net_sockaddr *proxy_addr,
 			  socklen_t addrlen)
 {
 	if (IS_ENABLED(CONFIG_SOCKS)) {

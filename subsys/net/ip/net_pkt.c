@@ -958,7 +958,7 @@ static size_t pkt_buffer_length(struct net_pkt *pkt,
 	}
 
 	/* Family vs iface MTU */
-	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6) {
 		if (IS_ENABLED(CONFIG_NET_IPV6_FRAGMENT) && (size > max_len)) {
 			/* We support larger packets if IPv6 fragmentation is
 			 * enabled.
@@ -967,14 +967,14 @@ static size_t pkt_buffer_length(struct net_pkt *pkt,
 		}
 
 		max_len = MAX(max_len, NET_IPV6_MTU);
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET) {
 		if (IS_ENABLED(CONFIG_NET_IPV4_FRAGMENT) && (size > max_len)) {
 			/* We support larger packets if IPv4 fragmentation is enabled */
 			max_len = size;
 		}
 
 		max_len = MAX(max_len, NET_IPV4_MTU);
-	} else { /* family == AF_UNSPEC */
+	} else { /* family == NET_AF_UNSPEC */
 #if defined (CONFIG_NET_L2_ETHERNET)
 		if (net_if_l2(net_pkt_iface(pkt)) ==
 		    &NET_L2_GET_NAME(ETHERNET)) {
@@ -1000,23 +1000,23 @@ static size_t pkt_estimate_headers_length(struct net_pkt *pkt,
 {
 	size_t hdr_len = 0;
 
-	if (family == AF_UNSPEC) {
+	if (family == NET_AF_UNSPEC) {
 		return  0;
 	}
 
 	/* Family header */
-	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6) {
 		hdr_len += NET_IPV6H_LEN;
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET) {
 		hdr_len += NET_IPV4H_LEN;
 	}
 
 	/* + protocol header */
-	if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
+	if (IS_ENABLED(CONFIG_NET_TCP) && proto == NET_IPPROTO_TCP) {
 		hdr_len += NET_TCPH_LEN + NET_TCP_MAX_OPT_SIZE;
-	} else if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
+	} else if (IS_ENABLED(CONFIG_NET_UDP) && proto == NET_IPPROTO_UDP) {
 		hdr_len += NET_UDPH_LEN;
-	} else if (proto == IPPROTO_ICMP || proto == IPPROTO_ICMPV6) {
+	} else if (proto == NET_IPPROTO_ICMP || proto == NET_IPPROTO_ICMPV6) {
 		hdr_len += NET_ICMPH_LEN;
 	}
 
@@ -1143,7 +1143,7 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 	size_t hdr_len = 0;
 	struct net_buf *buf;
 
-	if (!size && proto == 0 && net_pkt_family(pkt) == AF_UNSPEC) {
+	if (!size && proto == 0 && net_pkt_family(pkt) == NET_AF_UNSPEC) {
 		return 0;
 	}
 
@@ -1898,12 +1898,12 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == NET_AF_INET) {
 		net_pkt_set_ipv4_ttl(clone_pkt, net_pkt_ipv4_ttl(pkt));
 		net_pkt_set_ipv4_opts_len(clone_pkt,
 					  net_pkt_ipv4_opts_len(pkt));
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
-		   net_pkt_family(pkt) == AF_INET6) {
+		   net_pkt_family(pkt) == NET_AF_INET6) {
 		net_pkt_set_ipv6_hop_limit(clone_pkt,
 					   net_pkt_ipv6_hop_limit(pkt));
 		net_pkt_set_ipv6_ext_len(clone_pkt, net_pkt_ipv6_ext_len(pkt));
@@ -1930,12 +1930,12 @@ static struct net_pkt *net_pkt_clone_internal(struct net_pkt *pkt,
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 	clone_pkt = pkt_alloc_with_buffer(slab, net_pkt_iface(pkt),
 					  net_pkt_get_len(pkt),
-					  AF_UNSPEC, 0, timeout,
+					  NET_AF_UNSPEC, 0, timeout,
 					  __func__, __LINE__);
 #else
 	clone_pkt = pkt_alloc_with_buffer(slab, net_pkt_iface(pkt),
 					  net_pkt_get_len(pkt),
-					  AF_UNSPEC, 0, timeout);
+					  NET_AF_UNSPEC, 0, timeout);
 #endif
 	if (!clone_pkt) {
 		return NULL;

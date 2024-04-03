@@ -32,11 +32,11 @@ static uint16_t modem_ppp_fcs_final(uint16_t fcs) {
 }
 
 static uint16_t modem_ppp_ppp_protocol(struct net_pkt* pkt) {
-    if (net_pkt_family(pkt) == AF_INET) {
+    if (net_pkt_family(pkt) == NET_AF_INET) {
         return PPP_IP;
     }
 
-    if (net_pkt_family(pkt) == AF_INET6) {
+    if (net_pkt_family(pkt) == NET_AF_INET6) {
         return PPP_IPV6;
     }
 
@@ -230,7 +230,7 @@ static void modem_ppp_process_received_byte(struct modem_ppp* ppp, uint8_t byte)
         case MODEM_PPP_RECEIVE_STATE_HDR_23 :
             if (modem_ppp_is_byte_expected(byte, 0x23)) {
                 ppp->rx_pkt = net_pkt_rx_alloc_with_buffer(ppp->iface,
-                        CONFIG_MODEM_PPP_NET_BUF_FRAG_SIZE, AF_UNSPEC, 0, K_NO_WAIT);
+                        CONFIG_MODEM_PPP_NET_BUF_FRAG_SIZE, NET_AF_UNSPEC, 0, K_NO_WAIT);
 
                 if (ppp->rx_pkt == NULL) {
                     LOG_WRN("Dropped frame, no net_pkt available");
@@ -425,8 +425,8 @@ static int modem_ppp_ppp_api_send(const struct device* dev, struct net_pkt* pkt)
     }
 
     /* Validate packet protocol */
-    if ((net_pkt_is_ppp(pkt) == false) && (net_pkt_family(pkt) != AF_INET) &&
-        (net_pkt_family(pkt) != AF_INET6)) {
+    if ((net_pkt_is_ppp(pkt) == false) && (net_pkt_family(pkt) != NET_AF_INET) &&
+        (net_pkt_family(pkt) != NET_AF_INET6)) {
         return -EPROTONOSUPPORT;
     }
 

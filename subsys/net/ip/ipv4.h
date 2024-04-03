@@ -57,7 +57,7 @@ struct net_ipv4_igmp_v2_query {
     /* 16-bit ones' complement of the entire message */
     uint16_t chksum;
     /* The multicast address being queried */
-    struct in_addr address;
+    struct net_in_addr address;
 } __packed;
 
 struct net_ipv4_igmp_v2_report {
@@ -68,7 +68,7 @@ struct net_ipv4_igmp_v2_report {
     /* 16-bit ones' complement of the entire message */
     uint16_t chksum;
     /* The multicast address being queried */
-    struct in_addr address;
+    struct net_in_addr address;
 } __packed;
 
 struct net_ipv4_igmp_v3_query {
@@ -79,7 +79,7 @@ struct net_ipv4_igmp_v3_query {
     /* 16-bit ones' complement of the entire message */
     uint16_t chksum;
     /* The multicast address being queried */
-    struct in_addr address;
+    struct net_in_addr address;
     /* Reserved field, ignore */
     uint8_t reserved: 4;
     /* Suppress Router-side Processing Flag */
@@ -100,7 +100,7 @@ struct net_ipv4_igmp_v3_group_record {
 	/* Number of Source Addresses */
 	uint16_t sources_len;
 	/* The multicast address to report to*/
-	struct in_addr address;
+	struct net_in_addr address;
 } __packed;
 
 struct net_ipv4_igmp_v3_report {
@@ -132,16 +132,16 @@ struct net_ipv4_igmp_v3_report {
  */
 #if defined(CONFIG_NET_NATIVE_IPV4)
 int net_ipv4_create_full(struct net_pkt* pkt,
-                         const struct in_addr* src,
-                         const struct in_addr* dst,
+                         const struct net_in_addr* src,
+                         const struct net_in_addr* dst,
                          uint8_t tos,
                          uint16_t id,
                          uint8_t flags,
                          uint16_t offset);
 #else
 static inline int net_ipv4_create_full(struct net_pkt* pkt,
-                                       const struct in_addr* src,
-                                       const struct in_addr* dst,
+                                       const struct net_in_addr* src,
+                                       const struct net_in_addr* dst,
                                        uint8_t tos,
                                        uint16_t id,
                                        uint8_t flags,
@@ -169,12 +169,12 @@ static inline int net_ipv4_create_full(struct net_pkt* pkt,
  */
 #if defined(CONFIG_NET_NATIVE_IPV4)
 int net_ipv4_create(struct net_pkt* pkt,
-                    const struct in_addr* src,
-                    const struct in_addr* dst);
+                    const struct net_in_addr* src,
+                    const struct net_in_addr* dst);
 #else
 static inline int net_ipv4_create(struct net_pkt* pkt,
-                                  const struct in_addr* src,
-                                  const struct in_addr* dst) {
+                                  const struct net_in_addr* src,
+                                  const struct net_in_addr* dst) {
     ARG_UNUSED(pkt);
     ARG_UNUSED(src);
     ARG_UNUSED(dst);
@@ -309,10 +309,10 @@ static inline void net_ipv4_set_ecn(uint8_t* tos, uint8_t ecn) {
 /** Store pending IPv4 fragment information that is needed for reassembly. */
 struct net_ipv4_reassembly {
     /** IPv4 source address of the fragment */
-    struct in_addr src;
+    struct net_in_addr src;
 
     /** IPv4 destination address of the fragment */
-    struct in_addr dst;
+    struct net_in_addr dst;
 
     /**
      * Timeout for cancelling the reassembly. The timer is used

@@ -449,16 +449,16 @@ static void esp_dns_work(struct k_work* work) {
     #if defined(ESP_MAX_DNS)
     struct esp_data* data = CONTAINER_OF(work, struct esp_data, dns_work);
     struct dns_resolve_context* dnsctx;
-    struct sockaddr_in* addrs = data->dns_addresses;
-    const struct sockaddr* dns_servers[ESP_MAX_DNS + 1] = {};
+    struct net_sockaddr_in* addrs = data->dns_addresses;
+    const struct net_sockaddr* dns_servers[ESP_MAX_DNS + 1] = {};
     size_t i;
     int err;
 
     for (i = 0; i < ESP_MAX_DNS; i++) {
-        if (!addrs[i].sin_addr.s_addr) {
+        if (!addrs[i].sin_addr.s_addr_be) {
             break;
         }
-        dns_servers[i] = (struct sockaddr*)&addrs[i];
+        dns_servers[i] = (struct net_sockaddr*)&addrs[i];
     }
 
     dnsctx = dns_resolve_get_default();
@@ -476,7 +476,7 @@ MODEM_CMD_DEFINE(on_cmd_cipdns) {
     #if defined(ESP_MAX_DNS)
     struct esp_data* dev = CONTAINER_OF(data, struct esp_data,
                                         cmd_handler_data);
-    struct sockaddr_in* addrs = dev->dns_addresses;
+    struct net_sockaddr_in* addrs = dev->dns_addresses;
     char** servers       = (char**)argv + 1;
     size_t num_servers   = argc - 1;
     size_t valid_servers = 0;
@@ -485,22 +485,22 @@ MODEM_CMD_DEFINE(on_cmd_cipdns) {
 
     for (i = 0; i < ESP_MAX_DNS; i++) {
         if (i >= num_servers) {
-            addrs[i].sin_addr.s_addr = 0;
+            addrs[i].sin_addr.s_addr_be = 0;
             break;
         }
 
         servers[i] = str_unquote(servers[i]);
         LOG_DBG("DNS[%zu]: %s", i, servers[i]);
 
-        err = net_addr_pton(AF_INET, servers[i], &addrs[i].sin_addr);
+        err = net_addr_pton(NET_AF_INET, servers[i], &addrs[i].sin_addr);
         if (err) {
             LOG_ERR("Invalid DNS address: %s",
                     servers[i]);
-            addrs[i].sin_addr.s_addr = 0;
+            addrs[i].sin_addr.s_addr_be = 0;
             break;
         }
 
-        addrs[i].sin_family = AF_INET;
+        addrs[i].sin_family = NET_AF_INET;
         addrs[i].sin_port   = htons(53);
 
         valid_servers++;
@@ -585,13 +585,13 @@ MODEM_CMD_DEFINE(on_cmd_cipsta) {
     ip = str_unquote(argv[1]);
 
     if (!strcmp(argv[0], "ip")) {
-        net_addr_pton(AF_INET, ip, &dev->ip);
+        net_addr_pton(NET_AF_INET, ip, &dev->ip);
     }
     else if (!strcmp(argv[0], "gateway")) {
-        net_addr_pton(AF_INET, ip, &dev->gw);
+        net_addr_pton(NET_AF_INET, ip, &dev->gw);
     }
     else if (!strcmp(argv[0], "netmask")) {
-        net_addr_pton(AF_INET, ip, &dev->nm);
+        net_addr_pton(NET_AF_INET, ip, &dev->nm);
     }
     else {
         LOG_WRN("Unknown IP type %s", argv[0]);

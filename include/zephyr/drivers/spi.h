@@ -149,7 +149,7 @@ extern "C" {
 /** @} */
 
 /**
- * CRC Calcuation: if set, enable hardware CRC computation.
+ * CRC Calculation: if set, enable hardware CRC computation.
  */
 #define SPI_CRC_ENABLE      BIT(18)        /**< Enable CRC calculation */
 

@@ -183,7 +183,7 @@ static int sntp_recv_response(struct sntp_ctx *sntp, uint32_t timeout,
 	return status;
 }
 
-int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len)
+int sntp_init(struct sntp_ctx *ctx, struct net_sockaddr *addr, socklen_t addr_len)
 {
 	int ret;
 
@@ -193,7 +193,7 @@ int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len)
 
 	memset(ctx, 0, sizeof(struct sntp_ctx));
 
-	ctx->sock.fd = zsock_socket(addr->sa_family, SOCK_DGRAM, IPPROTO_UDP);
+	ctx->sock.fd = zsock_socket(addr->sa_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	if (ctx->sock.fd < 0) {
 		NET_ERR("Failed to create UDP socket %d", errno);
 		return -errno;

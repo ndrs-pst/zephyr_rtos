@@ -72,7 +72,7 @@
                     (_conn)->iface,                             \
                     (_len),                                     \
                     net_context_get_family((_conn)->context),   \
-                    IPPROTO_TCP,                                \
+                    NET_IPPROTO_TCP,                                \
                     TCP_PKT_ALLOC_TIMEOUT);                     \
         }                                                       \
         else {                                                  \
@@ -93,7 +93,7 @@
                     (_conn)->iface,                             \
                     (_len),                                     \
                     net_context_get_family((_conn)->context),   \
-                    IPPROTO_TCP,                                \
+                    NET_IPPROTO_TCP,                                \
                     TCP_PKT_ALLOC_TIMEOUT);                     \
         }                                                       \
         else {                                                  \
@@ -112,7 +112,7 @@
         if ((_len) > 0) {                                       \
             _pkt = net_pkt_alloc_with_buffer(                   \
                     (_iface), (_len), (_family),                \
-                    IPPROTO_TCP,                                \
+                    NET_IPPROTO_TCP,                                \
                     TCP_PKT_ALLOC_TIMEOUT);                     \
         }                                                       \
         else {                                                  \
@@ -233,9 +233,9 @@ enum tcp_data_mode {
 };
 
 union tcp_endpoint {
-    struct sockaddr     sa;
-    struct sockaddr_in  sin;
-    struct sockaddr_in6 sin6;
+    struct net_sockaddr     sa;
+    struct net_sockaddr_in  sin;
+    struct net_sockaddr_in6 sin6;
 };
 
 /* TCP Option codes */

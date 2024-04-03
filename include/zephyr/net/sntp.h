@@ -55,7 +55,7 @@ struct sntp_ctx {
  *
  * @return 0 if ok, <0 if error.
  */
-int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr,
+int sntp_init(struct sntp_ctx *ctx, struct net_sockaddr *addr,
 	      socklen_t addr_len);
 
 /**
@@ -109,7 +109,7 @@ int sntp_simple(const char *server, uint32_t timeout,
  *
  * @return 0 if ok, <0 if error (-ETIMEDOUT if timeout).
  */
-int sntp_simple_addr(struct sockaddr *addr, socklen_t addr_len, uint32_t timeout,
+int sntp_simple_addr(struct net_sockaddr *addr, socklen_t addr_len, uint32_t timeout,
 		     struct sntp_time *ts);
 
 #ifdef __cplusplus

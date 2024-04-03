@@ -52,8 +52,8 @@ static int zpacket_socket(int family, int type, int proto)
 	}
 
 	if (proto == 0) {
-		if (type == SOCK_RAW) {
-			proto = IPPROTO_RAW;
+		if (type == NET_SOCK_RAW) {
+			proto = NET_IPPROTO_RAW;
 		}
 	}
 
@@ -112,7 +112,7 @@ static void zpacket_received_cb(struct net_context *ctx,
 }
 
 static int zpacket_bind_ctx(struct net_context *ctx,
-			    const struct sockaddr *addr,
+			    const struct net_sockaddr *addr,
 			    socklen_t addrlen)
 {
 	int ret = 0;
@@ -137,7 +137,7 @@ static int zpacket_bind_ctx(struct net_context *ctx,
 }
 
 static void zpacket_set_eth_pkttype(struct net_if *iface,
-				    struct sockaddr_ll *addr,
+				    struct net_sockaddr_ll *addr,
 				    struct net_linkaddr *lladdr)
 {
 	if (lladdr == NULL || lladdr->addr == NULL) {
@@ -158,10 +158,10 @@ static void zpacket_set_eth_pkttype(struct net_if *iface,
 
 static void zpacket_set_source_addr(struct net_context *ctx,
 				    struct net_pkt *pkt,
-				    struct sockaddr *src_addr,
+				    struct net_sockaddr *src_addr,
 				    socklen_t *addrlen)
 {
-	struct sockaddr_ll addr = {0};
+	struct net_sockaddr_ll addr = {0};
 	struct net_if *iface = net_context_get_iface(ctx);
 
 	if (iface == NULL) {
@@ -222,12 +222,12 @@ static void zpacket_set_source_addr(struct net_context *ctx,
 	/* Copy the result sockaddr_ll structure into provided buffer. If the
 	 * buffer is smaller than the structure size, it will be truncated.
 	 */
-	memcpy(src_addr, &addr, MIN(sizeof(struct sockaddr_ll), *addrlen));
-	*addrlen = sizeof(struct sockaddr_ll);
+	memcpy(src_addr, &addr, MIN(sizeof(struct net_sockaddr_ll), *addrlen));
+	*addrlen = sizeof(struct net_sockaddr_ll);
 }
 
 ssize_t zpacket_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
-			   int flags, const struct sockaddr *dest_addr,
+			   int flags, const struct net_sockaddr *dest_addr,
 			   socklen_t addrlen)
 {
 	k_timeout_t timeout = K_FOREVER;
@@ -287,7 +287,7 @@ ssize_t zpacket_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 }
 
 ssize_t zpacket_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
-			     int flags, struct sockaddr *src_addr,
+			     int flags, struct net_sockaddr *src_addr,
 			     socklen_t *addrlen)
 {
 	size_t recv_len = 0;
@@ -390,14 +390,14 @@ static int packet_sock_ioctl_vmeth(void *obj, unsigned int request,
 /*
  * TODO: A packet socket can be bound to a network device using SO_BINDTODEVICE.
  */
-static int packet_sock_bind_vmeth(void *obj, const struct sockaddr *addr,
+static int packet_sock_bind_vmeth(void *obj, const struct net_sockaddr *addr,
 				  socklen_t addrlen)
 {
 	return zpacket_bind_ctx(obj, addr, addrlen);
 }
 
 /* The connect() function is no longer necessary. */
-static int packet_sock_connect_vmeth(void *obj, const struct sockaddr *addr,
+static int packet_sock_connect_vmeth(void *obj, const struct net_sockaddr *addr,
 				     socklen_t addrlen)
 {
 	return -EOPNOTSUPP;
@@ -413,7 +413,7 @@ static int packet_sock_listen_vmeth(void *obj, int backlog)
 	return -EOPNOTSUPP;
 }
 
-static int packet_sock_accept_vmeth(void *obj, struct sockaddr *addr,
+static int packet_sock_accept_vmeth(void *obj, struct net_sockaddr *addr,
 				    socklen_t *addrlen)
 {
 	return -EOPNOTSUPP;
@@ -421,7 +421,7 @@ static int packet_sock_accept_vmeth(void *obj, struct sockaddr *addr,
 
 static ssize_t packet_sock_sendto_vmeth(void *obj, const void *buf, size_t len,
 					int flags,
-					const struct sockaddr *dest_addr,
+					const struct net_sockaddr *dest_addr,
 					socklen_t addrlen)
 {
 	return zpacket_sendto_ctx(obj, buf, len, flags, dest_addr, addrlen);
@@ -434,7 +434,7 @@ static ssize_t packet_sock_sendmsg_vmeth(void *obj, const struct msghdr *msg,
 }
 
 static ssize_t packet_sock_recvfrom_vmeth(void *obj, void *buf, size_t max_len,
-					  int flags, struct sockaddr *src_addr,
+					  int flags, struct net_sockaddr *src_addr,
 					  socklen_t *addrlen)
 {
 	return zpacket_recvfrom_ctx(obj, buf, max_len, flags,
@@ -479,13 +479,13 @@ static const struct socket_op_vtable packet_sock_fd_op_vtable = {
 static bool packet_is_supported(int family, int type, int proto)
 {
 	switch (type) {
-	case SOCK_RAW:
+	case NET_SOCK_RAW:
 		return proto == ETH_P_ALL
 		  || proto == ETH_P_ECAT
 		  || proto == ETH_P_IEEE802154
-		  || proto == IPPROTO_RAW;
+		  || proto == NET_IPPROTO_RAW;
 
-	case SOCK_DGRAM:
+	case NET_SOCK_DGRAM:
 		return proto > 0;
 
 	default:

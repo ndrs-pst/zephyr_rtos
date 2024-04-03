@@ -44,12 +44,12 @@ static inline int shutdown(int sock, int how)
 	return zsock_shutdown(sock, how);
 }
 
-static inline int bind(int sock, const struct sockaddr *addr, socklen_t addrlen)
+static inline int bind(int sock, const struct net_sockaddr *addr, socklen_t addrlen)
 {
 	return zsock_bind(sock, addr, addrlen);
 }
 
-static inline int connect(int sock, const struct sockaddr *addr,
+static inline int connect(int sock, const struct net_sockaddr *addr,
 			  socklen_t addrlen)
 {
 	return zsock_connect(sock, addr, addrlen);
@@ -60,7 +60,7 @@ static inline int listen(int sock, int backlog)
 	return zsock_listen(sock, backlog);
 }
 
-static inline int accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
+static inline int accept(int sock, struct net_sockaddr *addr, socklen_t *addrlen)
 {
 	return zsock_accept(sock, addr, addrlen);
 }
@@ -76,7 +76,7 @@ static inline ssize_t recv(int sock, void *buf, size_t max_len, int flags)
 }
 
 static inline ssize_t sendto(int sock, const void *buf, size_t len, int flags,
-			     const struct sockaddr *dest_addr,
+			     const struct net_sockaddr *dest_addr,
 			     socklen_t addrlen)
 {
 	return zsock_sendto(sock, buf, len, flags, dest_addr, addrlen);
@@ -94,7 +94,7 @@ static inline ssize_t recvmsg(int sock, struct msghdr *msg, int flags)
 }
 
 static inline ssize_t recvfrom(int sock, void *buf, size_t max_len, int flags,
-			       struct sockaddr *src_addr, socklen_t *addrlen)
+			       struct net_sockaddr *src_addr, socklen_t *addrlen)
 {
 	return zsock_recvfrom(sock, buf, max_len, flags, src_addr, addrlen);
 }
@@ -111,13 +111,13 @@ static inline int setsockopt(int sock, int level, int optname,
 	return zsock_setsockopt(sock, level, optname, optval, optlen);
 }
 
-static inline int getpeername(int sock, struct sockaddr *addr,
+static inline int getpeername(int sock, struct net_sockaddr *addr,
 			      socklen_t *addrlen)
 {
 	return zsock_getpeername(sock, addr, addrlen);
 }
 
-static inline int getsockname(int sock, struct sockaddr *addr,
+static inline int getsockname(int sock, struct net_sockaddr *addr,
 			      socklen_t *addrlen)
 {
 	return zsock_getsockname(sock, addr, addrlen);

@@ -70,10 +70,10 @@ in_addr_t inet_addr(const char *cp)
 	return htonl(val);
 }
 
-char *inet_ntoa(struct in_addr in)
+char *inet_ntoa(struct net_in_addr in)
 {
 	static char buf[INET_ADDRSTRLEN];
-	unsigned char *bytes = (unsigned char *)&in.s_addr;
+	unsigned char *bytes = (unsigned char *)&in.s_addr_be;
 
 	snprintf(buf, sizeof(buf), "%d.%d.%d.%d", bytes[0], bytes[1], bytes[2], bytes[3]);
 

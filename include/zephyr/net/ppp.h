@@ -356,9 +356,9 @@ struct lcp_options {
 
 struct ipcp_options {
 	/** IPv4 address */
-	struct in_addr address;
-	struct in_addr dns1_address;
-	struct in_addr dns2_address;
+	struct net_in_addr address;
+	struct net_in_addr dns1_address;
+	struct net_in_addr dns2_address;
 };
 
 #define IPCP_NUM_MY_OPTIONS	3

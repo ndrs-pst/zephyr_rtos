@@ -858,7 +858,7 @@ struct net_pkt *ieee802154_create_mac_cmd_frame(struct net_if *iface, enum ieee8
 	 * bigger than IEEE802154_MTU bytes less the FCS size, so let's allocate that
 	 * size as buffer.
 	 */
-	pkt = net_pkt_alloc_with_buffer(iface, IEEE802154_MTU, AF_UNSPEC, 0, BUF_TIMEOUT);
+	pkt = net_pkt_alloc_with_buffer(iface, IEEE802154_MTU, NET_AF_UNSPEC, 0, BUF_TIMEOUT);
 	if (!pkt) {
 		goto out;
 	}

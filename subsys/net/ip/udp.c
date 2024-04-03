@@ -126,8 +126,8 @@ out:
 }
 
 int net_udp_register(uint8_t family,
-		     const struct sockaddr *remote_addr,
-		     const struct sockaddr *local_addr,
+		     const struct net_sockaddr *remote_addr,
+		     const struct net_sockaddr *local_addr,
 		     uint16_t remote_port,
 		     uint16_t local_port,
 		     struct net_context *context,
@@ -135,7 +135,7 @@ int net_udp_register(uint8_t family,
 		     void *user_data,
 		     struct net_conn_handle **handle)
 {
-	return net_conn_register(IPPROTO_UDP, family, remote_addr, local_addr,
+	return net_conn_register(NET_IPPROTO_UDP, family, remote_addr, local_addr,
 				 remote_port, local_port, context, cb,
 				 user_data, handle);
 }
@@ -168,7 +168,7 @@ struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
 	     net_pkt_is_ip_reassembled(pkt))) {
 		if (!udp_hdr->chksum) {
 			if (IS_ENABLED(CONFIG_NET_UDP_MISSING_CHECKSUM) &&
-			    net_pkt_family(pkt) == AF_INET) {
+			    net_pkt_family(pkt) == NET_AF_INET) {
 				goto out;
 			}
 
