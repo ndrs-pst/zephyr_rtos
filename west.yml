@@ -229,7 +229,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: bc9bfc2bf09e2daa4859f6566cbd16b083b1eea8
+      revision: 057d278cd1f3c2042d0cc1c4944115571fc878eb
       path: modules/hal/stm32
       groups:
         - hal
@@ -339,7 +339,7 @@ manifest:
       path: modules/lib/zcbor
     - name: golioth
       path: modules/lib/golioth
-      revision: 758d507de48fdf733157569915e3439dd6d07032
+      revision: 89515756cf7fe0a8b44fb23ca4e372cefdf487f8
       url: https://github.com/DDC-NDRS/golioth-zephyr-sdk.git
       import: west-external.yml
 

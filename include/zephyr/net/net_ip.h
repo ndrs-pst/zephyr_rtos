@@ -136,7 +136,7 @@ enum net_sock_type {
 #define htonll(x) sys_cpu_to_be64(x)
 
 /** IPv6 address struct */
-struct net_in6_addr {
+struct /**/net_in6_addr {
     union {
         uint8_t  s6_addr[16];
         uint16_t s6_addr16[8];  /* In big endian */
@@ -148,11 +148,15 @@ struct net_in6_addr {
 #define NET_IPV6_ADDR_SIZE 16
 
 /** IPv4 address struct */
-struct net_in_addr {
+struct /**/net_in_addr {
     union {
         uint8_t  s4_addr[4];
         uint16_t s4_addr16[2];  /* In big endian */
         uint32_t s4_addr32[1];  /* In big endian */
+
+        #if !defined(_MSC_VER)  /* #CUSTOM@NDRS */
+        uint32_t s_addr;        /* In big endian, for POSIX compatibility. */
+        #endif
         uint32_t s_addr_be;     /* In big endian, for POSIX compatibility. */
     };
 };
@@ -353,31 +357,31 @@ struct cmsghdr {
 /** @endcond */
 
 /** Generic sockaddr struct. Must be cast to proper type. */
-struct net_sockaddr {
+struct /**/net_sockaddr {
     sa_family_t sa_family;
-    char        data[NET_SOCKADDR_MAX_SIZE - sizeof(sa_family_t)];
+    char data[NET_SOCKADDR_MAX_SIZE - sizeof(sa_family_t)];
 };
 
 /** @cond INTERNAL_HIDDEN */
 
 struct net_sockaddr_ptr {
     sa_family_t family;
-    char        data[NET_SOCKADDR_PTR_MAX_SIZE - sizeof(sa_family_t)];
+    char data[NET_SOCKADDR_PTR_MAX_SIZE - sizeof(sa_family_t)];
 };
 
 /* Same as sockaddr in our case */
-struct net_sockaddr_storage {
+struct /**/net_sockaddr_storage {
     sa_family_t ss_family;
-    char        data[NET_SOCKADDR_MAX_SIZE - sizeof(sa_family_t)];
+    char data[NET_SOCKADDR_MAX_SIZE - sizeof(sa_family_t)];
 };
 
 /* Socket address struct for UNIX domain sockets */
-struct net_sockaddr_un {
+struct /**/net_sockaddr_un {
     sa_family_t sun_family; /* AF_UNIX */
-    char        sun_path[NET_SOCKADDR_MAX_SIZE - sizeof(sa_family_t)];
+    char sun_path[NET_SOCKADDR_MAX_SIZE - sizeof(sa_family_t)];
 };
 
-struct net_addr {
+struct /**/net_addr {
     sa_family_t family;
 
     union {
@@ -1691,6 +1695,32 @@ static inline uint8_t net_priority2vlan(enum net_priority priority) {
  * @return Network address family as a string, or NULL if family is unknown.
  */
 char const* net_family2str(sa_family_t family);
+
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
+/** Due to Zephyr-RTOS's compatibility, redefine the original struct name from the new one. */
+#define sockaddr            net_sockaddr
+#define sockaddr_in         net_sockaddr_in
+#define sockaddr_in6        net_sockaddr_in6
+#define sockaddr_un         net_sockaddr_un
+#define sockaddr_nl         net_sockaddr_nl
+#define sockaddr_storage    net_sockaddr_storage
+#define sockaddr_ll         net_sockaddr_ll
+#define in6_addr            net_in6_addr
+#define in_addr             net_in_addr
+#define AF_INET             NET_AF_INET
+#define AF_INET6            NET_AF_INET6
+#define AF_UNSPEC           NET_AF_UNSPEC
+#define SOCK_STREAM         NET_SOCK_STREAM
+#define SOCK_DGRAM          NET_SOCK_DGRAM
+#define INADDR_ANY          NET_INADDR_ANY
+#define IPPROTO_IP          NET_IPPROTO_IP
+#define IPPROTO_TCP         NET_IPPROTO_TCP
+#define IPPROTO_UDP         NET_IPPROTO_UDP
+#define IPPROTO_IPV6        NET_IPPROTO_IPV6
+#define IPPROTO_ICMP        NET_IPPROTO_ICMP
+#define IPPROTO_TLS_1_2     NET_IPPROTO_TLS_1_2
+#define IPPROTO_DTLS_1_2    NET_IPPROTO_DTLS_1_2
+#endif
 
 #ifdef __cplusplus
 }
