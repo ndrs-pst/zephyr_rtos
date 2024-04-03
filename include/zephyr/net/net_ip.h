@@ -1705,8 +1705,6 @@ char const* net_family2str(sa_family_t family);
 #define sockaddr_nl         net_sockaddr_nl
 #define sockaddr_storage    net_sockaddr_storage
 #define sockaddr_ll         net_sockaddr_ll
-#define in6_addr            net_in6_addr
-#define in_addr             net_in_addr
 #define AF_INET             NET_AF_INET
 #define AF_INET6            NET_AF_INET6
 #define AF_UNSPEC           NET_AF_UNSPEC
