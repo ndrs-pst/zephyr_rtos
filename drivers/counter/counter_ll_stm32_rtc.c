@@ -96,7 +96,7 @@ typedef uint64_t tick_t;
 
 struct rtc_stm32_config {
     struct counter_config_info counter_info;
-    LL_RTC_InitTypeDef         ll_rtc_config;
+    LL_RTC_InitTypeDef ll_rtc_config;
     const struct stm32_pclken* pclken;
 };
 
@@ -485,7 +485,7 @@ static int rtc_stm32_set_top_value(const struct device* dev,
     }
 }
 
-void rtc_stm32_isr(const struct device* dev) {
+static void rtc_stm32_isr(const struct device* dev) {
     struct rtc_stm32_data* data = dev->data;
     counter_alarm_callback_t alarm_callback = data->callback;
     uint32_t now = rtc_stm32_read(dev);
@@ -495,7 +495,6 @@ void rtc_stm32_isr(const struct device* dev) {
         || (data->irq_on_late && ll_func_isenabled_interrupt_alarm(RTC))
         #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
     ) {
-
         LL_RTC_DisableWriteProtection(RTC);
         ll_func_clear_alarm_flag(RTC);
         ll_func_disable_interrupt_alarm(RTC);
@@ -526,9 +525,9 @@ void rtc_stm32_isr(const struct device* dev) {
 }
 
 static int rtc_stm32_init(const struct device* dev) {
-    const struct device* const     clk  = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-    const struct rtc_stm32_config* cfg  = dev->config;
-    struct rtc_stm32_data*         data = dev->data;
+    const struct device* const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+    const struct rtc_stm32_config* cfg = dev->config;
+    struct rtc_stm32_data* data = dev->data;
 
     data->callback = NULL;
 
