@@ -104,10 +104,22 @@ typedef void (*rtc_alarm_callback)(const struct device* dev, uint16_t id, void* 
 typedef int (*rtc_api_set_time)(const struct device* dev, const struct rtc_time* timeptr);
 
 /**
+ * @typedef rtc_api_set_time_ext
+ * @brief API for setting RTC time with extended time format @see rtc_dt_t
+ */
+typedef int (*rtc_api_set_time_ext)(const struct device* dev, uint8_t const* du);
+
+/**
  * @typedef rtc_api_get_time
  * @brief API for getting RTC time
  */
 typedef int (*rtc_api_get_time)(const struct device* dev, struct rtc_time* timeptr);
+
+/**
+ * @typedef rtc_api_get_time_ext
+ * @brief API for getting RTC time with extended time format @see rtc_dt_t
+ */
+typedef int (*rtc_api_get_time_ext)(const struct device* dev, uint8_t* du);
 
 /**
  * @typedef rtc_api_alarm_get_supported_fields
@@ -181,6 +193,8 @@ __subsystem struct rtc_driver_api {
     rtc_api_set_calibration set_calibration;
     rtc_api_get_calibration get_calibration;
     #endif /* CONFIG_RTC_CALIBRATION */
+    rtc_api_set_time_ext set_time_ext;
+    rtc_api_get_time_ext get_time_ext;
 };
 
 /** @endcond */
@@ -204,6 +218,24 @@ static inline int z_impl_rtc_set_time(const struct device* dev, const struct rtc
 }
 
 /**
+ * @brief API for setting RTC time with extended time format @see rtc_dt_t.
+ *
+ * @param dev Device instance
+ * @param du  The time to set in extended format
+ *
+ * @return 0 if successful
+ * @return -EINVAL if RTC time is invalid or exceeds hardware capabilities
+ * @return -errno code if failure
+ */
+__syscall int rtc_set_time_ext(const struct device* dev, uint8_t const* du);
+
+static inline int z_impl_rtc_set_time_ext(const struct device* dev, uint8_t const* du) {
+    const struct rtc_driver_api* api = (const struct rtc_driver_api*)dev->api;
+
+    return api->set_time_ext(dev, du);
+}
+
+/**
  * @brief API for getting RTC time.
  *
  * @param dev Device instance
@@ -219,6 +251,24 @@ static inline int z_impl_rtc_get_time(const struct device* dev, struct rtc_time*
     const struct rtc_driver_api* api = (const struct rtc_driver_api*)dev->api;
 
     return api->get_time(dev, timeptr);
+}
+
+/**
+ * @brief API for getting RTC time with extended time format @see rtc_dt_t.
+ *
+ * @param dev Device instance
+ * @param du  Destination for the time in extended format
+ *
+ * @return 0 if successful
+ * @return -ENODATA if RTC time has not been set
+ * @return -errno code if failure
+ */
+__syscall int rtc_get_time_ext(const struct device* dev, uint8_t* du);
+
+static inline int z_impl_rtc_get_time_ext(const struct device* dev, uint8_t* du) {
+    const struct rtc_driver_api* api = (const struct rtc_driver_api*)dev->api;
+
+    return api->get_time_ext(dev, du);
 }
 
 /**

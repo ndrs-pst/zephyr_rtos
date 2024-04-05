@@ -210,9 +210,9 @@ static int rtc_stm32_set_time(const struct device* dev, const struct rtc_time* t
         return (-EIO);
     }
 
-    LL_RTC_DATE_SetYear(RTC, bin2bcd(real_year - RTC_YEAR_REF));
-    LL_RTC_DATE_SetMonth(RTC, bin2bcd(timeptr->tm_mon + 1));
-    LL_RTC_DATE_SetDay(RTC, bin2bcd(timeptr->tm_mday));
+    LL_RTC_DATE_SetYear(RTC, bin2bcd((uint8_t)(real_year - RTC_YEAR_REF)));
+    LL_RTC_DATE_SetMonth(RTC, bin2bcd((uint8_t)(timeptr->tm_mon + 1)));
+    LL_RTC_DATE_SetDay(RTC, bin2bcd((uint8_t)timeptr->tm_mday));
 
     if (timeptr->tm_wday == 0) {
         /* sunday (tm_wday = 0) is not represented by the same value in hardware */
@@ -224,9 +224,69 @@ static int rtc_stm32_set_time(const struct device* dev, const struct rtc_time* t
     }
 
 
-    LL_RTC_TIME_SetHour(RTC, bin2bcd(timeptr->tm_hour));
-    LL_RTC_TIME_SetMinute(RTC, bin2bcd(timeptr->tm_min));
-    LL_RTC_TIME_SetSecond(RTC, bin2bcd(timeptr->tm_sec));
+    LL_RTC_TIME_SetHour(RTC, bin2bcd((uint8_t)timeptr->tm_hour));
+    LL_RTC_TIME_SetMinute(RTC, bin2bcd((uint8_t)timeptr->tm_min));
+    LL_RTC_TIME_SetSecond(RTC, bin2bcd((uint8_t)timeptr->tm_sec));
+
+    LL_RTC_DisableInitMode(RTC);
+
+    LL_RTC_EnableWriteProtection(RTC);
+
+    #if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+    LL_PWR_DisableBkUpAccess();
+    #endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
+
+    k_mutex_unlock(&data->lock);
+
+    return (err);
+}
+
+static int rtc_stm32_set_time_ext(const struct device* dev, uint8_t const* du) {
+    struct rtc_stm32_data* data = dev->data;
+    int err;
+
+    uint32_t real_year = ((uint16_t)((uint16_t)du[0] << 8U) | (uint16_t)du[1]);
+    if (real_year < RTC_YEAR_REF) {
+        /* RTC does not support years before 2000 */
+        return (-EINVAL);
+    }
+
+    if (du[4] == 0xFF) {
+        /* day of the week is expected */
+        return (-EINVAL);
+    }
+
+    err = k_mutex_lock(&data->lock, K_NO_WAIT);
+    if (err) {
+        return (err);
+    }
+
+    LOG_INF("Setting clock");
+
+    #if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+    LL_PWR_EnableBkUpAccess();
+    #endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
+
+    LL_RTC_DisableWriteProtection(RTC);
+
+    ErrorStatus status = LL_RTC_EnterInitMode(RTC);
+
+    if (status != SUCCESS) {
+        #if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+        LL_PWR_DisableBkUpAccess();
+        #endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
+        k_mutex_unlock(&data->lock);
+        return (-EIO);
+    }
+
+    LL_RTC_DATE_SetYear(RTC, bin2bcd((uint8_t)(real_year - RTC_YEAR_REF)));
+    LL_RTC_DATE_SetMonth(RTC, bin2bcd(du[2]));
+    LL_RTC_DATE_SetDay(RTC, bin2bcd(du[3]));
+    LL_RTC_DATE_SetWeekDay(RTC, du[4]);
+
+    LL_RTC_TIME_SetHour(RTC, bin2bcd(du[5]));
+    LL_RTC_TIME_SetMinute(RTC, bin2bcd(du[6]));
+    LL_RTC_TIME_SetSecond(RTC, bin2bcd(du[7]));
 
     LL_RTC_DisableInitMode(RTC);
 
@@ -317,6 +377,57 @@ static int rtc_stm32_get_time(const struct device* dev, struct rtc_time* timeptr
     return (0);
 }
 
+static int rtc_stm32_get_time_ext(const struct device* dev, uint8_t* du) {
+    struct rtc_stm32_data* data = dev->data;
+    uint32_t rtc_date;
+    uint32_t rtc_time;
+    uint32_t real_year;
+
+    int err = k_mutex_lock(&data->lock, K_NO_WAIT);
+    if (err) {
+        return (err);
+    }
+
+    if (!LL_RTC_IsActiveFlag_INITS(RTC)) {
+        /* INITS flag is set when the calendar has been initialiazed. This flag is
+         * reset only on backup domain reset, so it can be read after a system
+         * reset to check if the calendar has been initialized.
+         */
+        k_mutex_unlock(&data->lock);
+        return (-ENODATA);
+    }
+
+    do {
+        /* read date, time and subseconds and relaunch if a day increment occurred
+         * while doing so as it will result in an erroneous result otherwise
+         */
+        rtc_date = LL_RTC_DATE_Get(RTC);
+        do {
+            /* read time and subseconds and relaunch if a second increment occurred
+             * while doing so as it will result in an erroneous result otherwise
+             */
+            rtc_time = LL_RTC_TIME_Get(RTC);
+        } while (rtc_time != LL_RTC_TIME_Get(RTC));
+    } while (rtc_date != LL_RTC_DATE_Get(RTC));
+
+    k_mutex_unlock(&data->lock);
+
+    real_year = bcd2bin(__LL_RTC_GET_YEAR(rtc_date)) + RTC_YEAR_REF;
+    du[0] = (uint8_t)((real_year) >> 8U);
+    du[1] = (uint8_t)((real_year) & 0xFFU);
+
+    du[2] = bcd2bin(__LL_RTC_GET_MONTH(rtc_date));
+    du[3] = bcd2bin(__LL_RTC_GET_DAY(rtc_date));
+
+    du[4] = __LL_RTC_GET_WEEKDAY(rtc_date);
+
+    du[5] = bcd2bin(__LL_RTC_GET_HOUR(rtc_time));
+    du[6] = bcd2bin(__LL_RTC_GET_MINUTE(rtc_time));
+    du[7] = bcd2bin(__LL_RTC_GET_SECOND(rtc_time));
+
+    return (0);
+}
+
 #ifdef CONFIG_RTC_CALIBRATION
 #if !defined(CONFIG_SOC_SERIES_STM32F2X)  && \
     !(defined(CONFIG_SOC_SERIES_STM32L1X) && !defined(RTC_SMOOTHCALIB_SUPPORT))
@@ -394,7 +505,7 @@ static int rtc_stm32_get_calibration(const struct device* dev, int32_t* calibrat
 #endif
 #endif /* CONFIG_RTC_CALIBRATION */
 
-static const struct rtc_driver_api rtc_stm32_driver_api = {
+static struct rtc_driver_api const rtc_stm32_driver_api = {
     .set_time = rtc_stm32_set_time,
     .get_time = rtc_stm32_get_time,
     /* RTC_ALARM not supported */
@@ -408,6 +519,9 @@ static const struct rtc_driver_api rtc_stm32_driver_api = {
     #error RTC calibration for devices without smooth calibration feature is not supported yet
     #endif
     #endif /* CONFIG_RTC_CALIBRATION */
+
+    .set_time_ext = rtc_stm32_set_time_ext,
+    .get_time_ext = rtc_stm32_get_time_ext
 };
 
 static const struct stm32_pclken rtc_clk[] = STM32_DT_INST_CLOCKS(0);
