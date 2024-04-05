@@ -68,6 +68,9 @@ LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
 #define RTC_TIMEOUT 1000000
 
 struct rtc_stm32_config {
+    RTC_TypeDef* regs;
+    uint16_t irq_num;
+
     uint32_t async_prescaler;
     uint32_t sync_prescaler;
     const struct stm32_pclken* pclken;
@@ -77,8 +80,15 @@ struct rtc_stm32_config {
 };
 
 struct rtc_stm32_data {
+    #if defined(CONFIG_RTC_UPDATE)
+    rtc_update_callback update_callback;
+    void* update_user_data;
+    #endif /* CONFIG_RTC_UPDATE */
+
     struct k_mutex lock;
 };
+
+static void rtc_stm32_isr(const struct device* dev);
 
 static int rtc_stm32_configure(const struct device* dev) {
     const struct rtc_stm32_config* cfg = dev->config;
@@ -122,6 +132,9 @@ static int rtc_stm32_configure(const struct device* dev) {
     #endif /* RTC_CR_BYPSHAD */
 
     LL_RTC_EnableWriteProtection(RTC);
+
+    IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
+                rtc_stm32_isr, DEVICE_DT_INST_GET(0), 0);
 
     return (err);
 }
@@ -428,6 +441,49 @@ static int rtc_stm32_get_time_ext(const struct device* dev, uint8_t* du) {
     return (0);
 }
 
+static void rtc_stm32_isr(const struct device* dev) {
+    const struct rtc_stm32_config* config = dev->config;
+    struct rtc_stm32_data* data = dev->data;
+    RTC_TypeDef* regs = config->regs;
+
+    if (LL_RTC_IsActiveFlag_WUT(regs)) {
+        /* Clear the WAKEUPTIMER interrupt pending bit */
+        LL_RTC_ClearFlag_WUT(regs);
+
+        if (data->update_callback != NULL) {
+            data->update_callback(dev,
+                                  data->update_user_data);
+        }
+    }
+
+    #ifdef __HAL_RTC_WAKEUPTIMER_EXTI_CLEAR_FLAG
+    __HAL_RTC_WAKEUPTIMER_EXTI_CLEAR_FLAG();
+    #endif
+}
+
+#if defined(CONFIG_RTC_UPDATE)
+static int rtc_stm32_update_set_callback(const struct device* dev,
+                                         rtc_update_callback callback, void* user_data) {
+    const struct rtc_stm32_config* config = dev->config;
+    struct rtc_stm32_data* data = dev->data;
+    int ret;
+
+    ret = k_mutex_lock(&data->lock, K_NO_WAIT);
+    if (ret == 0) {
+        irq_disable(config->irq_num);
+
+        data->update_callback  = callback;
+        data->update_user_data = user_data;
+
+        irq_enable(config->irq_num);
+    }
+
+    k_mutex_unlock(&data->lock);
+
+    return (ret);
+}
+#endif /* CONFIG_RTC_UPDATE */
+
 #ifdef CONFIG_RTC_CALIBRATION
 #if !defined(CONFIG_SOC_SERIES_STM32F2X)  && \
     !(defined(CONFIG_SOC_SERIES_STM32L1X) && !defined(RTC_SMOOTHCALIB_SUPPORT))
@@ -505,10 +561,17 @@ static int rtc_stm32_get_calibration(const struct device* dev, int32_t* calibrat
 #endif
 #endif /* CONFIG_RTC_CALIBRATION */
 
-static struct rtc_driver_api const rtc_stm32_driver_api = {
+static struct rtc_driver_api DT_CONST rtc_stm32_driver_api = {
     .set_time = rtc_stm32_set_time,
     .get_time = rtc_stm32_get_time,
+
     /* RTC_ALARM not supported */
+
+
+    #if defined(CONFIG_RTC_UPDATE)
+    .update_set_callback = rtc_stm32_update_set_callback,
+    #endif /* CONFIG_RTC_UPDATE */
+
     /* RTC_UPDATE not supported */
     #ifdef CONFIG_RTC_CALIBRATION
     #if !defined(CONFIG_SOC_SERIES_STM32F2X)  && \
@@ -528,8 +591,11 @@ static const struct stm32_pclken rtc_clk[] = STM32_DT_INST_CLOCKS(0);
 
 BUILD_ASSERT(DT_INST_CLOCKS_HAS_IDX(0, 1), "RTC source clock not defined in the device tree");
 
-static const struct rtc_stm32_config rtc_config = {
-    #if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSI
+static struct rtc_stm32_config DT_CONST /**/rtc_config = {
+    .regs    = (RTC_TypeDef*)DT_INST_REG_ADDR(0),
+    .irq_num = DT_INST_IRQN(0),
+
+    #if (DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSI)
     /* prescaler values for LSI @ 32 KHz */
     .async_prescaler = 0x7F,
     .sync_prescaler  = 0x00F9,
@@ -539,12 +605,22 @@ static const struct rtc_stm32_config rtc_config = {
     .sync_prescaler  = 0x00FF,
     #endif
     .pclken = rtc_clk,
-#if DT_INST_NODE_HAS_PROP(0, calib_out_freq)
+    #if DT_INST_NODE_HAS_PROP(0, calib_out_freq)
 	.cal_out_freq = _CONCAT(_CONCAT(LL_RTC_CALIB_OUTPUT_, DT_INST_PROP(0, calib_out_freq)), HZ),
-#endif
+    #endif
 };
 
 static struct rtc_stm32_data rtc_data;
 
 DEVICE_DT_INST_DEFINE(0, &rtc_stm32_init, NULL, &rtc_data, &rtc_config, PRE_KERNEL_1,
                       CONFIG_RTC_INIT_PRIORITY, &rtc_stm32_driver_api);
+
+
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+void zephyr_gtest_rtc_sam0(void) {
+    rtc_config.regs = (RTC_TypeDef*)ut_mcu_rtc_ptr;
+}
+
+#endif

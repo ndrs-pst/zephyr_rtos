@@ -193,8 +193,8 @@ __subsystem struct rtc_driver_api {
     rtc_api_set_calibration set_calibration;
     rtc_api_get_calibration get_calibration;
     #endif /* CONFIG_RTC_CALIBRATION */
-    rtc_api_set_time_ext set_time_ext;
-    rtc_api_get_time_ext get_time_ext;
+    rtc_api_set_time_ext set_time_ext;      /* #CUSTOM@NDRS */
+    rtc_api_get_time_ext get_time_ext;      /* #CUSTOM@NDRS */
 };
 
 /** @endcond */

@@ -556,7 +556,7 @@ void __weak z_early_rand_get(uint8_t* buf, size_t length) {
 
     if ((entropy != NULL) && device_is_ready(entropy)) {
         /* Try to see if driver provides an ISR-specific API */
-        rc = entropy_get_entropy_isr(entropy, buf, length, ENTROPY_BUSYWAIT);
+        rc = entropy_get_entropy_isr(entropy, buf, (uint16_t)length, ENTROPY_BUSYWAIT);
         if (rc > 0) {
             length -= rc;
             buf += rc;
@@ -568,7 +568,7 @@ void __weak z_early_rand_get(uint8_t* buf, size_t length) {
         uint32_t val;
 
         state = state + k_cycle_get_32();
-        state = state * 2862933555777941757ULL + 3037000493ULL;
+        state = (state * 2862933555777941757ULL) + 3037000493ULL;
         val   = (uint32_t)(state >> 32);
         rc    = MIN(length, sizeof(val));
         z_early_memcpy((void*)buf, &val, rc);
