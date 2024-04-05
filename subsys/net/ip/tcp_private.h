@@ -15,8 +15,8 @@
 
 #define th_sport(_x) UNALIGNED_GET(&(_x)->th_sport)
 #define th_dport(_x) UNALIGNED_GET(&(_x)->th_dport)
-#define th_seq(_x)   ntohl(UNALIGNED_GET(&(_x)->th_seq))
-#define th_ack(_x)   ntohl(UNALIGNED_GET(&(_x)->th_ack))
+#define th_seq(_x)   net_ntohl(UNALIGNED_GET(&(_x)->th_seq))
+#define th_ack(_x)   net_ntohl(UNALIGNED_GET(&(_x)->th_ack))
 #define th_off(_x)   ((_x)->th_off)
 #define th_flags(_x) UNALIGNED_GET(&(_x)->th_flags)
 #define th_win(_x)   UNALIGNED_GET(&(_x)->th_win)

@@ -305,11 +305,11 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 	net_pkt_lladdr_dst(pkt)->addr = (uint8_t *)net_eth_broadcast_addr();
 	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
 
-	hdr->hwtype = htons(NET_ARP_HTYPE_ETH);
-	hdr->protocol = htons(NET_ETH_PTYPE_IP);
+	hdr->hwtype = net_htons(NET_ARP_HTYPE_ETH);
+	hdr->protocol = net_htons(NET_ETH_PTYPE_IP);
 	hdr->hwlen = sizeof(struct net_eth_addr);
 	hdr->protolen = sizeof(struct net_in_addr);
-	hdr->opcode = htons(NET_ARP_REQUEST);
+	hdr->opcode = net_htons(NET_ARP_REQUEST);
 
 	(void)memset(&hdr->dst_hwaddr.addr, 0x00, sizeof(struct net_eth_addr));
 
@@ -579,11 +579,11 @@ static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,
 		net_pkt_set_vlan_tag(pkt, net_pkt_vlan_tag(req));
 	}
 
-	hdr->hwtype = htons(NET_ARP_HTYPE_ETH);
-	hdr->protocol = htons(NET_ETH_PTYPE_IP);
+	hdr->hwtype = net_htons(NET_ARP_HTYPE_ETH);
+	hdr->protocol = net_htons(NET_ETH_PTYPE_IP);
 	hdr->hwlen = sizeof(struct net_eth_addr);
 	hdr->protolen = sizeof(struct net_in_addr);
-	hdr->opcode = htons(NET_ARP_REPLY);
+	hdr->opcode = net_htons(NET_ARP_REPLY);
 
 	memcpy(&hdr->dst_hwaddr.addr, &dst_addr->addr,
 	       sizeof(struct net_eth_addr));
@@ -604,8 +604,8 @@ static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,
 
 static bool arp_hdr_check(struct net_arp_hdr *arp_hdr)
 {
-	if (ntohs(arp_hdr->hwtype) != NET_ARP_HTYPE_ETH ||
-	    ntohs(arp_hdr->protocol) != NET_ETH_PTYPE_IP ||
+	if (net_ntohs(arp_hdr->hwtype) != NET_ARP_HTYPE_ETH ||
+	    net_ntohs(arp_hdr->protocol) != NET_ETH_PTYPE_IP ||
 	    arp_hdr->hwlen != sizeof(struct net_eth_addr) ||
 	    arp_hdr->protolen != NET_ARP_IPV4_PTYPE_SIZE ||
 	    net_ipv4_is_addr_loopback((struct net_in_addr *)arp_hdr->src_ipaddr)) {
@@ -637,7 +637,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 		return NET_DROP;
 	}
 
-	switch (ntohs(arp_hdr->opcode)) {
+	switch (net_ntohs(arp_hdr->opcode)) {
 	case NET_ARP_REQUEST:
 		/* If ARP request sender hw address is our address,
 		 * we must drop the packet.

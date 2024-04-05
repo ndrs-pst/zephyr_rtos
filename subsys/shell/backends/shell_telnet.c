@@ -557,7 +557,7 @@ static int telnet_init(struct shell_telnet *ctx)
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		struct net_sockaddr_in any_addr4 = {
 			.sin_family = NET_AF_INET,
-			.sin_port = htons(TELNET_PORT),
+			.sin_port = net_htons(TELNET_PORT),
 			.sin_addr = NET_INADDR_ANY_INIT
 		};
 
@@ -572,7 +572,7 @@ static int telnet_init(struct shell_telnet *ctx)
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		struct net_sockaddr_in6 any_addr6 = {
 			.sin6_family = NET_AF_INET6,
-			.sin6_port = htons(TELNET_PORT),
+			.sin6_port = net_htons(TELNET_PORT),
 			.sin6_addr = IN6ADDR_ANY_INIT
 		};
 

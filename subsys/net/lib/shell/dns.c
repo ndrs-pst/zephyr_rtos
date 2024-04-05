@@ -73,14 +73,14 @@ static void print_dns_info(const struct shell *sh,
 			   net_sprint_ipv4_addr(
 				   &net_sin(&ctx->servers[i].dns_server)->
 				   sin_addr),
-			   ntohs(net_sin(
+			   net_ntohs(net_sin(
 				 &ctx->servers[i].dns_server)->sin_port));
 		} else if (ctx->servers[i].dns_server.sa_family == NET_AF_INET6) {
 			PR("\t[%s]:%u\n",
 			   net_sprint_ipv6_addr(
 				   &net_sin6(&ctx->servers[i].dns_server)->
 				   sin6_addr),
-			   ntohs(net_sin6(
+			   net_ntohs(net_sin6(
 				 &ctx->servers[i].dns_server)->sin6_port));
 		}
 	}

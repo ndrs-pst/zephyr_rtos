@@ -2301,8 +2301,8 @@ static inline bool handle_ra_prefix(struct net_pkt *pkt)
 
 	net_pkt_acknowledge_data(pkt, &rapfx_access);
 
-	valid_lifetime = ntohl(pfx_info->valid_lifetime);
-	preferred_lifetime = ntohl(pfx_info->preferred_lifetime);
+	valid_lifetime = net_ntohl(pfx_info->valid_lifetime);
+	preferred_lifetime = net_ntohl(pfx_info->preferred_lifetime);
 
 	if (valid_lifetime >= preferred_lifetime &&
 	    !net_ipv6_is_ll_addr((struct net_in6_addr *)pfx_info->prefix)) {
@@ -2386,7 +2386,7 @@ static inline bool handle_ra_route_info(struct net_pkt *pkt, uint8_t len)
 	}
 
 	prefix_len = route_info->prefix_len;
-	route_lifetime = ntohl(route_info->route_lifetime);
+	route_lifetime = net_ntohl(route_info->route_lifetime);
 	preference = route_info->flags.prf;
 
 	ret = net_pkt_read(pkt, &prefix_buf, prefix_field_len);
@@ -2521,9 +2521,9 @@ static int handle_ra_input(struct net_icmp_ctx *ctx,
 
 	net_pkt_acknowledge_data(pkt, &ra_access);
 
-	router_lifetime = ntohs(ra_hdr->router_lifetime);
-	reachable_time = ntohl(ra_hdr->reachable_time);
-	retrans_timer = ntohl(ra_hdr->retrans_timer);
+	router_lifetime = net_ntohs(ra_hdr->router_lifetime);
+	reachable_time = net_ntohl(ra_hdr->reachable_time);
+	retrans_timer = net_ntohl(ra_hdr->retrans_timer);
 
 	if (ra_hdr->cur_hop_limit) {
 		net_if_ipv6_set_hop_limit(net_pkt_iface(pkt),

@@ -210,7 +210,7 @@ static struct net_conn *conn_find_handler(struct net_if *iface,
 		}
 
 		if (net_sin(&conn->local_addr)->sin_port !=
-		    htons(local_port)) {
+			net_htons(local_port)) {
 			continue;
 		}
 
@@ -250,7 +250,7 @@ static struct net_conn *conn_find_handler(struct net_if *iface,
 		}
 
 		if (net_sin(&conn->remote_addr)->sin_port !=
-		    htons(remote_port)) {
+		    net_htons(remote_port)) {
 			continue;
 		}
 
@@ -318,7 +318,7 @@ static int net_conn_change_remote(struct net_conn *conn,
 
 	if (remote_port) {
 		conn->flags |= NET_CONN_REMOTE_PORT_SPEC;
-		net_sin(&conn->remote_addr)->sin_port = htons(remote_port);
+		net_sin(&conn->remote_addr)->sin_port = net_htons(remote_port);
 	} else {
 		conn->flags &= ~NET_CONN_REMOTE_PORT_SPEC;
 	}
@@ -400,7 +400,7 @@ int net_conn_register(uint16_t proto, uint8_t family,
 
 	if (local_port) {
 		flags |= NET_CONN_LOCAL_PORT_SPEC;
-		net_sin(&conn->local_addr)->sin_port = htons(local_port);
+		net_sin(&conn->local_addr)->sin_port = net_htons(local_port);
 	}
 
 	net_conn_change_callback(conn, cb, user_data);
@@ -667,7 +667,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 
 	NET_DBG("Check %s listener for pkt %p src port %u dst port %u"
 		" family %d", net_proto2str(net_pkt_family(pkt), proto), pkt,
-		ntohs(src_port), ntohs(dst_port), net_pkt_family(pkt));
+		net_ntohs(src_port), net_ntohs(dst_port), net_pkt_family(pkt));
 
 
 	struct net_conn *best_match = NULL;

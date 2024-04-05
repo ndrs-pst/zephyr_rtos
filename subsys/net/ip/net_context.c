@@ -314,9 +314,9 @@ static uint16_t find_available_port(struct net_context *context,
 	do {
 		local_port = sys_rand32_get() | 0x8000;
 	} while (check_used_port(NULL, net_context_get_proto(context),
-				 htons(local_port), addr, false, false) == -EEXIST);
+				 net_htons(local_port), addr, false, false) == -EEXIST);
 
-	return htons(local_port);
+	return net_htons(local_port);
 }
 #else
 #define check_used_port(...) 0
@@ -327,7 +327,7 @@ bool net_context_port_in_use(enum net_ip_protocol proto,
 			   uint16_t local_port,
 			   const struct net_sockaddr *local_addr)
 {
-	return check_used_port(NULL, proto, htons(local_port), local_addr, false, false) != 0;
+	return check_used_port(NULL, proto, net_htons(local_port), local_addr, false, false) != 0;
 }
 
 #if defined(CONFIG_NET_CONTEXT_CHECK)
@@ -669,7 +669,7 @@ static int bind_default(struct net_context *context)
 		}
 
 		ll_addr.sll_family = NET_AF_PACKET;
-		ll_addr.sll_protocol = htons(ETH_P_ALL);
+		ll_addr.sll_protocol = net_htons(ETH_P_ALL);
 		ll_addr.sll_ifindex = net_if_get_by_iface(net_if_get_default());
 
 		return net_context_bind(context, (struct net_sockaddr *)&ll_addr,
@@ -798,7 +798,7 @@ int net_context_bind(struct net_context *context, const struct net_sockaddr *add
 					      net_context_is_reuseport_set(context));
 			if (ret != 0) {
 				NET_ERR("Port %d is in use!",
-					ntohs(addr6->sin6_port));
+					net_ntohs(addr6->sin6_port));
 				NET_DBG("Interface %d (%p)",
 					iface ? net_if_get_by_iface(iface) : 0, iface);
 				ret = -EADDRINUSE;
@@ -817,7 +817,7 @@ int net_context_bind(struct net_context *context, const struct net_sockaddr *add
 			net_proto2str(NET_AF_INET6,
 				      net_context_get_proto(context)),
 			net_sprint_ipv6_addr(ptr),
-			ntohs(addr6->sin6_port),
+			net_ntohs(addr6->sin6_port),
 			net_if_get_by_iface(iface), iface);
 
 	unlock_ipv6:
@@ -898,7 +898,7 @@ int net_context_bind(struct net_context *context, const struct net_sockaddr *add
 					      net_context_is_reuseport_set(context));
 			if (ret != 0) {
 				NET_ERR("Port %d is in use!",
-					ntohs(addr4->sin_port));
+					net_ntohs(addr4->sin_port));
 					ret = -EADDRINUSE;
 				NET_DBG("Interface %d (%p)",
 					iface ? net_if_get_by_iface(iface) : 0, iface);
@@ -917,7 +917,7 @@ int net_context_bind(struct net_context *context, const struct net_sockaddr *add
 			net_proto2str(NET_AF_INET,
 				      net_context_get_proto(context)),
 			net_sprint_ipv4_addr(ptr),
-			ntohs(addr4->sin_port),
+			net_ntohs(addr4->sin_port),
 			net_if_get_by_iface(iface), iface);
 
 	unlock_ipv4:
@@ -974,7 +974,7 @@ int net_context_bind(struct net_context *context, const struct net_sockaddr *add
 		net_if_unlock(iface);
 
 		NET_DBG("Context %p bind to type 0x%04x iface[%d] %p addr %s",
-			context, htons(net_context_get_proto(context)),
+			context, net_htons(net_context_get_proto(context)),
 			ll_addr->sll_ifindex, iface,
 			net_sprint_ll_addr(
 				net_sll_ptr(&context->local)->sll_addr,
@@ -1859,7 +1859,7 @@ static void set_pkt_txtime(struct net_pkt *pkt, const struct msghdr *msghdr)
 		if (cmsg->cmsg_len == CMSG_LEN(sizeof(uint64_t)) &&
 		    cmsg->cmsg_level == SOL_SOCKET &&
 		    cmsg->cmsg_type == SCM_TXTIME) {
-			net_pkt_set_timestamp_ns(pkt, *(net_time_t *)CMSG_DATA(cmsg));
+			net_pkt_set_timestamp_ns(pkt, *(net_time_t*)NET_CMSG_DATA(cmsg));
 			break;
 		}
 	}
@@ -2413,7 +2413,7 @@ static int recv_udp(struct net_context *context,
 				      user_data,
 				      context->flags & NET_CONTEXT_REMOTE_ADDR_SET ?
 						&context->remote : NULL,
-				      ntohs(net_sin(&context->remote)->sin_port));
+				      net_ntohs(net_sin(&context->remote)->sin_port));
 		return ret;
 	}
 
@@ -2453,8 +2453,8 @@ static int recv_udp(struct net_context *context,
 				context->flags & NET_CONTEXT_REMOTE_ADDR_SET ?
 							&context->remote : NULL,
 				laddr,
-				ntohs(net_sin(&context->remote)->sin_port),
-				ntohs(lport),
+				net_ntohs(net_sin(&context->remote)->sin_port),
+				net_ntohs(lport),
 				context,
 				net_context_packet_received,
 				user_data,

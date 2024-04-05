@@ -756,7 +756,7 @@ int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst, const struct net_in_a
 		return -EINVAL;
 	}
 
-	if (!port_in_use(proto, ntohs(*(inst->port)), addr4, addr6)) {
+	if (!port_in_use(proto, net_ntohs(*(inst->port)), addr4, addr6)) {
 		/* Service is not yet bound, so do not advertise */
 		return -EHOSTDOWN;
 	}
@@ -855,7 +855,7 @@ int dns_sd_handle_service_type_enum(const struct dns_sd_rec *inst,
 		return -EINVAL;
 	}
 
-	if (!port_in_use(proto, ntohs(*(inst->port)), addr4, addr6)) {
+	if (!port_in_use(proto, net_ntohs(*(inst->port)), addr4, addr6)) {
 		/* Service is not yet bound, so do not advertise */
 		NET_DBG("service not bound");
 		return -EHOSTDOWN;

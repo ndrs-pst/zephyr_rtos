@@ -121,8 +121,8 @@ int net_ipv6_finalize(struct net_pkt* pkt, uint8_t next_header_proto) {
         return (-ENOBUFS);
     }
 
-    ipv6_hdr->len = htons(net_pkt_get_len(pkt) -
-                          sizeof(struct net_ipv6_hdr));
+    ipv6_hdr->len = net_htons(net_pkt_get_len(pkt) -
+                              sizeof(struct net_ipv6_hdr));
 
     if (net_pkt_ipv6_next_hdr(pkt) != 255U) {
         ipv6_hdr->nexthdr = net_pkt_ipv6_next_hdr(pkt);
@@ -488,7 +488,7 @@ enum net_verdict net_ipv6_input(struct net_pkt* pkt, bool is_loopback) {
         goto drop;
     }
 
-    pkt_len = ntohs(hdr->len) + sizeof(struct net_ipv6_hdr);
+    pkt_len = net_ntohs(hdr->len) + sizeof(struct net_ipv6_hdr);
     if (real_len < pkt_len) {
         NET_DBG("DROP: pkt len per hdr %d != pkt real len %d",
                 pkt_len, real_len);

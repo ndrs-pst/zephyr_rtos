@@ -102,13 +102,13 @@ static int cmd_net_udp_bind(const struct shell *sh, size_t argc, char *argv[])
 	udp_shell = sh;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && addr.sa_family == NET_AF_INET6) {
-		net_sin6(&addr)->sin6_port = htons(port);
+		net_sin6(&addr)->sin6_port = net_htons(port);
 		addrlen = sizeof(struct net_sockaddr_in6);
 
 		iface = net_if_ipv6_select_src_iface(
 				&net_sin6(&addr)->sin6_addr);
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr.sa_family == NET_AF_INET) {
-		net_sin(&addr)->sin_port = htons(port);
+		net_sin(&addr)->sin_port = net_htons(port);
 		addrlen = sizeof(struct net_sockaddr_in);
 
 		iface = net_if_ipv4_select_src_iface(
@@ -229,13 +229,13 @@ static int cmd_net_udp_send(const struct shell *sh, size_t argc, char *argv[])
 	udp_shell = sh;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && addr.sa_family == NET_AF_INET6) {
-		net_sin6(&addr)->sin6_port = htons(port);
+		net_sin6(&addr)->sin6_port = net_htons(port);
 		addrlen = sizeof(struct net_sockaddr_in6);
 
 		iface = net_if_ipv6_select_src_iface(
 				&net_sin6(&addr)->sin6_addr);
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr.sa_family == NET_AF_INET) {
-		net_sin(&addr)->sin_port = htons(port);
+		net_sin(&addr)->sin_port = net_htons(port);
 		addrlen = sizeof(struct net_sockaddr_in);
 
 		iface = net_if_ipv4_select_src_iface(

@@ -157,7 +157,7 @@ static void dns_postprocess_server(struct dns_resolve_context *ctx, int idx)
 				 * override this by defining the port
 				 * in config file.
 				 */
-				net_sin(addr)->sin_port = htons(5353);
+				net_sin(addr)->sin_port = net_htons(5353);
 			} else if (IS_ENABLED(CONFIG_LLMNR_RESOLVER) &&
 				   ctx->servers[idx].is_llmnr) {
 				/* We only use 5355 as a default port
@@ -165,9 +165,9 @@ static void dns_postprocess_server(struct dns_resolve_context *ctx, int idx)
 				 * override this by defining the port
 				 * in config file.
 				 */
-				net_sin(addr)->sin_port = htons(5355);
+				net_sin(addr)->sin_port = net_htons(5355);
 			} else {
-				net_sin(addr)->sin_port = htons(53);
+				net_sin(addr)->sin_port = net_htons(53);
 			}
 		}
 	} else {
@@ -180,12 +180,12 @@ static void dns_postprocess_server(struct dns_resolve_context *ctx, int idx)
 		if (net_sin6(addr)->sin6_port == 0U) {
 			if (IS_ENABLED(CONFIG_MDNS_RESOLVER) &&
 			    ctx->servers[idx].is_mdns) {
-				net_sin6(addr)->sin6_port = htons(5353);
+				net_sin6(addr)->sin6_port = net_htons(5353);
 			} else if (IS_ENABLED(CONFIG_LLMNR_RESOLVER) &&
 				   ctx->servers[idx].is_llmnr) {
-				net_sin6(addr)->sin6_port = htons(5355);
+				net_sin6(addr)->sin6_port = net_htons(5355);
 			} else {
-				net_sin6(addr)->sin6_port = htons(53);
+				net_sin6(addr)->sin6_port = net_htons(53);
 			}
 		}
 	}
@@ -266,7 +266,7 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 
 			if (IS_ENABLED(CONFIG_MDNS_RESOLVER) &&
 			    ctx->servers[i].is_mdns) {
-				local_addr6.sin6_port = htons(5353);
+				local_addr6.sin6_port = net_htons(5353);
 			}
 #else
 			continue;
@@ -280,7 +280,7 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 
 			if (IS_ENABLED(CONFIG_MDNS_RESOLVER) &&
 			    ctx->servers[i].is_mdns) {
-				local_addr4.sin_port = htons(5353);
+				local_addr4.sin_port = net_htons(5353);
 			}
 #else
 			continue;

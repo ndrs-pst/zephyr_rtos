@@ -113,7 +113,7 @@ static int icmpv6_handle_echo_request(struct net_icmp_ctx *ctx,
 		net_sprint_ipv6_addr(&ip_hdr->src),
 		net_sprint_ipv6_addr(&ip_hdr->dst));
 
-	payload_len = ntohs(ip_hdr->len) -
+	payload_len = net_ntohs(ip_hdr->len) -
 		net_pkt_ipv6_ext_len(pkt) - NET_ICMPH_LEN;
 	if (payload_len < NET_ICMPV6_UNUSED_LEN) {
 		/* No identifier or sequence number present */

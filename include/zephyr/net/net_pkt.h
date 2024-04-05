@@ -2207,7 +2207,7 @@ static inline int net_pkt_write_u8(struct net_pkt *pkt, uint8_t data)
 /* Write uint16_t big endian data into a net_pkt. */
 static inline int net_pkt_write_be16(struct net_pkt *pkt, uint16_t data)
 {
-	uint16_t data_be16 = htons(data);
+	uint16_t data_be16 = net_htons(data);
 
 	return net_pkt_write(pkt, &data_be16, sizeof(uint16_t));
 }
@@ -2215,7 +2215,7 @@ static inline int net_pkt_write_be16(struct net_pkt *pkt, uint16_t data)
 /* Write uint32_t big endian data into a net_pkt. */
 static inline int net_pkt_write_be32(struct net_pkt *pkt, uint32_t data)
 {
-	uint32_t data_be32 = htonl(data);
+	uint32_t data_be32 = net_htonl(data);
 
 	return net_pkt_write(pkt, &data_be32, sizeof(uint32_t));
 }

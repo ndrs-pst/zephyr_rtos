@@ -23,12 +23,12 @@ static void get_address_str(const struct net_sockaddr *addr,
 	if (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == NET_AF_INET6) {
 		snprintk(str, str_len, "[%s]:%u",
 			 net_sprint_ipv6_addr(&net_sin6(addr)->sin6_addr),
-			 ntohs(net_sin6(addr)->sin6_port));
+			 net_ntohs(net_sin6(addr)->sin6_port));
 
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == NET_AF_INET) {
 		snprintk(str, str_len, "%s:%d",
 			 net_sprint_ipv4_addr(&net_sin(addr)->sin_addr),
-			 ntohs(net_sin(addr)->sin_port));
+			 net_ntohs(net_sin(addr)->sin_port));
 
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
 		   addr->sa_family == NET_AF_PACKET) {

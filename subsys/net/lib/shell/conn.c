@@ -72,21 +72,21 @@ static void conn_handler_cb(struct net_conn *conn, void *user_data)
 		snprintk(addr_local, sizeof(addr_local), "[%s]:%u",
 			 net_sprint_ipv6_addr(
 				 &net_sin6(&conn->local_addr)->sin6_addr),
-			 ntohs(net_sin6(&conn->local_addr)->sin6_port));
+			 net_ntohs(net_sin6(&conn->local_addr)->sin6_port));
 		snprintk(addr_remote, sizeof(addr_remote), "[%s]:%u",
 			 net_sprint_ipv6_addr(
 				 &net_sin6(&conn->remote_addr)->sin6_addr),
-			 ntohs(net_sin6(&conn->remote_addr)->sin6_port));
+			 net_ntohs(net_sin6(&conn->remote_addr)->sin6_port));
 
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && conn->local_addr.sa_family == NET_AF_INET) {
 		snprintk(addr_local, sizeof(addr_local), "%s:%d",
 			 net_sprint_ipv4_addr(
 				 &net_sin(&conn->local_addr)->sin_addr),
-			 ntohs(net_sin(&conn->local_addr)->sin_port));
+			 net_ntohs(net_sin(&conn->local_addr)->sin_port));
 		snprintk(addr_remote, sizeof(addr_remote), "%s:%d",
 			 net_sprint_ipv4_addr(
 				 &net_sin(&conn->remote_addr)->sin_addr),
-			 ntohs(net_sin(&conn->remote_addr)->sin_port));
+			 net_ntohs(net_sin(&conn->remote_addr)->sin_port));
 
 	} else if (conn->local_addr.sa_family == NET_AF_UNSPEC) {
 		snprintk(addr_local, sizeof(addr_local), "AF_UNSPEC");
@@ -123,8 +123,8 @@ static void tcp_cb(struct tcp *conn, void *user_data)
 
 	PR("%p %p   %5u    %5u %10u %10u %5u   %s\n",
 	   conn, conn->context,
-	   ntohs(net_sin6_ptr(&conn->context->local)->sin6_port),
-	   ntohs(net_sin6(&conn->context->remote)->sin6_port),
+	   net_ntohs(net_sin6_ptr(&conn->context->local)->sin6_port),
+	   net_ntohs(net_sin6(&conn->context->remote)->sin6_port),
 	   conn->seq, conn->ack, recv_mss,
 	   net_tcp_state_str(net_tcp_get_state(conn)));
 

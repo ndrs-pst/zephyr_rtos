@@ -295,9 +295,9 @@ int zperf_udp_upload(const struct zperf_upload_params *param,
 	}
 
 	if (param->peer_addr.sa_family == NET_AF_INET) {
-		port = ntohs(net_sin(&param->peer_addr)->sin_port);
+		port = net_ntohs(net_sin(&param->peer_addr)->sin_port);
 	} else if (param->peer_addr.sa_family == NET_AF_INET6) {
-		port = ntohs(net_sin6(&param->peer_addr)->sin6_port);
+		port = net_ntohs(net_sin6(&param->peer_addr)->sin6_port);
 	} else {
 		NET_ERR("Invalid address family (%d)",
 			param->peer_addr.sa_family);

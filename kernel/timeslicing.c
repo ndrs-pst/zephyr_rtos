@@ -19,10 +19,10 @@ static bool slice_expired[CONFIG_MP_MAX_NUM_CPUS];
  * itself but before the corresponding context switch.  Treat that as
  * a noop condition in z_time_slice().
  */
-struct k_thread *pending_current;
+struct k_thread* pending_current;
 #endif
 
-static inline int slice_time(struct k_thread *thread)
+static inline int slice_time(struct k_thread const* thread)
 {
 	int ret = slice_ticks;
 
@@ -53,8 +53,9 @@ bool thread_is_sliceable(struct k_thread *thread)
 
 static void slice_timeout(struct _timeout const *timeout)
 {
-	int cpu = ARRAY_INDEX(slice_timeouts, timeout);
+	int cpu;
 
+	cpu = (int)ARRAY_INDEX_WITH_TYPE(slice_timeouts, struct _timeout, timeout);
 	slice_expired[cpu] = true;
 
 	/* We need an IPI if we just handled a timeslice expiration

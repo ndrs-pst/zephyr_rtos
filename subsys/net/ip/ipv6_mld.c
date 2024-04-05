@@ -54,7 +54,7 @@ static int mld_create(struct net_pkt *pkt,
 
 	mld->record_type = record_type;
 	mld->aux_data_len = 0U;
-	mld->num_sources = htons(num_sources);
+	mld->num_sources = net_htons(num_sources);
 
 	net_ipv6_addr_copy_raw(mld->mcast_address, (uint8_t *)addr);
 
@@ -342,7 +342,7 @@ static int handle_mld_query(struct net_icmp_ctx *ctx,
 
 	net_stats_update_ipv6_mld_recv(net_pkt_iface(pkt));
 
-	mld_query->num_sources = ntohs(mld_query->num_sources);
+	mld_query->num_sources = net_ntohs(mld_query->num_sources);
 
 	pkt_len = sizeof(struct net_ipv6_hdr) +	net_pkt_ipv6_ext_len(pkt) +
 		sizeof(struct net_icmp_hdr) +

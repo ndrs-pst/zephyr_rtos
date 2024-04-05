@@ -250,9 +250,9 @@ static int tcp_bind_listen_connection(struct zsock_pollfd *pollfd,
 	int ret;
 
 	if (address->sa_family == NET_AF_INET) {
-		port = ntohs(net_sin(address)->sin_port);
+		port = net_ntohs(net_sin(address)->sin_port);
 	} else {
-		port = ntohs(net_sin6(address)->sin6_port);
+		port = net_ntohs(net_sin6(address)->sin6_port);
 	}
 
 	ret = zsock_bind(pollfd->fd, address, sizeof(*address));

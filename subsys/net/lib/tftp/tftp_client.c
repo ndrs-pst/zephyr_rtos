@@ -174,7 +174,7 @@ static inline int send_err(int sock, struct tftpc *client, int err_code, char *e
  */
 static inline int send_ack(int sock, struct tftphdr_ack *ackhdr)
 {
-	LOG_DBG("Client acking block number: %d", ntohs(ackhdr->block));
+	LOG_DBG("Client acking block number: %d", net_ntohs(ackhdr->block));
 
 	return zsock_send(sock, ackhdr, sizeof(struct tftphdr_ack), 0);
 }

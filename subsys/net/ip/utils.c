@@ -389,7 +389,7 @@ int z_impl_net_addr_pton(sa_family_t family, const char *src,
 
 			if (*src != ':') {
 				/* Normal IPv6 16-bit piece */
-				UNALIGNED_PUT(htons(strtol(src, NULL, 16)),
+				UNALIGNED_PUT(net_htons(strtol(src, NULL, 16)),
 					      &addr->s6_addr16[i]);
 				src = strchr(src, ':');
 				if (src) {
@@ -676,7 +676,7 @@ uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto)
 
 	sum = pkt_calc_chksum(pkt, sum);
 
-	sum = (sum == 0U) ? 0xffff : htons(sum);
+	sum = (sum == 0U) ? 0xffff : net_htons(sum);
 
 	net_pkt_cursor_restore(pkt, &backup);
 
@@ -695,7 +695,7 @@ uint16_t net_calc_chksum_ipv4(struct net_pkt *pkt)
 			  net_pkt_ip_hdr_len(pkt) +
 			  net_pkt_ipv4_opts_len(pkt));
 
-	sum = (sum == 0U) ? 0xffff : htons(sum);
+	sum = (sum == 0U) ? 0xffff : net_htons(sum);
 
 	return ~sum;
 }
@@ -799,7 +799,7 @@ static bool parse_ipv6(const char *str, size_t str_len,
 			return false;
 		}
 
-		net_sin6(addr)->sin6_port = htons(port);
+		net_sin6(addr)->sin6_port = net_htons(port);
 
 		NET_DBG("IPv6 host %s port %d",
 			net_addr_ntop(NET_AF_INET6, addr6, ipaddr, sizeof(ipaddr) - 1),
@@ -874,7 +874,7 @@ static bool parse_ipv4(const char *str, size_t str_len,
 		return false;
 	}
 
-	net_sin(addr)->sin_port = htons(port);
+	net_sin(addr)->sin_port = net_htons(port);
 
 	NET_DBG("IPv4 host %s port %d",
 		net_addr_ntop(NET_AF_INET, addr4, ipaddr, sizeof(ipaddr) - 1),
@@ -939,10 +939,10 @@ int net_port_set_default(struct net_sockaddr *addr, uint16_t default_port)
 {
 	if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == NET_AF_INET &&
 	    net_sin(addr)->sin_port == 0) {
-		net_sin(addr)->sin_port = htons(default_port);
+		net_sin(addr)->sin_port = net_htons(default_port);
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == NET_AF_INET6 &&
 		   net_sin6(addr)->sin6_port == 0) {
-		net_sin6(addr)->sin6_port = htons(default_port);
+		net_sin6(addr)->sin6_port = net_htons(default_port);
 	} else if ((IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == NET_AF_INET) ||
 		   (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == NET_AF_INET6)) {
 		; /* Port is already set */

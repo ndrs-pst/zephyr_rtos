@@ -119,7 +119,7 @@ int net_ipv4_finalize(struct net_pkt* pkt, uint8_t next_header_proto) {
         }
     }
 
-    ipv4_hdr->len   = htons(net_pkt_get_len(pkt));
+    ipv4_hdr->len   = net_htons(net_pkt_get_len(pkt));
     ipv4_hdr->proto = next_header_proto;
 
     if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
@@ -283,7 +283,7 @@ enum net_verdict net_ipv4_input(struct net_pkt* pkt, bool is_loopback) {
 
     net_pkt_set_ipv4_opts_len(pkt, opts_len);
 
-    pkt_len = ntohs(hdr->len);
+    pkt_len = net_ntohs(hdr->len);
     if (real_len < pkt_len) {
         NET_DBG("DROP: pkt len per hdr %d != pkt real len %d",
                 pkt_len, real_len);
@@ -365,7 +365,7 @@ enum net_verdict net_ipv4_input(struct net_pkt* pkt, bool is_loopback) {
 
     if (IS_ENABLED(CONFIG_NET_IPV4_FRAGMENT)) {
         /* Check if this is a fragmented packet, and if so, handle reassembly */
-        if ((ntohs(*((uint16_t*)&hdr->offset[0])) &
+        if ((net_ntohs(*((uint16_t*)&hdr->offset[0])) &
             (NET_IPV4_FRAGH_OFFSET_MASK | NET_IPV4_MORE_FRAG_MASK)) != 0) {
             return net_ipv4_handle_fragment_hdr(pkt, hdr);
         }

@@ -89,18 +89,17 @@ static int handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 		 "rssi=%d "
 #endif
 		 "%s\n",
-		 ntohs(ip_hdr->len) - net_pkt_ipv6_ext_len(pkt) -
-								NET_ICMPH_LEN,
+		 net_ntohs(ip_hdr->len) - net_pkt_ipv6_ext_len(pkt) - NET_ICMPH_LEN,
 		 net_sprint_ipv6_addr(&ip_hdr->src),
 		 net_sprint_ipv6_addr(&ip_hdr->dst),
-		 ntohs(icmp_echo->sequence),
+		 net_ntohs(icmp_echo->sequence),
 		 ip_hdr->hop_limit,
 #ifdef CONFIG_IEEE802154
 		 net_pkt_ieee802154_rssi_dbm(pkt),
 #endif
 		 time_buf);
 
-	if (ntohs(icmp_echo->sequence) == ping_ctx.count) {
+	if (net_ntohs(icmp_echo->sequence) == ping_ctx.count) {
 		ping_done(&ping_ctx);
 	}
 
@@ -166,15 +165,14 @@ static int handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
 
 	PR_SHELL(ping_ctx.sh, "%d bytes from %s to %s: icmp_seq=%d ttl=%d "
 		 "%s\n",
-		 ntohs(ip_hdr->len) - net_pkt_ipv6_ext_len(pkt) -
-								NET_ICMPH_LEN,
+		 net_ntohs(ip_hdr->len) - net_pkt_ipv6_ext_len(pkt) - NET_ICMPH_LEN,
 		 net_sprint_ipv4_addr(&ip_hdr->src),
 		 net_sprint_ipv4_addr(&ip_hdr->dst),
-		 ntohs(icmp_echo->sequence),
+		 net_ntohs(icmp_echo->sequence),
 		 ip_hdr->ttl,
 		 time_buf);
 
-	if (ntohs(icmp_echo->sequence) == ping_ctx.count) {
+	if (net_ntohs(icmp_echo->sequence) == ping_ctx.count) {
 		ping_done(&ping_ctx);
 	}
 

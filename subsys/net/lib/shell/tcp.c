@@ -68,10 +68,10 @@ static void print_connect_info(const struct shell *sh,
 		if (IS_ENABLED(CONFIG_NET_IPV4)) {
 			PR("Connecting from %s:%u ",
 			   net_sprint_ipv4_addr(&net_sin(myaddr)->sin_addr),
-			   ntohs(net_sin(myaddr)->sin_port));
+			   net_ntohs(net_sin(myaddr)->sin_port));
 			PR("to %s:%u\n",
 			   net_sprint_ipv4_addr(&net_sin(addr)->sin_addr),
-			   ntohs(net_sin(addr)->sin_port));
+			   net_ntohs(net_sin(addr)->sin_port));
 		} else {
 			PR_INFO("IPv4 not supported\n");
 		}
@@ -82,10 +82,10 @@ static void print_connect_info(const struct shell *sh,
 		if (IS_ENABLED(CONFIG_NET_IPV6)) {
 			PR("Connecting from [%s]:%u ",
 			   net_sprint_ipv6_addr(&net_sin6(myaddr)->sin6_addr),
-			   ntohs(net_sin6(myaddr)->sin6_port));
+			   net_ntohs(net_sin6(myaddr)->sin6_port));
 			PR("to [%s]:%u\n",
 			   net_sprint_ipv6_addr(&net_sin6(addr)->sin6_addr),
-			   ntohs(net_sin6(addr)->sin6_port));
+			   net_ntohs(net_sin6(addr)->sin6_port));
 		} else {
 			PR_INFO("IPv6 not supported\n");
 		}
@@ -117,7 +117,7 @@ static void tcp_connect(const struct shell *sh, char *host, uint16_t port,
 			return;
 		}
 
-		net_sin6(&addr)->sin6_port = htons(port);
+		net_sin6(&addr)->sin6_port = net_htons(port);
 		addrlen = sizeof(struct net_sockaddr_in6);
 
 		nbr = net_ipv6_nbr_lookup(NULL, &net_sin6(&addr)->sin6_addr);
@@ -139,7 +139,7 @@ static void tcp_connect(const struct shell *sh, char *host, uint16_t port,
 		}
 
 		get_my_ipv4_addr(iface, &myaddr);
-		net_sin(&addr)->sin_port = htons(port);
+		net_sin(&addr)->sin_port = net_htons(port);
 		addrlen = sizeof(struct net_sockaddr_in);
 		family = addr.sa_family = myaddr.sa_family = NET_AF_INET;
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
@@ -154,13 +154,13 @@ static void tcp_connect(const struct shell *sh, char *host, uint16_t port,
 				return;
 			}
 
-			net_sin(&addr)->sin_port = htons(port);
+			net_sin(&addr)->sin_port = net_htons(port);
 			addrlen = sizeof(struct net_sockaddr_in);
 
 			get_my_ipv4_addr(iface, &myaddr);
 			family = addr.sa_family = myaddr.sa_family = NET_AF_INET;
 		} else {
-			net_sin6(&addr)->sin6_port = htons(port);
+			net_sin6(&addr)->sin6_port = net_htons(port);
 			addrlen = sizeof(struct net_sockaddr_in6);
 
 			nbr = net_ipv6_nbr_lookup(NULL,

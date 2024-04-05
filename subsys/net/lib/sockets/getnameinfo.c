@@ -25,7 +25,7 @@ int zsock_getnameinfo(const struct net_sockaddr *addr, socklen_t addrlen,
 	}
 
 	if (serv != NULL) {
-		snprintk(serv, servlen, "%hu", ntohs(a->sin_port));
+		snprintk(serv, servlen, "%hu", net_ntohs(a->sin_port));
 	}
 
 	return 0;

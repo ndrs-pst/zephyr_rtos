@@ -303,7 +303,7 @@ static int icmpv4_update_time_stamp(uint8_t *opt_data,
 
 	switch (flag) {
 	case NET_IPV4_TS_OPT_TS_ONLY:
-		if (net_pkt_write_be32(reply, htons(k_uptime_get_32()))) {
+		if (net_pkt_write_be32(reply, net_htons(k_uptime_get_32()))) {
 			goto drop;
 		}
 
@@ -319,7 +319,7 @@ static int icmpv4_update_time_stamp(uint8_t *opt_data,
 
 		len += addr_len;
 
-		if (net_pkt_write_be32(reply, htons(k_uptime_get_32()))) {
+		if (net_pkt_write_be32(reply, net_htons(k_uptime_get_32()))) {
 			goto drop;
 		}
 

@@ -1423,7 +1423,7 @@ static int insert_pktinfo(struct msghdr *msg, int level, int type,
 	cmsg->cmsg_level = level;
 	cmsg->cmsg_type = type;
 
-	memcpy(CMSG_DATA(cmsg), pktinfo, pktinfo_len);
+	memcpy(NET_CMSG_DATA(cmsg), pktinfo, pktinfo_len);
 
 	return 0;
 }

@@ -451,7 +451,7 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 
 	ppp.code = type;
 	ppp.id = id;
-	ppp.length = htons(len);
+	ppp.length = net_htons(len);
 
 	if (!pkt) {
 		pkt = net_pkt_alloc_with_buffer(iface,

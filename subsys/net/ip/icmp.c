@@ -171,8 +171,8 @@ static int send_icmpv4_echo_request(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	echo_req->identifier = htons(params->identifier);
-	echo_req->sequence   = htons(params->sequence);
+	echo_req->identifier = net_htons(params->identifier);
+	echo_req->sequence   = net_htons(params->sequence);
 
 	net_pkt_set_data(pkt, &icmpv4_access);
 
@@ -181,7 +181,7 @@ static int send_icmpv4_echo_request(struct net_icmp_ctx *ctx,
 	} else if (params->data == NULL && params->data_size > 0) {
 		/* Generate payload. */
 		if (params->data_size >= sizeof(uint32_t)) {
-			uint32_t time_stamp = htonl(k_cycle_get_32());
+			uint32_t time_stamp = net_htonl(k_cycle_get_32());
 
 			net_pkt_write(pkt, &time_stamp, sizeof(time_stamp));
 			params->data_size -= sizeof(time_stamp);
@@ -292,8 +292,8 @@ static int send_icmpv6_echo_request(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	echo_req->identifier = htons(params->identifier);
-	echo_req->sequence   = htons(params->sequence);
+	echo_req->identifier = net_htons(params->identifier);
+	echo_req->sequence   = net_htons(params->sequence);
 
 	net_pkt_set_data(pkt, &icmpv6_access);
 
@@ -302,7 +302,7 @@ static int send_icmpv6_echo_request(struct net_icmp_ctx *ctx,
 	} else if (params->data == NULL && params->data_size > 0) {
 		/* Generate payload. */
 		if (params->data_size >= sizeof(uint32_t)) {
-			uint32_t time_stamp = htonl(k_cycle_get_32());
+			uint32_t time_stamp = net_htonl(k_cycle_get_32());
 
 			net_pkt_write(pkt, &time_stamp, sizeof(time_stamp));
 			params->data_size -= sizeof(time_stamp);

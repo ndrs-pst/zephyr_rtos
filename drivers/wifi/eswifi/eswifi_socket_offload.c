@@ -720,7 +720,7 @@ static int eswifi_off_getaddrinfo(const char *node, const char *service,
 	ai->ai_protocol = ai->ai_socktype == NET_SOCK_STREAM ? NET_IPPROTO_TCP : NET_IPPROTO_UDP;
 
 	ai_addr->sin_family = ai->ai_family;
-	ai_addr->sin_port = htons(port);
+	ai_addr->sin_port = net_htons(port);
 
 	if (!net_ipaddr_parse(rsp, strlen(rsp), (struct net_sockaddr *)ai_addr)) {
 		free(ai_addr);

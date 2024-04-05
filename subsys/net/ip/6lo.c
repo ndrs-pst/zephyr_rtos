@@ -1361,7 +1361,7 @@ static bool uncompress_IPHC_header(struct net_pkt *pkt)
 	struct net_6lo_context *dst = NULL;
 #endif
 
-	iphc = ntohs(UNALIGNED_GET((uint16_t *)pkt->buffer->data));
+	iphc = net_ntohs(UNALIGNED_GET((uint16_t *)pkt->buffer->data));
 
 	inline_size = get_ihpc_inlined_size(iphc);
 	if (inline_size < 0) {
@@ -1610,7 +1610,7 @@ int net_6lo_uncompress_hdr_diff(struct net_pkt *pkt)
 		return 0;
 	}
 
-	iphc = ntohs(UNALIGNED_GET((uint16_t *)pkt->buffer->data));
+	iphc = net_ntohs(UNALIGNED_GET((uint16_t *)pkt->buffer->data));
 
 	inline_size = get_ihpc_inlined_size(iphc);
 	if (inline_size < 0) {

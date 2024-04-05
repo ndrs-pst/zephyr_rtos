@@ -93,7 +93,7 @@ enum net_sock_type {
  *
  * @return Host byte order value.
  */
-#define ntohs(x) sys_be16_to_cpu(x)
+#define net_ntohs(x) sys_be16_to_cpu(x)
 
 /** @brief Convert 32-bit value from network to host byte order.
  *
@@ -101,7 +101,7 @@ enum net_sock_type {
  *
  * @return Host byte order value.
  */
-#define ntohl(x) sys_be32_to_cpu(x)
+#define net_ntohl(x) sys_be32_to_cpu(x)
 
 /** @brief Convert 64-bit value from network to host byte order.
  *
@@ -109,7 +109,7 @@ enum net_sock_type {
  *
  * @return Host byte order value.
  */
-#define ntohll(x) sys_be64_to_cpu(x)
+#define net_ntohll(x) sys_be64_to_cpu(x)
 
 /** @brief Convert 16-bit value from host to network byte order.
  *
@@ -117,7 +117,7 @@ enum net_sock_type {
  *
  * @return Network byte order value.
  */
-#define htons(x) sys_cpu_to_be16(x)
+#define net_htons(x) sys_cpu_to_be16(x)
 
 /** @brief Convert 32-bit value from host to network byte order.
  *
@@ -125,7 +125,7 @@ enum net_sock_type {
  *
  * @return Network byte order value.
  */
-#define htonl(x) sys_cpu_to_be32(x)
+#define net_htonl(x) sys_cpu_to_be32(x)
 
 /** @brief Convert 64-bit value from host to network byte order.
  *
@@ -133,7 +133,7 @@ enum net_sock_type {
  *
  * @return Network byte order value.
  */
-#define htonll(x) sys_cpu_to_be64(x)
+#define net_htonll(x) sys_cpu_to_be64(x)
 
 /** IPv6 address struct */
 struct /**/net_in6_addr {
@@ -293,8 +293,8 @@ struct cmsghdr {
                           ALIGN_H((cmsg)->cmsg_len))))
 #endif
 
-#if !defined(CMSG_DATA)
-#define CMSG_DATA(cmsg) ((uint8_t*)(cmsg) + ALIGN_D(sizeof(struct cmsghdr)))
+#if !defined(NET_CMSG_DATA)
+#define NET_CMSG_DATA(cmsg) ((uint8_t*)(cmsg) + ALIGN_D(sizeof(struct cmsghdr)))
 #endif
 
 #if !defined(CMSG_SPACE)
@@ -626,7 +626,7 @@ static inline bool net_ipv6_is_addr_loopback(struct net_in6_addr *addr) {
     return UNALIGNED_GET(&addr->s6_addr32[0]) == 0 &&
            UNALIGNED_GET(&addr->s6_addr32[1]) == 0 &&
            UNALIGNED_GET(&addr->s6_addr32[2]) == 0 &&
-           ntohl(UNALIGNED_GET(&addr->s6_addr32[3])) == 1;
+           net_ntohl(UNALIGNED_GET(&addr->s6_addr32[3])) == 1;
 }
 
 /**
@@ -740,7 +740,7 @@ static inline bool net_ipv4_is_addr_unspecified(const struct net_in_addr* addr) 
  * @return True if address is multicast address, False otherwise.
  */
 static inline bool net_ipv4_is_addr_mcast(const struct net_in_addr* addr) {
-    return (ntohl(UNALIGNED_GET(&addr->s_addr_be)) & 0xF0000000) == 0xE0000000;
+    return (net_ntohl(UNALIGNED_GET(&addr->s_addr_be)) & 0xF0000000) == 0xE0000000;
 }
 
 /**
@@ -751,7 +751,7 @@ static inline bool net_ipv4_is_addr_mcast(const struct net_in_addr* addr) {
  * @return True if it is, false otherwise.
  */
 static inline bool net_ipv4_is_ll_addr(const struct net_in_addr* addr) {
-    return (ntohl(UNALIGNED_GET(&addr->s_addr_be)) & 0xFFFF0000) == 0xA9FE0000;
+    return (net_ntohl(UNALIGNED_GET(&addr->s_addr_be)) & 0xFFFF0000) == 0xA9FE0000;
 }
 
 /**
@@ -766,7 +766,7 @@ static inline bool net_ipv4_is_ll_addr(const struct net_in_addr* addr) {
 static inline bool net_ipv4_is_private_addr(const struct net_in_addr* addr) {
     uint32_t masked_24, masked_16, masked_12, masked_10, masked_8;
 
-    masked_24 = ntohl(UNALIGNED_GET(&addr->s_addr_be)) & 0xFFFFFF00;
+    masked_24 = net_ntohl(UNALIGNED_GET(&addr->s_addr_be)) & 0xFFFFFF00;
     masked_16 = masked_24 & 0xFFFF0000;
     masked_12 = masked_24 & 0xFFF00000;
     masked_10 = masked_24 & 0xFFC00000;
@@ -876,7 +876,7 @@ static inline bool net_ipv6_addr_cmp_raw(uint8_t const* addr1,
  * @return True if it is, false otherwise.
  */
 static inline bool net_ipv6_is_ll_addr(const struct net_in6_addr* addr) {
-    return UNALIGNED_GET(&addr->s6_addr16[0]) == htons(0xFE80);
+    return UNALIGNED_GET(&addr->s6_addr16[0]) == net_htons(0xFE80);
 }
 
 /**
@@ -887,7 +887,7 @@ static inline bool net_ipv6_is_ll_addr(const struct net_in6_addr* addr) {
  * @return True if it is, false otherwise.
  */
 static inline bool net_ipv6_is_sl_addr(const struct net_in6_addr* addr) {
-    return UNALIGNED_GET(&addr->s6_addr16[0]) == htons(0xFEC0);
+    return UNALIGNED_GET(&addr->s6_addr16[0]) == net_htons(0xFEC0);
 }
 
 /**
@@ -924,7 +924,7 @@ static inline bool net_ipv6_is_global_addr(const struct net_in6_addr* addr) {
 static inline bool net_ipv6_is_private_addr(const struct net_in6_addr* addr) {
     uint32_t masked_32, masked_7;
 
-    masked_32 = ntohl(UNALIGNED_GET(&addr->s6_addr32[0]));
+    masked_32 = net_ntohl(UNALIGNED_GET(&addr->s6_addr32[0]));
     masked_7  = masked_32 & 0xfc000000;
 
     return masked_32 == 0x20010db8 || /* 2001:db8::/32 */
@@ -1046,10 +1046,10 @@ static inline bool net_ipv6_is_addr_unspecified(const struct net_in6_addr* addr)
  *  @return True if the address is solicited node address, false otherwise.
  */
 static inline bool net_ipv6_is_addr_solicited_node(const struct net_in6_addr* addr) {
-    return UNALIGNED_GET(&addr->s6_addr32[0]) == htonl(0xff020000) &&
+    return UNALIGNED_GET(&addr->s6_addr32[0]) == net_htonl(0xff020000) &&
            UNALIGNED_GET(&addr->s6_addr32[1]) == 0x00000000 &&
-           UNALIGNED_GET(&addr->s6_addr32[2]) == htonl(0x00000001) &&
-           ((UNALIGNED_GET(&addr->s6_addr32[3]) & htonl(0xff000000)) == htonl(0xff000000));
+           UNALIGNED_GET(&addr->s6_addr32[2]) == net_htonl(0x00000001) &&
+           ((UNALIGNED_GET(&addr->s6_addr32[3]) & net_htonl(0xff000000)) == net_htonl(0xff000000));
 }
 
 /**
@@ -1265,14 +1265,14 @@ static inline void net_ipv6_addr_create(struct net_in6_addr* addr,
                                         uint16_t addr2, uint16_t addr3,
                                         uint16_t addr4, uint16_t addr5,
                                         uint16_t addr6, uint16_t addr7) {
-    UNALIGNED_PUT(htons(addr0), &addr->s6_addr16[0]);
-    UNALIGNED_PUT(htons(addr1), &addr->s6_addr16[1]);
-    UNALIGNED_PUT(htons(addr2), &addr->s6_addr16[2]);
-    UNALIGNED_PUT(htons(addr3), &addr->s6_addr16[3]);
-    UNALIGNED_PUT(htons(addr4), &addr->s6_addr16[4]);
-    UNALIGNED_PUT(htons(addr5), &addr->s6_addr16[5]);
-    UNALIGNED_PUT(htons(addr6), &addr->s6_addr16[6]);
-    UNALIGNED_PUT(htons(addr7), &addr->s6_addr16[7]);
+    UNALIGNED_PUT(net_htons(addr0), &addr->s6_addr16[0]);
+    UNALIGNED_PUT(net_htons(addr1), &addr->s6_addr16[1]);
+    UNALIGNED_PUT(net_htons(addr2), &addr->s6_addr16[2]);
+    UNALIGNED_PUT(net_htons(addr3), &addr->s6_addr16[3]);
+    UNALIGNED_PUT(net_htons(addr4), &addr->s6_addr16[4]);
+    UNALIGNED_PUT(net_htons(addr5), &addr->s6_addr16[5]);
+    UNALIGNED_PUT(net_htons(addr6), &addr->s6_addr16[6]);
+    UNALIGNED_PUT(net_htons(addr7), &addr->s6_addr16[7]);
 }
 
 /**
@@ -1302,8 +1302,8 @@ static inline void net_ipv6_addr_create_ll_allrouters_mcast(struct net_in6_addr*
 static inline void net_ipv6_addr_create_v4_mapped(const struct net_in_addr* addr4,
                                                   struct net_in6_addr* addr6) {
     net_ipv6_addr_create(addr6, 0, 0, 0, 0, 0, 0xffff,
-                         ntohs(addr4->s4_addr16[0]),
-                         ntohs(addr4->s4_addr16[1]));
+                         net_ntohs(addr4->s4_addr16[0]),
+                         net_ntohs(addr4->s4_addr16[1]));
 }
 
 /**
@@ -1332,7 +1332,7 @@ static inline bool net_ipv6_addr_is_v4_mapped(const struct net_in6_addr* addr) {
  */
 static inline void net_ipv6_addr_create_iid(struct net_in6_addr* addr,
                                             struct net_linkaddr* lladdr) {
-    UNALIGNED_PUT(htonl(0xfe800000), &addr->s6_addr32[0]);
+    UNALIGNED_PUT(net_htonl(0xfe800000), &addr->s6_addr32[0]);
     UNALIGNED_PUT(0, &addr->s6_addr32[1]);
 
     switch (lladdr->len) {
@@ -1718,6 +1718,14 @@ char const* net_family2str(sa_family_t family);
 #define IPPROTO_ICMP        NET_IPPROTO_ICMP
 #define IPPROTO_TLS_1_2     NET_IPPROTO_TLS_1_2
 #define IPPROTO_DTLS_1_2    NET_IPPROTO_DTLS_1_2
+
+#define ntohs               net_ntohs
+#define ntohl               net_ntohl
+#define ntohll              net_ntohll
+#define htons               net_htons
+#define htonl               net_htonl
+#define htonll              net_htonll
+
 #endif
 
 #ifdef __cplusplus

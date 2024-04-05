@@ -543,7 +543,7 @@ static inline enum ieee802154_addressing_mode get_dst_addr_mode(struct net_linka
 	}
 
 	if (dst->len == IEEE802154_SHORT_ADDR_LENGTH) {
-		uint16_t short_addr = ntohs(*(uint16_t *)(dst->addr));
+		uint16_t short_addr = net_ntohs(*(uint16_t *)(dst->addr));
 		*broadcast = (short_addr == IEEE802154_BROADCAST_ADDRESS);
 		return IEEE802154_ADDR_MODE_SHORT;
 	} else {
@@ -571,7 +571,7 @@ static inline bool data_addr_to_fs_settings(struct net_linkaddr *dst, struct iee
 			params->dst.len = IEEE802154_SHORT_ADDR_LENGTH;
 			fs->fc.ar = 0U;
 		} else if (dst->len == IEEE802154_SHORT_ADDR_LENGTH) {
-			params->dst.short_addr = ntohs(*(uint16_t *)(dst->addr));
+			params->dst.short_addr = net_ntohs(*(uint16_t *)(dst->addr));
 			params->dst.len = IEEE802154_SHORT_ADDR_LENGTH;
 		} else {
 			__ASSERT_NO_MSG(dst->len == IEEE802154_EXT_ADDR_LENGTH);
@@ -686,7 +686,7 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx, struct net_lin
 	params.dst.pan_id = ctx->pan_id;
 	params.pan_id = ctx->pan_id;
 	if (src->addr && src->len == IEEE802154_SHORT_ADDR_LENGTH) {
-		params.short_addr = ntohs(*(uint16_t *)(src->addr));
+		params.short_addr = net_ntohs(*(uint16_t *)(src->addr));
 		if (ctx->short_addr != params.short_addr) {
 			goto out;
 		}

@@ -126,7 +126,7 @@ static int igmp_v3_create(struct net_pkt *pkt, uint8_t type, struct net_if_mcast
 	igmp->type = type;
 	igmp->reserved_1 = 0U;
 	igmp->reserved_2 = 0U;
-	igmp->groups_len = htons(group_count);
+	igmp->groups_len = net_htons(group_count);
 	/* Setting initial value of chksum to 0 to calculate chksum as described in RFC 3376
 	 * ch 4.1.2
 	 */
@@ -158,7 +158,7 @@ static int igmp_v3_create(struct net_pkt *pkt, uint8_t type, struct net_if_mcast
 		group_record->type = mcast[i].record_type;
 		group_record->aux_len = 0U;
 		net_ipaddr_copy(&group_record->address, &mcast[i].address.in_addr);
-		group_record->sources_len = htons(mcast[i].sources_len);
+		group_record->sources_len = net_htons(mcast[i].sources_len);
 
 		if (net_pkt_set_data(pkt, &group_record_access)) {
 			return -ENOBUFS;

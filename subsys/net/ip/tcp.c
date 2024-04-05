@@ -1118,7 +1118,7 @@ static bool tcp_options_check(struct tcp_options* recv_options,
                 }
 
                 recv_options->mss =
-                    ntohs(UNALIGNED_GET((uint16_t*)(options + 2)));
+                    net_ntohs(UNALIGNED_GET((uint16_t*)(options + 2)));
                 recv_options->mss_found = true;
                 NET_DBG("MSS=%hu", recv_options->mss);
                 break;
@@ -1324,11 +1324,11 @@ static int tcp_header_add(struct tcp* conn, struct net_pkt* pkt, uint8_t flags,
     }
 
     UNALIGNED_PUT(flags, &th->th_flags);
-    UNALIGNED_PUT(htons(conn->recv_win), &th->th_win);
-    UNALIGNED_PUT(htonl(seq), &th->th_seq);
+    UNALIGNED_PUT(net_htons(conn->recv_win), &th->th_win);
+    UNALIGNED_PUT(net_htonl(seq), &th->th_seq);
 
     if (ACK & flags) {
-        UNALIGNED_PUT(htonl(conn->ack), &th->th_ack);
+        UNALIGNED_PUT(net_htonl(conn->ack), &th->th_ack);
     }
 
     return net_pkt_set_data(pkt, &tcp_access);
@@ -1393,7 +1393,7 @@ static int net_tcp_set_mss_opt(struct tcp* conn, struct net_pkt* pkt) {
     recv_mss = net_tcp_get_supported_mss(conn);
     recv_mss |= (NET_TCP_MSS_OPT << 24) | (NET_TCP_MSS_SIZE << 16);
 
-    UNALIGNED_PUT(htonl(recv_mss), (uint32_t*)mss);
+    UNALIGNED_PUT(net_htonl(recv_mss), (uint32_t*)mss);
 
     return net_pkt_set_data(pkt, &mss_opt_access);
 }
@@ -1493,10 +1493,10 @@ void net_tcp_reply_rst(struct net_pkt* pkt) {
         UNALIGNED_PUT(th_pkt->th_ack, &th_rst->th_seq);
     }
     else {
-        uint32_t ack = ntohl(th_pkt->th_seq) + tcp_data_len(pkt);
+        uint32_t ack = net_ntohl(th_pkt->th_seq) + tcp_data_len(pkt);
 
         UNALIGNED_PUT(RST | ACK, &th_rst->th_flags);
-        UNALIGNED_PUT(htonl(ack), &th_rst->th_ack);
+        UNALIGNED_PUT(net_htonl(ack), &th_rst->th_ack);
     }
 
     ret = net_pkt_set_data(rst, &tcp_access_rst);
@@ -2467,8 +2467,8 @@ static struct tcp* tcp_conn_new(struct net_pkt* pkt) {
 
     ret = net_conn_register(NET_IPPROTO_TCP, (uint8_t)af,
                             &context->remote, &local_addr,
-                            ntohs(conn->dst.sin.sin_port), /* local port */
-                            ntohs(conn->src.sin.sin_port), /* remote port */
+                            net_ntohs(conn->dst.sin.sin_port), /* local port */
+                            net_ntohs(conn->src.sin.sin_port), /* remote port */
                             context, tcp_recv, context,
                             &context->conn_handler);
     if (ret < 0) {
@@ -2878,7 +2878,7 @@ static enum net_verdict tcp_in(struct tcp* conn, struct net_pkt* pkt) {
     }
 
     if (th) {
-        conn->send_win = ntohs(th_win(th));
+        conn->send_win = net_ntohs(th_win(th));
         if (conn->send_win > conn->send_win_max) {
             NET_DBG("Lowering send window from %u to %u",
                     conn->send_win, conn->send_win_max);
@@ -3936,7 +3936,7 @@ int net_tcp_connect(struct net_context* context,
     ret = net_conn_register(net_context_get_proto(context),
                             (uint8_t)net_context_get_family(context),
                             remote_addr, local_addr,
-                            ntohs(remote_port), ntohs(local_port),
+                            net_ntohs(remote_port), net_ntohs(local_port),
                             context, tcp_recv, context,
                             &context->conn_handler);
     if (ret < 0) {
@@ -4019,8 +4019,8 @@ int net_tcp_accept(struct net_context* context, net_tcp_accept_cb_t cb,
 
             in->sin_port =
                     net_sin((struct net_sockaddr*)&context->local)->sin_port;
-            local_port   = ntohs(in->sin_port);
-            remote_port  = ntohs(net_sin(&context->remote)->sin_port);
+            local_port   = net_ntohs(in->sin_port);
+            remote_port  = net_ntohs(net_sin(&context->remote)->sin_port);
 
             break;
 
@@ -4038,8 +4038,8 @@ int net_tcp_accept(struct net_context* context, net_tcp_accept_cb_t cb,
 
             in6->sin6_port =
                     net_sin6((struct net_sockaddr*)&context->local)->sin6_port;
-            local_port     = ntohs(in6->sin6_port);
-            remote_port    = ntohs(net_sin6(&context->remote)->sin6_port);
+            local_port     = net_ntohs(in6->sin6_port);
+            remote_port    = net_ntohs(net_sin6(&context->remote)->sin6_port);
 
             break;
 
@@ -4206,7 +4206,7 @@ enum net_verdict tp_input(struct net_conn* net_conn,
                           union net_proto_header* proto,
                           void* user_data) {
     struct net_udp_hdr* uh = net_udp_get_hdr(pkt, NULL);
-    size_t data_len  = ntohs(uh->len) - sizeof(*uh);
+    size_t data_len  = net_ntohs(uh->len) - sizeof(*uh);
     struct tcp* conn = tcp_conn_search(pkt);
     size_t json_len  = 0;
     struct tp* tp;
@@ -4226,7 +4226,7 @@ enum net_verdict tp_input(struct net_conn* net_conn,
 
     type = json_decode_msg(buf, data_len);
 
-    data_len = ntohs(uh->len) - sizeof(*uh);
+    data_len = net_ntohs(uh->len) - sizeof(*uh);
 
     net_pkt_cursor_init(pkt);
     net_pkt_set_overwrite(pkt, true);

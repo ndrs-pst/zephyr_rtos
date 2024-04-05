@@ -208,7 +208,7 @@ static void zpacket_set_source_addr(struct net_context *ctx,
 		memcpy(addr.sll_addr, hdr->src.addr,
 		       sizeof(struct net_eth_addr));
 
-		addr.sll_protocol = ntohs(hdr->type);
+		addr.sll_protocol = net_ntohs(hdr->type);
 		addr.sll_hatype = ARPHRD_ETHER;
 
 		dst_addr.addr = hdr->dst.addr;

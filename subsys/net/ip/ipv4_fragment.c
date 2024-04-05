@@ -327,8 +327,8 @@ enum net_verdict net_ipv4_handle_fragment_hdr(struct net_pkt *pkt, struct net_ip
 	int ret;
 	int i;
 
-	flag = ntohs(*((uint16_t *)&hdr->offset));
-	id = ntohs(*((uint16_t *)&hdr->id));
+	flag = net_ntohs(*((uint16_t *)&hdr->offset));
+	id = net_ntohs(*((uint16_t *)&hdr->id));
 
 	reass = reassembly_get(id, (struct net_in_addr *)hdr->src,
 			       (struct net_in_addr *)hdr->dst, hdr->proto);
@@ -530,7 +530,7 @@ int net_ipv4_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	}
 
 	/* Check if the DF (Don't Fragment) flag is set, if so, we cannot fragment the packet */
-	flag = ntohs(*((uint16_t *)&frag_hdr->offset));
+	flag = net_ntohs(*((uint16_t *)&frag_hdr->offset));
 
 	if (flag & NET_IPV4_DO_NOT_FRAG_MASK) {
 		/* This packet cannot be fragmented */

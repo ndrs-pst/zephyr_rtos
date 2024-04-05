@@ -93,17 +93,17 @@ void get_addresses(struct net_context const* context,
         snprintk(addr_local, local_len, "[%s]:%u",
                  net_sprint_ipv6_addr(
                         net_sin6_ptr(&context->local)->sin6_addr),
-                 ntohs(net_sin6_ptr(&context->local)->sin6_port));
+                 net_ntohs(net_sin6_ptr(&context->local)->sin6_port));
         snprintk(addr_remote, remote_len, "[%s]:%u",
                  net_sprint_ipv6_addr(
                         &net_sin6(&context->remote)->sin6_addr),
-                 ntohs(net_sin6(&context->remote)->sin6_port));
+                 net_ntohs(net_sin6(&context->remote)->sin6_port));
     }
     else if (IS_ENABLED(CONFIG_NET_IPV4) && context->local.family == NET_AF_INET) {
         snprintk(addr_local, local_len, "%s:%d",
                  net_sprint_ipv4_addr(
                         net_sin_ptr(&context->local)->sin_addr),
-                 ntohs(net_sin_ptr(&context->local)->sin_port));
+                 net_ntohs(net_sin_ptr(&context->local)->sin_port));
 
         /* Check if we need to print the v4-mapping-to-v6 address */
         if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)       &&
@@ -112,13 +112,13 @@ void get_addresses(struct net_context const* context,
             snprintk(addr_remote, remote_len, "[%s]:%d",
                      net_sprint_ipv6_addr(
                             &net_sin6(&context->remote)->sin6_addr),
-                     ntohs(net_sin6(&context->remote)->sin6_port));
+                     net_ntohs(net_sin6(&context->remote)->sin6_port));
         }
         else {
             snprintk(addr_remote, remote_len, "%s:%d",
                      net_sprint_ipv4_addr(
                             &net_sin(&context->remote)->sin_addr),
-                     ntohs(net_sin(&context->remote)->sin_port));
+                     net_ntohs(net_sin(&context->remote)->sin_port));
         }
     }
     else if (context->local.family == NET_AF_UNSPEC) {

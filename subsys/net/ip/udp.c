@@ -49,7 +49,7 @@ int net_udp_finalize(struct net_pkt *pkt, bool force_chksum)
 	length = (uint16_t)(net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
 		 net_pkt_ip_opts_len(pkt));
 
-	udp_hdr->len = htons(length);
+	udp_hdr->len = net_htons(length);
 
 	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt)) || force_chksum) {
 		udp_hdr->chksum = net_calc_chksum_udp(pkt);
@@ -156,7 +156,7 @@ struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	if (ntohs(udp_hdr->len) != (net_pkt_get_len(pkt) -
+	if (net_ntohs(udp_hdr->len) != (net_pkt_get_len(pkt) -
 				    net_pkt_ip_hdr_len(pkt) -
 				    net_pkt_ip_opts_len(pkt))) {
 		NET_DBG("DROP: Invalid hdr length");

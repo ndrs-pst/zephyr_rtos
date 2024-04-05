@@ -190,14 +190,14 @@ static int getaddrinfo_null_host(int port, const struct zsock_addrinfo *hints,
 	if (hints->ai_family == NET_AF_INET || hints->ai_family == NET_AF_UNSPEC) {
 		struct net_sockaddr_in *addr = net_sin(&res->_ai_addr);
 		addr->sin_addr.s_addr_be = NET_INADDR_ANY;
-		addr->sin_port = htons(port);
+		addr->sin_port = net_htons(port);
 		addr->sin_family = NET_AF_INET;
 		INIT_ADDRINFO(res, addr);
 		res->ai_family = NET_AF_INET;
 	} else if (hints->ai_family == NET_AF_INET6) {
 		struct net_sockaddr_in6 *addr6 = net_sin6(&res->_ai_addr);
 		addr6->sin6_addr = in6addr_any;
-		addr6->sin6_port = htons(port);
+		addr6->sin6_port = net_htons(port);
 		addr6->sin6_family = NET_AF_INET6;
 		INIT_ADDRINFO(res, addr6);
 		res->ai_family = NET_AF_INET6;
@@ -405,7 +405,7 @@ static int try_resolve_literal_addr(const char *host, const char *service,
 			(struct net_sockaddr_in *)&res->_ai_addr;
 
 		INIT_ADDRINFO(res, addr);
-		addr->sin_port = htons(port);
+		addr->sin_port = net_htons(port);
 		addr->sin_family = NET_AF_INET;
 		break;
 	}
