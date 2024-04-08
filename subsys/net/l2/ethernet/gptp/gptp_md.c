@@ -215,7 +215,7 @@ static void gptp_md_compute_pdelay_rate_ratio(int port)
 		hdr = GPTP_HDR(pkt);
 		fup = GPTP_PDELAY_RESP_FOLLOWUP(pkt);
 
-		resp_evt_tstamp = ntohs(fup->resp_orig_ts_secs_high);
+		resp_evt_tstamp = net_ntohs(fup->resp_orig_ts_secs_high);
 		resp_evt_tstamp <<= 32;
 		resp_evt_tstamp |= ntohl(fup->resp_orig_ts_secs_low);
 		resp_evt_tstamp *= NSEC_PER_SEC;

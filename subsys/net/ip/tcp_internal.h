@@ -126,8 +126,8 @@ static inline int net_tcp_get(struct net_context *context)
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_connect(struct net_context *context,
-		    const struct sockaddr *addr,
-		    struct sockaddr *laddr,
+		    const struct net_sockaddr *addr,
+		    struct net_sockaddr *laddr,
 		    uint16_t rport,
 		    uint16_t lport,
 		    k_timeout_t timeout,
@@ -135,8 +135,8 @@ int net_tcp_connect(struct net_context *context,
 		    void *user_data);
 #else
 static inline int net_tcp_connect(struct net_context *context,
-				  const struct sockaddr *addr,
-				  struct sockaddr *laddr,
+				  const struct net_sockaddr *addr,
+				  struct net_sockaddr *laddr,
 				  uint16_t rport, uint16_t lport,
 				  k_timeout_t timeout,
 				  net_context_connect_cb_t cb, void *user_data)

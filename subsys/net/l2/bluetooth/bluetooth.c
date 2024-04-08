@@ -103,7 +103,7 @@ static int net_bt_send(struct net_if *iface, struct net_pkt *pkt)
 	NET_DBG("iface %p pkt %p len %zu", iface, pkt, net_pkt_get_len(pkt));
 
 	/* Only accept IPv6 packets */
-	if (net_pkt_family(pkt) != AF_INET6) {
+	if (net_pkt_family(pkt) != NET_AF_INET6) {
 		return -EINVAL;
 	}
 
@@ -157,7 +157,7 @@ static void ipsp_connected(struct bt_l2cap_chan *chan)
 	struct bt_if_conn *conn = CHAN_CONN(chan);
 	struct bt_conn_info info;
 	struct net_linkaddr ll;
-	struct in6_addr in6;
+	struct net_in6_addr in6;
 
 	if (bt_conn_get_info(chan->conn, &info) < 0) {
 		NET_ERR("Unable to get connection info");

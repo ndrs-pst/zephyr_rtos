@@ -255,7 +255,7 @@ extern struct usb_desc_header __usb_descriptor_start[];
 
 void usbip_start(void)
 {
-	struct sockaddr_in srv;
+	struct net_sockaddr_in srv;
 	unsigned char attached;
 	int listenfd, connfd;
 	const uint8_t *desc;
@@ -273,7 +273,7 @@ void usbip_start(void)
 		posix_exit(EXIT_FAILURE);
 	}
 
-	listenfd = socket(PF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+	listenfd = socket(PF_INET, NET_SOCK_STREAM | SOCK_NONBLOCK, 0);
 	if (listenfd < 0) {
 		LOG_ERR("socket() failed: %s", strerror(errno));
 		posix_exit(EXIT_FAILURE);
@@ -285,11 +285,11 @@ void usbip_start(void)
 	}
 
 	memset(&srv, 0, sizeof(srv));
-	srv.sin_family = AF_INET;
-	srv.sin_addr.s_addr = htonl(INADDR_ANY);
+	srv.sin_family = NET_AF_INET;
+	srv.sin_addr.s_addr_be = htonl(INADDR_ANY);
 	srv.sin_port = htons(USBIP_PORT);
 
-	if (bind(listenfd, (struct sockaddr *)&srv, sizeof(srv)) < 0) {
+	if (bind(listenfd, (struct net_sockaddr *)&srv, sizeof(srv)) < 0) {
 		LOG_ERR("bind() failed: %s", strerror(errno));
 		posix_exit(EXIT_FAILURE);
 	}
@@ -300,10 +300,10 @@ void usbip_start(void)
 	}
 
 	while (true) {
-		struct sockaddr_in client_addr;
+		struct net_sockaddr_in client_addr;
 		socklen_t client_addr_len = sizeof(client_addr);
 
-		connfd = accept4(listenfd, (struct sockaddr *)&client_addr,
+		connfd = accept4(listenfd, (struct net_sockaddr *)&client_addr,
 				 &client_addr_len, SOCK_NONBLOCK);
 		if (connfd < 0) {
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {

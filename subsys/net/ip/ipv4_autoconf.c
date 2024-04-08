@@ -35,16 +35,16 @@ static struct net_pkt *ipv4_autoconf_prepare_arp(struct net_if *iface)
 	struct net_if_config *cfg = net_if_get_config(iface);
 	struct net_pkt *pkt;
 
-	/* We provide AF_UNSPEC to the allocator: this packet does not
+	/* We provide NET_AF_UNSPEC to the allocator: this packet does not
 	 * need space for any IPv4 header.
 	 */
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct net_arp_hdr),
-					AF_UNSPEC, 0, BUF_ALLOC_TIMEOUT);
+					NET_AF_UNSPEC, 0, BUF_ALLOC_TIMEOUT);
 	if (!pkt) {
 		return NULL;
 	}
 
-	net_pkt_set_family(pkt, AF_INET);
+	net_pkt_set_family(pkt, NET_AF_INET);
 	net_pkt_set_ipv4_auto(pkt, true);
 
 	return net_arp_prepare(pkt, &cfg->ipv4auto.requested_ip,
@@ -163,7 +163,7 @@ enum net_verdict net_ipv4_autoconf_input(struct net_if *iface,
 
 static inline void ipv4_autoconf_addr_set(struct net_if_ipv4_autoconf *ipv4auto)
 {
-	struct in_addr netmask = { { { 255, 255, 0, 0 } } };
+	struct net_in_addr netmask = { { { 255, 255, 0, 0 } } };
 
 	if (ipv4auto->announce_cnt <=
 		(IPV4_AUTOCONF_ANNOUNCE_NUM - 1)) {
@@ -196,7 +196,7 @@ static void ipv4_autoconf_send(struct net_if_ipv4_autoconf *ipv4auto)
 		ipv4auto->probe_cnt = 0U;
 		ipv4auto->announce_cnt = 0U;
 		ipv4auto->conflict_cnt = 0U;
-		(void)memset(&ipv4auto->current_ip, 0, sizeof(struct in_addr));
+		(void)memset(&ipv4auto->current_ip, 0, sizeof(struct net_in_addr));
 		ipv4auto->requested_ip.s4_addr[0] = 169U;
 		ipv4auto->requested_ip.s4_addr[1] = 254U;
 		ipv4auto->requested_ip.s4_addr[2] = sys_rand8_get() % 254;
@@ -211,7 +211,7 @@ static void ipv4_autoconf_send(struct net_if_ipv4_autoconf *ipv4auto)
 		ipv4auto->probe_cnt = 0U;
 		ipv4auto->announce_cnt = 0U;
 		ipv4auto->conflict_cnt = 0U;
-		(void)memset(&ipv4auto->current_ip, 0, sizeof(struct in_addr));
+		(void)memset(&ipv4auto->current_ip, 0, sizeof(struct net_in_addr));
 		NET_DBG("%s: Starting probe for 169.254.%d.%d", "Renew",
 			ipv4auto->requested_ip.s4_addr[2],
 			ipv4auto->requested_ip.s4_addr[3]);
