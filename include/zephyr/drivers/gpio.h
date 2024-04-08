@@ -1537,6 +1537,11 @@ static inline int gpio_pin_get_dt(const struct gpio_dt_spec* spec) {
     return gpio_pin_get(spec->port, spec->pin);
 }
 
+/* #CUSTOM@NDRS */
+static inline int gpio_pin_get_raw_dt(const struct gpio_dt_spec* spec) {
+    return gpio_pin_get_raw(spec->port, spec->pin);
+}
+
 /**
  * @brief Set physical level of an output pin.
  *
