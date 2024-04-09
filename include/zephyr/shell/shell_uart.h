@@ -18,19 +18,19 @@ extern "C" {
 extern const struct shell_transport_api shell_uart_transport_api;
 
 #ifndef CONFIG_SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE
-#define CONFIG_SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE 0
+#define CONFIG_SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE 1
 #endif
 
 #ifndef CONFIG_SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE
-#define CONFIG_SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE 0
+#define CONFIG_SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE 1
 #endif
 
 #ifndef CONFIG_SHELL_BACKEND_SERIAL_ASYNC_RX_BUFFER_COUNT
-#define CONFIG_SHELL_BACKEND_SERIAL_ASYNC_RX_BUFFER_COUNT 0
+#define CONFIG_SHELL_BACKEND_SERIAL_ASYNC_RX_BUFFER_COUNT 1
 #endif
 
 #ifndef CONFIG_SHELL_BACKEND_SERIAL_ASYNC_RX_BUFFER_SIZE
-#define CONFIG_SHELL_BACKEND_SERIAL_ASYNC_RX_BUFFER_SIZE 0
+#define CONFIG_SHELL_BACKEND_SERIAL_ASYNC_RX_BUFFER_SIZE 1
 #endif
 
 #define ASYNC_RX_BUF_SIZE (CONFIG_SHELL_BACKEND_SERIAL_ASYNC_RX_BUFFER_COUNT * \
@@ -102,14 +102,14 @@ struct shell_uart_polling {
  *
  * @returns Pointer to the shell instance.
  */
-const struct shell *shell_backend_uart_get_ptr(void);
+const struct shell* shell_backend_uart_get_ptr(void);
 
 /**
  * @brief This function provides pointer to the smp shell data of the UART shell transport.
  *
  * @returns Pointer to the smp shell data.
  */
-struct smp_shell_data *shell_uart_smp_shell_data_get_ptr(void);
+struct smp_shell_data* shell_uart_smp_shell_data_get_ptr(void);
 
 #ifdef __cplusplus
 }

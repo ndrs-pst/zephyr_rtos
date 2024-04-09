@@ -1,0 +1,9 @@
+# Copyright (c) 2024 NDR Solution (Thailand) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_STM32
+	bool "STM32 Ethernet MDIO driver"
+	depends on ETH_STM32_HAL
+	default n
+	help
+	  Enable STM32 MCU Family MDIO driver.

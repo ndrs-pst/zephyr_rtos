@@ -25,7 +25,7 @@ static K_SEM_DEFINE(coap_client_recv_sem, 0, 1);
 static atomic_t coap_client_recv_active;
 
 static int send_request(int sock, const void *buf, size_t len, int flags,
-			const struct sockaddr *dest_addr, socklen_t addrlen)
+			const struct net_sockaddr *dest_addr, socklen_t addrlen)
 {
 	if (addrlen == 0) {
 		return zsock_sendto(sock, buf, len, flags, NULL, 0);
@@ -35,7 +35,7 @@ static int send_request(int sock, const void *buf, size_t len, int flags,
 }
 
 static int receive(int sock, void *buf, size_t max_len, int flags,
-		   struct sockaddr *src_addr, socklen_t *addrlen)
+		   struct net_sockaddr *src_addr, socklen_t *addrlen)
 {
 	if (*addrlen == 0) {
 		return zsock_recvfrom(sock, buf, max_len, flags, NULL, NULL);
@@ -274,7 +274,7 @@ out:
 	return ret;
 }
 
-int coap_client_req(struct coap_client *client, int sock, const struct sockaddr *addr,
+int coap_client_req(struct coap_client *client, int sock, const struct net_sockaddr *addr,
 		    struct coap_client_request *req, struct coap_transmission_parameters *params)
 {
 	int ret;

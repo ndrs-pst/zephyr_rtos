@@ -62,8 +62,8 @@ struct dhcpv4_server_ctx {
 	int sock;
 	struct k_work_delayable timeout_work;
 	struct dhcpv4_addr_slot addr_pool[CONFIG_NET_DHCPV4_SERVER_ADDR_COUNT];
-	struct in_addr server_addr;
-	struct in_addr netmask;
+	struct net_in_addr server_addr;
+	struct net_in_addr netmask;
 #if defined(DHCPV4_SERVER_ICMP_PROBE)
 	struct dhcpv4_server_probe_ctx probe_ctx;
 #endif
@@ -171,7 +171,7 @@ static int dhcpv4_find_message_type_option(uint8_t *data, size_t datalen,
 }
 
 static int dhcpv4_find_server_id_option(uint8_t *data, size_t datalen,
-					struct in_addr *server_id)
+					struct net_in_addr *server_id)
 {
 	uint8_t *opt;
 	uint8_t optlen;
@@ -182,11 +182,11 @@ static int dhcpv4_find_server_id_option(uint8_t *data, size_t datalen,
 		return -ENOENT;
 	}
 
-	if (optlen != sizeof(struct in_addr)) {
+	if (optlen != sizeof(struct net_in_addr)) {
 		return -EINVAL;
 	}
 
-	memcpy(server_id, opt, sizeof(struct in_addr));
+	memcpy(server_id, opt, sizeof(struct net_in_addr));
 
 	return 0;
 }
@@ -219,7 +219,7 @@ static int dhcpv4_find_client_id_option(uint8_t *data, size_t datalen,
 }
 
 static int dhcpv4_find_requested_ip_option(uint8_t *data, size_t datalen,
-					   struct in_addr *requested_ip)
+					   struct net_in_addr *requested_ip)
 {
 	uint8_t *opt;
 	uint8_t optlen;
@@ -230,11 +230,11 @@ static int dhcpv4_find_requested_ip_option(uint8_t *data, size_t datalen,
 		return -ENOENT;
 	}
 
-	if (optlen != sizeof(struct in_addr)) {
+	if (optlen != sizeof(struct net_in_addr)) {
 		return -EINVAL;
 	}
 
-	memcpy(requested_ip, opt, sizeof(struct in_addr));
+	memcpy(requested_ip, opt, sizeof(struct net_in_addr));
 
 	return 0;
 }
@@ -332,15 +332,15 @@ static uint8_t *dhcpv4_encode_message_type_option(uint8_t *buf, size_t *buflen,
 }
 
 static uint8_t *dhcpv4_encode_server_id_option(uint8_t *buf, size_t *buflen,
-					       struct in_addr *server_id)
+					       struct net_in_addr *server_id)
 {
 	if (buf == NULL || *buflen < DHCPV4_OPTIONS_SERVER_ID_SIZE) {
 		return NULL;
 	}
 
 	buf[0] = DHCPV4_OPTIONS_SERVER_ID;
-	buf[1] = sizeof(struct in_addr);
-	memcpy(&buf[2], server_id->s4_addr, sizeof(struct in_addr));
+	buf[1] = sizeof(struct net_in_addr);
+	memcpy(&buf[2], server_id->s4_addr, sizeof(struct net_in_addr));
 
 	*buflen -= DHCPV4_OPTIONS_SERVER_ID_SIZE;
 
@@ -364,15 +364,15 @@ static uint8_t *dhcpv4_encode_client_id_option(uint8_t *buf, size_t *buflen,
 }
 
 static uint8_t *dhcpv4_encode_subnet_mask_option(uint8_t *buf, size_t *buflen,
-						 struct in_addr *mask)
+						 struct net_in_addr *mask)
 {
 	if (buf == NULL || *buflen < DHCPV4_OPTIONS_SUBNET_MASK_SIZE) {
 		return NULL;
 	}
 
 	buf[0] = DHCPV4_OPTIONS_SUBNET_MASK;
-	buf[1] = sizeof(struct in_addr);
-	memcpy(&buf[2], mask->s4_addr, sizeof(struct in_addr));
+	buf[1] = sizeof(struct net_in_addr);
+	memcpy(&buf[2], mask->s4_addr, sizeof(struct net_in_addr));
 
 	*buflen -= DHCPV4_OPTIONS_SUBNET_MASK_SIZE;
 
@@ -396,7 +396,7 @@ static uint8_t *dhcpv4_encode_end_option(uint8_t *buf, size_t *buflen)
 
 static uint8_t *dhcpv4_encode_header(uint8_t *buf, size_t *buflen,
 				     struct dhcp_msg *msg,
-				     struct in_addr *yiaddr)
+				     struct net_in_addr *yiaddr)
 {
 	struct dhcp_msg *reply_msg = (struct dhcp_msg *)buf;
 
@@ -413,7 +413,7 @@ static uint8_t *dhcpv4_encode_header(uint8_t *buf, size_t *buflen,
 	reply_msg->flags = msg->flags;
 	memcpy(reply_msg->ciaddr, msg->ciaddr, sizeof(reply_msg->ciaddr));
 	if (yiaddr != NULL) {
-		memcpy(reply_msg->yiaddr, yiaddr, sizeof(struct in_addr));
+		memcpy(reply_msg->yiaddr, yiaddr, sizeof(struct net_in_addr));
 	} else {
 		memset(reply_msg->yiaddr, 0, sizeof(reply_msg->ciaddr));
 	}
@@ -484,14 +484,14 @@ out:
 
 static int dhcpv4_send(struct dhcpv4_server_ctx *ctx, enum net_dhcpv4_msg_type type,
 		       uint8_t *reply, size_t len, struct dhcp_msg *msg,
-		       struct in_addr *yiaddr)
+		       struct net_in_addr *yiaddr)
 {
-	struct sockaddr_in dst_addr = {
-		.sin_family = AF_INET,
+	struct net_sockaddr_in dst_addr = {
+		.sin_family = NET_AF_INET,
 		.sin_port = htons(DHCPV4_CLIENT_PORT),
 	};
-	struct in_addr giaddr; /* Relay agent address */
-	struct in_addr ciaddr; /* Client address */
+	struct net_in_addr giaddr; /* Relay agent address */
+	struct net_in_addr ciaddr; /* Client address */
 	int ret;
 
 	memcpy(&giaddr, msg->giaddr, sizeof(giaddr));
@@ -539,7 +539,7 @@ static int dhcpv4_send(struct dhcpv4_server_ctx *ctx, enum net_dhcpv4_msg_type t
 		return -EDESTADDRREQ;
 	}
 
-	ret = zsock_sendto(ctx->sock, reply, len, 0, (struct sockaddr *)&dst_addr,
+	ret = zsock_sendto(ctx->sock, reply, len, 0, (struct net_sockaddr *)&dst_addr,
 			   sizeof(dst_addr));
 	if (ret < 0) {
 		return -errno;
@@ -549,7 +549,7 @@ static int dhcpv4_send(struct dhcpv4_server_ctx *ctx, enum net_dhcpv4_msg_type t
 }
 
 static int dhcpv4_send_offer(struct dhcpv4_server_ctx *ctx, struct dhcp_msg *msg,
-			     struct in_addr *addr, uint32_t lease_time,
+			     struct net_in_addr *addr, uint32_t lease_time,
 			     struct dhcpv4_parameter_request_list *params,
 			     struct dhcpv4_client_id *client_id)
 {
@@ -589,7 +589,7 @@ static int dhcpv4_send_offer(struct dhcpv4_server_ctx *ctx, struct dhcp_msg *msg
 }
 
 static int dhcpv4_send_ack(struct dhcpv4_server_ctx *ctx, struct dhcp_msg *msg,
-			   struct in_addr *addr, uint32_t lease_time,
+			   struct net_in_addr *addr, uint32_t lease_time,
 			   struct dhcpv4_parameter_request_list *params,
 			   struct dhcpv4_client_id *client_id,
 			   bool inform)
@@ -714,14 +714,14 @@ static uint32_t dhcpv4_get_lease_time(uint8_t *options, uint8_t optlen)
 static int dhcpv4_probe_address(struct dhcpv4_server_ctx *ctx,
 				 struct dhcpv4_addr_slot *slot)
 {
-	struct sockaddr_in dest_addr = {
-		.sin_family = AF_INET,
+	struct net_sockaddr_in dest_addr = {
+		.sin_family = NET_AF_INET,
 		.sin_addr = slot->addr,
 	};
 	int ret;
 
 	ret = net_icmp_send_echo_request(&ctx->probe_ctx.icmp_ctx, ctx->iface,
-					 (struct sockaddr *)&dest_addr,
+					 (struct net_sockaddr *)&dest_addr,
 					 NULL, ctx);
 	if (ret < 0) {
 		LOG_ERR("Failed to send ICMP probe");
@@ -739,7 +739,7 @@ static int echo_reply_handler(struct net_icmp_ctx *icmp_ctx,
 	struct dhcpv4_server_ctx *ctx = user_data;
 	struct dhcpv4_server_probe_ctx *probe_ctx = &ctx->probe_ctx;
 	struct dhcpv4_addr_slot *new_slot = NULL;
-	struct in_addr peer_addr;
+	struct net_in_addr peer_addr;
 
 	ARG_UNUSED(icmp_ctx);
 	ARG_UNUSED(pkt);
@@ -752,7 +752,7 @@ static int echo_reply_handler(struct net_icmp_ctx *icmp_ctx,
 		goto out;
 	}
 
-	if (ip_hdr->family != AF_INET) {
+	if (ip_hdr->family != NET_AF_INET) {
 		goto out;
 	}
 
@@ -921,7 +921,7 @@ static void dhcpv4_handle_discover(struct dhcpv4_server_ctx *ctx,
 
 	/* 3. Check Requested IP Address option. */
 	if (selected == NULL) {
-		struct in_addr requested_ip;
+		struct net_in_addr requested_ip;
 
 		ret = dhcpv4_find_requested_ip_option(options, optlen,
 						      &requested_ip);
@@ -944,7 +944,7 @@ static void dhcpv4_handle_discover(struct dhcpv4_server_ctx *ctx,
 
 	/* 4. Allocate new address from pool, if available. */
 	if (selected == NULL) {
-		struct in_addr giaddr;
+		struct net_in_addr giaddr;
 
 		memcpy(&giaddr, msg->giaddr, sizeof(giaddr));
 		if (!net_ipv4_is_addr_unspecified(&giaddr)) {
@@ -1030,7 +1030,7 @@ static void dhcpv4_handle_request(struct dhcpv4_server_ctx *ctx,
 	struct dhcpv4_parameter_request_list params = { 0 };
 	struct dhcpv4_addr_slot *selected = NULL;
 	struct dhcpv4_client_id client_id;
-	struct in_addr requested_ip, server_id, ciaddr, giaddr;
+	struct net_in_addr requested_ip, server_id, ciaddr, giaddr;
 	int ret;
 
 	memcpy(&ciaddr, msg->ciaddr, sizeof(ciaddr));
@@ -1205,7 +1205,7 @@ static void dhcpv4_handle_decline(struct dhcpv4_server_ctx *ctx,
 				  uint8_t optlen)
 {
 	struct dhcpv4_client_id client_id;
-	struct in_addr requested_ip, server_id;
+	struct net_in_addr requested_ip, server_id;
 	int ret;
 
 	ret = dhcpv4_find_server_id_option(options, optlen, &server_id);
@@ -1258,7 +1258,7 @@ static void dhcpv4_handle_release(struct dhcpv4_server_ctx *ctx,
 				  uint8_t optlen)
 {
 	struct dhcpv4_client_id client_id;
-	struct in_addr ciaddr, server_id;
+	struct net_in_addr ciaddr, server_id;
 	int ret;
 
 	ret = dhcpv4_find_server_id_option(options, optlen, &server_id);
@@ -1307,7 +1307,7 @@ static void dhcpv4_handle_inform(struct dhcpv4_server_ctx *ctx,
 	struct dhcpv4_parameter_request_list params = { 0 };
 
 	(void)dhcpv4_find_parameter_request_list_option(options, optlen, &params);
-	(void)dhcpv4_send_ack(ctx, msg, (struct in_addr *)msg->ciaddr, 0,
+	(void)dhcpv4_send_ack(ctx, msg, (struct net_in_addr *)msg->ciaddr, 0,
 			      &params, NULL, true);
 }
 
@@ -1463,17 +1463,17 @@ static void dhcpv4_server_cb(struct k_work *work)
 NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(dhcpv4_server, NULL, dhcpv4_server_cb,
 				      CONFIG_NET_DHCPV4_SERVER_INSTANCES);
 
-int net_dhcpv4_server_start(struct net_if *iface, struct in_addr *base_addr)
+int net_dhcpv4_server_start(struct net_if *iface, struct net_in_addr *base_addr)
 {
-	struct sockaddr_in addr = {
-		.sin_family = AF_INET,
-		.sin_addr = INADDR_ANY_INIT,
+	struct net_sockaddr_in addr = {
+		.sin_family = NET_AF_INET,
+		.sin_addr = NET_INADDR_ANY_INIT,
 		.sin_port = htons(DHCPV4_SERVER_PORT),
 	};
 	struct ifreq ifreq = { 0 };
 	int ret, sock = -1, slot = -1;
-	const struct in_addr *server_addr;
-	struct in_addr netmask;
+	const struct net_in_addr *server_addr;
+	struct net_in_addr netmask;
 
 	if (iface == NULL || base_addr == NULL) {
 		return -EINVAL;
@@ -1531,7 +1531,7 @@ int net_dhcpv4_server_start(struct net_if *iface, struct in_addr *base_addr)
 		goto error;
 	}
 
-	sock = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	sock = zsock_socket(AF_INET, SOCK_DGRAM, NET_IPPROTO_UDP);
 	if (sock < 0) {
 		ret = errno;
 		LOG_ERR("Failed to create DHCPv4 server socket, %d", ret);
@@ -1547,7 +1547,7 @@ int net_dhcpv4_server_start(struct net_if *iface, struct in_addr *base_addr)
 		goto error;
 	}
 
-	ret = zsock_bind(sock, (struct sockaddr *)&addr, sizeof(addr));
+	ret = zsock_bind(sock, (struct net_sockaddr *)&addr, sizeof(addr));
 	if (ret < 0) {
 		ret = errno;
 		LOG_ERR("Failed to bind DHCPv4 server socket, %d", ret);
@@ -1568,7 +1568,7 @@ int net_dhcpv4_server_start(struct net_if *iface, struct in_addr *base_addr)
 	LOG_DBG("Started DHCPv4 server, address pool:");
 	for (int i = 0; i < ARRAY_SIZE(server_ctx[slot].addr_pool); i++) {
 		server_ctx[slot].addr_pool[i].state = DHCPV4_SERVER_ADDR_FREE;
-		server_ctx[slot].addr_pool[i].addr.s_addr =
+		server_ctx[slot].addr_pool[i].addr.s_addr_be =
 					htonl(ntohl(base_addr->s_addr) + i);
 
 		LOG_DBG("\t%2d: %s", i,
