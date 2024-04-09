@@ -20,12 +20,12 @@ LOG_MODULE_REGISTER(net_mqtt_sock_tls, CONFIG_MQTT_LOG_LEVEL);
 
 int mqtt_client_tls_connect(struct mqtt_client *client)
 {
-	const struct sockaddr *broker = client->broker;
+	const struct net_sockaddr *broker = client->broker;
 	struct mqtt_sec_config *tls_config = &client->transport.tls.config;
 	int ret;
 
 	client->transport.tls.sock = zsock_socket(broker->sa_family,
-						  SOCK_STREAM, IPPROTO_TLS_1_2);
+						  NET_SOCK_STREAM, NET_IPPROTO_TLS_1_2);
 	if (client->transport.tls.sock < 0) {
 		return -errno;
 	}
@@ -100,10 +100,10 @@ int mqtt_client_tls_connect(struct mqtt_client *client)
 		}
 	}
 
-	size_t peer_addr_size = sizeof(struct sockaddr_in6);
+	size_t peer_addr_size = sizeof(struct net_sockaddr_in6);
 
-	if (broker->sa_family == AF_INET) {
-		peer_addr_size = sizeof(struct sockaddr_in);
+	if (broker->sa_family == NET_AF_INET) {
+		peer_addr_size = sizeof(struct net_sockaddr_in);
 	}
 
 	ret = zsock_connect(client->transport.tls.sock, client->broker,
