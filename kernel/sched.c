@@ -1131,13 +1131,13 @@ static int32_t z_tick_sleep(k_ticks_t ticks) {
     z_add_thread_timeout(_current, timeout);
     z_mark_thread_as_suspended(_current);
 
-    (void)z_swap(&_sched_spinlock, key);
+    (void) z_swap(&_sched_spinlock, key);
 
     __ASSERT(!z_is_thread_state_set(_current, _THREAD_SUSPENDED), "");
 
     ticks = (k_ticks_t)expected_wakeup_ticks - sys_clock_tick_get_32();
     if (ticks > 0) {
-        return (ticks);
+        return (int32_t)(ticks);
     }
 
     return (0);
@@ -1183,10 +1183,10 @@ int32_t z_impl_k_usleep(int us) {
 
     SYS_PORT_TRACING_FUNC_ENTER(k_thread, usleep, us);
 
-    ticks = k_us_to_ticks_ceil64(us);
+    ticks = (int32_t)k_us_to_ticks_ceil64(us);
     ticks = z_tick_sleep(ticks);
 
-    int32_t ret = k_ticks_to_us_ceil64(ticks);
+    int32_t ret = (int32_t)k_ticks_to_us_ceil64(ticks);
 
     SYS_PORT_TRACING_FUNC_EXIT(k_thread, usleep, us, ret);
 
@@ -1271,7 +1271,7 @@ static inline void unpend_all(_wait_q_t* wait_q) {
 
     while ((thread = z_waitq_head(wait_q)) != NULL) {
         unpend_thread_no_timeout(thread);
-        (void)z_abort_thread_timeout(thread);
+        (void) z_abort_thread_timeout(thread);
         arch_thread_return_value_set(thread, 0);
         ready_thread(thread);
     }
@@ -1374,7 +1374,7 @@ void z_impl_k_thread_abort(struct k_thread* thread) {
 
 int z_impl_k_thread_join(struct k_thread* thread, k_timeout_t timeout) {
     k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
-    int              ret = 0;
+    int ret = 0;
 
     SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, join, thread, timeout);
 

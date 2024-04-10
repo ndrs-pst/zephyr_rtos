@@ -37,7 +37,7 @@ static bool share_paren(struct smf_state const* test_state,
 static bool last_state_share_paren(struct smf_ctx const* const ctx,
                                    struct smf_state const* state) {
     /* Get parent state of previous state */
-    if (!ctx->previous) {
+    if (ctx->previous == NULL) {
         return (false);
     }
 
@@ -78,7 +78,8 @@ __unused static bool smf_execute_ancestor_entry_actions(
          ((to_execute != NULL) && (to_execute != target));
          to_execute = get_child_of(target, to_execute)) {
         /* Execute parent state's entry */
-        if (!last_state_share_paren(ctx, to_execute) && to_execute->entry) {
+        if ((last_state_share_paren(ctx, to_execute) == false) &&
+            (to_execute->entry != NULL)) {
             to_execute->entry(ctx);
 
             /* No need to continue if terminate was set */
@@ -262,10 +263,9 @@ void smf_set_state(struct smf_ctx* const ctx, const struct smf_state* target) {
     ctx->previous = ctx->current;
     ctx->current  = target;
 
-    if (IS_ENABLED(CONFIG_SMF_ANCESTOR_SUPPORT)) {
-        if (smf_execute_ancestor_entry_actions(ctx, target)) {
-            return;
-        }
+    if (IS_ENABLED(CONFIG_SMF_ANCESTOR_SUPPORT) &&
+        (smf_execute_ancestor_entry_actions(ctx, target) == true)) {
+        return;
     }
 
     /* Now execute the target entry action */
@@ -303,10 +303,9 @@ int32_t smf_run_state(struct smf_ctx* const ctx) {
         ctx->current->run(ctx);
     }
 
-    if (IS_ENABLED(CONFIG_SMF_ANCESTOR_SUPPORT)) {
-        if (smf_execute_ancestor_run_actions(ctx)) {
-            return (ctx->terminate_val);
-        }
+    if (IS_ENABLED(CONFIG_SMF_ANCESTOR_SUPPORT) &&
+        (smf_execute_ancestor_run_actions(ctx) == true)) {
+        return (ctx->terminate_val);
     }
 
     return (0);
