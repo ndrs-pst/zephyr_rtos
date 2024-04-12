@@ -43,17 +43,17 @@ typedef void (*tpfAppResolveCb) (uint8 *pu8DomainName, uint32 u32ServerIP);
 NMI_API void registerSocketCallback(tpfAppSocketCb socket_cb,
 				    tpfAppResolveCb resolve_cb);
 NMI_API SOCKET socket(uint16 u16Domain, uint8 u8Type, uint8 u8Flags);
-NMI_API sint8 bind(SOCKET sock, struct sockaddr *pstrAddr, uint8 u8AddrLen);
+NMI_API sint8 bind(SOCKET sock, struct net_sockaddr *pstrAddr, uint8 u8AddrLen);
 NMI_API sint8 listen(SOCKET sock, uint8 backlog);
-NMI_API sint8 accept(SOCKET sock, struct sockaddr *addr, uint8 *addrlen);
-NMI_API sint8 connect(SOCKET sock, struct sockaddr *pstrAddr, uint8 u8AddrLen);
+NMI_API sint8 accept(SOCKET sock, struct net_sockaddr *addr, uint8 *addrlen);
+NMI_API sint8 connect(SOCKET sock, struct net_sockaddr *pstrAddr, uint8 u8AddrLen);
 NMI_API sint16 recv(SOCKET sock, void *pvRecvBuf,
 		    uint16 u16BufLen, uint32 u32Timeoutmsec);
 NMI_API sint16 send(SOCKET sock, void *pvSendBuffer,
 		    uint16 u16SendLength, uint16 u16Flags);
 NMI_API sint16 sendto(SOCKET sock, void *pvSendBuffer,
 		      uint16 u16SendLength, uint16 flags,
-		      struct sockaddr *pstrDestAddr, uint8 u8AddrLen);
+		      struct net_sockaddr *pstrDestAddr, uint8 u8AddrLen);
 NMI_API sint8 winc1500_close(SOCKET sock);
 
 enum socket_errors {
@@ -93,7 +93,7 @@ typedef struct {
 
 typedef struct {
 	SOCKET			sock;
-	struct sockaddr_in	strAddr;
+	struct net_sockaddr_in	strAddr;
 } tstrSocketAcceptMsg;
 
 typedef struct {
@@ -105,7 +105,7 @@ typedef struct {
 	uint8			*pu8Buffer;
 	sint16			s16BufferSize;
 	uint16			u16RemainingSize;
-	struct sockaddr_in	strRemoteAddr;
+	struct net_sockaddr_in	strRemoteAddr;
 } tstrSocketRecvMsg;
 
 #include <driver/include/m2m_wifi.h>
@@ -297,7 +297,7 @@ static int winc1500_get(sa_family_t family,
 	struct socket_data *sd;
 	SOCKET sock;
 
-	if (family != AF_INET) {
+	if (family != NET_AF_INET) {
 		LOG_ERR("Only AF_INET is supported!");
 		return -1;
 	}
@@ -326,7 +326,7 @@ static int winc1500_get(sa_family_t family,
  * This function is called when user wants to bind to local IP address.
  */
 static int winc1500_bind(struct net_context *context,
-			 const struct sockaddr *addr,
+			 const struct net_sockaddr *addr,
 			 socklen_t addrlen)
 {
 	SOCKET socket = (int)context->offload_context;
@@ -337,7 +337,7 @@ static int winc1500_bind(struct net_context *context,
 		return 0;
 	}
 
-	ret = bind((int)context->offload_context, (struct sockaddr *)addr,
+	ret = bind((int)context->offload_context, (struct net_sockaddr *)addr,
 		   addrlen);
 	if (ret) {
 		LOG_ERR("bind error %d %s!",
@@ -383,7 +383,7 @@ static int winc1500_listen(struct net_context *context, int backlog)
  * to a peer host.
  */
 static int winc1500_connect(struct net_context *context,
-			    const struct sockaddr *addr,
+			    const struct net_sockaddr *addr,
 			    socklen_t addrlen,
 			    net_context_connect_cb_t cb,
 			    int32_t timeout,
@@ -396,7 +396,7 @@ static int winc1500_connect(struct net_context *context,
 	w1500_data.socket_data[socket].connect_user_data = user_data;
 	w1500_data.socket_data[socket].ret_code = 0;
 
-	ret = connect(socket, (struct sockaddr *)addr, addrlen);
+	ret = connect(socket, (struct net_sockaddr *)addr, addrlen);
 	if (ret) {
 		LOG_ERR("connect error %d %s!",
 			ret, socket_error_string(ret));
@@ -485,7 +485,7 @@ out:
  * This function is called when user wants to send data to peer host.
  */
 static int winc1500_sendto(struct net_pkt *pkt,
-			   const struct sockaddr *dst_addr,
+			   const struct net_sockaddr *dst_addr,
 			   socklen_t addrlen,
 			   net_context_send_cb_t cb,
 			   int32_t timeout,
@@ -509,7 +509,7 @@ static int winc1500_sendto(struct net_pkt *pkt,
 	net_buf_add(buf, net_pkt_get_len(pkt));
 
 	ret = sendto(socket, buf->data, buf->len, 0,
-		     (struct sockaddr *)dst_addr, addrlen);
+		     (struct net_sockaddr *)dst_addr, addrlen);
 	if (ret) {
 		LOG_ERR("sendto error %d %s!", ret, socket_error_string(ret));
 		goto out;
@@ -592,7 +592,7 @@ static int winc1500_put(struct net_context *context)
 	struct socket_data *sd = &w1500_data.socket_data[sock];
 	int ret;
 
-	memset(&(context->remote), 0, sizeof(struct sockaddr_in));
+	memset(&(context->remote), 0, sizeof(struct net_sockaddr_in));
 	context->flags &= ~NET_CONTEXT_REMOTE_ADDR_SET;
 	ret = winc1500_close(sock);
 
@@ -654,7 +654,7 @@ static void handle_wifi_con_state_changed(void *pvMsg)
 static void handle_wifi_dhcp_conf(void *pvMsg)
 {
 	uint8_t *pu8IPAddress = (uint8_t *)pvMsg;
-	struct in_addr addr;
+	struct net_in_addr addr;
 	uint8_t i;
 
 	/* Connected and got IP address*/
@@ -889,8 +889,8 @@ static void handle_socket_msg_accept(struct socket_data *sd, void *pvMsg)
 
 		memcpy(a_sd, sd, sizeof(struct socket_data));
 
-		ret = net_context_get(AF_INET, SOCK_STREAM,
-				      IPPROTO_TCP, &a_sd->context);
+		ret = net_context_get(AF_INET, NET_SOCK_STREAM,
+				      NET_IPPROTO_TCP, &a_sd->context);
 		if (ret < 0) {
 			LOG_ERR("Cannot get new net context for ACCEPT");
 			return;
@@ -907,16 +907,16 @@ static void handle_socket_msg_accept(struct socket_data *sd, void *pvMsg)
 		a_sd->context->iface = sd->context->iface;
 
 		/** Setup remote */
-		a_sd->context->remote.sa_family = AF_INET;
+		a_sd->context->remote.sa_family = NET_AF_INET;
 		net_sin(&a_sd->context->remote)->sin_port =
 			accept_msg->strAddr.sin_port;
-		net_sin(&a_sd->context->remote)->sin_addr.s_addr =
-			accept_msg->strAddr.sin_addr.s_addr;
+		net_sin(&a_sd->context->remote)->sin_addr.s_addr_be =
+			accept_msg->strAddr.sin_addr.s_addr_be;
 		a_sd->context->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
 
 		sd->accept_cb(a_sd->context,
-			      (struct sockaddr *)&accept_msg->strAddr,
-			      sizeof(struct sockaddr_in),
+			      (struct net_sockaddr *)&accept_msg->strAddr,
+			      sizeof(struct net_sockaddr_in),
 			      (accept_msg->sock > 0) ?
 			      0 : accept_msg->sock,
 			      sd->accept_user_data);
