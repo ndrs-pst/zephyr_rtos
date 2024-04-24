@@ -546,6 +546,20 @@ __maybe_unused static void /**/spi_stm32_isr(const struct device* dev) {
     }
 }
 
+
+static inline void spi_rx_isr_stpm3x(SPI_TypeDef* spi, struct spi_stm32_data* data) {
+    // Receive data in 32 Bit mode when
+    // Init.FifoThreshold is SPI_FIFO_THRESHOLD_04DATA
+    uint32_t rx_frame;
+
+    rx_frame = LL_SPI_ReceiveData32(spi);
+    if (spi_context_rx_buf_on(&data->ctx)) {
+        UNALIGNED_PUT(rx_frame, (uint32_t*)data->ctx.rx_buf);
+    }
+    spi_context_update_rx(&data->ctx, 4, 1);
+    LL_SPI_DisableIT_RXP(spi);
+}
+
 /**
  * @brief SPI interrupt handler for STPM3x devices
  * 
@@ -555,8 +569,58 @@ __maybe_unused static void /**/spi_stpm3x_isr(const struct device* dev) {
     const struct spi_stm32_config* cfg = dev->config;
     struct spi_stm32_data* data = dev->data;
     SPI_TypeDef* spi = cfg->spi;
+    int err;
 
-    /* FIXME add implementation */
+    /* Some spurious interrupts are triggered when SPI is not enabled; ignore them.
+     * Do it only when fifo is enabled to leave non-fifo functionality untouched for now
+     */
+    if (cfg->fifo_enabled) {
+        if (!LL_SPI_IsEnabled(spi)) {
+            return;
+        }
+    }
+
+    /* @see HAL_SPI_IRQHandler */
+    uint32_t itsource = spi->IER;
+    uint32_t itflag   = spi->SR;
+    uint32_t trigger  = itsource & itflag;
+    uint32_t handled  = 0UL;
+
+    /* SPI in SUSPEND mode  ----------------------------------------------------*/
+    if (HAL_IS_BIT_SET(itflag, SPI_FLAG_SUSP) &&
+        HAL_IS_BIT_SET(itsource, SPI_FLAG_EOT)) {
+        /* Clear the Suspend flag */
+        LL_SPI_ClearFlag_SUSP(spi);
+        return;
+    }
+
+    /* SPI in mode Transmitter and Receiver ------------------------------------*/
+    if (HAL_IS_BIT_CLR(trigger, SPI_FLAG_OVR) &&
+        HAL_IS_BIT_CLR(trigger, SPI_FLAG_UDR) &&
+        HAL_IS_BIT_SET(trigger, SPI_FLAG_DXP)) {
+        spi_rx_isr_stpm3x(spi, data);
+
+        handled = 1UL;
+    }
+
+    if (handled != 0UL) {
+        return;
+    }
+
+    err = spi_stm32_get_err(spi);
+    if (err != 0) {
+        spi_stm32_complete(dev, err);
+        return;
+    }
+
+    if (spi_stm32_transfer_ongoing(data) == true) {
+        err = spi_stm32_shift_frames(cfg, data);
+    }
+
+    if ((err != 0) ||
+        (spi_stm32_transfer_ongoing(data) == false)) {
+        spi_stm32_complete(dev, err);
+    }
 }
 #endif
 
