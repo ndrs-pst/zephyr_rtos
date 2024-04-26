@@ -580,7 +580,7 @@ __maybe_unused static void /**/spi_stpm3x_isr(const struct device* dev) {
         }
     }
 
-    /* @see HAL_SPI_IRQHandler */
+    /* @see STPM3X_SPI::irq_hndl, HAL_SPI_IRQHandler */
     uint32_t itsource = spi->IER;
     uint32_t itflag   = spi->SR;
     uint32_t trigger  = itsource & itflag;
@@ -1499,3 +1499,51 @@ DEVICE_DT_INST_DEFINE(id, &spi_stm32_init, NULL,                \
 STM32_SPI_IRQ_HANDLER(id)
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_SPI_INIT)
+
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+static void zephyr_gtest_spi_stm32_cfg_init(struct spi_stm32_config* cfg) {
+    uintptr_t base_addr = (uintptr_t)cfg->spi;
+
+    switch (base_addr) {
+        case SPI1_BASE : {
+            cfg->spi = (SPI_TypeDef*)ut_mcu_spi1_ptr;
+            break;
+        }
+
+        case SPI2_BASE : {
+            cfg->spi = (SPI_TypeDef*)ut_mcu_spi2_ptr;
+            break;
+        }
+
+        case SPI3_BASE : {
+            cfg->spi = (SPI_TypeDef*)ut_mcu_spi3_ptr;
+            break;
+        }
+
+        case SPI4_BASE : {
+            cfg->spi = (SPI_TypeDef*)ut_mcu_spi4_ptr;
+            break;
+        }
+
+        case SPI5_BASE : {
+            cfg->spi = (SPI_TypeDef*)ut_mcu_spi5_ptr;
+            break;
+        }
+
+        default : { // SPI6_BASE
+            cfg->spi = (SPI_TypeDef*)ut_mcu_spi6_ptr;
+            break;
+        }
+    }
+}
+
+void zephyr_gtest_spi_stm32(void) {
+    zephyr_gtest_spi_stm32_cfg_init(&spi_stm32_cfg_0);
+    zephyr_gtest_spi_stm32_cfg_init(&spi_stm32_cfg_1);
+    zephyr_gtest_spi_stm32_cfg_init(&spi_stm32_cfg_2);
+}
+
+#endif
+
