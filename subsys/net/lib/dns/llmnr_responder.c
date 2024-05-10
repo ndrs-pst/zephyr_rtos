@@ -37,7 +37,7 @@ LOG_MODULE_REGISTER(net_llmnr_responder, CONFIG_LLMNR_RESPONDER_LOG_LEVEL);
 
 #if defined(CONFIG_NET_IPV4)
 static struct net_context *ipv4;
-static struct sockaddr_in local_addr4;
+static struct net_sockaddr_in local_addr4;
 #endif
 
 #if defined(CONFIG_NET_IPV6)
@@ -58,9 +58,9 @@ NET_BUF_POOL_DEFINE(llmnr_dns_msg_pool, DNS_RESOLVER_BUF_CTR,
 		    DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);
 
 #if defined(CONFIG_NET_IPV6)
-static void create_ipv6_addr(struct sockaddr_in6 *addr)
+static void create_ipv6_addr(struct net_sockaddr_in6 *addr)
 {
-	addr->sin6_family = AF_INET6;
+	addr->sin6_family = NET_AF_INET6;
 	addr->sin6_port = htons(LLMNR_LISTEN_PORT);
 
 	/* Well known IPv6 ff02::1:3 address */
@@ -69,7 +69,7 @@ static void create_ipv6_addr(struct sockaddr_in6 *addr)
 }
 
 static void create_ipv6_dst_addr(struct net_pkt *pkt,
-				 struct sockaddr_in6 *addr)
+				 struct net_sockaddr_in6 *addr)
 {
 	struct net_udp_hdr *udp_hdr, hdr;
 
@@ -78,7 +78,7 @@ static void create_ipv6_dst_addr(struct net_pkt *pkt,
 		return;
 	}
 
-	addr->sin6_family = AF_INET6;
+	addr->sin6_family = NET_AF_INET6;
 	addr->sin6_port = udp_hdr->src_port;
 
 	net_ipv6_addr_copy_raw((uint8_t *)&addr->sin6_addr, NET_IPV6_HDR(pkt)->src);
@@ -86,17 +86,17 @@ static void create_ipv6_dst_addr(struct net_pkt *pkt,
 #endif
 
 #if defined(CONFIG_NET_IPV4)
-static void create_ipv4_addr(struct sockaddr_in *addr)
+static void create_ipv4_addr(struct net_sockaddr_in *addr)
 {
-	addr->sin_family = AF_INET;
+	addr->sin_family = NET_AF_INET;
 	addr->sin_port = htons(LLMNR_LISTEN_PORT);
 
 	/* Well known IPv4 224.0.0.252 address */
-	addr->sin_addr.s_addr = htonl(0xE00000FC);
+	addr->sin_addr.s_addr_be = htonl(0xE00000FC);
 }
 
 static void create_ipv4_dst_addr(struct net_pkt *pkt,
-				 struct sockaddr_in *addr)
+				 struct net_sockaddr_in *addr)
 {
 	struct net_udp_hdr *udp_hdr, hdr;
 
@@ -106,7 +106,7 @@ static void create_ipv4_dst_addr(struct net_pkt *pkt,
 		return;
 	}
 
-	addr->sin_family = AF_INET;
+	addr->sin_family = NET_AF_INET;
 	addr->sin_port = udp_hdr->src_port;
 
 	net_ipv4_addr_copy_raw((uint8_t *)&addr->sin_addr, NET_IPV4_HDR(pkt)->src);
@@ -133,7 +133,7 @@ static struct net_context *get_ctx(sa_family_t family)
 	struct net_context *ctx;
 	int ret;
 
-	ret = net_context_get(family, SOCK_DGRAM, IPPROTO_UDP, &ctx);
+	ret = net_context_get(family, NET_SOCK_DGRAM, NET_IPPROTO_UDP, &ctx);
 	if (ret < 0) {
 		NET_DBG("Cannot get context (%d)", ret);
 		return NULL;
@@ -143,7 +143,7 @@ static struct net_context *get_ctx(sa_family_t family)
 }
 
 static int bind_ctx(struct net_context *ctx,
-		    struct sockaddr *local_addr,
+		    struct net_sockaddr *local_addr,
 		    socklen_t addrlen)
 {
 	int ret;
@@ -155,7 +155,7 @@ static int bind_ctx(struct net_context *ctx,
 	ret = net_context_bind(ctx, local_addr, addrlen);
 	if (ret < 0) {
 		NET_DBG("Cannot bind to LLMNR %s port (%d)",
-			local_addr->sa_family == AF_INET ?
+			local_addr->sa_family == NET_AF_INET ?
 			"IPv4" : "IPv6", ret);
 		return ret;
 	}
@@ -265,9 +265,9 @@ static int create_answer(struct net_context *ctx,
 }
 
 #if defined(CONFIG_NET_IPV4)
-static const uint8_t *get_ipv4_src(struct net_if *iface, struct in_addr *dst)
+static const uint8_t *get_ipv4_src(struct net_if *iface, struct net_in_addr *dst)
 {
-	const struct in_addr *addr;
+	const struct net_in_addr *addr;
 
 	addr = net_if_ipv4_select_src_addr(iface, dst);
 	if (!addr || net_ipv4_is_addr_unspecified(addr)) {
@@ -279,9 +279,9 @@ static const uint8_t *get_ipv4_src(struct net_if *iface, struct in_addr *dst)
 #endif
 
 #if defined(CONFIG_NET_IPV6)
-static const uint8_t *get_ipv6_src(struct net_if *iface, struct in6_addr *dst)
+static const uint8_t *get_ipv6_src(struct net_if *iface, struct net_in6_addr *dst)
 {
-	const struct in6_addr *addr;
+	const struct net_in6_addr *addr;
 
 	addr = net_if_ipv6_select_src_addr(iface, dst);
 	if (!addr || net_ipv6_is_addr_unspecified(addr)) {
@@ -299,14 +299,14 @@ static int create_ipv4_answer(struct net_context *ctx,
 			      enum dns_rr_type qtype,
 			      struct net_buf *query,
 			      uint16_t dns_id,
-			      struct sockaddr *dst,
+			      struct net_sockaddr *dst,
 			      socklen_t *dst_len)
 {
 	const uint8_t *addr;
 	int addr_len;
 
 	create_ipv4_dst_addr(pkt, net_sin(dst));
-	*dst_len = sizeof(struct sockaddr_in);
+	*dst_len = sizeof(struct net_sockaddr_in);
 
 	if (qtype == DNS_RR_TYPE_A) {
 		/* Select proper address according to destination */
@@ -316,17 +316,17 @@ static int create_ipv4_answer(struct net_context *ctx,
 			return -ENOENT;
 		}
 
-		addr_len = sizeof(struct in_addr);
+		addr_len = sizeof(struct net_in_addr);
 
 	} else if (qtype == DNS_RR_TYPE_AAAA) {
 #if defined(CONFIG_NET_IPV6)
 		addr = get_ipv6_src(net_pkt_iface(pkt),
-				    (struct in6_addr *)ip_hdr->ipv6->src);
+				    (struct net_in6_addr *)ip_hdr->ipv6->src);
 		if (!addr) {
 			return -ENOENT;
 		}
 
-		addr_len = sizeof(struct in6_addr);
+		addr_len = sizeof(struct net_in6_addr);
 #else
 		addr = NULL;
 		addr_len = 0;
@@ -351,7 +351,7 @@ static int create_ipv6_answer(struct net_context *ctx,
 			      enum dns_rr_type qtype,
 			      struct net_buf *query,
 			      uint16_t dns_id,
-			      struct sockaddr *dst,
+			      struct net_sockaddr *dst,
 			      socklen_t *dst_len)
 {
 #if defined(CONFIG_NET_IPV6)
@@ -359,25 +359,25 @@ static int create_ipv6_answer(struct net_context *ctx,
 	int addr_len;
 
 	create_ipv6_dst_addr(pkt, net_sin6(dst));
-	*dst_len = sizeof(struct sockaddr_in6);
+	*dst_len = sizeof(struct net_sockaddr_in6);
 
 	if (qtype == DNS_RR_TYPE_AAAA) {
 		addr = get_ipv6_src(net_pkt_iface(pkt),
-				    (struct in6_addr *)ip_hdr->ipv6->src);
+				    (struct net_in6_addr *)ip_hdr->ipv6->src);
 		if (!addr) {
 			return -ENOENT;
 		}
 
-		addr_len = sizeof(struct in6_addr);
+		addr_len = sizeof(struct net_in6_addr);
 	} else if (qtype == DNS_RR_TYPE_A) {
 #if defined(CONFIG_NET_IPV4)
 		addr = get_ipv4_src(net_pkt_iface(pkt),
-				    (struct in_addr *)ip_hdr->ipv4->src);
+				    (struct net_in_addr *)ip_hdr->ipv4->src);
 		if (!addr) {
 			return -ENOENT;
 		}
 
-		addr_len = sizeof(struct in_addr);
+		addr_len = sizeof(struct net_in_addr);
 #else
 		addr_len = 0;
 #endif
@@ -399,19 +399,19 @@ static int send_response(struct net_context *ctx, struct net_pkt *pkt,
 			 union net_ip_header *ip_hdr, struct net_buf *reply,
 			 enum dns_rr_type qtype, uint16_t dns_id)
 {
-	struct sockaddr dst;
+	struct net_sockaddr dst;
 	socklen_t dst_len;
 	int ret;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) &&
-	    net_pkt_family(pkt) == AF_INET) {
+	    net_pkt_family(pkt) == NET_AF_INET) {
 		ret = create_ipv4_answer(ctx, pkt, ip_hdr, qtype, reply,
 					 dns_id, &dst, &dst_len);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
-		   net_pkt_family(pkt) == AF_INET6) {
+		   net_pkt_family(pkt) == NET_AF_INET6) {
 		ret = create_ipv6_answer(ctx, pkt, ip_hdr, qtype, reply,
 					 dns_id, &dst, &dst_len);
 		if (ret < 0) {
@@ -426,7 +426,7 @@ static int send_response(struct net_context *ctx, struct net_pkt *pkt,
 				 dst_len, NULL, K_NO_WAIT, NULL);
 	if (ret < 0) {
 		NET_DBG("Cannot send LLMNR reply to %s (%d)",
-			net_pkt_family(pkt) == AF_INET ?
+			net_pkt_family(pkt) == NET_AF_INET ?
 			net_sprint_ipv4_addr(&net_sin(&dst)->sin_addr) :
 			net_sprint_ipv6_addr(&net_sin6(&dst)->sin6_addr),
 			ret);
@@ -482,7 +482,7 @@ static int dns_read(struct net_context *ctx,
 
 	NET_DBG("Received %d %s from %s (id 0x%04x)", queries,
 		queries > 1 ? "queries" : "query",
-		net_pkt_family(pkt) == AF_INET ?
+		net_pkt_family(pkt) == NET_AF_INET ?
 		net_sprint_ipv4_addr(&ip_hdr->ipv4->src) :
 		net_sprint_ipv6_addr(&ip_hdr->ipv6->src),
 		dns_id);
@@ -568,7 +568,7 @@ quit:
 #if defined(CONFIG_NET_IPV6)
 static void iface_ipv6_cb(struct net_if *iface, void *user_data)
 {
-	struct in6_addr *addr = user_data;
+	struct net_in6_addr *addr = user_data;
 	int ret;
 
 	ret = net_ipv6_mld_join(iface, addr);
@@ -578,7 +578,7 @@ static void iface_ipv6_cb(struct net_if *iface, void *user_data)
 	}
 }
 
-static void setup_ipv6_addr(struct sockaddr_in6 *local_addr)
+static void setup_ipv6_addr(struct net_sockaddr_in6 *local_addr)
 {
 	create_ipv6_addr(local_addr);
 
@@ -589,7 +589,7 @@ static void setup_ipv6_addr(struct sockaddr_in6 *local_addr)
 #if defined(CONFIG_NET_IPV4)
 static void iface_ipv4_cb(struct net_if *iface, void *user_data)
 {
-	struct in_addr *addr = user_data;
+	struct net_in_addr *addr = user_data;
 	int ret;
 
 	ret = net_ipv4_igmp_join(iface, addr, NULL);
@@ -599,7 +599,7 @@ static void iface_ipv4_cb(struct net_if *iface, void *user_data)
 	}
 }
 
-static void setup_ipv4_addr(struct sockaddr_in *local_addr)
+static void setup_ipv4_addr(struct net_sockaddr_in *local_addr)
 {
 	create_ipv4_addr(local_addr);
 
@@ -613,13 +613,13 @@ static int init_listener(void)
 
 #if defined(CONFIG_NET_IPV6)
 	{
-		static struct sockaddr_in6 local_addr;
+		static struct net_sockaddr_in6 local_addr;
 
 		setup_ipv6_addr(&local_addr);
 
 		ipv6 = get_ctx(AF_INET6);
 
-		ret = bind_ctx(ipv6, (struct sockaddr *)&local_addr,
+		ret = bind_ctx(ipv6, (struct net_sockaddr *)&local_addr,
 			       sizeof(local_addr));
 		if (ret < 0) {
 			net_context_put(ipv6);
@@ -643,7 +643,7 @@ ipv6_out:
 
 		ipv4 = get_ctx(AF_INET);
 
-		ret = bind_ctx(ipv4, (struct sockaddr *)&local_addr4,
+		ret = bind_ctx(ipv4, (struct net_sockaddr *)&local_addr4,
 			       sizeof(local_addr4));
 		if (ret < 0) {
 			net_context_put(ipv4);

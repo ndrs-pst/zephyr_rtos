@@ -232,7 +232,7 @@ start:
 			}
 
 			if (*fmt != 'u' && (int_value_type)d < 0) {
-				d = -d;
+				d = -(int_value_type)d;
 				prefix = "-";
 				min_width--;
 			} else if (special == ' ') {

@@ -46,7 +46,7 @@ extern "C" {
  *
  * @see http://man7.org/linux/man-pages/man3/timegm.3.html
  */
-int64_t timeutil_timegm64(const struct tm *tm);
+int64_t timeutil_timegm64(const struct tm* tm);
 
 /**
  * @brief Convert broken-down time to a POSIX epoch offset in seconds.
@@ -59,7 +59,7 @@ int64_t timeutil_timegm64(const struct tm *tm);
  *
  * @see http://man7.org/linux/man-pages/man3/timegm.3.html
  */
-time_t timeutil_timegm(const struct tm *tm);
+time_t timeutil_timegm(const struct tm* tm);
 
 /**
  * @}
@@ -81,27 +81,27 @@ time_t timeutil_timegm(const struct tm *tm);
  * interval between sampled instants to detect relative clock drift.
  */
 struct timeutil_sync_config {
-	/** The nominal instance counter rate in Hz.
-	 *
-	 * This value is assumed to be precise, but may drift depending on
-	 * the reference clock source.
-	 *
-	 * The value must be positive.
-	 */
-	uint32_t ref_Hz;
+    /** The nominal instance counter rate in Hz.
+     *
+     * This value is assumed to be precise, but may drift depending on
+     * the reference clock source.
+     *
+     * The value must be positive.
+     */
+    uint32_t ref_Hz;
 
-	/** The nominal local counter rate in Hz.
-	 *
-	 * This value is assumed to be inaccurate but reasonably stable.  For
-	 * a local clock driven by a crystal oscillator an error of 25 ppm is
-	 * common; for an RC oscillator larger errors should be expected.  The
-	 * timeutil_sync infrastructure can calculate the skew between the
-	 * local and reference clocks and apply it when converting between
-	 * time scales.
-	 *
-	 * The value must be positive.
-	 */
-	uint32_t local_Hz;
+    /** The nominal local counter rate in Hz.
+     *
+     * This value is assumed to be inaccurate but reasonably stable.  For
+     * a local clock driven by a crystal oscillator an error of 25 ppm is
+     * common; for an RC oscillator larger errors should be expected.  The
+     * timeutil_sync infrastructure can calculate the skew between the
+     * local and reference clocks and apply it when converting between
+     * time scales.
+     *
+     * The value must be positive.
+     */
+    uint32_t local_Hz;
 };
 
 /**
@@ -112,18 +112,18 @@ struct timeutil_sync_config {
  * scales.
  */
 struct timeutil_sync_instant {
-	/** An instant in the reference time scale.
-	 *
-	 * This must never be zero in an initialized timeutil_sync_instant
-	 * object.
-	 */
-	uint64_t ref;
+    /** An instant in the reference time scale.
+     *
+     * This must never be zero in an initialized timeutil_sync_instant
+     * object.
+     */
+    uint64_t ref;
 
-	/** The corresponding instance in the local time scale.
-	 *
-	 * This may be zero in a valid timeutil_sync_instant object.
-	 */
-	uint64_t local;
+    /** The corresponding instance in the local time scale.
+     *
+     * This may be zero in a valid timeutil_sync_instant object.
+     */
+    uint64_t local;
 };
 
 /**
@@ -137,34 +137,34 @@ struct timeutil_sync_instant {
  * State objects should be zero-initialized before use.
  */
 struct timeutil_sync_state {
-	/** Pointer to reference and local rate information. */
-	const struct timeutil_sync_config *cfg;
+    /** Pointer to reference and local rate information. */
+    const struct timeutil_sync_config* cfg;
 
-	/** The base instant in both time scales. */
-	struct timeutil_sync_instant base;
+    /** The base instant in both time scales. */
+    struct timeutil_sync_instant base;
 
-	/** The most recent instant in both time scales.
-	 *
-	 * This is captured here to provide data for skew calculation.
-	 */
-	struct timeutil_sync_instant latest;
+    /** The most recent instant in both time scales.
+     *
+     * This is captured here to provide data for skew calculation.
+     */
+    struct timeutil_sync_instant latest;
 
-	/** The scale factor used to correct for clock skew.
-	 *
-	 * The nominal rate for the local counter is assumed to be
-	 * inaccurate but stable, i.e. it will generally be some
-	 * parts-per-million faster or slower than specified.
-	 *
-	 * A duration in observed local clock ticks must be multiplied by
-	 * this value to produce a duration in ticks of a clock operating at
-	 * the nominal local rate.
-	 *
-	 * A zero value indicates that the skew has not been initialized.
-	 * If the value is zero when #base is initialized the skew will be
-	 * set to 1.  Otherwise the skew is assigned through
-	 * timeutil_sync_state_set_skew().
-	 */
-	float skew;
+    /** The scale factor used to correct for clock skew.
+     *
+     * The nominal rate for the local counter is assumed to be
+     * inaccurate but stable, i.e. it will generally be some
+     * parts-per-million faster or slower than specified.
+     *
+     * A duration in observed local clock ticks must be multiplied by
+     * this value to produce a duration in ticks of a clock operating at
+     * the nominal local rate.
+     *
+     * A zero value indicates that the skew has not been initialized.
+     * If the value is zero when #base is initialized the skew will be
+     * set to 1.  Otherwise the skew is assigned through
+     * timeutil_sync_state_set_skew().
+     */
+    float skew;
 };
 
 /**
@@ -184,8 +184,8 @@ struct timeutil_sync_state {
  * @retval 1 if installation provided a new latest instant
  * @retval -EINVAL if the new instant is not compatible with the base instant
  */
-int timeutil_sync_state_update(struct timeutil_sync_state *tsp,
-			       const struct timeutil_sync_instant *inst);
+int timeutil_sync_state_update(struct timeutil_sync_state* tsp,
+                               const struct timeutil_sync_instant* inst);
 
 /**
  * @brief Update the state with a new skew and possibly base value.
@@ -211,8 +211,8 @@ int timeutil_sync_state_update(struct timeutil_sync_state *tsp,
  * @return 0 if skew was updated
  * @return -EINVAL if skew was not valid
  */
-int timeutil_sync_state_set_skew(struct timeutil_sync_state *tsp, float skew,
-				 const struct timeutil_sync_instant *base);
+int timeutil_sync_state_set_skew(struct timeutil_sync_state* tsp, float skew,
+                                 const struct timeutil_sync_instant* base);
 
 /**
  * @brief Estimate the skew based on current state.
@@ -227,7 +227,7 @@ int timeutil_sync_state_set_skew(struct timeutil_sync_state *tsp, float skew,
  *
  * @return the estimated skew, or zero if skew could not be estimated.
  */
-float timeutil_sync_estimate_skew(const struct timeutil_sync_state *tsp);
+float timeutil_sync_estimate_skew(const struct timeutil_sync_state* tsp);
 
 /**
  * @brief Interpolate a reference timescale instant from a local
@@ -251,8 +251,8 @@ float timeutil_sync_estimate_skew(const struct timeutil_sync_state *tsp);
  *   * @p refp is null
  * @retval -ERANGE the interpolated reference time would be negative
  */
-int timeutil_sync_ref_from_local(const struct timeutil_sync_state *tsp,
-				 uint64_t local, uint64_t *refp);
+int timeutil_sync_ref_from_local(const struct timeutil_sync_state* tsp,
+                                 uint64_t local, uint64_t* refp);
 
 /**
  * @brief Interpolate a local timescale instant from a reference
@@ -275,8 +275,8 @@ int timeutil_sync_ref_from_local(const struct timeutil_sync_state *tsp,
  *   * the time synchronization state is not adequately initialized
  *   * @p refp is null
  */
-int timeutil_sync_local_from_ref(const struct timeutil_sync_state *tsp,
-				 uint64_t ref, int64_t *localp);
+int timeutil_sync_local_from_ref(const struct timeutil_sync_state* tsp,
+                                 uint64_t ref, int64_t* localp);
 
 /**
  * @brief Convert from a skew to an error in parts-per-billion.

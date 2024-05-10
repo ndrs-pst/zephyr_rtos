@@ -67,8 +67,8 @@ struct virtual_interface_link_types {
 struct virtual_interface_config {
 	sa_family_t family;
 	union {
-		struct in_addr peer4addr;
-		struct in6_addr peer6addr;
+		struct net_in_addr peer4addr;
+		struct net_in6_addr peer6addr;
 		int mtu;
 		struct virtual_interface_link_types link_types;
 	};
@@ -125,7 +125,7 @@ struct virtual_interface_api {
 /* Make sure that the network interface API is properly setup inside
  * Virtual API struct (it is the first one).
  */
-BUILD_ASSERT(offsetof(struct virtual_interface_api, iface_api) == 0);
+BUILD_ASSERT(offsetof(struct virtual_interface_api, iface_api) == 0, "offsetof error !!!");
 
 /** Virtual L2 context that is needed to binding to the real network interface
  */

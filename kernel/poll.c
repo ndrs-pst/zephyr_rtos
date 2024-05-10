@@ -35,140 +35,152 @@
  */
 static struct k_spinlock lock;
 
-enum POLL_MODE { MODE_NONE, MODE_POLL, MODE_TRIGGERED };
+enum POLL_MODE {
+    MODE_NONE,
+    MODE_POLL,
+    MODE_TRIGGERED
+};
 
-static int signal_poller(struct k_poll_event *event, uint32_t state);
-static int signal_triggered_work(struct k_poll_event *event, uint32_t status);
+static int signal_poller(struct k_poll_event* event, uint32_t state);
+static int signal_triggered_work(struct k_poll_event* event, uint32_t status);
 
-void k_poll_event_init(struct k_poll_event *event, uint32_t type,
-		       int mode, void *obj)
-{
-	__ASSERT(mode == K_POLL_MODE_NOTIFY_ONLY,
-		 "only NOTIFY_ONLY mode is supported\n");
-	__ASSERT(type < (BIT(_POLL_NUM_TYPES)), "invalid type\n");
-	__ASSERT(obj != NULL, "must provide an object\n");
+void k_poll_event_init(struct k_poll_event* event, uint32_t type,
+                       int mode, void* obj) {
+    __ASSERT(mode == K_POLL_MODE_NOTIFY_ONLY,
+             "only NOTIFY_ONLY mode is supported\n");
+    __ASSERT(type < (BIT(_POLL_NUM_TYPES)), "invalid type\n");
+    __ASSERT(obj != NULL, "must provide an object\n");
 
-	event->poller = NULL;
-	/* event->tag is left uninitialized: the user will set it if needed */
-	event->type = type;
-	event->state = K_POLL_STATE_NOT_READY;
-	event->mode = mode;
-	event->unused = 0U;
-	event->obj = obj;
+    event->poller = NULL;
+    /* event->tag is left uninitialized: the user will set it if needed */
+    event->type   = type;
+    event->state  = K_POLL_STATE_NOT_READY;
+    event->mode   = mode;
+    event->unused = 0U;
+    event->obj    = obj;
 
-	SYS_PORT_TRACING_FUNC(k_poll_api, event_init, event);
+    SYS_PORT_TRACING_FUNC(k_poll_api, event_init, event);
 }
 
 /* must be called with interrupts locked */
-static inline bool is_condition_met(struct k_poll_event *event, uint32_t *state)
-{
-	switch (event->type) {
-	case K_POLL_TYPE_SEM_AVAILABLE:
-		if (k_sem_count_get(event->sem) > 0U) {
-			*state = K_POLL_STATE_SEM_AVAILABLE;
-			return true;
-		}
-		break;
-	case K_POLL_TYPE_DATA_AVAILABLE:
-		if (!k_queue_is_empty(event->queue)) {
-			*state = K_POLL_STATE_FIFO_DATA_AVAILABLE;
-			return true;
-		}
-		break;
-	case K_POLL_TYPE_SIGNAL:
-		if (event->signal->signaled != 0U) {
-			*state = K_POLL_STATE_SIGNALED;
-			return true;
-		}
-		break;
-	case K_POLL_TYPE_MSGQ_DATA_AVAILABLE:
-		if (event->msgq->used_msgs > 0) {
-			*state = K_POLL_STATE_MSGQ_DATA_AVAILABLE;
-			return true;
-		}
-		break;
-#ifdef CONFIG_PIPES
-	case K_POLL_TYPE_PIPE_DATA_AVAILABLE:
-		if (k_pipe_read_avail(event->pipe)) {
-			*state = K_POLL_STATE_PIPE_DATA_AVAILABLE;
-			return true;
-		}
-#endif /* CONFIG_PIPES */
-	case K_POLL_TYPE_IGNORE:
-		break;
-	default:
-		__ASSERT(false, "invalid event type (0x%x)\n", event->type);
-		break;
-	}
+static inline bool is_condition_met(struct k_poll_event* event, uint32_t* state) {
+    switch (event->type) {
+        case K_POLL_TYPE_SEM_AVAILABLE :
+            if (k_sem_count_get(event->sem) > 0U) {
+                *state = K_POLL_STATE_SEM_AVAILABLE;
+                return true;
+            }
+            break;
 
-	return false;
+        case K_POLL_TYPE_DATA_AVAILABLE :
+            if (!k_queue_is_empty(event->queue)) {
+                *state = K_POLL_STATE_FIFO_DATA_AVAILABLE;
+                return true;
+            }
+            break;
+
+        case K_POLL_TYPE_SIGNAL :
+            if (event->signal->signaled != 0U) {
+                *state = K_POLL_STATE_SIGNALED;
+                return true;
+            }
+            break;
+
+        case K_POLL_TYPE_MSGQ_DATA_AVAILABLE :
+            if (event->msgq->used_msgs > 0) {
+                *state = K_POLL_STATE_MSGQ_DATA_AVAILABLE;
+                return true;
+            }
+            break;
+
+        #ifdef CONFIG_PIPES
+        case K_POLL_TYPE_PIPE_DATA_AVAILABLE :
+            if (k_pipe_read_avail(event->pipe)) {
+                *state = K_POLL_STATE_PIPE_DATA_AVAILABLE;
+                return true;
+            }
+        #endif /* CONFIG_PIPES */
+
+        case K_POLL_TYPE_IGNORE :
+            break;
+
+        default :
+            __ASSERT(false, "invalid event type (0x%x)\n", event->type);
+            break;
+    }
+
+    return (false);
 }
 
-static struct k_thread *poller_thread(struct z_poller *p)
-{
-	return p ? CONTAINER_OF(p, struct k_thread, poller) : NULL;
+static struct k_thread* poller_thread(struct z_poller* p) {
+    return p ? CONTAINER_OF(p, struct k_thread, poller) : NULL;
 }
 
-static inline void add_event(sys_dlist_t *events, struct k_poll_event *event,
-			     struct z_poller *poller)
-{
-	struct k_poll_event *pending;
+static inline void add_event(sys_dlist_t* events, struct k_poll_event* event,
+                             struct z_poller* poller) {
+    struct k_poll_event* pending;
 
-	pending = (struct k_poll_event *)sys_dlist_peek_tail(events);
-	if ((pending == NULL) ||
-		(z_sched_prio_cmp(poller_thread(pending->poller),
-							   poller_thread(poller)) > 0)) {
-		sys_dlist_append(events, &event->_node);
-		return;
-	}
+    pending = (struct k_poll_event*)sys_dlist_peek_tail(events);
+    if ((pending == NULL) ||
+        (z_sched_prio_cmp(poller_thread(pending->poller),
+                          poller_thread(poller)) > 0)) {
+        sys_dlist_append(events, &event->_node);
+        return;
+    }
 
-	SYS_DLIST_FOR_EACH_CONTAINER(events, pending, _node) {
-		if (z_sched_prio_cmp(poller_thread(poller),
-					poller_thread(pending->poller)) > 0) {
-			sys_dlist_insert(&pending->_node, &event->_node);
-			return;
-		}
-	}
+    SYS_DLIST_FOR_EACH_CONTAINER_WITH_TYPE(events, struct k_poll_event,
+                                           pending, _node) {
+        if (z_sched_prio_cmp(poller_thread(poller),
+                             poller_thread(pending->poller)) > 0) {
+            sys_dlist_insert(&pending->_node, &event->_node);
+            return;
+        }
+    }
 
-	sys_dlist_append(events, &event->_node);
+    sys_dlist_append(events, &event->_node);
 }
 
 /* must be called with interrupts locked */
-static inline void register_event(struct k_poll_event *event,
-				 struct z_poller *poller)
-{
-	switch (event->type) {
-	case K_POLL_TYPE_SEM_AVAILABLE:
-		__ASSERT(event->sem != NULL, "invalid semaphore\n");
-		add_event(&event->sem->poll_events, event, poller);
-		break;
-	case K_POLL_TYPE_DATA_AVAILABLE:
-		__ASSERT(event->queue != NULL, "invalid queue\n");
-		add_event(&event->queue->poll_events, event, poller);
-		break;
-	case K_POLL_TYPE_SIGNAL:
-		__ASSERT(event->signal != NULL, "invalid poll signal\n");
-		add_event(&event->signal->poll_events, event, poller);
-		break;
-	case K_POLL_TYPE_MSGQ_DATA_AVAILABLE:
-		__ASSERT(event->msgq != NULL, "invalid message queue\n");
-		add_event(&event->msgq->poll_events, event, poller);
-		break;
-#ifdef CONFIG_PIPES
-	case K_POLL_TYPE_PIPE_DATA_AVAILABLE:
-		__ASSERT(event->pipe != NULL, "invalid pipe\n");
-		add_event(&event->pipe->poll_events, event, poller);
-		break;
-#endif /* CONFIG_PIPES */
-	case K_POLL_TYPE_IGNORE:
-		/* nothing to do */
-		break;
-	default:
-		__ASSERT(false, "invalid event type\n");
-		break;
-	}
+static inline void register_event(struct k_poll_event* event,
+                                  struct z_poller* poller) {
+    switch (event->type) {
+        case K_POLL_TYPE_SEM_AVAILABLE :
+            __ASSERT(event->sem != NULL, "invalid semaphore\n");
+            add_event(&event->sem->poll_events, event, poller);
+            break;
 
-	event->poller = poller;
+        case K_POLL_TYPE_DATA_AVAILABLE :
+            __ASSERT(event->queue != NULL, "invalid queue\n");
+            add_event(&event->queue->poll_events, event, poller);
+            break;
+
+        case K_POLL_TYPE_SIGNAL :
+            __ASSERT(event->signal != NULL, "invalid poll signal\n");
+            add_event(&event->signal->poll_events, event, poller);
+            break;
+
+        case K_POLL_TYPE_MSGQ_DATA_AVAILABLE :
+            __ASSERT(event->msgq != NULL, "invalid message queue\n");
+            add_event(&event->msgq->poll_events, event, poller);
+            break;
+
+        #ifdef CONFIG_PIPES
+        case K_POLL_TYPE_PIPE_DATA_AVAILABLE:
+            __ASSERT(event->pipe != NULL, "invalid pipe\n");
+            add_event(&event->pipe->poll_events, event, poller);
+            break;
+        #endif /* CONFIG_PIPES */
+
+        case K_POLL_TYPE_IGNORE :
+            /* nothing to do */
+            break;
+
+        default :
+            __ASSERT(false, "invalid event type\n");
+            break;
+    }
+
+    event->poller = poller;
 }
 
 /* must be called with interrupts locked */
@@ -590,7 +602,7 @@ static void triggered_work_handler(struct k_work *work)
 	twork->real_handler(work);
 }
 
-static void triggered_work_expiration_handler(struct _timeout *timeout)
+static void triggered_work_expiration_handler(struct _timeout const* timeout)
 {
 	struct k_work_poll *twork =
 		CONTAINER_OF(timeout, struct k_work_poll, timeout);
@@ -655,7 +667,7 @@ void k_work_poll_init(struct k_work_poll *work,
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work_poll, init, work);
 
-	*work = (struct k_work_poll) {};
+	*work = (struct k_work_poll) {0};
 	k_work_init(&work->work, triggered_work_handler);
 	work->real_handler = handler;
 	z_init_timeout(&work->timeout);
