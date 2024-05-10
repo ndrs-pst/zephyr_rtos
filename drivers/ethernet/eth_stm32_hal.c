@@ -61,7 +61,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
 
 #define DEVICE_PHY_BY_NAME(n) \
-        DEVICE_DT_GET(DT_CHILD(DT_INST_CHILD(n, mdio), ethernet_phy_0))
+        DEVICE_DT_GET(DT_CHILD(DT_INST_CHILD(n, mdio), eth_phy_0))
 
 static const struct device* eth_stm32_phy_dev = DEVICE_PHY_BY_NAME(0);
 
@@ -257,23 +257,11 @@ static void eth_stm32_phy_link_callback(const struct device* pdev,
                                         struct phy_link_state* state,
                                         void* user_data) {
     const struct device* dev = user_data;
-    const struct eth_stm32_hal_dev_cfg* cfg = dev->config;
     struct eth_stm32_hal_dev_data* ctx = dev->data;
 
     ARG_UNUSED(pdev);
 
     if (state->is_up == true) {
-        /* Porting phy link config to mac */
-        // convert_phy_to_mac_config(&gmac_cfg, state->speed);
-
-        /* Set MAC configuration */
-        // Gmac_Ip_SetSpeed(cfg->instance, gmac_cfg.Speed);
-
-        // cfg->base->MAC_CONFIGURATION |= GMAC_MAC_CONFIGURATION_DM(gmac_cfg.Duplex);
-
-        /* net iface should be down even if PHY link state is up
-         * till the upper network layers have suspended the iface.
-         */
         if (ctx->if_suspended) {
             return;
         }

@@ -1716,15 +1716,14 @@ char const* net_family2str(sa_family_t family);
  * @return 0 if ok, <0 if error
  */
 #if defined(CONFIG_NET_IPV6_PE)
-int net_ipv6_pe_add_filter(struct in6_addr *addr, bool is_denylist);
+int net_ipv6_pe_add_filter(struct net_in6_addr* addr, bool is_denylist);
 #else
-static inline int net_ipv6_pe_add_filter(struct in6_addr *addr,
-					 bool is_denylist)
-{
-	ARG_UNUSED(addr);
-	ARG_UNUSED(is_denylist);
+static inline int net_ipv6_pe_add_filter(struct net_in6_addr* addr,
+                                         bool is_denylist) {
+    ARG_UNUSED(addr);
+    ARG_UNUSED(is_denylist);
 
-	return -ENOTSUP;
+    return (-ENOTSUP);
 }
 #endif /* CONFIG_NET_IPV6_PE */
 
@@ -1736,13 +1735,12 @@ static inline int net_ipv6_pe_add_filter(struct in6_addr *addr,
  * @return 0 if ok, <0 if error
  */
 #if defined(CONFIG_NET_IPV6_PE)
-int net_ipv6_pe_del_filter(struct in6_addr *addr);
+int net_ipv6_pe_del_filter(struct net_in6_addr* addr);
 #else
-static inline int net_ipv6_pe_del_filter(struct in6_addr *addr)
-{
-	ARG_UNUSED(addr);
+static inline int net_ipv6_pe_del_filter(struct net_in6_addr* addr) {
+    ARG_UNUSED(addr);
 
-	return -ENOTSUP;
+    return (-ENOTSUP);
 }
 #endif /* CONFIG_NET_IPV6_PE */
 

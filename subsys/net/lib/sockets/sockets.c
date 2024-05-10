@@ -3768,7 +3768,7 @@ int zsock_getsockname_ctx(struct net_context *ctx, struct net_sockaddr *addr,
 		newlen = sizeof(struct net_sockaddr_in);
 
 		ret = net_context_get_local_addr(ctx,
-						 (struct sockaddr *)&addr4,
+						 (struct net_sockaddr*)&addr4,
 						 &newlen);
 		if (ret < 0) {
 			SET_ERRNO(-ret);

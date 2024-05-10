@@ -329,7 +329,7 @@ static int cmd_net_ip6_pe(const struct shell *sh, size_t argc, char *argv[])
 #if defined(CONFIG_NET_NATIVE_IPV6)
 #if CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT > 0
 	bool do_allowlisting = true;
-	struct in6_addr prefix;
+	struct net_in6_addr prefix;
 	bool do_add;
 	int arg = 1;
 	int ret;

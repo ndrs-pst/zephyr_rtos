@@ -185,9 +185,8 @@ static void append_mcast_routes(struct net_route_entry_mcast *entry, void *user_
 }
 #endif
 
-int net_ipv6_mld_send_single(struct net_if *iface, const struct in6_addr *addr, uint8_t mode)
-{
-	struct net_pkt *pkt;
+int net_ipv6_mld_send_single(struct net_if* iface, const struct net_in6_addr* addr, uint8_t mode) {
+	struct net_pkt* pkt;
 	int ret;
 
 	pkt = net_pkt_alloc_with_buffer(iface, IPV6_OPT_HDR_ROUTER_ALERT_LEN +

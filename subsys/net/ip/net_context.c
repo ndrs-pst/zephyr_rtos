@@ -1137,8 +1137,8 @@ int net_context_create_ipv6_new(struct net_context *context,
 
 	if (net_ipv6_is_addr_unspecified(src) || net_ipv6_is_addr_mcast(src)) {
 		src = net_if_ipv6_select_src_addr_hint(net_pkt_iface(pkt),
-						       (struct inet_n6_addr *)dst,
-						       context->options.addr_preferences);
+		                                       dst,
+		                                       context->options.addr_preferences);
 	}
 
 #if defined(CONFIG_NET_CONTEXT_DSCP_ECN)
@@ -3178,7 +3178,7 @@ int net_context_get_option(struct net_context *context,
 }
 
 int net_context_get_local_addr(struct net_context *ctx,
-			       struct sockaddr *addr,
+			       struct net_sockaddr *addr,
 			       socklen_t *addrlen)
 {
 	if (ctx == NULL || addr == NULL || addrlen == NULL) {
@@ -3186,30 +3186,30 @@ int net_context_get_local_addr(struct net_context *ctx,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_TCP) &&
-	    net_context_get_type(ctx) == SOCK_STREAM) {
+	    net_context_get_type(ctx) == NET_SOCK_STREAM) {
 		return net_tcp_endpoint_copy(ctx, addr, NULL, addrlen);
 	}
 
-	if (IS_ENABLED(CONFIG_NET_UDP) && net_context_get_type(ctx) == SOCK_DGRAM) {
+	if (IS_ENABLED(CONFIG_NET_UDP) && (net_context_get_type(ctx) == NET_SOCK_DGRAM)) {
 		socklen_t newlen;
 
-		if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->local.family == AF_INET) {
-			newlen = MIN(*addrlen, sizeof(struct sockaddr_in));
+		if (IS_ENABLED(CONFIG_NET_IPV4) && (ctx->local.family == NET_AF_INET)) {
+			newlen = MIN(*addrlen, sizeof(struct net_sockaddr_in));
 
-			net_sin(addr)->sin_family = AF_INET;
+			net_sin(addr)->sin_family = NET_AF_INET;
 			net_sin(addr)->sin_port = net_sin_ptr(&ctx->local)->sin_port;
 			memcpy(&net_sin(addr)->sin_addr,
 			       net_sin_ptr(&ctx->local)->sin_addr,
-			       sizeof(struct in_addr));
+			       sizeof(struct net_in_addr));
 
-		} else if (IS_ENABLED(CONFIG_NET_IPV6) && ctx->local.family == AF_INET6) {
-			newlen = MIN(*addrlen, sizeof(struct sockaddr_in6));
+		} else if (IS_ENABLED(CONFIG_NET_IPV6) && (ctx->local.family == NET_AF_INET6)) {
+			newlen = MIN(*addrlen, sizeof(struct net_sockaddr_in6));
 
-			net_sin6(addr)->sin6_family = AF_INET6;
+			net_sin6(addr)->sin6_family = NET_AF_INET6;
 			net_sin6(addr)->sin6_port = net_sin6_ptr(&ctx->local)->sin6_port;
 			memcpy(&net_sin6(addr)->sin6_addr,
 			       net_sin6_ptr(&ctx->local)->sin6_addr,
-			       sizeof(struct in6_addr));
+			       sizeof(struct net_in6_addr));
 		} else {
 			return -EAFNOSUPPORT;
 		}

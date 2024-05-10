@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(net_ipv6_pe, CONFIG_NET_IPV6_PE_LOG_LEVEL);
 #include "ipv6.h"
 
 /* From RFC 5453 */
-static const struct in6_addr reserved_anycast_subnet = { { {
+static const struct net_in6_addr reserved_anycast_subnet = { { {
 			0xfd, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x80,
 			0xfd, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
 		} } };
