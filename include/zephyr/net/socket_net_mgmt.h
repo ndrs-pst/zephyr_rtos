@@ -37,7 +37,7 @@ extern "C" {
 #define SOL_NET_MGMT_RAW (SOL_NET_MGMT_BASE + 1)
 
 /**
- * struct sockaddr_nm - The sockaddr structure for NET_MGMT sockets
+ * struct net_sockaddr_nm - The sockaddr structure for NET_MGMT sockets
  *
  * Similar concepts are used as in Linux AF_NETLINK. The NETLINK name is not
  * used in order to avoid confusion between Zephyr and Linux as the
@@ -54,7 +54,7 @@ extern "C" {
  * address of this net_mgmt socket. The application is responsible for picking
  * a unique integer value to fill in nm_pid.
  */
-struct sockaddr_nm {
+struct net_sockaddr_nm {
 	/** AF_NET_MGMT address family. */
 	sa_family_t nm_family;
 

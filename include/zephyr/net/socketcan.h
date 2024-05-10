@@ -55,10 +55,10 @@ enum {
 #define CANFD_FDF 0x04 /* mark CAN FD for dual use of struct canfd_frame */
 
 /**
- * struct sockaddr_can - The sockaddr structure for CAN sockets
+ * struct net_sockaddr_can - The sockaddr structure for CAN sockets
  *
  */
-struct sockaddr_can {
+struct net_sockaddr_can {
 	sa_family_t can_family;
 	int         can_ifindex;
 };

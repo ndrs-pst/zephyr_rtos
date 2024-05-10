@@ -1094,7 +1094,7 @@ static ssize_t websocket_write_vmeth(void *obj, const void *buffer,
 
 static ssize_t websocket_sendto_ctx(void *obj, const void *buf, size_t len,
 				    int flags,
-				    const struct sockaddr *dest_addr,
+				    const struct net_sockaddr *dest_addr,
 				    socklen_t addrlen)
 {
 	struct websocket_context *ctx = obj;
@@ -1111,7 +1111,7 @@ static ssize_t websocket_sendto_ctx(void *obj, const void *buf, size_t len,
 }
 
 static ssize_t websocket_recvfrom_ctx(void *obj, void *buf, size_t max_len,
-				      int flags, struct sockaddr *src_addr,
+				      int flags, struct net_sockaddr *src_addr,
 				      socklen_t *addrlen)
 {
 	struct websocket_context *ctx = obj;

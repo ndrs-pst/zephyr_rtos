@@ -344,7 +344,7 @@ extern npf_test_fn_t npf_ip_src_addr_unmatch;
  * addresses contained in the provided set.
  *
  * @param _name Name of the condition
- * @param _ip_addr_array Array of <tt>struct in_addr</tt> or <tt>struct in6_addr</tt> items to test
+ * @param _ip_addr_array Array of <tt>struct net_in_addr</tt> or <tt>struct net_in6_addr</tt> items to test
  *against
  * @param _ip_addr_num number of IP addresses in the array
  * @param _af Addresses family type (AF_INET / AF_INET6) in the array
@@ -364,7 +364,7 @@ extern npf_test_fn_t npf_ip_src_addr_unmatch;
  * addresses contained in the provided set.
  *
  * @param _name Name of the condition
- * @param _ip_addr_array Array of <tt>struct in_addr</tt> or <tt>struct in6_addr</tt> items to test
+ * @param _ip_addr_array Array of <tt>struct net_in_addr</tt> or <tt>struct net_in6_addr</tt> items to test
  *against
  * @param _ip_addr_num number of IP addresses in the array
  * @param _af Addresses family type (AF_INET / AF_INET6) in the array

@@ -133,16 +133,16 @@ int zperf_tcp_upload(const struct zperf_upload_params *param,
 	}
 
 	sock = zperf_prepare_upload_sock(&param->peer_addr, param->options.tos,
-					 param->options.priority, IPPROTO_TCP);
+					 param->options.priority, NET_IPPROTO_TCP);
 	if (sock < 0) {
 		return sock;
 	}
 
 	if (param->options.tcp_nodelay &&
-	    zsock_setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
+	    zsock_setsockopt(sock, NET_IPPROTO_TCP, TCP_NODELAY,
 			     &param->options.tcp_nodelay,
 			     sizeof(param->options.tcp_nodelay)) != 0) {
-		NET_WARN("Failed to set IPPROTO_TCP - TCP_NODELAY socket option.");
+		NET_WARN("Failed to set NET_IPPROTO_TCP - TCP_NODELAY socket option.");
 		return -EINVAL;
 	}
 

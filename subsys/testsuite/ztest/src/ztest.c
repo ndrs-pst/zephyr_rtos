@@ -1199,7 +1199,7 @@ void __weak test_main(void)
 }
 
 #ifndef KERNEL
-int main(void)
+int ztest_main(void)    /* #CUSTOM@NDRS */
 {
 	z_init_mock();
 	test_main();
@@ -1392,8 +1392,7 @@ static void testsuite_list_get(size_t idx, struct shell_static_entry *entry)
 SHELL_CMD_REGISTER(ztest, &sub_ztest_cmds, "Ztest commands", NULL);
 #endif /* CONFIG_ZTEST_SHELL */
 
-int main(void)
-{
+int ztest_main(void) /* #CUSTOM@NDRS */ {
 #ifdef CONFIG_USERSPACE
 	/* Partition containing globals tagged with ZTEST_DMEM and ZTEST_BMEM
 	 * macros. Any variables that user code may reference need to be

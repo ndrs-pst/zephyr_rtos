@@ -344,11 +344,11 @@ static bool start_http_client(void)
 	int protocol = IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) ? IPPROTO_TLS_1_2 : IPPROTO_TCP;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		hints.ai_family = AF_INET6;
-		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_family = NET_AF_INET6;
+		hints.ai_socktype = NET_SOCK_STREAM;
 	} else if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		hints.ai_family = AF_INET;
-		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_family = NET_AF_INET;
+		hints.ai_socktype = NET_SOCK_STREAM;
 	}
 
 	while (resolve_attempts--) {
@@ -365,7 +365,7 @@ static bool start_http_client(void)
 		return false;
 	}
 
-	hb_context.sock = zsock_socket(addr->ai_family, SOCK_STREAM, protocol);
+	hb_context.sock = zsock_socket(addr->ai_family, NET_SOCK_STREAM, protocol);
 	if (hb_context.sock < 0) {
 		LOG_ERR("Failed to create TCP socket");
 		goto err;
