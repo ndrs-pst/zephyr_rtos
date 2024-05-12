@@ -71,6 +71,14 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #endif
 #endif /* CONFIG_SOC_SERIES_STM32MP1X */
 
+__weak void bsp_hal_spi_tx_rx_cplt_callback(SPI_TypeDef* spi) {
+    /* pass */
+}
+
+__weak void bsp_hal_spi_err_callback(SPI_TypeDef* spi, uint32_t sr) {
+    /* pass */
+}
+
 static void spi_stm32_pm_policy_state_lock_get(const struct device* dev) {
     if (IS_ENABLED(CONFIG_PM)) {
         struct spi_stm32_data* data = dev->data;
@@ -355,6 +363,8 @@ static int spi_stm32_get_err(SPI_TypeDef* spi) {
             LL_SPI_ClearFlag_OVR(spi);
         }
 
+        bsp_hal_spi_err_callback(spi, sr);
+
         return (-EIO);
     }
 
@@ -623,6 +633,10 @@ __maybe_unused static void /**/spi_stpm3x_isr(const struct device* dev) {
 
     if (handled != 0UL) {
         return;
+    }
+
+    if (HAL_IS_BIT_SET(trigger, SPI_FLAG_EOT)) {
+        bsp_hal_spi_tx_rx_cplt_callback(spi);
     }
 
     err = spi_stm32_get_err(spi);
