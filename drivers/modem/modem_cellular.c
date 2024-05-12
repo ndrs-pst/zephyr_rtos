@@ -134,13 +134,13 @@ struct modem_cellular_data {
 
 struct modem_cellular_config {
     const struct device* uart;
-    const struct gpio_dt_spec power_gpio;
-    const struct gpio_dt_spec reset_gpio;
-    const uint16_t power_pulse_duration_ms;
-    const uint16_t reset_pulse_duration_ms;
-    const uint16_t startup_time_ms;
-    const uint16_t shutdown_time_ms;
-    bool const autostarts;
+    struct gpio_dt_spec power_gpio;
+    struct gpio_dt_spec reset_gpio;
+    uint16_t power_pulse_duration_ms;
+    uint16_t reset_pulse_duration_ms;
+    uint16_t startup_time_ms;
+    uint16_t shutdown_time_ms;
+    bool autostarts;
     const struct modem_chat_script* init_chat_script;
     const struct modem_chat_script* dial_chat_script;
     const struct modem_chat_script* periodic_chat_script;
@@ -252,7 +252,7 @@ static void modem_cellular_event_handler(struct modem_cellular_data* data,
 static void modem_cellular_bus_pipe_handler(struct modem_pipe* pipe,
                                             enum modem_pipe_event event,
                                             void* user_data) {
-    struct modem_cellular_data* data = (struct modem_cellular_data*)user_data;
+    struct modem_cellular_data* data = user_data;
 
     switch (event) {
         case MODEM_PIPE_EVENT_OPENED :
@@ -271,7 +271,7 @@ static void modem_cellular_bus_pipe_handler(struct modem_pipe* pipe,
 static void modem_cellular_dlci1_pipe_handler(struct modem_pipe* pipe,
                                               enum modem_pipe_event event,
                                               void* user_data) {
-    struct modem_cellular_data* data = (struct modem_cellular_data*)user_data;
+    struct modem_cellular_data* data = user_data;
 
     switch (event) {
         case MODEM_PIPE_EVENT_OPENED :
@@ -286,7 +286,7 @@ static void modem_cellular_dlci1_pipe_handler(struct modem_pipe* pipe,
 static void modem_cellular_dlci2_pipe_handler(struct modem_pipe* pipe,
                                               enum modem_pipe_event event,
                                               void* user_data) {
-    struct modem_cellular_data* data = (struct modem_cellular_data*)user_data;
+    struct modem_cellular_data* data = user_data;
 
     switch (event) {
         case MODEM_PIPE_EVENT_OPENED :
@@ -301,7 +301,7 @@ static void modem_cellular_dlci2_pipe_handler(struct modem_pipe* pipe,
 static void modem_cellular_chat_callback_handler(struct modem_chat* chat,
                                                  enum modem_chat_script_result result,
                                                  void* user_data) {
-    struct modem_cellular_data* data = (struct modem_cellular_data*)user_data;
+    struct modem_cellular_data* data = user_data;
 
     if (result == MODEM_CHAT_SCRIPT_RESULT_SUCCESS) {
         modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS);
@@ -313,7 +313,7 @@ static void modem_cellular_chat_callback_handler(struct modem_chat* chat,
 
 static void modem_cellular_chat_on_imei(struct modem_chat* chat, char** argv, uint16_t argc,
                                         void* user_data) {
-    struct modem_cellular_data* data = (struct modem_cellular_data*)user_data;
+    struct modem_cellular_data* data = user_data;
 
     if (argc != 2) {
         return;
@@ -324,7 +324,7 @@ static void modem_cellular_chat_on_imei(struct modem_chat* chat, char** argv, ui
 
 static void modem_cellular_chat_on_cgmm(struct modem_chat* chat, char** argv, uint16_t argc,
                                         void* user_data) {
-    struct modem_cellular_data* data = (struct modem_cellular_data*)user_data;
+    struct modem_cellular_data* data = user_data;
 
     if (argc != 2) {
         return;
@@ -335,7 +335,7 @@ static void modem_cellular_chat_on_cgmm(struct modem_chat* chat, char** argv, ui
 
 static void modem_cellular_chat_on_cgmi(struct modem_chat* chat, char** argv, uint16_t argc,
                                         void* user_data) {
-    struct modem_cellular_data* data = (struct modem_cellular_data*)user_data;
+    struct modem_cellular_data* data = user_data;
 
     if (argc != 2) {
         return;
@@ -346,7 +346,7 @@ static void modem_cellular_chat_on_cgmi(struct modem_chat* chat, char** argv, ui
 
 static void modem_cellular_chat_on_cgmr(struct modem_chat* chat, char** argv, uint16_t argc,
                                         void* user_data) {
-    struct modem_cellular_data* data = (struct modem_cellular_data*)user_data;
+    struct modem_cellular_data* data = user_data;
 
     if (argc != 2) {
         return;
@@ -357,7 +357,7 @@ static void modem_cellular_chat_on_cgmr(struct modem_chat* chat, char** argv, ui
 
 static void modem_cellular_chat_on_csq(struct modem_chat* chat, char** argv, uint16_t argc,
                                        void* user_data) {
-    struct modem_cellular_data* data = (struct modem_cellular_data*)user_data;
+    struct modem_cellular_data* data = user_data;
 
     if (argc != 3) {
         return;
@@ -368,7 +368,7 @@ static void modem_cellular_chat_on_csq(struct modem_chat* chat, char** argv, uin
 
 static void modem_cellular_chat_on_cesq(struct modem_chat* chat, char** argv, uint16_t argc,
                                         void* user_data) {
-    struct modem_cellular_data* data = (struct modem_cellular_data*)user_data;
+    struct modem_cellular_data* data = user_data;
 
     if (argc != 7) {
         return;
@@ -380,7 +380,7 @@ static void modem_cellular_chat_on_cesq(struct modem_chat* chat, char** argv, ui
 
 static void modem_cellular_chat_on_iccid(struct modem_chat* chat, char** argv, uint16_t argc,
                                          void* user_data) {
-    struct modem_cellular_data* data = (struct modem_cellular_data*)user_data;
+    struct modem_cellular_data* data = user_data;
 
     if (argc != 2) {
         return;
@@ -391,7 +391,7 @@ static void modem_cellular_chat_on_iccid(struct modem_chat* chat, char** argv, u
 
 static void modem_cellular_chat_on_imsi(struct modem_chat* chat, char** argv, uint16_t argc,
                                         void* user_data) {
-    struct modem_cellular_data* data = (struct modem_cellular_data*)user_data;
+    struct modem_cellular_data* data = user_data;
 
     if (argc != 2) {
         return;
@@ -411,7 +411,7 @@ static bool modem_cellular_is_registered(struct modem_cellular_data* data) {
 
 static void modem_cellular_chat_on_cxreg(struct modem_chat* chat, char** argv, uint16_t argc,
                                          void* user_data) {
-    struct modem_cellular_data* data = (struct modem_cellular_data*)user_data;
+    struct modem_cellular_data* data = user_data;
     enum cellular_registration_status registration_status = 0;
 
     if (argc == 2) {
@@ -528,8 +528,7 @@ static void modem_cellular_delegate_event(struct modem_cellular_data* data,
 }
 
 static int modem_cellular_on_idle_state_enter(struct modem_cellular_data* data) {
-    const struct modem_cellular_config* config =
-        (const struct modem_cellular_config*)data->dev->config;
+    struct modem_cellular_config const* config = data->dev->config;
 
     if (modem_cellular_gpio_is_enabled(&config->reset_gpio)) {
         gpio_pin_set_dt(&config->reset_gpio, 1);
@@ -546,8 +545,7 @@ static int modem_cellular_on_idle_state_enter(struct modem_cellular_data* data) 
 
 static void modem_cellular_idle_event_handler(struct modem_cellular_data* data,
                                               enum modem_cellular_event evt) {
-    const struct modem_cellular_config* config =
-        (const struct modem_cellular_config*)data->dev->config;
+    struct modem_cellular_config const* config = data->dev->config;
 
     switch (evt) {
         case MODEM_CELLULAR_EVENT_RESUME :
@@ -579,8 +577,7 @@ static void modem_cellular_idle_event_handler(struct modem_cellular_data* data,
 }
 
 static int modem_cellular_on_idle_state_leave(struct modem_cellular_data* data) {
-    const struct modem_cellular_config* config =
-        (const struct modem_cellular_config*)data->dev->config;
+    struct modem_cellular_config const* config = data->dev->config;
 
     k_sem_take(&data->suspended_sem, K_NO_WAIT);
 
@@ -592,8 +589,7 @@ static int modem_cellular_on_idle_state_leave(struct modem_cellular_data* data) 
 }
 
 static int modem_cellular_on_reset_pulse_state_enter(struct modem_cellular_data* data) {
-    const struct modem_cellular_config* config =
-        (const struct modem_cellular_config*)data->dev->config;
+    struct modem_cellular_config const* config = data->dev->config;
 
     gpio_pin_set_dt(&config->reset_gpio, 1);
     modem_cellular_start_timer(data, K_MSEC(config->reset_pulse_duration_ms));
@@ -618,8 +614,7 @@ static void modem_cellular_reset_pulse_event_handler(struct modem_cellular_data*
 }
 
 static int modem_cellular_on_reset_pulse_state_leave(struct modem_cellular_data* data) {
-    const struct modem_cellular_config* config =
-        (const struct modem_cellular_config*)data->dev->config;
+    struct modem_cellular_config const* config = data->dev->config;
 
     gpio_pin_set_dt(&config->reset_gpio, 0);
     modem_cellular_stop_timer(data);
@@ -628,8 +623,7 @@ static int modem_cellular_on_reset_pulse_state_leave(struct modem_cellular_data*
 }
 
 static int modem_cellular_on_power_on_pulse_state_enter(struct modem_cellular_data* data) {
-    const struct modem_cellular_config* config =
-        (const struct modem_cellular_config*)data->dev->config;
+    struct modem_cellular_config const* config = data->dev->config;
 
     gpio_pin_set_dt(&config->power_gpio, 1);
     modem_cellular_start_timer(data, K_MSEC(config->power_pulse_duration_ms));
@@ -653,8 +647,7 @@ static void modem_cellular_power_on_pulse_event_handler(struct modem_cellular_da
 }
 
 static int modem_cellular_on_power_on_pulse_state_leave(struct modem_cellular_data* data) {
-    const struct modem_cellular_config* config =
-        (const struct modem_cellular_config*)data->dev->config;
+    struct modem_cellular_config const* config = data->dev->config;
 
     gpio_pin_set_dt(&config->power_gpio, 0);
     modem_cellular_stop_timer(data);
@@ -663,8 +656,7 @@ static int modem_cellular_on_power_on_pulse_state_leave(struct modem_cellular_da
 }
 
 static int modem_cellular_on_await_power_on_state_enter(struct modem_cellular_data* data) {
-    const struct modem_cellular_config* config =
-        (const struct modem_cellular_config*)data->dev->config;
+    struct modem_cellular_config const* config = data->dev->config;
 
     modem_cellular_start_timer(data, K_MSEC(config->startup_time_ms));
 
@@ -694,8 +686,7 @@ static int modem_cellular_on_run_init_script_state_enter(struct modem_cellular_d
 
 static void modem_cellular_run_init_script_event_handler(struct modem_cellular_data* data,
                                                          enum modem_cellular_event evt) {
-    const struct modem_cellular_config* config =
-        (const struct modem_cellular_config*)data->dev->config;
+    struct modem_cellular_config const* config = data->dev->config;
 
     switch (evt) {
         case MODEM_CELLULAR_EVENT_BUS_OPENED :
@@ -838,8 +829,7 @@ static int modem_cellular_on_run_dial_script_state_enter(struct modem_cellular_d
 
 static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_data* data,
                                                          enum modem_cellular_event evt) {
-    const struct modem_cellular_config* config =
-        (const struct modem_cellular_config*)data->dev->config;
+    struct modem_cellular_config const* config = data->dev->config;
 
     switch (evt) {
         case MODEM_CELLULAR_EVENT_TIMEOUT :
@@ -877,8 +867,7 @@ static int modem_cellular_on_await_registered_state_enter(struct modem_cellular_
 
 static void modem_cellular_await_registered_event_handler(struct modem_cellular_data* data,
                                                           enum modem_cellular_event evt) {
-    const struct modem_cellular_config* config =
-        (const struct modem_cellular_config*)data->dev->config;
+    struct modem_cellular_config const* config = data->dev->config;
 
     switch (evt) {
         case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS :
@@ -918,8 +907,7 @@ static int modem_cellular_on_carrier_on_state_enter(struct modem_cellular_data* 
 
 static void modem_cellular_carrier_on_event_handler(struct modem_cellular_data* data,
                                                     enum modem_cellular_event evt) {
-    const struct modem_cellular_config* config =
-        (const struct modem_cellular_config*)data->dev->config;
+    struct modem_cellular_config const* config = data->dev->config;
 
     switch (evt) {
         case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS :
@@ -962,8 +950,7 @@ static int modem_cellular_on_init_power_off_state_enter(struct modem_cellular_da
 
 static void modem_cellular_init_power_off_event_handler(struct modem_cellular_data* data,
                                                         enum modem_cellular_event evt) {
-    const struct modem_cellular_config* config =
-        (const struct modem_cellular_config*)data->dev->config;
+    struct modem_cellular_config const* config = data->dev->config;
 
     switch (evt) {
         case MODEM_CELLULAR_EVENT_TIMEOUT :
@@ -988,8 +975,7 @@ static int modem_cellular_on_init_power_off_state_leave(struct modem_cellular_da
 }
 
 static int modem_cellular_on_power_off_pulse_state_enter(struct modem_cellular_data* data) {
-    const struct modem_cellular_config* config =
-        (const struct modem_cellular_config*)data->dev->config;
+    struct modem_cellular_config const* config = data->dev->config;
 
     gpio_pin_set_dt(&config->power_gpio, 1);
     modem_cellular_start_timer(data, K_MSEC(config->power_pulse_duration_ms));
@@ -1010,8 +996,7 @@ static void modem_cellular_power_off_pulse_event_handler(struct modem_cellular_d
 }
 
 static int modem_cellular_on_power_off_pulse_state_leave(struct modem_cellular_data* data) {
-    const struct modem_cellular_config* config =
-        (const struct modem_cellular_config*)data->dev->config;
+    struct modem_cellular_config const* config = data->dev->config;
 
     gpio_pin_set_dt(&config->power_gpio, 0);
     modem_cellular_stop_timer(data);
@@ -1020,8 +1005,7 @@ static int modem_cellular_on_power_off_pulse_state_leave(struct modem_cellular_d
 }
 
 static int modem_cellular_on_await_power_off_state_enter(struct modem_cellular_data* data) {
-    const struct modem_cellular_config* config =
-        (const struct modem_cellular_config*)data->dev->config;
+    struct modem_cellular_config const* config = data->dev->config;
 
     modem_cellular_start_timer(data, K_MSEC(config->shutdown_time_ms));
 
@@ -1165,16 +1149,13 @@ static void modem_cellular_enter_state(struct modem_cellular_data* data,
     int ret;
 
     ret = modem_cellular_on_state_leave(data);
-
     if (ret < 0) {
         LOG_WRN("failed to leave state, error: %i", ret);
-
         return;
     }
 
     data->state = state;
     ret = modem_cellular_on_state_enter(data);
-
     if (ret < 0) {
         LOG_WRN("failed to enter state error: %i", ret);
     }
@@ -1253,7 +1234,7 @@ static void modem_cellular_event_handler(struct modem_cellular_data* data,
 
 static void modem_cellular_cmux_handler(struct modem_cmux* cmux, enum modem_cmux_event event,
                                         void* user_data) {
-    struct modem_cellular_data* data = (struct modem_cellular_data*)user_data;
+    struct modem_cellular_data* data = user_data;
 
     switch (event) {
         case MODEM_CMUX_EVENT_CONNECTED :
@@ -1322,7 +1303,7 @@ static int modem_cellular_get_signal(const struct device* dev,
                                      const enum cellular_signal_type type,
                                      int16_t* value) {
     int ret = -ENOTSUP;
-    struct modem_cellular_data* data = (struct modem_cellular_data*)dev->data;
+    struct modem_cellular_data* data = dev->data;
 
     if ((data->state != MODEM_CELLULAR_STATE_AWAIT_REGISTERED) &&
         (data->state != MODEM_CELLULAR_STATE_CARRIER_ON)) {
@@ -1376,7 +1357,7 @@ static int modem_cellular_get_modem_info(const struct device* dev,
                                          enum cellular_modem_info_type type,
                                          char* info, size_t size) {
     int ret = 0;
-    struct modem_cellular_data* data = (struct modem_cellular_data*)dev->data;
+    struct modem_cellular_data* data = dev->data;
 
     switch (type) {
         case CELLULAR_MODEM_INFO_IMEI :
@@ -1415,7 +1396,7 @@ static int modem_cellular_get_registration_status(const struct device* dev,
                                                   enum cellular_access_technology tech,
                                                   enum cellular_registration_status* status) {
     int ret = 0;
-    struct modem_cellular_data* data = (struct modem_cellular_data*)dev->data;
+    struct modem_cellular_data* data = dev->data;
 
     switch (tech) {
         case CELLULAR_ACCESS_TECHNOLOGY_GSM :
@@ -1443,7 +1424,7 @@ static int modem_cellular_get_registration_status(const struct device* dev,
     return (ret);
 }
 
-static const struct cellular_driver_api modem_cellular_api = {
+static struct cellular_driver_api const modem_cellular_api = {
     .get_signal = modem_cellular_get_signal,
     .get_modem_info = modem_cellular_get_modem_info,
     .get_registration_status = modem_cellular_get_registration_status,
@@ -1451,7 +1432,7 @@ static const struct cellular_driver_api modem_cellular_api = {
 
 #ifdef CONFIG_PM_DEVICE
 static int modem_cellular_pm_action(const struct device* dev, enum pm_device_action action) {
-    struct modem_cellular_data* data = (struct modem_cellular_data*)dev->data;
+    struct modem_cellular_data* data = dev->data;
     int ret;
 
     switch (action) {
@@ -1475,8 +1456,8 @@ static int modem_cellular_pm_action(const struct device* dev, enum pm_device_act
 #endif /* CONFIG_PM_DEVICE */
 
 static int modem_cellular_init(const struct device* dev) {
-    struct modem_cellular_data*   data   = (struct modem_cellular_data*)dev->data;
-    struct modem_cellular_config* config = (struct modem_cellular_config*)dev->config;
+    struct modem_cellular_data* data = dev->data;
+    struct modem_cellular_config const* config = dev->config;
 
     data->dev = dev;
 
@@ -2072,7 +2053,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
         .ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                            \
     };                                                                          \
                                                                                 \
-    static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {  \
+    static struct modem_cellular_config DT_CONST MODEM_CELLULAR_INST_NAME(config, inst) = { \
         .uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                               \
         .power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),      \
         .reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),      \
@@ -2101,7 +2082,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
         .ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                            \
     };                                                                          \
                                                                                 \
-    static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {  \
+    static struct modem_cellular_config DT_CONST MODEM_CELLULAR_INST_NAME(config, inst) = { \
         .uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                               \
         .power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),      \
         .reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),      \
@@ -2130,7 +2111,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
         .ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                            \
     };                                                                          \
                                                                                 \
-    static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {  \
+    static struct modem_cellular_config DT_CONST MODEM_CELLULAR_INST_NAME(config, inst) = { \
         .uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                               \
         .power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),      \
         .reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),      \
@@ -2159,7 +2140,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
         .ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                            \
     };                                                                          \
                                                                                 \
-    static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {  \
+    static struct modem_cellular_config DT_CONST MODEM_CELLULAR_INST_NAME(config, inst) = { \
         .uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                               \
         .power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),      \
         .reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),      \
@@ -2188,7 +2169,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
         .ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                            \
     };                                                                          \
                                                                                 \
-    static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {  \
+    static struct modem_cellular_config DT_CONST MODEM_CELLULAR_INST_NAME(config, inst) = { \
         .uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                               \
         .power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),      \
         .reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),      \
@@ -2217,7 +2198,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
         .ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                            \
     };                                                                          \
                                                                                 \
-    static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {  \
+    static struct modem_cellular_config DT_CONST MODEM_CELLULAR_INST_NAME(config, inst) = { \
         .uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                               \
         .power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),      \
         .reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),      \
@@ -2247,7 +2228,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
         .ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                            \
     };                                                                          \
                                                                                 \
-    static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {  \
+    static struct modem_cellular_config DT_CONST MODEM_CELLULAR_INST_NAME(config, inst) = { \
         .uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                               \
         .power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),      \
         .reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),      \
@@ -2276,7 +2257,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
         .ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                            \
     };                                                                          \
                                                                                 \
-    static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {  \
+    static struct modem_cellular_config DT_CONST MODEM_CELLULAR_INST_NAME(config, inst) = { \
         .uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                               \
         .power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),      \
         .reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),      \
@@ -2304,7 +2285,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
         .ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                            \
     };                                                                          \
                                                                                 \
-    static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {  \
+    static struct modem_cellular_config DT_CONST MODEM_CELLULAR_INST_NAME(config, inst) = { \
         .uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                               \
         .power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),      \
         .reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),      \
@@ -2333,7 +2314,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
         .ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                            \
     };                                                                          \
                                                                                 \
-    static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {  \
+    static struct modem_cellular_config DT_CONST MODEM_CELLULAR_INST_NAME(config, inst) = { \
         .uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                               \
         .power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),      \
         .reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),      \
