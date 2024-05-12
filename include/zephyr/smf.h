@@ -31,13 +31,13 @@
  * @param _parent  State parent object or NULL
  * @param _initial State initial transition object or NULL
  */
-#define SMF_CREATE_STATE(_entry, _run, _exit, _parent, _initial) \
-{                                                                \
-    .entry = _entry,                                             \
-    .run   = _run,                                               \
-    .exit  = _exit,                                              \
-    IF_ENABLED(CONFIG_SMF_ANCESTOR_SUPPORT, (.parent = _parent,))       \
-    IF_ENABLED(CONFIG_SMF_INITIAL_TRANSITION, (.initial = _initial,))   \
+#define SMF_CREATE_STATE(_entry, _run, _exit, _parent, _initial)    \
+{                                           \
+    .entry   = _entry,                      \
+    .run     = _run,                        \
+    .exit    = _exit,                       \
+    .parent  = _parent,                     \
+    .initial = _initial                     \
 }
 
 /**
@@ -84,12 +84,12 @@ struct smf_state {
      */
     const struct smf_state* parent;
 
-#ifdef CONFIG_SMF_INITIAL_TRANSITION
-	/**
-	 * Optional initial transition state. NULL for leaf states.
-	 */
-	const struct smf_state *initial;
-#endif
+    #ifdef CONFIG_SMF_INITIAL_TRANSITION
+    /**
+     * Optional initial transition state. NULL for leaf states.
+     */
+    const struct smf_state* initial;
+    #endif
 };
 
 /** Defines the current context of the state machine. */
@@ -146,7 +146,7 @@ void smf_set_terminate(struct smf_ctx* ctx, int32_t val);
  *
  * @param ctx  State machine context
  */
-void smf_set_handled(struct smf_ctx *ctx);
+void smf_set_handled(struct smf_ctx* ctx);
 
 /**
  * @brief Runs one iteration of a state machine (including any parent states)
