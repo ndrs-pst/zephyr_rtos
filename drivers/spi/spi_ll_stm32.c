@@ -71,6 +71,10 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #endif
 #endif /* CONFIG_SOC_SERIES_STM32MP1X */
 
+#if (__GTEST == 1U)
+extern void bsp_hal_spi_tx_rx_cplt_callback(SPI_TypeDef* spi);
+extern void bsp_hal_spi_err_callback(SPI_TypeDef* spi, uint32_t sr);
+#else
 __weak void bsp_hal_spi_tx_rx_cplt_callback(SPI_TypeDef* spi) {
     /* pass */
 }
@@ -78,6 +82,7 @@ __weak void bsp_hal_spi_tx_rx_cplt_callback(SPI_TypeDef* spi) {
 __weak void bsp_hal_spi_err_callback(SPI_TypeDef* spi, uint32_t sr) {
     /* pass */
 }
+#endif
 
 static void spi_stm32_pm_policy_state_lock_get(const struct device* dev) {
     if (IS_ENABLED(CONFIG_PM)) {
@@ -635,6 +640,7 @@ __maybe_unused static void /**/spi_stpm3x_isr(const struct device* dev) {
         return;
     }
 
+    /* SPI in end of Transfer --------------------------------------------------*/
     if (HAL_IS_BIT_SET(trigger, SPI_FLAG_EOT)) {
         bsp_hal_spi_tx_rx_cplt_callback(spi);
     }
