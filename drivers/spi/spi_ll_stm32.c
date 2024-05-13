@@ -568,10 +568,7 @@ static inline void spi_rx_isr_stpm3x(SPI_TypeDef* spi, struct spi_stm32_data* da
     uint32_t rx_frame;
 
     rx_frame = LL_SPI_ReceiveData32(spi);
-    if (spi_context_rx_buf_on(&data->ctx)) {
-        UNALIGNED_PUT(rx_frame, (uint32_t*)data->ctx.rx_buf);
-    }
-    spi_context_update_rx(&data->ctx, 4, 1);
+    UNALIGNED_PUT(rx_frame, (uint32_t*)data->ctx.rx_buf);
     LL_SPI_DisableIT_RXP(spi);
 }
 
@@ -634,7 +631,7 @@ __maybe_unused static void /**/spi_stpm3x_isr(const struct device* dev) {
 
     if (spi_stm32_transfer_ongoing(data) == true) {
         err = spi_stm32_shift_frames(cfg, data);
-    }
+}
 
     if ((err != 0) ||
         (spi_stm32_transfer_ongoing(data) == false)) {
@@ -1008,6 +1005,7 @@ int spi_stpm3x_transceive_dt(struct spi_dt_spec const* spec,
                              uint8_t const tx[],
                              uint8_t rx[]) {
     struct spi_stm32_config const* cfg = spec->bus->config;
+    struct spi_stm32_data* data = spec->bus->data;
     SPI_TypeDef* spi = cfg->spi;
 
     // Register the thunking handler
@@ -1028,11 +1026,16 @@ int spi_stpm3x_transceive_dt(struct spi_dt_spec const* spec,
 
     // Set the number of data at current transfer
     MODIFY_REG(spi->CR2, SPI_CR2_TSIZE, 4U);
+    MODIFY_REG(spi->CFG1, SPI_CFG1_FTHLV, SPI_FIFO_THRESHOLD_04DATA);
 
     /* Enable SPI peripheral */
     LL_SPI_Enable(spi);
 
     __IO uint8_t* ptxdr_8bits = (__IO uint8_t*)(&(spi->TXDR));
+
+    data->ctx.rx_buf = rx;
+    data->ctx.rx_len = 0U;
+    data->ctx.tx_len = 0U;
 
     // Transmit data in 8 Bit mode and put in TxFIFO
     *ptxdr_8bits = tx[0];
@@ -1060,6 +1063,7 @@ int spi_stpm3x_init(struct spi_dt_spec const* spec,
 
     ret = spi_stm32_configure(spec->bus, &spec->config);
     if (ret == 0) {
+        data->ctx.asynchronous = true;
         data->ctx.callback = cb;
         data->ctx.callback_data = userdata;
     }
