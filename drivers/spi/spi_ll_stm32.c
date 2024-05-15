@@ -662,16 +662,13 @@ void stpm3x_hal_spi_irq_hndl(SPI_TypeDef* spi,
         /* Disable EOT interrupt */
         LL_SPI_DisableIT_EOT(spi);
 
-        /* DMA Normal Mode */
-        if (HAL_IS_BIT_CLR(cfg1, SPI_CFG1_TXDMAEN | SPI_CFG1_RXDMAEN)) {
-            /* Call SPI Standard close procedure */
-            stpm3x_hal_spi_cls_xfer(spi, data);
+        /* Call SPI Standard close procedure */
+        stpm3x_hal_spi_cls_xfer(spi, data);
 
-            data->State = HAL_SPI_STATE_READY;
-            if (data->ErrorCode != HAL_SPI_ERROR_NONE) {
-                bsp_hal_spi_err_callback(spi, data->ErrorCode);
-                return;
-            }
+        data->State = HAL_SPI_STATE_READY;
+        if (data->ErrorCode != HAL_SPI_ERROR_NONE) {
+            bsp_hal_spi_err_callback(spi, data->ErrorCode);
+            return;
         }
 
         if (State == HAL_SPI_STATE_BUSY_TX_RX) {
@@ -792,18 +789,9 @@ __maybe_unused static void /**/spi_stpm3x_isr(const struct device* dev) {
     SPI_TypeDef* spi = cfg->spi;
     uint32_t event;
 
-    /* Some spurious interrupts are triggered when SPI is not enabled; ignore them.
-     * Do it only when fifo is enabled to leave non-fifo functionality untouched for now
-     */
-    if (cfg->fifo_enabled) {
-        if (!LL_SPI_IsEnabled(spi)) {
-            return;
-        }
-    }
-
     event = spi_irq_handler_asynch(spi, data, cfg->irq);
     if (data->ctx.callback && (event & SPI_EVENT_ALL)) {
-        data->ctx.callback(dev, event, data->ctx.callback_data);
+        data->ctx.callback(dev, (event & SPI_EVENT_ALL), data->ctx.callback_data);
     }
 }
 #endif
@@ -1191,6 +1179,9 @@ int spi_stpm3x_transceive_dt(struct spi_dt_spec const* spec,
 
     // Set the function for IT treatment
     // @note already set in _spi_init_direct with HAL_SPI_Set_TxISR_Rx_ISR_8BIT
+    data->ErrorCode = HAL_SPI_ERROR_NONE;
+    data->State     = HAL_SPI_STATE_BUSY_TX_RX;
+
     data->ctx.rx_buf = rx;
     data->ctx.rx_len = 0U;
     data->ctx.tx_len = 0U;
@@ -1543,6 +1534,12 @@ static int spi_stm32_init(const struct device* dev) {
     cfg->irq_config(dev);
     #endif
 
+    /* @warning critical part the peripheral keeps always control of all associated GPIOs
+     * When SPI master has to be disabled temporary for a specific configuration reason (e.g. CRC
+     * reset, CPHA or HDDIR change) setting this bit prevents any glitches on the associated 
+     * outputs configured at alternate function mode by keeping them forced at state corresponding
+     * the current SPI configuration.
+     */
     LL_SPI_EnableGPIOControl(cfg->spi);
 
     #ifdef CONFIG_SPI_STM32_DMA
