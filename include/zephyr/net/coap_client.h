@@ -94,7 +94,7 @@ struct coap_client_internal_request {
 
 struct coap_client {
 	int fd;
-	struct sockaddr address;
+	struct net_sockaddr address;
 	socklen_t socklen;
 	bool response_ready;
 	struct k_mutex send_mutex;
@@ -134,7 +134,7 @@ int coap_client_init(struct coap_client *client, const char *info);
  * @return zero when operation started successfully or negative error code otherwise.
  */
 
-int coap_client_req(struct coap_client *client, int sock, const struct sockaddr *addr,
+int coap_client_req(struct coap_client *client, int sock, const struct net_sockaddr *addr,
 		    struct coap_client_request *req, struct coap_transmission_parameters *params);
 
 /**

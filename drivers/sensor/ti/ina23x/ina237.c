@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(INA237, CONFIG_SENSOR_LOG_LEVEL);
 #define INA237_POWER_TO_uW(x) ((x) / 5ULL)
 
 /**
- * @brief Scale die temperture from 0.125 degC/bit to micro-degrees C
+ * @brief Scale die temperature from 0.125 degC/bit to micro-degrees C
  *  Note that the bottom 4 bits are reserved and are always zero.
  */
 #define INA237_DIETEMP_TO_uDegC(x) (((x) >> 4) * 125000)
@@ -396,7 +396,7 @@ static const struct sensor_driver_api ina237_driver_api = {
 	.channel_get = ina237_channel_get,
 };
 
-/* Shunt calibration must be muliplied by 4 if high-prevision mode is selected */
+/* Shunt calibration must be multiplied by 4 if high-prevision mode is selected */
 #define CAL_PRECISION_MULTIPLIER(config) \
 	(((config & INA237_CFG_HIGH_PRECISION) >> 4) * 3 + 1)
 

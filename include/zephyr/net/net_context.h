@@ -37,13 +37,13 @@ extern "C" {
 
 /** State of the context (bits 1 & 2 in the flags) */
 enum net_context_state {
-	NET_CONTEXT_IDLE = 0,
-	NET_CONTEXT_UNCONNECTED = 0,
-	NET_CONTEXT_CONFIGURING = 1,
-	NET_CONTEXT_CONNECTING = 1,
-	NET_CONTEXT_READY = 2,
-	NET_CONTEXT_CONNECTED = 2,
-	NET_CONTEXT_LISTENING = 3,
+    NET_CONTEXT_IDLE        = 0,
+    NET_CONTEXT_UNCONNECTED = 0,
+    NET_CONTEXT_CONFIGURING = 1,
+    NET_CONTEXT_CONNECTING  = 1,
+    NET_CONTEXT_READY       = 2,
+    NET_CONTEXT_CONNECTED   = 2,
+    NET_CONTEXT_LISTENING   = 3,
 };
 
 /**
@@ -51,19 +51,19 @@ enum net_context_state {
  * stored into a bit field to save space.
  */
 /** Protocol family of this connection */
-#define NET_CONTEXT_FAMILY (BIT(3) | BIT(4) | BIT(5))
+#define NET_CONTEXT_FAMILY  (BIT(3) | BIT(4) | BIT(5))
 
 /** Type of the connection (datagram / stream / raw) */
-#define NET_CONTEXT_TYPE   (BIT(6) | BIT(7))
+#define NET_CONTEXT_TYPE    (BIT(6) | BIT(7))
 
 /** Remote address set */
-#define NET_CONTEXT_REMOTE_ADDR_SET  BIT(8)
+#define NET_CONTEXT_REMOTE_ADDR_SET BIT(8)
 
 /** Is the socket accepting connections */
 #define NET_CONTEXT_ACCEPTING_SOCK  BIT(9)
 
 /** Is the socket closing / closed */
-#define NET_CONTEXT_CLOSING_SOCK  BIT(10)
+#define NET_CONTEXT_CLOSING_SOCK    BIT(10)
 
 /* Context is bound to a specific interface */
 #define NET_CONTEXT_BOUND_TO_IFACE BIT(11)
@@ -90,12 +90,12 @@ struct net_context;
  * pkt parameter is set to NULL.
  * @param user_data The user data given in net_recv() call.
  */
-typedef void (*net_context_recv_cb_t)(struct net_context *context,
-				      struct net_pkt *pkt,
-				      union net_ip_header *ip_hdr,
-				      union net_proto_header *proto_hdr,
-				      int status,
-				      void *user_data);
+typedef void (*net_context_recv_cb_t)(struct net_context* context,
+                                      struct net_pkt* pkt,
+                                      union net_ip_header* ip_hdr,
+                                      union net_proto_header* proto_hdr,
+                                      int status,
+                                      void* user_data);
 
 /**
  * @typedef net_context_send_cb_t
@@ -111,9 +111,9 @@ typedef void (*net_context_recv_cb_t)(struct net_context *context,
  * < 0 there was an error sending data.
  * @param user_data The user data given in net_send() call.
  */
-typedef void (*net_context_send_cb_t)(struct net_context *context,
-				      int status,
-				      void *user_data);
+typedef void (*net_context_send_cb_t)(struct net_context* context,
+                                      int status,
+                                      void* user_data);
 
 /**
  * @typedef net_tcp_accept_cb_t
@@ -131,11 +131,11 @@ typedef void (*net_context_send_cb_t)(struct net_context *context,
  * @param status The status code, 0 on success, < 0 otherwise
  * @param user_data The user data given in net_context_accept() call.
  */
-typedef void (*net_tcp_accept_cb_t)(struct net_context *new_context,
-				    struct sockaddr *addr,
-				    socklen_t addrlen,
-				    int status,
-				    void *user_data);
+typedef void (*net_tcp_accept_cb_t)(struct net_context* new_context,
+                                    struct net_sockaddr* addr,
+                                    socklen_t addrlen,
+                                    int status,
+                                    void* user_data);
 
 /**
  * @typedef net_context_connect_cb_t
@@ -158,9 +158,9 @@ typedef void (*net_tcp_accept_cb_t)(struct net_context *new_context,
  * error.
  * @param user_data The user data given in net_context_connect() call.
  */
-typedef void (*net_context_connect_cb_t)(struct net_context *context,
-					 int status,
-					 void *user_data);
+typedef void (*net_context_connect_cb_t)(struct net_context* context,
+                                         int status,
+                                         void* user_data);
 
 /* The net_pkt_get_slab_func_t is here in order to avoid circular
  * dependency between net_pkt.h and net_context.h
@@ -173,7 +173,7 @@ typedef void (*net_context_connect_cb_t)(struct net_context *context,
  *
  * @return Pointer to valid struct k_mem_slab instance.
  */
-typedef struct k_mem_slab *(*net_pkt_get_slab_func_t)(void);
+typedef struct k_mem_slab* (*net_pkt_get_slab_func_t)(void);
 
 /* The net_pkt_get_pool_func_t is here in order to avoid circular
  * dependency between net_pkt.h and net_context.h
@@ -186,7 +186,7 @@ typedef struct k_mem_slab *(*net_pkt_get_slab_func_t)(void);
  *
  * @return Pointer to valid struct net_buf_pool instance.
  */
-typedef struct net_buf_pool *(*net_pkt_get_pool_func_t)(void);
+typedef struct net_buf_pool* (*net_pkt_get_pool_func_t)(void);
 
 struct net_tcp;
 
@@ -199,191 +199,203 @@ struct net_conn_handle;
  * anyway. This saves 12 bytes / context in IPv6.
  */
 __net_socket struct net_context {
-	/** First member of the structure to allow to put contexts into a FIFO.
-	 */
-	void *fifo_reserved;
+    /** First member of the structure to allow to put contexts into a FIFO.
+     */
+    void* fifo_reserved;
 
-	/** User data associated with a context.
-	 */
-	void *user_data;
+    /** User data associated with a context.
+     */
+    void* user_data;
 
-	/** Reference count
-	 */
-	atomic_t refcount;
+    /** Reference count
+     */
+    atomic_t refcount;
 
-	/** Internal lock for protecting this context from multiple access.
-	 */
-	struct k_mutex lock;
+    /** Internal lock for protecting this context from multiple access.
+     */
+    struct k_mutex lock;
 
-	/** Local endpoint address. Note that the values are in network byte
-	 * order.
-	 */
-	struct sockaddr_ptr local;
+    /** Local endpoint address. Note that the values are in network byte
+     * order.
+     */
+    struct net_sockaddr_ptr local;
 
-	/** Remote endpoint address. Note that the values are in network byte
-	 * order.
-	 */
-	struct sockaddr remote;
+    /** Remote endpoint address. Note that the values are in network byte
+     * order.
+     */
+    struct net_sockaddr remote;
 
-	/** Connection handle */
-	struct net_conn_handle *conn_handler;
+    /** Connection handle */
+    struct net_conn_handle* conn_handler;
 
-	/** Receive callback to be called when desired packet
-	 * has been received.
-	 */
-	net_context_recv_cb_t recv_cb;
+    /** Receive callback to be called when desired packet
+     * has been received.
+     */
+    net_context_recv_cb_t recv_cb;
 
-	/** Send callback to be called when the packet has been sent
-	 * successfully.
-	 */
-	net_context_send_cb_t send_cb;
+    /** Send callback to be called when the packet has been sent
+     * successfully.
+     */
+    net_context_send_cb_t send_cb;
 
-	/** Connect callback to be called when a connection has been
-	 *  established.
-	 */
-	net_context_connect_cb_t connect_cb;
+    /** Connect callback to be called when a connection has been
+     *  established.
+     */
+    net_context_connect_cb_t connect_cb;
 
-#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
-	/** Get TX net_buf pool for this context.
-	 */
-	net_pkt_get_slab_func_t tx_slab;
+    #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+    /** Get TX net_buf pool for this context.
+     */
+    net_pkt_get_slab_func_t tx_slab;
 
-	/** Get DATA net_buf pool for this context.
-	 */
-	net_pkt_get_pool_func_t data_pool;
-#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
+    /** Get DATA net_buf pool for this context.
+     */
+    net_pkt_get_pool_func_t data_pool;
+    #endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
-#if defined(CONFIG_NET_TCP)
-	/** TCP connection information */
-	void *tcp;
-#endif /* CONFIG_NET_TCP */
+    #if defined(CONFIG_NET_TCP)
+    /** TCP connection information */
+    void* tcp;
+    #endif /* CONFIG_NET_TCP */
 
-#if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
-	/**
-	 * Semaphore to signal synchronous recv call completion.
-	 */
-	struct k_sem recv_data_wait;
-#endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
+    #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
+    /**
+     * Semaphore to signal synchronous recv call completion.
+     */
+    struct k_sem recv_data_wait;
+    #endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
 
-#if defined(CONFIG_NET_SOCKETS)
-	/** BSD socket private data */
-	void *socket_data;
+    #if defined(CONFIG_NET_SOCKETS)
+    /** BSD socket private data */
+    void* socket_data;
 
-	/** Per-socket packet or connection queues */
-	union {
-		struct k_fifo recv_q;
-		struct k_fifo accept_q;
-	};
+    /** Per-socket packet or connection queues */
+    union {
+        struct k_fifo recv_q;
+        struct k_fifo accept_q;
+    };
 
-	struct {
-		/** Condition variable used when receiving data */
-		struct k_condvar recv;
+    struct {
+        /** Condition variable used when receiving data */
+        struct k_condvar recv;
 
-		/** Mutex used by condition variable */
-		struct k_mutex *lock;
-	} cond;
-#endif /* CONFIG_NET_SOCKETS */
+        /** Mutex used by condition variable */
+        struct k_mutex* lock;
+    } cond;
+    #endif /* CONFIG_NET_SOCKETS */
 
-#if defined(CONFIG_NET_OFFLOAD)
-	/** context for use by offload drivers */
-	void *offload_context;
-#endif /* CONFIG_NET_OFFLOAD */
+    #if defined(CONFIG_NET_OFFLOAD)
+    /** context for use by offload drivers */
+    void* offload_context;
+    #endif /* CONFIG_NET_OFFLOAD */
 
-#if defined(CONFIG_NET_SOCKETS_CAN)
-	int can_filter_id;
-#endif /* CONFIG_NET_SOCKETS_CAN */
+    #if defined(CONFIG_NET_SOCKETS_CAN)
+    int can_filter_id;
+    #endif /* CONFIG_NET_SOCKETS_CAN */
 
-	/** Option values */
-	struct {
-#if defined(CONFIG_NET_CONTEXT_PRIORITY)
-		/** Priority of the network data sent via this net_context */
-		uint8_t priority;
-#endif
-#if defined(CONFIG_NET_CONTEXT_TXTIME)
-		/** When to send the packet out */
-		bool txtime;
-#endif
-#if defined(CONFIG_SOCKS)
-		/** Socks proxy address */
-		struct {
-			struct sockaddr addr;
-			socklen_t addrlen;
-		} proxy;
-#endif
-#if defined(CONFIG_NET_CONTEXT_RCVTIMEO)
-		/** Receive timeout */
-		k_timeout_t rcvtimeo;
-#endif
-#if defined(CONFIG_NET_CONTEXT_SNDTIMEO)
-		/** Send timeout */
-		k_timeout_t sndtimeo;
-#endif
-#if defined(CONFIG_NET_CONTEXT_RCVBUF)
-		/** Receive buffer maximum size */
-		uint16_t rcvbuf;
-#endif
-#if defined(CONFIG_NET_CONTEXT_SNDBUF)
-		/** Send buffer maximum size */
-		uint16_t sndbuf;
-#endif
-#if defined(CONFIG_NET_CONTEXT_DSCP_ECN)
-		/**
-		 * DSCP (Differentiated Services Code point) and
-		 * ECN (Explicit Congestion Notification) values.
-		 */
-		uint8_t dscp_ecn;
-#endif
-#if defined(CONFIG_NET_CONTEXT_REUSEADDR)
-		/** Re-use address (SO_REUSEADDR) flag on a socket. */
-		bool reuseaddr;
-#endif
-#if defined(CONFIG_NET_CONTEXT_REUSEPORT)
-		/** Re-use port (SO_REUSEPORT) flag on a socket. */
-		bool reuseport;
-#endif
-#if defined(CONFIG_NET_IPV4_MAPPING_TO_IPV6)
-		/** Support v4-mapped-on-v6 addresses */
-		bool ipv6_v6only;
-#endif
-#if defined(CONFIG_NET_CONTEXT_RECV_PKTINFO)
-		/** Receive network packet information in recvmsg() call */
-		bool recv_pktinfo;
-#endif
-#if defined(CONFIG_NET_IPV6)
-		/**
-		 * Source address selection preferences. Currently used only for IPv6,
-		 * see RFC 5014 for details.
-		 */
-		uint16_t addr_preferences;
-#endif
-	} options;
+    /** Option values */
+    struct {
+        #if defined(CONFIG_NET_CONTEXT_PRIORITY) || defined(_MSC_VER) /* #CUSTOM@NDRS */
+        /** Priority of the network data sent via this net_context */
+        uint8_t priority;
+        #endif
 
-	/** Protocol (UDP, TCP or IEEE 802.3 protocol value) */
-	uint16_t proto;
+        #if defined(CONFIG_NET_CONTEXT_TXTIME)
+        /** When to send the packet out */
+        bool txtime;
+        #endif
 
-	/** Flags for the context */
-	uint16_t flags;
+        #if defined(CONFIG_SOCKS)
+        /** Socks proxy address */
+        struct {
+            struct net_sockaddr addr;
+            socklen_t addrlen;
+        } proxy;
+        #endif
 
-	/** Network interface assigned to this context */
-	int8_t iface;
+        #if defined(CONFIG_NET_CONTEXT_RCVTIMEO)
+        /** Receive timeout */
+        k_timeout_t rcvtimeo;
+        #endif
 
-	/** IPv6 hop limit or IPv4 ttl for packets sent via this context. */
-	union {
-		struct {
-			uint8_t ipv6_hop_limit;       /**< IPv6 hop limit */
-			uint8_t ipv6_mcast_hop_limit; /**< IPv6 multicast hop limit */
-		};
-		struct {
-			uint8_t ipv4_ttl;       /**< IPv4 TTL */
-			uint8_t ipv4_mcast_ttl; /**< IPv4 multicast TTL */
-		};
-	};
+        #if defined(CONFIG_NET_CONTEXT_SNDTIMEO)
+        /** Send timeout */
+        k_timeout_t sndtimeo;
+        #endif
 
-#if defined(CONFIG_SOCKS)
-	/** Is socks proxy enabled */
-	bool proxy_enabled;
-#endif
+        #if defined(CONFIG_NET_CONTEXT_RCVBUF)
+        /** Receive buffer maximum size */
+        uint16_t rcvbuf;
+        #endif
 
+        #if defined(CONFIG_NET_CONTEXT_SNDBUF)
+        /** Send buffer maximum size */
+        uint16_t sndbuf;
+        #endif
+
+        #if defined(CONFIG_NET_CONTEXT_DSCP_ECN)
+        /**
+         * DSCP (Differentiated Services Code point) and
+         * ECN (Explicit Congestion Notification) values.
+         */
+        uint8_t dscp_ecn;
+        #endif
+
+        #if defined(CONFIG_NET_CONTEXT_REUSEADDR)
+        /** Re-use address (SO_REUSEADDR) flag on a socket. */
+        bool reuseaddr;
+        #endif
+
+        #if defined(CONFIG_NET_CONTEXT_REUSEPORT)
+        /** Re-use port (SO_REUSEPORT) flag on a socket. */
+        bool reuseport;
+        #endif
+
+        #if defined(CONFIG_NET_IPV4_MAPPING_TO_IPV6)
+        /** Support v4-mapped-on-v6 addresses */
+        bool ipv6_v6only;
+        #endif
+
+        #if defined(CONFIG_NET_CONTEXT_RECV_PKTINFO)
+        /** Receive network packet information in recvmsg() call */
+        bool recv_pktinfo;
+        #endif
+
+        #if defined(CONFIG_NET_IPV6)
+        /**
+         * Source address selection preferences. Currently used only for IPv6,
+         * see RFC 5014 for details.
+         */
+        uint16_t addr_preferences;
+        #endif
+    } options;
+
+    /** Protocol (UDP, TCP or IEEE 802.3 protocol value) */
+    uint16_t proto;
+
+    /** Flags for the context */
+    uint16_t flags;
+
+    /** Network interface assigned to this context */
+    int8_t iface;
+
+    /** IPv6 hop limit or IPv4 ttl for packets sent via this context. */
+    union {
+        struct {
+            uint8_t ipv6_hop_limit;       /**< IPv6 hop limit */
+            uint8_t ipv6_mcast_hop_limit; /**< IPv6 multicast hop limit */
+        };
+
+        struct {
+            uint8_t ipv4_ttl;       /**< IPv4 TTL */
+            uint8_t ipv4_mcast_ttl; /**< IPv4 multicast TTL */
+        };
+    };
+
+    #if defined(CONFIG_SOCKS)
+    /** Is socks proxy enabled */
+    bool proxy_enabled;
+    #endif
 };
 
 /**
@@ -393,11 +405,10 @@ __net_socket struct net_context {
  *
  * @return True if the context is currently in use, False otherwise.
  */
-static inline bool net_context_is_used(struct net_context *context)
-{
-	NET_ASSERT(context);
+static inline bool net_context_is_used(struct net_context* context) {
+    NET_ASSERT(context);
 
-	return context->flags & NET_CONTEXT_IN_USE;
+    return context->flags & NET_CONTEXT_IN_USE;
 }
 
 /**
@@ -407,11 +418,10 @@ static inline bool net_context_is_used(struct net_context *context)
  *
  * @return True if the context is bound to network interface, False otherwise.
  */
-static inline bool net_context_is_bound_to_iface(struct net_context *context)
-{
-	NET_ASSERT(context);
+static inline bool net_context_is_bound_to_iface(struct net_context* context) {
+    NET_ASSERT(context);
 
-	return context->flags & NET_CONTEXT_BOUND_TO_IFACE;
+    return context->flags & NET_CONTEXT_BOUND_TO_IFACE;
 }
 
 /**
@@ -421,11 +431,10 @@ static inline bool net_context_is_bound_to_iface(struct net_context *context)
  *
  * @return True if the context is accepting connections, False otherwise.
  */
-static inline bool net_context_is_accepting(struct net_context *context)
-{
-	NET_ASSERT(context);
+static inline bool net_context_is_accepting(struct net_context* context) {
+    NET_ASSERT(context);
 
-	return context->flags & NET_CONTEXT_ACCEPTING_SOCK;
+    return context->flags & NET_CONTEXT_ACCEPTING_SOCK;
 }
 
 /**
@@ -434,16 +443,16 @@ static inline bool net_context_is_accepting(struct net_context *context)
  * @param context Network context.
  * @param accepting True if accepting, False if not
  */
-static inline void net_context_set_accepting(struct net_context *context,
-					     bool accepting)
-{
-	NET_ASSERT(context);
+static inline void net_context_set_accepting(struct net_context* context,
+                                             bool accepting) {
+    NET_ASSERT(context);
 
-	if (accepting) {
-		context->flags |= NET_CONTEXT_ACCEPTING_SOCK;
-	} else {
-		context->flags &= ~NET_CONTEXT_ACCEPTING_SOCK;
-	}
+    if (accepting) {
+        context->flags |= NET_CONTEXT_ACCEPTING_SOCK;
+    }
+    else {
+        context->flags &= ~NET_CONTEXT_ACCEPTING_SOCK;
+    }
 }
 
 /**
@@ -453,11 +462,10 @@ static inline void net_context_set_accepting(struct net_context *context,
  *
  * @return True if the context is closing, False otherwise.
  */
-static inline bool net_context_is_closing(struct net_context *context)
-{
-	NET_ASSERT(context);
+static inline bool net_context_is_closing(struct net_context* context) {
+    NET_ASSERT(context);
 
-	return context->flags & NET_CONTEXT_CLOSING_SOCK;
+    return context->flags & NET_CONTEXT_CLOSING_SOCK;
 }
 
 /**
@@ -466,20 +474,20 @@ static inline bool net_context_is_closing(struct net_context *context)
  * @param context Network context.
  * @param closing True if closing, False if not
  */
-static inline void net_context_set_closing(struct net_context *context,
-					   bool closing)
-{
-	NET_ASSERT(context);
+static inline void net_context_set_closing(struct net_context* context,
+                                           bool closing) {
+    NET_ASSERT(context);
 
-	if (closing) {
-		context->flags |= NET_CONTEXT_CLOSING_SOCK;
-	} else {
-		context->flags &= ~NET_CONTEXT_CLOSING_SOCK;
-	}
+    if (closing) {
+        context->flags |= NET_CONTEXT_CLOSING_SOCK;
+    }
+    else {
+        context->flags &= ~NET_CONTEXT_CLOSING_SOCK;
+    }
 }
 
 #define NET_CONTEXT_STATE_SHIFT 1
-#define NET_CONTEXT_STATE_MASK 0x03
+#define NET_CONTEXT_STATE_MASK  0x03
 
 /**
  * @brief Get state for this network context.
@@ -491,13 +499,12 @@ static inline void net_context_set_closing(struct net_context *context,
  * @return Network state.
  */
 static inline
-enum net_context_state net_context_get_state(struct net_context *context)
-{
-	NET_ASSERT(context);
+enum net_context_state net_context_get_state(struct net_context* context) {
+    NET_ASSERT(context);
 
-	return (enum net_context_state)
-		((context->flags >> NET_CONTEXT_STATE_SHIFT) &
-		NET_CONTEXT_STATE_MASK);
+    return (enum net_context_state)
+            ((context->flags >> NET_CONTEXT_STATE_SHIFT) &
+            NET_CONTEXT_STATE_MASK);
 }
 
 /**
@@ -508,14 +515,13 @@ enum net_context_state net_context_get_state(struct net_context *context)
  * @param context Network context.
  * @param state New network context state.
  */
-static inline void net_context_set_state(struct net_context *context,
-					 enum net_context_state state)
-{
-	NET_ASSERT(context);
+static inline void net_context_set_state(struct net_context* context,
+                                         enum net_context_state state) {
+    NET_ASSERT(context);
 
-	context->flags &= ~(NET_CONTEXT_STATE_MASK << NET_CONTEXT_STATE_SHIFT);
-	context->flags |= ((state & NET_CONTEXT_STATE_MASK) <<
-			   NET_CONTEXT_STATE_SHIFT);
+    context->flags &= ~(NET_CONTEXT_STATE_MASK << NET_CONTEXT_STATE_SHIFT);
+    context->flags |= ((state & NET_CONTEXT_STATE_MASK) <<
+                        NET_CONTEXT_STATE_SHIFT);
 }
 
 /**
@@ -528,11 +534,10 @@ static inline void net_context_set_state(struct net_context *context,
  *
  * @return Network state.
  */
-static inline sa_family_t net_context_get_family(struct net_context *context)
-{
-	NET_ASSERT(context);
+static inline sa_family_t net_context_get_family(struct net_context* context) {
+    NET_ASSERT(context);
 
-	return ((context->flags & NET_CONTEXT_FAMILY) >> 3);
+    return ((context->flags & NET_CONTEXT_FAMILY) >> 3);
 }
 
 /**
@@ -544,20 +549,19 @@ static inline sa_family_t net_context_get_family(struct net_context *context)
  * @param context Network context.
  * @param family Address family (AF_INET, AF_INET6, AF_PACKET, AF_CAN)
  */
-static inline void net_context_set_family(struct net_context *context,
-					  sa_family_t family)
-{
-	uint8_t flag = 0U;
+static inline void net_context_set_family(struct net_context* context,
+                                          sa_family_t family) {
+    uint8_t flag = 0U;
 
-	NET_ASSERT(context);
+    NET_ASSERT(context);
 
-	if (family == AF_UNSPEC || family == AF_INET || family == AF_INET6 ||
-	    family == AF_PACKET || family == AF_CAN) {
-		/* Family is in BIT(4), BIT(5) and BIT(6) */
-		flag = family << 3;
-	}
+    if ((family == NET_AF_UNSPEC) || (family == NET_AF_INET) || (family == NET_AF_INET6) ||
+        (family == NET_AF_PACKET) || (family == NET_AF_CAN)) {
+        /* Family is in BIT(4), BIT(5) and BIT(6) */
+        flag = family << 3;
+    }
 
-	context->flags |= flag;
+    context->flags |= flag;
 }
 
 /**
@@ -571,11 +575,10 @@ static inline void net_context_set_family(struct net_context *context,
  * @return Network context type.
  */
 static inline
-enum net_sock_type net_context_get_type(struct net_context *context)
-{
-	NET_ASSERT(context);
+enum net_sock_type net_context_get_type(struct net_context* context) {
+    NET_ASSERT(context);
 
-	return (enum net_sock_type)((context->flags & NET_CONTEXT_TYPE) >> 6);
+    return (enum net_sock_type)((context->flags & NET_CONTEXT_TYPE) >> 6);
 }
 
 /**
@@ -587,19 +590,18 @@ enum net_sock_type net_context_get_type(struct net_context *context)
  * @param context Network context.
  * @param type Context type (SOCK_STREAM or SOCK_DGRAM)
  */
-static inline void net_context_set_type(struct net_context *context,
-					enum net_sock_type type)
-{
-	uint16_t flag = 0U;
+static inline void net_context_set_type(struct net_context* context,
+                                        enum net_sock_type type) {
+    uint16_t flag = 0U;
 
-	NET_ASSERT(context);
+    NET_ASSERT(context);
 
-	if (type == SOCK_DGRAM || type == SOCK_STREAM || type == SOCK_RAW) {
-		/* Type is in BIT(6) and BIT(7)*/
-		flag = type << 6;
-	}
+    if ((type == NET_SOCK_DGRAM) || (type == NET_SOCK_STREAM) || (type == NET_SOCK_RAW)) {
+        /* Type is in BIT(6) and BIT(7)*/
+        flag = type << 6;
+    }
 
-	context->flags |= flag;
+    context->flags |= flag;
 }
 
 /**
@@ -611,19 +613,17 @@ static inline void net_context_set_type(struct net_context *context,
  * @param filter_id CAN filter id
  */
 #if defined(CONFIG_NET_SOCKETS_CAN)
-static inline void net_context_set_can_filter_id(struct net_context *context,
-					     int filter_id)
-{
-	NET_ASSERT(context);
+static inline void net_context_set_can_filter_id(struct net_context* context,
+                                                 int filter_id) {
+    NET_ASSERT(context);
 
-	context->can_filter_id = filter_id;
+    context->can_filter_id = filter_id;
 }
 #else
-static inline void net_context_set_can_filter_id(struct net_context *context,
-					     int filter_id)
-{
-	ARG_UNUSED(context);
-	ARG_UNUSED(filter_id);
+static inline void net_context_set_can_filter_id(struct net_context* context,
+                                                 int filter_id) {
+    ARG_UNUSED(context);
+    ARG_UNUSED(filter_id);
 }
 #endif
 
@@ -637,18 +637,16 @@ static inline void net_context_set_can_filter_id(struct net_context *context,
  * @return Filter id of this network context
  */
 #if defined(CONFIG_NET_SOCKETS_CAN)
-static inline int net_context_get_can_filter_id(struct net_context *context)
-{
-	NET_ASSERT(context);
+static inline int net_context_get_can_filter_id(struct net_context* context) {
+    NET_ASSERT(context);
 
-	return context->can_filter_id;
+    return (context->can_filter_id);
 }
 #else
-static inline int net_context_get_can_filter_id(struct net_context *context)
-{
-	ARG_UNUSED(context);
+static inline int net_context_get_can_filter_id(struct net_context* context) {
+    ARG_UNUSED(context);
 
-	return -1;
+    return (-1);
 }
 #endif
 
@@ -662,9 +660,8 @@ static inline int net_context_get_can_filter_id(struct net_context *context)
  *
  * @return Network context IP protocol.
  */
-static inline uint16_t net_context_get_proto(struct net_context *context)
-{
-	return context->proto;
+static inline uint16_t net_context_get_proto(struct net_context* context) {
+    return (context->proto);
 }
 
 /**
@@ -677,10 +674,9 @@ static inline uint16_t net_context_get_proto(struct net_context *context)
  * @param proto Context IP protocol (IPPROTO_UDP, IPPROTO_TCP or IEEE 802.3
  * protocol value)
  */
-static inline void net_context_set_proto(struct net_context *context,
-					 uint16_t proto)
-{
-	context->proto = proto;
+static inline void net_context_set_proto(struct net_context* context,
+                                         uint16_t proto) {
+    context->proto = proto;
 }
 
 /**
@@ -694,11 +690,10 @@ static inline void net_context_set_proto(struct net_context *context,
  * NULL otherwise.
  */
 static inline
-struct net_if *net_context_get_iface(struct net_context *context)
-{
-	NET_ASSERT(context);
+struct net_if* net_context_get_iface(struct net_context* context) {
+    NET_ASSERT(context);
 
-	return net_if_get_by_index(context->iface);
+    return net_if_get_by_index(context->iface);
 }
 
 /**
@@ -709,12 +704,11 @@ struct net_if *net_context_get_iface(struct net_context *context)
  * @param context Network context.
  * @param iface Network interface.
  */
-static inline void net_context_set_iface(struct net_context *context,
-					 struct net_if *iface)
-{
-	NET_ASSERT(iface);
+static inline void net_context_set_iface(struct net_context* context,
+                                         struct net_if* iface) {
+    NET_ASSERT(iface);
 
-	context->iface = net_if_get_by_iface(iface);
+    context->iface = net_if_get_by_iface(iface);
 }
 
 /**
@@ -725,13 +719,12 @@ static inline void net_context_set_iface(struct net_context *context,
  * @param context Network context.
  * @param iface Network interface.
  */
-static inline void net_context_bind_iface(struct net_context *context,
-					  struct net_if *iface)
-{
-	NET_ASSERT(iface);
+static inline void net_context_bind_iface(struct net_context* context,
+                                          struct net_if* iface) {
+    NET_ASSERT(iface);
 
-	context->flags |= NET_CONTEXT_BOUND_TO_IFACE;
-	net_context_set_iface(context, iface);
+    context->flags |= NET_CONTEXT_BOUND_TO_IFACE;
+    net_context_set_iface(context, iface);
 }
 
 /**
@@ -744,9 +737,8 @@ static inline void net_context_bind_iface(struct net_context *context,
  *
  * @return IPv4 TTL value
  */
-static inline uint8_t net_context_get_ipv4_ttl(struct net_context *context)
-{
-	return context->ipv4_ttl;
+static inline uint8_t net_context_get_ipv4_ttl(struct net_context* context) {
+    return (context->ipv4_ttl);
 }
 
 /**
@@ -758,10 +750,9 @@ static inline uint8_t net_context_get_ipv4_ttl(struct net_context *context)
  * @param context Network context.
  * @param ttl IPv4 time-to-live value.
  */
-static inline void net_context_set_ipv4_ttl(struct net_context *context,
-					    uint8_t ttl)
-{
-	context->ipv4_ttl = ttl;
+static inline void net_context_set_ipv4_ttl(struct net_context* context,
+                                            uint8_t ttl) {
+    context->ipv4_ttl = ttl;
 }
 
 /**
@@ -774,9 +765,8 @@ static inline void net_context_set_ipv4_ttl(struct net_context *context,
  *
  * @return IPv4 multicast TTL value
  */
-static inline uint8_t net_context_get_ipv4_mcast_ttl(struct net_context *context)
-{
-	return context->ipv4_mcast_ttl;
+static inline uint8_t net_context_get_ipv4_mcast_ttl(struct net_context* context) {
+    return (context->ipv4_mcast_ttl);
 }
 
 /**
@@ -788,10 +778,9 @@ static inline uint8_t net_context_get_ipv4_mcast_ttl(struct net_context *context
  * @param context Network context.
  * @param ttl IPv4 multicast time-to-live value.
  */
-static inline void net_context_set_ipv4_mcast_ttl(struct net_context *context,
-						  uint8_t ttl)
-{
-	context->ipv4_mcast_ttl = ttl;
+static inline void net_context_set_ipv4_mcast_ttl(struct net_context* context,
+                                                  uint8_t ttl) {
+    context->ipv4_mcast_ttl = ttl;
 }
 
 /**
@@ -804,9 +793,8 @@ static inline void net_context_set_ipv4_mcast_ttl(struct net_context *context,
  *
  * @return IPv6 hop limit value
  */
-static inline uint8_t net_context_get_ipv6_hop_limit(struct net_context *context)
-{
-	return context->ipv6_hop_limit;
+static inline uint8_t net_context_get_ipv6_hop_limit(struct net_context* context) {
+    return (context->ipv6_hop_limit);
 }
 
 /**
@@ -817,10 +805,9 @@ static inline uint8_t net_context_get_ipv6_hop_limit(struct net_context *context
  * @param context Network context.
  * @param hop_limit IPv6 hop limit value.
  */
-static inline void net_context_set_ipv6_hop_limit(struct net_context *context,
-						  uint8_t hop_limit)
-{
-	context->ipv6_hop_limit = hop_limit;
+static inline void net_context_set_ipv6_hop_limit(struct net_context* context,
+                                                  uint8_t hop_limit) {
+    context->ipv6_hop_limit = hop_limit;
 }
 
 /**
@@ -833,9 +820,8 @@ static inline void net_context_set_ipv6_hop_limit(struct net_context *context,
  *
  * @return IPv6 multicast hop limit value
  */
-static inline uint8_t net_context_get_ipv6_mcast_hop_limit(struct net_context *context)
-{
-	return context->ipv6_mcast_hop_limit;
+static inline uint8_t net_context_get_ipv6_mcast_hop_limit(struct net_context* context) {
+    return (context->ipv6_mcast_hop_limit);
 }
 
 /**
@@ -847,10 +833,9 @@ static inline uint8_t net_context_get_ipv6_mcast_hop_limit(struct net_context *c
  * @param context Network context.
  * @param hop_limit IPv6 multicast hop limit value.
  */
-static inline void net_context_set_ipv6_mcast_hop_limit(struct net_context *context,
-							uint8_t hop_limit)
-{
-	context->ipv6_mcast_hop_limit = hop_limit;
+static inline void net_context_set_ipv6_mcast_hop_limit(struct net_context* context,
+                                                        uint8_t hop_limit) {
+    context->ipv6_mcast_hop_limit = hop_limit;
 }
 
 /**
@@ -863,17 +848,15 @@ static inline void net_context_set_ipv6_mcast_hop_limit(struct net_context *cont
  * @param enable Enable socks proxy or disable it.
  */
 #if defined(CONFIG_SOCKS)
-static inline void net_context_set_proxy_enabled(struct net_context *context,
-						 bool enable)
-{
-	context->proxy_enabled = enable;
+static inline void net_context_set_proxy_enabled(struct net_context* context,
+                                                 bool enable) {
+    context->proxy_enabled = enable;
 }
 #else
-static inline void net_context_set_proxy_enabled(struct net_context *context,
-						 bool enable)
-{
-	ARG_UNUSED(context);
-	ARG_UNUSED(enable);
+static inline void net_context_set_proxy_enabled(struct net_context* context,
+                                                 bool enable) {
+    ARG_UNUSED(context);
+    ARG_UNUSED(enable);
 }
 #endif
 
@@ -888,15 +871,14 @@ static inline void net_context_set_proxy_enabled(struct net_context *context,
  * @return True if socks proxy is enabled for this context, False otherwise
  */
 #if defined(CONFIG_SOCKS)
-static inline bool net_context_is_proxy_enabled(struct net_context *context)
-{
-	return context->proxy_enabled;
+static inline bool net_context_is_proxy_enabled(struct net_context* context) {
+    return (context->proxy_enabled);
 }
 #else
-static inline bool net_context_is_proxy_enabled(struct net_context *context)
-{
-	ARG_UNUSED(context);
-	return false;
+static inline bool net_context_is_proxy_enabled(struct net_context* context) {
+    ARG_UNUSED(context);
+
+    return (false);
 }
 #endif
 
@@ -918,9 +900,9 @@ static inline bool net_context_is_proxy_enabled(struct net_context *context)
  * @return 0 if ok, < 0 if error
  */
 int net_context_get(sa_family_t family,
-		    enum net_sock_type type,
-		    uint16_t ip_proto,
-		    struct net_context **context);
+                    enum net_sock_type type,
+                    uint16_t ip_proto,
+                    struct net_context** context);
 
 /**
  * @brief Close and unref a network context.
@@ -935,7 +917,7 @@ int net_context_get(sa_family_t family,
  *
  * @return 0 if ok, < 0 if error
  */
-int net_context_put(struct net_context *context);
+int net_context_put(struct net_context* context);
 
 /**
  * @brief Take a reference count to a net_context, preventing destruction
@@ -949,7 +931,7 @@ int net_context_put(struct net_context *context);
  *
  * @return The new reference count
  */
-int net_context_ref(struct net_context *context);
+int net_context_ref(struct net_context* context);
 
 /**
  * @brief Decrement the reference count to a network context
@@ -964,7 +946,7 @@ int net_context_ref(struct net_context *context);
  *
  * @return The new reference count, zero if the context was destroyed
  */
-int net_context_unref(struct net_context *context);
+int net_context_unref(struct net_context* context);
 
 /**
  * @brief Create IPv4 packet in provided net_pkt from context
@@ -977,17 +959,16 @@ int net_context_unref(struct net_context *context);
  * @return Return 0 on success, negative errno otherwise.
  */
 #if defined(CONFIG_NET_IPV4)
-int net_context_create_ipv4_new(struct net_context *context,
-				struct net_pkt *pkt,
-				const struct in_addr *src,
-				const struct in_addr *dst);
+int net_context_create_ipv4_new(struct net_context* context,
+                                struct net_pkt* pkt,
+                                const struct net_in_addr* src,
+                                const struct net_in_addr* dst);
 #else
-static inline int net_context_create_ipv4_new(struct net_context *context,
-					      struct net_pkt *pkt,
-					      const struct in_addr *src,
-					      const struct in_addr *dst)
-{
-	return -1;
+static inline int net_context_create_ipv4_new(struct net_context* context,
+                                              struct net_pkt* pkt,
+                                              const struct net_in_addr* src,
+                                              const struct net_in_addr* dst) {
+    return (-1);
 }
 #endif /* CONFIG_NET_IPV4 */
 
@@ -1002,21 +983,21 @@ static inline int net_context_create_ipv4_new(struct net_context *context,
  * @return Return 0 on success, negative errno otherwise.
  */
 #if defined(CONFIG_NET_IPV6)
-int net_context_create_ipv6_new(struct net_context *context,
-				struct net_pkt *pkt,
-				const struct in6_addr *src,
-				const struct in6_addr *dst);
+int net_context_create_ipv6_new(struct net_context* context,
+                                struct net_pkt* pkt,
+                                const struct net_in6_addr* src,
+                                const struct net_in6_addr* dst);
 #else
-static inline int net_context_create_ipv6_new(struct net_context *context,
-					      struct net_pkt *pkt,
-					      const struct in6_addr *src,
-					      const struct in6_addr *dst)
-{
-	ARG_UNUSED(context);
-	ARG_UNUSED(pkt);
-	ARG_UNUSED(src);
-	ARG_UNUSED(dst);
-	return -1;
+static inline int net_context_create_ipv6_new(struct net_context* context,
+                                              struct net_pkt* pkt,
+                                              const struct net_in6_addr* src,
+                                              const struct net_in6_addr* dst) {
+    ARG_UNUSED(context);
+    ARG_UNUSED(pkt);
+    ARG_UNUSED(src);
+    ARG_UNUSED(dst);
+
+    return (-1);
 }
 #endif /* CONFIG_NET_IPV6 */
 
@@ -1031,9 +1012,9 @@ static inline int net_context_create_ipv6_new(struct net_context *context,
  *
  * @return 0 if ok, < 0 if error
  */
-int net_context_bind(struct net_context *context,
-		     const struct sockaddr *addr,
-		     socklen_t addrlen);
+int net_context_bind(struct net_context* context,
+                     const struct net_sockaddr* addr,
+                     socklen_t addrlen);
 
 /**
  * @brief Mark the context as a listening one.
@@ -1045,8 +1026,8 @@ int net_context_bind(struct net_context *context,
  *
  * @return 0 if ok, < 0 if error
  */
-int net_context_listen(struct net_context *context,
-		       int backlog);
+int net_context_listen(struct net_context* context,
+                       int backlog);
 
 /**
  * @brief            Create a network connection.
@@ -1076,12 +1057,12 @@ int net_context_listen(struct net_context *context,
  * @return           -ENOTSUP if the operation is not supported or implemented.
  * @return           -ETIMEDOUT if the connect operation times out.
  */
-int net_context_connect(struct net_context *context,
-			const struct sockaddr *addr,
-			socklen_t addrlen,
-			net_context_connect_cb_t cb,
-			k_timeout_t timeout,
-			void *user_data);
+int net_context_connect(struct net_context* context,
+                        const struct net_sockaddr* addr,
+                        socklen_t addrlen,
+                        net_context_connect_cb_t cb,
+                        k_timeout_t timeout,
+                        void* user_data);
 
 /**
  * @brief Accept a network connection attempt.
@@ -1108,10 +1089,10 @@ int net_context_connect(struct net_context *context,
  *
  * @return 0 if ok, < 0 if error
  */
-int net_context_accept(struct net_context *context,
-		       net_tcp_accept_cb_t cb,
-		       k_timeout_t timeout,
-		       void *user_data);
+int net_context_accept(struct net_context* context,
+                       net_tcp_accept_cb_t cb,
+                       k_timeout_t timeout,
+                       void* user_data);
 
 /**
  * @brief Send data to a peer.
@@ -1132,12 +1113,12 @@ int net_context_accept(struct net_context *context,
  *
  * @return 0 if ok, < 0 if error
  */
-int net_context_send(struct net_context *context,
-		     const void *buf,
-		     size_t len,
-		     net_context_send_cb_t cb,
-		     k_timeout_t timeout,
-		     void *user_data);
+int net_context_send(struct net_context* context,
+                     void const* buf,
+                     size_t len,
+                     net_context_send_cb_t cb,
+                     k_timeout_t timeout,
+                     void* user_data);
 
 /**
  * @brief Send data to a peer specified by address.
@@ -1160,14 +1141,14 @@ int net_context_send(struct net_context *context,
  *
  * @return numbers of bytes sent on success, a negative errno otherwise
  */
-int net_context_sendto(struct net_context *context,
-		       const void *buf,
-		       size_t len,
-		       const struct sockaddr *dst_addr,
-		       socklen_t addrlen,
-		       net_context_send_cb_t cb,
-		       k_timeout_t timeout,
-		       void *user_data);
+int net_context_sendto(struct net_context* context,
+                       void const* buf,
+                       size_t len,
+                       const struct net_sockaddr* dst_addr,
+                       socklen_t addrlen,
+                       net_context_send_cb_t cb,
+                       k_timeout_t timeout,
+                       void* user_data);
 
 /**
  * @brief Send data in iovec to a peer specified in msghdr struct.
@@ -1187,12 +1168,12 @@ int net_context_sendto(struct net_context *context,
  *
  * @return numbers of bytes sent on success, a negative errno otherwise
  */
-int net_context_sendmsg(struct net_context *context,
-			const struct msghdr *msghdr,
-			int flags,
-			net_context_send_cb_t cb,
-			k_timeout_t timeout,
-			void *user_data);
+int net_context_sendmsg(struct net_context* context,
+                        const struct msghdr* msghdr,
+                        int flags,
+                        net_context_send_cb_t cb,
+                        k_timeout_t timeout,
+                        void* user_data);
 
 /**
  * @brief Receive network data from a peer specified by context.
@@ -1230,10 +1211,10 @@ int net_context_sendmsg(struct net_context *context,
  *
  * @return 0 if ok, < 0 if error
  */
-int net_context_recv(struct net_context *context,
-		     net_context_recv_cb_t cb,
-		     k_timeout_t timeout,
-		     void *user_data);
+int net_context_recv(struct net_context* context,
+                     net_context_recv_cb_t cb,
+                     k_timeout_t timeout,
+                     void* user_data);
 
 /**
  * @brief Update TCP receive window for context.
@@ -1255,27 +1236,27 @@ int net_context_recv(struct net_context *context,
  *
  * @return 0 if ok, < 0 if error
  */
-int net_context_update_recv_wnd(struct net_context *context,
-				int32_t delta);
+int net_context_update_recv_wnd(struct net_context* context,
+                                int32_t delta);
 
 enum net_context_option {
-	NET_OPT_PRIORITY          = 1,
-	NET_OPT_TXTIME            = 2,
-	NET_OPT_SOCKS5            = 3,
-	NET_OPT_RCVTIMEO          = 4,
-	NET_OPT_SNDTIMEO          = 5,
-	NET_OPT_RCVBUF            = 6,
-	NET_OPT_SNDBUF            = 7,
-	NET_OPT_DSCP_ECN          = 8,
-	NET_OPT_REUSEADDR         = 9,
-	NET_OPT_REUSEPORT         = 10,
-	NET_OPT_IPV6_V6ONLY       = 11,
-	NET_OPT_RECV_PKTINFO      = 12,
-	NET_OPT_MCAST_TTL         = 13,
-	NET_OPT_MCAST_HOP_LIMIT   = 14,
-	NET_OPT_UNICAST_HOP_LIMIT = 15,
-	NET_OPT_TTL               = 16,
-	NET_OPT_ADDR_PREFERENCES  = 17,
+    NET_OPT_PRIORITY          = 1,
+    NET_OPT_TXTIME            = 2,
+    NET_OPT_SOCKS5            = 3,
+    NET_OPT_RCVTIMEO          = 4,
+    NET_OPT_SNDTIMEO          = 5,
+    NET_OPT_RCVBUF            = 6,
+    NET_OPT_SNDBUF            = 7,
+    NET_OPT_DSCP_ECN          = 8,
+    NET_OPT_REUSEADDR         = 9,
+    NET_OPT_REUSEPORT         = 10,
+    NET_OPT_IPV6_V6ONLY       = 11,
+    NET_OPT_RECV_PKTINFO      = 12,
+    NET_OPT_MCAST_TTL         = 13,
+    NET_OPT_MCAST_HOP_LIMIT   = 14,
+    NET_OPT_UNICAST_HOP_LIMIT = 15,
+    NET_OPT_TTL               = 16,
+    NET_OPT_ADDR_PREFERENCES  = 17
 };
 
 /**
@@ -1288,9 +1269,9 @@ enum net_context_option {
  *
  * @return 0 if ok, <0 if error
  */
-int net_context_set_option(struct net_context *context,
-			   enum net_context_option option,
-			   const void *value, size_t len);
+int net_context_set_option(struct net_context* context,
+                           enum net_context_option option,
+                           void const* value, size_t len);
 
 /**
  * @brief Get connection option value for this context.
@@ -1302,9 +1283,9 @@ int net_context_set_option(struct net_context *context,
  *
  * @return 0 if ok, <0 if error
  */
-int net_context_get_option(struct net_context *context,
-			   enum net_context_option option,
-			   void *value, size_t *len);
+int net_context_get_option(struct net_context* context,
+                           enum net_context_option option,
+                           void* value, size_t* len);
 
 /**
  * @typedef net_context_cb_t
@@ -1313,7 +1294,7 @@ int net_context_get_option(struct net_context *context,
  * @param context A valid pointer on current network context
  * @param user_data A valid pointer on some user data or NULL
  */
-typedef void (*net_context_cb_t)(struct net_context *context, void *user_data);
+typedef void (*net_context_cb_t)(struct net_context* context, void* user_data);
 
 /**
  * @brief Go through all the network connections and call callback
@@ -1322,7 +1303,7 @@ typedef void (*net_context_cb_t)(struct net_context *context, void *user_data);
  * @param cb User-supplied callback function to call.
  * @param user_data User specified data.
  */
-void net_context_foreach(net_context_cb_t cb, void *user_data);
+void net_context_foreach(net_context_cb_t cb, void* user_data);
 
 /**
  * @brief Set custom network buffer pools for context send operations
@@ -1345,14 +1326,13 @@ void net_context_foreach(net_context_cb_t cb, void *user_data);
  * the network.
  */
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
-static inline void net_context_setup_pools(struct net_context *context,
-					   net_pkt_get_slab_func_t tx_slab,
-					   net_pkt_get_pool_func_t data_pool)
-{
-	NET_ASSERT(context);
+static inline void net_context_setup_pools(struct net_context* context,
+                                           net_pkt_get_slab_func_t tx_slab,
+                                           net_pkt_get_pool_func_t data_pool) {
+    NET_ASSERT(context);
 
-	context->tx_slab = tx_slab;
-	context->data_pool = data_pool;
+    context->tx_slab   = tx_slab;
+    context->data_pool = data_pool;
 }
 #else
 #define net_context_setup_pools(context, tx_pool, data_pool)
@@ -1372,7 +1352,7 @@ static inline void net_context_setup_pools(struct net_context *context,
  * @return false if the port is not bound
  */
 bool net_context_port_in_use(enum net_ip_protocol ip_proto,
-	uint16_t local_port, const struct sockaddr *local_addr);
+    uint16_t local_port, const struct net_sockaddr* local_addr);
 
 #ifdef __cplusplus
 }

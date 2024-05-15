@@ -83,14 +83,14 @@
 #define SOC_GPIO_FUNC_OUT_1             (10 << SOC_GPIO_FUNC_POS)
 
 struct soc_gpio_pin {
-	uint32_t mask;     /** pin(s) bit mask */
+    uint32_t mask;     /** pin(s) bit mask */
 #ifdef ID_GPIO
-	Gpio *regs;        /** pointer to registers of the GPIO controller */
+    Gpio *regs;        /** pointer to registers of the GPIO controller */
 #else
-	Pio *regs;         /** pointer to registers of the PIO controller */
+    Pio *regs;         /** pointer to registers of the PIO controller */
 #endif
-	uint8_t periph_id; /** peripheral ID of the PIO controller */
-	uint32_t flags;    /** pin flags/attributes */
+    uint8_t periph_id; /** peripheral ID of the PIO controller */
+    uint32_t flags;    /** pin flags/attributes */
 };
 
 /**
@@ -126,7 +126,7 @@ void soc_gpio_configure(const struct soc_gpio_pin *pin);
  * @param size size of the pin list.
  */
 void soc_gpio_list_configure(const struct soc_gpio_pin pins[],
-			     unsigned int size);
+                             unsigned int size);
 
 /**
  * @brief Set pin(s) high.
@@ -140,9 +140,9 @@ void soc_gpio_list_configure(const struct soc_gpio_pin pins[],
 static inline void soc_gpio_set(const struct soc_gpio_pin *pin)
 {
 #ifdef ID_GPIO
-	pin->regs->OVRS = pin->mask;
+    pin->regs->OVRS = pin->mask;
 #else
-	pin->regs->PIO_SODR = pin->mask;
+    pin->regs->PIO_SODR = pin->mask;
 #endif
 }
 
@@ -158,9 +158,9 @@ static inline void soc_gpio_set(const struct soc_gpio_pin *pin)
 static inline void soc_gpio_clear(const struct soc_gpio_pin *pin)
 {
 #ifdef ID_GPIO
-	pin->regs->OVRC = pin->mask;
+    pin->regs->OVRC = pin->mask;
 #else
-	pin->regs->PIO_CODR = pin->mask;
+    pin->regs->PIO_CODR = pin->mask;
 #endif
 }
 
@@ -176,9 +176,9 @@ static inline void soc_gpio_clear(const struct soc_gpio_pin *pin)
 static inline uint32_t soc_gpio_get(const struct soc_gpio_pin *pin)
 {
 #ifdef ID_GPIO
-	return pin->regs->PVR & pin->mask;
+    return pin->regs->PVR & pin->mask;
 #else
-	return pin->regs->PIO_PDSR & pin->mask;
+    return pin->regs->PIO_PDSR & pin->mask;
 #endif
 }
 
@@ -202,16 +202,15 @@ static inline uint32_t soc_gpio_get(const struct soc_gpio_pin *pin)
  * @param div  slow clock divider, valid values: from 0 to 2^14 - 1
  */
 static inline void soc_gpio_debounce_length_set(const struct soc_gpio_pin *pin,
-						uint32_t div)
-{
+                        uint32_t div) {
 #ifdef ID_GPIO
-	if (div) {
-		pin->regs->STERS = pin->mask;
-	} else {
-		pin->regs->STERC = pin->mask;
-	}
+    if (div) {
+        pin->regs->STERS = pin->mask;
+    } else {
+        pin->regs->STERC = pin->mask;
+    }
 #else
-	pin->regs->PIO_SCDR = PIO_SCDR_DIV(div);
+    pin->regs->PIO_SCDR = PIO_SCDR_DIV(div);
 #endif
 }
 

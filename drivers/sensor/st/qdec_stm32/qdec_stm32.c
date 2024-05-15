@@ -127,7 +127,7 @@ static int qdec_stm32_initialize(const struct device *dev)
 	LL_TIM_SetAutoReload(dev_cfg->timer_inst, max_counter_value);
 
 	if (LL_TIM_ENCODER_Init(dev_cfg->timer_inst, &init_props) != SUCCESS) {
-		LOG_ERR("Initalization failed");
+		LOG_ERR("Initialization failed");
 		return -EIO;
 	}
 
