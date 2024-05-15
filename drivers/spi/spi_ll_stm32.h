@@ -63,6 +63,8 @@ struct stream {
 
 struct spi_stm32_data {
     struct spi_context ctx;
+    HAL_SPI_StateTypeDef State;
+    uint32_t ErrorCode;
 
     #ifdef CONFIG_SPI_STM32_DMA
     struct k_sem      status_sem;

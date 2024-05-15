@@ -79,7 +79,7 @@ __weak void bsp_hal_spi_tx_rx_cplt_callback(SPI_TypeDef* spi) {
     /* pass */
 }
 
-__weak void bsp_hal_spi_err_callback(SPI_TypeDef* spi, uint32_t sr) {
+__weak void bsp_hal_spi_err_callback(SPI_TypeDef* spi, uint32_t ercd) {
     /* pass */
 }
 #endif
@@ -586,46 +586,80 @@ static inline void spi_rx_isr_stpm3x(SPI_TypeDef* spi, struct spi_stm32_data* da
     uint32_t rx_frame;
 
     rx_frame = LL_SPI_ReceiveData32(spi);
-    if (spi_context_rx_buf_on(&data->ctx)) {
-        UNALIGNED_PUT(rx_frame, (uint32_t*)data->ctx.rx_buf);
-    }
-    spi_context_update_rx(&data->ctx, 4, 1);
+    UNALIGNED_PUT(rx_frame, (uint32_t*)data->ctx.rx_buf);
     LL_SPI_DisableIT_RXP(spi);
 }
 
-/**
- * @brief SPI interrupt handler for STPM3x devices
- *
- * @param[in] dev SPI device struct
- */
-__maybe_unused static void /**/spi_stpm3x_isr(const struct device* dev) {
-    const struct spi_stm32_config* cfg = dev->config;
-    struct spi_stm32_data* data = dev->data;
-    SPI_TypeDef* spi = cfg->spi;
-    int err;
 
-    /* Some spurious interrupts are triggered when SPI is not enabled; ignore them.
-     * Do it only when fifo is enabled to leave non-fifo functionality untouched for now
-     */
-    if (cfg->fifo_enabled) {
-        if (!LL_SPI_IsEnabled(spi)) {
-            return;
+#define SPI_EVENT_ERROR       (1 << 1)
+#define SPI_EVENT_COMPLETE    (1 << 2)
+#define SPI_EVENT_RX_OVERFLOW (1 << 3)
+#define SPI_EVENT_ALL         (SPI_EVENT_ERROR | SPI_EVENT_COMPLETE | SPI_EVENT_RX_OVERFLOW)
+#define SPI_EVENT_INTERNAL_TRANSFER_COMPLETE (1 << 30) // Internal flag to report that an event occurred
+
+
+static void stpm3x_hal_spi_cls_xfer(SPI_TypeDef* spi,
+                                    struct spi_stm32_data* data) {
+    uint32_t itflag = spi->SR;
+
+    LL_SPI_ClearFlag_EOT(spi);
+    LL_SPI_ClearFlag_TXTF(spi);
+
+    /* Disable SPI peripheral */
+    LL_SPI_Disable(spi);
+
+    /* Disable ITs */
+    LL_SPI_DisableIT(spi, SPI_IT_EOT | SPI_IT_TXP | SPI_IT_RXP | SPI_IT_DXP |
+                          SPI_IT_UDR | SPI_IT_OVR | SPI_IT_FRE | SPI_IT_MODF);
+
+    /* Disable Tx DMA Request */
+    CLEAR_BIT(spi->CFG1, SPI_CFG1_TXDMAEN | SPI_CFG1_RXDMAEN);
+
+    /* Report UnderRun error for non RX Only communication */
+    if (data->State != HAL_SPI_STATE_BUSY_RX) {
+        if ((itflag & SPI_FLAG_UDR) != 0UL) {
+            SET_BIT(data->ErrorCode, HAL_SPI_ERROR_UDR);
+            LL_SPI_ClearFlag_UDR(spi);
         }
     }
 
+    /* Report OverRun error for non TX Only communication */
+    if (data->State != HAL_SPI_STATE_BUSY_TX) {
+        if ((itflag & SPI_FLAG_OVR) != 0UL) {
+            SET_BIT(data->ErrorCode, HAL_SPI_ERROR_OVR);
+            LL_SPI_ClearFlag_OVR(spi);
+        }
+
+        /* Check if CRC error occurred */
+        if ((itflag & SPI_FLAG_CRCERR) != 0UL) {
+            SET_BIT(data->ErrorCode, HAL_SPI_ERROR_CRC);
+            LL_SPI_ClearFlag_CRCERR(spi);
+        }
+    }
+
+    /* SPI Mode Fault error interrupt occurred -------------------------------*/
+    if ((itflag & SPI_FLAG_MODF) != 0UL) {
+        SET_BIT(data->ErrorCode, HAL_SPI_ERROR_MODF);
+        LL_SPI_ClearFlag_MODF(spi);
+    }
+
+    /* SPI Frame error interrupt occurred ------------------------------------*/
+    if ((itflag & SPI_FLAG_FRE) != 0UL) {
+        SET_BIT(data->ErrorCode, HAL_SPI_ERROR_FRE);
+        LL_SPI_ClearFlag_FRE(spi);
+    }
+}
+
+
+void stpm3x_hal_spi_irq_hndl(SPI_TypeDef* spi,
+                             struct spi_stm32_data* data) {
     /* @see STPM3X_SPI::irq_hndl, HAL_SPI_IRQHandler */
     uint32_t itsource = spi->IER;
     uint32_t itflag   = spi->SR;
     uint32_t trigger  = itsource & itflag;
+    uint32_t cfg1     = spi->CFG1;
     uint32_t handled  = 0UL;
-
-    /* SPI in SUSPEND mode  ----------------------------------------------------*/
-    if (HAL_IS_BIT_SET(itflag, SPI_FLAG_SUSP) &&
-        HAL_IS_BIT_SET(itsource, SPI_FLAG_EOT)) {
-        /* Clear the Suspend flag */
-        LL_SPI_ClearFlag_SUSP(spi);
-        return;
-    }
+    HAL_SPI_StateTypeDef State = data->State;
 
     /* SPI in mode Transmitter and Receiver ------------------------------------*/
     if (HAL_IS_BIT_CLR(trigger, SPI_FLAG_OVR) &&
@@ -640,24 +674,144 @@ __maybe_unused static void /**/spi_stpm3x_isr(const struct device* dev) {
         return;
     }
 
-    /* SPI in end of Transfer --------------------------------------------------*/
+    /* SPI End Of Transfer: DMA or IT based transfer */
     if (HAL_IS_BIT_SET(trigger, SPI_FLAG_EOT)) {
-        bsp_hal_spi_tx_rx_cplt_callback(spi);
-    }
+        /* Clear EOT/TXTF/SUSP flag */
+        spi->IFCR = (SPI_IFCR_EOTC | SPI_IFCR_TXTFC | SPI_IFCR_SUSPC);
 
-    err = spi_stm32_get_err(spi);
-    if (err != 0) {
-        spi_stm32_complete(dev, err);
+        /* Disable EOT interrupt */
+        LL_SPI_DisableIT_EOT(spi);
+
+        /* Call SPI Standard close procedure */
+        stpm3x_hal_spi_cls_xfer(spi, data);
+
+        data->State = HAL_SPI_STATE_READY;
+        if (data->ErrorCode != HAL_SPI_ERROR_NONE) {
+            bsp_hal_spi_err_callback(spi, data->ErrorCode);
+            return;
+        }
+
+        if (State == HAL_SPI_STATE_BUSY_TX_RX) {
+            bsp_hal_spi_tx_rx_cplt_callback(spi);
+        }
         return;
     }
 
-    if (spi_stm32_transfer_ongoing(data) == true) {
-        err = spi_stm32_shift_frames(cfg, data);
+    if (HAL_IS_BIT_SET(itflag, SPI_FLAG_SUSP) &&
+        HAL_IS_BIT_SET(itsource, SPI_FLAG_EOT)) {
+        /* Abort on going, clear SUSP flag to avoid infinite looping */
+        LL_SPI_ClearFlag_SUSP(spi);
+
+        return;
     }
 
-    if ((err != 0) ||
-        (spi_stm32_transfer_ongoing(data) == false)) {
-        spi_stm32_complete(dev, err);
+    /* SPI in Error Treatment --------------------------------------------------*/
+    if ((trigger & (SPI_FLAG_MODF | SPI_FLAG_OVR | SPI_FLAG_FRE | SPI_FLAG_UDR)) != 0UL) {
+        /* SPI Overrun error interrupt occurred ----------------------------------*/
+        if ((trigger & SPI_FLAG_OVR) != 0UL) {
+            SET_BIT(data->ErrorCode, HAL_SPI_ERROR_OVR);
+            LL_SPI_ClearFlag_OVR(spi);
+        }
+
+        /* SPI Mode Fault error interrupt occurred -------------------------------*/
+        if ((trigger & SPI_FLAG_MODF) != 0UL) {
+            SET_BIT(data->ErrorCode, HAL_SPI_ERROR_MODF);
+            LL_SPI_ClearFlag_MODF(spi);
+        }
+
+        /* SPI Frame error interrupt occurred ------------------------------------*/
+        if ((trigger & SPI_FLAG_FRE) != 0UL) {
+            SET_BIT(data->ErrorCode, HAL_SPI_ERROR_FRE);
+            LL_SPI_ClearFlag_FRE(spi);
+        }
+
+        /* SPI Underrun error interrupt occurred ------------------------------------*/
+        if ((trigger & SPI_FLAG_UDR) != 0UL) {
+            SET_BIT(data->ErrorCode, HAL_SPI_ERROR_UDR);
+            LL_SPI_ClearFlag_UDR(spi);
+        }
+
+        if (data->ErrorCode != HAL_SPI_ERROR_NONE) {
+            /* Disable SPI peripheral */
+            LL_SPI_Disable(spi);
+
+            /* Disable all interrupts */
+            LL_SPI_DisableIT(spi, (SPI_IT_EOT | SPI_IT_RXP | SPI_IT_TXP | SPI_IT_MODF |
+                                   SPI_IT_OVR | SPI_IT_FRE | SPI_IT_UDR));
+
+            /* Disable the SPI DMA requests if enabled */
+            if (HAL_IS_BIT_SET(cfg1, SPI_CFG1_TXDMAEN | SPI_CFG1_RXDMAEN)) {
+                /* Disable the SPI DMA requests */
+                CLEAR_BIT(spi->CFG1, SPI_CFG1_TXDMAEN | SPI_CFG1_RXDMAEN);
+            }
+            else {
+                /* Restore hspi->State to Ready */
+                data->State = HAL_SPI_STATE_READY;
+
+                bsp_hal_spi_err_callback(spi, data->ErrorCode);
+            }
+        }
+        return;
+    }
+}
+
+
+uint32_t spi_irq_handler_asynch(SPI_TypeDef* spi,
+                                struct spi_stm32_data* data,
+                                IRQn_Type irq_n) {
+    int event;
+
+    stpm3x_hal_spi_irq_hndl(spi, data);
+
+    event = 0;
+    if (data->State == HAL_SPI_STATE_READY) {
+        // When HAL SPI is back to READY state, check if there was an error
+        int error = data->ErrorCode;
+        if (error != HAL_SPI_ERROR_NONE) {
+            // something went wrong and the transfer has definitely completed
+            event = (SPI_EVENT_ERROR | SPI_EVENT_INTERNAL_TRANSFER_COMPLETE);
+
+            if (error & HAL_SPI_ERROR_OVR) {
+                // buffer overrun
+                event |= SPI_EVENT_RX_OVERFLOW;
+            }
+        }
+        else {
+            // else we're done
+            event = (SPI_EVENT_COMPLETE | SPI_EVENT_INTERNAL_TRANSFER_COMPLETE);
+        }
+
+        // disable the interrupt
+        NVIC_DisableIRQ(irq_n);
+        NVIC_ClearPendingIRQ(irq_n);
+
+        // reset transfer size
+        LL_SPI_SetTransferSize(spi, 0);
+
+        // HAL_SPI_TransmitReceive_IT/HAL_SPI_Transmit_IT/HAL_SPI_Receive_IT
+        // function disable SPI after transfer. So we need enabled it back,
+        // otherwise spi_master_block_write/spi_master_write won't work in 4-wire mode.
+        LL_SPI_Enable(spi);
+    }
+
+    return (event & (SPI_EVENT_ALL | SPI_EVENT_INTERNAL_TRANSFER_COMPLETE));
+}
+
+
+/**
+ * @brief SPI interrupt handler for STPM3x devices
+ * 
+ * @param[in] dev SPI device struct
+ */
+__maybe_unused static void /**/spi_stpm3x_isr(const struct device* dev) {
+    const struct spi_stm32_config* cfg = dev->config;
+    struct spi_stm32_data* data = dev->data;
+    SPI_TypeDef* spi = cfg->spi;
+    uint32_t event;
+
+    event = spi_irq_handler_asynch(spi, data, cfg->irq);
+    if (data->ctx.callback && (event & SPI_EVENT_ALL)) {
+        data->ctx.callback(dev, (event & SPI_EVENT_ALL), data->ctx.callback_data);
     }
 }
 #endif
@@ -1030,6 +1184,7 @@ int spi_stpm3x_transceive_dt(struct spi_dt_spec const* spec,
                              uint8_t const tx[],
                              uint8_t rx[]) {
     struct spi_stm32_config const* cfg = spec->bus->config;
+    struct spi_stm32_data* data = spec->bus->data;
     SPI_TypeDef* spi = cfg->spi;
 
     // Register the thunking handler
@@ -1047,9 +1202,16 @@ int spi_stpm3x_transceive_dt(struct spi_dt_spec const* spec,
 
     // Set the function for IT treatment
     // @note already set in _spi_init_direct with HAL_SPI_Set_TxISR_Rx_ISR_8BIT
+    data->ErrorCode = HAL_SPI_ERROR_NONE;
+    data->State     = HAL_SPI_STATE_BUSY_TX_RX;
+
+    data->ctx.rx_buf = rx;
+    data->ctx.rx_len = 0U;
+    data->ctx.tx_len = 0U;
 
     // Set the number of data at current transfer
     MODIFY_REG(spi->CR2, SPI_CR2_TSIZE, 4U);
+    MODIFY_REG(spi->CFG1, SPI_CFG1_FTHLV, SPI_FIFO_THRESHOLD_04DATA);
 
     /* Enable SPI peripheral */
     LL_SPI_Enable(spi);
@@ -1399,6 +1561,14 @@ static int spi_stm32_init(const struct device* dev) {
     #ifdef CONFIG_SPI_STM32_INTERRUPT
     cfg->irq_config(dev);
     #endif
+
+    /* @warning critical part the peripheral keeps always control of all associated GPIOs
+     * When SPI master has to be disabled temporary for a specific configuration reason (e.g. CRC
+     * reset, CPHA or HDDIR change) setting this bit prevents any glitches on the associated 
+     * outputs configured at alternate function mode by keeping them forced at state corresponding
+     * the current SPI configuration.
+     */
+    LL_SPI_EnableGPIOControl(cfg->spi);
 
     #ifdef CONFIG_SPI_STM32_DMA
     if ((data->dma_rx.dma_dev != NULL) &&
