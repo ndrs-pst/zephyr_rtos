@@ -204,7 +204,7 @@ static inline uint16_t allocate_tx_buffer(void) {
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
     defined(CONFIG_ETH_STM32_HAL_API_V2)
-static __noinit ETH_TxPacketConfig tx_config;
+static __noinit ETH_TxPacketConfigTypeDef tx_config;
 #endif
 
 /*
@@ -1244,7 +1244,7 @@ static int /**/eth_stm32_initialize(const struct device* dev) {
     #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
         defined(CONFIG_ETH_STM32_HAL_API_V2)
     /* Tx config init: */
-    (void) memset(&tx_config, 0, sizeof(ETH_TxPacketConfig));
+    (void) memset(&tx_config, 0, sizeof(ETH_TxPacketConfigTypeDef));
     tx_config.Attributes = ETH_TX_PACKETS_FEATURES_CSUM |
                            ETH_TX_PACKETS_FEATURES_CRCPAD;
     tx_config.ChecksumCtrl = IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM) ?
