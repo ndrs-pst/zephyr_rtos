@@ -88,7 +88,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void) {
  */
 #define z_tmcvt_use_fast_algo(from_hz, to_hz) \
     ((DIV_ROUND_UP(CONFIG_SYS_CLOCK_MAX_TIMEOUT_DAYS * 24ULL * 3600ULL * from_hz, \
-               UINT32_MAX) * to_hz) <= UINT32_MAX)
+                   UINT32_MAX) * to_hz) <= UINT32_MAX)
 
 /* Time converter generator gadget.  Selects from one of three
  * conversion algorithms: ones that take advantage when the
@@ -130,8 +130,8 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void) {
  * the conversion requires a simple integer division
  */
 #define z_tmcvt_off_div(__from_hz, __to_hz, __round_up, __round_off)    \
-    ((__round_off) ? ((__from_hz) / (__to_hz)) / 2 :        \
-     (__round_up) ? ((__from_hz) / (__to_hz)) - 1 :            \
+    ((__round_off) ? ((__from_hz) / (__to_hz)) / 2 :                    \
+     (__round_up ) ? ((__from_hz) / (__to_hz)) - 1 :                    \
      0)
 
 /*
@@ -160,28 +160,28 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void) {
  * the conversion requires a full mul/div
  */
 #define z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off)    \
-    ((__round_off) ? (__from_hz) / 2 :                \
-     (__round_up) ? (__from_hz) - 1 :                \
+    ((__round_off) ? (__from_hz) / 2 :                                  \
+     (__round_up ) ? (__from_hz) - 1 :                                  \
      0)
 
 /* Integer division 32-bit conversion */
 #define z_tmcvt_int_div_32(__t, __from_hz, __to_hz, __round_up, __round_off) \
-    ((uint64_t) (__t) <= 0xffffffffU -                \
-     z_tmcvt_off_div(__from_hz, __to_hz, __round_up, __round_off) ?    \
-     ((uint32_t)((__t) +                        \
-             z_tmcvt_off_div(__from_hz, __to_hz,        \
-                     __round_up, __round_off)) /    \
-      z_tmcvt_divisor(__from_hz, __to_hz))                \
-     :                                \
-     (uint32_t) (((uint64_t) (__t) +                \
-              z_tmcvt_off_div(__from_hz, __to_hz,        \
-                      __round_up, __round_off)) /    \
-             z_tmcvt_divisor(__from_hz, __to_hz))        \
-        )
+    ((uint64_t)(__t) <= 0xFFFFFFFFU -                                   \
+     z_tmcvt_off_div(__from_hz, __to_hz, __round_up, __round_off) ?     \
+    ((uint32_t)((__t) +                                                 \
+                z_tmcvt_off_div(__from_hz, __to_hz,                     \
+                __round_up, __round_off)) /                             \
+            z_tmcvt_divisor(__from_hz, __to_hz))                        \
+     :                                                                  \
+     (uint32_t)(((uint64_t)(__t) +                                      \
+                z_tmcvt_off_div(__from_hz, __to_hz,                     \
+                __round_up, __round_off)) /                             \
+                z_tmcvt_divisor(__from_hz, __to_hz))                    \
+    )
 
 /* Integer multiplication 32-bit conversion */
-#define z_tmcvt_int_mul_32(__t, __from_hz, __to_hz)    \
-    (uint32_t) (__t)*((__to_hz) / (__from_hz))
+#define z_tmcvt_int_mul_32(__t, __from_hz, __to_hz) \
+    (uint32_t)(__t) * ((__to_hz) / (__from_hz))
 
 /* General 32-bit conversion */
 #define z_tmcvt_gen_32(__t, __from_hz, __to_hz, __round_up, __round_off)\
@@ -190,23 +190,23 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void) {
 
 /* Integer division 64-bit conversion */
 #define z_tmcvt_int_div_64(__t, __from_hz, __to_hz, __round_up, __round_off) \
-    (((uint64_t) (__t) + z_tmcvt_off_div(__from_hz, __to_hz,    \
-                         __round_up, __round_off)) / \
-    z_tmcvt_divisor(__from_hz, __to_hz))
+    (((uint64_t)(__t) + z_tmcvt_off_div(__from_hz, __to_hz,             \
+                                        __round_up, __round_off)) /     \
+                                        z_tmcvt_divisor(__from_hz, __to_hz))
 
 /* Integer multiplcation 64-bit conversion */
-#define z_tmcvt_int_mul_64(__t, __from_hz, __to_hz)    \
-    (uint64_t) (__t)*((__to_hz) / (__from_hz))
+#define z_tmcvt_int_mul_64(__t, __from_hz, __to_hz) \
+    (uint64_t)(__t) * ((__to_hz) / (__from_hz))
 
 /* Fast 64-bit conversion. This relies on the multiply not overflowing */
 #define z_tmcvt_gen_64_fast(__t, __from_hz, __to_hz, __round_up, __round_off) \
-    (((uint64_t) (__t)*(__to_hz) + \
-      z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off)) / (__from_hz))
+    (((uint64_t)(__t) * (__to_hz) + \
+     z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off)) / (__from_hz))
 
 /* Slow 64-bit conversion. This avoids overflowing the multiply */
 #define z_tmcvt_gen_64_slow(__t, __from_hz, __to_hz, __round_up, __round_off) \
-    (((uint64_t) (__t) / (__from_hz))*(__to_hz) +            \
-     (((uint64_t) (__t) % (__from_hz))*(__to_hz) +        \
+    (((uint64_t)(__t) / (__from_hz)) * (__to_hz) +  \
+     (((uint64_t)(__t) % (__from_hz)) * (__to_hz) + \
       z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off)) / (__from_hz))
 
 /* General 64-bit conversion. Uses one of the two above macros */
@@ -254,7 +254,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void) {
     )
 
 #define z_tmcvt(__t, __from_hz, __to_hz, __const_hz, __result32, __round_up, __round_off) \
-    ((__result32) ?                            \
+    ((__result32) ?                                             \
      z_tmcvt_32(__t, __from_hz, __to_hz, __const_hz, __round_up, __round_off) : \
      z_tmcvt_64(__t, __from_hz, __to_hz, __const_hz, __round_up, __round_off))
 
@@ -278,8 +278,8 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void) {
  *              "cyc" => "hardware cycles",
  *              "ticks" => "ticks");
  * my %human_round = ("ceil" => "Rounds up",
- *           "near" => "Round nearest",
- *           "floor" => "Truncates");
+ *              "near" => "Round nearest",
+ *              "floor" => "Truncates");
  *
  * sub big { return $_[0] eq "us" || $_[0] eq "ns"; }
  * sub prefix { return $_[0] eq "sec" || $_[0] eq "ms" || $_[0] eq "us" || $_[0] eq "ns"; }
@@ -301,7 +301,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void) {
  *
  *                 my $hfrom = $human{$from_unit};
  *                 my $hto = $human{$to_unit};
- *        my $hround = $human_round{$round};
+ *                 my $hround = $human_round{$round};
  *                 print "/", "** \@brief Convert $hfrom to $hto. $ret32 bits. $hround.\n";
  *                 print " *\n";
  *                 print " * Converts time values in $hfrom to $hto.\n";
@@ -334,12 +334,12 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void) {
  * save bytes below
  */
 #define Z_HZ_sec    1
-#define Z_HZ_ms     1000
-#define Z_HZ_us     1000000
-#define Z_HZ_ns     1000000000
-#define Z_HZ_cyc    sys_clock_hw_cycles_per_sec()
-#define Z_HZ_ticks  CONFIG_SYS_CLOCK_TICKS_PER_SEC
-#define Z_CCYC       (!IS_ENABLED(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME))
+#define Z_HZ_ms    1000
+#define Z_HZ_us    1000000
+#define Z_HZ_ns    1000000000
+#define Z_HZ_cyc   sys_clock_hw_cycles_per_sec()
+#define Z_HZ_ticks (uint32_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC
+#define Z_CCYC     (!IS_ENABLED(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME))
 
 /** @brief Convert seconds to hardware cycles. 32 bits. Truncates.
  *
@@ -1653,7 +1653,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void) {
  * @return The converted time value in milliseconds. uint64_t
  */
 #define k_ticks_to_ms_floor64(t) \
-    z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_ms, true, false, false)
+    (int64_t)z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_ms, true, false, false)
 
 /** @brief Convert ticks to milliseconds. 32 bits. Round nearest.
  *
