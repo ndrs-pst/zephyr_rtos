@@ -125,6 +125,7 @@ struct rtc_stm32_alrm {
     LL_RTC_AlarmTypeDef ll_rtc_alrm;
     /* user-defined alarm mask, values from RTC_ALARM_TIME_MASK */
     uint16_t user_mask;
+
     rtc_alarm_callback user_callback;
     void* user_data;
     bool  is_pending;
@@ -146,6 +147,10 @@ struct rtc_stm32_data {
 };
 
 static void rtc_stm32_isr(const struct device* dev);
+
+#if defined(CONFIG_APP_USE_STM32_RTC_ISR_CUSTOM)
+extern void bsp_hal_rtc_isr(void);
+#endif
 
 static int rtc_stm32_configure(const struct device* dev) {
     const struct rtc_stm32_config* cfg = dev->config;
@@ -190,8 +195,13 @@ static int rtc_stm32_configure(const struct device* dev) {
 
     LL_RTC_EnableWriteProtection(RTC);
 
+    #if defined(CONFIG_APP_USE_STM32_RTC_ISR_CUSTOM)
+    IRQ_DIRECT_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
+                       bsp_hal_rtc_isr, 0);
+    #else
     IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
                 rtc_stm32_isr, DEVICE_DT_INST_GET(0), 0);
+    #endif
 
     return (err);
 }
@@ -1054,7 +1064,7 @@ static int rtc_stm32_set_time_ext(const struct device* dev, uint8_t const* du) {
 }
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
-static void /**/rtc_stm32_isr(const struct device* dev) {
+__maybe_unused static void /**/rtc_stm32_isr(const struct device* dev) {
     const struct rtc_stm32_config* config = dev->config;
     struct rtc_stm32_data* data = dev->data;
     RTC_TypeDef* regs = config->regs;
