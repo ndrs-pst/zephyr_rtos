@@ -140,18 +140,23 @@ extern "C" {
  * Without @kconfig{CONFIG_SPI_EXTENDED_MODES} being enabled, single is the
  * only supported one.
  */
-#define SPI_LINES_SINGLE    (0U << 16)     /**< Single line */
-#define SPI_LINES_DUAL      (1U << 16)     /**< Dual lines */
-#define SPI_LINES_QUAD      (2U << 16)     /**< Quad lines */
-#define SPI_LINES_OCTAL     (3U << 16)     /**< Octal lines */
+#define SPI_LINES_SINGLE    (0U << 16)      /**< Single line */
+#define SPI_LINES_DUAL      (1U << 16)      /**< Dual lines  */
+#define SPI_LINES_QUAD      (2U << 16)      /**< Quad lines  */
+#define SPI_LINES_OCTAL     (3U << 16)      /**< Octal lines */
 
-#define SPI_LINES_MASK      (0x3U << 16)   /**< Mask for MISO lines in spi_operation_t */
+#define SPI_LINES_MASK      (0x3U << 16)    /**< Mask for MISO lines in spi_operation_t */
 /** @} */
 
 /**
  * CRC Calculation: if set, enable hardware CRC computation.
  */
-#define SPI_CRC_ENABLE      BIT(18)        /**< Enable CRC calculation */
+#define SPI_CRC_ENABLE      BIT(18)         /**< Enable CRC calculation */
+
+/**
+ * STPM3X Specific Driver: if set, enable usage of special driver.
+ */
+#define SPI_STPM3X_DRV      BIT(19)         /**< Enable STPM3X Specific Driver */
 
 /**
  * @brief SPI Chip Select control structure
