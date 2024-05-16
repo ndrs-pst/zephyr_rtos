@@ -173,7 +173,7 @@ struct net_pkt {
 #if defined(CONFIG_NET_LLDP)
 	uint8_t lldp_pkt : 1; /* Is this pkt an LLDP message.
 			       * Note: family needs to be
-			       * AF_UNSPEC.
+			       * NET_AF_UNSPEC.
 			       */
 #endif
 	uint8_t ppp_msg : 1; /* This is a PPP message */
@@ -290,13 +290,13 @@ struct net_pkt {
 	 * have network tunneling in use.
 	 */
 	union {
-		struct sockaddr remote;
+		struct net_sockaddr remote;
 
 		/* This will make sure that there is enough storage to store
 		 * the address struct. The access to value is via remote
 		 * address.
 		 */
-		struct sockaddr_storage remote_storage;
+		struct net_sockaddr_storage remote_storage;
 	};
 #endif /* CONFIG_NET_OFFLOAD */
 
@@ -1302,7 +1302,7 @@ static inline void net_pkt_set_src_ipv6_addr(struct net_pkt *pkt)
 {
 	net_if_ipv6_select_src_addr(net_context_get_iface(
 					    net_pkt_context(pkt)),
-				    (struct in6_addr *)NET_IPV6_HDR(pkt)->src);
+				    (struct net_in6_addr*)NET_IPV6_HDR(pkt)->src);
 }
 
 static inline void net_pkt_set_overwrite(struct net_pkt *pkt, bool overwrite)
@@ -1370,13 +1370,13 @@ static inline bool net_pkt_filter_local_in_recv_ok(struct net_pkt *pkt)
 #endif /* CONFIG_NET_PKT_FILTER && CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK */
 
 #if defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_L2_IPIP)
-static inline struct sockaddr *net_pkt_remote_address(struct net_pkt *pkt)
+static inline struct net_sockaddr *net_pkt_remote_address(struct net_pkt *pkt)
 {
 	return &pkt->remote;
 }
 
 static inline void net_pkt_set_remote_address(struct net_pkt *pkt,
-					      struct sockaddr *address,
+					      struct net_sockaddr *address,
 					      socklen_t len)
 {
 	memcpy(&pkt->remote, address, len);
@@ -2212,7 +2212,7 @@ static inline int net_pkt_write_u8(struct net_pkt *pkt, uint8_t data)
 /* Write uint16_t big endian data into a net_pkt. */
 static inline int net_pkt_write_be16(struct net_pkt *pkt, uint16_t data)
 {
-	uint16_t data_be16 = htons(data);
+	uint16_t data_be16 = net_htons(data);
 
 	return net_pkt_write(pkt, &data_be16, sizeof(uint16_t));
 }
@@ -2220,7 +2220,7 @@ static inline int net_pkt_write_be16(struct net_pkt *pkt, uint16_t data)
 /* Write uint32_t big endian data into a net_pkt. */
 static inline int net_pkt_write_be32(struct net_pkt *pkt, uint32_t data)
 {
-	uint32_t data_be32 = htonl(data);
+	uint32_t data_be32 = net_htonl(data);
 
 	return net_pkt_write(pkt, &data_be32, sizeof(uint32_t));
 }
