@@ -795,14 +795,6 @@ uint32_t stpm3x_hal_spi_irq_hndl_asynch(SPI_TypeDef* spi,
         /* Disable the interrupt */
         NVIC_DisableIRQ(irq_n);
         NVIC_ClearPendingIRQ(irq_n);
-
-        /* Reset transfer size */
-        LL_SPI_SetTransferSize(spi, 0);
-
-        /* HAL_SPI_TransmitReceive_IT/HAL_SPI_Transmit_IT/HAL_SPI_Receive_IT
-         * function disable SPI after transfer. So we need enabled it back,
-         * otherwise spi_master_block_write/spi_master_write won't work in 4-wire mode. */
-        LL_SPI_Enable(spi);
     }
 
     return (event & (SPI_EVENT_ALL | SPI_EVENT_INTERNAL_TRANSFER_COMPLETE));
@@ -1193,13 +1185,18 @@ end :
 
 /* STPM3X's specific function */
 bool spi_stpm3x_is_active(struct spi_dt_spec const* spec) {
-    struct spi_stm32_config const* cfg = spec->bus->config;
-    SPI_TypeDef* spi = cfg->spi;
-    bool is_active;
+    struct spi_stm32_data const* data = spec->bus->data;
+    HAL_SPI_StateTypeDef State = data->State;
 
-    is_active = (bool)LL_SPI_IsActiveMasterTransfer(spi);
+    switch (State) {
+        case HAL_SPI_STATE_RESET :
+        case HAL_SPI_STATE_READY :
+        case HAL_SPI_STATE_ERROR :
+            return (false);
 
-    return (is_active);
+        default :
+            return (true);
+    }
 }
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stpm3x_spi)
@@ -1258,6 +1255,14 @@ int spi_stpm3x_transceive_dt(struct spi_dt_spec const* spec,
     return (0);
 }
 
+
+/**
+ * @brief SPI STPM3X specific initialization
+ * @param[in] spec SPI device tree specification
+ * @param[in] cb   Callback function
+ * @param[in] userdata Callback user data
+ * @return 0 on success, negative error code on failure
+ */
 int spi_stpm3x_init(struct spi_dt_spec const* spec,
                     spi_callback_t cb,
                     void* userdata) {
@@ -1266,6 +1271,7 @@ int spi_stpm3x_init(struct spi_dt_spec const* spec,
 
     ret = spi_stm32_configure(spec->bus, &spec->config);
     if (ret == 0) {
+        data->State = HAL_SPI_STATE_READY;
         data->ctx.callback = cb;
         data->ctx.callback_data = userdata;
     }
