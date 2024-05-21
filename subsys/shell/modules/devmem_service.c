@@ -75,12 +75,12 @@ static int memory_dump(const struct shell* sh, mem_addr_t phys_addr, size_t size
 
                 case 16 :
                     value = sys_le16_to_cpu(sys_read16(addr + data_offset));
-                    sys_put_le16(value, &hex_data[data_offset]);
+                    sys_put_be16(value, &hex_data[data_offset]);
                     break;
 
                 case 32 :
                     value = sys_le32_to_cpu(sys_read32(addr + data_offset));
-                    sys_put_le32(value, &hex_data[data_offset]);
+                    sys_put_be32(value, &hex_data[data_offset]);
                     break;
 
                 default :
