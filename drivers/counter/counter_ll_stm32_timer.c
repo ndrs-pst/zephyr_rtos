@@ -34,6 +34,10 @@ LOG_MODULE_REGISTER(counter_timer_stm32, CONFIG_COUNTER_LOG_LEVEL);
        (IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_1) ? 1U : \
         0))))
 
+#if defined(CONFIG_APP_USE_STM32_TMR_ISR_CUSTOM)
+extern void bsp_hal_tmr_isr(void);
+#endif
+
 /** Channel to compare set function mapping. */
 static void (*const set_timer_compare[TIMER_MAX_CH])(TIM_TypeDef* TIMx,
                                                      uint32_t CompareValue) = {
@@ -618,6 +622,18 @@ void counter_stm32_irq_handler(const struct device* dev) {
 /** TIMx instance from DT */
 #define TIM(idx) ((TIM_TypeDef*)DT_REG_ADDR(TIMER(idx)))
 
+#define STM32_COUNTER_IRQ_CONNECT(idx)              \
+    COND_CODE_1(DT_INST_PROP(idx, bsp_hal_tmr_isr), \
+        (IRQ_DIRECT_CONNECT(DT_INST_IRQN(idx),      \
+                            DT_INST_IRQ(idx, priority),     \
+                            bsp_hal_tmr_isr, 0)),   \
+        (IRQ_CONNECT(DT_IRQN(TIMER(idx)),           \
+                             DT_IRQ(TIMER(idx), priority),  \
+                             counter_stm32_irq_handler,     \
+                             DEVICE_DT_INST_GET(idx),       \
+                             0))                    \
+    )
+
 #define COUNTER_DEVICE_INIT(idx)                                \
     BUILD_ASSERT(DT_PROP(TIMER(idx), st_prescaler) <= 0xFFFF,   \
                  "TIMER prescaler out of range");               \
@@ -628,11 +644,7 @@ void counter_stm32_irq_handler(const struct device* dev) {
     static struct counter_stm32_ch_data counter##idx##_ch_data[TIMER_MAX_CH];   \
                                                                 \
     static void counter_##idx##_stm32_irq_config(const struct device* dev) {    \
-        IRQ_CONNECT(DT_IRQN(TIMER(idx)),                        \
-                    DT_IRQ(TIMER(idx), priority),               \
-                    counter_stm32_irq_handler,                  \
-                    DEVICE_DT_INST_GET(idx),                    \
-                    0);                                         \
+        STM32_COUNTER_IRQ_CONNECT(idx);                         \
         irq_enable(DT_IRQN(TIMER(idx)));                        \
     }                                                           \
                                                                 \
