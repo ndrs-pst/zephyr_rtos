@@ -186,7 +186,7 @@ static void counter_stm32_counter_stm32_set_cc_int_pending(const struct device* 
 static int counter_stm32_set_cc(const struct device* dev, uint8_t id,
                                 const struct counter_alarm_cfg* alarm_cfg) {
     const struct counter_stm32_config* config = dev->config;
-    struct counter_stm32_data* data = dev->data;
+    struct counter_stm32_data const* data = dev->data;
 
     __ASSERT_NO_MSG(data->guard_period < counter_stm32_get_top_value(dev));
     uint32_t val = alarm_cfg->ticks;
@@ -351,7 +351,7 @@ static uint32_t counter_stm32_get_pending_int(const struct device* dev) {
 }
 
 /**
- * Obtain timer clock speed.
+ * @brief Obtain timer clock speed.
  *
  * @param pclken  Timer clock control subsystem.
  * @param tim_clk Where computed timer clock will be stored.
@@ -496,7 +496,7 @@ static int counter_stm32_init_timer(const struct device* dev) {
     /* initialize timer */
     LL_TIM_StructInit(&init);
 
-    init.Prescaler     = cfg->prescaler;
+    init.Prescaler     = (uint16_t)cfg->prescaler;
     init.CounterMode   = LL_TIM_COUNTERMODE_UP;
     init.Autoreload    = counter_get_max_top_value(dev);
     init.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
@@ -510,10 +510,11 @@ static int counter_stm32_init_timer(const struct device* dev) {
 }
 
 static uint32_t counter_stm32_get_guard_period(const struct device* dev, uint32_t flags) {
-    struct counter_stm32_data* data = dev->data;
-
     ARG_UNUSED(flags);
-    return data->guard_period;
+
+    struct counter_stm32_data const* data = dev->data;
+
+    return (data->guard_period);
 }
 
 static int counter_stm32_set_guard_period(const struct device* dev, uint32_t guard,
@@ -528,7 +529,7 @@ static int counter_stm32_set_guard_period(const struct device* dev, uint32_t gua
 }
 
 static uint32_t counter_stm32_get_freq(const struct device* dev) {
-    struct counter_stm32_data* data = dev->data;
+    struct counter_stm32_data const* data = dev->data;
 
     return (data->freq);
 }
@@ -592,7 +593,7 @@ static const struct counter_driver_api counter_stm32_driver_api = {
 
 void counter_stm32_irq_handler(const struct device* dev) {
     const struct counter_stm32_config* config = dev->config;
-    struct counter_stm32_data* data = dev->data;
+    struct counter_stm32_data const* data = dev->data;
     TIM_TypeDef* timer = config->timer;
 
     /* Capture compare events */

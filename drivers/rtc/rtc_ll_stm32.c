@@ -1253,8 +1253,13 @@ static struct rtc_stm32_config DT_CONST /**/rtc_config = {
     .sync_prescaler  = 0x00F9,
     #else /* DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSE */
     /* prescaler values for LSE @ 32768 Hz */
+    #if defined(CONFIG_APP_USE_STM32_RTC_PRESCALER_CUSTOM)
+    .async_prescaler = CONFIG_APP_STM32_RTC_PREDIV_A,
+    .sync_prescaler  = CONFIG_APP_STM32_RTC_PREDIV_S,
+    #else
     .async_prescaler = 0x7F,
     .sync_prescaler  = 0x00FF,
+    #endif
     #endif
     .pclken = rtc_stm32_clk,
     #if DT_INST_NODE_HAS_PROP(0, calib_out_freq)
