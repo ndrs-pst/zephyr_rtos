@@ -623,9 +623,9 @@ void counter_stm32_irq_handler(const struct device* dev) {
 #define TIM(idx) ((TIM_TypeDef*)DT_REG_ADDR(TIMER(idx)))
 
 #define STM32_COUNTER_IRQ_CONNECT(idx)              \
-    COND_CODE_1(DT_INST_PROP(idx, bsp_hal_tmr_isr), \
-        (IRQ_DIRECT_CONNECT(DT_INST_IRQN(idx),      \
-                            DT_INST_IRQ(idx, priority),     \
+    COND_CODE_1(DT_PROP(TIMER(idx), bsp_hal_tmr_isr),       \
+        (IRQ_DIRECT_CONNECT(DT_IRQN(TIMER(idx)),    \
+                            DT_IRQ(TIMER(idx), priority),   \
                             bsp_hal_tmr_isr, 0)),   \
         (IRQ_CONNECT(DT_IRQN(TIMER(idx)),           \
                              DT_IRQ(TIMER(idx), priority),  \
