@@ -649,7 +649,7 @@ void counter_stm32_irq_handler(const struct device* dev) {
         irq_enable(DT_IRQN(TIMER(idx)));                        \
     }                                                           \
                                                                 \
-    static const struct counter_stm32_config counter##idx##_config = {          \
+    static struct counter_stm32_config DT_CONST counter##idx##_config = {       \
         .info = {                                               \
             .max_top_value =                                    \
                 IS_TIM_32B_COUNTER_INSTANCE(TIM(idx)) ?         \
@@ -678,3 +678,56 @@ void counter_stm32_irq_handler(const struct device* dev) {
                           &counter_stm32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_DEVICE_INIT)
+
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+#define STM32_COUNTER_CFG_REG_INIT(idx)     \
+    zephyr_counter_cfg_reg_init(&counter##idx##_config);
+
+void zephyr_counter_cfg_reg_init(struct counter_stm32_config* cfg) {
+    switch ((uintptr_t)cfg->timer) {
+        case TIM1_BASE :
+            cfg->timer = (TIM_TypeDef*)ut_mcu_tim1_ptr;
+            break;
+
+        case TIM2_BASE :
+            cfg->timer = (TIM_TypeDef*)ut_mcu_tim2_ptr;
+            break;
+
+        case TIM3_BASE :
+            cfg->timer = (TIM_TypeDef*)ut_mcu_tim3_ptr;
+            break;
+
+        case TIM4_BASE :
+            cfg->timer = (TIM_TypeDef*)ut_mcu_tim4_ptr;
+            break;
+
+        case TIM5_BASE :
+            cfg->timer = (TIM_TypeDef*)ut_mcu_tim5_ptr;
+            break;
+
+        case TIM6_BASE :
+            cfg->timer = (TIM_TypeDef*)ut_mcu_tim6_ptr;
+            break;
+
+        case TIM7_BASE :
+            cfg->timer = (TIM_TypeDef*)ut_mcu_tim7_ptr;
+            break;
+
+        case TIM8_BASE :
+            cfg->timer = (TIM_TypeDef*)ut_mcu_tim8_ptr;
+            break;
+
+        default :
+            // pass
+            break;
+    }
+}
+
+void zephyr_gtest_counter_stm32(void) {
+    DT_INST_FOREACH_STATUS_OKAY(STM32_COUNTER_CFG_REG_INIT)
+}
+
+#endif
+
