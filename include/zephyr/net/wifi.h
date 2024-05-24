@@ -65,7 +65,7 @@ enum wifi_security_type {
 };
 
 /** Helper function to get user-friendly security type name. */
-const char *wifi_security_txt(enum wifi_security_type security);
+char const* wifi_security_txt(enum wifi_security_type security);
 
 /** @brief IEEE 802.11w - Management frame protection. */
 enum wifi_mfp_options {
@@ -84,7 +84,7 @@ enum wifi_mfp_options {
 };
 
 /** Helper function to get user-friendly MFP name.*/
-const char *wifi_mfp_txt(enum wifi_mfp_options mfp);
+char const* wifi_mfp_txt(enum wifi_mfp_options mfp);
 
 /**
  * @brief IEEE 802.11 operational frequency bands (not exhaustive).
@@ -106,7 +106,7 @@ enum wifi_frequency_bands {
 };
 
 /** Helper function to get user-friendly frequency band name. */
-const char *wifi_band_txt(enum wifi_frequency_bands band);
+char const* wifi_band_txt(enum wifi_frequency_bands band);
 
 /** Max SSID length */
 #define WIFI_SSID_MAX_LEN 32
@@ -161,18 +161,18 @@ enum wifi_iface_state {
 
 /* We rely on the strict order of the enum values, so, let's check it */
 BUILD_ASSERT(WIFI_STATE_DISCONNECTED < WIFI_STATE_INTERFACE_DISABLED &&
-	     WIFI_STATE_INTERFACE_DISABLED < WIFI_STATE_INACTIVE &&
-	     WIFI_STATE_INACTIVE < WIFI_STATE_SCANNING &&
-	     WIFI_STATE_SCANNING < WIFI_STATE_AUTHENTICATING &&
-	     WIFI_STATE_AUTHENTICATING < WIFI_STATE_ASSOCIATING &&
-	     WIFI_STATE_ASSOCIATING < WIFI_STATE_ASSOCIATED &&
-	     WIFI_STATE_ASSOCIATED < WIFI_STATE_4WAY_HANDSHAKE &&
-	     WIFI_STATE_4WAY_HANDSHAKE < WIFI_STATE_GROUP_HANDSHAKE &&
-	     WIFI_STATE_GROUP_HANDSHAKE < WIFI_STATE_COMPLETED);
+			 WIFI_STATE_INTERFACE_DISABLED < WIFI_STATE_INACTIVE &&
+			 WIFI_STATE_INACTIVE < WIFI_STATE_SCANNING &&
+			 WIFI_STATE_SCANNING < WIFI_STATE_AUTHENTICATING &&
+			 WIFI_STATE_AUTHENTICATING < WIFI_STATE_ASSOCIATING &&
+			 WIFI_STATE_ASSOCIATING < WIFI_STATE_ASSOCIATED &&
+			 WIFI_STATE_ASSOCIATED < WIFI_STATE_4WAY_HANDSHAKE &&
+			 WIFI_STATE_4WAY_HANDSHAKE < WIFI_STATE_GROUP_HANDSHAKE &&
+			 WIFI_STATE_GROUP_HANDSHAKE < WIFI_STATE_COMPLETED, "Wi-Fi settings error");
 
 
 /** Helper function to get user-friendly interface state name. */
-const char *wifi_state_txt(enum wifi_iface_state state);
+char const* wifi_state_txt(enum wifi_iface_state state);
 
 /** @brief Wi-Fi interface modes.
  *
@@ -200,7 +200,7 @@ enum wifi_iface_mode {
 };
 
 /** Helper function to get user-friendly interface mode name. */
-const char *wifi_mode_txt(enum wifi_iface_mode mode);
+char const* wifi_mode_txt(enum wifi_iface_mode mode);
 
 /** @brief Wi-Fi link operating modes
  *
@@ -234,7 +234,7 @@ enum wifi_link_mode {
 };
 
 /** Helper function to get user-friendly link mode name. */
-const char *wifi_link_mode_txt(enum wifi_link_mode link_mode);
+char const* wifi_link_mode_txt(enum wifi_link_mode link_mode);
 
 /** @brief Wi-Fi scanning types. */
 enum wifi_scan_type {
@@ -253,7 +253,7 @@ enum wifi_ps {
 };
 
 /** Helper function to get user-friendly ps name. */
-const char *wifi_ps_txt(enum wifi_ps ps_name);
+char const* wifi_ps_txt(enum wifi_ps ps_name);
 
 /** @brief Wi-Fi power save modes. */
 enum wifi_ps_mode {
@@ -267,7 +267,7 @@ enum wifi_ps_mode {
 };
 
 /** Helper function to get user-friendly ps mode name. */
-const char *wifi_ps_mode_txt(enum wifi_ps_mode ps_mode);
+char const* wifi_ps_mode_txt(enum wifi_ps_mode ps_mode);
 
 /** Network interface index min value */
 #define WIFI_INTERFACE_INDEX_MIN 1
@@ -311,7 +311,7 @@ enum wifi_twt_operation {
 };
 
 /** Helper function to get user-friendly twt operation name. */
-const char *wifi_twt_operation_txt(enum wifi_twt_operation twt_operation);
+char const* wifi_twt_operation_txt(enum wifi_twt_operation twt_operation);
 
 /** @brief Wi-Fi Target Wake Time (TWT) negotiation types. */
 enum wifi_twt_negotiation_type {
@@ -324,7 +324,7 @@ enum wifi_twt_negotiation_type {
 };
 
 /** Helper function to get user-friendly twt negotiation type name. */
-const char *wifi_twt_negotiation_type_txt(enum wifi_twt_negotiation_type twt_negotiation);
+char const* wifi_twt_negotiation_type_txt(enum wifi_twt_negotiation_type twt_negotiation);
 
 /** @brief Wi-Fi Target Wake Time (TWT) setup commands. */
 enum wifi_twt_setup_cmd {
@@ -347,7 +347,7 @@ enum wifi_twt_setup_cmd {
 };
 
 /** Helper function to get user-friendly twt setup cmd name. */
-const char *wifi_twt_setup_cmd_txt(enum wifi_twt_setup_cmd twt_setup);
+char const* wifi_twt_setup_cmd_txt(enum wifi_twt_setup_cmd twt_setup);
 
 /** @brief Wi-Fi Target Wake Time (TWT) negotiation status. */
 enum wifi_twt_setup_resp_status {
@@ -392,36 +392,30 @@ enum wifi_twt_teardown_status {
 };
 
 /** @cond INTERNAL_HIDDEN */
-static const char * const wifi_twt_err_code_tbl[] = {
-	[WIFI_TWT_FAIL_UNSPECIFIED] = "Unspecified",
-	[WIFI_TWT_FAIL_CMD_EXEC_FAIL] = "Command Execution failed",
-	[WIFI_TWT_FAIL_OPERATION_NOT_SUPPORTED] =
-		"Operation not supported",
-	[WIFI_TWT_FAIL_UNABLE_TO_GET_IFACE_STATUS] =
-		"Unable to get iface status",
-	[WIFI_TWT_FAIL_DEVICE_NOT_CONNECTED] =
-		"Device not connected",
-	[WIFI_TWT_FAIL_PEER_NOT_HE_CAPAB] = "Peer not HE capable",
-	[WIFI_TWT_FAIL_PEER_NOT_TWT_CAPAB] = "Peer not TWT capable",
-	[WIFI_TWT_FAIL_OPERATION_IN_PROGRESS] =
-		"Operation already in progress",
-	[WIFI_TWT_FAIL_INVALID_FLOW_ID] =
-		"Invalid negotiated flow id",
-	[WIFI_TWT_FAIL_IP_NOT_ASSIGNED] =
-		"IP address not assigned",
-	[WIFI_TWT_FAIL_FLOW_ALREADY_EXISTS] =
-		"Flow already exists",
+/* #CUSTOM@NDRS */
+static char const* const wifi_twt_err_code_tbl[] = {
+    "Unspecified",                   /* WIFI_TWT_FAIL_UNSPECIFIED   */
+    "Command Execution failed",      /* WIFI_TWT_FAIL_CMD_EXEC_FAIL */
+    "Operation not supported",       /* WIFI_TWT_FAIL_OPERATION_NOT_SUPPORTED */
+    "Unable to get iface status",    /* WIFI_TWT_FAIL_UNABLE_TO_GET_IFACE_STATUS */
+    "Device not connected",          /* WIFI_TWT_FAIL_DEVICE_NOT_CONNECTED */
+    "Peer not HE capable",           /* WIFI_TWT_FAIL_PEER_NOT_HE_CAPAB */
+    "Peer not TWT capable",          /* WIFI_TWT_FAIL_PEER_NOT_TWT_CAPAB */
+    "Operation already in progress", /* WIFI_TWT_FAIL_OPERATION_IN_PROGRESS */
+    "Invalid negotiated flow id",    /* WIFI_TWT_FAIL_INVALID_FLOW_ID */
+    "IP address not assigned",       /* WIFI_TWT_FAIL_IP_NOT_ASSIGNED */
+    "Flow already exists"            /* WIFI_TWT_FAIL_FLOW_ALREADY_EXISTS */
 };
+
 /** @endcond */
 
 /** Helper function to get user-friendly TWT error code name. */
-static inline const char *wifi_twt_get_err_code_str(int16_t err_no)
-{
-	if ((err_no) < (int16_t)ARRAY_SIZE(wifi_twt_err_code_tbl)) {
-		return wifi_twt_err_code_tbl[err_no];
-	}
+static inline char const* wifi_twt_get_err_code_str(int16_t err_no) {
+    if ((err_no) < (int16_t)ARRAY_SIZE(wifi_twt_err_code_tbl)) {
+        return wifi_twt_err_code_tbl[err_no];
+    }
 
-	return "<unknown>";
+    return "<unknown>";
 }
 
 /** @brief Wi-Fi power save parameters. */
@@ -447,7 +441,7 @@ enum wifi_ps_wakeup_mode {
 };
 
 /** Helper function to get user-friendly ps wakeup mode name. */
-const char *wifi_ps_wakeup_mode_txt(enum wifi_ps_wakeup_mode ps_wakeup_mode);
+char const* wifi_ps_wakeup_mode_txt(enum wifi_ps_wakeup_mode ps_wakeup_mode);
 
 /** @brief Wi-Fi power save error codes. */
 enum wifi_config_ps_param_fail_reason {
@@ -468,30 +462,26 @@ enum wifi_config_ps_param_fail_reason {
 };
 
 /** @cond INTERNAL_HIDDEN */
-static const char * const wifi_ps_param_config_err_code_tbl[] = {
-	[WIFI_PS_PARAM_FAIL_UNSPECIFIED] = "Unspecified",
-	[WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL] = "Command Execution failed",
-	[WIFI_PS_PARAM_FAIL_OPERATION_NOT_SUPPORTED] =
-		"Operation not supported",
-	[WIFI_PS_PARAM_FAIL_UNABLE_TO_GET_IFACE_STATUS] =
-		"Unable to get iface status",
-	[WIFI_PS_PARAM_FAIL_DEVICE_NOT_CONNECTED] =
-		"Cannot set parameters while device not connected",
-	[WIFI_PS_PARAM_FAIL_DEVICE_CONNECTED] =
-		"Cannot set parameters while device connected",
-	[WIFI_PS_PARAM_LISTEN_INTERVAL_RANGE_INVALID] =
-		"Parameter out of range",
+/* #CUSTOM@NDRS */
+static char const* const wifi_ps_param_config_err_code_tbl[] = {
+    "Unspecified",                                      /* WIFI_PS_PARAM_FAIL_UNSPECIFIED */
+    "Command Execution failed",                         /* WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL */
+    "Operation not supported",                          /* WIFI_PS_PARAM_FAIL_OPERATION_NOT_SUPPORTED */
+    "Unable to get iface status",                       /* WIFI_PS_PARAM_FAIL_UNABLE_TO_GET_IFACE_STATUS */
+    "Cannot set parameters while device not connected", /* WIFI_PS_PARAM_FAIL_DEVICE_NOT_CONNECTED */
+    "Cannot set parameters while device connected",     /* WIFI_PS_PARAM_FAIL_DEVICE_CONNECTED */
+    "Parameter out of range"                            /* WIFI_PS_PARAM_LISTEN_INTERVAL_RANGE_INVALID */
 };
+
 /** @endcond */
 
 /** Helper function to get user-friendly power save error code name. */
-static inline const char *wifi_ps_get_config_err_code_str(int16_t err_no)
-{
-	if ((err_no) < (int16_t)ARRAY_SIZE(wifi_ps_param_config_err_code_tbl)) {
-		return wifi_ps_param_config_err_code_tbl[err_no];
-	}
+static inline char const* wifi_ps_get_config_err_code_str(int16_t err_no) {
+    if ((err_no) < (int16_t)ARRAY_SIZE(wifi_ps_param_config_err_code_tbl)) {
+        return wifi_ps_param_config_err_code_tbl[err_no];
+    }
 
-	return "<unknown>";
+    return "<unknown>";
 }
 
 #ifdef __cplusplus
