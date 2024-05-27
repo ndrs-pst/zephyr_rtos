@@ -87,12 +87,12 @@ int znet_mgmt_socket(int family, int type, int proto)
 }
 
 static int znet_mgmt_bind(struct net_mgmt_socket *mgmt,
-			  const struct sockaddr *addr,
+			  const struct net_sockaddr *addr,
 			  socklen_t addrlen)
 {
-	struct sockaddr_nm *nm_addr = (struct sockaddr_nm *)addr;
+	struct net_sockaddr_nm *nm_addr = (struct net_sockaddr_nm *)addr;
 
-	if (addrlen != sizeof(struct sockaddr_nm)) {
+	if (addrlen != sizeof(struct net_sockaddr_nm)) {
 		return -EINVAL;
 	}
 
@@ -121,7 +121,7 @@ static int znet_mgmt_bind(struct net_mgmt_socket *mgmt,
 
 ssize_t znet_mgmt_sendto(struct net_mgmt_socket *mgmt,
 			 const void *buf, size_t len,
-			 int flags, const struct sockaddr *dest_addr,
+			 int flags, const struct net_sockaddr *dest_addr,
 			 socklen_t addrlen)
 {
 	if (mgmt->proto == NET_MGMT_EVENT_PROTO) {
@@ -140,10 +140,10 @@ ssize_t znet_mgmt_sendto(struct net_mgmt_socket *mgmt,
 
 static ssize_t znet_mgmt_recvfrom(struct net_mgmt_socket *mgmt, void *buf,
 				  size_t max_len, int flags,
-				  struct sockaddr *src_addr,
+				  struct net_sockaddr *src_addr,
 				  socklen_t *addrlen)
 {
-	struct sockaddr_nm *nm_addr = (struct sockaddr_nm *)src_addr;
+	struct net_sockaddr_nm *nm_addr = (struct net_sockaddr_nm *)src_addr;
 	k_timeout_t timeout = mgmt->wait_timeout;
 	uint32_t raised_event = 0;
 	uint8_t *copy_to = buf;
@@ -313,14 +313,14 @@ static int net_mgmt_sock_ioctl(void *obj, unsigned int request,
 	return -1;
 }
 
-static int net_mgmt_sock_bind(void *obj, const struct sockaddr *addr,
+static int net_mgmt_sock_bind(void *obj, const struct net_sockaddr *addr,
 			      socklen_t addrlen)
 {
 	return znet_mgmt_bind(obj, addr, addrlen);
 }
 
 /* The connect() function is not needed */
-static int net_mgmt_sock_connect(void *obj, const struct sockaddr *addr,
+static int net_mgmt_sock_connect(void *obj, const struct net_sockaddr *addr,
 				 socklen_t addrlen)
 {
 	return 0;
@@ -334,7 +334,7 @@ static int net_mgmt_sock_listen(void *obj, int backlog)
 	return 0;
 }
 
-static int net_mgmt_sock_accept(void *obj, struct sockaddr *addr,
+static int net_mgmt_sock_accept(void *obj, struct net_sockaddr *addr,
 				socklen_t *addrlen)
 {
 	return 0;
@@ -342,7 +342,7 @@ static int net_mgmt_sock_accept(void *obj, struct sockaddr *addr,
 
 static ssize_t net_mgmt_sock_sendto(void *obj, const void *buf,
 				    size_t len, int flags,
-				    const struct sockaddr *dest_addr,
+				    const struct net_sockaddr *dest_addr,
 				    socklen_t addrlen)
 {
 	return znet_mgmt_sendto(obj, buf, len, flags, dest_addr, addrlen);
@@ -350,7 +350,7 @@ static ssize_t net_mgmt_sock_sendto(void *obj, const void *buf,
 
 static ssize_t net_mgmt_sock_recvfrom(void *obj, void *buf,
 				      size_t max_len, int flags,
-				      struct sockaddr *src_addr,
+				      struct net_sockaddr *src_addr,
 				      socklen_t *addrlen)
 {
 	return znet_mgmt_recvfrom(obj, buf, max_len, flags,
@@ -387,7 +387,7 @@ static const struct socket_op_vtable net_mgmt_sock_fd_op_vtable = {
 
 static bool net_mgmt_is_supported(int family, int type, int proto)
 {
-	if ((type != SOCK_RAW && type != SOCK_DGRAM) ||
+	if ((type != NET_SOCK_RAW && type != NET_SOCK_DGRAM) ||
 	    (proto != NET_MGMT_EVENT_PROTO)) {
 		return false;
 	}
