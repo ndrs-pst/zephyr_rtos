@@ -9,8 +9,31 @@
 #include <zephyr/device.h>
 #include <version.h>
 
+#define CLI_INFO_BBC_MICRO_OWL_LOGO_2                                               \
+    "■　■　■　■　■　■　■　■　■\n"                                                            \
+    "　■　　　　　■　■　　　　　■　\n"                                                            \
+    "■　　　■　　　■　　　■　　　■\n"                                                            \
+    "　　　■　■　　　　　■　■　　　\n"                                                            \
+    "■　　　■　　　　　　　■　　　■\n"                                                            \
+    "　■　　　　　■　■　　　　　■　\n"                                                            \
+    "■　■　　　　　■　　　　　■　■\n"                                                            \
+    "　■　■　　　　　　　　　■　　　\n"                                                            \
+    "■　■　■　■　■　■　■　　　■\n"                                                            \
+    "　■　■　■　■　　　　　　　　　\n"                                                            \
+    "■　■　■　■　■　　　　　　　■\n"                                                            \
+    "　■　■　■　■　　　　　　　　　\n"                                                            \
+    "　　■　■　■　■　　　　　　　■\n"                                                            \
+    "　　　■　■　■　■　　　　　　　\n"                                                            \
+    "　　　　■　■　■　■　　　　　■\n"                                                            \
+    "　　　　　■　■　■　■　　　　　\n"                                                            \
+    "　　　　　　■　■　■　■　　　■\n"                                                            \
+    "　　　　　　　■　　　■　■　　　\n"                                                            \
+    "　　　　　　■　　　■　　　■　■\n"                                                            \
+    "　■　■　■　■　■　■　■　■　\n"                                                            \
+    "　　　　　　　　　　　　　　　　■\n"
+
 #if defined(CONFIG_BOOT_DELAY) && (CONFIG_BOOT_DELAY > 0)
-#define DELAY_STR STRINGIFY(CONFIG_BOOT_DELAY)
+#define DELAY_STR      STRINGIFY(CONFIG_BOOT_DELAY)
 #define BANNER_POSTFIX " (delayed boot " DELAY_STR "ms)"
 #else
 #define BANNER_POSTFIX ""
@@ -24,14 +47,14 @@
 #endif /* BUILD_VERSION */
 #endif /* !BANNER_VERSION */
 
-void boot_banner(void)
-{
+void boot_banner(void) {
 #if defined(CONFIG_BOOT_DELAY) && (CONFIG_BOOT_DELAY > 0)
-	printk("***** delaying boot " DELAY_STR "ms (per build configuration) *****\n");
-	k_busy_wait(CONFIG_BOOT_DELAY * USEC_PER_MSEC);
+    printk("***** delaying boot " DELAY_STR "ms (per build configuration) *****\n");
+    k_busy_wait(CONFIG_BOOT_DELAY * USEC_PER_MSEC);
 #endif /* defined(CONFIG_BOOT_DELAY) && (CONFIG_BOOT_DELAY > 0) */
 
 #ifdef CONFIG_BOOT_BANNER
-	printk("*** " CONFIG_BOOT_BANNER_STRING " " BANNER_VERSION BANNER_POSTFIX " ***\n");
+    printk("*** " CONFIG_BOOT_BANNER_STRING " " BANNER_VERSION BANNER_POSTFIX " ***\n");
+    printk(CLI_INFO_BBC_MICRO_OWL_LOGO_2);
 #endif /* CONFIG_BOOT_BANNER */
 }

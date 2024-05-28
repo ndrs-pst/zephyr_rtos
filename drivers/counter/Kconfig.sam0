@@ -8,3 +8,10 @@ config COUNTER_SAM0_TC32
 	help
 	  Enable the SAM0 series timer counter (TC) driver in 32-bit wide
 	  mode.
+
+config COUNTER_SAM0_RTC
+	bool "SAM0 series RTC – Real-Time Counter driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM0_RTC_ENABLED
+	help
+	  Enable the SAM0 series RTC – Real-Time Counter
