@@ -89,9 +89,9 @@ struct pinctrl_dev_config {
  * @param state_idx State index.
  * @param node_id Node identifier.
  */
-#define Z_PINCTRL_STATE_ID(state_idx, node_id)				       \
-	_CONCAT(PINCTRL_STATE_,						       \
-		DT_PINCTRL_IDX_TO_NAME_UPPER_TOKEN(node_id, state_idx))
+#define Z_PINCTRL_STATE_ID(state_idx, node_id)      \
+    Z_CONCAT(PINCTRL_STATE_,                        \
+        DT_PINCTRL_IDX_TO_NAME_UPPER_TOKEN(node_id, state_idx))
 
 /**
  * @brief Obtain the variable name storing pinctrl config for the given DT node
@@ -100,7 +100,7 @@ struct pinctrl_dev_config {
  * @param node_id Node identifier.
  */
 #define Z_PINCTRL_DEV_CONFIG_NAME(node_id) \
-	_CONCAT(__pinctrl_dev_config, DEVICE_DT_NAME_GET(node_id))
+    Z_CONCAT(__pinctrl_dev_config, DEVICE_DT_NAME_GET(node_id))
 
 /**
  * @brief Obtain the variable name storing pinctrl states for the given DT node
@@ -109,7 +109,7 @@ struct pinctrl_dev_config {
  * @param node_id Node identifier.
  */
 #define Z_PINCTRL_STATES_NAME(node_id) \
-	_CONCAT(__pinctrl_states, DEVICE_DT_NAME_GET(node_id))
+    Z_CONCAT(__pinctrl_states, DEVICE_DT_NAME_GET(node_id))
 
 /**
  * @brief Obtain the variable name storing pinctrl pins for the given DT node
@@ -119,7 +119,7 @@ struct pinctrl_dev_config {
  * @param node_id Node identifier.
  */
 #define Z_PINCTRL_STATE_PINS_NAME(state_idx, node_id) \
-	_CONCAT(__pinctrl_state_pins_ ## state_idx, DEVICE_DT_NAME_GET(node_id))
+    Z_CONCAT(__pinctrl_state_pins_ ## state_idx, DEVICE_DT_NAME_GET(node_id))
 
 /**
  * @brief Utility macro to check if given state has to be skipped.
@@ -132,9 +132,9 @@ struct pinctrl_dev_config {
  * @param state_idx State index.
  * @param node_id Node identifier.
  */
-#define Z_PINCTRL_SKIP_STATE(state_idx, node_id)			       \
-	_CONCAT(PINCTRL_SKIP_,						       \
-		DT_PINCTRL_IDX_TO_NAME_UPPER_TOKEN(node_id, state_idx))
+#define Z_PINCTRL_SKIP_STATE(state_idx, node_id)    \
+    Z_CONCAT(PINCTRL_SKIP_,                         \
+        DT_PINCTRL_IDX_TO_NAME_UPPER_TOKEN(node_id, state_idx))
 
 /**
  * @brief Helper macro to define pins for a given pin control state.
@@ -284,8 +284,8 @@ struct pinctrl_dev_config {
  * @retval 0 If state has been found.
  * @retval -ENOENT If the state has not been found.
  */
-int pinctrl_lookup_state(const struct pinctrl_dev_config *config, uint8_t id,
-			 const struct pinctrl_state **state);
+int pinctrl_lookup_state(const struct pinctrl_dev_config* config, uint8_t id,
+                         const struct pinctrl_state** state);
 
 /**
  * @brief Configure a set of pins.
@@ -304,7 +304,7 @@ int pinctrl_lookup_state(const struct pinctrl_dev_config *config, uint8_t id,
  * @retval -errno Negative errno for other failures.
  */
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
-			   uintptr_t reg);
+                           uintptr_t reg);
 
 /**
  * @brief Apply a state directly from the provided state configuration.
@@ -341,15 +341,13 @@ static inline int pinctrl_apply_state_direct(
  * @retval -ENOENT If given state id does not exist.
  * @retval -errno Negative errno for other failures.
  */
-static inline int pinctrl_apply_state(const struct pinctrl_dev_config *config,
-				      uint8_t id)
-{
+static inline int pinctrl_apply_state(const struct pinctrl_dev_config* config, uint8_t id) {
 	int ret;
 	const struct pinctrl_state *state;
 
 	ret = pinctrl_lookup_state(config, id, &state);
 	if (ret < 0) {
-		return ret;
+		return (ret);
 	}
 
 	return pinctrl_apply_state_direct(config, state);

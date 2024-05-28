@@ -80,7 +80,7 @@ static inline void ieee802154_acknowledge(struct net_if *iface, struct ieee80215
 		return;
 	}
 
-	pkt = net_pkt_alloc_with_buffer(iface, IEEE802154_ACK_PKT_LENGTH, AF_UNSPEC, 0,
+	pkt = net_pkt_alloc_with_buffer(iface, IEEE802154_ACK_PKT_LENGTH, NET_AF_UNSPEC, 0,
 					BUF_TIMEOUT);
 	if (!pkt) {
 		return;
@@ -487,7 +487,7 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 		frame_buf = net_buf_alloc(&tx_frame_buf_pool, K_FOREVER);
 	}
 
-	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && net_pkt_family(pkt) == AF_PACKET) {
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && net_pkt_family(pkt) == NET_AF_PACKET) {
 		enum net_sock_type socket_type;
 		struct net_context *context;
 
@@ -497,13 +497,13 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 		}
 
 		socket_type = net_context_get_type(context);
-		if (socket_type == SOCK_RAW) {
+		if (socket_type == NET_SOCK_RAW) {
 			send_raw = true;
 		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM) &&
-			   socket_type == SOCK_DGRAM) {
-			struct sockaddr_ll *dst_addr = (struct sockaddr_ll *)&context->remote;
-			struct sockaddr_ll_ptr *src_addr =
-				(struct sockaddr_ll_ptr *)&context->local;
+			   socket_type == NET_SOCK_DGRAM) {
+			struct net_sockaddr_ll *dst_addr = (struct net_sockaddr_ll *)&context->remote;
+			struct net_sockaddr_ll_ptr *src_addr =
+				(struct net_sockaddr_ll_ptr *)&context->local;
 
 			net_pkt_lladdr_dst(pkt)->addr = dst_addr->sll_addr;
 			net_pkt_lladdr_dst(pkt)->len = dst_addr->sll_halen;

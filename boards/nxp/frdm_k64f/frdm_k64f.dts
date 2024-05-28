@@ -11,9 +11,9 @@
 	compatible = "nxp,mk64f12", "nxp,k64f", "nxp,k6x";
 
 	aliases {
-		led0 = &green_led;
-		led1 = &blue_led;
-		led2 = &red_led;
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
 		sw0 = &user_button_3;
 		sw1 = &user_button_2;
 		magn0 = &fxos8700;

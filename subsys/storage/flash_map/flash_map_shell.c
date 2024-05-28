@@ -20,8 +20,7 @@ LOG_MODULE_REGISTER(flash_map_shell);
 
 extern const struct flash_area *flash_map;
 
-static void fa_cb(const struct flash_area *fa, void *user_data)
-{
+static void fa_cb(const struct flash_area* fa, void* user_data) {
 	struct shell *sh = user_data;
 #if CONFIG_FLASH_MAP_LABELS
 	const char *fa_label = flash_area_label(fa);
@@ -53,7 +52,8 @@ static int cmd_flash_map_list(const struct shell *sh, size_t argc, char **argv)
 			"------------------------------");
 #endif
 	flash_area_foreach(fa_cb, (struct shell *)sh);
-	return 0;
+
+    return (0);
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_flash_map,

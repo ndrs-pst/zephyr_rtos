@@ -417,7 +417,7 @@ static int emmc_dma_init(const struct device *dev, struct sdhc_data *data, bool 
 	if (IS_ENABLED(CONFIG_INTEL_EMMC_HOST_ADMA)) {
 		uint8_t *buff = data->data;
 
-		/* Setup DMA trasnfer using ADMA2 */
+		/* Setup DMA transfer using ADMA2 */
 		memset(emmc->desc_table, 0, sizeof(emmc->desc_table));
 
 #if defined(CONFIG_INTEL_EMMC_HOST_ADMA_DESC_SIZE)
@@ -446,7 +446,7 @@ static int emmc_dma_init(const struct device *dev, struct sdhc_data *data, bool 
 		LOG_DBG("adma: %llx %x %p", emmc->desc_table[0], regs->adma_sys_addr1,
 			emmc->desc_table);
 	} else {
-		/* Setup DMA trasnfer using SDMA */
+		/* Setup DMA transfer using SDMA */
 		regs->sdma_sysaddr = (uint32_t)((uintptr_t)data->data);
 		LOG_DBG("sdma_sysaddr: %x", regs->sdma_sysaddr);
 	}
@@ -1057,7 +1057,7 @@ static int emmc_set_io(const struct device *dev, struct sdhc_io *ios)
 		LOG_DBG("signal_voltage: %d", ios->signal_voltage);
 		ret = emmc_set_voltage(dev, ios->signal_voltage);
 		if (ret) {
-			LOG_ERR("Set signal volatge failed:%d", ret);
+			LOG_ERR("Set signal voltage failed:%d", ret);
 			return ret;
 		}
 		host_io->signal_voltage = ios->signal_voltage;

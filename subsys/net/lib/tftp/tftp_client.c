@@ -12,8 +12,8 @@ LOG_MODULE_REGISTER(tftp_client, CONFIG_TFTP_LOG_LEVEL);
 #include "tftp_client.h"
 
 #define ADDRLEN(sa) \
-	(sa.sa_family == AF_INET ? \
-		sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6))
+	(sa.sa_family == NET_AF_INET ? \
+		sizeof(struct net_sockaddr_in) : sizeof(struct net_sockaddr_in6))
 
 /*
  * Prepare a request as required by RFC1350. This packet can be sent
@@ -174,7 +174,7 @@ static inline int send_err(int sock, struct tftpc *client, int err_code, char *e
  */
 static inline int send_ack(int sock, struct tftphdr_ack *ackhdr)
 {
-	LOG_DBG("Client acking block number: %d", ntohs(ackhdr->block));
+	LOG_DBG("Client acking block number: %d", net_ntohs(ackhdr->block));
 
 	return zsock_send(sock, ackhdr, sizeof(struct tftphdr_ack), 0);
 }
@@ -216,7 +216,7 @@ static int send_request(int sock, struct tftpc *client,
 		}
 
 		/* Receive data from the TFTP Server. */
-		struct sockaddr from_addr;
+		struct net_sockaddr from_addr;
 		socklen_t from_addr_len = sizeof(from_addr);
 
 		ret = zsock_recvfrom(sock, client->tftp_buf, TFTPC_MAX_BUF_SIZE, 0,
@@ -258,7 +258,7 @@ int tftp_get(struct tftpc *client, const char *remote_file, const char *mode)
 		return -EINVAL;
 	}
 
-	sock = zsock_socket(client->server.sa_family, SOCK_DGRAM, IPPROTO_UDP);
+	sock = zsock_socket(client->server.sa_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	if (sock < 0) {
 		LOG_ERR("Failed to create UDP socket: %d", errno);
 		return -errno;
@@ -383,7 +383,7 @@ int tftp_put(struct tftpc *client, const char *remote_file, const char *mode,
 		return -EINVAL;
 	}
 
-	sock = zsock_socket(client->server.sa_family, SOCK_DGRAM, IPPROTO_UDP);
+	sock = zsock_socket(client->server.sa_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	if (sock < 0) {
 		LOG_ERR("Failed to create UDP socket: %d", errno);
 		return -errno;

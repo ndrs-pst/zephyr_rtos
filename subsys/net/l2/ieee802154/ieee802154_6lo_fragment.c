@@ -242,7 +242,7 @@ static void update_protocol_header_lengths(struct net_pkt *pkt, uint16_t size)
 
 	net_pkt_set_data(pkt, &ipv6_access);
 
-	if (ipv6->nexthdr == IPPROTO_UDP) {
+	if (ipv6->nexthdr == NET_IPPROTO_UDP) {
 		NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
 		struct net_udp_hdr *udp;
 

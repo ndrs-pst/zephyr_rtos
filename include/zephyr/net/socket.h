@@ -273,15 +273,15 @@ struct zsock_addrinfo {
 	struct zsock_addrinfo *ai_next; /**< Pointer to next address entry */
 	int ai_flags;             /**< Additional options */
 	int ai_family;            /**< Address family of the returned addresses */
-	int ai_socktype;          /**< Socket type, for example SOCK_STREAM or SOCK_DGRAM */
+	int ai_socktype;          /**< Socket type, for example NET_SOCK_STREAM or SOCK_DGRAM */
 	int ai_protocol;          /**< Protocol for addresses, 0 means any protocol */
 	int ai_eflags;            /**< Extended flags for special usage */
 	socklen_t ai_addrlen;     /**< Length of the socket address */
-	struct sockaddr *ai_addr; /**< Pointer to the address */
+	struct net_sockaddr *ai_addr; /**< Pointer to the address */
 	char *ai_canonname;       /**< Optional official name of the host */
 
 /** @cond INTERNAL_HIDDEN */
-	struct sockaddr _ai_addr;
+	struct net_sockaddr _ai_addr;
 	char _ai_canonname[DNS_MAX_NAME_SIZE + 1];
 /** @endcond */
 };
@@ -397,7 +397,7 @@ __syscall int zsock_shutdown(int sock, int how);
  * if :kconfig:option:`CONFIG_POSIX_API` is defined.
  * @endrst
  */
-__syscall int zsock_bind(int sock, const struct sockaddr *addr,
+__syscall int zsock_bind(int sock, const struct net_sockaddr *addr,
 			 socklen_t addrlen);
 
 /**
@@ -412,7 +412,7 @@ __syscall int zsock_bind(int sock, const struct sockaddr *addr,
  * if :kconfig:option:`CONFIG_POSIX_API` is defined.
  * @endrst
  */
-__syscall int zsock_connect(int sock, const struct sockaddr *addr,
+__syscall int zsock_connect(int sock, const struct net_sockaddr *addr,
 			    socklen_t addrlen);
 
 /**
@@ -441,7 +441,7 @@ __syscall int zsock_listen(int sock, int backlog);
  * if :kconfig:option:`CONFIG_POSIX_API` is defined.
  * @endrst
  */
-__syscall int zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen);
+__syscall int zsock_accept(int sock, struct net_sockaddr *addr, socklen_t *addrlen);
 
 /**
  * @brief Send data to an arbitrary network address
@@ -456,7 +456,7 @@ __syscall int zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen);
  * @endrst
  */
 __syscall ssize_t zsock_sendto(int sock, const void *buf, size_t len,
-			       int flags, const struct sockaddr *dest_addr,
+			       int flags, const struct net_sockaddr *dest_addr,
 			       socklen_t addrlen);
 
 /**
@@ -505,7 +505,7 @@ __syscall ssize_t zsock_sendmsg(int sock, const struct msghdr *msg,
  * @endrst
  */
 __syscall ssize_t zsock_recvfrom(int sock, void *buf, size_t max_len,
-				 int flags, struct sockaddr *src_addr,
+				 int flags, struct net_sockaddr *src_addr,
 				 socklen_t *addrlen);
 
 /**
@@ -675,7 +675,7 @@ __syscall int zsock_setsockopt(int sock, int level, int optname,
  * if :kconfig:option:`CONFIG_POSIX_API` is defined.
  * @endrst
  */
-__syscall int zsock_getpeername(int sock, struct sockaddr *addr,
+__syscall int zsock_getpeername(int sock, struct net_sockaddr *addr,
 				socklen_t *addrlen);
 
 /**
@@ -690,7 +690,7 @@ __syscall int zsock_getpeername(int sock, struct sockaddr *addr,
  * if :kconfig:option:`CONFIG_POSIX_API` is defined.
  * @endrst
  */
-__syscall int zsock_getsockname(int sock, struct sockaddr *addr,
+__syscall int zsock_getsockname(int sock, struct net_sockaddr *addr,
 				socklen_t *addrlen);
 
 /**
@@ -849,7 +849,7 @@ const char *zsock_gai_strerror(int errcode);
  * if :kconfig:option:`CONFIG_POSIX_API` is defined.
  * @endrst
  */
-int zsock_getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
+int zsock_getnameinfo(const struct net_sockaddr *addr, socklen_t addrlen,
 		      char *host, socklen_t hostlen,
 		      char *serv, socklen_t servlen, int flags);
 
@@ -888,13 +888,13 @@ static inline int shutdown(int sock, int how)
 }
 
 /** POSIX wrapper for @ref zsock_bind */
-static inline int bind(int sock, const struct sockaddr *addr, socklen_t addrlen)
+static inline int bind(int sock, const struct net_sockaddr *addr, socklen_t addrlen)
 {
 	return zsock_bind(sock, addr, addrlen);
 }
 
 /** POSIX wrapper for @ref zsock_connect */
-static inline int connect(int sock, const struct sockaddr *addr,
+static inline int connect(int sock, const struct net_sockaddr *addr,
 			  socklen_t addrlen)
 {
 	return zsock_connect(sock, addr, addrlen);
@@ -907,7 +907,7 @@ static inline int listen(int sock, int backlog)
 }
 
 /** POSIX wrapper for @ref zsock_accept */
-static inline int accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
+static inline int accept(int sock, struct net_sockaddr *addr, socklen_t *addrlen)
 {
 	return zsock_accept(sock, addr, addrlen);
 }
@@ -926,7 +926,7 @@ static inline ssize_t recv(int sock, void *buf, size_t max_len, int flags)
 
 /** POSIX wrapper for @ref zsock_sendto */
 static inline ssize_t sendto(int sock, const void *buf, size_t len, int flags,
-			     const struct sockaddr *dest_addr,
+			     const struct net_sockaddr *dest_addr,
 			     socklen_t addrlen)
 {
 	return zsock_sendto(sock, buf, len, flags, dest_addr, addrlen);
@@ -941,7 +941,7 @@ static inline ssize_t sendmsg(int sock, const struct msghdr *message,
 
 /** POSIX wrapper for @ref zsock_recvfrom */
 static inline ssize_t recvfrom(int sock, void *buf, size_t max_len, int flags,
-			       struct sockaddr *src_addr, socklen_t *addrlen)
+			       struct net_sockaddr *src_addr, socklen_t *addrlen)
 {
 	return zsock_recvfrom(sock, buf, max_len, flags, src_addr, addrlen);
 }
@@ -973,14 +973,14 @@ static inline int setsockopt(int sock, int level, int optname,
 }
 
 /** POSIX wrapper for @ref zsock_getpeername */
-static inline int getpeername(int sock, struct sockaddr *addr,
+static inline int getpeername(int sock, struct net_sockaddr *addr,
 			      socklen_t *addrlen)
 {
 	return zsock_getpeername(sock, addr, addrlen);
 }
 
 /** POSIX wrapper for @ref zsock_getsockname */
-static inline int getsockname(int sock, struct sockaddr *addr,
+static inline int getsockname(int sock, struct net_sockaddr *addr,
 			      socklen_t *addrlen)
 {
 	return zsock_getsockname(sock, addr, addrlen);
@@ -1007,7 +1007,7 @@ static inline const char *gai_strerror(int errcode)
 }
 
 /** POSIX wrapper for @ref zsock_getnameinfo */
-static inline int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
+static inline int getnameinfo(const struct net_sockaddr *addr, socklen_t addrlen,
 			      char *host, socklen_t hostlen,
 			      char *serv, socklen_t servlen, int flags)
 {
@@ -1185,7 +1185,7 @@ struct ifreq {
  * @name TCP level options (IPPROTO_TCP)
  * @{
  */
-/* Socket options for IPPROTO_TCP level */
+/* Socket options for NET_IPPROTO_TCP level */
 /** Disable TCP buffering (ignored, for compatibility) */
 #define TCP_NODELAY 1
 /** Start keepalives after this period (seconds) */
@@ -1201,7 +1201,7 @@ struct ifreq {
  * @name IPv4 level options (IPPROTO_IP)
  * @{
  */
-/* Socket options for IPPROTO_IP level */
+/* Socket options for NET_IPPROTO_IP level */
 /** Set or receive the Type-Of-Service value for an outgoing packet. */
 #define IP_TOS 1
 
@@ -1222,8 +1222,8 @@ struct ifreq {
  */
 struct in_pktinfo {
 	unsigned int   ipi_ifindex;  /**< Network interface index */
-	struct in_addr ipi_spec_dst; /**< Local address */
-	struct in_addr ipi_addr;     /**< Header Destination address */
+	struct net_in_addr ipi_spec_dst; /**< Local address */
+	struct net_in_addr ipi_addr;     /**< Header Destination address */
 };
 
 /** Set IPv4 multicast TTL value. */
@@ -1237,8 +1237,8 @@ struct in_pktinfo {
  * @brief Struct used when joining or leaving a IPv4 multicast group.
  */
 struct ip_mreqn {
-	struct in_addr imr_multiaddr; /**< IP multicast group address */
-	struct in_addr imr_address;   /**< IP address of local interface */
+	struct net_in_addr imr_multiaddr; /**< IP multicast group address */
+	struct net_in_addr imr_address;   /**< IP address of local interface */
 	int            imr_ifindex;   /**< Network interface index */
 };
 
@@ -1248,7 +1248,7 @@ struct ip_mreqn {
  * @name IPv6 level options (IPPROTO_IPV6)
  * @{
  */
-/* Socket options for IPPROTO_IPV6 level */
+/* Socket options for NET_IPPROTO_IPV6 level */
 /** Set the unicast hop limit for the socket. */
 #define IPV6_UNICAST_HOPS	16
 
@@ -1266,7 +1266,7 @@ struct ip_mreqn {
  */
 struct ipv6_mreq {
 	/** IPv6 multicast address of group */
-	struct in6_addr ipv6mr_multiaddr;
+	struct net_in6_addr ipv6mr_multiaddr;
 
 	/** Network interface index of the local IPv6 address */
 	int ipv6mr_ifindex;
@@ -1309,7 +1309,7 @@ struct ipv6_mreq {
  * option is set.
  */
 struct in6_pktinfo {
-	struct in6_addr ipi6_addr;    /**< Destination IPv6 address */
+	struct net_in6_addr ipi6_addr;    /**< Destination IPv6 address */
 	unsigned int    ipi6_ifindex; /**< Receive interface index */
 };
 
