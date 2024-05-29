@@ -49,6 +49,15 @@ config PHY_MICROCHIP_KSZ8081
 	help
 	  Enable Microchip KSZ8081 Ethernet Phy Driver
 
+config PHY_MICROCHIP_LAN8742A
+	bool "Microchip LAN8742A Phy Driver"
+	default y
+	depends on DT_HAS_MICROCHIP_LAN8742A_ENABLED
+	depends on MDIO
+	depends on GPIO
+	help
+	  Enable Microchip LAN8742A Ethernet Phy Driver
+
 config PHY_AUTONEG_TIMEOUT_MS
 	int "Auto-negotiation timeout value in milliseconds"
 	default 4000

@@ -510,7 +510,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 	struct jesd216_erase_type *etp = dev_data->erase_types;
 	const size_t flash_size = jesd216_bfp_density(bfp) / 8U;
 
-	LOG_DBG("%s: %u MiBy flash", dev->name, (uint32_t)(flash_size >> 20));
+	LOG_DBG("%s: %u MiB flash", dev->name, (uint32_t)(flash_size >> 20));
 
 	/* Copy over the erase types, preserving their order.  (The
 	 * Sector Map Parameter table references them by index.)
