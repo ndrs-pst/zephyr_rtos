@@ -104,6 +104,6 @@ static inline size_t z_impl_fram_get_size(const struct device* dev) {
  * @}
  */
 
-#include <syscalls/fram.h>
+#include <zephyr/syscalls/fram.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_FRAM_H_ */

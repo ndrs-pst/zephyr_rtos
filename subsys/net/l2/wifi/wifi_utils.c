@@ -144,7 +144,6 @@ static int wifi_utils_get_all_chans_in_range(uint8_t chan_start,
             for (i = 0; i < ARRAY_SIZE(valid_5g_chans_20mhz); i++) {
                 if (valid_5g_chans_20mhz[i] == chan_start) {
                     start = true;
-                    continue;
                 }
 
                 if (valid_5g_chans_20mhz[i] == chan_end) {
