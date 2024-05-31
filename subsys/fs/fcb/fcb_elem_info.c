@@ -10,7 +10,7 @@
 #include <zephyr/fs/fcb.h>
 #include "fcb_priv.h"
 
-#define FCB_FIXED_ENDMARKER 0xab
+#define FCB_FIXED_ENDMARKER     0xABU
 
 /*
  * Given offset in flash sector, fill in rest of the fcb_entry, and crc8 over

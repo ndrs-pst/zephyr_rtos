@@ -20,7 +20,9 @@
 #include <zephyr/posix/signal.h>
 #endif
 #include <zephyr/posix/sys/confstr.h>
+#if !defined(_MSC_VER)  /* #CUSTOM@NDRS */
 #include <zephyr/posix/sys/stat.h>
+#endif
 #include <zephyr/posix/sys/sysconf.h>
 
 #ifdef __cplusplus
