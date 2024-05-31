@@ -50,7 +50,7 @@ static int set_power_mode(enum bmp5_powermode powermode, const struct device *de
 
 	ret = get_power_mode(&current_powermode, dev);
 	if (ret != BMP5_OK) {
-		LOG_ERR("Couldnt set the power mode because something went wrong when getting the "
+		LOG_ERR("Couldn't set the power mode because something went wrong when getting the "
 			"current power mode.");
 		return ret;
 	}
@@ -408,7 +408,7 @@ static int bmp581_channel_get(const struct device *dev, enum sensor_channel chan
 		*val = drv->last_sample.pressure;
 		return BMP5_OK;
 	case SENSOR_CHAN_AMBIENT_TEMP:
-		/* returns temperature in Celcius */
+		/* returns temperature in Celsius */
 		*val = drv->last_sample.temperature;
 		return BMP5_OK;
 	default:

@@ -183,7 +183,7 @@ void mqtt_client_init(struct mqtt_client *client)
 
 #if defined(CONFIG_SOCKS)
 int mqtt_client_set_proxy(struct mqtt_client *client,
-			  struct sockaddr *proxy_addr,
+			  struct net_sockaddr *proxy_addr,
 			  socklen_t addrlen)
 {
 	if (IS_ENABLED(CONFIG_SOCKS)) {
@@ -603,8 +603,8 @@ int mqtt_live(struct mqtt_client *client)
 
 	elapsed_time = mqtt_elapsed_time_in_ms_get(
 				client->internal.last_activity);
-	if ((client->keepalive > 0) &&
-	    (elapsed_time >= (client->keepalive * 1000))) {
+	if ((client->keepalive > 0U) &&
+	    (elapsed_time >= (client->keepalive * 1000U))) {
 		err_code = mqtt_ping(client);
 		ping_sent = true;
 	}

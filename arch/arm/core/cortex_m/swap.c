@@ -89,10 +89,10 @@ uintptr_t z_arm_pendsv_c(uintptr_t exc_ret)
 
 	arch_irq_unlock(basepri);
 
-#if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
+	#if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
 	/* Re-program dynamic memory map */
 	z_arm_configure_dynamic_mpu_regions(current);
-#endif
+	#endif
 
 	/* restore mode */
 	IF_ENABLED(CONFIG_USERSPACE, ({

@@ -50,7 +50,7 @@ struct fcb_disk_area {
 };
 
 int fcb_put_len(const struct fcb *fcb, uint8_t *buf, uint16_t len);
-int fcb_get_len(const struct fcb *fcb, uint8_t *buf, uint16_t *len);
+int fcb_get_len(const struct fcb *fcb, uint8_t const* buf, uint16_t *len);
 
 static inline int fcb_len_in_flash(struct fcb *fcb, uint16_t len)
 {
@@ -72,8 +72,8 @@ int fcb_getnext_nolock(struct fcb *fcb, struct fcb_entry *loc);
 int fcb_elem_info(struct fcb *fcb, struct fcb_entry *loc);
 int fcb_elem_endmarker(struct fcb *fcb, struct fcb_entry *loc, uint8_t *crc8p);
 
-int fcb_sector_hdr_init(struct fcb *fcb, struct flash_sector *sector, uint16_t id);
-int fcb_sector_hdr_read(struct fcb *fcb, struct flash_sector *sector,
+int fcb_sector_hdr_init(struct fcb const* fcb, struct flash_sector *sector, uint16_t id);
+int fcb_sector_hdr_read(struct fcb const* fcb, struct flash_sector *sector,
 			struct fcb_disk_area *fdap);
 
 #ifdef __cplusplus

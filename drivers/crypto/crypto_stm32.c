@@ -494,7 +494,7 @@ static int crypto_stm32_init(const struct device *dev)
 	return 0;
 }
 
-static struct crypto_driver_api crypto_enc_funcs = {
+static struct crypto_driver_api const crypto_enc_funcs = {
 	.cipher_begin_session = crypto_stm32_session_setup,
 	.cipher_free_session = crypto_stm32_session_free,
 	.cipher_async_callback_set = NULL,

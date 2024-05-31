@@ -69,7 +69,7 @@ struct ppp_api {
 /* Make sure that the network interface API is properly setup inside
  * PPP API struct (it is the first one).
  */
-BUILD_ASSERT(offsetof(struct ppp_api, iface_api) == 0);
+BUILD_ASSERT(offsetof(struct ppp_api, iface_api) == 0, "offsetof error !!!");
 
 /**
  * PPP protocol types.
@@ -311,7 +311,7 @@ struct ppp_fsm {
 	/** Option bits */
 	uint32_t flags;
 
-	/** Number of re-transmissions left */;
+	/** Number of re-transmissions left */
 	uint32_t retransmits;
 
 	/** Number of NACK loops since last ACK */
@@ -382,13 +382,13 @@ struct lcp_options {
 /** IPv4 control protocol options */
 struct ipcp_options {
 	/** IPv4 address */
-	struct in_addr address;
+	struct net_in_addr address;
 
 	/** Primary DNS server address */
-	struct in_addr dns1_address;
+	struct net_in_addr dns1_address;
 
 	/** Secondary DNS server address */
-	struct in_addr dns2_address;
+	struct net_in_addr dns2_address;
 };
 
 /** IPv6 control protocol options */

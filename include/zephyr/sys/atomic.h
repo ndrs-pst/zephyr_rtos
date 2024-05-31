@@ -23,7 +23,7 @@ extern "C" {
 
 /* Low-level primitives come in several styles: */
 
-#if defined(CONFIG_ATOMIC_OPERATIONS_C)
+#if (defined(CONFIG_ATOMIC_OPERATIONS_C) || (__GTEST == 1U)) /* @CUSTOM@NDRS */
 /* Generic-but-slow implementation based on kernel locking and syscalls */
 #include <zephyr/sys/atomic_c.h>
 #elif defined(CONFIG_ATOMIC_OPERATIONS_ARCH)
@@ -73,9 +73,9 @@ extern "C" {
  * @cond INTERNAL_HIDDEN
  */
 
-#define ATOMIC_BITS (sizeof(atomic_val_t) * 8)
-#define ATOMIC_MASK(bit) BIT((unsigned long)(bit) & (ATOMIC_BITS - 1U))
-#define ATOMIC_ELEM(addr, bit) ((addr) + ((bit) / ATOMIC_BITS))
+#define ATOMIC_BITS             ((atomic_val_t)sizeof(atomic_val_t) * 8)
+#define ATOMIC_MASK(bit)        BIT((unsigned long)(bit) & (ATOMIC_BITS - 1U))
+#define ATOMIC_ELEM(addr, bit)  ((addr) + ((bit) / ATOMIC_BITS))
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -124,11 +124,10 @@ extern "C" {
  *
  * @return true if the bit was set, false if it wasn't.
  */
-static inline bool atomic_test_bit(const atomic_t *target, int bit)
-{
-	atomic_val_t val = atomic_get(ATOMIC_ELEM(target, bit));
+static inline bool atomic_test_bit(const atomic_t* target, int bit) {
+    atomic_val_t val = atomic_get(ATOMIC_ELEM(target, bit));
 
-	return (1 & (val >> (bit & (ATOMIC_BITS - 1)))) != 0;
+    return (1 & (val >> (bit & (ATOMIC_BITS - 1)))) != 0;
 }
 
 /**
@@ -144,14 +143,13 @@ static inline bool atomic_test_bit(const atomic_t *target, int bit)
  *
  * @return false if the bit was already cleared, true if it wasn't.
  */
-static inline bool atomic_test_and_clear_bit(atomic_t *target, int bit)
-{
-	atomic_val_t mask = ATOMIC_MASK(bit);
-	atomic_val_t old;
+static inline bool atomic_test_and_clear_bit(atomic_t* target, int bit) {
+    atomic_val_t mask = ATOMIC_MASK(bit);
+    atomic_val_t old;
 
-	old = atomic_and(ATOMIC_ELEM(target, bit), ~mask);
+    old = atomic_and(ATOMIC_ELEM(target, bit), ~mask);
 
-	return (old & mask) != 0;
+    return (old & mask) != 0;
 }
 
 /**
