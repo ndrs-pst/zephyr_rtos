@@ -15,7 +15,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/flash.h>
 
-uint8_t fcb_get_align(const struct fcb* fcb) {
+uint8_t fcb_get_align(struct fcb const* fcb) {
     uint8_t align;
 
     if (fcb->fap == NULL) {
@@ -27,11 +27,11 @@ uint8_t fcb_get_align(const struct fcb* fcb) {
     return (align);
 }
 
-int fcb_flash_read(const struct fcb* fcb, struct flash_sector const* sector,
+int fcb_flash_read(struct fcb const* fcb, struct flash_sector const* sector,
                    off_t off, void* dst, size_t len) {
     int rc;
 
-    if (off + len > sector->fs_size) {
+    if ((off + len) > sector->fs_size) {
         return (-EINVAL);
     }
 
@@ -47,11 +47,11 @@ int fcb_flash_read(const struct fcb* fcb, struct flash_sector const* sector,
     return (0);
 }
 
-int fcb_flash_write(const struct fcb* fcb, const struct flash_sector* sector,
+int fcb_flash_write(struct fcb const* fcb, struct flash_sector const* sector,
                     off_t off, void const* src, size_t len) {
     int rc;
 
-    if (off + len > sector->fs_size) {
+    if ((off + len) > sector->fs_size) {
         return (-EINVAL);
     }
 
@@ -59,7 +59,7 @@ int fcb_flash_write(const struct fcb* fcb, const struct flash_sector* sector,
         return (-EIO);
     }
 
-    rc = flash_area_write(fcb->fap, sector->fs_off + off, src, len);
+    rc = flash_area_write(fcb->fap, (sector->fs_off + off), src, len);
     if (rc != 0) {
         return (-EIO);
     }
@@ -67,7 +67,7 @@ int fcb_flash_write(const struct fcb* fcb, const struct flash_sector* sector,
     return (0);
 }
 
-int fcb_erase_sector(const struct fcb* fcb, const struct flash_sector* sector) {
+int fcb_erase_sector(struct fcb const* fcb, struct flash_sector const* sector) {
     int rc;
 
     if (fcb->fap == NULL) {
@@ -75,7 +75,6 @@ int fcb_erase_sector(const struct fcb* fcb, const struct flash_sector* sector) {
     }
 
     rc = flash_area_erase(fcb->fap, sector->fs_off, sector->fs_size);
-
     if (rc != 0) {
         return (-EIO);
     }
@@ -214,7 +213,7 @@ int fcb_is_empty(struct fcb* fcb) {
  * to correctly use the first bit of byte to figure out how many bytes are there
  * and if there is any data at all or both bytes are equal to erase value.
  */
-int fcb_put_len(const struct fcb* fcb, uint8_t* buf, uint16_t len) {
+int fcb_put_len(struct fcb const* fcb, uint8_t* buf, uint16_t len) {
     if (len < 0x80) {
         buf[0] = (uint8_t)(len ^ ~fcb->f_erase_value);
         return (1);
@@ -229,7 +228,7 @@ int fcb_put_len(const struct fcb* fcb, uint8_t* buf, uint16_t len) {
     }
 }
 
-int fcb_get_len(const struct fcb* fcb, uint8_t const* buf, uint16_t* len) {
+int fcb_get_len(struct fcb const* fcb, uint8_t const* buf, uint16_t* len) {
     int rc;
     uint8_t buf0_xor;
     uint8_t buf1_xor;
@@ -280,7 +279,9 @@ int fcb_sector_hdr_init(struct fcb const* fcb, struct flash_sector* sector, uint
  * Returns 0 if sector is unused;
  * Returns 1 if sector has data.
  */
-int fcb_sector_hdr_read(struct fcb const* fcb, struct flash_sector* sector, struct fcb_disk_area* fdap) {
+int fcb_sector_hdr_read(struct fcb const* fcb,
+                        struct flash_sector* sector,
+                        struct fcb_disk_area* fdap) {
     struct fcb_disk_area fda;
     int rc;
 
@@ -292,11 +293,13 @@ int fcb_sector_hdr_read(struct fcb const* fcb, struct flash_sector* sector, stru
     if (rc) {
         return (-EIO);
     }
+
     if (fdap->fd_magic == MK32(fcb->f_erase_value)) {
         return (0);
     }
+
     if (fdap->fd_magic != fcb_flash_magic(fcb)) {
-        return -ENOMSG;
+        return (-ENOMSG);
     }
 
     return (1);
@@ -320,7 +323,7 @@ int fcb_offset_last_n(struct fcb* fcb, uint8_t entries, struct fcb_entry* last_n
     }
 
     i = 0;
-    (void)memset(&loc, 0, sizeof(loc));
+    (void) memset(&loc, 0, sizeof(loc));
     while (!fcb_getnext(fcb, &loc)) {
         if (i == 0) {
             /* Start from the beginning of fcb entries */
@@ -334,9 +337,10 @@ int fcb_offset_last_n(struct fcb* fcb, uint8_t entries, struct fcb_entry* last_n
                 /* A fcb history must have been erased,
                  * wanted entry doesn't exist anymore.
                  */
-                return -ENOENT;
+                return (-ENOENT);
             }
         }
+
         i++;
     }
 
