@@ -12,8 +12,10 @@
 #include <time.h>
 
 #ifdef CONFIG_NEWLIB_LIBC
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 /* Kludge to support outdated newlib version as used in SDK 0.10 for Xtensa */
 #include <newlib.h>
+#endif
 
 #ifdef __NEWLIB__
 /* Newever Newlib 3.x+ */
@@ -29,6 +31,7 @@
 extern "C" {
 #endif
 
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 struct timespec {
 	time_t tv_sec;
 	long tv_nsec;
@@ -38,6 +41,7 @@ struct itimerspec {
 	struct timespec it_interval;  /* Timer interval */
 	struct timespec it_value;     /* Timer expiration */
 };
+#endif
 
 #ifdef __cplusplus
 }
@@ -83,7 +87,7 @@ extern "C" {
 
 static inline int32_t _ts_to_ms(const struct timespec *to)
 {
-	return (to->tv_sec * MSEC_PER_SEC) + (to->tv_nsec / NSEC_PER_MSEC);
+	return (int32_t)((to->tv_sec * MSEC_PER_SEC) + (to->tv_nsec / NSEC_PER_MSEC));
 }
 
 int clock_gettime(clockid_t clock_id, struct timespec *ts);

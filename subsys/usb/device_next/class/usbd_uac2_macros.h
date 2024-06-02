@@ -773,7 +773,7 @@
 			AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR(node)		\
 		})), (0))
 
-/* Return offset inside UAC2_DESCRIPTORS(DT_PARENT(node)) poiting to data
+/* Return offset inside UAC2_DESCRIPTORS(DT_PARENT(node)) pointing to data
  * endpoint address belonging to given AudioStreaming interface node.
  *
  * It is programmer error to call this macro with node other than AudioStreaming
@@ -785,7 +785,7 @@
 	- AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS_SIZE(node)			\
 	+ offsetof(struct usb_ep_descriptor, bEndpointAddress)
 
-/* Return offset inside UAC2_DESCRIPTORS(DT_PARENT(node)) poiting to feedback
+/* Return offset inside UAC2_DESCRIPTORS(DT_PARENT(node)) pointing to feedback
  * endpoint address belonging to given AudioStreaming interface node.
  *
  * It is programmer error to call this macro with node other than AudioStreaming
@@ -821,7 +821,7 @@
 			AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_PTR(node)	\
 		)), (0))
 
-/* Return index inside UAC2_DESCRIPTOR_PTRS(DT_PARENT(node)) poiting to data
+/* Return index inside UAC2_DESCRIPTOR_PTRS(DT_PARENT(node)) pointing to data
  * endpoint descriptor belonging to given AudioStreaming interface node.
  *
  * It is programmer error to call this macro with node other than AudioStreaming
@@ -832,7 +832,7 @@
 	- AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_COUNT(node)			\
 	- AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS_COUNT(node)
 
-/* Return index inside UAC2_DESCRIPTOR_PTRS(DT_PARENT(node)) poiting to feedback
+/* Return index inside UAC2_DESCRIPTOR_PTRS(DT_PARENT(node)) pointing to feedback
  * endpoint descriptor belonging to given AudioStreaming interface node.
  *
  * It is programmer error to call this macro with node other than AudioStreaming

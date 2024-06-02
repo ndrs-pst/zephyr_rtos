@@ -107,10 +107,9 @@ extern "C" {
  */
 
 struct _priq_rb {
-	struct rbtree tree;
-	int next_order_key;
+    struct rbtree tree;
+    int next_order_key;
 };
-
 
 /* Traditional/textbook "multi-queue" structure.  Separate lists for a
  * small number (max 32 here) of fixed priorities.  This corresponds
@@ -120,129 +119,128 @@ struct _priq_rb {
  * to represent their requirements.
  */
 struct _priq_mq {
-	sys_dlist_t queues[K_NUM_THREAD_PRIO];
-	unsigned long bitmask[PRIQ_BITMAP_SIZE];
+    sys_dlist_t queues[K_NUM_THREAD_PRIO];
+    unsigned long bitmask[PRIQ_BITMAP_SIZE];
 };
 
 struct _ready_q {
-#ifndef CONFIG_SMP
-	/* always contains next thread to run: cannot be NULL */
-	struct k_thread *cache;
-#endif
+    #ifndef CONFIG_SMP
+    /* always contains next thread to run: cannot be NULL */
+    struct k_thread* cache;
+    #endif
 
-#if defined(CONFIG_SCHED_DUMB)
-	sys_dlist_t runq;
-#elif defined(CONFIG_SCHED_SCALABLE)
-	struct _priq_rb runq;
-#elif defined(CONFIG_SCHED_MULTIQ)
-	struct _priq_mq runq;
-#endif
+    #if defined(CONFIG_SCHED_DUMB)
+    sys_dlist_t runq;
+    #elif defined(CONFIG_SCHED_SCALABLE)
+    struct _priq_rb runq;
+    #elif defined(CONFIG_SCHED_MULTIQ)
+    struct _priq_mq runq;
+    #endif
 };
 
 typedef struct _ready_q _ready_q_t;
 
 struct _cpu {
-	/* nested interrupt count */
-	uint32_t nested;
+    /* nested interrupt count */
+    uint32_t nested;
 
-	/* interrupt stack pointer base */
-	char *irq_stack;
+    /* interrupt stack pointer base */
+    char* irq_stack;
 
-	/* currently scheduled thread */
-	struct k_thread *current;
+    /* currently scheduled thread */
+    struct k_thread* current;
 
-	/* one assigned idle thread per CPU */
-	struct k_thread *idle_thread;
+    /* one assigned idle thread per CPU */
+    struct k_thread* idle_thread;
 
-#ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
-	struct _ready_q ready_q;
-#endif
+    #ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
+    struct _ready_q ready_q;
+    #endif
 
-#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) &&                                                         \
-	(CONFIG_NUM_COOP_PRIORITIES > CONFIG_NUM_METAIRQ_PRIORITIES)
-	/* Coop thread preempted by current metairq, or NULL */
-	struct k_thread *metairq_preempted;
-#endif
+    #if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) &&                  \
+        (CONFIG_NUM_COOP_PRIORITIES > CONFIG_NUM_METAIRQ_PRIORITIES)
+    /* Coop thread preempted by current metairq, or NULL */
+    struct k_thread* metairq_preempted;
+    #endif
 
-	uint8_t id;
+    uint8_t id;
 
-#if defined(CONFIG_FPU_SHARING)
-	void *fp_ctx;
-#endif
+    #if defined(CONFIG_FPU_SHARING)
+    void* fp_ctx;
+    #endif
 
-#ifdef CONFIG_SMP
-	/* True when _current is allowed to context switch */
-	uint8_t swap_ok;
-#endif
+    #ifdef CONFIG_SMP
+    /* True when _current is allowed to context switch */
+    uint8_t swap_ok;
+    #endif
 
-#ifdef CONFIG_SCHED_THREAD_USAGE
-	/*
-	 * [usage0] is used as a timestamp to mark the beginning of an
-	 * execution window. [0] is a special value indicating that it
-	 * has been stopped (but not disabled).
-	 */
+    #ifdef CONFIG_SCHED_THREAD_USAGE
+    /*
+     * [usage0] is used as a timestamp to mark the beginning of an
+     * execution window. [0] is a special value indicating that it
+     * has been stopped (but not disabled).
+     */
+    uint32_t usage0;
 
-	uint32_t usage0;
+    #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+    struct k_cycle_stats* usage;
+    #endif
+    #endif
 
-#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
-	struct k_cycle_stats *usage;
-#endif
-#endif
+    #ifdef CONFIG_OBJ_CORE_SYSTEM
+    struct k_obj_core obj_core;
+    #endif
 
-#ifdef CONFIG_OBJ_CORE_SYSTEM
-	struct k_obj_core  obj_core;
-#endif
-
-	/* Per CPU architecture specifics */
-	struct _cpu_arch arch;
+    /* Per CPU architecture specifics */
+    struct _cpu_arch arch;
 };
 
 typedef struct _cpu _cpu_t;
 
 struct z_kernel {
-	struct _cpu cpus[CONFIG_MP_MAX_NUM_CPUS];
+    struct _cpu cpus[CONFIG_MP_MAX_NUM_CPUS];
 
-#ifdef CONFIG_PM
-	int32_t idle; /* Number of ticks for kernel idling */
-#endif
+    #ifdef CONFIG_PM
+    int32_t idle; /* Number of ticks for kernel idling */
+    #endif
 
-	/*
-	 * ready queue: can be big, keep after small fields, since some
-	 * assembly (e.g. ARC) are limited in the encoding of the offset
-	 */
-#ifndef CONFIG_SCHED_CPU_MASK_PIN_ONLY
-	struct _ready_q ready_q;
-#endif
+    /*
+     * ready queue: can be big, keep after small fields, since some
+     * assembly (e.g. ARC) are limited in the encoding of the offset
+     */
+    #ifndef CONFIG_SCHED_CPU_MASK_PIN_ONLY
+    struct _ready_q ready_q;
+    #endif
 
-#ifdef CONFIG_FPU_SHARING
-	/*
-	 * A 'current_sse' field does not exist in addition to the 'current_fp'
-	 * field since it's not possible to divide the IA-32 non-integer
-	 * registers into 2 distinct blocks owned by differing threads.  In
-	 * other words, given that the 'fxnsave/fxrstor' instructions
-	 * save/restore both the X87 FPU and XMM registers, it's not possible
-	 * for a thread to only "own" the XMM registers.
-	 */
+    #ifdef CONFIG_FPU_SHARING
+    /*
+     * A 'current_sse' field does not exist in addition to the 'current_fp'
+     * field since it's not possible to divide the IA-32 non-integer
+     * registers into 2 distinct blocks owned by differing threads.  In
+     * other words, given that the 'fxnsave/fxrstor' instructions
+     * save/restore both the X87 FPU and XMM registers, it's not possible
+     * for a thread to only "own" the XMM registers.
+     */
+    /* thread that owns the FP regs */
+    struct k_thread* current_fp;
+    #endif
 
-	/* thread that owns the FP regs */
-	struct k_thread *current_fp;
-#endif
+    #if defined(CONFIG_THREAD_MONITOR)
+    struct k_thread* threads; /* singly linked list of ALL threads */
+    #endif
 
-#if defined(CONFIG_THREAD_MONITOR)
-	struct k_thread *threads; /* singly linked list of ALL threads */
-#endif
-#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
-	struct k_cycle_stats usage[CONFIG_MP_MAX_NUM_CPUS];
-#endif
+    #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+    struct k_cycle_stats usage[CONFIG_MP_MAX_NUM_CPUS];
+    #endif
 
-#ifdef CONFIG_OBJ_CORE_SYSTEM
-	struct k_obj_core  obj_core;
-#endif
+    #ifdef CONFIG_OBJ_CORE_SYSTEM
+    struct k_obj_core obj_core;
+    #endif
 
-#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
-	/* Need to signal an IPI at the next scheduling point */
-	bool pending_ipi;
-#endif
+    #if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
+    /* Need to signal an IPI at the next scheduling point */
+    bool pending_ipi;
+    #endif
 };
 
 typedef struct z_kernel _kernel_t;
@@ -259,7 +257,7 @@ extern atomic_t _cpus_active;
 bool z_smp_cpu_mobile(void);
 
 #define _current_cpu ({ __ASSERT_NO_MSG(!z_smp_cpu_mobile()); \
-			arch_curr_cpu(); })
+                        arch_curr_cpu(); })
 #define _current k_sched_current_thread_query()
 
 #else
@@ -271,18 +269,18 @@ bool z_smp_cpu_mobile(void);
 #ifdef CONFIG_WAITQ_SCALABLE
 
 typedef struct {
-	struct _priq_rb waitq;
+    struct _priq_rb waitq;
 } _wait_q_t;
 
 /* defined in kernel/priority_queues.c */
-bool z_priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
+bool z_priq_rb_lessthan(struct rbnode* a, struct rbnode* b);
 
 #define Z_WAIT_Q_INIT(wait_q) { { { .lessthan_fn = z_priq_rb_lessthan } } }
 
 #else
 
 typedef struct {
-	sys_dlist_t waitq;
+    sys_dlist_t waitq;
 } _wait_q_t;
 
 #define Z_WAIT_Q_INIT(wait_q) { SYS_DLIST_STATIC_INIT(&(wait_q)->waitq) }
@@ -291,20 +289,20 @@ typedef struct {
 
 /* kernel timeout record */
 struct _timeout;
-typedef void (*_timeout_func_t)(struct _timeout *t);
+typedef void (*_timeout_func_t)(struct _timeout const* timeout);
 
 struct _timeout {
-	sys_dnode_t node;
-	_timeout_func_t fn;
-#ifdef CONFIG_TIMEOUT_64BIT
-	/* Can't use k_ticks_t for header dependency reasons */
-	int64_t dticks;
-#else
-	int32_t dticks;
-#endif
+    sys_dnode_t node;
+    _timeout_func_t fn;
+    #ifdef CONFIG_TIMEOUT_64BIT
+    /* Can't use k_ticks_t for header dependency reasons */
+    int64_t dticks;
+    #else
+    int32_t dticks;
+    #endif
 };
 
-typedef void (*k_thread_timeslice_fn_t)(struct k_thread *thread, void *data);
+typedef void (*k_thread_timeslice_fn_t)(struct k_thread* thread, void* data);
 
 #ifdef __cplusplus
 }
