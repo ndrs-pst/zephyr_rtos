@@ -478,9 +478,11 @@ struct bt_data {
  * @param _type Type of advertising data field
  * @param _bytes Variable number of single-byte parameters
  */
+#if !defined(_MSC_VER)  /* #CUSTOM@NDRS */
 #define BT_DATA_BYTES(_type, _bytes...) \
 	BT_DATA(_type, ((uint8_t []) { _bytes }), \
 		sizeof((uint8_t []) { _bytes }))
+#endif
 
 /**
  * @brief Get the total size (in bytes) of a given set of @ref bt_data
