@@ -557,7 +557,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 		wait_synchronization(i2c);
 
 		/* 5 is the nominal 100ns rise time from the app notes */
-		baud = (SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / 100000U - 5U - 10U) / 2U;
+		baud = (SOC_ATMEL_SAM0_GCLK1_FREQ_HZ / 100000U - 5U - 10U) / 2U;
 		if (baud > 255U || baud < 1U) {
 			return -ERANGE;
 		}
@@ -574,7 +574,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 		wait_synchronization(i2c);
 
 		/* 5 is the nominal 100ns rise time from the app notes */
-		baud = (SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / 400000U - 5U - 10U) / 2U;
+		baud = (SOC_ATMEL_SAM0_GCLK1_FREQ_HZ / 400000U - 5U - 10U) / 2U;
 		if (baud > 255U || baud < 1U) {
 			return -ERANGE;
 		}
@@ -594,7 +594,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 		wait_synchronization(i2c);
 
 		/* 5 is the nominal 100ns rise time from the app notes */
-		baud = (SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / 1000000U - 5U - 10U);
+		baud = (SOC_ATMEL_SAM0_GCLK1_FREQ_HZ / 1000000U - 5U - 10U);
 
 		/* 2:1 low:high ratio */
 		baud_high = baud;
@@ -625,7 +625,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 		i2c->CTRLA.reg = CTRLA;
 		wait_synchronization(i2c);
 
-		baud = (SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / 3400000U) - 2U;
+		baud = (SOC_ATMEL_SAM0_GCLK1_FREQ_HZ / 3400000U) - 2U;
 
 		/* 2:1 low:high ratio */
 		baud_high = baud;
@@ -702,14 +702,12 @@ static int i2c_sam0_initialize(const struct device *dev)
 
 #ifdef MCLK
 	/* Enable the GCLK */
-	GCLK->PCHCTRL[cfg->gclk_core_id].reg = GCLK_PCHCTRL_GEN_GCLK0 |
-					       GCLK_PCHCTRL_CHEN;
+	GCLK->PCHCTRL[cfg->gclk_core_id].reg = GCLK_PCHCTRL_GEN_GCLK1 | GCLK_PCHCTRL_CHEN;
 	/* Enable SERCOM clock in MCLK */
 	*cfg->mclk |= cfg->mclk_mask;
 #else
 	/* Enable the GCLK */
-	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 |
-			    GCLK_CLKCTRL_CLKEN;
+	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK1 | GCLK_CLKCTRL_CLKEN;
 
 	/* Enable SERCOM clock in PM */
 	PM->APBCMASK.reg |= cfg->pm_apbcmask;
@@ -760,7 +758,6 @@ static int i2c_sam0_initialize(const struct device *dev)
 
 	return 0;
 }
-
 
 static const struct i2c_driver_api i2c_sam0_driver_api = {
 	.configure = i2c_sam0_configure,

@@ -21,104 +21,92 @@
 extern "C" {
 #endif
 
-static ALWAYS_INLINE void sys_set_bit(mem_addr_t addr, unsigned int bit)
-{
-	uint32_t temp = *(volatile uint32_t *)addr;
+static ALWAYS_INLINE void sys_set_bit(mem_addr_t addr, unsigned int bit) {
+    uint32_t temp = *(volatile uint32_t*)addr;
 
-	*(volatile uint32_t *)addr = temp | (1 << bit);
+    *(volatile uint32_t*)addr = (temp | (1UL << bit));
 }
 
-static ALWAYS_INLINE void sys_clear_bit(mem_addr_t addr, unsigned int bit)
-{
-	uint32_t temp = *(volatile uint32_t *)addr;
+static ALWAYS_INLINE void sys_clear_bit(mem_addr_t addr, unsigned int bit) {
+    uint32_t temp = *(volatile uint32_t*)addr;
 
-	*(volatile uint32_t *)addr = temp & ~(1 << bit);
+    *(volatile uint32_t*)addr = (temp & ~(1UL << bit));
 }
 
-static ALWAYS_INLINE int sys_test_bit(mem_addr_t addr, unsigned int bit)
-{
-	uint32_t temp = *(volatile uint32_t *)addr;
+static ALWAYS_INLINE int sys_test_bit(mem_addr_t addr, unsigned int bit) {
+    uint32_t temp = *(volatile uint32_t*)addr;
 
-	return temp & (1 << bit);
+    return (temp & (1UL << bit));
 }
 
-static ALWAYS_INLINE void sys_set_bits(mem_addr_t addr, unsigned int mask)
-{
-	uint32_t temp = *(volatile uint32_t *)addr;
+static ALWAYS_INLINE void sys_set_bits(mem_addr_t addr, unsigned int mask) {
+    uint32_t temp = *(volatile uint32_t*)addr;
 
-	*(volatile uint32_t *)addr = temp | mask;
+    *(volatile uint32_t*)addr = (temp | mask);
 }
 
-static ALWAYS_INLINE void sys_clear_bits(mem_addr_t addr, unsigned int mask)
-{
-	uint32_t temp = *(volatile uint32_t *)addr;
+static ALWAYS_INLINE void sys_clear_bits(mem_addr_t addr, unsigned int mask) {
+    uint32_t temp = *(volatile uint32_t*)addr;
 
-	*(volatile uint32_t *)addr = temp & ~mask;
+    *(volatile uint32_t*)addr = (temp & ~mask);
 }
 
 static ALWAYS_INLINE
-	void sys_bitfield_set_bit(mem_addr_t addr, unsigned int bit)
-{
-	/* Doing memory offsets in terms of 32-bit values to prevent
-	 * alignment issues
-	 */
-	sys_set_bit(addr + ((bit >> 5) << 2), bit & 0x1F);
+        void sys_bitfield_set_bit(mem_addr_t addr, unsigned int bit) {
+    /* Doing memory offsets in terms of 32-bit values to prevent
+     * alignment issues
+     */
+    sys_set_bit(addr + ((bit >> 5U) << 2U), bit & 0x1FU);
 }
 
 static ALWAYS_INLINE
-	void sys_bitfield_clear_bit(mem_addr_t addr, unsigned int bit)
-{
-	sys_clear_bit(addr + ((bit >> 5) << 2), bit & 0x1F);
+        void sys_bitfield_clear_bit(mem_addr_t addr, unsigned int bit) {
+    sys_clear_bit(addr + ((bit >> 5U) << 2U), bit & 0x1FU);
 }
 
 static ALWAYS_INLINE
-	int sys_bitfield_test_bit(mem_addr_t addr, unsigned int bit)
-{
-	return sys_test_bit(addr + ((bit >> 5) << 2), bit & 0x1F);
+        int sys_bitfield_test_bit(mem_addr_t addr, unsigned int bit) {
+    return sys_test_bit(addr + ((bit >> 5U) << 2U), bit & 0x1FU);
 }
 
 static ALWAYS_INLINE
-	int sys_test_and_set_bit(mem_addr_t addr, unsigned int bit)
-{
-	int ret;
+        int sys_test_and_set_bit(mem_addr_t addr, unsigned int bit) {
+    int ret;
 
-	ret = sys_test_bit(addr, bit);
-	sys_set_bit(addr, bit);
+    ret = sys_test_bit(addr, bit);
+    sys_set_bit(addr, bit);
 
-	return ret;
+    return (ret);
 }
 
 static ALWAYS_INLINE
-	int sys_test_and_clear_bit(mem_addr_t addr, unsigned int bit)
-{
-	int ret;
+        int sys_test_and_clear_bit(mem_addr_t addr, unsigned int bit) {
+    int ret;
 
-	ret = sys_test_bit(addr, bit);
-	sys_clear_bit(addr, bit);
+    ret = sys_test_bit(addr, bit);
+    sys_clear_bit(addr, bit);
 
-	return ret;
+    return (ret);
 }
 
 static ALWAYS_INLINE
-	int sys_bitfield_test_and_set_bit(mem_addr_t addr, unsigned int bit)
-{
-	int ret;
+        int sys_bitfield_test_and_set_bit(mem_addr_t addr, unsigned int bit) {
+    int ret;
 
-	ret = sys_bitfield_test_bit(addr, bit);
-	sys_bitfield_set_bit(addr, bit);
+    ret = sys_bitfield_test_bit(addr, bit);
+    sys_bitfield_set_bit(addr, bit);
 
-	return ret;
+    return (ret);
 }
 
 static ALWAYS_INLINE
-	int sys_bitfield_test_and_clear_bit(mem_addr_t addr, unsigned int bit)
-{
-	int ret;
+        int sys_bitfield_test_and_clear_bit(mem_addr_t addr, unsigned int bit) {
+    int ret;
 
-	ret = sys_bitfield_test_bit(addr, bit);
-	sys_bitfield_clear_bit(addr, bit);
+    ret = sys_bitfield_test_bit(addr, bit);
+    sys_bitfield_clear_bit(addr, bit);
 
-	return ret;
+    return (ret);
 }
 
 #ifdef __cplusplus

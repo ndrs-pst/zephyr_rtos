@@ -178,7 +178,12 @@ int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 	slab->info.block_size = block_size;
 	slab->buffer = buffer;
 	slab->info.num_used = 0U;
-	slab->lock = (struct k_spinlock) {};
+
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	slab->lock = (struct k_spinlock){0};
+	#else
+	slab->lock = (struct k_spinlock){};
+	#endif
 
 #ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
 	slab->info.max_used = 0U;

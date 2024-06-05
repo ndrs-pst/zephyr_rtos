@@ -37,53 +37,54 @@ extern "C" {
 #endif
 
 /** Length of MBAP Header */
-#define MODBUS_MBAP_LENGTH		7
+#define MODBUS_MBAP_LENGTH 7
 /** Length of MBAP Header plus function code */
-#define MODBUS_MBAP_AND_FC_LENGTH	(MODBUS_MBAP_LENGTH + 1)
+#define MODBUS_MBAP_AND_FC_LENGTH (MODBUS_MBAP_LENGTH + 1)
 
 /** @name Modbus exception codes
  *  @{
  */
 /** No exception */
-#define MODBUS_EXC_NONE				0
+#define MODBUS_EXC_NONE 0
 /** Illegal function code */
-#define MODBUS_EXC_ILLEGAL_FC			1
+#define MODBUS_EXC_ILLEGAL_FC 1
 /** Illegal data address */
-#define MODBUS_EXC_ILLEGAL_DATA_ADDR		2
+#define MODBUS_EXC_ILLEGAL_DATA_ADDR 2
 /** Illegal data value */
-#define MODBUS_EXC_ILLEGAL_DATA_VAL		3
+#define MODBUS_EXC_ILLEGAL_DATA_VAL 3
 /** Server device failure */
-#define MODBUS_EXC_SERVER_DEVICE_FAILURE	4
+#define MODBUS_EXC_SERVER_DEVICE_FAILURE 4
 /** Acknowledge */
-#define MODBUS_EXC_ACK				5
+#define MODBUS_EXC_ACK 5
 /** Server device busy */
-#define MODBUS_EXC_SERVER_DEVICE_BUSY		6
+#define MODBUS_EXC_SERVER_DEVICE_BUSY 6
 /** Memory parity error */
-#define MODBUS_EXC_MEM_PARITY_ERROR		8
+#define MODBUS_EXC_MEM_PARITY_ERROR 8
 /** Gateway path unavailable */
-#define MODBUS_EXC_GW_PATH_UNAVAILABLE		10
+#define MODBUS_EXC_GW_PATH_UNAVAILABLE 10
 /** Gateway target device failed to respond */
-#define MODBUS_EXC_GW_TARGET_FAILED_TO_RESP	11
+#define MODBUS_EXC_GW_TARGET_FAILED_TO_RESP 11
+
 /** @} */
 
 /**
  * @brief Frame struct used internally and for raw ADU support.
  */
 struct modbus_adu {
-	/** Transaction Identifier */
-	uint16_t trans_id;
-	/** Protocol Identifier */
-	uint16_t proto_id;
-	/** Length of the data only (not the length of unit ID + PDU) */
-	uint16_t length;
-	/** Unit Identifier */
-	uint8_t unit_id;
-	/** Function Code */
-	uint8_t fc;
-	/** Transaction Data */
-	uint8_t data[CONFIG_MODBUS_BUFFER_SIZE - 4];
-	/** RTU CRC */
-	uint16_t crc;
+    /** Transaction Identifier */
+    uint16_t trans_id;
+    /** Protocol Identifier */
+    uint16_t proto_id;
+    /** Length of the data only (not the length of unit ID + PDU) */
+    uint16_t length;
+    /** Unit Identifier */
+    uint8_t unit_id;
+    /** Function Code */
+    uint8_t fc;
+    /** Transaction Data */
+    uint8_t data[CONFIG_MODBUS_BUFFER_SIZE - 4];
+    /** RTU CRC */
+    uint16_t crc;
 };
 
 /**
@@ -113,11 +114,11 @@ struct modbus_adu {
  *
  * @retval           0 If the function was successful
  */
-int modbus_read_coils(const int iface,
-		      const uint8_t unit_id,
-		      const uint16_t start_addr,
-		      uint8_t *const coil_tbl,
-		      const uint16_t num_coils);
+int modbus_read_coils(int const iface,
+                      const uint8_t unit_id,
+                      const uint16_t start_addr,
+                      uint8_t* const coil_tbl,
+                      const uint16_t num_coils);
 
 /**
  * @brief Read discrete inputs (FC02)
@@ -147,11 +148,11 @@ int modbus_read_coils(const int iface,
  *
  * @retval           0 If the function was successful
  */
-int modbus_read_dinputs(const int iface,
-			const uint8_t unit_id,
-			const uint16_t start_addr,
-			uint8_t *const di_tbl,
-			const uint16_t num_di);
+int modbus_read_dinputs(int const iface,
+                        const uint8_t unit_id,
+                        const uint16_t start_addr,
+                        uint8_t* const di_tbl,
+                        const uint16_t num_di);
 
 /**
  * @brief Read holding registers (FC03)
@@ -170,11 +171,11 @@ int modbus_read_dinputs(const int iface,
  *
  * @retval           0 If the function was successful
  */
-int modbus_read_holding_regs(const int iface,
-			     const uint8_t unit_id,
-			     const uint16_t start_addr,
-			     uint16_t *const reg_buf,
-			     const uint16_t num_regs);
+int modbus_read_holding_regs(int const iface,
+                             const uint8_t unit_id,
+                             const uint16_t start_addr,
+                             uint16_t* const reg_buf,
+                             const uint16_t num_regs);
 
 /**
  * @brief Read input registers (FC04)
@@ -193,11 +194,11 @@ int modbus_read_holding_regs(const int iface,
  *
  * @retval           0 If the function was successful
  */
-int modbus_read_input_regs(const int iface,
-			   const uint8_t unit_id,
-			   const uint16_t start_addr,
-			   uint16_t *const reg_buf,
-			   const uint16_t num_regs);
+int modbus_read_input_regs(int const iface,
+                           const uint8_t unit_id,
+                           const uint16_t start_addr,
+                           uint16_t* const reg_buf,
+                           const uint16_t num_regs);
 
 /**
  * @brief Write single coil (FC05)
@@ -211,10 +212,10 @@ int modbus_read_input_regs(const int iface,
  *
  * @retval           0 If the function was successful
  */
-int modbus_write_coil(const int iface,
-		      const uint8_t unit_id,
-		      const uint16_t coil_addr,
-		      const bool coil_state);
+int modbus_write_coil(int const iface,
+                      const uint8_t unit_id,
+                      const uint16_t coil_addr,
+                      bool const coil_state);
 
 /**
  * @brief Write single holding register (FC06)
@@ -229,10 +230,10 @@ int modbus_write_coil(const int iface,
  *
  * @retval           0 If the function was successful
  */
-int modbus_write_holding_reg(const int iface,
-			     const uint8_t unit_id,
-			     const uint16_t start_addr,
-			     const uint16_t reg_val);
+int modbus_write_holding_reg(int const iface,
+                             const uint8_t unit_id,
+                             const uint16_t start_addr,
+                             const uint16_t reg_val);
 
 /**
  * @brief Read diagnostic (FC08)
@@ -247,11 +248,11 @@ int modbus_write_holding_reg(const int iface,
  *
  * @retval           0 If the function was successful
  */
-int modbus_request_diagnostic(const int iface,
-			      const uint8_t unit_id,
-			      const uint16_t sfunc,
-			      const uint16_t data,
-			      uint16_t *const data_out);
+int modbus_request_diagnostic(int const iface,
+                              const uint8_t unit_id,
+                              const uint16_t sfunc,
+                              const uint16_t data,
+                              uint16_t* const data_out);
 
 /**
  * @brief Write coils (FC15)
@@ -280,11 +281,11 @@ int modbus_request_diagnostic(const int iface,
  *
  * @retval           0 If the function was successful
  */
-int modbus_write_coils(const int iface,
-		       const uint8_t unit_id,
-		       const uint16_t start_addr,
-		       uint8_t *const coil_tbl,
-		       const uint16_t num_coils);
+int modbus_write_coils(int const iface,
+                       const uint8_t unit_id,
+                       const uint16_t start_addr,
+                       uint8_t* const coil_tbl,
+                       const uint16_t num_coils);
 
 /**
  * @brief Write holding registers (FC16)
@@ -303,11 +304,11 @@ int modbus_write_coils(const int iface,
  *
  * @retval           0 If the function was successful
  */
-int modbus_write_holding_regs(const int iface,
-			      const uint8_t unit_id,
-			      const uint16_t start_addr,
-			      uint16_t *const reg_buf,
-			      const uint16_t num_regs);
+int modbus_write_holding_regs(int const iface,
+                              const uint8_t unit_id,
+                              const uint16_t start_addr,
+                              uint16_t* const reg_buf,
+                              const uint16_t num_regs);
 
 /**
  * @brief Read floating-point holding registers (FC03)
@@ -326,11 +327,11 @@ int modbus_write_holding_regs(const int iface,
  *
  * @retval           0 If the function was successful
  */
-int modbus_read_holding_regs_fp(const int iface,
-				const uint8_t unit_id,
-				const uint16_t start_addr,
-				float *const reg_buf,
-				const uint16_t num_regs);
+int modbus_read_holding_regs_fp(int const iface,
+                                const uint8_t unit_id,
+                                const uint16_t start_addr,
+                                float* const reg_buf,
+                                const uint16_t num_regs);
 
 /**
  * @brief Write floating-point holding registers (FC16)
@@ -349,40 +350,40 @@ int modbus_read_holding_regs_fp(const int iface,
  *
  * @retval           0 If the function was successful
  */
-int modbus_write_holding_regs_fp(const int iface,
-				 const uint8_t unit_id,
-				 const uint16_t start_addr,
-				 float *const reg_buf,
-				 const uint16_t num_regs);
+int modbus_write_holding_regs_fp(int const iface,
+                                 const uint8_t unit_id,
+                                 const uint16_t start_addr,
+                                 float const* const reg_buf,
+                                 const uint16_t num_regs);
 
 /** Modbus Server User Callback structure */
 struct modbus_user_callbacks {
-	/** Coil read callback */
-	int (*coil_rd)(uint16_t addr, bool *state);
+    /** Coil read callback */
+    int (*coil_rd)(uint16_t addr, bool* state);
 
-	/** Coil write callback */
-	int (*coil_wr)(uint16_t addr, bool state);
+    /** Coil write callback */
+    int (*coil_wr)(uint16_t addr, bool state);
 
-	/** Discrete Input read callback */
-	int (*discrete_input_rd)(uint16_t addr, bool *state);
+    /** Discrete Input read callback */
+    int (*discrete_input_rd)(uint16_t addr, bool* state);
 
-	/** Input Register read callback */
-	int (*input_reg_rd)(uint16_t addr, uint16_t *reg);
+    /** Input Register read callback */
+    int (*input_reg_rd)(uint16_t addr, uint16_t* reg);
 
-	/** Floating Point Input Register read callback */
-	int (*input_reg_rd_fp)(uint16_t addr, float *reg);
+    /** Floating Point Input Register read callback */
+    int (*input_reg_rd_fp)(uint16_t addr, float* reg);
 
-	/** Holding Register read callback */
-	int (*holding_reg_rd)(uint16_t addr, uint16_t *reg);
+    /** Holding Register read callback */
+    int (*holding_reg_rd)(uint16_t addr, uint16_t* reg);
 
-	/** Holding Register write callback */
-	int (*holding_reg_wr)(uint16_t addr, uint16_t reg);
+    /** Holding Register write callback */
+    int (*holding_reg_wr)(uint16_t addr, uint16_t reg);
 
-	/** Floating Point Holding Register read callback */
-	int (*holding_reg_rd_fp)(uint16_t addr, float *reg);
+    /** Floating Point Holding Register read callback */
+    int (*holding_reg_rd_fp)(uint16_t addr, float* reg);
 
-	/** Floating Point Holding Register write callback */
-	int (*holding_reg_wr_fp)(uint16_t addr, float reg);
+    /** Floating Point Holding Register write callback */
+    int (*holding_reg_wr_fp)(uint16_t addr, float reg);
 };
 
 /**
@@ -395,7 +396,7 @@ struct modbus_user_callbacks {
  *
  * @retval           Modbus interface index or negative error value.
  */
-int modbus_iface_get_by_name(const char *iface_name);
+int modbus_iface_get_by_name(char const* iface_name);
 
 /**
  * @brief ADU raw callback function signature
@@ -406,8 +407,8 @@ int modbus_iface_get_by_name(const char *iface_name);
  *
  * @retval           0 If transfer was successful
  */
-typedef int (*modbus_raw_cb_t)(const int iface, const struct modbus_adu *adu,
-				void *user_data);
+typedef int (*modbus_raw_cb_t)(int const iface, const struct modbus_adu* adu,
+                               void* user_data);
 
 /**
  * @brief Custom function code handler function signature.
@@ -430,82 +431,83 @@ typedef int (*modbus_raw_cb_t)(const int iface, const struct modbus_adu *adu,
  *
  * @retval           true If response should be sent, false otherwise
  */
-typedef bool (*modbus_custom_cb_t)(const int iface,
-				const struct modbus_adu *const rx_adu,
-				struct modbus_adu *const tx_adu,
-				uint8_t *const excep_code,
-				void *const user_data);
+typedef bool (*modbus_custom_cb_t)(int const iface,
+                                   const struct modbus_adu* const rx_adu,
+                                   struct modbus_adu* const tx_adu,
+                                   uint8_t* const excep_code,
+                                   void* const user_data);
 
 /** @cond INTERNAL_HIDDEN */
 /**
  * @brief Custom function code definition.
  */
 struct modbus_custom_fc {
-	sys_snode_t node;
-	modbus_custom_cb_t cb;
-	void *user_data;
-	uint8_t fc;
-	uint8_t excep_code;
+    sys_snode_t        node;
+    modbus_custom_cb_t cb;
+    void*              user_data;
+    uint8_t            fc;
+    uint8_t            excep_code;
 };
+
 /** @endcond INTERNAL_HIDDEN */
 
 /**
  * @brief Helper macro for initializing custom function code structs
  */
-#define MODBUS_CUSTOM_FC_DEFINE(name, user_cb, user_fc, userdata)	\
-	static struct modbus_custom_fc modbus_cfg_##name = {		\
-		.cb = user_cb,						\
-		.user_data = userdata,					\
-		.fc = user_fc,						\
-		.excep_code = MODBUS_EXC_NONE,				\
-	}
+#define MODBUS_CUSTOM_FC_DEFINE(name, user_cb, user_fc, userdata)                                                      \
+    static struct modbus_custom_fc modbus_cfg_##name = {                                                               \
+        .cb         = user_cb,                                                                                         \
+        .user_data  = userdata,                                                                                        \
+        .fc         = user_fc,                                                                                         \
+        .excep_code = MODBUS_EXC_NONE,                                                                                 \
+    }
 
 /**
  * @brief Modbus interface mode
  */
 enum modbus_mode {
-	/** Modbus over serial line RTU mode */
-	MODBUS_MODE_RTU,
-	/** Modbus over serial line ASCII mode */
-	MODBUS_MODE_ASCII,
-	/** Modbus raw ADU mode */
-	MODBUS_MODE_RAW,
+    /** Modbus over serial line RTU mode */
+    MODBUS_MODE_RTU,
+    /** Modbus over serial line ASCII mode */
+    MODBUS_MODE_ASCII,
+    /** Modbus raw ADU mode */
+    MODBUS_MODE_RAW,
 };
 
 /**
  * @brief Modbus serial line parameter
  */
 struct modbus_serial_param {
-	/** Baudrate of the serial line */
-	uint32_t baud;
-	/** parity UART's parity setting:
-	 *    UART_CFG_PARITY_NONE,
-	 *    UART_CFG_PARITY_EVEN,
-	 *    UART_CFG_PARITY_ODD
-	 */
-	enum uart_config_parity parity;
-	/** stop_bits_client UART's stop bits setting if in client mode:
-	 *    UART_CFG_STOP_BITS_0_5,
-	 *    UART_CFG_STOP_BITS_1,
-	 *    UART_CFG_STOP_BITS_1_5,
-	 *    UART_CFG_STOP_BITS_2,
-	 */
-	enum uart_config_stop_bits stop_bits_client;
+    /** Baudrate of the serial line */
+    uint32_t baud;
+    /** parity UART's parity setting:
+     *    UART_CFG_PARITY_NONE,
+     *    UART_CFG_PARITY_EVEN,
+     *    UART_CFG_PARITY_ODD
+     */
+    enum uart_config_parity parity;
+    /** stop_bits_client UART's stop bits setting if in client mode:
+     *    UART_CFG_STOP_BITS_0_5,
+     *    UART_CFG_STOP_BITS_1,
+     *    UART_CFG_STOP_BITS_1_5,
+     *    UART_CFG_STOP_BITS_2,
+     */
+    enum uart_config_stop_bits stop_bits_client;
 };
 
 /**
  * @brief Modbus server parameter
  */
 struct modbus_server_param {
-	/** Pointer to the User Callback structure */
-	struct modbus_user_callbacks *user_cb;
-	/** Modbus unit ID of the server */
-	uint8_t unit_id;
+    /** Pointer to the User Callback structure */
+    struct modbus_user_callbacks* user_cb;
+    /** Modbus unit ID of the server */
+    uint8_t unit_id;
 };
 
 struct modbus_raw_cb {
-	modbus_raw_cb_t raw_tx_cb;
-	void *user_data;
+    modbus_raw_cb_t raw_tx_cb;
+    void*           user_data;
 };
 
 /**
@@ -513,21 +515,23 @@ struct modbus_raw_cb {
  *        as client or server.
  */
 struct modbus_iface_param {
-	/** Mode of the interface */
-	enum modbus_mode mode;
-	union {
-		struct modbus_server_param server;
-		/** Amount of time client will wait for
-		 *  a response from the server.
-		 */
-		uint32_t rx_timeout;
-	};
-	union {
-		/** Serial support parameter of the interface */
-		struct modbus_serial_param serial;
-		/** Pointer to raw ADU callback function */
-		struct modbus_raw_cb rawcb;
-	};
+    /** Mode of the interface */
+    enum modbus_mode mode;
+
+    union {
+        struct modbus_server_param server;
+        /** Amount of time client will wait for
+         *  a response from the server.
+         */
+        uint32_t rx_timeout;
+    };
+
+    union {
+        /** Serial support parameter of the interface */
+        struct modbus_serial_param serial;
+        /** Pointer to raw ADU callback function */
+        struct modbus_raw_cb rawcb;
+    };
 };
 
 /**
@@ -538,7 +542,7 @@ struct modbus_iface_param {
  *
  * @retval           0 If the function was successful
  */
-int modbus_init_server(const int iface, struct modbus_iface_param param);
+int modbus_init_server(int const iface, struct modbus_iface_param param);
 
 /**
  * @brief Configure Modbus Interface as raw ADU client
@@ -548,7 +552,7 @@ int modbus_init_server(const int iface, struct modbus_iface_param param);
  *
  * @retval           0 If the function was successful
  */
-int modbus_init_client(const int iface, struct modbus_iface_param param);
+int modbus_init_client(int const iface, struct modbus_iface_param param);
 
 /**
  * @brief Disable Modbus Interface
@@ -569,7 +573,7 @@ int modbus_disable(const uint8_t iface);
  *
  * @retval           0 If transfer was successful
  */
-int modbus_raw_submit_rx(const int iface, const struct modbus_adu *adu);
+int modbus_raw_submit_rx(int const iface, const struct modbus_adu* adu);
 
 /**
  * @brief Put MBAP header into a buffer
@@ -578,7 +582,7 @@ int modbus_raw_submit_rx(const int iface, const struct modbus_adu *adu);
  * @param header     Pointer to the buffer in which MBAP header
  *                   will be placed.
  */
-void modbus_raw_put_header(const struct modbus_adu *adu, uint8_t *header);
+void modbus_raw_put_header(const struct modbus_adu* adu, uint8_t* header);
 
 /**
  * @brief Get MBAP header from a buffer
@@ -586,7 +590,7 @@ void modbus_raw_put_header(const struct modbus_adu *adu, uint8_t *header);
  * @param adu        Pointer to the RAW ADU struct
  * @param header     Pointer to the buffer containing MBAP header
  */
-void modbus_raw_get_header(struct modbus_adu *adu, const uint8_t *header);
+void modbus_raw_get_header(struct modbus_adu* adu, uint8_t const* header);
 
 /**
  * @brief Set Server Device Failure exception
@@ -595,7 +599,7 @@ void modbus_raw_get_header(struct modbus_adu *adu, const uint8_t *header);
  *
  * @param adu        Pointer to the RAW ADU struct
  */
-void modbus_raw_set_server_failure(struct modbus_adu *adu);
+void modbus_raw_set_server_failure(struct modbus_adu* adu);
 
 /**
  * @brief Use interface as backend to send and receive ADU
@@ -609,7 +613,7 @@ void modbus_raw_set_server_failure(struct modbus_adu *adu);
  *
  * @retval           0 If transfer was successful
  */
-int modbus_raw_backend_txn(const int iface, struct modbus_adu *adu);
+int modbus_raw_backend_txn(int const iface, struct modbus_adu* adu);
 
 /**
  * @brief Register a user-defined function code handler.
@@ -627,7 +631,7 @@ int modbus_raw_backend_txn(const int iface, struct modbus_adu *adu);
  *
  * @retval           0 on success
  */
-int modbus_register_user_fc(const int iface, struct modbus_custom_fc *custom_fc);
+int modbus_register_user_fc(int const iface, struct modbus_custom_fc* custom_fc);
 
 #ifdef __cplusplus
 }

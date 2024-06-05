@@ -48,7 +48,8 @@ struct llext_const_symbol {
 	/** Address of symbol */
 	const void *const addr;
 };
-BUILD_ASSERT(sizeof(struct llext_const_symbol) == 2 * sizeof(uintptr_t));
+BUILD_ASSERT(sizeof(struct llext_const_symbol) == 2 * sizeof(uintptr_t),
+			 "sizeof(struct llext_const_symbol) error !!!");
 
 /**
  * @brief Symbols are named memory addresses
