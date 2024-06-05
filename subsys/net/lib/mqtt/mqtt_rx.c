@@ -152,7 +152,7 @@ static int mqtt_read_message_chunk(struct mqtt_client *client,
 	int len;
 
 	/* In case all data requested has already been buffered, return. */
-	if (length <= (buf->end - buf->cur)) {
+	if (length <= (uintptr_t)(buf->end - buf->cur)) {
 		return 0;
 	}
 
@@ -185,7 +185,7 @@ static int mqtt_read_message_chunk(struct mqtt_client *client,
 	client->internal.rx_buf_datalen += len;
 	buf->end += len;
 
-	if (len < remaining) {
+	if (len < (int)remaining) {
 		NET_ERR("[CID %p]: Message partially received.", client);
 		return -EAGAIN;
 	}

@@ -37,7 +37,7 @@
 LOG_MODULE_REGISTER(bt_driver);
 
 #define BTPROTO_HCI      1
-struct sockaddr_hci {
+struct net_sockaddr_hci {
 	sa_family_t     hci_family;
 	unsigned short  hci_dev;
 	unsigned short  hci_channel;
@@ -303,7 +303,7 @@ static int user_chan_open(void)
 	int fd;
 
 	if (hci_socket) {
-		struct sockaddr_hci addr;
+		struct net_sockaddr_hci addr;
 
 		fd = socket(PF_BLUETOOTH, SOCK_RAW | SOCK_CLOEXEC | SOCK_NONBLOCK,
 			    BTPROTO_HCI);
@@ -316,21 +316,21 @@ static int user_chan_open(void)
 		addr.hci_dev = bt_dev_index;
 		addr.hci_channel = HCI_CHANNEL_USER;
 
-		if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+		if (bind(fd, (struct net_sockaddr *)&addr, sizeof(addr)) < 0) {
 			int err = -errno;
 
 			close(fd);
 			return err;
 		}
 	} else {
-		struct sockaddr_in addr;
+		struct net_sockaddr_in addr;
 
-		fd = socket(AF_INET, SOCK_STREAM, 0);
+		fd = socket(AF_INET, NET_SOCK_STREAM, 0);
 		if (fd < 0) {
 			return -errno;
 		}
 
-		addr.sin_family = AF_INET;
+		addr.sin_family = NET_AF_INET;
 		addr.sin_port = htons(port);
 		if (inet_pton(AF_INET, ip_addr, &(addr.sin_addr)) <= 0) {
 			int err = -errno;
@@ -339,7 +339,7 @@ static int user_chan_open(void)
 			return err;
 		}
 
-		if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+		if (connect(fd, (struct net_sockaddr *)&addr, sizeof(addr)) < 0) {
 			int err = -errno;
 
 			close(fd);
@@ -412,7 +412,7 @@ static void cmd_bt_dev_found(char *argv, int offset)
 			posix_print_error_and_exit("Error: IP port for bluetooth "
 						   "hci tcp server is out of range.\n");
 		}
-		struct in_addr addr;
+		struct net_in_addr addr;
 
 		if (inet_pton(AF_INET, ip_addr, &addr) != 1) {
 			posix_print_error_and_exit("Error: IP address for bluetooth "

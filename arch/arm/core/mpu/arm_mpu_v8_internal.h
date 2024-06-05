@@ -413,7 +413,7 @@ static inline int mpu_buffer_validate(const void *addr, size_t size, int write)
 	int32_t rnr;
 	int rc = -EPERM;
 
-	int key = arch_irq_lock();
+	unsigned int key = arch_irq_lock();
 
 	/* Iterate all mpu regions in reversed order */
 	for (rnr = 0; rnr < mpu_get_num_regions(); rnr++) {

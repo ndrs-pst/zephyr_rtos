@@ -45,63 +45,69 @@ extern "C" {
  */
 
 /** @brief Cast @p x, a pointer, to an unsigned integer. */
-#define POINTER_TO_UINT(x) ((uintptr_t) (x))
+#define POINTER_TO_UINT(x)  ((uintptr_t)(x))
 /** @brief Cast @p x, an unsigned integer, to a <tt>void*</tt>. */
-#define UINT_TO_POINTER(x) ((void *) (uintptr_t) (x))
+#define UINT_TO_POINTER(x)  ((void*)(uintptr_t)(x))
 /** @brief Cast @p x, a pointer, to a signed integer. */
-#define POINTER_TO_INT(x)  ((intptr_t) (x))
+#define POINTER_TO_INT(x)   ((intptr_t)(x))
 /** @brief Cast @p x, a signed integer, to a <tt>void*</tt>. */
-#define INT_TO_POINTER(x)  ((void *) (intptr_t) (x))
+#define INT_TO_POINTER(x)   ((void*)(intptr_t)(x))
+
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define __CHAR_BIT__            8UL
+#define __SIZEOF_LONG__         4UL
+#define __SIZEOF_LONG_LONG__    8UL
+#endif
 
 #if !(defined(__CHAR_BIT__) && defined(__SIZEOF_LONG__) && defined(__SIZEOF_LONG_LONG__))
-#	error Missing required predefined macros for BITS_PER_LONG calculation
+#error Missing required predefined macros for BITS_PER_LONG calculation
 #endif
 
 /** Number of bits in a long int. */
-#define BITS_PER_LONG	(__CHAR_BIT__ * __SIZEOF_LONG__)
+#define BITS_PER_LONG       (__CHAR_BIT__ * __SIZEOF_LONG__)
 
 /** Number of bits in a long long int. */
-#define BITS_PER_LONG_LONG	(__CHAR_BIT__ * __SIZEOF_LONG_LONG__)
+#define BITS_PER_LONG_LONG  (__CHAR_BIT__ * __SIZEOF_LONG_LONG__)
 
 /**
  * @brief Create a contiguous bitmask starting at bit position @p l
  *        and ending at position @p h.
  */
 #define GENMASK(h, l) \
-	(((~0UL) - (1UL << (l)) + 1) & (~0UL >> (BITS_PER_LONG - 1 - (h))))
+    (((~0UL) - (1UL << (l)) + 1UL) & (~0UL >> (BITS_PER_LONG - 1UL - (h))))
 
 /**
  * @brief Create a contiguous 64-bit bitmask starting at bit position @p l
  *        and ending at position @p h.
  */
 #define GENMASK64(h, l) \
-	(((~0ULL) - (1ULL << (l)) + 1) & (~0ULL >> (BITS_PER_LONG_LONG - 1 - (h))))
+    (((~0ULL) - (1ULL << (l)) + 1ULL) & (~0ULL >> (BITS_PER_LONG_LONG - 1ULL - (h))))
 
 /** @brief Extract the Least Significant Bit from @p value. */
-#define LSB_GET(value) ((value) & -(value))
+#define LSB_GET(value) ((value) & ~(value - 1UL))               /* #CUSTOM@NDRS */
 
 /**
  * @brief Extract a bitfield element from @p value corresponding to
- *	  the field mask @p mask.
+ *    the field mask @p mask.
  */
 #define FIELD_GET(mask, value)  (((value) & (mask)) / LSB_GET(mask))
 
 /**
  * @brief Prepare a bitfield element using @p value with @p mask representing
- *	  its field position and width. The result should be combined
- *	  with other fields using a logical OR.
+ *    its field position and width. The result should be combined
+ *    with other fields using a logical OR.
  */
 #define FIELD_PREP(mask, value) (((value) * LSB_GET(mask)) & (mask))
 
 /** @brief 0 if @p cond is true-ish; causes a compile error otherwise. */
-#define ZERO_OR_COMPILE_ERROR(cond) ((int) sizeof(char[1 - 2 * !(cond)]) - 1)
+#define ZERO_OR_COMPILE_ERROR(cond) ((int)sizeof(char[1 - 2 * !(cond)]) - 1)
 
-#if defined(__cplusplus)
+#if (defined(__cplusplus) || defined(_MSC_VER))                 /* #CUSTOM@NDRS */
 
 /* The built-in function used below for type checking in C is not
  * supported by GNU C++.
  */
-#define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
+#define ARRAY_SIZE(_array) (sizeof(_array) / sizeof((_array)[0]))
 
 #else /* __cplusplus */
 
@@ -110,10 +116,10 @@ extern "C" {
  *
  * This macro is available only from C, not C++.
  */
-#define IS_ARRAY(array) \
-	ZERO_OR_COMPILE_ERROR( \
-		!__builtin_types_compatible_p(__typeof__(array), \
-					      __typeof__(&(array)[0])))
+#define IS_ARRAY(_array) \
+    ZERO_OR_COMPILE_ERROR( \
+        !__builtin_types_compatible_p(__typeof__(_array), \
+                                      __typeof__(&(_array)[0])))
 
 /**
  * @brief Number of elements in the given @p array
@@ -124,8 +130,8 @@ extern "C" {
  *
  * In C, passing a pointer as @p array causes a compile error.
  */
-#define ARRAY_SIZE(array) \
-	((size_t) (IS_ARRAY(array) + (sizeof(array) / sizeof((array)[0]))))
+#define ARRAY_SIZE(_array) \
+    ((size_t)(IS_ARRAY(_array) + (sizeof(_array) / sizeof((_array)[0]))))
 
 #endif /* __cplusplus */
 
@@ -143,10 +149,10 @@ extern "C" {
  *
  * @return 1 if @p ptr is part of @p array, 0 otherwise
  */
-#define IS_ARRAY_ELEMENT(array, ptr)                                                               \
-	((ptr) && POINTER_TO_UINT(array) <= POINTER_TO_UINT(ptr) &&                          \
-	 POINTER_TO_UINT(ptr) < POINTER_TO_UINT(&(array)[ARRAY_SIZE(array)]) &&                    \
-	 (POINTER_TO_UINT(ptr) - POINTER_TO_UINT(array)) % sizeof((array)[0]) == 0)
+#define IS_ARRAY_ELEMENT(_array, _ptr)                          \
+    ((_ptr) && POINTER_TO_UINT(_array) <= POINTER_TO_UINT(_ptr) && \
+     POINTER_TO_UINT(_ptr) < POINTER_TO_UINT(&(_array)[ARRAY_SIZE(_array)]) && \
+     (POINTER_TO_UINT(_ptr) - POINTER_TO_UINT(_array)) % sizeof((_array)[0]) == 0)
 
 /**
  * @brief Index of @p ptr within @p array
@@ -162,11 +168,15 @@ extern "C" {
  *
  * @return the array index of @p ptr within @p array, on success
  */
-#define ARRAY_INDEX(array, ptr)                                                                    \
-	({                                                                                         \
-		__ASSERT_NO_MSG(IS_ARRAY_ELEMENT(array, ptr));                                     \
-		(__typeof__((array)[0]) *)(ptr) - (array);                                         \
-	})
+#define ARRAY_INDEX(_array, _ptr)                               \
+    ({                                                          \
+        __ASSERT_NO_MSG(IS_ARRAY_ELEMENT(_array, _ptr));        \
+        (__typeof__((_array)[0])*)(_ptr) - (_array);            \
+    })
+
+/* #CUSTOM@NDRS */
+#define ARRAY_INDEX_WITH_TYPE(_array, _type, _ptr)              \
+    (_type*)((_ptr) - (_array))
 
 /**
  * @brief Check if a pointer @p ptr lies within @p array.
@@ -178,9 +188,9 @@ extern "C" {
  * @param ptr a pointer
  * @return 1 if @p ptr is part of @p array, 0 otherwise
  */
-#define PART_OF_ARRAY(array, ptr)                                                                  \
-	((ptr) && POINTER_TO_UINT(array) <= POINTER_TO_UINT(ptr) &&                                \
-	 POINTER_TO_UINT(ptr) < POINTER_TO_UINT(&(array)[ARRAY_SIZE(array)]))
+#define PART_OF_ARRAY(_array, _ptr)                             \
+    ((_ptr) && POINTER_TO_UINT(_array) <= POINTER_TO_UINT(_ptr) && \
+     POINTER_TO_UINT(_ptr) < POINTER_TO_UINT(&(_array)[ARRAY_SIZE(_array)]))
 
 /**
  * @brief Array-index of @p ptr within @p array, rounded down
@@ -199,11 +209,11 @@ extern "C" {
  *
  * @return the array index of @p ptr within @p array, on success
  */
-#define ARRAY_INDEX_FLOOR(array, ptr)                                                              \
-	({                                                                                         \
-		__ASSERT_NO_MSG(PART_OF_ARRAY(array, ptr));                                        \
-		(POINTER_TO_UINT(ptr) - POINTER_TO_UINT(array)) / sizeof((array)[0]);              \
-	})
+#define ARRAY_INDEX_FLOOR(_array, _ptr)                         \
+    ({                                                          \
+        __ASSERT_NO_MSG(PART_OF_ARRAY(_array, ptr));            \
+        (POINTER_TO_UINT(ptr) - POINTER_TO_UINT(array)) / sizeof((array)[0]); \
+    })
 
 /**
  * @brief Iterate over members of an array using an index variable
@@ -236,10 +246,10 @@ extern "C" {
  * @brief Validate CONTAINER_OF parameters, only applies to C mode.
  */
 #ifndef __cplusplus
-#define CONTAINER_OF_VALIDATE(ptr, type, field)               \
-	BUILD_ASSERT(SAME_TYPE(*(ptr), ((type *)0)->field) || \
-		     SAME_TYPE(*(ptr), void),                 \
-		     "pointer type mismatch in CONTAINER_OF");
+#define CONTAINER_OF_VALIDATE(ptr, type, field)                 \
+    BUILD_ASSERT(SAME_TYPE(*(ptr), ((type*)0)->field) ||        \
+                 SAME_TYPE(*(ptr), void),                       \
+                 "pointer type mismatch in CONTAINER_OF");
 #else
 #define CONTAINER_OF_VALIDATE(ptr, type, field)
 #endif
@@ -249,14 +259,14 @@ extern "C" {
  *
  * Example:
  *
- *	struct foo {
- *		int bar;
- *	};
+ *  struct foo {
+ *      int bar;
+ *  };
  *
- *	struct foo my_foo;
- *	int *ptr = &my_foo.bar;
+ *  struct foo my_foo;
+ *  int *ptr = &my_foo.bar;
  *
- *	struct foo *container = CONTAINER_OF(ptr, struct foo, bar);
+ *  struct foo *container = CONTAINER_OF(ptr, struct foo, bar);
  *
  * Above, @p container points at @p my_foo.
  *
@@ -265,11 +275,16 @@ extern "C" {
  * @param field the name of the field within the struct @p ptr points to
  * @return a pointer to the structure that contains @p ptr
  */
-#define CONTAINER_OF(ptr, type, field)                               \
-	({                                                           \
-		CONTAINER_OF_VALIDATE(ptr, type, field)              \
-		((type *)(((char *)(ptr)) - offsetof(type, field))); \
-	})
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define CONTAINER_OF(ptr, type, field) \
+    ((type*)(((char*)(ptr)) - offsetof(type, field)))
+#else
+#define CONTAINER_OF(ptr, type, field) \
+    ({  \
+        CONTAINER_OF_VALIDATE(ptr, type, field) \
+        ((type*)(((char*)(ptr)) - offsetof(type, field)));  \
+    })
+#endif
 
 /**
  * @brief Concatenate input arguments
@@ -293,21 +308,20 @@ extern "C" {
 /**
  * @brief Value of @p x rounded up to the next multiple of @p align.
  */
-#define ROUND_UP(x, align)                                   \
-	((((unsigned long)(x) + ((unsigned long)(align) - 1)) / \
-	  (unsigned long)(align)) * (unsigned long)(align))
+#define ROUND_UP(x, align)                                      \
+    ((((unsigned long)(x) + ((unsigned long)(align)-1)) / (unsigned long)(align)) * (unsigned long)(align))
 
 /**
  * @brief Value of @p x rounded down to the previous multiple of @p align.
  */
-#define ROUND_DOWN(x, align)                                 \
-	(((unsigned long)(x) / (unsigned long)(align)) * (unsigned long)(align))
+#define ROUND_DOWN(x, align)                                    \
+    (((unsigned long)(x) / (unsigned long)(align)) * (unsigned long)(align))
 
 /** @brief Value of @p x rounded up to the next word boundary. */
-#define WB_UP(x) ROUND_UP(x, sizeof(void *))
+#define WB_UP(x)    ROUND_UP(x, sizeof(void*))
 
 /** @brief Value of @p x rounded down to the previous word boundary. */
-#define WB_DN(x) ROUND_DOWN(x, sizeof(void *))
+#define WB_DN(x)    ROUND_DOWN(x, sizeof(void*))
 
 /**
  * @brief Divide and round up.
@@ -323,7 +337,7 @@ extern "C" {
  *
  * @return The result of @p n / @p d, rounded up.
  */
-#define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
+#define DIV_ROUND_UP(n, d)      (((n) + (d) - 1) / (d))
 
 /**
  * @brief Divide and round to the nearest integer.
@@ -340,16 +354,16 @@ extern "C" {
  *
  * @return The result of @p n / @p d, rounded to the nearest integer.
  */
-#define DIV_ROUND_CLOSEST(n, d)	\
-	((((n) < 0) ^ ((d) < 0)) ? ((n) - ((d) / 2)) / (d) : \
-	((n) + ((d) / 2)) / (d))
+#define DIV_ROUND_CLOSEST(n, d) \
+    ((((n) < 0) ^ ((d) < 0)) ? ((n) - ((d) / 2)) / (d) : \
+    ((n) + ((d) / 2)) / (d))
 
 /**
  * @brief Ceiling function applied to @p numerator / @p divider as a fraction.
  * @deprecated Use DIV_ROUND_UP() instead.
  */
 #define ceiling_fraction(numerator, divider) __DEPRECATED_MACRO \
-	DIV_ROUND_UP(numerator, divider)
+    DIV_ROUND_UP(numerator, divider)
 
 #ifndef MAX
 /**
@@ -416,9 +430,8 @@ extern "C" {
  * @param x value to check
  * @return true if @p x is a power of two, false otherwise
  */
-static inline bool is_power_of_two(unsigned int x)
-{
-	return IS_POWER_OF_TWO(x);
+static inline bool is_power_of_two(unsigned int x) {
+    return IS_POWER_OF_TWO(x);
 }
 
 /**
@@ -452,22 +465,21 @@ static ALWAYS_INLINE bool is_null_no_warn(void *p)
  * @return @p value shifted right by @p shift; opened bit positions are
  *         filled with the sign bit
  */
-static inline int64_t arithmetic_shift_right(int64_t value, uint8_t shift)
-{
-	int64_t sign_ext;
+static inline int64_t arithmetic_shift_right(int64_t value, uint8_t shift) {
+    int64_t sign_ext;
 
-	if (shift == 0U) {
-		return value;
-	}
+    if (shift == 0U) {
+        return value;
+    }
 
-	/* extract sign bit */
-	sign_ext = (value >> 63) & 1;
+    /* extract sign bit */
+    sign_ext = (value >> 63) & 1;
 
-	/* make all bits of sign_ext be the same as the value's sign bit */
-	sign_ext = -sign_ext;
+    /* make all bits of sign_ext be the same as the value's sign bit */
+    sign_ext = -sign_ext;
 
-	/* shift value and fill opened bit positions with sign bit */
-	return (value >> shift) | (sign_ext << (64 - shift));
+    /* shift value and fill opened bit positions with sign bit */
+    return (value >> shift) | (sign_ext << (64 - shift));
 }
 
 /**
@@ -479,13 +491,12 @@ static inline int64_t arithmetic_shift_right(int64_t value, uint8_t shift)
  * @param src Pointer to the source of the data.
  * @param size The number of bytes to copy.
  */
-static inline void bytecpy(void *dst, const void *src, size_t size)
-{
-	size_t i;
+static inline void bytecpy(void* dst, void const* src, size_t size) {
+    size_t i;
 
-	for (i = 0; i < size; ++i) {
-		((volatile uint8_t *)dst)[i] = ((volatile const uint8_t *)src)[i];
-	}
+    for (i = 0; i < size; ++i) {
+        ((volatile uint8_t*)dst)[i] = ((volatile uint8_t const*)src)[i];
+    }
 }
 
 /**
@@ -498,41 +509,40 @@ static inline void bytecpy(void *dst, const void *src, size_t size)
  * @param b Pointer to the the second memory region.
  * @param size The number of bytes to swap.
  */
-static inline void byteswp(void *a, void *b, size_t size)
-{
-	uint8_t t;
-	uint8_t *aa = (uint8_t *)a;
-	uint8_t *bb = (uint8_t *)b;
+static inline void byteswp(void* a, void* b, size_t size) {
+    uint8_t  t;
+    uint8_t* aa = (uint8_t*)a;
+    uint8_t* bb = (uint8_t*)b;
 
-	for (; size > 0; --size) {
-		t = *aa;
-		*aa++ = *bb;
-		*bb++ = t;
-	}
+    for (; size > 0; --size) {
+        t     = *aa;
+        *aa++ = *bb;
+        *bb++ = t;
+    }
 }
 
 /**
- * @brief      Convert a single character into a hexadecimal nibble.
+ * @brief Convert a single character into a hexadecimal nibble.
  *
- * @param c     The character to convert
- * @param x     The address of storage for the converted number.
- *
- *  @return Zero on success or (negative) error code otherwise.
- */
-int char2hex(char c, uint8_t *x);
-
-/**
- * @brief      Convert a single hexadecimal nibble into a character.
- *
- * @param c     The number to convert
- * @param x     The address of storage for the converted character.
+ * @param c The character to convert
+ * @param x The address of storage for the converted number.
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int hex2char(uint8_t x, char *c);
+int char2hex(char c, uint8_t* x);
 
 /**
- * @brief      Convert a binary array into string representation.
+ * @brief Convert a single hexadecimal nibble into a character.
+ *
+ * @param c The number to convert
+ * @param x The address of storage for the converted character.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int hex2char(uint8_t x, char* c);
+
+/**
+ * @brief Convert a binary array into string representation.
  *
  * @param buf     The binary array to convert
  * @param buflen  The length of the binary array to convert
@@ -541,19 +551,19 @@ int hex2char(uint8_t x, char *c);
  *
  * @return     The length of the converted string, or 0 if an error occurred.
  */
-size_t bin2hex(const uint8_t *buf, size_t buflen, char *hex, size_t hexlen);
+size_t bin2hex(uint8_t const* buf, size_t buflen, char* hex, size_t hexlen);
 
 /**
- * @brief      Convert a hexadecimal string into a binary array.
+ * @brief Convert a hexadecimal string into a binary array.
  *
  * @param hex     The hexadecimal string to convert
  * @param hexlen  The length of the hexadecimal string to convert.
  * @param buf     Address of where to store the binary data
  * @param buflen  Size of the storage area for binary data
  *
- * @return     The length of the binary array, or 0 if an error occurred.
+ * @return The length of the binary array, or 0 if an error occurred.
  */
-size_t hex2bin(const char *hex, size_t hexlen, uint8_t *buf, size_t buflen);
+size_t hex2bin(char const* hex, size_t hexlen, uint8_t* buf, size_t buflen);
 
 /**
  * @brief Convert a binary coded decimal (BCD 8421) value to binary.
@@ -562,9 +572,8 @@ size_t hex2bin(const char *hex, size_t hexlen, uint8_t *buf, size_t buflen);
  *
  * @return Binary representation of input value.
  */
-static inline uint8_t bcd2bin(uint8_t bcd)
-{
-	return ((10 * (bcd >> 4)) + (bcd & 0x0F));
+static inline uint8_t bcd2bin(uint8_t bcd) {
+    return (uint8_t)(((10U * (bcd >> 4U)) + (bcd & 0x0FU)));
 }
 
 /**
@@ -574,13 +583,12 @@ static inline uint8_t bcd2bin(uint8_t bcd)
  *
  * @return BCD 8421 representation of input value.
  */
-static inline uint8_t bin2bcd(uint8_t bin)
-{
-	return (((bin / 10) << 4) | (bin % 10));
+static inline uint8_t bin2bcd(uint8_t bin) {
+    return (((bin / 10) << 4) | (bin % 10));
 }
 
 /**
- * @brief      Convert a uint8_t into a decimal string representation.
+ * @brief Convert a uint8_t into a decimal string representation.
  *
  * Convert a uint8_t value into its ASCII decimal string representation.
  * The string is terminated if there is enough space in buf.
@@ -589,10 +597,10 @@ static inline uint8_t bin2bcd(uint8_t bin)
  * @param buflen  Size of the storage area for string representation.
  * @param value   The value to convert to decimal string
  *
- * @return     The length of the converted string (excluding terminator if
- *             any), or 0 if an error occurred.
+ * @return The length of the converted string (excluding terminator if
+ *         any), or 0 if an error occurred.
  */
-uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
+uint8_t u8_to_dec(char* buf, uint8_t buflen, uint8_t value);
 
 /**
  * @brief Sign extend an 8, 16 or 32 bit value using the index bit as sign bit.
@@ -648,7 +656,7 @@ static inline int64_t sign_extend_64(uint64_t value, uint8_t index)
  *
  * @return Pointer to the @p utf8_str
  */
-char *utf8_trunc(char *utf8_str);
+char* utf8_trunc(char* utf8_str);
 
 /**
  * @brief Copies a UTF-8 encoded string from @p src to @p dst
@@ -664,11 +672,12 @@ char *utf8_trunc(char *utf8_str);
  *
  * @return Pointer to the @p dst
  */
-char *utf8_lcpy(char *dst, const char *src, size_t n);
+char* utf8_lcpy(char* dst, char const* src, size_t n);
 
 #define __z_log2d(x) (32 - __builtin_clz(x) - 1)
 #define __z_log2q(x) (64 - __builtin_clzll(x) - 1)
-#define __z_log2(x) (sizeof(__typeof__(x)) > 4 ? __z_log2q(x) : __z_log2d(x))
+#define __z_log2(x)  (sizeof(__typeof__(x)) > 4 ? __z_log2q(x) : __z_log2d(x))
+#define __z_log2_with_type(x, type)  (sizeof(type) > 4 ? __z_log2q(x) : __z_log2d(x))
 
 /**
  * @brief Compute log2(x)
@@ -681,6 +690,7 @@ char *utf8_lcpy(char *dst, const char *src, size_t n);
  * @return log2(x) when 1 <= x <= max(x), -1 when x < 1
  */
 #define LOG2(x) ((x) < 1 ? -1 : __z_log2(x))
+#define LOG2_WITH_TYPE(x, type) ((x) < 1 ? -1 : __z_log2_with_type(x, type))
 
 /**
  * @brief Compute ceil(log2(x))
@@ -692,7 +702,7 @@ char *utf8_lcpy(char *dst, const char *src, size_t n);
  *
  * @return ceil(log2(x)) when 1 <= x <= max(type(x)), 0 when x < 1
  */
-#define LOG2CEIL(x) ((x) < 1 ?  0 : __z_log2((x)-1) + 1)
+#define LOG2CEIL(x) ((x) < 1 ? 0 : __z_log2((x)-1) + 1)
 
 /**
  * @brief Compute next highest power of two
@@ -706,7 +716,7 @@ char *utf8_lcpy(char *dst, const char *src, size_t n);
  *
  * @return 2^ceil(log2(x)) or 0 if 2^ceil(log2(x)) would saturate 64-bits
  */
-#define NHPOT(x) ((x) < 1 ? 1 : ((x) > (1ULL<<63) ? 0 : 1ULL << LOG2CEIL(x)))
+#define NHPOT(x) ((x) < 1 ? 1 : ((x) > (1ULL << 63) ? 0 : 1ULL << LOG2CEIL(x)))
 
 /**
  * @brief Determine if a buffer exceeds highest address
@@ -720,9 +730,9 @@ char *utf8_lcpy(char *dst, const char *src, size_t n);
  *
  * @return true if pointer overflow detected, false otherwise
  */
-#define Z_DETECT_POINTER_OVERFLOW(addr, buflen)  \
-	(((buflen) != 0) &&                        \
-	((UINTPTR_MAX - (uintptr_t)(addr)) <= ((uintptr_t)((buflen) - 1))))
+#define Z_DETECT_POINTER_OVERFLOW(addr, buflen) \
+    (((buflen) != 0) &&                         \
+    ((UINTPTR_MAX - (uintptr_t)(addr)) <= ((uintptr_t)((buflen)-1))))
 
 /**
  * @brief XOR n bytes
@@ -824,16 +834,21 @@ static inline void mem_xor_128(uint8_t dst[16], const uint8_t src1[16], const ui
  *
  * @retval expr As a boolean return, if false then it has timed out.
  */
-#define WAIT_FOR(expr, timeout, delay_stmt)                                                        \
-	({                                                                                         \
-		uint32_t _wf_cycle_count = k_us_to_cyc_ceil32(timeout);                            \
-		uint32_t _wf_start = k_cycle_get_32();                                             \
-		while (!(expr) && (_wf_cycle_count > (k_cycle_get_32() - _wf_start))) {            \
-			delay_stmt;                                                                \
-			Z_SPIN_DELAY(10);                                                          \
-		}                                                                                  \
-		(expr);                                                                            \
-	})
+#if defined(_MSC_VER)           /* #CUSTOM@NDRS */
+/* During unit-test we can just always return true for WAIT_FOR() */
+#define WAIT_FOR(expr, timeout, delay_stmt)     true
+#else
+#define WAIT_FOR(expr, timeout, delay_stmt)                     \
+    ({                                                          \
+        uint32_t _wf_cycle_count = k_us_to_cyc_ceil32(timeout); \
+        uint32_t _wf_start       = k_cycle_get_32();            \
+        while (!(expr) && (_wf_cycle_count > (k_cycle_get_32() - _wf_start))) { \
+            delay_stmt;                                         \
+            Z_SPIN_DELAY(10);                                   \
+        }                                                       \
+        (expr);                                                 \
+    })
+#endif
 
 /**
  * @}

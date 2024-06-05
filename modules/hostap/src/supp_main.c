@@ -501,7 +501,7 @@ static int register_supplicant_event_socket(struct supplicant_context *ctx)
 {
 	int ret;
 
-	ret = socketpair(AF_UNIX, SOCK_STREAM, 0, ctx->event_socketpair);
+	ret = socketpair(AF_UNIX, NET_SOCK_STREAM, 0, ctx->event_socketpair);
 	if (ret < 0) {
 		ret = -errno;
 		LOG_ERR("Failed to initialize socket (%d)", ret);
