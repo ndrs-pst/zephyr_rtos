@@ -802,6 +802,7 @@ config SYS_CLOCK_TICKS_PER_SEC
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int "System clock's h/w timer frequency"
+	default $(dt_node_int_prop_int, /cpus/cpu@0, clock-frequency)
 	help
 	  This option specifies the frequency of the hardware timer used for the
 	  system clock (in Hz). This option is set by the SOC's or board's Kconfig file

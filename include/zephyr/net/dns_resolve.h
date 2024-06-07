@@ -191,7 +191,7 @@ struct dns_socket_dispatcher {
 	/** Type of the socket (resolver / responder) */
 	enum dns_socket_type type;
 	/** Local endpoint address (used when binding the socket) */
-	struct sockaddr local_addr;
+	struct net_sockaddr local_addr;
 	/** DNS socket dispatcher callback is called for incoming traffic */
 	dns_socket_dispatcher_cb cb;
 	/** Socket descriptors to poll */
@@ -211,7 +211,7 @@ struct dns_socket_dispatcher {
 };
 
 struct mdns_responder_context {
-	struct sockaddr server_addr;
+	struct net_sockaddr server_addr;
 	struct dns_socket_dispatcher dispatcher;
 	struct zsock_pollfd fds[1];
 	int sock;
@@ -246,7 +246,7 @@ int dns_dispatcher_unregister(struct dns_socket_dispatcher *ctx);
  */
 struct dns_addrinfo {
 	/** IP address information */
-	struct sockaddr ai_addr;
+	struct net_sockaddr ai_addr;
 	/** Length of the ai_addr field */
 	socklen_t       ai_addrlen;
 	/** Address family of the address information */
@@ -335,7 +335,7 @@ struct dns_resolve_context {
 	/** List of configured DNS servers */
 	struct dns_server {
 		/** DNS server information */
-		struct sockaddr dns_server;
+		struct net_sockaddr dns_server;
 
 		/** Connection to the DNS server */
 		int sock;
@@ -427,7 +427,7 @@ struct dns_resolve_context {
  *
  * @details This function sets the DNS server address and initializes the
  * DNS context that is used by the actual resolver. DNS server addresses
- * can be specified either in textual form, or as struct sockaddr (or both).
+ * can be specified either in textual form, or as struct net_sockaddr (or both).
  * Note that the recommended way to resolve DNS names is to use
  * the dns_get_addr_info() API. In that case user does not need to
  * call dns_resolve_init() as the DNS servers are already setup by the system.
@@ -443,15 +443,15 @@ struct dns_resolve_context {
  *    IPv4 + port : 10.0.9.1:5353
  *    IPv6        : 2001:db8::22:42
  *    IPv6 + port : [2001:db8::22:42]:5353
- * @param dns_servers_sa DNS server addresses as struct sockaddr. The array
- * is NULL terminated. Port numbers are optional in struct sockaddr, the
+ * @param dns_servers_sa DNS server addresses as struct net_sockaddr. The array
+ * is NULL terminated. Port numbers are optional in struct net_sockaddr, the
  * default will be used if set to 0.
  *
  * @return 0 if ok, <0 if error.
  */
 int dns_resolve_init(struct dns_resolve_context *ctx,
 		     const char *dns_servers_str[],
-		     const struct sockaddr *dns_servers_sa[]);
+		     const struct net_sockaddr *dns_servers_sa[]);
 
 /**
  * @brief Init DNS resolving context with default Kconfig options.
@@ -487,15 +487,15 @@ int dns_resolve_close(struct dns_resolve_context *ctx);
  *    IPv4 + port : 10.0.9.1:5353
  *    IPv6        : 2001:db8::22:42
  *    IPv6 + port : [2001:db8::22:42]:5353
- * @param servers_sa DNS server addresses as struct sockaddr. The array
- * is NULL terminated. Port numbers are optional in struct sockaddr, the
+ * @param servers_sa DNS server addresses as struct net_sockaddr. The array
+ * is NULL terminated. Port numbers are optional in struct net_sockaddr, the
  * default will be used if set to 0.
  *
  * @return 0 if ok, <0 if error.
  */
 int dns_resolve_reconfigure(struct dns_resolve_context *ctx,
 			    const char *servers_str[],
-			    const struct sockaddr *servers_sa[]);
+			    const struct net_sockaddr *servers_sa[]);
 
 /**
  * @brief Cancel a pending DNS query.

@@ -59,6 +59,15 @@ config PHY_REALTEK_RTL8211F
 	help
 	  Enable Realtek RTL8211F Ethernet PHY Driver
 
+config PHY_MICROCHIP_LAN8742A
+	bool "Microchip LAN8742A Phy Driver"
+	default y
+	depends on DT_HAS_MICROCHIP_LAN8742A_ENABLED
+	depends on MDIO
+	depends on GPIO
+	help
+	  Enable Microchip LAN8742A Ethernet Phy Driver
+
 config PHY_AUTONEG_TIMEOUT_MS
 	int "Auto-negotiation timeout value in milliseconds"
 	default 4000

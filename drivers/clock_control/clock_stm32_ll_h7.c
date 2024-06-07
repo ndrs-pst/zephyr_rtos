@@ -281,6 +281,9 @@ static int32_t prepare_regulator_voltage_scale(void)
 #else
 	while (LL_PWR_IsActiveFlag_VOS() == 0) {
 #endif
+		if (IS_ENABLED(__GTEST)) {
+			break;
+		}
 	}
 	return 0;
 }
@@ -320,7 +323,11 @@ static int32_t optimize_regulator_voltage_scale(uint32_t sysclk_freq)
 #else
 	while (LL_PWR_IsActiveFlag_VOS() == 0) {
 #endif
-	};
+		if (IS_ENABLED(__GTEST)) {
+			break;
+		}
+	}
+
 	return 0;
 }
 
@@ -648,7 +655,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 	return 0;
 }
 
-static struct clock_control_driver_api stm32_clock_control_api = {
+static struct clock_control_driver_api const stm32_clock_control_api = {
 	.on = stm32_clock_control_on,
 	.off = stm32_clock_control_off,
 	.get_rate = stm32_clock_control_get_subsys_rate,
@@ -669,6 +676,10 @@ static void set_up_fixed_clock_sources(void)
 
 		LL_RCC_HSE_Enable();
 		while (LL_RCC_HSE_IsReady() != 1) {
+			/* Wait for HSE ready */
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 		/* Check if we need to enable HSE clock security system or not */
 #if STM32_HSE_CSS
@@ -681,6 +692,10 @@ static void set_up_fixed_clock_sources(void)
 		/* Enable HSI oscillator */
 		LL_RCC_HSI_Enable();
 		while (LL_RCC_HSI_IsReady() != 1) {
+			/* Wait for HSI ready */
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 		/* HSI divider configuration */
 		LL_RCC_HSI_SetDivider(hsi_divider(STM32_HSI_DIVISOR));
@@ -690,6 +705,9 @@ static void set_up_fixed_clock_sources(void)
 		/* Enable CSI oscillator */
 		LL_RCC_CSI_Enable();
 		while (LL_RCC_CSI_IsReady() != 1) {
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	}
 
@@ -697,6 +715,9 @@ static void set_up_fixed_clock_sources(void)
 		/* Enable LSI oscillator */
 		LL_RCC_LSI_Enable();
 		while (LL_RCC_LSI_IsReady() != 1) {
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	}
 
@@ -715,12 +736,18 @@ static void set_up_fixed_clock_sources(void)
 		/* Enable LSE oscillator */
 		LL_RCC_LSE_Enable();
 		while (LL_RCC_LSE_IsReady() != 1) {
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	}
 
 	if (IS_ENABLED(STM32_HSI48_ENABLED)) {
 		LL_RCC_HSI48_Enable();
 		while (LL_RCC_HSI48_IsReady() != 1) {
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	}
 }
@@ -737,12 +764,18 @@ static void stm32_clock_switch_to_hsi(void)
 		LL_RCC_HSI_Enable();
 		while (LL_RCC_HSI_IsReady() != 1) {
 			/* Wait for HSI ready */
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	}
 
 	/* Set HSI as SYSCLCK source */
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
+		if (IS_ENABLED(__GTEST)) {
+			break;
+		}
 	}
 }
 
@@ -825,6 +858,9 @@ static int set_up_plls(void)
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 	LL_RCC_PLL1_Enable();
 	while (LL_RCC_PLL1_IsReady() != 1U) {
+		if (IS_ENABLED(__GTEST)) {
+			break;
+		}
 	}
 
 #endif /* STM32_PLL_ENABLED */
@@ -1096,12 +1132,18 @@ int stm32_clock_control_init(const struct device *dev)
 		/* Set PLL1 as System Clock Source */
 		LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PLL1);
 		while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_PLL1) {
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	} else if (IS_ENABLED(STM32_SYSCLK_SRC_HSE)) {
 		/* Set sysclk source to HSE */
 		LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSE);
 		while (LL_RCC_GetSysClkSource() !=
 					LL_RCC_SYS_CLKSOURCE_STATUS_HSE) {
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	} else if (IS_ENABLED(STM32_SYSCLK_SRC_HSI)) {
 		/* Set sysclk source to HSI */
@@ -1111,6 +1153,9 @@ int stm32_clock_control_init(const struct device *dev)
 		LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_CSI);
 		while (LL_RCC_GetSysClkSource() !=
 					LL_RCC_SYS_CLKSOURCE_STATUS_CSI) {
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	} else {
 		return -ENOTSUP;
