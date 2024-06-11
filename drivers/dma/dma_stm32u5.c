@@ -464,7 +464,7 @@ static int dma_stm32_configure(const struct device* dev,
     index = find_lsb_set(config->dest_data_size) - 1;
     DMA_InitStruct.DestDataWidth = table_dst_size[index];
 
-    LL_DMA_SetBlkDataLength(dma, dma_stm32_id_to_stream(id), size);
+    DMA_InitStruct.BlkDataLength = config->head_block->block_size;
 
     /* The request ID is stored in the dma_slot */
     DMA_InitStruct.Request = config->dma_slot;
@@ -511,14 +511,7 @@ static int dma_stm32_reload(const struct device* dev, uint32_t id,
                            dma_stm32_id_to_stream(id),
                            src, dst);
 
-    if (stream->source_periph) {
-        LL_DMA_SetBlkDataLength(dma, dma_stm32_id_to_stream(id),
-                                (size / stream->src_size));
-    }
-    else {
-        LL_DMA_SetBlkDataLength(dma, dma_stm32_id_to_stream(id),
-                                (size / stream->dst_size));
-    }
+    LL_DMA_SetBlkDataLength(dma, dma_stm32_id_to_stream(id), size);
 
     /* When reloading the dma, the stream is busy again before enabling */
     stream->busy = true;
