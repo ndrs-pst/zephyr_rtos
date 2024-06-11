@@ -86,7 +86,7 @@ int fcb_append(struct fcb* fcb, uint16_t len, struct fcb_entry* append_loc) {
     active = &fcb->f_active;
     if (active->fe_elem_off + len + cnt > active->fe_sector->fs_size) {
         sector = fcb_new_sector(fcb, fcb->f_scratch_cnt);
-        if (!sector || (sector->fs_size <
+        if (!sector || ((int)sector->fs_size <
                         fcb_len_in_flash(fcb, sizeof(struct fcb_disk_area)) + len + cnt)) {
             rc = -ENOSPC;
             goto err;

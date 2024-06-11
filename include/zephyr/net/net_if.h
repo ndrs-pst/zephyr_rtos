@@ -99,7 +99,7 @@ struct net_if_addr {
         };
         #endif /* CONFIG_NET_IPV6_DAD */
 
-        #if defined(CONFIG_NET_IPV4_ACD)
+        #if defined(CONFIG_NET_IPV4_ACD) || defined(_MSC_VER) /* #CUSTOM@NDRS */
         struct {
             /** Address conflict detection (ACD) timer. */
             sys_snode_t acd_node;
@@ -459,7 +459,7 @@ struct net_if_ipv4 {
     /** IPv4 time-to-live for multicast packets */
     uint8_t mcast_ttl;
 
-    #if defined(CONFIG_NET_IPV4_ACD)
+    #if defined(CONFIG_NET_IPV4_ACD) || defined(_MSC_VER) /* #CUSTOM@NDRS */
     /** IPv4 conflict count.  */
     uint8_t conflict_cnt;
     #endif
