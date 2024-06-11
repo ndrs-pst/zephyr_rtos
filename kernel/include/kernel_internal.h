@@ -29,7 +29,7 @@ void z_init_cpu(int id);
 
 /* Initialize a thread */
 void z_init_thread_base(struct _thread_base *thread_base, int priority,
-			uint32_t initial_state, unsigned int options);
+                        uint32_t initial_state, unsigned int options);
 
 /* Early boot functions */
 void z_early_memset(void *dst, int c, size_t n);
@@ -39,27 +39,24 @@ void z_bss_zero(void);
 #ifdef CONFIG_XIP
 void z_data_copy(void);
 #else
-static inline void z_data_copy(void)
-{
-	/* Do nothing */
+static inline void z_data_copy(void) {
+    /* Do nothing */
 }
 #endif /* CONFIG_XIP */
 
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION
 void z_bss_zero_boot(void);
 #else
-static inline void z_bss_zero_boot(void)
-{
-	/* Do nothing */
+static inline void z_bss_zero_boot(void) {
+    /* Do nothing */
 }
 #endif /* CONFIG_LINKER_USE_BOOT_SECTION */
 
 #ifdef CONFIG_LINKER_USE_PINNED_SECTION
 void z_bss_zero_pinned(void);
 #else
-static inline void z_bss_zero_pinned(void)
-{
-	/* Do nothing */
+static inline void z_bss_zero_pinned(void) {
+    /* Do nothing */
 }
 #endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
@@ -68,13 +65,13 @@ FUNC_NORETURN void z_cstart(void);
 void z_device_state_init(void);
 
 extern FUNC_NORETURN void z_thread_entry(k_thread_entry_t entry,
-			  void *p1, void *p2, void *p3);
+                                         void* p1, void* p2, void* p3);
 
 extern char *z_setup_new_thread(struct k_thread *new_thread,
-				k_thread_stack_t *stack, size_t stack_size,
-				k_thread_entry_t entry,
-				void *p1, void *p2, void *p3,
-				int prio, uint32_t options, const char *name);
+                                k_thread_stack_t *stack, size_t stack_size,
+                                k_thread_entry_t entry,
+                                void* p1, void* p2, void* p3,
+                                int prio, uint32_t options, const char *name);
 
 /**
  * @brief Allocate aligned memory from the current thread's resource pool
@@ -105,9 +102,8 @@ void *z_thread_aligned_alloc(size_t align, size_t size);
  * @return A pointer to the allocated memory, or NULL if there is insufficient
  * RAM in the pool or there is no pool to draw memory from
  */
-static inline void *z_thread_malloc(size_t size)
-{
-	return z_thread_aligned_alloc(0, size);
+static inline void *z_thread_malloc(size_t size) {
+    return z_thread_aligned_alloc(0, size);
 }
 
 
@@ -116,19 +112,17 @@ static inline void *z_thread_malloc(size_t size)
  * z_swap() is in use it's a simple inline provided by the kernel.
  */
 static ALWAYS_INLINE void
-arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
-{
-	thread->swap_retval = value;
+arch_thread_return_value_set(struct k_thread *thread, unsigned int value) {
+    thread->swap_retval = value;
 }
 #endif
 
 static ALWAYS_INLINE void
-z_thread_return_value_set_with_data(struct k_thread *thread,
-				   unsigned int value,
-				   void *data)
-{
-	arch_thread_return_value_set(thread, value);
-	thread->base.swap_data = data;
+z_thread_return_value_set_with_data(struct k_thread* thread,
+                                    unsigned int value,
+                                    void* data) {
+    arch_thread_return_value_set(thread, value);
+    thread->base.swap_data = data;
 }
 
 #ifdef CONFIG_SMP
@@ -151,7 +145,7 @@ extern struct k_thread z_main_thread;
 extern struct k_thread z_idle_threads[CONFIG_MP_MAX_NUM_CPUS];
 #endif /* CONFIG_MULTITHREADING */
 K_KERNEL_PINNED_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
-				    CONFIG_ISR_STACK_SIZE);
+                                    CONFIG_ISR_STACK_SIZE);
 
 #ifdef CONFIG_GEN_PRIV_STACKS
 extern uint8_t *z_priv_stack_find(k_thread_stack_t *stack);
@@ -257,8 +251,8 @@ void z_paging_histogram_init(void);
  * @param hist The timing histogram to be updated.
  * @param cycles Time spent in measured operation.
  */
-void z_paging_histogram_inc(struct k_mem_paging_histogram_t *hist,
-			    uint32_t cycles);
+void z_paging_histogram_inc(struct k_mem_paging_histogram_t* hist,
+                            uint32_t cycles);
 #endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
 
 #ifdef CONFIG_OBJ_CORE_STATS_THREAD

@@ -26,8 +26,8 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #endif
 
 #define ADDRLEN(sock) \
-	(((struct sockaddr *)sock)->sa_family == AF_INET ? \
-		sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6))
+	(((struct net_sockaddr *)sock)->sa_family == NET_AF_INET ? \
+		sizeof(struct net_sockaddr_in) : sizeof(struct net_sockaddr_in6))
 
 /* Shortened defines */
 #define MAX_OPTIONS    CONFIG_COAP_SERVER_MESSAGE_OPTIONS
@@ -83,7 +83,7 @@ static inline void coap_server_free(void *ptr)
 
 static int coap_service_remove_observer(const struct coap_service *service,
 					struct coap_resource *resource,
-					const struct sockaddr *addr,
+					const struct net_sockaddr *addr,
 					const uint8_t *token, uint8_t tkl)
 {
 	struct coap_observer *obs;
@@ -125,7 +125,7 @@ static int coap_server_process(int sock_fd)
 {
 	static uint8_t buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
 
-	struct sockaddr client_addr;
+	struct net_sockaddr client_addr;
 	socklen_t client_addr_len = sizeof(client_addr);
 	struct coap_service *service = NULL;
 	struct coap_packet request;
@@ -366,13 +366,13 @@ int coap_service_start(const struct coap_service *service)
 
 	uint8_t af;
 	socklen_t len;
-	struct sockaddr_storage addr_storage;
+	struct net_sockaddr_storage addr_storage;
 	union {
-		struct sockaddr *addr;
-		struct sockaddr_in *addr4;
-		struct sockaddr_in6 *addr6;
+		struct net_sockaddr *addr;
+		struct net_sockaddr_in *addr4;
+		struct net_sockaddr_in6 *addr6;
 	} addr_ptrs = {
-		.addr = (struct sockaddr *)&addr_storage,
+		.addr = (struct net_sockaddr *)&addr_storage,
 	};
 
 	if (!coap_service_in_section(service)) {
@@ -388,42 +388,42 @@ int coap_service_start(const struct coap_service *service)
 	}
 
 	/* set the default address (in6addr_any / INADDR_ANY are all 0) */
-	addr_storage = (struct sockaddr_storage){0};
+	addr_storage = (struct net_sockaddr_storage){0};
 	if (IS_ENABLED(CONFIG_NET_IPV6) && service->host != NULL &&
 	    zsock_inet_pton(AF_INET6, service->host, &addr_ptrs.addr6->sin6_addr) == 1) {
 		/* if a literal IPv6 address is provided as the host, use IPv6 */
-		af = AF_INET6;
-		len = sizeof(struct sockaddr_in6);
+		af = NET_AF_INET6;
+		len = sizeof(struct net_sockaddr_in6);
 
-		addr_ptrs.addr6->sin6_family = AF_INET6;
+		addr_ptrs.addr6->sin6_family = NET_AF_INET6;
 		addr_ptrs.addr6->sin6_port = htons(*service->port);
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && service->host != NULL &&
 		   zsock_inet_pton(AF_INET, service->host, &addr_ptrs.addr4->sin_addr) == 1) {
 		/* if a literal IPv4 address is provided as the host, use IPv4 */
-		af = AF_INET;
-		len = sizeof(struct sockaddr_in);
+		af = NET_AF_INET;
+		len = sizeof(struct net_sockaddr_in);
 
-		addr_ptrs.addr4->sin_family = AF_INET;
+		addr_ptrs.addr4->sin_family = NET_AF_INET;
 		addr_ptrs.addr4->sin_port = htons(*service->port);
 	} else if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		/* prefer IPv6 if both IPv6 and IPv4 are supported */
-		af = AF_INET6;
-		len = sizeof(struct sockaddr_in6);
+		af = NET_AF_INET6;
+		len = sizeof(struct net_sockaddr_in6);
 
-		addr_ptrs.addr6->sin6_family = AF_INET6;
+		addr_ptrs.addr6->sin6_family = NET_AF_INET6;
 		addr_ptrs.addr6->sin6_port = htons(*service->port);
 	} else if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		af = AF_INET;
-		len = sizeof(struct sockaddr_in);
+		af = NET_AF_INET;
+		len = sizeof(struct net_sockaddr_in);
 
-		addr_ptrs.addr4->sin_family = AF_INET;
+		addr_ptrs.addr4->sin_family = NET_AF_INET;
 		addr_ptrs.addr4->sin_port = htons(*service->port);
 	} else {
 		ret = -ENOTSUP;
 		goto end;
 	}
 
-	service->data->sock_fd = zsock_socket(af, SOCK_DGRAM, IPPROTO_UDP);
+	service->data->sock_fd = zsock_socket(af, SOCK_DGRAM, NET_IPPROTO_UDP);
 	if (service->data->sock_fd < 0) {
 		ret = -errno;
 		goto end;
@@ -449,7 +449,7 @@ int coap_service_start(const struct coap_service *service)
 			goto close;
 		}
 
-		if (af == AF_INET6) {
+		if (af == NET_AF_INET6) {
 			*service->port = addr_ptrs.addr6->sin6_port;
 		} else {
 			*service->port = addr_ptrs.addr4->sin_port;
@@ -520,7 +520,7 @@ int coap_service_is_running(const struct coap_service *service)
 }
 
 int coap_service_send(const struct coap_service *service, const struct coap_packet *cpkt,
-		      const struct sockaddr *addr, socklen_t addr_len,
+		      const struct net_sockaddr *addr, socklen_t addr_len,
 		      const struct coap_transmission_parameters *params)
 {
 	int ret;
@@ -585,7 +585,7 @@ send:
 }
 
 int coap_resource_send(const struct coap_resource *resource, const struct coap_packet *cpkt,
-		       const struct sockaddr *addr, socklen_t addr_len,
+		       const struct net_sockaddr *addr, socklen_t addr_len,
 		       const struct coap_transmission_parameters *params)
 {
 	/* Find owning service */
@@ -599,7 +599,7 @@ int coap_resource_send(const struct coap_resource *resource, const struct coap_p
 }
 
 int coap_resource_parse_observe(struct coap_resource *resource, const struct coap_packet *request,
-				const struct sockaddr *addr)
+				const struct net_sockaddr *addr)
 {
 	const struct coap_service *service = NULL;
 	int ret;
@@ -668,7 +668,7 @@ unlock:
 }
 
 static int coap_resource_remove_observer(struct coap_resource *resource,
-					 const struct sockaddr *addr,
+					 const struct net_sockaddr *addr,
 					 const uint8_t *token, uint8_t token_len)
 {
 	const struct coap_service *service = NULL;
@@ -703,7 +703,7 @@ static int coap_resource_remove_observer(struct coap_resource *resource,
 }
 
 int coap_resource_remove_observer_by_addr(struct coap_resource *resource,
-					  const struct sockaddr *addr)
+					  const struct net_sockaddr *addr)
 {
 	return coap_resource_remove_observer(resource, addr, NULL, 0);
 }
@@ -725,7 +725,7 @@ static void coap_server_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	/* Create a socket pair to wake zsock_poll */
-	ret = zsock_socketpair(AF_UNIX, SOCK_STREAM, 0, control_socks);
+	ret = zsock_socketpair(AF_UNIX, NET_SOCK_STREAM, 0, control_socks);
 	if (ret < 0) {
 		LOG_ERR("Failed to create socket pair (%d)", ret);
 		return;

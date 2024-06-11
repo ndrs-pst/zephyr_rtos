@@ -169,14 +169,14 @@ static bool dhcpv4_add_req_options(struct net_pkt *pkt)
 }
 
 static bool dhcpv4_add_server_id(struct net_pkt *pkt,
-				 const struct in_addr *addr)
+				 const struct net_in_addr *addr)
 {
 	return dhcpv4_add_option_length_value(pkt, DHCPV4_OPTIONS_SERVER_ID,
 					      4, addr->s4_addr);
 }
 
 static bool dhcpv4_add_req_ipaddr(struct net_pkt *pkt,
-				  const struct in_addr *addr)
+				  const struct net_in_addr *addr)
 {
 	return dhcpv4_add_option_length_value(pkt, DHCPV4_OPTIONS_REQ_IPADDR,
 					      4, addr->s4_addr);
@@ -232,13 +232,13 @@ static inline bool dhcpv4_add_sname(struct net_pkt *pkt)
 
 /* Create DHCPv4 message and add options as per message type */
 static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
-					     const struct in_addr *ciaddr,
-					     const struct in_addr *src_addr,
-					     const struct in_addr *server_addr,
+					     const struct net_in_addr *ciaddr,
+					     const struct net_in_addr *src_addr,
+					     const struct net_in_addr *server_addr,
 					     bool server_id, bool requested_ip)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(dhcp_access, struct dhcp_msg);
-	const struct in_addr *addr;
+	const struct net_in_addr *addr;
 	size_t size = DHCPV4_MESSAGE_SIZE;
 	struct net_pkt *pkt;
 	struct dhcp_msg *msg;
@@ -362,7 +362,7 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 
 	net_pkt_cursor_init(pkt);
 
-	net_ipv4_finalize(pkt, IPPROTO_UDP);
+	net_ipv4_finalize(pkt, NET_IPPROTO_UDP);
 
 	return pkt;
 
@@ -425,9 +425,9 @@ static uint32_t dhcpv4_update_message_timeout(struct net_if_dhcpv4 *dhcpv4)
  */
 static uint32_t dhcpv4_send_request(struct net_if *iface)
 {
-	const struct in_addr *server_addr = net_ipv4_broadcast_address();
-	const struct in_addr *ciaddr = NULL;
-	const struct in_addr *src_addr = NULL;
+	const struct net_in_addr *server_addr = net_ipv4_broadcast_address();
+	const struct net_in_addr *ciaddr = NULL;
+	const struct net_in_addr *src_addr = NULL;
 	bool with_server_id = false;
 	bool with_requested_ip = false;
 	struct net_pkt *pkt = NULL;
@@ -450,7 +450,7 @@ static uint32_t dhcpv4_send_request(struct net_if *iface)
 		with_server_id = true;
 		with_requested_ip = true;
 		memcpy(&iface->config.dhcpv4.request_server_addr, &iface->config.dhcpv4.server_id,
-		       sizeof(struct in_addr));
+		       sizeof(struct net_in_addr));
 		break;
 	case NET_DHCPV4_RENEWING:
 		/* Since we have an address populate the ciaddr field.
@@ -582,8 +582,8 @@ static void dhcpv4_enter_selecting(struct net_if *iface)
 	iface->config.dhcpv4.renewal_time = 0U;
 	iface->config.dhcpv4.rebinding_time = 0U;
 
-	iface->config.dhcpv4.server_id.s_addr = INADDR_ANY;
-	iface->config.dhcpv4.requested_ip.s_addr = INADDR_ANY;
+	iface->config.dhcpv4.server_id.s_addr_be = NET_INADDR_ANY;
+	iface->config.dhcpv4.requested_ip.s_addr_be = NET_INADDR_ANY;
 
 	iface->config.dhcpv4.state = NET_DHCPV4_SELECTING;
 	NET_DBG("enter state=%s",
@@ -924,7 +924,7 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 
 		switch (type) {
 		case DHCPV4_OPTIONS_SUBNET_MASK: {
-			struct in_addr netmask;
+			struct net_in_addr netmask;
 
 			if (length != 4U) {
 				NET_ERR("options_subnet_mask, bad length");
@@ -943,7 +943,7 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 			break;
 		}
 		case DHCPV4_OPTIONS_ROUTER: {
-			struct in_addr router;
+			struct net_in_addr router;
 
 			/* Router option may present 1 or more
 			 * addresses for routers on the clients
@@ -972,9 +972,9 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 #if defined(CONFIG_DNS_RESOLVER)
 		case DHCPV4_OPTIONS_DNS_SERVER: {
 			struct dns_resolve_context *ctx;
-			struct sockaddr_in dns;
-			const struct sockaddr *dns_servers[] = {
-				(struct sockaddr *)&dns, NULL
+			struct net_sockaddr_in dns;
+			const struct net_sockaddr *dns_servers[] = {
+				(struct net_sockaddr *)&dns, NULL
 			};
 			int status;
 
@@ -998,7 +998,7 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 			}
 
 			ctx = dns_resolve_get_default();
-			dns.sin_family = AF_INET;
+			dns.sin_family = NET_AF_INET;
 			status = dns_resolve_reconfigure(ctx, NULL, dns_servers);
 			if (status < 0) {
 				NET_DBG("options_dns, failed to set "
@@ -1011,7 +1011,7 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 #endif
 #if defined(CONFIG_LOG_BACKEND_NET_USE_DHCPV4_OPTION)
 		case DHCPV4_OPTIONS_LOG_SERVER: {
-			struct sockaddr_in log_server = { 0 };
+			struct net_sockaddr_in log_server = { 0 };
 
 			/* Log server option may present 1 or more
 			 * addresses. Each 4 bytes in length. Log
@@ -1030,8 +1030,8 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 				return false;
 			}
 
-			log_server.sin_family = AF_INET;
-			log_backend_net_set_ip((struct sockaddr *)&log_server);
+			log_server.sin_family = NET_AF_INET;
+			log_backend_net_set_ip((struct net_sockaddr *)&log_server);
 
 #ifdef CONFIG_LOG_BACKEND_NET_AUTOSTART
 			log_backend_net_start();
@@ -1193,7 +1193,7 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 
 end:
 	if (*msg_type == NET_DHCPV4_MSG_TYPE_OFFER && !router_present) {
-		struct in_addr any = INADDR_ANY_INIT;
+		struct net_in_addr any = NET_INADDR_ANY_INIT;
 
 		net_if_ipv4_set_gw(iface, &any);
 	}
@@ -1407,7 +1407,7 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	}
 
 	memcpy(&iface->config.dhcpv4.response_src_addr, ip_hdr->ipv4->src,
-		       sizeof(struct in_addr));
+		       sizeof(struct net_in_addr));
 
 	dhcpv4_handle_reply(iface, msg_type, msg);
 
@@ -1742,14 +1742,14 @@ void net_dhcpv4_restart(struct net_if *iface)
 
 int net_dhcpv4_init(void)
 {
-	struct sockaddr local_addr;
+	struct net_sockaddr local_addr;
 	int ret;
 
 	NET_DBG("");
 
 	net_ipaddr_copy(&net_sin(&local_addr)->sin_addr,
 			net_ipv4_unspecified_address());
-	local_addr.sa_family = AF_INET;
+	local_addr.sa_family = NET_AF_INET;
 
 	/* Register UDP input callback on
 	 * DHCPV4_SERVER_PORT(67) and DHCPV4_CLIENT_PORT(68) for

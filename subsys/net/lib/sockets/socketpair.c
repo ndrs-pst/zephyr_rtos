@@ -291,7 +291,7 @@ int z_impl_zsock_socketpair(int family, int type, int proto, int *sv)
 		goto errout;
 	}
 
-	if (type != SOCK_STREAM) {
+	if (type != NET_SOCK_STREAM) {
 		errno = EPROTOTYPE;
 		res = -1;
 		goto errout;
@@ -1005,7 +1005,7 @@ out:
 	return res;
 }
 
-static int spair_bind(void *obj, const struct sockaddr *addr,
+static int spair_bind(void *obj, const struct net_sockaddr *addr,
 		      socklen_t addrlen)
 {
 	ARG_UNUSED(obj);
@@ -1016,7 +1016,7 @@ static int spair_bind(void *obj, const struct sockaddr *addr,
 	return -1;
 }
 
-static int spair_connect(void *obj, const struct sockaddr *addr,
+static int spair_connect(void *obj, const struct net_sockaddr *addr,
 			 socklen_t addrlen)
 {
 	ARG_UNUSED(obj);
@@ -1036,7 +1036,7 @@ static int spair_listen(void *obj, int backlog)
 	return -1;
 }
 
-static int spair_accept(void *obj, struct sockaddr *addr,
+static int spair_accept(void *obj, struct net_sockaddr *addr,
 			socklen_t *addrlen)
 {
 	ARG_UNUSED(obj);
@@ -1048,7 +1048,7 @@ static int spair_accept(void *obj, struct sockaddr *addr,
 }
 
 static ssize_t spair_sendto(void *obj, const void *buf, size_t len,
-			    int flags, const struct sockaddr *dest_addr,
+			    int flags, const struct net_sockaddr *dest_addr,
 				 socklen_t addrlen)
 {
 	ARG_UNUSED(flags);
@@ -1118,7 +1118,7 @@ out:
 }
 
 static ssize_t spair_recvfrom(void *obj, void *buf, size_t max_len,
-			      int flags, struct sockaddr *src_addr,
+			      int flags, struct net_sockaddr *src_addr,
 				   socklen_t *addrlen)
 {
 	(void)flags;

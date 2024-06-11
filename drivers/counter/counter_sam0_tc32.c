@@ -338,15 +338,13 @@ static int counter_sam0_tc32_initialize(const struct device *dev)
 
 #ifdef MCLK
 	/* Enable the GCLK */
-	GCLK->PCHCTRL[cfg->gclk_id].reg = GCLK_PCHCTRL_GEN_GCLK0 |
-					  GCLK_PCHCTRL_CHEN;
+	GCLK->PCHCTRL[cfg->gclk_id].reg = GCLK_PCHCTRL_GEN_GCLK1 | GCLK_PCHCTRL_CHEN;
 
 	/* Enable TC clock in MCLK */
 	*cfg->mclk |= cfg->mclk_mask;
 #else
 	/* Enable the GCLK */
-	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 |
-			    GCLK_CLKCTRL_CLKEN;
+	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK1 | GCLK_CLKCTRL_CLKEN;
 
 	/* Enable clock in PM */
 	PM->APBCMASK.reg |= cfg->pm_apbcmask;
@@ -426,7 +424,7 @@ static const struct counter_driver_api counter_sam0_tc32_driver_api = {
 	counter_sam0_tc32_dev_config_##n = {				\
 		.info = {						\
 			.max_top_value = UINT32_MAX,			\
-			.freq = SOC_ATMEL_SAM0_GCLK0_FREQ_HZ /		\
+			.freq = SOC_ATMEL_SAM0_GCLK1_FREQ_HZ /		\
 				SAM0_TC32_PRESCALER(n),			\
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		\
 			.channels = 1					\
