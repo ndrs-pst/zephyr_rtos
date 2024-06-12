@@ -357,12 +357,12 @@ static void udp_finalize_pkt(struct net_pkt *pkt)
 
 	net_pkt_cursor_init(pkt);
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
-		ret = net_ipv4_finalize(pkt, IPPROTO_UDP);
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == NET_AF_INET) {
+		ret = net_ipv4_finalize(pkt, NET_IPPROTO_UDP);
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
-		ret = net_ipv6_finalize(pkt, IPPROTO_UDP);
+	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == NET_AF_INET6) {
+		ret = net_ipv6_finalize(pkt, NET_IPPROTO_UDP);
 	}
 
 	NET_ASSERT(ret == 0);
@@ -370,22 +370,22 @@ static void udp_finalize_pkt(struct net_pkt *pkt)
 
 static int ip_header_add(struct net_pkt *pkt)
 {
-	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
-		struct in_addr src;
-		struct in_addr dst;
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == NET_AF_INET) {
+		struct net_in_addr src;
+		struct net_in_addr dst;
 
-		net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR, &src);
-		net_addr_pton(AF_INET, CONFIG_NET_CONFIG_PEER_IPV4_ADDR, &dst);
+		net_addr_pton(NET_AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR, &src);
+		net_addr_pton(NET_AF_INET, CONFIG_NET_CONFIG_PEER_IPV4_ADDR, &dst);
 
 		return net_ipv4_create(pkt, &src, &dst);
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
-		struct in6_addr src;
-		struct in6_addr dst;
+	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == NET_AF_INET6) {
+		struct net_in6_addr src;
+		struct net_in6_addr dst;
 
-		net_addr_pton(AF_INET6, CONFIG_NET_CONFIG_MY_IPV6_ADDR, &src);
-		net_addr_pton(AF_INET6, CONFIG_NET_CONFIG_PEER_IPV6_ADDR, &dst);
+		net_addr_pton(NET_AF_INET6, CONFIG_NET_CONFIG_MY_IPV6_ADDR, &src);
+		net_addr_pton(NET_AF_INET6, CONFIG_NET_CONFIG_PEER_IPV6_ADDR, &dst);
 
 		return net_ipv6_create(pkt, &src, &dst);
 	}
@@ -415,7 +415,7 @@ static struct net_pkt *tp_output_pkt_alloc(sa_family_t af,
 
 	tp_pkt->pkt = net_pkt_alloc_with_buffer(iface,
 					sizeof(struct net_udp_hdr) + len,
-					af, IPPROTO_UDP, K_NO_WAIT);
+					af, NET_IPPROTO_UDP, K_NO_WAIT);
 	tp_assert(tp_pkt->pkt, "");
 
 	tp_pkt->file = file;

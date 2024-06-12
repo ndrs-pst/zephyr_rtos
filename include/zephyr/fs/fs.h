@@ -8,10 +8,19 @@
 #ifndef ZEPHYR_INCLUDE_FS_FS_H_
 #define ZEPHYR_INCLUDE_FS_FS_H_
 
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+typedef long off_t;
+typedef signed int ssize_t;
+#else
 #include <sys/types.h>
+#endif
 
 #include <zephyr/sys/dlist.h>
 #include <zephyr/fs/fs_interface.h>
+
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#include <string.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,10 +40,10 @@ struct fs_file_system_t;
  * @brief Enumeration for directory entry types
  */
 enum fs_dir_entry_type {
-	/** Identifier for file entry */
-	FS_DIR_ENTRY_FILE = 0,
-	/** Identifier for directory entry */
-	FS_DIR_ENTRY_DIR
+    /** Identifier for file entry */
+    FS_DIR_ENTRY_FILE = 0,
+    /** Identifier for directory entry */
+    FS_DIR_ENTRY_DIR
 };
 
 /** @brief Enumeration to uniquely identify file system types.
@@ -52,17 +61,17 @@ enum fs_dir_entry_type {
  * used by the application.
  */
 enum {
-	/** Identifier for in-tree FatFS file system. */
-	FS_FATFS = 0,
+    /** Identifier for in-tree FatFS file system. */
+    FS_FATFS = 0,
 
-	/** Identifier for in-tree LittleFS file system. */
-	FS_LITTLEFS,
+    /** Identifier for in-tree LittleFS file system. */
+    FS_LITTLEFS,
 
-	/** Identifier for in-tree Ext2 file system. */
-	FS_EXT2,
+    /** Identifier for in-tree Ext2 file system. */
+    FS_EXT2,
 
-	/** Base identifier for external file systems. */
-	FS_TYPE_EXTERNAL_BASE,
+    /** Base identifier for external file systems. */
+    FS_TYPE_EXTERNAL_BASE,
 };
 
 /** Flag prevents formatting device if requested file system not found */
@@ -89,23 +98,30 @@ enum {
  * @brief File system mount info structure
  */
 struct fs_mount_t {
-	/** Entry for the fs_mount_list list */
-	sys_dnode_t node;
-	/** File system type */
-	int type;
-	/** Mount point directory name (ex: "/fatfs") */
-	const char *mnt_point;
-	/** Pointer to file system specific data */
-	void *fs_data;
-	/** Pointer to backend storage device */
-	void *storage_dev;
-	/* The following fields are filled by file system core */
-	/** Length of Mount point string */
-	size_t mountp_len;
-	/** Pointer to File system interface of the mount point */
-	const struct fs_file_system_t *fs;
-	/** Mount flags */
-	uint8_t flags;
+    /** Entry for the fs_mount_list list */
+    sys_dnode_t node;
+
+    /** File system type */
+    int type;
+
+    /** Mount point directory name (ex: "/fatfs") */
+    char const* mnt_point;
+
+    /** Pointer to file system specific data */
+    void* fs_data;
+
+    /** Pointer to backend storage device */
+    void* storage_dev;
+
+    /* The following fields are filled by file system core */
+    /** Length of Mount point string */
+    size_t mountp_len;
+
+    /** Pointer to File system interface of the mount point */
+    const struct fs_file_system_t* fs;
+
+    /** Mount flags */
+    uint8_t flags;
 };
 
 /**
@@ -115,14 +131,16 @@ struct fs_mount_t {
  * file or directory information.
  */
 struct fs_dirent {
-	/**
-	 * File/directory type (FS_DIR_ENTRY_FILE or FS_DIR_ENTRY_DIR)
-	 */
-	enum fs_dir_entry_type type;
-	/** Name of file or directory */
-	char name[MAX_FILE_NAME + 1];
-	/** Size of file (0 if directory). */
-	size_t size;
+    /**
+     * File/directory type (FS_DIR_ENTRY_FILE or FS_DIR_ENTRY_DIR)
+     */
+    enum fs_dir_entry_type type;
+
+    /** Name of file or directory */
+    char name[MAX_FILE_NAME + 1];
+
+    /** Size of file (0 if directory). */
+    size_t size;
 };
 
 /**
@@ -132,16 +150,18 @@ struct fs_dirent {
  * in the volume.
  */
 struct fs_statvfs {
-	/** Optimal transfer block size */
-	unsigned long f_bsize;
-	/** Allocation unit size */
-	unsigned long f_frsize;
-	/** Size of FS in f_frsize units */
-	unsigned long f_blocks;
-	/** Number of free blocks */
-	unsigned long f_bfree;
-};
+    /** Optimal transfer block size */
+    unsigned long f_bsize;
 
+    /** Allocation unit size */
+    unsigned long f_frsize;
+
+    /** Size of FS in f_frsize units */
+    unsigned long f_blocks;
+
+    /** Number of free blocks */
+    unsigned long f_bfree;
+};
 
 /**
  * @name fs_open open and creation mode flags
@@ -178,15 +198,15 @@ struct fs_statvfs {
  */
 #ifndef FS_SEEK_SET
 /** Seek from the beginning of file */
-#define FS_SEEK_SET	0
+#define FS_SEEK_SET     0
 #endif
 #ifndef FS_SEEK_CUR
 /** Seek from a current position */
-#define FS_SEEK_CUR	1
+#define FS_SEEK_CUR     1
 #endif
 #ifndef FS_SEEK_END
 /** Seek from the end of file */
-#define FS_SEEK_END	2
+#define FS_SEEK_END     2
 #endif
 /**
  * @}
@@ -200,11 +220,11 @@ struct fs_statvfs {
  * @return a value suitable for initializing an fs_mount_t flags
  * member.
  */
-#define FSTAB_ENTRY_DT_MOUNT_FLAGS(node_id)				\
-	((DT_PROP(node_id, automount) ? FS_MOUNT_FLAG_AUTOMOUNT : 0)	\
-	 | (DT_PROP(node_id, read_only) ? FS_MOUNT_FLAG_READ_ONLY : 0)	\
-	 | (DT_PROP(node_id, no_format) ? FS_MOUNT_FLAG_NO_FORMAT : 0)  \
-	 | (DT_PROP(node_id, disk_access) ? FS_MOUNT_FLAG_USE_DISK_ACCESS : 0))
+#define FSTAB_ENTRY_DT_MOUNT_FLAGS(node_id)                         \
+    ((DT_PROP(node_id, automount) ? FS_MOUNT_FLAG_AUTOMOUNT : 0) |  \
+     (DT_PROP(node_id, read_only) ? FS_MOUNT_FLAG_READ_ONLY : 0) |  \
+     (DT_PROP(node_id, no_format) ? FS_MOUNT_FLAG_NO_FORMAT : 0) |  \
+     (DT_PROP(node_id, disk_access) ? FS_MOUNT_FLAG_USE_DISK_ACCESS : 0))
 
 /**
  * @brief The name under which a zephyr,fstab entry mount structure is
@@ -222,8 +242,8 @@ struct fs_statvfs {
  *
  * @param node_id the node identifier for a child entry in a zephyr,fstab node.
  */
-#define FS_FSTAB_DECLARE_ENTRY(node_id)		\
-	extern struct fs_mount_t FS_FSTAB_ENTRY(node_id)
+#define FS_FSTAB_DECLARE_ENTRY(node_id)     \
+        extern struct fs_mount_t FS_FSTAB_ENTRY(node_id)
 
 /**
  * @brief Initialize fs_file_t object
@@ -234,12 +254,17 @@ struct fs_statvfs {
  * @param zfp Pointer to file object
  *
  */
-static inline void fs_file_t_init(struct fs_file_t *zfp)
-{
-	zfp->filep = NULL;
-	zfp->mp = NULL;
-	zfp->flags = 0;
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+static inline void fs_file_t_init(struct fs_file_t* zfp) {
+    memset(zfp, 0, sizeof(*zfp));
 }
+#else
+static inline void fs_file_t_init(struct fs_file_t* zfp) {
+    zfp->filep = NULL;
+    zfp->mp    = NULL;
+    zfp->flags = 0;
+}
+#endif
 
 /**
  * @brief Initialize fs_dir_t object
@@ -250,11 +275,16 @@ static inline void fs_file_t_init(struct fs_file_t *zfp)
  * @param zdp Pointer to file object
  *
  */
-static inline void fs_dir_t_init(struct fs_dir_t *zdp)
-{
-	zdp->dirp = NULL;
-	zdp->mp = NULL;
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+static inline void fs_dir_t_init(struct fs_dir_t* zdp) {
+    memset(zdp, 0, sizeof(*zdp));
 }
+#else
+static inline void fs_dir_t_init(struct fs_dir_t* zdp) {
+    zdp->dirp = NULL;
+    zdp->mp   = NULL;
+}
+#endif
 
 /**
  * @brief Open or create file
@@ -284,14 +314,14 @@ static inline void fs_dir_t_init(struct fs_dir_t *zdp)
  * @retval -EBUSY when zfp is already used;
  * @retval -EINVAL when a bad file name is given;
  * @retval -EROFS when opening read-only file for write, or attempting to
- *	   create a file on a system that has been mounted with the
- *	   FS_MOUNT_FLAG_READ_ONLY flag;
+ *         create a file on a system that has been mounted with the
+ *         FS_MOUNT_FLAG_READ_ONLY flag;
  * @retval -ENOENT when the file does not exist at the path;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval -EACCES when trying to truncate a file without opening it for write.
  * @retval <0 an other negative errno code, depending on a file system back-end.
  */
-int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags);
+int fs_open(struct fs_file_t* zfp, char const* file_name, fs_mode_t flags);
 
 /**
  * @brief Close file
@@ -304,7 +334,7 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags);
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 a negative errno code on error.
  */
-int fs_close(struct fs_file_t *zfp);
+int fs_close(struct fs_file_t* zfp);
 
 /**
  * @brief Unlink file
@@ -316,11 +346,11 @@ int fs_close(struct fs_file_t *zfp);
  * @retval 0 on success;
  * @retval -EINVAL when a bad file name is given;
  * @retval -EROFS if file is read-only, or when file system has been mounted
- *	   with the FS_MOUNT_FLAG_READ_ONLY flag;
+ *       with the FS_MOUNT_FLAG_READ_ONLY flag;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code on error.
  */
-int fs_unlink(const char *path);
+int fs_unlink(char const* path);
 
 /**
  * @brief Rename file or directory
@@ -341,13 +371,13 @@ int fs_unlink(const char *path);
  *
  * @retval 0 on success;
  * @retval -EINVAL when a bad file name is given, or when rename would cause move
- *	   between mount points;
+ *       between mount points;
  * @retval -EROFS if file is read-only, or when file system has been mounted
- *	   with the FS_MOUNT_FLAG_READ_ONLY flag;
+ *       with the FS_MOUNT_FLAG_READ_ONLY flag;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code on error.
  */
-int fs_rename(const char *from, const char *to);
+int fs_rename(char const* from, char const* to);
 
 /**
  * @brief Read file
@@ -365,7 +395,7 @@ int fs_rename(const char *from, const char *to);
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 a negative errno code on error.
  */
-ssize_t fs_read(struct fs_file_t *zfp, void *ptr, size_t size);
+ssize_t fs_read(struct fs_file_t* zfp, void* ptr, size_t size);
 
 /**
  * @brief Write file
@@ -386,7 +416,7 @@ ssize_t fs_read(struct fs_file_t *zfp, void *ptr, size_t size);
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code on error.
  */
-ssize_t fs_write(struct fs_file_t *zfp, const void *ptr, size_t size);
+ssize_t fs_write(struct fs_file_t* zfp, void const* ptr, size_t size);
 
 /**
  * @brief Seek file
@@ -406,7 +436,7 @@ ssize_t fs_write(struct fs_file_t *zfp, const void *ptr, size_t size);
  * @retval -ENOTSUP if not supported by underlying file system driver;
  * @retval <0 an other negative errno code on error.
  */
-int fs_seek(struct fs_file_t *zfp, off_t offset, int whence);
+int fs_seek(struct fs_file_t* zfp, off_t offset, int whence);
 
 /**
  * @brief Get current file position.
@@ -422,7 +452,14 @@ int fs_seek(struct fs_file_t *zfp, off_t offset, int whence);
  *
  * The current revision does not validate the file object.
  */
-off_t fs_tell(struct fs_file_t *zfp);
+off_t fs_tell(struct fs_file_t* zfp);
+
+/** Get the size of the file.
+ *
+ *  @param file     File handle.
+ *  @return         Size of the file in bytes.
+ */
+off_t fs_size(struct fs_file_t* zfp); /* #CUSTOM@NDRS */
 
 /**
  * @brief Truncate or extend an open file to a given size
@@ -444,7 +481,7 @@ off_t fs_tell(struct fs_file_t *zfp);
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code on error.
  */
-int fs_truncate(struct fs_file_t *zfp, off_t length);
+int fs_truncate(struct fs_file_t* zfp, off_t length);
 
 /**
  * @brief Flush cached write data buffers of an open file
@@ -462,7 +499,7 @@ int fs_truncate(struct fs_file_t *zfp, off_t length);
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 a negative errno code on error.
  */
-int fs_sync(struct fs_file_t *zfp);
+int fs_sync(struct fs_file_t* zfp);
 
 /**
  * @brief Directory create
@@ -478,7 +515,7 @@ int fs_sync(struct fs_file_t *zfp);
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code on error
  */
-int fs_mkdir(const char *path);
+int fs_mkdir(char const* path);
 
 /**
  * @brief Directory open
@@ -494,7 +531,7 @@ int fs_mkdir(const char *path);
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 a negative errno code on error.
  */
-int fs_opendir(struct fs_dir_t *zdp, const char *path);
+int fs_opendir(struct fs_dir_t* zdp, char const* path);
 
 /**
  * @brief Directory read entry
@@ -515,7 +552,7 @@ int fs_opendir(struct fs_dir_t *zdp, const char *path);
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 a negative errno code on error.
  */
-int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry);
+int fs_readdir(struct fs_dir_t* zdp, struct fs_dirent* entry);
 
 /**
  * @brief Directory close
@@ -528,7 +565,7 @@ int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry);
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 a negative errno code on error.
  */
-int fs_closedir(struct fs_dir_t *zdp);
+int fs_closedir(struct fs_dir_t* zdp);
 
 /**
  * @brief Mount filesystem
@@ -542,11 +579,11 @@ int fs_closedir(struct fs_dir_t *zdp);
  * or mount points that consist of single digit, e.g: "/0:", "/1:" and so forth.
  *
  * @param mp Pointer to the fs_mount_t structure.  Referenced object
- *	     is not changed if the mount operation failed.
- *	     A reference is captured in the fs infrastructure if the
- *	     mount operation succeeds, and the application must not
- *	     mutate the structure contents until fs_unmount is
- *	     successfully invoked on the same pointer.
+ *           is not changed if the mount operation failed.
+ *           A reference is captured in the fs infrastructure if the
+ *           mount operation succeeds, and the application must not
+ *           mutate the structure contents until fs_unmount is
+ *           successfully invoked on the same pointer.
  *
  * @retval 0 on success;
  * @retval -ENOENT when file system type has not been registered;
@@ -554,10 +591,10 @@ int fs_closedir(struct fs_dir_t *zdp);
  *         when @c FS_MOUNT_FLAG_USE_DISK_ACCESS is set but driver does not
  *         support it.
  * @retval -EROFS if system requires formatting but @c FS_MOUNT_FLAG_READ_ONLY
- *	   has been set;
+ *          has been set;
  * @retval <0 an other negative errno code on error.
  */
-int fs_mount(struct fs_mount_t *mp);
+int fs_mount(struct fs_mount_t* mp);
 
 /**
  * @brief Unmount filesystem
@@ -573,7 +610,7 @@ int fs_mount(struct fs_mount_t *mp);
  * @retval -ENOTSUP when not supported by underlying file system driver;
  * @retval <0 an other negative errno code on error.
  */
-int fs_unmount(struct fs_mount_t *mp);
+int fs_unmount(struct fs_mount_t* mp);
 
 /**
  * @brief Get path of mount point at index
@@ -590,7 +627,7 @@ int fs_unmount(struct fs_mount_t *mp);
  * @retval 0 on success;
  * @retval -ENOENT if there is no mount point with given index.
  */
-int fs_readmount(int *index, const char **name);
+int fs_readmount(int* index, char const** name);
 
 /**
  * @brief File or directory status
@@ -608,7 +645,7 @@ int fs_readmount(int *index, const char **name);
  * @retval -ENOTSUP when not supported by underlying file system driver;
  * @retval <0 negative errno code on error.
  */
-int fs_stat(const char *path, struct fs_dirent *entry);
+int fs_stat(char const* path, struct fs_dirent* entry);
 
 /**
  * @brief Retrieves statistics of the file system volume
@@ -624,7 +661,7 @@ int fs_stat(const char *path, struct fs_dirent *entry);
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code on error.
  */
-int fs_statvfs(const char *path, struct fs_statvfs *stat);
+int fs_statvfs(char const* path, struct fs_statvfs* stat);
 
 /**
  * @brief Create fresh file system
@@ -637,7 +674,7 @@ int fs_statvfs(const char *path, struct fs_statvfs *stat);
  * @retval 0 on success;
  * @retval <0 negative errno code on error.
  */
-int fs_mkfs(int fs_type, uintptr_t dev_id, void *cfg, int flags);
+int fs_mkfs(int fs_type, uintptr_t dev_id, void* cfg, int flags);
 
 /**
  * @brief Register a file system
@@ -652,9 +689,9 @@ int fs_mkfs(int fs_type, uintptr_t dev_id, void *cfg, int flags);
  * @retval 0 on success;
  * @retval -EALREADY when a file system of a given type has already been registered;
  * @retval -ENOSCP when there is no space left, in file system registry, to add
- *	   this file system type.
+ *          this file system type.
  */
-int fs_register(int type, const struct fs_file_system_t *fs);
+int fs_register(int type, const struct fs_file_system_t* fs);
 
 /**
  * @brief Unregister a file system
@@ -667,12 +704,11 @@ int fs_register(int type, const struct fs_file_system_t *fs);
  * @retval 0 on success;
  * @retval -EINVAL when file system of a given type has not been registered.
  */
-int fs_unregister(int type, const struct fs_file_system_t *fs);
+int fs_unregister(int type, const struct fs_file_system_t* fs);
 
 /**
  * @}
  */
-
 
 #ifdef __cplusplus
 }

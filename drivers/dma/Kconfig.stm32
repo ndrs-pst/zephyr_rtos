@@ -67,6 +67,14 @@ config DMA_STM32_BDMA
 	help
 	  BDMA driver for STM32H7 series SoCs.
 
+config DMA_STM32_MDMA
+	bool "STM32 MDMA driver"
+	default y
+	select USE_STM32_LL_MDMA
+	depends on DT_HAS_ST_STM32_MDMA_ENABLED
+	help
+	  MDMA driver for STM32H7 series SoCs.
+
 config DMAMUX_STM32_INIT_PRIORITY
 	int "STM32 DMAMUX init priority"
 	depends on DT_HAS_ST_STM32_DMAMUX_ENABLED

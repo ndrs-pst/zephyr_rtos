@@ -57,20 +57,20 @@
  * @warning Not to be manipulated without the macros!
  */
 struct spsc {
-	/* private value only the producer thread should mutate */
-	unsigned long acquire;
+    /* private value only the producer thread should mutate */
+    unsigned long acquire;
 
-	/* private value only the consumer thread should mutate */
-	unsigned long consume;
+    /* private value only the consumer thread should mutate */
+    unsigned long consume;
 
-	/* producer mutable, consumer readable */
-	atomic_t in;
+    /* producer mutable, consumer readable */
+    atomic_t in;
 
-	/* consumer mutable, producer readable */
-	atomic_t out;
+    /* consumer mutable, producer readable */
+    atomic_t out;
 
-	/* mask used to automatically wrap values */
-	const unsigned long mask;
+    /* mask used to automatically wrap values */
+    unsigned long const mask;
 };
 
 /**
@@ -79,18 +79,17 @@ struct spsc {
  * @param sz Size of the spsc, must be power of 2 (ex: 2, 4, 8)
  * @param buf Buffer pointer
  */
-#define SPSC_INITIALIZER(sz, buf)                                                                  \
-	{                                                                                          \
-		._spsc =                                                                           \
-			{                                                                          \
-				.acquire = 0,                                                      \
-				.consume = 0,                                                      \
-				.in = ATOMIC_INIT(0),                                              \
-				.out = ATOMIC_INIT(0),                                             \
-				.mask = sz - 1,                                                    \
-			},                                                                         \
-		.buffer = buf,                                                                     \
-	}
+#define SPSC_INITIALIZER(sz, buf)           \
+    {                                       \
+        ._spsc = {                          \
+            .acquire = 0,                   \
+            .consume = 0,                   \
+            .in      = ATOMIC_INIT(0),      \
+            .out     = ATOMIC_INIT(0),      \
+            .mask    = (sz - 1),            \
+        },                                  \
+        .buffer = buf,                      \
+    }
 
 /**
  * @brief Declare an anonymous struct type for an spsc
@@ -98,11 +97,11 @@ struct spsc {
  * @param name Name of the spsc symbol to be provided
  * @param type Type stored in the spsc
  */
-#define SPSC_DECLARE(name, type)                                                                   \
-	static struct spsc_##name {                                                                \
-		struct spsc _spsc;                                                                 \
-		type * const buffer;                                                               \
-	}
+#define SPSC_DECLARE(name, type)            \
+    static struct spsc_##name {             \
+        struct spsc _spsc;                  \
+        type* const buffer;                 \
+    }
 
 /**
  * @brief Define an spsc with a fixed size
@@ -111,10 +110,10 @@ struct spsc {
  * @param type Type stored in the spsc
  * @param sz Size of the spsc, must be power of 2 (ex: 2, 4, 8)
  */
-#define SPSC_DEFINE(name, type, sz)                                                                \
-	BUILD_ASSERT(IS_POWER_OF_TWO(sz));                                                         \
-	static type __spsc_buf_##name[sz];                                                         \
-	SPSC_DECLARE(name, type) name = SPSC_INITIALIZER(sz, __spsc_buf_##name);
+#define SPSC_DEFINE(name, type, sz)         \
+    BUILD_ASSERT(IS_POWER_OF_TWO(sz));      \
+    static type __spsc_buf_##name[sz];      \
+    SPSC_DECLARE(name, type) name = SPSC_INITIALIZER(sz, __spsc_buf_##name);
 
 /**
  * @brief Size of the SPSC queue
@@ -152,13 +151,13 @@ struct spsc {
  *
  * @param spsc SPSC to initialize/reset
  */
-#define spsc_reset(spsc)                                                                           \
-	({                                                                                         \
-		(spsc)->_spsc.consume = 0;                                                         \
-		(spsc)->_spsc.acquire = 0;                                                         \
-		atomic_set(&(spsc)->_spsc.in, 0);                                                  \
-		atomic_set(&(spsc)->_spsc.out, 0);                                                 \
-	})
+#define spsc_reset(spsc)                    \
+    ({                                      \
+        (spsc)->_spsc.consume = 0;          \
+        (spsc)->_spsc.acquire = 0;          \
+        atomic_set(&(spsc)->_spsc.in, 0);   \
+        atomic_set(&(spsc)->_spsc.out, 0);  \
+    })
 
 /**
  * @brief Acquire an element to produce from the SPSC
@@ -167,15 +166,15 @@ struct spsc {
  *
  * @return A pointer to the acquired element or null if the spsc is full
  */
-#define spsc_acquire(spsc)                                                                         \
-	({                                                                                         \
-		unsigned long idx = z_spsc_in(spsc) + (spsc)->_spsc.acquire;                       \
-		bool spsc_acq = (idx - z_spsc_out(spsc)) < spsc_size(spsc);                        \
-		if (spsc_acq) {                                                                    \
-			(spsc)->_spsc.acquire += 1;                                                \
-		}                                                                                  \
-		spsc_acq ? &((spsc)->buffer[z_spsc_mask(spsc, idx)]) : NULL;                       \
-	})
+#define spsc_acquire(spsc)                  \
+    ({                                      \
+        unsigned long idx = z_spsc_in(spsc) + (spsc)->_spsc.acquire;    \
+        bool spsc_acq = (idx - z_spsc_out(spsc)) < spsc_size(spsc);     \
+        if (spsc_acq) {                     \
+            (spsc)->_spsc.acquire += 1;     \
+        }                                   \
+        spsc_acq ? &((spsc)->buffer[z_spsc_mask(spsc, idx)]) : NULL;    \
+    })
 
 /**
  * @brief Produce one previously acquired element to the SPSC
@@ -184,13 +183,13 @@ struct spsc {
  *
  * @param spsc SPSC to produce the previously acquired element or do nothing
  */
-#define spsc_produce(spsc)                                                                         \
-	({                                                                                         \
-		if ((spsc)->_spsc.acquire > 0) {                                                   \
-			(spsc)->_spsc.acquire -= 1;                                                \
-			atomic_add(&(spsc)->_spsc.in, 1);                                          \
-		}                                                                                  \
-	})
+#define spsc_produce(spsc)                  \
+    ({                                      \
+        if ((spsc)->_spsc.acquire > 0) {    \
+            (spsc)->_spsc.acquire -= 1;     \
+            atomic_add(&(spsc)->_spsc.in, 1);   \
+        }                                   \
+    })
 
 /**
  * @brief Produce all previously acquired elements to the SPSC
@@ -200,14 +199,21 @@ struct spsc {
  *
  * @param spsc SPSC to produce all previously acquired elements or do nothing
  */
-#define spsc_produce_all(spsc)                                                                     \
-	({                                                                                         \
-		if ((spsc)->_spsc.acquire > 0) {                                                   \
-			unsigned long acquired = (spsc)->_spsc.acquire;                            \
-			(spsc)->_spsc.acquire = 0;                                                 \
-			atomic_add(&(spsc)->_spsc.in, acquired);                                   \
-		}                                                                                  \
-	})
+#if defined(_MSC_VER)
+#define spsc_produce_all(spsc)              \
+    do {                                    \
+        /* pass: unsupported compilation error */   \
+    } while (false)
+#else
+#define spsc_produce_all(spsc)              \
+    ({                                      \
+        if ((spsc)->_spsc.acquire > 0) {    \
+            unsigned long acquired = (spsc)->_spsc.acquire; \
+            (spsc)->_spsc.acquire  = 0;                 \
+            atomic_add(&(spsc)->_spsc.in, acquired);    \
+        }                                               \
+    })
+#endif
 
 /**
  * @brief Drop all previously acquired elements
@@ -216,10 +222,10 @@ struct spsc {
  *
  * @param spsc SPSC to drop all previously acquired elements or do nothing
  */
-#define spsc_drop_all(spsc)                                                                        \
-	do {                                                                                       \
-		(spsc)->_spsc.acquire = 0;                                                         \
-	} while (false)
+#define spsc_drop_all(spsc)         \
+    do {                            \
+        (spsc)->_spsc.acquire = 0;  \
+    } while (false)
 
 /**
  * @brief Consume an element from the spsc
@@ -228,57 +234,58 @@ struct spsc {
  *
  * @return Pointer to element or null if no consumable elements left
  */
-#define spsc_consume(spsc)                                                                         \
-	({                                                                                         \
-		unsigned long idx = z_spsc_out(spsc) + (spsc)->_spsc.consume;                      \
-		bool has_consumable = (idx != z_spsc_in(spsc));                                    \
-		if (has_consumable) {                                                              \
-			(spsc)->_spsc.consume += 1;                                                \
-		}                                                                                  \
-		has_consumable ? &((spsc)->buffer[z_spsc_mask(spsc, idx)]) : NULL;                 \
-	})
+#define spsc_consume(spsc)                                              \
+    ({                                                                  \
+        unsigned long idx = z_spsc_out(spsc) + (spsc)->_spsc.consume;   \
+        bool has_consumable = (idx != z_spsc_in(spsc));                 \
+        if (has_consumable) {                                           \
+            (spsc)->_spsc.consume += 1;                                 \
+        }                                                               \
+        has_consumable ? &((spsc)->buffer[z_spsc_mask(spsc, idx)]) : NULL;  \
+    })
 
 /**
  * @brief Release a consumed element
  *
  * @param spsc SPSC to release consumed element or do nothing
  */
-#define spsc_release(spsc)                                                                         \
-	({                                                                                         \
-		if ((spsc)->_spsc.consume > 0) {                                                   \
-			(spsc)->_spsc.consume -= 1;                                                \
-			atomic_add(&(spsc)->_spsc.out, 1);                                         \
-		}                                                                                  \
-	})
+#define spsc_release(spsc)                          \
+    ({                                              \
+        if ((spsc)->_spsc.consume > 0) {            \
+            (spsc)->_spsc.consume -= 1;             \
+            atomic_add(&(spsc)->_spsc.out, 1);      \
+        }                                           \
+    })
 
 /**
  * @brief Release all consumed elements
  *
  * @param spsc SPSC to release consumed elements or do nothing
  */
-#define spsc_release_all(spsc)                                                                     \
-	({                                                                                         \
-		if ((spsc)->_spsc.consume > 0) {                                                   \
-			unsigned long consumed = (spsc)->_spsc.consume;                            \
-			(spsc)->_spsc.consume = 0;                                                 \
-			atomic_add(&(spsc)->_spsc.out, consumed);                                  \
-		}                                                                                  \
-	})
+#define spsc_release_all(spsc)                      \
+    ({                                              \
+        if ((spsc)->_spsc.consume > 0) {            \
+            unsigned long consumed = (spsc)->_spsc.consume; \
+            (spsc)->_spsc.consume  = 0;             \
+            atomic_add(&(spsc)->_spsc.out, consumed);       \
+        }                                           \
+    })
 
 /**
  * @brief Count of acquirable in spsc
  *
  * @param spsc SPSC to get item count for
  */
-#define spsc_acquirable(spsc)                                                                      \
-	({ (((spsc)->_spsc.in + (spsc)->_spsc.acquire) - (spsc)->_spsc.out) - spsc_size(spsc); })
+#define spsc_acquirable(spsc)   \
+    (((spsc)->_spsc.in + (spsc)->_spsc.acquire) - (spsc)->_spsc.out) - spsc_size(spsc)
 
 /**
  * @brief Count of consumables in spsc
  *
  * @param spsc SPSC to get item count for
  */
-#define spsc_consumable(spsc) ({ (spsc)->_spsc.in - (spsc)->_spsc.out - (spsc)->_spsc.consume; })
+#define spsc_consumable(spsc)   \
+    ({ (spsc)->_spsc.in - (spsc)->_spsc.out - (spsc)->_spsc.consume; })
 
 /**
  * @brief Peek at the first available item in queue
@@ -287,12 +294,12 @@ struct spsc {
  *
  * @return Pointer to element or null if no consumable elements left
  */
-#define spsc_peek(spsc)                                                                            \
-	({                                                                                         \
-		unsigned long idx = z_spsc_out(spsc) + (spsc)->_spsc.consume;                      \
-		bool has_consumable = (idx != z_spsc_in(spsc));                                    \
-		has_consumable ? &((spsc)->buffer[z_spsc_mask(spsc, idx)]) : NULL;                 \
-	})
+#define spsc_peek(spsc)         \
+    ({                          \
+        unsigned long idx = z_spsc_out(spsc) + (spsc)->_spsc.consume;   \
+        bool has_consumable = (idx != z_spsc_in(spsc));                 \
+        has_consumable ? &((spsc)->buffer[z_spsc_mask(spsc, idx)]) : NULL;  \
+    })
 
 /**
  * @brief Peek at the next item in the queue from a given one
@@ -303,13 +310,13 @@ struct spsc {
  *
  * @return Pointer to element or null if none left
  */
-#define spsc_next(spsc, item)                                                                      \
-	({                                                                                         \
-		unsigned long idx = ((item) - (spsc)->buffer);                                     \
-		bool has_next =                                                                    \
-			z_spsc_mask(spsc, (idx + 1)) != (z_spsc_mask(spsc, z_spsc_in(spsc)));      \
-		has_next ? &((spsc)->buffer[z_spsc_mask((spsc), idx + 1)]) : NULL;                 \
-	})
+#define spsc_next(spsc, item)   \
+    ({                          \
+        unsigned long idx = ((item) - (spsc)->buffer);          \
+        bool has_next = z_spsc_mask(spsc, (idx + 1)) !=         \
+                (z_spsc_mask(spsc, z_spsc_in(spsc)));           \
+        has_next ? &((spsc)->buffer[z_spsc_mask((spsc), idx + 1)]) : NULL;  \
+    })
 
 /**
  * @brief Get the previous item in the queue from a given one
@@ -319,12 +326,12 @@ struct spsc {
  *
  * @return Pointer to element or null if none left
  */
-#define spsc_prev(spsc, item)                                                                      \
-	({                                                                                         \
-		unsigned long idx = ((item) - &(spsc)->buffer[0]) / sizeof((spsc)->buffer[0]);     \
-		bool has_prev = idx != z_spsc_mask(spsc, z_spsc_out(spsc));                        \
-		has_prev ? &((spsc)->buffer[z_spsc_mask(spsc, idx - 1)]) : NULL;                   \
-	})
+#define spsc_prev(spsc, item)   \
+    ({                          \
+        unsigned long idx = ((item) - &(spsc)->buffer[0]) / sizeof((spsc)->buffer[0]);  \
+        bool has_prev = idx != z_spsc_mask(spsc, z_spsc_out(spsc));                     \
+        has_prev ? &((spsc)->buffer[z_spsc_mask(spsc, idx - 1)]) : NULL;                \
+    })
 
 /**
  * @}
