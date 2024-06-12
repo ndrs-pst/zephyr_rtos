@@ -818,7 +818,7 @@ static int quectel_lcx6g_init(const struct device* dev) {
     _CONCAT(_CONCAT(_CONCAT(name, _), DT_DRV_COMPAT), inst)
 
 #define LCX6G_DEVICE(inst)                                      \
-    static struct quectel_lcx6g_config LCX6G_INST_NAME(inst, config) = {    \
+    static const struct quectel_lcx6g_config LCX6G_INST_NAME(inst, config) = { \
         .uart            = DEVICE_DT_GET(DT_INST_BUS(inst)),                \
         .pps_mode        = DT_INST_STRING_UPPER_TOKEN(inst, pps_mode),      \
         .pps_pulse_width = DT_INST_PROP(inst, pps_pulse_width),             \
