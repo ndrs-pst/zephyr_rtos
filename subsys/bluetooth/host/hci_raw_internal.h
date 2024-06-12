@@ -14,12 +14,12 @@ extern "C" {
 #endif
 
 struct bt_dev_raw {
-#if DT_HAS_CHOSEN(zephyr_bt_hci)
-	const struct device *hci;
-#else
-	/* Registered HCI driver */
-	const struct bt_hci_driver *drv;
-#endif
+    #if DT_HAS_CHOSEN(zephyr_bt_hci)
+    const struct device *hci;
+    #else
+    /* Registered HCI driver */
+    const struct bt_hci_driver *drv;
+    #endif
 };
 
 #if DT_HAS_CHOSEN(zephyr_bt_hci)

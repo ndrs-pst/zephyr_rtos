@@ -360,7 +360,7 @@ enum net_event_l4_cmd {
  */
 struct net_event_ipv6_addr {
 	/** IPv6 address related to this event */
-	struct in6_addr addr;
+	struct net_in6_addr addr;
 };
 
 /**
@@ -374,7 +374,7 @@ struct net_event_ipv6_addr {
  */
 struct net_event_ipv6_nbr {
 	/** Neighbor IPv6 address */
-	struct in6_addr addr;
+	struct net_in6_addr addr;
 	/** Neighbor index in cache */
 	int idx;
 };
@@ -389,9 +389,9 @@ struct net_event_ipv6_nbr {
  */
 struct net_event_ipv6_route {
 	/** IPv6 address of the next hop */
-	struct in6_addr nexthop;
+	struct net_in6_addr nexthop;
 	/** IPv6 address or prefix of the route */
-	struct in6_addr addr;
+	struct net_in6_addr addr;
 	/** IPv6 prefix length */
 	uint8_t prefix_len;
 };
@@ -406,7 +406,7 @@ struct net_event_ipv6_route {
  */
 struct net_event_ipv6_prefix {
 	/** IPv6 prefix */
-	struct in6_addr addr;
+	struct net_in6_addr addr;
 	/** IPv6 prefix length */
 	uint8_t len;
 	/** IPv6 prefix lifetime in seconds */
@@ -436,7 +436,7 @@ struct net_event_l4_hostname {
  */
 struct net_event_ipv6_pe_filter {
 	/** IPv6 address of privacy extension filter */
-	struct in6_addr prefix;
+	struct net_in6_addr prefix;
 	/** IPv6 filter deny or allow list */
 	bool is_deny_list;
 };

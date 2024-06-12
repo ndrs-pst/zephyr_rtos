@@ -34,7 +34,7 @@ enum zperf_status {
 } __packed;
 
 struct zperf_upload_params {
-	struct sockaddr peer_addr;
+	struct net_sockaddr peer_addr;
 	uint32_t duration_ms;
 	uint32_t rate_kbps;
 	uint16_t packet_size;
@@ -49,7 +49,7 @@ struct zperf_upload_params {
 
 struct zperf_download_params {
 	uint16_t port;
-	struct sockaddr addr;
+	struct net_sockaddr addr;
 	char if_name[IFNAMSIZ];
 };
 
