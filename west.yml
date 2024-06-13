@@ -116,7 +116,7 @@ manifest:
       groups:
         - babblesim
     - name: cmsis
-      revision: 4b96cbb174678dcd3ca86e11e1f24bc5f8726da0
+      revision: 11e93bd9fe672e0aaf7d766d01332dd84b76436f
       path: modules/hal/cmsis
       groups:
         - hal
@@ -132,7 +132,7 @@ manifest:
       groups:
         - tools
     - name: fatfs
-      revision: 427159bf95ea49b7680facffaa29ad506b42709b
+      revision: 1c156b2db4d4d2f9289ef0aa1876e4a0f864b9ea
       path: modules/fs/fatfs
       groups:
         - fs
@@ -152,7 +152,7 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: d6221e73d76a4a31d802e0657342fcbda77e21ae
+      revision: eae49887dcebfcb89f2a513331e27fe432bfb093
       path: modules/hal/atmel
       groups:
         - hal
@@ -198,7 +198,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 5db52e3e3bd6a7ada1f4983e037555d3ff9af028
+      revision: fde97ef084ec6096368c9212be335fda1b47637d
       path: modules/hal/nxp
       groups:
         - hal
@@ -234,7 +234,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 6443e5c4d391c3e9e283c5728cd07d855e663965
+      revision: 10646b972aa8ee7ffe0252c6828239b6ecfeefc1
       path: modules/hal/stm32
       groups:
         - hal
@@ -287,7 +287,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 018dc01d484358d81f889c36471d9ce5590965b6
+      revision: 17564ad004704c03def18808faaf6ea39a66cfc5
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -340,10 +340,15 @@ manifest:
       revision: 84ef879a46d7bfd9a423fbfb502b04289861f9ea
       path: modules/lib/uoscore-uedhoc
     - name: zcbor
-      revision: 75d088037eb237b18e7ec1f47c9ce494b9b95aab
+      revision: 2d2edb19d0112400b6579ef0503f9a974f745b2e
       path: modules/lib/zcbor
+    - name: golioth
+      path: modules/lib/golioth
+      revision: 89515756cf7fe0a8b44fb23ca4e372cefdf487f8
+      url: https://github.com/DDC-NDRS/golioth-zephyr-sdk.git
+      import: west-external.yml
 
   self:
-    path: zephyr
+    path: zephyr_rtos
     west-commands: scripts/west-commands.yml
     import: submanifests

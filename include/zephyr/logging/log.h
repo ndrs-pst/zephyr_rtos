@@ -41,7 +41,11 @@ extern "C" {
  * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
  */
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define LOG_ERR(...)
+#else
 #define LOG_ERR(...)    Z_LOG(LOG_LEVEL_ERR, __VA_ARGS__)
+#endif
 
 /**
  * @brief Writes a WARNING level message to the log.
@@ -52,7 +56,11 @@ extern "C" {
  * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
  */
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define LOG_WRN(...)
+#else
 #define LOG_WRN(...)   Z_LOG(LOG_LEVEL_WRN, __VA_ARGS__)
+#endif
 
 /**
  * @brief Writes an INFO level message to the log.
@@ -62,7 +70,11 @@ extern "C" {
  * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
  */
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define LOG_INF(...)
+#else
 #define LOG_INF(...)   Z_LOG(LOG_LEVEL_INF, __VA_ARGS__)
+#endif
 
 /**
  * @brief Writes a DEBUG level message to the log.
@@ -72,7 +84,11 @@ extern "C" {
  * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
  */
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define LOG_DBG(...)
+#else
 #define LOG_DBG(...)    Z_LOG(LOG_LEVEL_DBG, __VA_ARGS__)
+#endif
 
 /**
  * @brief Writes a WARNING level message to the log on the first execution only.
@@ -101,7 +117,11 @@ extern "C" {
  * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
  */
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define LOG_PRINTK(...)
+#else
 #define LOG_PRINTK(...) Z_LOG_PRINTK(0, __VA_ARGS__)
+#endif
 
 /**
  * @brief Unconditionally print raw log message.
@@ -221,8 +241,12 @@ extern "C" {
  * @param _length Length of data (in bytes).
  * @param _str    Persistent, raw string.
  */
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define LOG_HEXDUMP_DBG(_data, _length, _str)
+#else
 #define LOG_HEXDUMP_DBG(_data, _length, _str) \
 	Z_LOG_HEXDUMP(LOG_LEVEL_DBG, _data, _length, _str)
+#endif
 
 /**
  * @brief Writes an ERROR hexdump message associated with the instance to the
@@ -386,6 +410,9 @@ void z_log_vprintk(const char *fmt, va_list ap);
  *       In other cases, this macro has no effect.
  * @see LOG_MODULE_DECLARE
  */
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define LOG_MODULE_REGISTER(...)
+#else
 #define LOG_MODULE_REGISTER(...)					\
 	COND_CODE_1(							\
 		Z_DO_LOG_MODULE_REGISTER(__VA_ARGS__),			\
@@ -394,6 +421,7 @@ void z_log_vprintk(const char *fmt, va_list ap);
 		() \
 	)								\
 	LOG_MODULE_DECLARE(__VA_ARGS__)
+#endif
 
 /**
  * @brief Macro for declaring a log module (not registering it).
@@ -421,6 +449,9 @@ void z_log_vprintk(const char *fmt, va_list ap);
  *       this macro has no effect.
  * @see LOG_MODULE_REGISTER
  */
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define LOG_MODULE_DECLARE(...)
+#else
 #define LOG_MODULE_DECLARE(...)						      \
 	extern const struct log_source_const_data			      \
 			Z_LOG_ITEM_CONST_DATA(GET_ARG_N(1, __VA_ARGS__));     \
@@ -442,6 +473,7 @@ void z_log_vprintk(const char *fmt, va_list ap);
 									      \
 	static const uint32_t __log_level __unused =			      \
 					_LOG_LEVEL_RESOLVE(__VA_ARGS__)
+#endif
 
 /**
  * @brief Macro for setting log level in the file or function where instance

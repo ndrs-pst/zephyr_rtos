@@ -1889,7 +1889,7 @@ struct ieee802154_radio_api {
 /* Make sure that the network interface API is properly setup inside
  * IEEE 802.15.4 driver API struct (it is the first one).
  */
-BUILD_ASSERT(offsetof(struct ieee802154_radio_api, iface_api) == 0);
+BUILD_ASSERT(offsetof(struct ieee802154_radio_api, iface_api) == 0, "offset error !!!");
 
 /** @} */
 

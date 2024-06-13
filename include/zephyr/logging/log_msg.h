@@ -19,6 +19,8 @@
 #ifndef alloca
 #define alloca __builtin_alloca
 #endif
+#elif defined(_MSC_VER)                     /* #CUSTOM@NDRS */
+/* pass */
 #else
 #include <alloca.h>
 #endif
@@ -86,10 +88,14 @@ struct log_msg_hdr {
 /* Messages are aligned to alignment required by cbprintf package. */
 #define Z_LOG_MSG_ALIGNMENT CBPRINTF_PACKAGE_ALIGNMENT
 
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define Z_LOG_MSG_PADDING       8           /* workaround error C2131: expression did not evaluate to a constant */
+#else
 #define Z_LOG_MSG_PADDING \
 	((sizeof(struct log_msg_hdr) % Z_LOG_MSG_ALIGNMENT) > 0 ? \
 	(Z_LOG_MSG_ALIGNMENT - (sizeof(struct log_msg_hdr) % Z_LOG_MSG_ALIGNMENT)) : \
 		0)
+#endif
 
 struct log_msg {
 	struct log_msg_hdr hdr;
@@ -97,7 +103,11 @@ struct log_msg {
 	 * properly aligned.
 	 */
 	uint8_t padding[Z_LOG_MSG_PADDING];
-	uint8_t data[];
+#if defined(_MSC_VER)                       /* warning C4200: nonstandard extension used: zero-sized array in struct/union */
+    uint8_t data[1];
+#else
+    uint8_t data[];
+#endif
 };
 
 /**
@@ -327,6 +337,8 @@ enum z_log_msg_mode {
 
 #define Z_LOG_MSG_STACK_CREATE(_cstr_cnt, _domain_id, _source, _level, _data, _dlen, ...) \
 do { \
+	_Pragma("GCC diagnostic push") \
+	_Pragma("GCC diagnostic ignored \"-Wconversion\"")  \
 	int _plen; \
 	uint32_t _options = Z_LOG_MSG_CBPRINTF_FLAGS(_cstr_cnt) | \
 			  CBPRINTF_PACKAGE_ADD_RW_STR_POS; \
@@ -337,7 +349,7 @@ do { \
 					__VA_ARGS__); \
 	} \
 	TOOLCHAIN_IGNORE_WSHADOW_BEGIN \
-	struct log_msg *_msg; \
+	struct log_msg* _msg; \
 	TOOLCHAIN_IGNORE_WSHADOW_END \
 	Z_LOG_MSG_ON_STACK_ALLOC(_msg, Z_LOG_MSG_LEN(_plen, 0)); \
 	Z_LOG_ARM64_VLA_PROTECT(); \
@@ -352,6 +364,7 @@ do { \
 	LOG_MSG_DBG("creating message on stack: package len: %d, data len: %d\n", \
 			_plen, (int)(_dlen)); \
 	z_log_msg_static_create((void *)_source, _desc, _msg->data, _data); \
+	_Pragma("GCC diagnostic pop") \
 } while (false)
 
 #ifdef CONFIG_LOG_SPEED
@@ -611,8 +624,8 @@ struct log_msg *z_log_msg_alloc(uint32_t wlen);
  *
  * @param data Data.
  */
-void z_log_msg_finalize(struct log_msg *msg, const void *source,
-			 const struct log_msg_desc desc, const void *data);
+void z_log_msg_finalize(struct log_msg* msg, const void* source,
+                        const struct log_msg_desc desc, const void* data);
 
 /** @brief Create log message using simplified method for string with no arguments.
  *
@@ -654,9 +667,9 @@ __syscall void z_log_msg_simple_create_2(const void *source, uint32_t level,
  *
  * @param data Data.
  */
-__syscall void z_log_msg_static_create(const void *source,
-					const struct log_msg_desc desc,
-					uint8_t *package, const void *data);
+__syscall void z_log_msg_static_create(const void* source,
+                                       const struct log_msg_desc desc,
+                                       uint8_t* package, const void* data);
 
 /** @brief Create message at runtime.
  *
@@ -679,11 +692,11 @@ __syscall void z_log_msg_static_create(const void *source,
  *
  * @param ap Variable list of string arguments.
  */
-void z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,
-				uint8_t level, const void *data,
-				size_t dlen, uint32_t package_flags,
-				const char *fmt,
-				va_list ap);
+void z_log_msg_runtime_vcreate(uint8_t domain_id, const void* source,
+                               uint8_t level, const void *data,
+                               size_t dlen, uint32_t package_flags,
+                               const char *fmt,
+                               va_list ap);
 
 /** @brief Create message at runtime.
  *
@@ -761,9 +774,8 @@ static inline uint32_t log_msg_generic_get_wlen(const union mpsc_pbuf_generic *i
  *
  * @return Domain ID
  */
-static inline uint8_t log_msg_get_domain(struct log_msg *msg)
-{
-	return msg->hdr.desc.domain;
+static inline uint8_t log_msg_get_domain(struct log_msg* msg) {
+    return ((uint8_t)(msg->hdr.desc.domain));
 }
 
 /** @brief Get log message level.
@@ -772,9 +784,8 @@ static inline uint8_t log_msg_get_domain(struct log_msg *msg)
  *
  * @return Log level.
  */
-static inline uint8_t log_msg_get_level(struct log_msg *msg)
-{
-	return msg->hdr.desc.level;
+static inline uint8_t log_msg_get_level(struct log_msg* msg) {
+    return ((uint8_t)(msg->hdr.desc.level));
 }
 
 /** @brief Get message source data.

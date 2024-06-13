@@ -112,6 +112,7 @@ void z_irq_spurious(const void *unused)
 }
 
 #ifdef CONFIG_PM
+#if (__GTEST == 0U) /* #CUSTOM@NDRS */
 void _arch_isr_direct_pm(void)
 {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
@@ -143,6 +144,14 @@ void _arch_isr_direct_pm(void)
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
 }
+#else
+void _arch_isr_direct_pm(void) {
+	if (_kernel.idle) {
+		_kernel.idle = 0;
+		z_pm_save_idle_exit();
+	}
+}
+#endif
 #endif
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)

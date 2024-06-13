@@ -779,6 +779,8 @@ do { \
 do { \
 	_Pragma("GCC diagnostic push") \
 	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
+	_Pragma("GCC diagnostic ignored \"-Wconversion\"")    \
+	_Pragma("GCC diagnostic ignored \"-Wsign-conversion\"") \
 	Z_CBPRINTF_SUPPRESS_SIZEOF_ARRAY_DECAY \
 	BUILD_ASSERT(!IS_ENABLED(CONFIG_XTENSA) || \
 		     (IS_ENABLED(CONFIG_XTENSA) && \

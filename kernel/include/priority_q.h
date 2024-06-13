@@ -88,9 +88,21 @@ static ALWAYS_INLINE void z_priq_rb_add(struct _priq_rb *pq, struct k_thread *th
 	 * a latency glitch to loop over all the threads like this.
 	 */
 	if (!pq->next_order_key) {
+		#if (__GTEST == 0U) /* #CUSTOM@NDRS */
 		RB_FOR_EACH_CONTAINER(&pq->tree, t, base.qnode_rb) {
 			t->base.order_key = pq->next_order_key++;
 		}
+		#else
+		/* Alternative implement RB_FOR_EACH_CONTAINER to be MSVC compatible */
+		struct _rb_foreach __f = _RB_FOREACH_INIT(&pq->tree, t);
+		struct rbnode* n;
+		for (n = z_rb_foreach_next(&pq->tree, &__f);
+			 n != NULL;
+			 n = z_rb_foreach_next(&pq->tree, &__f)) {
+			t = CONTAINER_OF(n, struct k_thread, base.qnode_rb);
+			t->base.order_key = pq->next_order_key++;
+		}
+		#endif
 	}
 
 	rb_insert(&pq->tree, &thread->base.qnode_rb);
