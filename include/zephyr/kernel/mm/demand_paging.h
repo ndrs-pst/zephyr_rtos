@@ -32,48 +32,60 @@
 /**
  * Paging Statistics.
  */
+#ifdef CONFIG_DEMAND_PAGING_STATS /* #CUSTOM@NDRS */
 struct k_mem_paging_stats_t {
-#if defined(CONFIG_DEMAND_PAGING_STATS) || defined(__DOXYGEN__)
-	struct {
-		/** Number of page faults */
-		unsigned long			cnt;
+    #if defined(CONFIG_DEMAND_PAGING_STATS) || defined(__DOXYGEN__)
+    struct {
+        /** Number of page faults */
+        unsigned long cnt;
 
-		/** Number of page faults with IRQ locked */
-		unsigned long			irq_locked;
+        /** Number of page faults with IRQ locked */
+        unsigned long irq_locked;
 
-		/** Number of page faults with IRQ unlocked */
-		unsigned long			irq_unlocked;
+        /** Number of page faults with IRQ unlocked */
+        unsigned long irq_unlocked;
 
-#if !defined(CONFIG_DEMAND_PAGING_ALLOW_IRQ) || defined(__DOXYGEN__)
-		/** Number of page faults while in ISR */
-		unsigned long			in_isr;
-#endif /* !CONFIG_DEMAND_PAGING_ALLOW_IRQ */
-	} pagefaults;
+        #if !defined(CONFIG_DEMAND_PAGING_ALLOW_IRQ) || defined(__DOXYGEN__)
+        /** Number of page faults while in ISR */
+        unsigned long in_isr;
+        #endif /* !CONFIG_DEMAND_PAGING_ALLOW_IRQ */
+    } pagefaults;
 
-	struct {
-		/** Number of clean pages selected for eviction */
-		unsigned long			clean;
+    struct {
+        /** Number of clean pages selected for eviction */
+        unsigned long clean;
 
-		/** Number of dirty pages selected for eviction */
-		unsigned long			dirty;
-	} eviction;
-#endif /* CONFIG_DEMAND_PAGING_STATS */
+        /** Number of dirty pages selected for eviction */
+        unsigned long dirty;
+    } eviction;
+    #endif /* CONFIG_DEMAND_PAGING_STATS */
 };
+#else
+struct k_mem_paging_stats_t {
+    unsigned dummy;
+};
+#endif
 
 /**
  * Paging Statistics Histograms.
  */
+#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM /* #CUSTOM@NDRS */
 struct k_mem_paging_histogram_t {
-#if defined(CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM) || defined(__DOXYGEN__)
-	/* Counts for each bin in timing histogram */
-	unsigned long	counts[CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS];
+    #if defined(CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM) || defined(__DOXYGEN__)
+    /* Counts for each bin in timing histogram */
+    unsigned long counts[CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS];
 
-	/* Bounds for the bins in timing histogram,
-	 * excluding the first and last (hence, NUM_SLOTS - 1).
-	 */
-	unsigned long	bounds[CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS];
-#endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
+    /* Bounds for the bins in timing histogram,
+     * excluding the first and last (hence, NUM_SLOTS - 1).
+     */
+    unsigned long bounds[CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS];
+    #endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
 };
+#else
+struct k_mem_paging_histogram_t {
+    unsigned dummy;
+};
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -102,7 +114,7 @@ extern "C" {
  * @retval -ENOMEM Insufficient space in backing store to satisfy request.
  *         The region may be partially paged out.
  */
-int k_mem_page_out(void *addr, size_t size);
+int k_mem_page_out(void* addr, size_t size);
 
 /**
  * Load a virtual data region into memory
@@ -117,7 +129,7 @@ int k_mem_page_out(void *addr, size_t size);
  * @param addr Base page-aligned virtual address
  * @param size Page-aligned data region size
  */
-void k_mem_page_in(void *addr, size_t size);
+void k_mem_page_in(void* addr, size_t size);
 
 /**
  * Pin an aligned virtual data region, paging in as necessary
@@ -132,7 +144,7 @@ void k_mem_page_in(void *addr, size_t size);
  * @param addr Base page-aligned virtual address
  * @param size Page-aligned data region size
  */
-void k_mem_pin(void *addr, size_t size);
+void k_mem_pin(void* addr, size_t size);
 
 /**
  * Un-pin an aligned virtual data region
@@ -144,7 +156,7 @@ void k_mem_pin(void *addr, size_t size);
  * @param addr Base page-aligned virtual address
  * @param size Page-aligned data region size
  */
-void k_mem_unpin(void *addr, size_t size);
+void k_mem_unpin(void* addr, size_t size);
 
 /**
  * Get the paging statistics since system startup
@@ -154,7 +166,7 @@ void k_mem_unpin(void *addr, size_t size);
  *
  * @param[in,out] stats Paging statistics struct to be filled.
  */
-__syscall void k_mem_paging_stats_get(struct k_mem_paging_stats_t *stats);
+__syscall void k_mem_paging_stats_get(struct k_mem_paging_stats_t* stats);
 
 struct k_thread;
 /**
@@ -167,8 +179,8 @@ struct k_thread;
  * @param[in,out] stats Paging statistics struct to be filled.
  */
 __syscall
-void k_mem_paging_thread_stats_get(struct k_thread *thread,
-				   struct k_mem_paging_stats_t *stats);
+void k_mem_paging_thread_stats_get(struct k_thread* thread,
+                                   struct k_mem_paging_stats_t* stats);
 
 /**
  * Get the eviction timing histogram
@@ -179,7 +191,7 @@ void k_mem_paging_thread_stats_get(struct k_thread *thread,
  * @param[in,out] hist Timing histogram struct to be filled.
  */
 __syscall void k_mem_paging_histogram_eviction_get(
-	struct k_mem_paging_histogram_t *hist);
+        struct k_mem_paging_histogram_t* hist);
 
 /**
  * Get the backing store page-in timing histogram
@@ -190,7 +202,7 @@ __syscall void k_mem_paging_histogram_eviction_get(
  * @param[in,out] hist Timing histogram struct to be filled.
  */
 __syscall void k_mem_paging_histogram_backing_store_page_in_get(
-	struct k_mem_paging_histogram_t *hist);
+        struct k_mem_paging_histogram_t* hist);
 
 /**
  * Get the backing store page-out timing histogram
@@ -201,7 +213,7 @@ __syscall void k_mem_paging_histogram_backing_store_page_in_get(
  * @param[in,out] hist Timing histogram struct to be filled.
  */
 __syscall void k_mem_paging_histogram_backing_store_page_out_get(
-	struct k_mem_paging_histogram_t *hist);
+        struct k_mem_paging_histogram_t* hist);
 
 #include <zephyr/syscalls/demand_paging.h>
 
@@ -229,7 +241,7 @@ __syscall void k_mem_paging_histogram_backing_store_page_out_get(
  * @param [out] dirty Whether the page to evict is dirty
  * @return The page frame to evict
  */
-struct k_mem_page_frame *k_mem_paging_eviction_select(bool *dirty);
+struct k_mem_page_frame* k_mem_paging_eviction_select(bool* dirty);
 
 /**
  * Initialization function
@@ -285,9 +297,9 @@ void k_mem_paging_eviction_init(void);
  * @return 0 Success
  * @return -ENOMEM Backing store is full
  */
-int k_mem_paging_backing_store_location_get(struct k_mem_page_frame *pf,
-					    uintptr_t *location,
-					    bool page_fault);
+int k_mem_paging_backing_store_location_get(struct k_mem_page_frame* pf,
+                                            uintptr_t* location,
+                                            bool page_fault);
 
 /**
  * Free a backing store location
@@ -347,8 +359,8 @@ void k_mem_paging_backing_store_page_in(uintptr_t location);
  * @param pf Page frame that was loaded in
  * @param location Location of where the loaded data page was retrieved
  */
-void k_mem_paging_backing_store_page_finalize(struct k_mem_page_frame *pf,
-					      uintptr_t location);
+void k_mem_paging_backing_store_page_finalize(struct k_mem_page_frame* pf,
+                                              uintptr_t location);
 
 /**
  * Backing store initialization function.

@@ -6,7 +6,7 @@
 
 /*
  * **************************************************************************
- * xSPI flash controller driver for stm32 serie with xSPI periherals
+ * xSPI flash controller driver for stm32 series with xSPI peripherals
  * This driver is based on the stm32Cube HAL XSPI driver
  * with one xspi DTS NODE
  * **************************************************************************
