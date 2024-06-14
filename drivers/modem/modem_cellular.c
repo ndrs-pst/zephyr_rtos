@@ -2072,22 +2072,22 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
     MODEM_CELLULAR_INST_NAME(user_pipes, inst)
 
 /* Extract the first argument (pipe name) from a pair */
-#define MODEM_GET_PIPE_NAME_ARG(arg1, ...) arg1
+#define MODEM_CELLULAR_GET_PIPE_NAME_ARG(arg1, ...) arg1
 
 /* Extract the second argument (DLCI address) from a pair */
-#define MODEM_GET_DLCI_ADDRESS_ARG(arg1, arg2, ...) arg2
+#define MODEM_CELLULAR_GET_DLCI_ADDRESS_ARG(arg1, arg2, ...) arg2
 
 /* Define user pipe data using instance and extracted pipe name */
-#define MODEM_CELLULAR_DEFINE_USER_PIPE_DATA_HELPER(_args, inst)        \
-    MODEM_CELLULAR_DEFINE_USER_PIPE_DATA(inst,                          \
-                                         MODEM_GET_PIPE_NAME_ARG _args, \
+#define MODEM_CELLULAR_DEFINE_USER_PIPE_DATA_HELPER(_args, inst)                        \
+    MODEM_CELLULAR_DEFINE_USER_PIPE_DATA(inst,                                          \
+                                         MODEM_CELLULAR_GET_PIPE_NAME_ARG _args,        \
                                          CONFIG_MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES)
 
 /* Initialize user pipe using instance, extracted pipe name, and DLCI address */
-#define MODEM_CELLULAR_INIT_USER_PIPE_HELPER(_args, inst)               \
-    MODEM_CELLULAR_INIT_USER_PIPE(inst,                                 \
-                                  MODEM_GET_PIPE_NAME_ARG _args,        \
-                                  MODEM_GET_DLCI_ADDRESS_ARG _args)
+#define MODEM_CELLULAR_INIT_USER_PIPE_HELPER(_args, inst)                               \
+    MODEM_CELLULAR_INIT_USER_PIPE(inst,                                                 \
+                                  MODEM_CELLULAR_GET_PIPE_NAME_ARG _args,               \
+                                  MODEM_CELLULAR_GET_DLCI_ADDRESS_ARG _args)
 
 /*
  * Define and initialize user pipes dynamically
@@ -2151,25 +2151,6 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
                                    &quectel_bg95_dial_chat_script,      \
                                    &quectel_bg95_periodic_chat_script)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #define MODEM_CELLULAR_DEVICE_QUECTEL_EG25_G(inst)                      \
     MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64); \
                                                                         \
@@ -2179,7 +2160,9 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
         .ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                    \
     };                                                                  \
                                                                         \
-    MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst)                     \
+    MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                     \
+                                              (user_pipe_0, 3),         \
+                                              (user_pipe_1, 4))         \
                                                                         \
     MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 500, 15000, 5000, false, \
                                    &quectel_eg25_g_init_chat_script,    \
@@ -2195,7 +2178,9 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
         .ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                    \
     };                                                                  \
                                                                         \
-    MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst)                     \
+    MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                     \
+                                              (user_pipe_0, 3),         \
+                                              (user_pipe_1, 4))         \
                                                                         \
     MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 10000, 5000, false, \
                                    &simcom_sim7080_init_chat_script,    \
@@ -2211,7 +2196,9 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
         .ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                    \
     };                                                                  \
                                                                         \
-    MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst)                     \
+    MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                     \
+                                              (gnss_pipe, 3),           \
+                                              (user_pipe_0, 4))         \
                                                                         \
     MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 10000, 5000, false, \
                                    &u_blox_sara_r4_init_chat_script,    \
@@ -2227,7 +2214,9 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
         .ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                    \
     };                                                                  \
                                                                         \
-    MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst)                     \
+    MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                     \
+                                              (gnss_pipe, 4),           \
+                                              (user_pipe_0, 3))         \
                                                                         \
     MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 1500, 13000, true,  \
                                    &u_blox_sara_r5_init_chat_script,    \
@@ -2243,7 +2232,9 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
         .ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                    \
     };                                                                  \
                                                                         \
-    MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst)                     \
+    MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                     \
+                                              (user_pipe_0, 3),         \
+                                              (user_pipe_1, 4))         \
                                                                         \
     MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 10000, 5000, false, \
                                    &swir_hl7800_init_chat_script,       \
@@ -2259,7 +2250,9 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
         .ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                    \
     };                                                                  \
                                                                         \
-    MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst)                     \
+    MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                     \
+                                              (user_pipe_0, 3),         \
+                                              (user_pipe_1, 4))         \
                                                                         \
     MODEM_CELLULAR_DEFINE_INSTANCE(inst, 5050, 250, 15000, 5000, false, \
                                    &telit_me910g1_init_chat_script,     \
@@ -2274,7 +2267,8 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
         .ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                    \
     };                                                                  \
                                                                         \
-    MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst)                     \
+    MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                     \
+                                              (gnss_pipe, 3))           \
                                                                         \
     MODEM_CELLULAR_DEFINE_INSTANCE(inst, 100, 100, 2000, 10000, false,  \
                                    &nordic_nrf91_slm_init_chat_script,  \
@@ -2290,7 +2284,9 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
         .ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                    \
     };                                                                  \
                                                                         \
-    MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst)                     \
+    MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                     \
+                                              (user_pipe_0, 3),         \
+                                              (user_pipe_1, 4))         \
                                                                         \
     MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 2000, 5000, true,   \
                                    &sqn_gm02s_init_chat_script,         \
