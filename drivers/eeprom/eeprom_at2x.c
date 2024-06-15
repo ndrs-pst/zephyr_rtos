@@ -155,7 +155,7 @@ static int eeprom_at2x_write(const struct device* dev, off_t offset, void const*
 
     if (config->readonly) {
         LOG_WRN("attempt to write to read-only device");
-        return -EACCES;
+        return (-EACCES);
     }
 
     if (len == 0U) {

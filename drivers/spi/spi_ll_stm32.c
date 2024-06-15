@@ -1846,18 +1846,28 @@ static void zephyr_gtest_spi_stm32_reg_init(struct spi_stm32_config* cfg) {
             break;
         }
 
+        #if defined(SPI4_BASE)
         case SPI4_BASE : {
             cfg->spi = (SPI_TypeDef*)ut_mcu_spi4_ptr;
             break;
         }
+        #endif
 
+        #if defined(SPI5_BASE)
         case SPI5_BASE : {
             cfg->spi = (SPI_TypeDef*)ut_mcu_spi5_ptr;
             break;
         }
+        #endif
 
-        default : { // SPI6_BASE
+        #if defined(SPI6_BASE)
+        case SPI5_BASE: {
             cfg->spi = (SPI_TypeDef*)ut_mcu_spi6_ptr;
+            break;
+        }
+        #endif
+
+        default : {
             break;
         }
     }
