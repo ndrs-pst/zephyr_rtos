@@ -62,6 +62,14 @@ K_SEM_DEFINE(mcps_confirm_sem, 0, 1);
 K_MUTEX_DEFINE(lorawan_join_mutex);
 K_MUTEX_DEFINE(lorawan_send_mutex);
 
+static void mcps_confirm_handler(McpsConfirm_t* mcps_confirm);
+static void mcps_indication_handler(McpsIndication_t* mcps_indication);
+static void mlme_confirm_handler(MlmeConfirm_t* mlme_confirm);
+static void mlme_indication_handler(MlmeIndication_t* mlme_indication);
+
+static uint8_t get_battery_level(void);
+static void mac_process_notify(void);
+
 struct lorawan_context {
     /* We store both the default datarate requested through lorawan_set_datarate
      * and the current datarate so that we can use the default datarate for all
@@ -72,9 +80,6 @@ struct lorawan_context {
     bool lorawan_adr_enable;
 
     sys_slist_t dl_callbacks;
-
-    LoRaMacPrimitives_t mac_primitives;
-    LoRaMacCallback_t   mac_callbacks;
 
     LoRaMacEventInfoStatus_t last_mcps_confirm_status;
     LoRaMacEventInfoStatus_t last_mlme_confirm_status;
@@ -88,6 +93,24 @@ struct lorawan_context {
 };
 
 static struct lorawan_context lw_context;
+
+static LoRaMacPrimitives_t const lw_mac_primitives = {
+    .MacMcpsConfirm    = mcps_confirm_handler,
+    .MacMcpsIndication = mcps_indication_handler,
+    .MacMlmeConfirm    = mlme_confirm_handler,
+    .MacMlmeIndication = mlme_indication_handler
+};
+
+static LoRaMacCallback_t const lw_mac_callbacks = {
+    .GetBatteryLevel = get_battery_level,
+    .GetTemperatureLevel = NULL,
+    #if IS_ENABLED(CONFIG_LORAWAN_NVM_NONE)
+    .NvmDataChange = NULL,
+    #else
+    .NvmDataChange = lorawan_nvm_data_mgmt_event,
+    #endif
+    .MacProcessNotify = mac_process_notify
+};
 
 static enum lorawan_channels_mask_size region_channels_mask_size =
     DEFAULT_LORAWAN_CHANNELS_MASK_SIZE;
@@ -693,7 +716,7 @@ int lorawan_start(void) {
     PhyParam_t phy_param;
     struct lorawan_context* context = &lw_context;
 
-    status = LoRaMacInitialization(&context->mac_primitives, &context->mac_callbacks,
+    status = LoRaMacInitialization(&lw_mac_primitives, &lw_mac_callbacks,
                                    context->selected_region);
     if (status != LORAMAC_STATUS_OK) {
         LOG_ERR("LoRaMacInitialization failed: %s",
@@ -735,22 +758,6 @@ static int lorawan_init(void) {
     sys_slist_init(&context->dl_callbacks);
 
     context->selected_region = DEFAULT_LORAWAN_REGION;
-
-    context->mac_primitives.MacMcpsConfirm     = mcps_confirm_handler;
-    context->mac_primitives.MacMcpsIndication  = mcps_indication_handler;
-    context->mac_primitives.MacMlmeConfirm     = mlme_confirm_handler;
-    context->mac_primitives.MacMlmeIndication  = mlme_indication_handler;
-    context->mac_callbacks.GetBatteryLevel     = get_battery_level;
-    context->mac_callbacks.GetTemperatureLevel = NULL;
-
-    if (IS_ENABLED(CONFIG_LORAWAN_NVM_NONE)) {
-        context->mac_callbacks.NvmDataChange = NULL;
-    }
-    else {
-        context->mac_callbacks.NvmDataChange = lorawan_nvm_data_mgmt_event;
-    }
-
-    context->mac_callbacks.MacProcessNotify = mac_process_notify;
 
     return (0);
 }
