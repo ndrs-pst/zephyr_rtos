@@ -983,7 +983,11 @@ static int spi_stm32_configure(const struct device* dev,
 
     #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
     if (config->operation & SPI_STPM3X_DRV) {                   /* #CUSTOM@NDRS */
+        #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
         LL_SPI_SetFIFOThreshold(spi, LL_SPI_FIFO_TH_04DATA);
+        #else
+        /* TODO: now support only STM32H7 */
+        #endif
     }
     else {
         ll_func_set_fifo_threshold_8bit(spi);
@@ -1608,7 +1612,9 @@ static int spi_stm32_init(const struct device* dev) {
      * outputs configured at alternate function mode by keeping them forced at state corresponding
      * the current SPI configuration.
      */
+    #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
     LL_SPI_EnableGPIOControl(cfg->spi);                         /* #CUSTOM@NDRS */
+    #endif
 
     #ifdef CONFIG_SPI_STM32_DMA
     if ((data->dma_rx.dma_dev != NULL) &&
