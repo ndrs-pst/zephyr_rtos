@@ -1867,7 +1867,7 @@ static void zephyr_gtest_spi_stm32_reg_init(struct spi_stm32_config* cfg) {
         #endif
 
         #if defined(SPI6_BASE)
-        case SPI5_BASE: {
+        case SPI6_BASE: {
             cfg->spi = (SPI_TypeDef*)ut_mcu_spi6_ptr;
             break;
         }
