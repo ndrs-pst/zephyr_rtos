@@ -31,3 +31,7 @@ properties:
   fifo-enable:
     type: boolean
     description: Enable the SPI FIFO usage for performance improvement.
+
+  stpm3x-isr:
+    type: boolean
+    description: Use STPM3X interrupt service routine

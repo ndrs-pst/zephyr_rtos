@@ -24,8 +24,7 @@ static struct k_obj_type obj_type_timer;
  *
  * @param t  Timeout used by the timer.
  */
-void z_timer_expiration_handler(struct _timeout *t)
-{
+void z_timer_expiration_handler(struct _timeout const* t) {
 	struct k_timer *timer = CONTAINER_OF(t, struct k_timer, timeout);
 	struct k_thread *thread;
 	k_spinlock_key_t key = k_spin_lock(&lock);
@@ -110,10 +109,9 @@ void z_timer_expiration_handler(struct _timeout *t)
 }
 
 
-void k_timer_init(struct k_timer *timer,
-			 k_timer_expiry_t expiry_fn,
-			 k_timer_stop_t stop_fn)
-{
+void k_timer_init(struct k_timer* timer,
+                  k_timer_expiry_t expiry_fn,
+                  k_timer_stop_t stop_fn) {
 	timer->expiry_fn = expiry_fn;
 	timer->stop_fn = stop_fn;
 	timer->status = 0U;
@@ -136,9 +134,8 @@ void k_timer_init(struct k_timer *timer,
 }
 
 
-void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
-			  k_timeout_t period)
-{
+void z_impl_k_timer_start(struct k_timer* timer, k_timeout_t duration,
+                          k_timeout_t period) {
 	SYS_PORT_TRACING_OBJ_FUNC(k_timer, start, timer, duration, period);
 
 	/* Acquire spinlock to ensure safety during concurrent calls to
@@ -175,7 +172,7 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 	timer->status = 0U;
 
 	z_add_timeout(&timer->timeout, z_timer_expiration_handler,
-		     duration);
+                      duration);
 
 	k_spin_unlock(&lock, key);
 }
