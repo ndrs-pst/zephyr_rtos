@@ -94,7 +94,7 @@ static int pack_uint16(uint16_t val, struct buf_ctx *buf)
  */
 static int pack_utf8_str(const struct mqtt_utf8 *str, struct buf_ctx *buf)
 {
-	if ((buf->end - buf->cur) < GET_UT8STR_BUFFER_SIZE(str)) {
+	if ((uintptr_t)(buf->end - buf->cur) < GET_UT8STR_BUFFER_SIZE(str)) {
 		return -ENOMEM;
 	}
 
@@ -102,7 +102,7 @@ static int pack_utf8_str(const struct mqtt_utf8 *str, struct buf_ctx *buf)
 		 (uint32_t)GET_UT8STR_BUFFER_SIZE(str), (void *)buf->cur, (void *)buf->end);
 
 	/* Pack length followed by string. */
-	(void)pack_uint16(str->size, buf);
+	(void) pack_uint16((uint16_t)str->size, buf);
 
 	memcpy(buf->cur, str->utf8, str->size);
 	buf->cur += str->size;
