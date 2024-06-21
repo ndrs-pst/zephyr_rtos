@@ -38,35 +38,33 @@ extern "C" {
  */
 
 /** I2C Standard Speed: 100 kHz */
-#define I2C_SPEED_STANDARD		(0x1U)
+#define /**/I2C_SPEED_STANDARD  (0x01U)
 
 /** I2C Fast Speed: 400 kHz */
-#define I2C_SPEED_FAST			(0x2U)
+#define /**/I2C_SPEED_FAST      (0x02U)
 
 /** I2C Fast Plus Speed: 1 MHz */
-#define I2C_SPEED_FAST_PLUS		(0x3U)
+#define /**/I2C_SPEED_FAST_PLUS (0x03U)
 
 /** I2C High Speed: 3.4 MHz */
-#define I2C_SPEED_HIGH			(0x4U)
+#define /**/I2C_SPEED_HIGH      (0x04U)
 
 /** I2C Ultra Fast Speed: 5 MHz */
-#define I2C_SPEED_ULTRA			(0x5U)
+#define /**/I2C_SPEED_ULTRA     (0x05U)
 
 /** Device Tree specified speed */
-#define I2C_SPEED_DT			(0x7U)
+#define /**/I2C_SPEED_DT        (0x07U)
 
-#define I2C_SPEED_SHIFT			(1U)
-#define I2C_SPEED_SET(speed)		(((speed) << I2C_SPEED_SHIFT) \
-						& I2C_SPEED_MASK)
-#define I2C_SPEED_MASK			(0x7U << I2C_SPEED_SHIFT) /* 3 bits */
-#define I2C_SPEED_GET(cfg) 		(((cfg) & I2C_SPEED_MASK) \
-						>> I2C_SPEED_SHIFT)
+#define I2C_SPEED_SHIFT         (1U)
+#define I2C_SPEED_SET(speed)    (((speed) << I2C_SPEED_SHIFT) & I2C_SPEED_MASK)
+#define I2C_SPEED_MASK          (0x07U << I2C_SPEED_SHIFT) /* 3 bits */
+#define I2C_SPEED_GET(cfg)      (((cfg)&I2C_SPEED_MASK) >> I2C_SPEED_SHIFT)
 
 /** Use 10-bit addressing. DEPRECATED - Use I2C_MSG_ADDR_10_BITS instead. */
-#define I2C_ADDR_10_BITS		BIT(0)
+#define I2C_ADDR_10_BITS        BIT(0)
 
 /** Peripheral to act as Controller. */
-#define I2C_MODE_CONTROLLER		BIT(4)
+#define /**/I2C_MODE_CONTROLLER BIT(4)
 
 /**
  * @brief Complete I2C DT information
@@ -75,8 +73,8 @@ extern "C" {
  * @param addr is the target address
  */
 struct i2c_dt_spec {
-	const struct device *bus;
-	uint16_t addr;
+    const struct device *bus;
+    uint16_t addr;
 };
 
 /**
@@ -89,9 +87,9 @@ struct i2c_dt_spec {
  * @param node_id Devicetree node identifier for the I2C device whose
  *                struct i2c_dt_spec to create an initializer for
  */
-#define I2C_DT_SPEC_GET_ON_I3C(node_id)					\
-	.bus = DEVICE_DT_GET(DT_BUS(node_id)),				\
-	.addr = DT_PROP_BY_IDX(node_id, reg, 0)
+#define I2C_DT_SPEC_GET_ON_I3C(node_id)             \
+    .bus = DEVICE_DT_GET(DT_BUS(node_id)),          \
+    .addr = DT_PROP_BY_IDX(node_id, reg, 0)
 
 /**
  * @brief Structure initializer for i2c_dt_spec from devicetree (on I2C bus)
@@ -103,9 +101,9 @@ struct i2c_dt_spec {
  * @param node_id Devicetree node identifier for the I2C device whose
  *                struct i2c_dt_spec to create an initializer for
  */
-#define I2C_DT_SPEC_GET_ON_I2C(node_id)					\
-	.bus = DEVICE_DT_GET(DT_BUS(node_id)),				\
-	.addr = DT_REG_ADDR(node_id)
+#define I2C_DT_SPEC_GET_ON_I2C(node_id)             \
+    .bus = DEVICE_DT_GET(DT_BUS(node_id)),          \
+    .addr = DT_REG_ADDR(node_id)
 
 /**
  * @brief Structure initializer for i2c_dt_spec from devicetree
@@ -117,12 +115,12 @@ struct i2c_dt_spec {
  * @param node_id Devicetree node identifier for the I2C device whose
  *                struct i2c_dt_spec to create an initializer for
  */
-#define I2C_DT_SPEC_GET(node_id)					\
-	{								\
-		COND_CODE_1(DT_ON_BUS(node_id, i3c),			\
-			    (I2C_DT_SPEC_GET_ON_I3C(node_id)),		\
-			    (I2C_DT_SPEC_GET_ON_I2C(node_id)))		\
-	}
+#define I2C_DT_SPEC_GET(node_id)                    \
+    {                                               \
+        COND_CODE_1(DT_ON_BUS(node_id, i3c),        \
+                    (I2C_DT_SPEC_GET_ON_I3C(node_id)),  \
+                    (I2C_DT_SPEC_GET_ON_I2C(node_id)))  \
+    }
 
 /**
  * @brief Structure initializer for i2c_dt_spec from devicetree instance
@@ -133,25 +131,24 @@ struct i2c_dt_spec {
  * @param inst Devicetree instance number
  */
 #define I2C_DT_SPEC_INST_GET(inst) \
-	I2C_DT_SPEC_GET(DT_DRV_INST(inst))
-
+    I2C_DT_SPEC_GET(DT_DRV_INST(inst))
 
 /*
  * I2C_MSG_* are I2C Message flags.
  */
 
 /** Write message to I2C bus. */
-#define I2C_MSG_WRITE			(0U << 0U)
+#define /**/I2C_MSG_WRITE           (0U << 0U)
 
 /** Read message from I2C bus. */
-#define I2C_MSG_READ			BIT(0)
+#define /**/I2C_MSG_READ            BIT(0)
 
 /** @cond INTERNAL_HIDDEN */
-#define I2C_MSG_RW_MASK			BIT(0)
+#define I2C_MSG_RW_MASK             BIT(0)
 /** @endcond  */
 
 /** Send STOP after this message. */
-#define I2C_MSG_STOP			BIT(1)
+#define /**/I2C_MSG_STOP            BIT(1)
 
 /** RESTART I2C transaction for this message.
  *
@@ -160,12 +157,12 @@ struct i2c_dt_spec {
  * that follows a write, or vice-versa.  Some drivers will merge
  * adjacent fragments into a single transaction using this flag; some
  * will not. */
-#define I2C_MSG_RESTART			BIT(2)
+#define /**/I2C_MSG_RESTART         BIT(2)
 
 /** Use 10-bit addressing for this message.
  *
  * @note Not all SoC I2C implementations support this feature. */
-#define I2C_MSG_ADDR_10_BITS		BIT(3)
+#define /**/I2C_MSG_ADDR_10_BITS    BIT(3)
 
 /**
  * @brief One I2C Message.
@@ -182,14 +179,14 @@ struct i2c_dt_spec {
  * or without presence of @ref I2C_MSG_RESTART in #flags.
  */
 struct i2c_msg {
-	/** Data buffer in bytes */
-	uint8_t		*buf;
+    /** Data buffer in bytes */
+    uint8_t* buf;
 
-	/** Length of buffer in bytes */
-	uint32_t	len;
+    /** Length of buffer in bytes */
+    uint32_t len;
 
-	/** Flags for this message */
-	uint8_t		flags;
+    /** Flags for this message */
+    uint8_t flags;
 };
 
 /**
@@ -199,7 +196,7 @@ struct i2c_msg {
  * @param result Result code of the transfer request. 0 is success, -errno for failure.
  * @param data Transfer requester supplied data which is passed along to the callback.
  */
-typedef void (*i2c_callback_t)(const struct device *dev, int result, void *data);
+typedef void (*i2c_callback_t)(const struct device* dev, int result, void* data);
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -209,25 +206,25 @@ typedef void (*i2c_callback_t)(const struct device *dev, int result, void *data)
  */
 struct i2c_target_config;
 
-typedef int (*i2c_api_configure_t)(const struct device *dev,
-				   uint32_t dev_config);
-typedef int (*i2c_api_get_config_t)(const struct device *dev,
-				    uint32_t *dev_config);
-typedef int (*i2c_api_full_io_t)(const struct device *dev,
-				 struct i2c_msg *msgs,
-				 uint8_t num_msgs,
-				 uint16_t addr);
-typedef int (*i2c_api_target_register_t)(const struct device *dev,
-					struct i2c_target_config *cfg);
-typedef int (*i2c_api_target_unregister_t)(const struct device *dev,
-					  struct i2c_target_config *cfg);
+typedef int (*i2c_api_configure_t)(const struct device* dev,
+                                   uint32_t dev_config);
+typedef int (*i2c_api_get_config_t)(const struct device* dev,
+                                    uint32_t* dev_config);
+typedef int (*i2c_api_full_io_t)(const struct device* dev,
+                                 struct i2c_msg* msgs,
+                                 uint8_t num_msgs,
+                                 uint16_t addr);
+typedef int (*i2c_api_target_register_t)(const struct device* dev,
+                                         struct i2c_target_config* cfg);
+typedef int (*i2c_api_target_unregister_t)(const struct device* dev,
+                                           struct i2c_target_config* cfg);
 #ifdef CONFIG_I2C_CALLBACK
-typedef int (*i2c_api_transfer_cb_t)(const struct device *dev,
-				 struct i2c_msg *msgs,
-				 uint8_t num_msgs,
-				 uint16_t addr,
-				 i2c_callback_t cb,
-				 void *userdata);
+typedef int (*i2c_api_transfer_cb_t)(const struct device* dev,
+                                     struct i2c_msg* msgs,
+                                     uint8_t num_msgs,
+                                     uint16_t addr,
+                                     i2c_callback_t cb,
+                                     void* userdata);
 #endif /* CONFIG_I2C_CALLBACK */
 #if defined(CONFIG_I2C_RTIO) || defined(__DOXYGEN__)
 
@@ -235,33 +232,35 @@ typedef int (*i2c_api_transfer_cb_t)(const struct device *dev,
  * @typedef i2c_api_iodev_submit
  * @brief Callback API for submitting work to a I2C device with RTIO
  */
-typedef void (*i2c_api_iodev_submit)(const struct device *dev,
-				     struct rtio_iodev_sqe *iodev_sqe);
+typedef void (*i2c_api_iodev_submit)(const struct device* dev,
+                                     struct rtio_iodev_sqe* iodev_sqe);
 #endif /* CONFIG_I2C_RTIO */
 
-typedef int (*i2c_api_recover_bus_t)(const struct device *dev);
+typedef int (*i2c_api_recover_bus_t)(const struct device* dev);
 
 __subsystem struct i2c_driver_api {
-	i2c_api_configure_t configure;
-	i2c_api_get_config_t get_config;
-	i2c_api_full_io_t transfer;
-	i2c_api_target_register_t target_register;
-	i2c_api_target_unregister_t target_unregister;
-#ifdef CONFIG_I2C_CALLBACK
-	i2c_api_transfer_cb_t transfer_cb;
-#endif
-#ifdef CONFIG_I2C_RTIO
-	i2c_api_iodev_submit iodev_submit;
-#endif
-	i2c_api_recover_bus_t recover_bus;
+    i2c_api_configure_t         configure;
+    i2c_api_get_config_t        get_config;
+    i2c_api_full_io_t           transfer;
+    i2c_api_target_register_t   target_register;
+    i2c_api_target_unregister_t target_unregister;
+
+    #ifdef CONFIG_I2C_CALLBACK
+    i2c_api_transfer_cb_t transfer_cb;
+    #endif
+
+    #ifdef CONFIG_I2C_RTIO
+    i2c_api_iodev_submit iodev_submit;
+    #endif
+    i2c_api_recover_bus_t recover_bus;
 };
 
-typedef int (*i2c_target_api_register_t)(const struct device *dev);
-typedef int (*i2c_target_api_unregister_t)(const struct device *dev);
+typedef int (*i2c_target_api_register_t)(const struct device* dev);
+typedef int (*i2c_target_api_unregister_t)(const struct device* dev);
 
 __subsystem struct i2c_target_driver_api {
-	i2c_target_api_register_t driver_register;
-	i2c_target_api_unregister_t driver_unregister;
+    i2c_target_api_register_t   driver_register;
+    i2c_target_api_unregister_t driver_unregister;
 };
 
 /**
@@ -269,7 +268,7 @@ __subsystem struct i2c_target_driver_api {
  */
 
 /** Target device responds to 10-bit addressing. */
-#define I2C_TARGET_FLAGS_ADDR_10_BITS	BIT(0)
+#define I2C_TARGET_FLAGS_ADDR_10_BITS   BIT(0)
 
 /** @brief Function called when a write to the device is initiated.
  *
@@ -287,7 +286,7 @@ __subsystem struct i2c_target_driver_api {
  * @return 0 if the write is accepted, or a negative error code.
  */
 typedef int (*i2c_target_write_requested_cb_t)(
-		struct i2c_target_config *config);
+                struct i2c_target_config* config);
 
 /** @brief Function called when a write to the device is continued.
  *
@@ -308,7 +307,7 @@ typedef int (*i2c_target_write_requested_cb_t)(
  * code.
  */
 typedef int (*i2c_target_write_received_cb_t)(
-		struct i2c_target_config *config, uint8_t val);
+                struct i2c_target_config* config, uint8_t val);
 
 /** @brief Function called when a read from the device is initiated.
  *
@@ -330,7 +329,7 @@ typedef int (*i2c_target_write_received_cb_t)(
  * @return 0 if more data can be requested, or a negative error code.
  */
 typedef int (*i2c_target_read_requested_cb_t)(
-		struct i2c_target_config *config, uint8_t *val);
+                struct i2c_target_config* config, uint8_t* val);
 
 /** @brief Function called when a read from the device is continued.
  *
@@ -352,7 +351,7 @@ typedef int (*i2c_target_read_requested_cb_t)(
  * @return 0 if data has been provided, or a negative error code.
  */
 typedef int (*i2c_target_read_processed_cb_t)(
-		struct i2c_target_config *config, uint8_t *val);
+                struct i2c_target_config* config, uint8_t* val);
 
 #ifdef CONFIG_I2C_TARGET_BUFFER_MODE
 /** @brief Function called when a write to the device is completed.
@@ -369,7 +368,7 @@ typedef int (*i2c_target_read_processed_cb_t)(
  * @param len the length of the data to be transferred.
  */
 typedef void (*i2c_target_buf_write_received_cb_t)(
-		struct i2c_target_config *config, uint8_t *ptr, uint32_t len);
+        struct i2c_target_config* config, uint8_t* ptr, uint32_t len);
 
 /** @brief Function called when a read from the device is initiated.
  *
@@ -394,7 +393,7 @@ typedef void (*i2c_target_buf_write_received_cb_t)(
  * @return 0 if data has been provided, or a negative error code.
  */
 typedef int (*i2c_target_buf_read_requested_cb_t)(
-		struct i2c_target_config *config, uint8_t **ptr, uint32_t *len);
+                struct i2c_target_config* config, uint8_t** ptr, uint32_t* len);
 #endif
 
 /** @brief Function called when a stop condition is observed after a
@@ -411,7 +410,7 @@ typedef int (*i2c_target_buf_read_requested_cb_t)(
  *
  * @return Ignored.
  */
-typedef int (*i2c_target_stop_cb_t)(struct i2c_target_config *config);
+typedef int (*i2c_target_stop_cb_t)(struct i2c_target_config* config);
 
 /** @brief Structure providing callbacks to be implemented for devices
  * that supports the I2C target API.
@@ -420,15 +419,15 @@ typedef int (*i2c_target_stop_cb_t)(struct i2c_target_config *config);
  * same API at different addresses on the bus.
  */
 struct i2c_target_callbacks {
-	i2c_target_write_requested_cb_t write_requested;
-	i2c_target_read_requested_cb_t read_requested;
-	i2c_target_write_received_cb_t write_received;
-	i2c_target_read_processed_cb_t read_processed;
-#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
-	i2c_target_buf_write_received_cb_t buf_write_received;
-	i2c_target_buf_read_requested_cb_t buf_read_requested;
-#endif
-	i2c_target_stop_cb_t stop;
+    i2c_target_write_requested_cb_t write_requested;
+    i2c_target_read_requested_cb_t  read_requested;
+    i2c_target_write_received_cb_t  write_received;
+    i2c_target_read_processed_cb_t  read_processed;
+    #ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+    i2c_target_buf_write_received_cb_t buf_write_received;
+    i2c_target_buf_read_requested_cb_t buf_read_requested;
+    #endif
+    i2c_target_stop_cb_t stop;
 };
 
 /** @brief Structure describing a device that supports the I2C
@@ -443,17 +442,17 @@ struct i2c_target_callbacks {
  * reference to i2c_target_register().
  */
 struct i2c_target_config {
-	/** Private, do not modify */
-	sys_snode_t node;
+    /** Private, do not modify */
+    sys_snode_t node;
 
-	/** Flags for the target device defined by I2C_TARGET_FLAGS_* constants */
-	uint8_t flags;
+    /** Flags for the target device defined by I2C_TARGET_FLAGS_* constants */
+    uint8_t flags;
 
-	/** Address for this target device */
-	uint16_t address;
+    /** Address for this target device */
+    uint16_t address;
 
-	/** Callback functions */
-	const struct i2c_target_callbacks *callbacks;
+    /** Callback functions */
+    const struct i2c_target_callbacks* callbacks;
 };
 
 /**
@@ -464,10 +463,9 @@ struct i2c_target_config {
  * @retval true if the I2C bus is ready for use.
  * @retval false if the I2C bus is not ready for use.
  */
-static inline bool i2c_is_ready_dt(const struct i2c_dt_spec *spec)
-{
-	/* Validate bus is ready */
-	return device_is_ready(spec->bus);
+static inline bool i2c_is_ready_dt(const struct i2c_dt_spec* spec) {
+    /* Validate bus is ready */
+    return device_is_ready(spec->bus);
 }
 
 /**
@@ -508,8 +506,8 @@ static inline bool i2c_is_read_op(struct i2c_msg *msg)
  * @param addr Address of the I2C target device.
  * @param dump_read Dump data from I2C reads, otherwise only writes have data dumped.
  */
-void i2c_dump_msgs_rw(const struct device *dev, const struct i2c_msg *msgs, uint8_t num_msgs,
-		      uint16_t addr, bool dump_read);
+void i2c_dump_msgs_rw(const struct device* dev, const struct i2c_msg* msgs, uint8_t num_msgs,
+                      uint16_t addr, bool dump_read);
 
 /**
  * @brief Dump out an I2C message, before it is executed.
@@ -525,10 +523,9 @@ void i2c_dump_msgs_rw(const struct device *dev, const struct i2c_msg *msgs, uint
  * @param num_msgs Number of messages to dump.
  * @param addr Address of the I2C target device.
  */
-static inline void i2c_dump_msgs(const struct device *dev, const struct i2c_msg *msgs,
-				 uint8_t num_msgs, uint16_t addr)
-{
-	i2c_dump_msgs_rw(dev, msgs, num_msgs, addr, false);
+static inline void i2c_dump_msgs(const struct device* dev, const struct i2c_msg* msgs,
+                                 uint8_t num_msgs, uint16_t addr) {
+    i2c_dump_msgs_rw(dev, msgs, num_msgs, addr, false);
 }
 
 #if defined(CONFIG_I2C_STATS) || defined(__DOXYGEN__)
@@ -553,13 +550,12 @@ STATS_NAME_END(i2c);
 
 /** @endcond */
 
-
 /**
  * @brief I2C specific device state which allows for i2c device class specific additions
  */
 struct i2c_device_state {
-	struct device_state devstate;
-	struct stats_i2c stats;
+    struct device_state devstate;
+    struct stats_i2c    stats;
 };
 
 /**
@@ -569,25 +565,25 @@ struct i2c_device_state {
  * @param msgs Array of struct i2c_msg
  * @param num_msgs Number of i2c_msgs
  */
-static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs,
-				  uint8_t num_msgs)
-{
-	struct i2c_device_state *state =
-		CONTAINER_OF(dev->state, struct i2c_device_state, devstate);
-	uint32_t bytes_read = 0U;
-	uint32_t bytes_written = 0U;
+static inline void i2c_xfer_stats(const struct device* dev, struct i2c_msg* msgs,
+                                  uint8_t num_msgs) {
+    struct i2c_device_state* state =
+            CONTAINER_OF(dev->state, struct i2c_device_state, devstate);
+    uint32_t bytes_read    = 0U;
+    uint32_t bytes_written = 0U;
 
-	STATS_INC(state->stats, transfer_call_count);
-	STATS_INCN(state->stats, message_count, num_msgs);
-	for (uint8_t i = 0U; i < num_msgs; i++) {
-		if (msgs[i].flags & I2C_MSG_READ) {
-			bytes_read += msgs[i].len;
-		} else {
-			bytes_written += msgs[i].len;
-		}
-	}
-	STATS_INCN(state->stats, bytes_read, bytes_read);
-	STATS_INCN(state->stats, bytes_written, bytes_written);
+    STATS_INC(state->stats, transfer_call_count);
+    STATS_INCN(state->stats, message_count, num_msgs);
+    for (uint8_t i = 0U; i < num_msgs; i++) {
+        if (msgs[i].flags & I2C_MSG_READ) {
+            bytes_read += msgs[i].len;
+        }
+        else {
+            bytes_written += msgs[i].len;
+        }
+    }
+    STATS_INCN(state->stats, bytes_read, bytes_read);
+    STATS_INCN(state->stats, bytes_written, bytes_written);
 }
 
 /** @cond INTERNAL_HIDDEN */
@@ -595,9 +591,9 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 /**
  * @brief Define a statically allocated and section assigned i2c device state
  */
-#define Z_I2C_DEVICE_STATE_DEFINE(dev_id)				\
-	static struct i2c_device_state Z_DEVICE_STATE_NAME(dev_id)	\
-	__attribute__((__section__(".z_devstate")))
+#define Z_I2C_DEVICE_STATE_DEFINE(dev_id)                       \
+    static struct i2c_device_state Z_DEVICE_STATE_NAME(dev_id)  \
+    __attribute__((__section__(".z_devstate")))
 
 /**
  * @brief Define an i2c device init wrapper function
@@ -605,20 +601,19 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  * This does device instance specific initialization of common data (such as stats)
  * and calls the given init_fn
  */
-#define Z_I2C_INIT_FN(dev_id, init_fn)					\
-	static inline int UTIL_CAT(dev_id, _init)(const struct device *dev) \
-	{								\
-		struct i2c_device_state *state =			\
-			CONTAINER_OF(dev->state, struct i2c_device_state, devstate); \
-		stats_init(&state->stats.s_hdr, STATS_SIZE_32, 4,	\
-			   STATS_NAME_INIT_PARMS(i2c));			\
-		stats_register(dev->name, &(state->stats.s_hdr));	\
-		if (!is_null_no_warn(init_fn)) {			\
-			return init_fn(dev);				\
-		}							\
-									\
-		return 0;						\
-	}
+#define Z_I2C_INIT_FN(dev_id, init_fn)      \
+    static inline int UTIL_CAT(dev_id, _init)(const struct device* dev) {       \
+        struct i2c_device_state* state =    \
+                CONTAINER_OF(dev->state, struct i2c_device_state, devstate);    \
+        stats_init(&state->stats.s_hdr, STATS_SIZE_32, 4,   \
+                   STATS_NAME_INIT_PARMS(i2c));             \
+        stats_register(dev->name, &(state->stats.s_hdr));   \
+        if (!is_null_no_warn(init_fn)) {    \
+            return init_fn(dev);            \
+        }                                   \
+                                            \
+        return (0);                         \
+    }
 
 /** @endcond */
 
@@ -649,31 +644,30 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  * @param api Provides an initial pointer to the API function struct
  * used by the driver. Can be NULL.
  */
-#define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
-			     prio, api, ...)				\
-	Z_I2C_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));		\
-	Z_I2C_INIT_FN(Z_DEVICE_DT_DEV_ID(node_id), init_fn)		\
-	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),		\
-			DEVICE_DT_NAME(node_id),			\
-			&UTIL_CAT(Z_DEVICE_DT_DEV_ID(node_id), _init),	\
-			pm, data, config, level, prio, api,	\
-			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)).devstate), \
-			__VA_ARGS__)
+#define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, \
+                             prio, api, ...)                    \
+    Z_I2C_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));     \
+    Z_I2C_INIT_FN(Z_DEVICE_DT_DEV_ID(node_id), init_fn)         \
+    Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),       \
+                    DEVICE_DT_NAME(node_id),                    \
+                    &UTIL_CAT(Z_DEVICE_DT_DEV_ID(node_id), _init),  \
+                    pm, data, config, level, prio, api,         \
+                    &(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)).devstate), \
+                    __VA_ARGS__)
 
 #else /* CONFIG_I2C_STATS */
 
-static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs,
-				  uint8_t num_msgs)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(msgs);
-	ARG_UNUSED(num_msgs);
+static inline void i2c_xfer_stats(const struct device* dev, struct i2c_msg* msgs,
+                                  uint8_t num_msgs) {
+    ARG_UNUSED(dev);
+    ARG_UNUSED(msgs);
+    ARG_UNUSED(num_msgs);
 }
 
-#define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
-			     prio, api, ...)				\
-	DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
-			 prio, api, __VA_ARGS__)
+#define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, \
+                             prio, api, ...)                            \
+    DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,         \
+                     prio, api, __VA_ARGS__)
 
 #endif /* CONFIG_I2C_STATS */
 
@@ -685,9 +679,8 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  *
  * @param ... other parameters as expected by I2C_DEVICE_DT_DEFINE().
  */
-#define I2C_DEVICE_DT_INST_DEFINE(inst, ...)		\
-	I2C_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
-
+#define I2C_DEVICE_DT_INST_DEFINE(inst, ...)        \
+    I2C_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
  * @brief Configure operation of a host controller.
@@ -699,15 +692,14 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  * @retval 0 If successful.
  * @retval -EIO General input / output error, failed to configure device.
  */
-__syscall int i2c_configure(const struct device *dev, uint32_t dev_config);
+__syscall int i2c_configure(const struct device* dev, uint32_t dev_config);
 
-static inline int z_impl_i2c_configure(const struct device *dev,
-				       uint32_t dev_config)
-{
-	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->api;
+static inline int z_impl_i2c_configure(const struct device* dev,
+                                       uint32_t dev_config) {
+    const struct i2c_driver_api* api =
+            (const struct i2c_driver_api*)dev->api;
 
-	return api->configure(dev, dev_config);
+    return api->configure(dev, dev_config);
 }
 
 /**
@@ -730,17 +722,16 @@ static inline int z_impl_i2c_configure(const struct device *dev,
  * @retval -ERANGE Configured I2C frequency is invalid.
  * @retval -ENOSYS If get config is not implemented
  */
-__syscall int i2c_get_config(const struct device *dev, uint32_t *dev_config);
+__syscall int i2c_get_config(const struct device* dev, uint32_t* dev_config);
 
-static inline int z_impl_i2c_get_config(const struct device *dev, uint32_t *dev_config)
-{
-	const struct i2c_driver_api *api = (const struct i2c_driver_api *)dev->api;
+static inline int z_impl_i2c_get_config(const struct device* dev, uint32_t* dev_config) {
+    const struct i2c_driver_api* api = (const struct i2c_driver_api*)dev->api;
 
-	if (api->get_config == NULL) {
-		return -ENOSYS;
-	}
+    if (api->get_config == NULL) {
+        return (-ENOSYS);
+    }
 
-	return api->get_config(dev, dev_config);
+    return api->get_config(dev, dev_config);
 }
 
 /**
@@ -774,26 +765,25 @@ static inline int z_impl_i2c_get_config(const struct device *dev, uint32_t *dev_
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-__syscall int i2c_transfer(const struct device *dev,
-			   struct i2c_msg *msgs, uint8_t num_msgs,
-			   uint16_t addr);
+__syscall int i2c_transfer(const struct device* dev,
+                           struct i2c_msg* msgs, uint8_t num_msgs,
+                           uint16_t addr);
 
-static inline int z_impl_i2c_transfer(const struct device *dev,
-				      struct i2c_msg *msgs, uint8_t num_msgs,
-				      uint16_t addr)
-{
-	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->api;
+static inline int z_impl_i2c_transfer(const struct device* dev,
+                                      struct i2c_msg* msgs, uint8_t num_msgs,
+                                      uint16_t addr) {
+    const struct i2c_driver_api* api =
+            (const struct i2c_driver_api*)dev->api;
 
-	int res =  api->transfer(dev, msgs, num_msgs, addr);
+    int res = api->transfer(dev, msgs, num_msgs, addr);
 
-	i2c_xfer_stats(dev, msgs, num_msgs);
+    i2c_xfer_stats(dev, msgs, num_msgs);
 
-	if (IS_ENABLED(CONFIG_I2C_DUMP_MESSAGES)) {
-		i2c_dump_msgs_rw(dev, msgs, num_msgs, addr, true);
-	}
+    if (IS_ENABLED(CONFIG_I2C_DUMP_MESSAGES)) {
+        i2c_dump_msgs_rw(dev, msgs, num_msgs, addr, true);
+    }
 
-	return res;
+    return (res);
 }
 
 #if defined(CONFIG_I2C_CALLBACK) || defined(__DOXYGEN__)
@@ -820,20 +810,19 @@ static inline int z_impl_i2c_transfer(const struct device *dev,
  * @retval -ENOSYS If transfer async is not implemented
  * @retval -EWOULDBLOCK If the device is temporarily busy doing another transfer
  */
-static inline int i2c_transfer_cb(const struct device *dev,
-				 struct i2c_msg *msgs,
-				 uint8_t num_msgs,
-				 uint16_t addr,
-				 i2c_callback_t cb,
-				 void *userdata)
-{
-	const struct i2c_driver_api *api = (const struct i2c_driver_api *)dev->api;
+static inline int i2c_transfer_cb(const struct device* dev,
+                                  struct i2c_msg* msgs,
+                                  uint8_t num_msgs,
+                                  uint16_t addr,
+                                  i2c_callback_t cb,
+                                  void* userdata) {
+    const struct i2c_driver_api* api = (const struct i2c_driver_api*)dev->api;
 
-	if (api->transfer_cb == NULL) {
-		return -ENOSYS;
-	}
+    if (api->transfer_cb == NULL) {
+        return (-ENOSYS);
+    }
 
-	return api->transfer_cb(dev, msgs, num_msgs, addr, cb, userdata);
+    return api->transfer_cb(dev, msgs, num_msgs, addr, cb, userdata);
 }
 
 /**
@@ -851,13 +840,12 @@ static inline int i2c_transfer_cb(const struct device *dev,
  *
  * @return a value from i2c_transfer_cb()
  */
-static inline int i2c_transfer_cb_dt(const struct i2c_dt_spec *spec,
-				struct i2c_msg *msgs,
-				uint8_t num_msgs,
-				i2c_callback_t cb,
-				void *userdata)
-{
-	return i2c_transfer_cb(spec->bus, msgs, num_msgs, spec->addr, cb, userdata);
+static inline int i2c_transfer_cb_dt(const struct i2c_dt_spec* spec,
+                                     struct i2c_msg* msgs,
+                                     uint8_t num_msgs,
+                                     i2c_callback_t cb,
+                                     void* userdata) {
+    return i2c_transfer_cb(spec->bus, msgs, num_msgs, spec->addr, cb, userdata);
 }
 
 /**
@@ -883,24 +871,23 @@ static inline int i2c_transfer_cb_dt(const struct i2c_dt_spec *spec,
  * @retval 0 if successful
  * @retval negative on error.
  */
-static inline int i2c_write_read_cb(const struct device *dev, struct i2c_msg *msgs,
-				 uint8_t num_msgs, uint16_t addr, const void *write_buf,
-				 size_t num_write, void *read_buf, size_t num_read,
-				 i2c_callback_t cb, void *userdata)
-{
-	if ((msgs == NULL) || (num_msgs != 2)) {
-		return -EINVAL;
-	}
+static inline int i2c_write_read_cb(const struct device* dev, struct i2c_msg* msgs,
+                                    uint8_t num_msgs, uint16_t addr, void const* write_buf,
+                                    size_t num_write, void* read_buf, size_t num_read,
+                                    i2c_callback_t cb, void* userdata) {
+    if ((msgs == NULL) || (num_msgs != 2)) {
+        return (-EINVAL);
+    }
 
-	msgs[0].buf = (uint8_t *)write_buf;
-	msgs[0].len = num_write;
-	msgs[0].flags = I2C_MSG_WRITE;
+    msgs[0].buf   = (uint8_t*)write_buf;
+    msgs[0].len   = num_write;
+    msgs[0].flags = I2C_MSG_WRITE;
 
-	msgs[1].buf = (uint8_t *)read_buf;
-	msgs[1].len = num_read;
-	msgs[1].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
+    msgs[1].buf   = (uint8_t*)read_buf;
+    msgs[1].len   = num_read;
+    msgs[1].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
 
-	return i2c_transfer_cb(dev, msgs, num_msgs, addr, cb, userdata);
+    return i2c_transfer_cb(dev, msgs, num_msgs, addr, cb, userdata);
 }
 
 /**
@@ -924,19 +911,19 @@ static inline int i2c_write_read_cb(const struct device *dev, struct i2c_msg *ms
  *
  * @return a value from i2c_write_read_cb()
  */
-static inline int i2c_write_read_cb_dt(const struct i2c_dt_spec *spec, struct i2c_msg *msgs,
-				       uint8_t num_msgs, const void *write_buf, size_t num_write,
-				       void *read_buf, size_t num_read, i2c_callback_t cb,
-				       void *userdata)
-{
-	return i2c_write_read_cb(spec->bus, msgs, num_msgs, spec->addr, write_buf, num_write,
-				 read_buf, num_read, cb, userdata);
+static inline int i2c_write_read_cb_dt(const struct i2c_dt_spec* spec, struct i2c_msg* msgs,
+                                       uint8_t num_msgs, void const* write_buf, size_t num_write,
+                                       void* read_buf, size_t num_read, i2c_callback_t cb,
+                                       void* userdata) {
+    return i2c_write_read_cb(spec->bus, msgs, num_msgs, spec->addr, write_buf, num_write,
+                             read_buf, num_read, cb, userdata);
 }
 
 #if defined(CONFIG_POLL) || defined(__DOXYGEN__)
 
 /** @cond INTERNAL_HIDDEN */
-void z_i2c_transfer_signal_cb(const struct device *dev, int result, void *userdata);
+void z_i2c_transfer_signal_cb(const struct device* dev, int result, void* userdata);
+
 /** @endcond */
 
 /**
@@ -960,25 +947,23 @@ void z_i2c_transfer_signal_cb(const struct device *dev, int result, void *userda
  * @retval -ENOSYS If transfer async is not implemented
  * @retval -EWOULDBLOCK If the device is temporarily busy doing another transfer
  */
-static inline int i2c_transfer_signal(const struct device *dev,
-				 struct i2c_msg *msgs,
-				 uint8_t num_msgs,
-				 uint16_t addr,
-				 struct k_poll_signal *sig)
-{
-	const struct i2c_driver_api *api = (const struct i2c_driver_api *)dev->api;
+static inline int i2c_transfer_signal(const struct device* dev,
+                                      struct i2c_msg* msgs,
+                                      uint8_t num_msgs,
+                                      uint16_t addr,
+                                      struct k_poll_signal* sig) {
+    const struct i2c_driver_api* api = (const struct i2c_driver_api*)dev->api;
 
-	if (api->transfer_cb == NULL) {
-		return -ENOSYS;
-	}
+    if (api->transfer_cb == NULL) {
+        return -ENOSYS;
+    }
 
-	return api->transfer_cb(dev, msgs, num_msgs, addr, z_i2c_transfer_signal_cb, sig);
+    return api->transfer_cb(dev, msgs, num_msgs, addr, z_i2c_transfer_signal_cb, sig);
 }
 
 #endif /* CONFIG_POLL */
 
 #endif /* CONFIG_I2C_CALLBACK */
-
 
 #if defined(CONFIG_I2C_RTIO) || defined(__DOXYGEN__)
 
@@ -988,13 +973,12 @@ static inline int i2c_transfer_signal(const struct device *dev,
  * @param iodev_sqe Prepared submissions queue entry connected to an iodev
  *                  defined by I2C_DT_IODEV_DEFINE.
  */
-static inline void i2c_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
-{
-	const struct i2c_dt_spec *dt_spec = (const struct i2c_dt_spec *)iodev_sqe->sqe.iodev->data;
-	const struct device *dev = dt_spec->bus;
-	const struct i2c_driver_api *api = (const struct i2c_driver_api *)dev->api;
+static inline void i2c_iodev_submit(struct rtio_iodev_sqe* iodev_sqe) {
+    const struct i2c_dt_spec* dt_spec = (const struct i2c_dt_spec*)iodev_sqe->sqe.iodev->data;
+    const struct device* dev = dt_spec->bus;
+    const struct i2c_driver_api* api = (const struct i2c_driver_api*)dev->api;
 
-	api->iodev_submit(dt_spec->bus, iodev_sqe);
+    api->iodev_submit(dt_spec->bus, iodev_sqe);
 }
 
 extern const struct rtio_iodev_api i2c_iodev_api;
@@ -1008,10 +992,10 @@ extern const struct rtio_iodev_api i2c_iodev_api;
  * @param name Symbolic name of the iodev to define
  * @param node_id Devicetree node identifier
  */
-#define I2C_DT_IODEV_DEFINE(name, node_id)					\
-	const struct i2c_dt_spec _i2c_dt_spec_##name =				\
-		I2C_DT_SPEC_GET(node_id);					\
-	RTIO_IODEV_DEFINE(name, &i2c_iodev_api, (void *)&_i2c_dt_spec_##name)
+#define I2C_DT_IODEV_DEFINE(name, node_id)                              \
+    const struct i2c_dt_spec _i2c_dt_spec_##name =                      \
+            I2C_DT_SPEC_GET(node_id);                                   \
+    RTIO_IODEV_DEFINE(name, &i2c_iodev_api, (void*)&_i2c_dt_spec_##name)
 
 /**
  * @brief Define an iodev for a given i2c device on a bus
@@ -1041,10 +1025,10 @@ extern const struct rtio_iodev_api i2c_iodev_api;
  * @retval sqe Last submission in the queue added
  * @retval NULL Not enough memory in the context to copy the requests
  */
-struct rtio_sqe *i2c_rtio_copy(struct rtio *r,
-			       struct rtio_iodev *iodev,
-			       const struct i2c_msg *msgs,
-			       uint8_t num_msgs);
+struct rtio_sqe* i2c_rtio_copy(struct rtio* r,
+                               struct rtio_iodev* iodev,
+                               const struct i2c_msg* msgs,
+                               uint8_t num_msgs);
 
 #endif /* CONFIG_I2C_RTIO */
 
@@ -1061,10 +1045,9 @@ struct rtio_sqe *i2c_rtio_copy(struct rtio *r,
  *
  * @return a value from i2c_transfer()
  */
-static inline int i2c_transfer_dt(const struct i2c_dt_spec *spec,
-				  struct i2c_msg *msgs, uint8_t num_msgs)
-{
-	return i2c_transfer(spec->bus, msgs, num_msgs, spec->addr);
+static inline int i2c_transfer_dt(const struct i2c_dt_spec* spec,
+                                  struct i2c_msg* msgs, uint8_t num_msgs) {
+    return i2c_transfer(spec->bus, msgs, num_msgs, spec->addr);
 }
 
 /**
@@ -1079,18 +1062,17 @@ static inline int i2c_transfer_dt(const struct i2c_dt_spec *spec,
  * @retval -EIO General input / output error.
  * @retval -ENOSYS If bus recovery is not implemented
  */
-__syscall int i2c_recover_bus(const struct device *dev);
+__syscall int i2c_recover_bus(const struct device* dev);
 
-static inline int z_impl_i2c_recover_bus(const struct device *dev)
-{
-	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->api;
+static inline int z_impl_i2c_recover_bus(const struct device* dev) {
+    const struct i2c_driver_api* api =
+            (const struct i2c_driver_api*)dev->api;
 
-	if (api->recover_bus == NULL) {
-		return -ENOSYS;
-	}
+    if (api->recover_bus == NULL) {
+        return (-ENOSYS);
+    }
 
-	return api->recover_bus(dev);
+    return api->recover_bus(dev);
 }
 
 /**
@@ -1117,17 +1099,16 @@ static inline int z_impl_i2c_recover_bus(const struct device *dev)
  * @retval -EIO General input / output error.
  * @retval -ENOSYS If target mode is not implemented
  */
-static inline int i2c_target_register(const struct device *dev,
-				     struct i2c_target_config *cfg)
-{
-	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->api;
+static inline int i2c_target_register(const struct device* dev,
+                                      struct i2c_target_config* cfg) {
+    const struct i2c_driver_api* api =
+            (const struct i2c_driver_api*)dev->api;
 
-	if (api->target_register == NULL) {
-		return -ENOSYS;
-	}
+    if (api->target_register == NULL) {
+        return (-ENOSYS);
+    }
 
-	return api->target_register(dev, cfg);
+    return api->target_register(dev, cfg);
 }
 
 /**
@@ -1146,17 +1127,16 @@ static inline int i2c_target_register(const struct device *dev,
  * @retval -EINVAL If parameters are invalid
  * @retval -ENOSYS If target mode is not implemented
  */
-static inline int i2c_target_unregister(const struct device *dev,
-				       struct i2c_target_config *cfg)
-{
-	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->api;
+static inline int i2c_target_unregister(const struct device* dev,
+                                        struct i2c_target_config* cfg) {
+    const struct i2c_driver_api* api =
+            (const struct i2c_driver_api*)dev->api;
 
-	if (api->target_unregister == NULL) {
-		return -ENOSYS;
-	}
+    if (api->target_unregister == NULL) {
+        return (-ENOSYS);
+    }
 
-	return api->target_unregister(dev, cfg);
+    return api->target_unregister(dev, cfg);
 }
 
 /**
@@ -1172,14 +1152,13 @@ static inline int i2c_target_unregister(const struct device *dev,
  * @retval -EINVAL If parameters are invalid
  * @retval -EIO General input / output error.
  */
-__syscall int i2c_target_driver_register(const struct device *dev);
+__syscall int i2c_target_driver_register(const struct device* dev);
 
-static inline int z_impl_i2c_target_driver_register(const struct device *dev)
-{
-	const struct i2c_target_driver_api *api =
-		(const struct i2c_target_driver_api *)dev->api;
+static inline int z_impl_i2c_target_driver_register(const struct device* dev) {
+    const struct i2c_target_driver_api* api =
+            (const struct i2c_target_driver_api*)dev->api;
 
-	return api->driver_register(dev);
+    return api->driver_register(dev);
 }
 
 /**
@@ -1195,14 +1174,13 @@ static inline int z_impl_i2c_target_driver_register(const struct device *dev)
  * @retval 0 Is successful
  * @retval -EINVAL If parameters are invalid
  */
-__syscall int i2c_target_driver_unregister(const struct device *dev);
+__syscall int i2c_target_driver_unregister(const struct device* dev);
 
-static inline int z_impl_i2c_target_driver_unregister(const struct device *dev)
-{
-	const struct i2c_target_driver_api *api =
-		(const struct i2c_target_driver_api *)dev->api;
+static inline int z_impl_i2c_target_driver_unregister(const struct device* dev) {
+    const struct i2c_target_driver_api* api =
+            (const struct i2c_target_driver_api*)dev->api;
 
-	return api->driver_unregister(dev);
+    return api->driver_unregister(dev);
 }
 
 /*
@@ -1223,16 +1201,18 @@ static inline int z_impl_i2c_target_driver_unregister(const struct device *dev)
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-static inline int i2c_write(const struct device *dev, const uint8_t *buf,
-			    uint32_t num_bytes, uint16_t addr)
-{
-	struct i2c_msg msg;
+static inline int i2c_write(const struct device* dev, uint8_t const* buf,
+                            uint32_t num_bytes, uint16_t addr) {
+    struct i2c_msg msg;
+    int ret;
 
-	msg.buf = (uint8_t *)buf;
-	msg.len = num_bytes;
-	msg.flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+    msg.buf   = (uint8_t*)buf;
+    msg.len   = num_bytes;
+    msg.flags = (I2C_MSG_WRITE | I2C_MSG_STOP);
 
-	return i2c_transfer(dev, &msg, 1, addr);
+    ret = i2c_transfer(dev, &msg, 1, addr);
+
+    return (ret);
 }
 
 /**
@@ -1248,10 +1228,13 @@ static inline int i2c_write(const struct device *dev, const uint8_t *buf,
  *
  * @return a value from i2c_write()
  */
-static inline int i2c_write_dt(const struct i2c_dt_spec *spec,
-			       const uint8_t *buf, uint32_t num_bytes)
-{
-	return i2c_write(spec->bus, buf, num_bytes, spec->addr);
+static inline int i2c_write_dt(const struct i2c_dt_spec* spec,
+                               uint8_t const* buf, uint32_t num_bytes) {
+    int ret;
+
+    ret = i2c_write(spec->bus, buf, num_bytes, spec->addr);
+
+    return (ret);
 }
 
 /**
@@ -1268,16 +1251,18 @@ static inline int i2c_write_dt(const struct i2c_dt_spec *spec,
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-static inline int i2c_read(const struct device *dev, uint8_t *buf,
-			   uint32_t num_bytes, uint16_t addr)
-{
-	struct i2c_msg msg;
+static inline int i2c_read(const struct device* dev, uint8_t* buf,
+                           uint32_t num_bytes, uint16_t addr) {
+    struct i2c_msg msg;
+    int ret;
 
-	msg.buf = buf;
-	msg.len = num_bytes;
-	msg.flags = I2C_MSG_READ | I2C_MSG_STOP;
+    msg.buf   = buf;
+    msg.len   = num_bytes;
+    msg.flags = (I2C_MSG_READ | I2C_MSG_STOP);
 
-	return i2c_transfer(dev, &msg, 1, addr);
+    ret = i2c_transfer(dev, &msg, 1, addr);
+
+    return (ret);
 }
 
 /**
@@ -1293,10 +1278,13 @@ static inline int i2c_read(const struct device *dev, uint8_t *buf,
  *
  * @return a value from i2c_read()
  */
-static inline int i2c_read_dt(const struct i2c_dt_spec *spec,
-			      uint8_t *buf, uint32_t num_bytes)
-{
-	return i2c_read(spec->bus, buf, num_bytes, spec->addr);
+static inline int i2c_read_dt(const struct i2c_dt_spec* spec,
+                              uint8_t* buf, uint32_t num_bytes) {
+    int ret;
+
+    ret = i2c_read(spec->bus, buf, num_bytes, spec->addr);
+
+    return (ret);
 }
 
 /**
@@ -1317,21 +1305,20 @@ static inline int i2c_read_dt(const struct i2c_dt_spec *spec,
  * @retval 0 if successful
  * @retval negative on error.
  */
-static inline int i2c_write_read(const struct device *dev, uint16_t addr,
-				 const void *write_buf, size_t num_write,
-				 void *read_buf, size_t num_read)
-{
-	struct i2c_msg msg[2];
+static inline int i2c_write_read(const struct device* dev, uint16_t addr,
+                                 void const* write_buf, size_t num_write,
+                                 void* read_buf, size_t num_read) {
+    struct i2c_msg msg[2];
 
-	msg[0].buf = (uint8_t *)write_buf;
-	msg[0].len = num_write;
-	msg[0].flags = I2C_MSG_WRITE;
+    msg[0].buf   = (uint8_t*)write_buf;
+    msg[0].len   = num_write;
+    msg[0].flags = I2C_MSG_WRITE;
 
-	msg[1].buf = (uint8_t *)read_buf;
-	msg[1].len = num_read;
-	msg[1].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
+    msg[1].buf   = (uint8_t*)read_buf;
+    msg[1].len   = num_read;
+    msg[1].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
 
-	return i2c_transfer(dev, msg, 2, addr);
+    return i2c_transfer(dev, msg, 2, addr);
 }
 
 /**
@@ -1351,13 +1338,12 @@ static inline int i2c_write_read(const struct device *dev, uint16_t addr,
  *
  * @return a value from i2c_write_read()
  */
-static inline int i2c_write_read_dt(const struct i2c_dt_spec *spec,
-				    const void *write_buf, size_t num_write,
-				    void *read_buf, size_t num_read)
-{
-	return i2c_write_read(spec->bus, spec->addr,
-			      write_buf, num_write,
-			      read_buf, num_read);
+static inline int i2c_write_read_dt(const struct i2c_dt_spec* spec,
+                                    void const* write_buf, size_t num_write,
+                                    void* read_buf, size_t num_read) {
+    return i2c_write_read(spec->bus, spec->addr,
+                          write_buf, num_write ,
+                          read_buf , num_read);
 }
 
 /**
@@ -1378,15 +1364,14 @@ static inline int i2c_write_read_dt(const struct i2c_dt_spec *spec,
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-static inline int i2c_burst_read(const struct device *dev,
-				 uint16_t dev_addr,
-				 uint8_t start_addr,
-				 uint8_t *buf,
-				 uint32_t num_bytes)
-{
-	return i2c_write_read(dev, dev_addr,
-			      &start_addr, sizeof(start_addr),
-			      buf, num_bytes);
+static inline int i2c_burst_read(const struct device* dev,
+                                 uint16_t dev_addr,
+                                 uint8_t start_addr,
+                                 uint8_t* buf,
+                                 uint32_t num_bytes) {
+    return i2c_write_read(dev, dev_addr,
+                          &start_addr, sizeof(start_addr),
+                          buf, num_bytes);
 }
 
 /**
@@ -1403,13 +1388,12 @@ static inline int i2c_burst_read(const struct device *dev,
  *
  * @return a value from i2c_burst_read()
  */
-static inline int i2c_burst_read_dt(const struct i2c_dt_spec *spec,
-				    uint8_t start_addr,
-				    uint8_t *buf,
-				    uint32_t num_bytes)
-{
-	return i2c_burst_read(spec->bus, spec->addr,
-			      start_addr, buf, num_bytes);
+static inline int i2c_burst_read_dt(const struct i2c_dt_spec* spec,
+                                    uint8_t start_addr,
+                                    uint8_t* buf,
+                                    uint32_t num_bytes) {
+    return i2c_burst_read(spec->bus, spec->addr,
+                          start_addr, buf, num_bytes);
 }
 
 /**
@@ -1433,23 +1417,22 @@ static inline int i2c_burst_read_dt(const struct i2c_dt_spec *spec,
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-static inline int i2c_burst_write(const struct device *dev,
-				  uint16_t dev_addr,
-				  uint8_t start_addr,
-				  const uint8_t *buf,
-				  uint32_t num_bytes)
-{
-	struct i2c_msg msg[2];
+static inline int i2c_burst_write(const struct device* dev,
+                                  uint16_t dev_addr,
+                                  uint8_t start_addr,
+                                  uint8_t const* buf,
+                                  uint32_t num_bytes) {
+    struct i2c_msg msg[2];
 
-	msg[0].buf = &start_addr;
-	msg[0].len = 1U;
-	msg[0].flags = I2C_MSG_WRITE;
+    msg[0].buf   = &start_addr;
+    msg[0].len   = 1U;
+    msg[0].flags = I2C_MSG_WRITE;
 
-	msg[1].buf = (uint8_t *)buf;
-	msg[1].len = num_bytes;
-	msg[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+    msg[1].buf   = (uint8_t*)buf;
+    msg[1].len   = num_bytes;
+    msg[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 
-	return i2c_transfer(dev, msg, 2, dev_addr);
+    return i2c_transfer(dev, msg, 2, dev_addr);
 }
 
 /**
@@ -1466,13 +1449,12 @@ static inline int i2c_burst_write(const struct device *dev,
  *
  * @return a value from i2c_burst_write()
  */
-static inline int i2c_burst_write_dt(const struct i2c_dt_spec *spec,
-				     uint8_t start_addr,
-				     const uint8_t *buf,
-				     uint32_t num_bytes)
-{
-	return i2c_burst_write(spec->bus, spec->addr,
-			       start_addr, buf, num_bytes);
+static inline int i2c_burst_write_dt(const struct i2c_dt_spec* spec,
+                                     uint8_t start_addr,
+                                     uint8_t const* buf,
+                                     uint32_t num_bytes) {
+    return i2c_burst_write(spec->bus, spec->addr,
+                           start_addr, buf, num_bytes);
 }
 
 /**
@@ -1490,13 +1472,12 @@ static inline int i2c_burst_write_dt(const struct i2c_dt_spec *spec,
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-static inline int i2c_reg_read_byte(const struct device *dev,
-				    uint16_t dev_addr,
-				    uint8_t reg_addr, uint8_t *value)
-{
-	return i2c_write_read(dev, dev_addr,
-			      &reg_addr, sizeof(reg_addr),
-			      value, sizeof(*value));
+static inline int i2c_reg_read_byte(const struct device* dev,
+                                    uint16_t dev_addr,
+                                    uint8_t reg_addr, uint8_t* value) {
+    return i2c_write_read(dev, dev_addr,
+                          &reg_addr, sizeof(reg_addr),
+                          value, sizeof(*value));
 }
 
 /**
@@ -1512,10 +1493,9 @@ static inline int i2c_reg_read_byte(const struct device *dev,
  *
  * @return a value from i2c_reg_read_byte()
  */
-static inline int i2c_reg_read_byte_dt(const struct i2c_dt_spec *spec,
-				       uint8_t reg_addr, uint8_t *value)
-{
-	return i2c_reg_read_byte(spec->bus, spec->addr, reg_addr, value);
+static inline int i2c_reg_read_byte_dt(const struct i2c_dt_spec* spec,
+                                       uint8_t reg_addr, uint8_t* value) {
+    return i2c_reg_read_byte(spec->bus, spec->addr, reg_addr, value);
 }
 
 /**
@@ -1536,13 +1516,12 @@ static inline int i2c_reg_read_byte_dt(const struct i2c_dt_spec *spec,
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-static inline int i2c_reg_write_byte(const struct device *dev,
-				     uint16_t dev_addr,
-				     uint8_t reg_addr, uint8_t value)
-{
-	uint8_t tx_buf[2] = {reg_addr, value};
+static inline int i2c_reg_write_byte(const struct device* dev,
+                                     uint16_t dev_addr,
+                                     uint8_t reg_addr, uint8_t value) {
+    uint8_t tx_buf[2] = {reg_addr, value};
 
-	return i2c_write(dev, tx_buf, 2, dev_addr);
+    return i2c_write(dev, tx_buf, 2, dev_addr);
 }
 
 /**
@@ -1558,10 +1537,9 @@ static inline int i2c_reg_write_byte(const struct device *dev,
  *
  * @return a value from i2c_reg_write_byte()
  */
-static inline int i2c_reg_write_byte_dt(const struct i2c_dt_spec *spec,
-					uint8_t reg_addr, uint8_t value)
-{
-	return i2c_reg_write_byte(spec->bus, spec->addr, reg_addr, value);
+static inline int i2c_reg_write_byte_dt(const struct i2c_dt_spec* spec,
+                                        uint8_t reg_addr, uint8_t value) {
+    return i2c_reg_write_byte(spec->bus, spec->addr, reg_addr, value);
 }
 
 /**
@@ -1583,25 +1561,25 @@ static inline int i2c_reg_write_byte_dt(const struct i2c_dt_spec *spec,
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-static inline int i2c_reg_update_byte(const struct device *dev,
-				      uint8_t dev_addr,
-				      uint8_t reg_addr, uint8_t mask,
-				      uint8_t value)
-{
-	uint8_t old_value, new_value;
-	int rc;
+static inline int i2c_reg_update_byte(const struct device* dev,
+                                      uint8_t dev_addr,
+                                      uint8_t reg_addr, uint8_t mask,
+                                      uint8_t value) {
+    uint8_t old_value;
+    uint8_t new_value;
+    int rc;
 
-	rc = i2c_reg_read_byte(dev, dev_addr, reg_addr, &old_value);
-	if (rc != 0) {
-		return rc;
-	}
+    rc = i2c_reg_read_byte(dev, dev_addr, reg_addr, &old_value);
+    if (rc != 0) {
+        return (rc);
+    }
 
-	new_value = (old_value & ~mask) | (value & mask);
-	if (new_value == old_value) {
-		return 0;
-	}
+    new_value = (old_value & ~mask) | (value & mask);
+    if (new_value == old_value) {
+        return (0);
+    }
 
-	return i2c_reg_write_byte(dev, dev_addr, reg_addr, new_value);
+    return i2c_reg_write_byte(dev, dev_addr, reg_addr, new_value);
 }
 
 /**
@@ -1618,12 +1596,11 @@ static inline int i2c_reg_update_byte(const struct device *dev,
  *
  * @return a value from i2c_reg_update_byte()
  */
-static inline int i2c_reg_update_byte_dt(const struct i2c_dt_spec *spec,
-					 uint8_t reg_addr, uint8_t mask,
-					 uint8_t value)
-{
-	return i2c_reg_update_byte(spec->bus, spec->addr,
-				   reg_addr, mask, value);
+static inline int i2c_reg_update_byte_dt(const struct i2c_dt_spec* spec,
+                                         uint8_t reg_addr, uint8_t mask,
+                                         uint8_t value) {
+    return i2c_reg_update_byte(spec->bus, (uint8_t)spec->addr,
+                               reg_addr, mask, value);
 }
 
 #ifdef __cplusplus
