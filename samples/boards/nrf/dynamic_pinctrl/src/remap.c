@@ -49,8 +49,7 @@ static int remap_pins(void)
 		struct pinctrl_dev_config *uart0_config =
 			PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(uart0));
 
-		return pinctrl_update_states(uart0_config, uart0_alt,
-					     ARRAY_SIZE(uart0_alt));
+		return pinctrl_update_states(uart0_config, uart0_alt, ARRAY_SIZE(uart0_alt));
 
 	}
 

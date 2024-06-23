@@ -133,16 +133,26 @@ extern "C" {
  * @{
  */
 
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#ifndef CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE
+#define CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE      0
+#endif
+#endif
+
 /** @brief Required alignment of the buffer used for packaging. */
-#ifdef __xtensa__
-#define CBPRINTF_PACKAGE_ALIGNMENT 16
+#if defined(__xtensa__) || defined(_MSC_VER)/* #CUSTOM@NDRS */
+#define CBPRINTF_PACKAGE_ALIGNMENT              8
 #else
 #define CBPRINTF_PACKAGE_ALIGNMENT \
 	Z_POW2_CEIL(COND_CODE_1(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE, \
 		(sizeof(long double)), (MAX(sizeof(double), sizeof(long long)))))
 #endif
 
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+/* pass */
+#else
 BUILD_ASSERT(Z_IS_POW2(CBPRINTF_PACKAGE_ALIGNMENT));
+#endif
 
 
 /**@defgroup CBPRINTF_PACKAGE_FLAGS Package flags
@@ -536,7 +546,7 @@ static inline int z_cbprintf_cpy(const void *buf, size_t len, void *ctx)
 	memcpy(&((uint8_t *)desc->buf)[desc->off], buf, len);
 	desc->off += len;
 
-	return len;
+	return ((int)len);
 }
 
 /** @brief Copy package with optional appending of strings.
