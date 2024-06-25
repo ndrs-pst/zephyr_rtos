@@ -22,7 +22,7 @@ static struct modem_context mctx;
 static const struct socket_op_vtable offload_socket_fd_op_vtable;
 
 static struct zsock_addrinfo dns_result;
-static struct sockaddr dns_result_addr;
+static struct net_sockaddr dns_result_addr;
 static char dns_result_canonname[DNS_MAX_NAME_SIZE + 1];
 
 static struct sim7080_gnss_data gnss_data;
@@ -129,7 +129,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_tx_ready)
 /*
  * Connects an modem socket. Protocol can either be TCP or UDP.
  */
-static int offload_connect(void *obj, const struct sockaddr *addr, socklen_t addrlen)
+static int offload_connect(void *obj, const struct net_sockaddr *addr, socklen_t addrlen)
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	uint16_t dst_port = 0;
@@ -157,14 +157,14 @@ static int offload_connect(void *obj, const struct sockaddr *addr, socklen_t add
 	}
 
 	/* get the destination port */
-	if (addr->sa_family == AF_INET6) {
+	if (addr->sa_family == NET_AF_INET6) {
 		dst_port = ntohs(net_sin6(addr)->sin6_port);
-	} else if (addr->sa_family == AF_INET) {
+	} else if (addr->sa_family == NET_AF_INET) {
 		dst_port = ntohs(net_sin(addr)->sin_port);
 	}
 
 	/* Get protocol */
-	protocol = (sock->type == SOCK_STREAM) ? "TCP" : "UDP";
+	protocol = (sock->type == NET_SOCK_STREAM) ? "TCP" : "UDP";
 
 	ret = modem_context_sprint_ip_addr(addr, ip_str, sizeof(ip_str));
 	if (ret != 0) {
@@ -215,7 +215,7 @@ error:
  * then send a OK or ERROR.
  */
 static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
-			      const struct sockaddr *dest_addr, socklen_t addrlen)
+			      const struct net_sockaddr *dest_addr, socklen_t addrlen)
 {
 	int ret;
 	struct modem_socket *sock = (struct modem_socket *)obj;
@@ -373,7 +373,7 @@ MODEM_CMD_DEFINE(on_cmd_carecv)
  * Read data from a given socket.
  */
 static ssize_t offload_recvfrom(void *obj, void *buf, size_t max_len, int flags,
-				struct sockaddr *src_addr, socklen_t *addrlen)
+				struct net_sockaddr *src_addr, socklen_t *addrlen)
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	char sendbuf[sizeof("AT+CARECV=##,####")];
@@ -460,7 +460,7 @@ static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 		return -EAGAIN;
 	}
 
-	if (sock->type == SOCK_DGRAM) {
+	if (sock->type == NET_SOCK_DGRAM) {
 		/*
 		 * Current implementation only handles single contiguous fragment at a time, so
 		 * prevent sending multiple datagrams.
@@ -671,7 +671,7 @@ MODEM_CMD_DEFINE(on_cmd_cdnsgip)
 
 	*ipv4 = '\0';
 	net_addr_pton(dns_result.ai_family, ips,
-		      &((struct sockaddr_in *)&dns_result_addr)->sin_addr);
+		      &((struct net_sockaddr_in *)&dns_result_addr)->sin_addr);
 	ret = 0;
 
 exit:
@@ -701,8 +701,8 @@ static int offload_getaddrinfo(const char *node, const char *service,
 	(void)memset(&dns_result_addr, 0, sizeof(dns_result_addr));
 
 	/* Currently only support IPv4. */
-	dns_result.ai_family = AF_INET;
-	dns_result_addr.sa_family = AF_INET;
+	dns_result.ai_family = NET_AF_INET;
+	dns_result_addr.sa_family = NET_AF_INET;
 	dns_result.ai_addr = &dns_result_addr;
 	dns_result.ai_addrlen = sizeof(dns_result_addr);
 	dns_result.ai_canonname = dns_result_canonname;
@@ -716,14 +716,14 @@ static int offload_getaddrinfo(const char *node, const char *service,
 	}
 
 	if (port > 0U) {
-		if (dns_result.ai_family == AF_INET) {
+		if (dns_result.ai_family == NET_AF_INET) {
 			net_sin(&dns_result_addr)->sin_port = htons(port);
 		}
 	}
 
 	/* Check if node is an IP address */
 	if (net_addr_pton(dns_result.ai_family, node,
-			  &((struct sockaddr_in *)&dns_result_addr)->sin_addr) == 0) {
+			  &((struct net_sockaddr_in *)&dns_result_addr)->sin_addr) == 0) {
 		*res = &dns_result;
 		return 0;
 	}
@@ -767,18 +767,18 @@ static struct offloaded_if_api api_funcs = {
 
 static bool offload_is_supported(int family, int type, int proto)
 {
-	if (family != AF_INET &&
-	    family != AF_INET6) {
+	if (family != NET_AF_INET &&
+	    family != NET_AF_INET6) {
 		return false;
 	}
 
-	if (type != SOCK_DGRAM &&
-	    type != SOCK_STREAM) {
+	if (type != NET_SOCK_DGRAM &&
+	    type != NET_SOCK_STREAM) {
 		return false;
 	}
 
-	if (proto != IPPROTO_TCP &&
-	    proto != IPPROTO_UDP) {
+	if (proto != NET_IPPROTO_TCP &&
+	    proto != NET_IPPROTO_UDP) {
 		return false;
 	}
 
@@ -2434,4 +2434,4 @@ NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL, &mdata, NULL,
 				  MDM_MAX_DATA_LENGTH);
 
 NET_SOCKET_OFFLOAD_REGISTER(simcom_sim7080, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY,
-			    AF_UNSPEC, offload_is_supported, offload_socket);
+			    NET_AF_UNSPEC, offload_is_supported, offload_socket);

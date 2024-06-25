@@ -8,57 +8,27 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/net/net_ip.h>
 
-#define PR(fmt, ...)                                                            \
-	do {                                                                    \
-		if (sh) {                                                       \
-			shell_fprintf(sh, SHELL_NORMAL, fmt, ##__VA_ARGS__);    \
-		} else {                                                        \
-			printk(fmt, ##__VA_ARGS__);                             \
-		}                                                               \
-	} while (false)
+#define PR(fmt, ...)            \
+    shell_fprintf(sh, SHELL_NORMAL, fmt, ##__VA_ARGS__)
 
-#define PR_SHELL(sh, fmt, ...)                                                  \
-	do {                                                                    \
-		if (sh) {                                                       \
-			shell_fprintf(sh, SHELL_NORMAL, fmt, ##__VA_ARGS__);    \
-		} else {                                                        \
-			printk(fmt, ##__VA_ARGS__);                             \
-		}                                                               \
-	} while (false)
+#define PR_SHELL(sh, fmt, ...)  \
+    shell_fprintf(sh, SHELL_NORMAL, fmt, ##__VA_ARGS__)
 
-#define PR_ERROR(fmt, ...)                                                      \
-	do {                                                                    \
-		if (sh) {                                                       \
-			shell_fprintf(sh, SHELL_ERROR, fmt, ##__VA_ARGS__);     \
-		} else {                                                        \
-			printk(fmt, ##__VA_ARGS__);                             \
-		}                                                               \
-	} while (false)
+#define PR_ERROR(fmt, ...)      \
+    shell_fprintf(sh, SHELL_ERROR, fmt, ##__VA_ARGS__)
 
-#define PR_INFO(fmt, ...)                                                       \
-	do {                                                                    \
-		if (sh) {                                                       \
-			shell_fprintf(sh, SHELL_INFO, fmt, ##__VA_ARGS__);      \
-		} else {                                                        \
-			printk(fmt, ##__VA_ARGS__);                             \
-		}                                                               \
-	} while (false)
+#define PR_INFO(fmt, ...)       \
+    shell_fprintf(sh, SHELL_INFO, fmt, ##__VA_ARGS__)
 
-#define PR_WARNING(fmt, ...)                                                    \
-	do {                                                                    \
-		if (sh) {                                                       \
-			shell_fprintf(sh, SHELL_WARNING, fmt, ##__VA_ARGS__);   \
-		} else {                                                        \
-			printk(fmt, ##__VA_ARGS__);                             \
-		}                                                               \
-	} while (false)
+#define PR_WARNING(fmt, ...)    \
+    shell_fprintf(sh, SHELL_WARNING, fmt, ##__VA_ARGS__)
 
 #include "net_private.h"
 #include "../ip/ipv6.h"
 
 struct net_shell_user_data {
-	const struct shell *sh;
-	void *user_data;
+    const struct shell* sh;
+    void*               user_data;
 };
 
 #if !defined(NET_VLAN_MAX_COUNT)
@@ -81,12 +51,12 @@ struct net_shell_user_data {
 #define IFACE_DYN_CMD NULL
 #endif /* CONFIG_NET_SHELL_DYN_CMD_COMPLETION */
 
-const char *addrtype2str(enum net_addr_type addr_type);
-const char *addrstate2str(enum net_addr_state addr_state);
-void get_addresses(struct net_context *context,
-		   char addr_local[], int local_len,
-		   char addr_remote[], int remote_len);
+char const* addrtype2str(enum net_addr_type addr_type);
+char const* addrstate2str(enum net_addr_state addr_state);
+void get_addresses(struct net_context const* context,
+                   char addr_local[], int local_len,
+                   char addr_remote[], int remote_len);
 void events_enable(void);
-int get_iface_idx(const struct shell *sh, char *index_str);
-const char *iface2str(struct net_if *iface, const char **extra);
-void ipv6_frag_cb(struct net_ipv6_reassembly *reass, void *user_data);
+int get_iface_idx(const struct shell* sh, char* index_str);
+char const* iface2str(struct net_if* iface, char const** extra);
+void ipv6_frag_cb(struct net_ipv6_reassembly* reass, void* user_data);
