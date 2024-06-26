@@ -3407,8 +3407,10 @@ next_state :
                 tcp_cancel_last_ack_timer(conn);
             }
             break;
+
         case TCP_CLOSED :
             break;
+
         case TCP_FIN_WAIT_1 :
             /*
              * FIN1:
@@ -3491,6 +3493,7 @@ next_state :
                 }
             }
             break;
+
         case TCP_FIN_WAIT_2 :
             /*
              * FIN2:
@@ -4327,6 +4330,7 @@ enum net_verdict tp_input(struct net_conn* net_conn,
         case TP_CONFIG_REQUEST :
             tp_new = json_to_tp_new(buf, data_len);
             break;
+
         default :
             tp = json_to_tp(buf, data_len);
             break;
@@ -4423,6 +4427,7 @@ enum net_verdict tp_input(struct net_conn* net_conn,
         case TP_DEBUG_CONTINUE :
             tp_state = tp->type;
             break;
+
         default :
             NET_ASSERT(false, "Unimplemented tp command: %s", tp->msg);
     }
