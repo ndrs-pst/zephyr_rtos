@@ -63,7 +63,7 @@ static int cmd_net_udp_bind(const struct shell *sh, size_t argc, char *argv[])
 	int ret;
 
 	struct net_if *iface;
-	struct sockaddr addr;
+	struct net_sockaddr addr;
 	int addrlen;
 
 	if (argc < 3) {
@@ -92,7 +92,7 @@ static int cmd_net_udp_bind(const struct shell *sh, size_t argc, char *argv[])
 		return ret;
 	}
 
-	ret = net_context_get(addr.sa_family, SOCK_DGRAM, IPPROTO_UDP,
+	ret = net_context_get(addr.sa_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP,
 			      &udp_ctx);
 	if (ret < 0) {
 		PR_WARNING("Cannot get UDP context (%d)\n", ret);
@@ -101,15 +101,15 @@ static int cmd_net_udp_bind(const struct shell *sh, size_t argc, char *argv[])
 
 	udp_shell = sh;
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && addr.sa_family == AF_INET6) {
-		net_sin6(&addr)->sin6_port = htons(port);
-		addrlen = sizeof(struct sockaddr_in6);
+	if (IS_ENABLED(CONFIG_NET_IPV6) && addr.sa_family == NET_AF_INET6) {
+		net_sin6(&addr)->sin6_port = net_htons(port);
+		addrlen = sizeof(struct net_sockaddr_in6);
 
 		iface = net_if_ipv6_select_src_iface(
 				&net_sin6(&addr)->sin6_addr);
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr.sa_family == AF_INET) {
-		net_sin(&addr)->sin_port = htons(port);
-		addrlen = sizeof(struct sockaddr_in);
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr.sa_family == NET_AF_INET) {
+		net_sin(&addr)->sin_port = net_htons(port);
+		addrlen = sizeof(struct net_sockaddr_in);
 
 		iface = net_if_ipv4_select_src_iface(
 				&net_sin(&addr)->sin_addr);
@@ -190,7 +190,7 @@ static int cmd_net_udp_send(const struct shell *sh, size_t argc, char *argv[])
 	int ret;
 
 	struct net_if *iface;
-	struct sockaddr addr;
+	struct net_sockaddr addr;
 	int addrlen;
 
 	if (argc < 4) {
@@ -219,7 +219,7 @@ static int cmd_net_udp_send(const struct shell *sh, size_t argc, char *argv[])
 		return ret;
 	}
 
-	ret = net_context_get(addr.sa_family, SOCK_DGRAM, IPPROTO_UDP,
+	ret = net_context_get(addr.sa_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP,
 			      &udp_ctx);
 	if (ret < 0) {
 		PR_WARNING("Cannot get UDP context (%d)\n", ret);
@@ -228,15 +228,15 @@ static int cmd_net_udp_send(const struct shell *sh, size_t argc, char *argv[])
 
 	udp_shell = sh;
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && addr.sa_family == AF_INET6) {
-		net_sin6(&addr)->sin6_port = htons(port);
-		addrlen = sizeof(struct sockaddr_in6);
+	if (IS_ENABLED(CONFIG_NET_IPV6) && addr.sa_family == NET_AF_INET6) {
+		net_sin6(&addr)->sin6_port = net_htons(port);
+		addrlen = sizeof(struct net_sockaddr_in6);
 
 		iface = net_if_ipv6_select_src_iface(
 				&net_sin6(&addr)->sin6_addr);
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr.sa_family == AF_INET) {
-		net_sin(&addr)->sin_port = htons(port);
-		addrlen = sizeof(struct sockaddr_in);
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr.sa_family == NET_AF_INET) {
+		net_sin(&addr)->sin_port = net_htons(port);
+		addrlen = sizeof(struct net_sockaddr_in);
 
 		iface = net_if_ipv4_select_src_iface(
 				&net_sin(&addr)->sin_addr);
