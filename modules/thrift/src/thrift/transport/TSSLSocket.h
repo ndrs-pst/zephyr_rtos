@@ -378,7 +378,7 @@ class TSSLException : public TTransportException
 
 struct SSLContext {
 	int verifyMode = TLS_PEER_VERIFY_REQUIRED;
-	net_ip_protocol_secure protocol = IPPROTO_TLS_1_0;
+	net_ip_protocol_secure protocol = NET_IPPROTO_TLS_1_0;
 };
 
 /**
