@@ -2303,7 +2303,7 @@ void net_if_ipv4_maddr_leave(struct net_if* iface,
 static inline struct net_in_addr* net_if_router_ipv4(struct net_if_router* router) {
     NET_ASSERT(router);
 
-    return ((struct net_in_addr*)&router->address.in_addr);
+    return (&router->address.in_addr);
 }
 #else
 static inline struct net_in_addr* net_if_router_ipv4(struct net_if_router* router) {
