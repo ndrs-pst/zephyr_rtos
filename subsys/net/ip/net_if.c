@@ -5026,14 +5026,12 @@ static void notify_iface_up(struct net_if* iface) {
     /* In many places it's assumed that link address was set with
      * net_if_set_link_addr(). Better check that now.
      */
-    #if defined(CONFIG_NET_L2_CANBUS_RAW)
-    if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
+    if (IS_ENABLED(CONFIG_NET_L2_CANBUS_RAW) &&
+        IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
         (net_if_l2(iface) == &NET_L2_GET_NAME(CANBUS_RAW))) {
         /* CAN does not require link address. */
     }
-    else
-    #endif /* CONFIG_NET_L2_CANBUS_RAW */
-    {
+    else {
         if (!net_if_is_offloaded(iface)) {
             NET_ASSERT(net_if_get_link_addr(iface)->addr != NULL);
         }
@@ -5531,10 +5529,10 @@ bool net_if_is_wifi(struct net_if* iface) {
         return net_off_is_wifi_offloaded(iface);
     }
 
-    #if defined(CONFIG_NET_L2_ETHERNET)
-    return net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET) &&
-           net_eth_type_is_wifi(iface);
-    #endif
+    if (IS_ENABLED(CONFIG_NET_L2_ETHERNET)) {
+        return net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET) &&
+               net_eth_type_is_wifi(iface);
+    }
 
     return (false);
 }
@@ -5659,78 +5657,54 @@ int net_if_get_by_name(char const* name) {
 
 #if defined(CONFIG_NET_INTERFACE_NAME)
 static void set_default_name(struct net_if* iface) {
-    char name[CONFIG_NET_INTERFACE_NAME_LEN + 1] = {0};
+    char name[CONFIG_NET_INTERFACE_NAME_LEN + 1];
     int  ret;
 
     if (net_if_is_wifi(iface)) {
-        static int count;
+        static int wlan_count;
 
-        snprintk(name, (sizeof(name) - 1), "wlan%d", count++);
+        snprintk(name, sizeof(name), "wlan%d", wlan_count++);
     }
-    else if (IS_ENABLED(CONFIG_NET_L2_ETHERNET)) {
-        #if defined(CONFIG_NET_L2_ETHERNET)
-        if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
-            static int count;
+    else if (IS_ENABLED(CONFIG_NET_L2_ETHERNET) &&
+             (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET))) {
+        static int eth_count;
 
-            snprintk(name, (sizeof(name) - 1), "eth%d", count++);
-        }
-        #endif /* CONFIG_NET_L2_ETHERNET */
+        snprintk(name, sizeof(name), "eth%d", eth_count++);
     }
+    else if (IS_ENABLED(CONFIG_NET_L2_IEEE802154) &&
+             (net_if_l2(iface) == &NET_L2_GET_NAME(IEEE802154))) {
+        static int ieee_count;
 
-    if (IS_ENABLED(CONFIG_NET_L2_IEEE802154)) {
-        #if defined(CONFIG_NET_L2_IEEE802154)
-        if (net_if_l2(iface) == &NET_L2_GET_NAME(IEEE802154)) {
-            static int count;
-
-            snprintk(name, (sizeof(name) - 1), "ieee%d", count++);
-        }
-        #endif /* CONFIG_NET_L2_IEEE802154 */
+        snprintk(name, sizeof(name), "ieee%d", ieee_count++);
     }
+    else if (IS_ENABLED(CONFIG_NET_L2_DUMMY) &&
+             (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY))) {
+        static int dummy_count;
 
-    if (IS_ENABLED(CONFIG_NET_L2_DUMMY)) {
-        #if defined(CONFIG_NET_L2_DUMMY)
-        if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
-            static int count;
-
-            snprintk(name, (sizeof(name) - 1), "dummy%d", count++);
-        }
-        #endif /* CONFIG_NET_L2_DUMMY */
+        snprintk(name, sizeof(name), "dummy%d", dummy_count++);
     }
+    else if (IS_ENABLED(CONFIG_NET_L2_CANBUS_RAW) &&
+             (net_if_l2(iface) == &NET_L2_GET_NAME(CANBUS_RAW))) {
+        static int can_count;
 
-    if (IS_ENABLED(CONFIG_NET_L2_CANBUS_RAW)) {
-        #if defined(CONFIG_NET_L2_CANBUS_RAW)
-        if (net_if_l2(iface) == &NET_L2_GET_NAME(CANBUS_RAW)) {
-            static int count;
-
-            snprintk(name, (sizeof(name) - 1), "can%d", count++);
-        }
-        #endif /* CONFIG_NET_L2_CANBUS_RAW */
+        snprintk(name, sizeof(name), "can%d", can_count++);
     }
+    else if (IS_ENABLED(CONFIG_NET_L2_PPP) &&
+             (net_if_l2(iface) == &NET_L2_GET_NAME(PPP))) {
+        static int ppp_count;
 
-    if (IS_ENABLED(CONFIG_NET_L2_PPP)) {
-        #if defined(CONFIG_NET_L2_PPP)
-        if (net_if_l2(iface) == &NET_L2_GET_NAME(PPP)) {
-            static int count;
-
-            snprintk(name, (sizeof(name) - 1), "ppp%d", count++);
-        }
-        #endif /* CONFIG_NET_L2_PPP */
+        snprintk(name, sizeof(name), "ppp%d", ppp_count++);
     }
+    else if (IS_ENABLED(CONFIG_NET_L2_OPENTHREAD) &&
+             (net_if_l2(iface) == &NET_L2_GET_NAME(OPENTHREAD))) {
+        static int thread_count;
 
-    if (IS_ENABLED(CONFIG_NET_L2_OPENTHREAD)) {
-        #if defined(CONFIG_NET_L2_OPENTHREAD)
-        if (net_if_l2(iface) == &NET_L2_GET_NAME(OPENTHREAD)) {
-            static int count;
-
-            snprintk(name, (sizeof(name) - 1), "thread%d", count++);
-        }
-        #endif /* CONFIG_NET_L2_OPENTHREAD */
+        snprintk(name, sizeof(name), "thread%d", thread_count++);
     }
+    else {
+        static int net_count;
 
-    if (name[0] == '\0') {
-        static int count;
-
-        snprintk(name, (sizeof(name) - 1), "net%d", count++);
+        snprintk(name, sizeof(name), "net%d", net_count++);
     }
 
     ret = net_if_set_name(iface, name);
