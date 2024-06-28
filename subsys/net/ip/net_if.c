@@ -613,7 +613,7 @@ struct net_if* net_if_get_default(void) {
     iface = net_if_get_first_wifi();
     #endif
 
-    return iface ? iface : _net_if_list_start;
+    return (iface ? iface : _net_if_list_start);
 }
 
 struct net_if* net_if_get_first_by_type(const struct net_l2* l2) {
@@ -1923,7 +1923,7 @@ bool net_if_ipv6_addr_rm(struct net_if* iface, const struct net_in6_addr* addr) 
 
     ipv6 = iface->config.ip.ipv6;
     if (ipv6 == NULL) {
-        return false;
+        return (false);
     }
 
     ret = net_if_addr_unref(iface, NET_AF_INET6, addr);
@@ -2376,7 +2376,7 @@ static struct net_if_ipv6_prefix* ipv6_prefix_find(struct net_if* iface,
 
         if (net_ipv6_addr_cmp(prefix, &ipv6->prefix[i].prefix) &&
             (prefix_len == ipv6->prefix[i].len)) {
-            return &ipv6->prefix[i];
+            return (&ipv6->prefix[i]);
         }
     }
 
@@ -2825,7 +2825,7 @@ static inline struct net_in6_addr* check_global_addr(struct net_if* iface,
         }
 
         if (!net_ipv6_is_ll_addr(&ipv6->unicast[i].address.in6_addr)) {
-            return &ipv6->unicast[i].address.in6_addr;
+            return (&ipv6->unicast[i].address.in6_addr);
         }
     }
 
@@ -3096,8 +3096,8 @@ uint32_t net_if_ipv6_calc_reachable_time(struct net_if_ipv6 const* ipv6) {
     NET_DBG("min_reachable:%u max_reachable:%u", min_reachable,
             max_reachable);
 
-    return min_reachable +
-           sys_rand32_get() % (max_reachable - min_reachable);
+    return (min_reachable +
+            sys_rand32_get() % (max_reachable - min_reachable));
 }
 
 static void iface_ipv6_start(struct net_if* iface) {

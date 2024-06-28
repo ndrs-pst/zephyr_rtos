@@ -239,7 +239,7 @@ enum net_verdict net_ipv4_input(struct net_pkt* pkt, bool is_loopback) {
     int real_len = net_pkt_get_len(pkt);
     enum net_verdict verdict = NET_DROP;
     union net_proto_header proto_hdr;
-    struct net_ipv4_hdr *hdr;
+    struct net_ipv4_hdr* hdr;
     union net_ip_header ip;
     uint8_t hdr_len;
     uint8_t opts_len;
@@ -409,11 +409,11 @@ enum net_verdict net_ipv4_input(struct net_pkt* pkt, bool is_loopback) {
         #if defined(CONFIG_NET_L2_IPIP)
         case NET_IPPROTO_IPV6 :
         case NET_IPPROTO_IPIP : {
-            struct net_sockaddr_in remote_addr = { 0 };
+            struct net_sockaddr_in remote_addr = {0};
             struct net_if* tunnel_iface;
 
             remote_addr.sin_family = NET_AF_INET;
-            net_ipv4_addr_copy_raw((uint8_t *)&remote_addr.sin_addr, hdr->src);
+            net_ipv4_addr_copy_raw((uint8_t*)&remote_addr.sin_addr, hdr->src);
 
             net_pkt_set_remote_address(pkt, (struct net_sockaddr *)&remote_addr,
                                        sizeof(struct net_sockaddr_in));
