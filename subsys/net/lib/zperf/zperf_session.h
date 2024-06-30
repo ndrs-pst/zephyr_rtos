@@ -54,7 +54,7 @@ struct session {
 	struct zperf_server_hdr stat;
 };
 
-struct session *get_session(const struct sockaddr *addr,
+struct session *get_session(const struct net_sockaddr *addr,
 			    enum session_proto proto);
 void zperf_session_init(void);
 void zperf_reset_session_stats(struct session *session);
