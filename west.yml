@@ -116,7 +116,7 @@ manifest:
       groups:
         - babblesim
     - name: cmsis
-      revision: 4b96cbb174678dcd3ca86e11e1f24bc5f8726da0
+      revision: 11e93bd9fe672e0aaf7d766d01332dd84b76436f
       path: modules/hal/cmsis
       groups:
         - hal
@@ -132,7 +132,7 @@ manifest:
       groups:
         - tools
     - name: fatfs
-      revision: 427159bf95ea49b7680facffaa29ad506b42709b
+      revision: 1c156b2db4d4d2f9289ef0aa1876e4a0f864b9ea
       path: modules/fs/fatfs
       groups:
         - fs
@@ -152,7 +152,7 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: 56d60ebc909ad065bf6554cee73487969857614b
+      revision: dcd4dad5e91c6a8f5e2744b04816bf0c30a90a13
       path: modules/hal/atmel
       groups:
         - hal
@@ -198,7 +198,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 862e001504bd6e0a4feade6a718e9f973116849c
+      revision: 21100a1b7d14fd2961249469f2102005fef12c12
       path: modules/hal/nxp
       groups:
         - hal
@@ -234,7 +234,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: d12e21e35d8d33c5fdf711d1a1c07f38c9295f70
+      revision: 45ecdf7da8d9abc9820ad5ccf2f2e8c90fb69608
       path: modules/hal/stm32
       groups:
         - hal
@@ -276,7 +276,7 @@ manifest:
         - fs
       revision: 408c16a909dd6cf128874a76f21c793798c9e423
     - name: loramac-node
-      revision: fb00b383072518c918e2258b0916c996f2d4eebe
+      revision: 88deb45109317473ac5706e97a6b8bbeb524aab1
       path: modules/lib/loramac-node
     - name: lvgl
       revision: 2b498e6f36d6b82ae1da12c8b7742e318624ecf5
@@ -287,7 +287,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 898a1ca64a759541d9fcc37fef921db93d99ad70
+      revision: 3243fbda4e48aaafcb5acf6dc2add0857473517a
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -340,10 +340,15 @@ manifest:
       revision: 84ef879a46d7bfd9a423fbfb502b04289861f9ea
       path: modules/lib/uoscore-uedhoc
     - name: zcbor
-      revision: 75d088037eb237b18e7ec1f47c9ce494b9b95aab
+      revision: 2d2edb19d0112400b6579ef0503f9a974f745b2e
       path: modules/lib/zcbor
+    - name: golioth
+      path: modules/lib/golioth
+      revision: 89515756cf7fe0a8b44fb23ca4e372cefdf487f8
+      url: https://github.com/DDC-NDRS/golioth-zephyr-sdk.git
+      import: west-external.yml
 
   self:
-    path: zephyr
+    path: zephyr_rtos
     west-commands: scripts/west-commands.yml
     import: submanifests
