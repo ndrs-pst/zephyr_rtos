@@ -1092,8 +1092,9 @@ void shell_hexdump(const struct shell* sh, uint8_t const* data, size_t len);
  * @param[in] _ft Format string.
  * @param[in] ... List of parameters to print.
  */
+void __printf_like(2, 3) shell_info_impl(const struct shell* sh, const char* fmt, ...);
 #define shell_info(_sh, _ft, ...) \
-    shell_fprintf(_sh, SHELL_INFO, _ft "\n", ##__VA_ARGS__)
+    shell_info_impl(_sh, _ft "\n", ##__VA_ARGS__)
 
 /**
  * @brief Print normal message to the shell.
@@ -1104,8 +1105,9 @@ void shell_hexdump(const struct shell* sh, uint8_t const* data, size_t len);
  * @param[in] _ft Format string.
  * @param[in] ... List of parameters to print.
  */
+void __printf_like(2, 3) shell_print_impl(const struct shell* sh, const char* fmt, ...);
 #define shell_print(_sh, _ft, ...) \
-    shell_fprintf(_sh, SHELL_NORMAL, _ft "\n", ##__VA_ARGS__)
+    shell_print_impl(_sh, _ft "\n", ##__VA_ARGS__)
 
 /**
  * @brief Print warning message to the shell.
@@ -1116,8 +1118,9 @@ void shell_hexdump(const struct shell* sh, uint8_t const* data, size_t len);
  * @param[in] _ft Format string.
  * @param[in] ... List of parameters to print.
  */
+void __printf_like(2, 3) shell_warn_impl(const struct shell* sh, const char* fmt, ...);
 #define shell_warn(_sh, _ft, ...) \
-    shell_fprintf(_sh, SHELL_WARNING, _ft "\n", ##__VA_ARGS__)
+    shell_warn_impl(_sh, _ft "\n", ##__VA_ARGS__)
 
 /**
  * @brief Print error message to the shell.
@@ -1128,8 +1131,9 @@ void shell_hexdump(const struct shell* sh, uint8_t const* data, size_t len);
  * @param[in] _ft Format string.
  * @param[in] ... List of parameters to print.
  */
+void __printf_like(2, 3) shell_error_impl(const struct shell* sh, const char* fmt, ...);
 #define shell_error(_sh, _ft, ...) \
-    shell_fprintf(_sh, SHELL_ERROR, _ft "\n", ##__VA_ARGS__)
+    shell_error_impl(_sh, _ft "\n", ##__VA_ARGS__)
 
 /**
  * @brief Process function, which should be executed when data is ready in the
