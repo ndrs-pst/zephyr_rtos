@@ -176,7 +176,7 @@ static void zpacket_set_source_addr(struct net_context *ctx,
 		return;
 	}
 
-	addr.sll_family = AF_PACKET;
+	addr.sll_family = NET_AF_PACKET;
 	addr.sll_ifindex = net_if_get_by_iface(iface);
 
 	if (net_pkt_is_l2_processed(pkt)) {
@@ -502,5 +502,5 @@ static bool packet_is_supported(int family, int type, int proto)
 	}
 }
 
-NET_SOCKET_REGISTER(af_packet, NET_SOCKET_DEFAULT_PRIO, AF_PACKET,
+NET_SOCKET_REGISTER(af_packet, NET_SOCKET_DEFAULT_PRIO, NET_AF_PACKET,
 		    packet_is_supported, zpacket_socket);

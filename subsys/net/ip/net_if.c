@@ -375,7 +375,7 @@ void net_if_queue_tx(struct net_if const* iface, struct net_pkt* pkt) {
     }
 }
 
-void net_if_stats_reset(struct net_if const* iface) {
+void net_if_stats_reset(struct net_if* iface) {
     #if defined(CONFIG_NET_STATISTICS_PER_INTERFACE)
     STRUCT_SECTION_FOREACH(net_if, tmp) {
         if (iface == tmp) {

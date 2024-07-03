@@ -285,7 +285,7 @@ int z_impl_zsock_socketpair(int family, int type, int proto, int *sv)
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, socketpair, family, type, proto, sv);
 
-	if (family != AF_UNIX) {
+	if (family != NET_AF_UNIX) {
 		errno = EAFNOSUPPORT;
 		res = -1;
 		goto errout;

@@ -63,7 +63,7 @@ union net_mgmt_events {
 
 extern void net_if_init(void);
 extern void net_if_post_init(void);
-extern void net_if_stats_reset(struct net_if const* iface);
+extern void net_if_stats_reset(struct net_if* iface);
 extern void net_if_stats_reset_all(void);
 extern void net_process_rx_packet(struct net_pkt* pkt);
 extern void net_process_tx_packet(struct net_pkt* pkt);
