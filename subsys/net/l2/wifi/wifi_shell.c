@@ -1570,15 +1570,16 @@ static int cmd_wifi_set_rts_threshold(const struct shell *sh, size_t argc, char 
 
 	if (net_mgmt(NET_REQUEST_WIFI_RTS_THRESHOLD, iface,
 		     &rts_threshold, sizeof(rts_threshold))) {
-		shell_fprintf(sh, SHELL_WARNING,
-			      "Setting RTS threshold failed.\n");
+		shell_warn_impl(sh,
+				"Setting RTS threshold failed.\n");
 		return -ENOEXEC;
 	}
 
-	if ((int)rts_threshold >= 0)
-		shell_fprintf(sh, SHELL_NORMAL, "RTS threshold: %d\n", rts_threshold);
-	else
-		shell_fprintf(sh, SHELL_NORMAL, "RTS threshold is off\n");
+	if ((int)rts_threshold >= 0) {
+		shell_print_impl(sh, "RTS threshold: %d\n", rts_threshold);
+	} else {
+		shell_print_impl(sh, "RTS threshold is off\n");
+	}
 
 	return 0;
 }
