@@ -44,12 +44,12 @@ static const char *const colors[] = {
 	NULL                    /* dbg */
 };
 
-static uint32_t freq;
+static uint32_t timestamp_freq;
 static log_timestamp_t timestamp_div;
 
 #define SECONDS_IN_DAY			86400U
 
-static uint32_t days_in_month[12] = {31, 28, 31, 30, 31, 30, 31,
+static const uint8_t days_in_month[12] = {31, 28, 31, 30, 31, 30, 31,
 									31, 30, 31, 30, 31};
 
 struct YMD_date {
@@ -138,7 +138,7 @@ static int print_formatted(const struct log_output *output,
 			   const char *fmt, ...)
 {
 	va_list args;
-	int length = 0;
+	int length;
 
 	va_start(args, fmt);
 	length = cbvprintf(out_func, (void *)output, fmt, args);
@@ -218,7 +218,7 @@ static int timestamp_print(const struct log_output *output,
 		(flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) |
 		IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP) |
 		IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP);
-
+	uint32_t freq = timestamp_freq;
 
 	if (!format) {
 #ifndef CONFIG_LOG_TIMESTAMP_64BIT
@@ -364,7 +364,7 @@ static int ids_print(const struct log_output *output,
 static void newline_print(const struct log_output *ctx, uint32_t flags)
 {
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
-	    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
+	    ((flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) != 0U)) {
 		return;
 	}
 
@@ -619,7 +619,7 @@ static uint32_t prefix_print(const struct log_output *output,
 	const char *tag = IS_ENABLED(CONFIG_LOG) ? z_log_get_tag() : NULL;
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
-	    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
+	    ((flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) != 0U)) {
 		/* TODO: As there is no way to figure out the
 		 * facility at this point, use a pre-defined value.
 		 * Change this to use the real facility of the
@@ -644,7 +644,7 @@ static uint32_t prefix_print(const struct log_output *output,
 	}
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
-	    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
+	    ((flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) != 0U)) {
 		length += syslog_print(output, level_on, func_on, &thread_on, domain,
 				       source_off ? NULL : source, tid, level, length);
 	} else {
@@ -749,21 +749,23 @@ void log_output_dropped_process(const struct log_output *output, uint32_t cnt)
 
 void log_output_timestamp_freq_set(uint32_t frequency)
 {
-	timestamp_div = 1U;
+	log_timestamp_t div = 1U;
+
 	/* There is no point to have frequency higher than 1MHz (ns are not
 	 * printed) and too high frequency leads to overflows in calculations.
 	 */
 	while (frequency > 1000000) {
 		frequency /= 2U;
-		timestamp_div *= 2U;
+		div *= 2U;
 	}
 
-	freq = frequency;
+	timestamp_div = div;
+	timestamp_freq = frequency;
 }
 
 uint64_t log_output_timestamp_to_us(log_timestamp_t timestamp)
 {
 	timestamp /= timestamp_div;
 
-	return ((uint64_t) timestamp * 1000000U) / freq;
+	return ((uint64_t) timestamp * 1000000U) / timestamp_freq;
 }
