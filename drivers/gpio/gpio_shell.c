@@ -438,12 +438,12 @@ static int cmd_gpio_toggle(const struct shell* sh, size_t argc, char** argv) {
 static int cmd_gpio_devices(const struct shell* sh, size_t argc, char** argv) {
     size_t i;
 
-    shell_fprintf(sh, SHELL_NORMAL, "%-16s Other names\n", "Device");
+    shell_print_impl(sh, "%-16s Other names\n", "Device");
 
     for (i = 0; i < ARRAY_SIZE(gpio_list); i++) {
         const struct device *dev = gpio_list[i].dev;
 
-        shell_fprintf(sh, SHELL_NORMAL, "%-16s", dev->name);
+        shell_print_impl(sh, "%-16s", dev->name);
 
         #ifdef CONFIG_DEVICE_DT_METADATA
         const struct device_dt_nodelabels* nl = device_get_dt_nodelabels(dev);
@@ -452,12 +452,12 @@ static int cmd_gpio_devices(const struct shell* sh, size_t argc, char** argv) {
             for (size_t j = 0; j < nl->num_nodelabels; j++) {
                 const char* nodelabel = nl->nodelabels[j];
 
-                shell_fprintf(sh, SHELL_NORMAL, " %s", nodelabel);
+                shell_print_impl(sh, " %s", nodelabel);
             }
         }
         #endif
 
-        shell_fprintf(sh, SHELL_NORMAL, "\n");
+        shell_print_impl(sh, "\n");
     }
 
     return (0);
