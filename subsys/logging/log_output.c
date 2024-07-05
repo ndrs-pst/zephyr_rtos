@@ -44,8 +44,12 @@ static const char *const colors[] = {
 	NULL                    /* dbg */
 };
 
-static uint32_t timestamp_freq;
-static log_timestamp_t timestamp_div;
+struct log_output_context {
+	uint32_t timestamp_freq;
+	log_timestamp_t timestamp_div;
+};
+
+static struct log_output_context log_output_context;
 
 #define SECONDS_IN_DAY			86400U
 
@@ -218,7 +222,7 @@ static int timestamp_print(const struct log_output *output,
 		(flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) |
 		IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP) |
 		IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP);
-	uint32_t freq = timestamp_freq;
+	uint32_t freq = log_output_context.timestamp_freq;
 
 	if (!format) {
 #ifndef CONFIG_LOG_TIMESTAMP_64BIT
@@ -239,7 +243,7 @@ static int timestamp_print(const struct log_output *output,
 		uint32_t ms;
 		uint32_t us;
 
-		timestamp /= timestamp_div;
+		timestamp /= log_output_context.timestamp_div;
 		total_seconds = timestamp / freq;
 		seconds = total_seconds;
 		hours = seconds / 3600U;
@@ -759,13 +763,13 @@ void log_output_timestamp_freq_set(uint32_t frequency)
 		div *= 2U;
 	}
 
-	timestamp_div = div;
-	timestamp_freq = frequency;
+	log_output_context.timestamp_div = div;
+	log_output_context.timestamp_freq = frequency;
 }
 
 uint64_t log_output_timestamp_to_us(log_timestamp_t timestamp)
 {
-	timestamp /= timestamp_div;
+	timestamp /= log_output_context.timestamp_div;
 
-	return ((uint64_t) timestamp * 1000000U) / timestamp_freq;
+	return ((uint64_t) timestamp * 1000000U) / log_output_context.timestamp_freq;
 }
