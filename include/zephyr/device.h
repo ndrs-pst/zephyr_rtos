@@ -894,10 +894,15 @@ __syscall int device_init(const struct device* dev);
 struct device_dt_nodelabels {
     /* @brief number of elements in the nodelabels array */
     size_t num_nodelabels;
+
     /* @brief array of node labels as strings, exactly as they
      *        appear in the final devicetree
      */
+    #if defined(_MSC_VER)  /* #CUSTOM@NDRs */
+    char const* nodelabels[1];
+    #else
     char const* nodelabels[];
+    #endif
 };
 
 /**
