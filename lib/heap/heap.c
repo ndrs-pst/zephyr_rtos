@@ -310,7 +310,8 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	 * So if e.g. align = 0x28 (32 | 8) this means we align to a 32-byte
 	 * boundary and then rewind 8 bytes.
 	 */
-	rew = align & -align;
+	/* #CUSTOM@NDRS */
+	rew = align & ~(align - 1U);
 	if (align != rew) {
 		align -= rew;
 		gap = MIN(rew, chunk_header_bytes(h));
