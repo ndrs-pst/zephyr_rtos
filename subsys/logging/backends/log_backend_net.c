@@ -337,7 +337,7 @@ static void panic(struct log_backend const *const backend)
 	panic_mode = true;
 }
 
-const struct log_backend_api log_backend_net_api = {
+static const struct log_backend_api log_backend_net_api = {
 	.panic = panic,
 	.init = init_net,
 	.process = process,
