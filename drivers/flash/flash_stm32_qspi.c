@@ -225,7 +225,7 @@ static inline int qspi_prepare_quad_program(struct device const* dev,
 static int qspi_send_cmd(struct device const* dev, QSPI_CommandTypeDef const* cmd) {
     const struct flash_stm32_qspi_config* dev_cfg = dev->config;
     struct flash_stm32_qspi_data* dev_data = dev->data;
-    HAL_StatusTypeDef hal_ret;
+    HAL_StatusTypeDef hal_sts;
 
     ARG_UNUSED(dev_cfg);
 
@@ -233,9 +233,9 @@ static int qspi_send_cmd(struct device const* dev, QSPI_CommandTypeDef const* cm
 
     dev_data->cmd_status = 0;
 
-    hal_ret = HAL_QSPI_Command_IT(&dev_data->hqspi, cmd);
-    if (hal_ret != HAL_OK) {
-        LOG_ERR("%d: Failed to send QSPI instruction", hal_ret);
+    hal_sts = HAL_QSPI_Command_IT(&dev_data->hqspi, cmd);
+    if (hal_sts != HAL_OK) {
+        LOG_ERR("%d: Failed to send QSPI instruction", hal_sts);
         return (-EIO);
     }
     LOG_DBG("CCR 0x%x", dev_cfg->regs->CCR);
@@ -252,7 +252,7 @@ static int qspi_read_access(struct device const* dev, QSPI_CommandTypeDef* cmd,
                             uint8_t* data, size_t size) {
     const struct flash_stm32_qspi_config* dev_cfg  = dev->config;
     struct flash_stm32_qspi_data* dev_data = dev->data;
-    HAL_StatusTypeDef hal_ret;
+    HAL_StatusTypeDef hal_sts;
 
     ARG_UNUSED(dev_cfg);
 
@@ -260,22 +260,22 @@ static int qspi_read_access(struct device const* dev, QSPI_CommandTypeDef* cmd,
 
     dev_data->cmd_status = 0;
 
-    hal_ret = HAL_QSPI_Command_IT(&dev_data->hqspi, cmd);
-    if (hal_ret != HAL_OK) {
-        LOG_ERR("%d: Failed to send QSPI instruction", hal_ret);
+    hal_sts = HAL_QSPI_Command_IT(&dev_data->hqspi, cmd);
+    if (hal_sts != HAL_OK) {
+        LOG_ERR("%d: Failed to send QSPI instruction", hal_sts);
         return (-EIO);
     }
 
     if ((STM32_QSPI_USE_DMA == 1) &&
         (size >= STM32_QSPI_DMA_THRESHOLD)) {
-        hal_ret = HAL_QSPI_Receive_DMA(&dev_data->hqspi, data);
+        hal_sts = HAL_QSPI_Receive_DMA(&dev_data->hqspi, data);
     }
     else {
-        hal_ret = HAL_QSPI_Receive_IT(&dev_data->hqspi, data);
+        hal_sts = HAL_QSPI_Receive_IT(&dev_data->hqspi, data);
     }
 
-    if (hal_ret != HAL_OK) {
-        LOG_ERR("%d: Failed to read data", hal_ret);
+    if (hal_sts != HAL_OK) {
+        LOG_ERR("%d: Failed to read data", hal_sts);
         return (-EIO);
     }
 
@@ -1733,7 +1733,7 @@ static struct flash_stm32_qspi_data flash_stm32_qspi_dev_data = {
     QSPI_DMA_CHANNEL(STM32_QSPI_NODE, tx_rx)
 };
 
-DEVICE_DT_INST_DEFINE(0, &flash_stm32_qspi_init, NULL,
+DEVICE_DT_INST_DEFINE(0, flash_stm32_qspi_init, NULL,
                       &flash_stm32_qspi_dev_data, &flash_stm32_qspi_cfg,
                       POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
                       &flash_stm32_qspi_driver_api);

@@ -2605,7 +2605,7 @@ static struct flash_stm32_ospi_data flash_stm32_ospi_dev_data = {
 	OSPI_DMA_CHANNEL(STM32_OSPI_NODE, tx_rx)
 };
 
-DEVICE_DT_INST_DEFINE(0, &flash_stm32_ospi_init, NULL,
+DEVICE_DT_INST_DEFINE(0, flash_stm32_ospi_init, NULL,
 		      &flash_stm32_ospi_dev_data, &flash_stm32_ospi_cfg,
 		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		      &flash_stm32_ospi_driver_api);
