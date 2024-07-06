@@ -137,11 +137,11 @@ int lwm2m_open_socket(struct lwm2m_ctx *client_ctx)
 
 		if (IS_ENABLED(CONFIG_LWM2M_DTLS_SUPPORT) && client_ctx->use_dtls) {
 			client_ctx->sock_fd = zsock_socket(client_ctx->remote_addr.sa_family,
-							   SOCK_DGRAM, IPPROTO_DTLS_1_2);
+							   SOCK_DGRAM, NET_IPPROTO_DTLS_1_2);
 		} else {
 			client_ctx->sock_fd =
-				zsock_socket(client_ctx->remote_addr.sa_family, SOCK_DGRAM,
-					     IPPROTO_UDP);
+				zsock_socket(client_ctx->remote_addr.sa_family, NET_SOCK_DGRAM,
+					     NET_IPPROTO_UDP);
 		}
 
 		if (client_ctx->sock_fd < 0) {
@@ -678,7 +678,7 @@ static int socket_recv_message(struct lwm2m_ctx *client_ctx)
 	static uint8_t in_buf[NET_IPV6_MTU];
 	socklen_t from_addr_len;
 	ssize_t len;
-	static struct sockaddr from_addr;
+	static struct net_sockaddr from_addr;
 
 	from_addr_len = sizeof(from_addr);
 	len = zsock_recvfrom(client_ctx->sock_fd, in_buf, sizeof(in_buf) - 1, ZSOCK_MSG_DONTWAIT,
@@ -1170,10 +1170,10 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 		goto error;
 	}
 
-	if ((client_ctx->remote_addr).sa_family == AF_INET) {
-		addr_len = sizeof(struct sockaddr_in);
-	} else if ((client_ctx->remote_addr).sa_family == AF_INET6) {
-		addr_len = sizeof(struct sockaddr_in6);
+	if ((client_ctx->remote_addr).sa_family == NET_AF_INET) {
+		addr_len = sizeof(struct net_sockaddr_in);
+	} else if ((client_ctx->remote_addr).sa_family == NET_AF_INET6) {
+		addr_len = sizeof(struct net_sockaddr_in6);
 	} else {
 		ret = -EPROTONOSUPPORT;
 		goto error;
@@ -1298,7 +1298,7 @@ static int lwm2m_engine_init(void)
 	if (IS_ENABLED(CONFIG_LWM2M_TICKLESS)) {
 		/* Create socketpair that is used to wake zsock_poll() in the main loop */
 		int s[2];
-		int ret = zsock_socketpair(AF_UNIX, SOCK_STREAM, 0, s);
+		int ret = zsock_socketpair(AF_UNIX, NET_SOCK_STREAM, 0, s);
 
 		if (ret) {
 			LOG_ERR("Error; socketpair() returned %d", ret);

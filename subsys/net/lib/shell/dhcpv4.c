@@ -17,7 +17,7 @@ static int cmd_net_dhcpv4_server_start(const struct shell *sh, size_t argc, char
 {
 #if defined(CONFIG_NET_DHCPV4_SERVER)
 	struct net_if *iface = NULL;
-	struct in_addr base_addr;
+	struct net_in_addr base_addr;
 	int idx, ret;
 
 	idx = get_iface_idx(sh, argv[1]);
@@ -31,7 +31,7 @@ static int cmd_net_dhcpv4_server_start(const struct shell *sh, size_t argc, char
 		return -ENOEXEC;
 	}
 
-	if (net_addr_pton(AF_INET, argv[2], &base_addr)) {
+	if (net_addr_pton(NET_AF_INET, argv[2], &base_addr)) {
 		PR_ERROR("Invalid address: %s\n", argv[2]);
 		return -EINVAL;
 	}

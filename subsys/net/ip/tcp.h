@@ -7,8 +7,8 @@
 /**
  * @brief Transmission Control Protocol (TCP)
  *
- * - net_tcp_get() is called by net_context_get(AF_INET, SOCK_STREAM,
-     IPPROTO_TCP, ...) and creates struct tcp for the net_context
+ * - net_tcp_get() is called by net_context_get(AF_INET, NET_SOCK_STREAM,
+     NET_IPPROTO_TCP, ...) and creates struct tcp for the net_context
  * - net_tcp_listen()/net_tcp_accept() listen/accept
  * - At the reception of SYN on the listening net_context, a new pair
  *   of net_context/struct tcp registers a new net_conn handle
