@@ -635,7 +635,7 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 
 	context.connecting = true;
 	ret = net_mgmt(NET_REQUEST_WIFI_CONNECT, iface,
-		       &cnx_params, sizeof(struct wifi_connect_req_params));
+		       &cnx_params, sizeof(struct wifi_connect_req_params));    /* @see esp32_wifi_connect */
 	if (ret) {
 		printk("Connection request failed with error: %d\n", ret);
 		context.connecting = false;
@@ -655,8 +655,7 @@ static int cmd_wifi_disconnect(const struct shell *sh, size_t argc,
 
 	context.disconnecting = true;
 
-	status = net_mgmt(NET_REQUEST_WIFI_DISCONNECT, iface, NULL, 0);
-
+	status = net_mgmt(NET_REQUEST_WIFI_DISCONNECT, iface, NULL, 0);     /* @see esp32_wifi_disconnect */
 	if (status) {
 		context.disconnecting = false;
 
@@ -809,6 +808,7 @@ static int cmd_wifi_scan(const struct shell *sh, size_t argc, char *argv[])
 
 	if (do_scan) {
 		if (net_mgmt(NET_REQUEST_WIFI_SCAN, iface, &params, sizeof(params))) {
+			/* @see esp32_wifi_scan */
 			PR_WARNING("Scan request failed\n");
 			return -ENOEXEC;
 		}
@@ -829,6 +829,7 @@ static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
 
 	if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &status,
 		     sizeof(struct wifi_iface_status))) {
+		/* @see esp32_wifi_status */
 		PR_WARNING("Status request failed\n");
 
 		return -ENOEXEC;
@@ -1268,6 +1269,7 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 
 	k_mutex_init(&wifi_ap_sta_list_lock);
 
+	/* @see esp32_wifi_ap_enable */
 	ret = net_mgmt(NET_REQUEST_WIFI_AP_ENABLE, iface, &cnx_params,
 		       sizeof(struct wifi_connect_req_params));
 	if (ret) {
@@ -1286,6 +1288,7 @@ static int cmd_wifi_ap_disable(const struct shell *sh, size_t argc,
 	struct net_if *iface = net_if_get_wifi_sap();
 	int ret;
 
+	/* @see esp32_wifi_ap_disable */
 	ret = net_mgmt(NET_REQUEST_WIFI_AP_DISABLE, iface, NULL, 0);
 	if (ret) {
 		PR_WARNING("AP mode disable failed: %s\n", strerror(-ret));
@@ -1351,6 +1354,7 @@ static int cmd_wifi_ap_sta_disconnect(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
+	/* @see esp32_wifi_sta_disconnect */
 	ret = net_mgmt(NET_REQUEST_WIFI_AP_STA_DISCONNECT, iface, mac, sizeof(mac));
 	if (ret) {
 		PR_WARNING("AP station disconnect failed: %s\n",
@@ -1583,15 +1587,14 @@ static int cmd_wifi_set_rts_threshold(const struct shell *sh, size_t argc, char 
 
 	if (net_mgmt(NET_REQUEST_WIFI_RTS_THRESHOLD, iface,
 		     &rts_threshold, sizeof(rts_threshold))) {
-		shell_warn_impl(sh,
-				"Setting RTS threshold failed.\n");
+		shell_warn(sh, "Setting RTS threshold failed.");
 		return -ENOEXEC;
 	}
 
 	if ((int)rts_threshold >= 0) {
-		shell_print_impl(sh, "RTS threshold: %d\n", rts_threshold);
+		shell_print(sh, "RTS threshold: %d", rts_threshold);
 	} else {
-		shell_print_impl(sh, "RTS threshold is off\n");
+		shell_print(sh, "RTS threshold is off");
 	}
 
 	return 0;
