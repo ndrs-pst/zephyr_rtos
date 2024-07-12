@@ -67,7 +67,7 @@ void TSSLServerSocket::listen()
 {
 	THRIFT_SOCKET sv[2];
 	// Create the socket pair used to interrupt
-	if (-1 == THRIFT_SOCKETPAIR(AF_LOCAL, SOCK_STREAM, 0, sv)) {
+	if (-1 == THRIFT_SOCKETPAIR(AF_LOCAL, NET_SOCK_STREAM, 0, sv)) {
 		GlobalOutput.perror("TServerSocket::listen() socketpair() interrupt",
 				    THRIFT_GET_SOCKET_ERROR);
 		interruptSockWriter_ = THRIFT_INVALID_SOCKET;
@@ -78,7 +78,7 @@ void TSSLServerSocket::listen()
 	}
 
 	// Create the socket pair used to interrupt all clients
-	if (-1 == THRIFT_SOCKETPAIR(AF_LOCAL, SOCK_STREAM, 0, sv)) {
+	if (-1 == THRIFT_SOCKETPAIR(AF_LOCAL, NET_SOCK_STREAM, 0, sv)) {
 		GlobalOutput.perror("TServerSocket::listen() socketpair() childInterrupt",
 				    THRIFT_GET_SOCKET_ERROR);
 		childInterruptSockWriter_ = THRIFT_INVALID_SOCKET;
@@ -98,7 +98,7 @@ void TSSLServerSocket::listen()
 	// Resolve host:port strings into an iterable of struct addrinfo*
 	AddressResolutionHelper resolved_addresses;
 	try {
-		resolved_addresses.resolve(address_, std::to_string(port_), SOCK_STREAM,
+		resolved_addresses.resolve(address_, std::to_string(port_), NET_SOCK_STREAM,
 					   AI_PASSIVE | AI_V4MAPPED);
 
 	} catch (const std::system_error &e) {
@@ -127,7 +127,7 @@ void TSSLServerSocket::listen()
 		}
 		auto trybind = *addr_iter++;
 
-		serverSocket_ = socket(trybind->ai_family, trybind->ai_socktype, IPPROTO_TLS_1_2);
+		serverSocket_ = socket(trybind->ai_family, trybind->ai_socktype, NET_IPPROTO_TLS_1_2);
 		if (serverSocket_ == -1) {
 			errno_copy = THRIFT_GET_SOCKET_ERROR;
 			continue;
@@ -147,9 +147,9 @@ void TSSLServerSocket::listen()
 		}
 
 #ifdef IPV6_V6ONLY
-		if (trybind->ai_family == AF_INET6) {
+		if (trybind->ai_family == NET_AF_INET6) {
 			int zero = 0;
-			if (-1 == setsockopt(serverSocket_, IPPROTO_IPV6, IPV6_V6ONLY,
+			if (-1 == setsockopt(serverSocket_, NET_IPPROTO_IPV6, IPV6_V6ONLY,
 					     cast_sockopt(&zero), sizeof(zero))) {
 				GlobalOutput.perror("TServerSocket::listen() IPV6_V6ONLY ",
 						    THRIFT_GET_SOCKET_ERROR);
@@ -168,20 +168,20 @@ void TSSLServerSocket::listen()
 
 	// retrieve bind info
 	if (port_ == 0 && retries <= retryLimit_) {
-		struct sockaddr_storage sa;
+		struct net_sockaddr_storage sa;
 		socklen_t len = sizeof(sa);
 		std::memset(&sa, 0, len);
-		if (::getsockname(serverSocket_, reinterpret_cast<struct sockaddr *>(&sa), &len) <
+		if (::getsockname(serverSocket_, reinterpret_cast<struct net_sockaddr *>(&sa), &len) <
 		    0) {
 			errno_copy = THRIFT_GET_SOCKET_ERROR;
 			GlobalOutput.perror("TServerSocket::getPort() getsockname() ", errno_copy);
 		} else {
-			if (sa.ss_family == AF_INET6) {
+			if (sa.ss_family == NET_AF_INET6) {
 				const auto *sin =
-					reinterpret_cast<const struct sockaddr_in6 *>(&sa);
+					reinterpret_cast<const struct net_sockaddr_in6 *>(&sa);
 				port_ = ntohs(sin->sin6_port);
 			} else {
-				const auto *sin = reinterpret_cast<const struct sockaddr_in *>(&sa);
+				const auto *sin = reinterpret_cast<const struct net_sockaddr_in *>(&sa);
 				port_ = ntohs(sin->sin_port);
 			}
 		}
