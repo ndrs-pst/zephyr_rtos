@@ -24,7 +24,8 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <esp_mac.h>
 #include "wifi/wifi_event.h"
 
-#define DHCPV4_MASK (NET_EVENT_IPV4_DHCP_BOUND | NET_EVENT_IPV4_DHCP_STOP)
+#define DHCPV4_MASK         (NET_EVENT_IPV4_DHCP_BOUND | NET_EVENT_IPV4_DHCP_STOP)
+#define WIFI_PROTOCOL_MASK  (WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N)
 
 /* use global iface pointer to support any ethernet driver */
 /* necessary for wifi callback functions */
@@ -52,7 +53,6 @@ struct esp32_wifi_status {
 
 struct esp32_wifi_runtime {
     uint8_t mac_addr[6];
-    uint8_t frame_buf[NET_ETH_MAX_FRAME_SIZE];
     #if defined(CONFIG_NET_STATISTICS_WIFI)
     struct net_stats_wifi stats;
     #endif
@@ -60,6 +60,8 @@ struct esp32_wifi_runtime {
     scan_result_cb_t scan_cb;
     uint8_t state;
     uint8_t ap_connection_cnt;
+
+    uint8_t frame_buf[NET_ETH_MAX_FRAME_SIZE];
 };
 
 static struct net_mgmt_event_callback esp32_dhcp_cb;
@@ -437,6 +439,12 @@ static int esp32_wifi_connect(const struct device* dev,
             return (-EAGAIN);
         }
 
+        ret = esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_MASK);
+        if (ret) {
+            LOG_ERR("Failed to set Wi-Fi protocol (%d)", ret);
+            return (-EAGAIN);
+        }
+
         ret = esp_wifi_start();
         if (ret) {
             LOG_ERR("Failed to start Wi-Fi driver (%d)", ret);
@@ -700,17 +708,27 @@ static int esp32_wifi_status(const struct device* dev, struct wifi_iface_status*
             status->rssi = ap_info.rssi;
             memcpy(status->bssid, ap_info.bssid, WIFI_MAC_ADDR_LEN);
 
-            if (ap_info.phy_11b) {
-                status->link_mode = WIFI_1;
-            }
-            else if (ap_info.phy_11g) {
-                status->link_mode = WIFI_3;
-            }
-            else if (ap_info.phy_11n) {
-                status->link_mode = WIFI_4;
-            }
-            else if (ap_info.phy_11ax) {
-                status->link_mode = WIFI_6;
+            wifi_phy_mode_t phy_mode;
+            esp_err_t err;
+
+            err = esp_wifi_sta_get_negotiated_phymode(&phy_mode);
+            if (err == ESP_OK) {
+                if (phy_mode == WIFI_PHY_MODE_11B) {
+                    status->link_mode = WIFI_1;
+                }
+                else if (phy_mode == WIFI_PHY_MODE_11G) {
+                    status->link_mode = WIFI_3;
+                }
+                else if ((phy_mode == WIFI_PHY_MODE_HT20) ||
+                         (phy_mode == WIFI_PHY_MODE_HT40)) {
+                    status->link_mode = WIFI_4;
+                }
+                else if (phy_mode == WIFI_PHY_MODE_HE20) {
+                    status->link_mode = WIFI_6;
+                }
+                else {
+                    /* pass */
+                }
             }
 
             status->beacon_interval = conf.sta.listen_interval;
@@ -836,7 +854,10 @@ int esp32_wifi_ap_config_params(const struct device *dev, struct wifi_ap_config_
     }
 
     if (params->type & WIFI_AP_CONFIG_PARAM_MAX_INACTIVITY) {
-        return (-ENOTSUP);
+        err = esp_wifi_set_inactive_time(WIFI_IF_AP, (uint16_t)params->max_inactivity);
+        if (err != ESP_OK) {
+            return (-EIO);
+        }
     }
 
     if (params->type & WIFI_AP_CONFIG_PARAM_MAX_NUM_STA) {
@@ -876,6 +897,7 @@ static void esp32_wifi_init(struct net_if* iface) {
     esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, eth_esp32_rx);
 
     ret |= esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
+    ret |= esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_MASK);
     ret |= esp_wifi_start();
 
     if (ret != ESP_OK) {
@@ -927,7 +949,7 @@ static const struct wifi_mgmt_ops esp32_wifi_mgmt = {
     .get_stats = esp32_wifi_stats,
     #endif
 
-    .mode = esp32_wifi_mode,
+    .mode    = esp32_wifi_mode,
     .channel = esp32_wifi_channel,
 
     .ap_config_params = esp32_wifi_ap_config_params
