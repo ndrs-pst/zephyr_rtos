@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 /* use global iface pointer to support any ethernet driver */
 /* necessary for wifi callback functions */
 static struct net_if* esp32_wifi_iface;
-static struct esp32_wifi_runtime esp32_data;
+static __noinit struct esp32_wifi_runtime esp32_data;
 
 enum esp32_state_flag {
     ESP32_STA_STOPPED,
@@ -313,10 +313,10 @@ static void esp_wifi_handle_ap_connect_event(void* event_data) {
 
         if (memcmp(event->mac, sta->mac, 6) == 0) {
             if (sta->phy_11n) {
-                sta_info.link_mode = WIFI_3;
+                sta_info.link_mode = WIFI_4;
             }
             else if (sta->phy_11g) {
-                sta_info.link_mode = WIFI_2;
+                sta_info.link_mode = WIFI_3;
             }
             else if (sta->phy_11b) {
                 sta_info.link_mode = WIFI_1;
@@ -633,6 +633,10 @@ static int esp32_wifi_ap_disable(const struct device* dev) {
     return (0);
 };
 
+static int esp32_wifi_ap_sta_disconnect(const struct device* dev, uint8_t const* mac) {
+    return (-ENOTSUP);
+}
+
 static int esp32_wifi_status(const struct device* dev, struct wifi_iface_status* status) {
     struct esp32_wifi_runtime* data = dev->data;
     wifi_mode_t mode;
@@ -728,10 +732,97 @@ static int esp32_wifi_status(const struct device* dev, struct wifi_iface_status*
     return 0;
 }
 
+int esp32_wifi_mode(const struct device* dev, struct wifi_mode_info* mode) {
+    struct net_if* iface = net_if_get_by_index(mode->if_index);
+    wifi_mode_t wifi_mode;
+    esp_err_t err;
+
+    /* Make sure we are on the right interface */
+    if (iface != esp32_wifi_iface) {
+        return (-ESRCH);
+    }
+
+    if (mode->oper == WIFI_MGMT_GET) {
+        err = esp_wifi_get_mode(&wifi_mode);
+        if (err != ESP_OK) {
+            return (-EIO);
+        }
+
+        switch (wifi_mode) {
+            case ESP32_WIFI_MODE_STA :
+                mode->mode = WIFI_STA_MODE;
+                break;
+
+            case ESP32_WIFI_MODE_AP :
+                mode->mode = WIFI_SOFTAP_MODE;
+                break;
+
+            case ESP32_WIFI_MODE_APSTA :
+                mode->mode = WIFI_SOFTAP_MODE | WIFI_STA_MODE;
+                break;
+
+            default :
+                mode->mode = 0U;
+                break;
+        }
+    }
+    else { /* WIFI_MGMT_SET */
+        switch (mode->mode) {
+            case WIFI_STA_MODE :
+                wifi_mode = ESP32_WIFI_MODE_STA;
+                break;
+
+            case WIFI_SOFTAP_MODE :
+                wifi_mode = ESP32_WIFI_MODE_AP;
+                break;
+
+            case (WIFI_SOFTAP_MODE | WIFI_STA_MODE) :
+                wifi_mode = ESP32_WIFI_MODE_APSTA;
+                break;
+
+            default :
+                return (-EINVAL);
+        }
+
+        err = esp_wifi_set_mode(wifi_mode);
+        if (err != ESP_OK) {
+            return (-EIO);
+        }
+    }
+
+    return (0);
+}
+
+
+int esp32_wifi_ap_config_params(const struct device *dev, struct wifi_ap_config_params *params) {
+    wifi_config_t wifi_config;
+    esp_err_t err;
+
+    err = esp_wifi_get_config(WIFI_IF_AP, &wifi_config);
+    if (err != ESP_OK) {
+        return (-EIO);
+    }
+
+    if (params->type & WIFI_AP_CONFIG_PARAM_MAX_INACTIVITY) {
+        return (-ENOTSUP);
+    }
+
+    if (params->type & WIFI_AP_CONFIG_PARAM_MAX_NUM_STA) {
+        wifi_config.ap.max_connection = (uint8_t)params->max_num_sta;
+    }
+
+    err = esp_wifi_set_config(WIFI_IF_AP, &wifi_config);
+    if (err != ESP_OK) {
+        return (-EIO);
+    }
+
+    return (0);
+}
+
 static void esp32_wifi_init(struct net_if* iface) {
-    const struct device*       dev      = net_if_get_device(iface);
+    const struct device* dev = net_if_get_device(iface);
     struct esp32_wifi_runtime* dev_data = dev->data;
-    struct ethernet_context*   eth_ctx  = net_if_l2_data(iface);
+    struct ethernet_context* eth_ctx = net_if_l2_data(iface);
 
     eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
     esp32_wifi_iface     = iface;
@@ -798,11 +889,15 @@ static const struct wifi_mgmt_ops esp32_wifi_mgmt = {
     .disconnect   = esp32_wifi_disconnect,
     .ap_enable    = esp32_wifi_ap_enable,
     .ap_disable   = esp32_wifi_ap_disable,
+    .ap_sta_disconnect = esp32_wifi_ap_sta_disconnect,
     .iface_status = esp32_wifi_status,
-
     #if defined(CONFIG_NET_STATISTICS_WIFI)
     .get_stats = esp32_wifi_stats,
     #endif
+
+    .mode = esp32_wifi_mode,
+
+    .ap_config_params = esp32_wifi_ap_config_params
 };
 
 static const struct net_wifi_mgmt_offload esp32_api = {
