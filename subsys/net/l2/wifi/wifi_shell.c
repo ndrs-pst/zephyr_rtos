@@ -1354,7 +1354,7 @@ static int cmd_wifi_ap_sta_disconnect(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	/* @see esp32_wifi_sta_disconnect */
+	/* @see esp32_wifi_ap_sta_disconnect */
 	ret = net_mgmt(NET_REQUEST_WIFI_AP_STA_DISCONNECT, iface, mac, sizeof(mac));
 	if (ret) {
 		PR_WARNING("AP station disconnect failed: %s\n",
@@ -1693,9 +1693,9 @@ static int cmd_wifi_mode(const struct shell *sh, size_t argc, char *argv[])
 		}
 
 		if (mode_info.oper == WIFI_MGMT_GET) {
-			PR("Wi-Fi current mode is %x\n", mode_info.mode);
+			PR("Wi-Fi current mode is 0x%02x\n", mode_info.mode);
 		} else {
-			PR("Wi-Fi mode set to %x\n", mode_info.mode);
+			PR("Wi-Fi mode set to 0x%02x\n", mode_info.mode);
 		}
 	}
 	return 0;
@@ -2021,8 +2021,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		      NULL,
 		      "<mode: legacy/WMM>.\n",
 		      cmd_wifi_ps_mode,
-		      2,
-		      0),
+		      2, 0),
 	SHELL_CMD_ARG(scan, NULL,
 		  "Scan for Wi-Fi APs\n"
 		    "[-t, --type <active/passive>] : Preferred mode of scan. The actual mode of scan can depend on factors such as the Wi-Fi chip implementation, regulatory domain restrictions. Default type is active\n"
