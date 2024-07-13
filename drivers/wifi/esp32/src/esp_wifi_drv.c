@@ -767,6 +767,32 @@ static int esp32_wifi_status(const struct device* dev, struct wifi_iface_status*
     return 0;
 }
 
+int esp32_wifi_reg_domain(const struct device* dev, struct wifi_reg_domain* reg_domain) {
+    wifi_mode_t wifi_mode;
+    esp_err_t err;
+
+    ARG_UNUSED(dev);
+
+    if (reg_domain->oper == WIFI_MGMT_GET) {
+        err = esp_wifi_get_country_code(reg_domain->country_code);
+        if (err != ESP_OK) {
+            return (-EIO);
+        }
+
+        /* Only supports country codes, so set num_channels to zeros */
+        reg_domain->num_channels = 0U;
+    }
+    else { /* WIFI_MGMT_SET */
+        bool ieee80211d_enabled = !reg_domain->force;
+        err = esp_wifi_set_country_code(reg_domain->country_code, ieee80211d_enabled);
+        if (err != ESP_OK) {
+            return (-EIO);
+        }
+    }
+
+    return (0);
+}
+
 int esp32_wifi_mode(const struct device* dev, struct wifi_mode_info* mode) {
     struct net_if* iface = net_if_get_by_index(mode->if_index);
     wifi_mode_t wifi_mode;
@@ -949,8 +975,9 @@ static const struct wifi_mgmt_ops esp32_wifi_mgmt = {
     .get_stats = esp32_wifi_stats,
     #endif
 
-    .mode    = esp32_wifi_mode,
-    .channel = esp32_wifi_channel,
+    .reg_domain = esp32_wifi_reg_domain,
+    .mode       = esp32_wifi_mode,
+    .channel    = esp32_wifi_channel,
 
     .ap_config_params = esp32_wifi_ap_config_params
 };
