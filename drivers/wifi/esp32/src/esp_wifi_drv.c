@@ -793,6 +793,39 @@ int esp32_wifi_mode(const struct device* dev, struct wifi_mode_info* mode) {
 }
 
 
+int esp32_wifi_channel(const struct device *dev,
+                       struct wifi_channel_info *channel) {
+    struct net_if* iface = net_if_get_by_index(channel->if_index);
+    uint8_t primary_chan;
+    wifi_second_chan_t second_chan;
+    esp_err_t err;
+
+    ARG_UNUSED(dev);
+
+    /* Make sure we are on the right interface */
+    if (iface != esp32_wifi_iface) {
+        return (-ESRCH);
+    }
+
+    if (channel->oper == WIFI_MGMT_GET) {
+        err = esp_wifi_get_channel(&primary_chan, &second_chan);
+        if (err != ESP_OK) {
+            return (-EIO);
+        }
+
+        channel->channel = primary_chan;
+        (void) second_chan;
+    }
+    else { /* WIFI_MGMT_SET */
+        err = esp_wifi_set_channel(channel->channel, WIFI_SECOND_CHAN_NONE);
+        if (err != ESP_OK) {
+            return (-EIO);
+        }
+    }
+
+    return (0);
+}
+
 int esp32_wifi_ap_config_params(const struct device *dev, struct wifi_ap_config_params *params) {
     wifi_config_t wifi_config;
     esp_err_t err;
@@ -895,6 +928,7 @@ static const struct wifi_mgmt_ops esp32_wifi_mgmt = {
     #endif
 
     .mode = esp32_wifi_mode,
+    .channel = esp32_wifi_channel,
 
     .ap_config_params = esp32_wifi_ap_config_params
 };
