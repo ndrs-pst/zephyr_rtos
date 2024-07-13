@@ -216,7 +216,7 @@ static inline void sys_sflist_init(sys_sflist_t *list)
 /* Flag bits are stored in unused LSB of the sys_sfnode_t pointer */
 #define SYS_SFLIST_FLAGS_MASK	((uintptr_t)(__alignof__(sys_sfnode_t) - 1))
 /* At least 2 available flag bits are expected */
-BUILD_ASSERT(SYS_SFLIST_FLAGS_MASK >= 0x3);
+BUILD_ASSERT(SYS_SFLIST_FLAGS_MASK >= 0x3, "SYS_SFLIST_FLAGS_MASK shall >= 0x3");
 
 static inline sys_sfnode_t *z_sfnode_next_peek(sys_sfnode_t *node)
 {
