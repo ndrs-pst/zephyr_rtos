@@ -307,7 +307,7 @@ static void esp_wifi_handle_ap_connect_event(void* event_data) {
     /* Expect the return value to always be ESP_OK,
      * since it is called in esp_wifi_event_handler()
      */
-    (void)esp_wifi_ap_get_sta_list(&sta_list);
+    (void) esp_wifi_ap_get_sta_list(&sta_list);
     for (int i = 0; i < sta_list.num; i++) {
         wifi_sta_info_t* sta = &sta_list.sta[i];
 
@@ -560,7 +560,7 @@ static int esp32_wifi_scan(const struct device* dev,
 static int esp32_wifi_ap_enable(const struct device* dev,
                                 struct wifi_connect_req_params* params) {
     struct esp32_wifi_runtime* data = dev->data;
-    esp_err_t err = 0;
+    esp_err_t err;
 
     /* Build Wi-Fi configuration for AP mode */
     wifi_config_t wifi_config = {
@@ -622,7 +622,7 @@ static int esp32_wifi_ap_enable(const struct device* dev,
 };
 
 static int esp32_wifi_ap_disable(const struct device* dev) {
-    int err = 0;
+    int err;
 
     err = esp_wifi_stop();
     if (err) {
@@ -634,7 +634,24 @@ static int esp32_wifi_ap_disable(const struct device* dev) {
 };
 
 static int esp32_wifi_ap_sta_disconnect(const struct device* dev, uint8_t const* mac) {
-    return (-ENOTSUP);
+    uint16_t aid;
+    esp_err_t err;
+
+    ARG_UNUSED(dev);
+
+    err = esp_wifi_ap_get_sta_aid(mac, &aid);
+    if (err) {
+        LOG_ERR("Failed to get station's AID: (%d)", err);
+        return (-EIO);
+    }
+
+    err = esp_wifi_deauth_sta(aid);
+    if (err != ESP_OK) {
+        LOG_ERR("Failed to disconnect station: (%d)", err);
+        return (-EIO);
+    }
+
+    return (0);
 }
 
 static int esp32_wifi_status(const struct device* dev, struct wifi_iface_status* status) {
@@ -737,6 +754,8 @@ int esp32_wifi_mode(const struct device* dev, struct wifi_mode_info* mode) {
     wifi_mode_t wifi_mode;
     esp_err_t err;
 
+    ARG_UNUSED(dev);
+
     /* Make sure we are on the right interface */
     if (iface != esp32_wifi_iface) {
         return (-ESRCH);
@@ -767,27 +786,7 @@ int esp32_wifi_mode(const struct device* dev, struct wifi_mode_info* mode) {
         }
     }
     else { /* WIFI_MGMT_SET */
-        switch (mode->mode) {
-            case WIFI_STA_MODE :
-                wifi_mode = ESP32_WIFI_MODE_STA;
-                break;
-
-            case WIFI_SOFTAP_MODE :
-                wifi_mode = ESP32_WIFI_MODE_AP;
-                break;
-
-            case (WIFI_SOFTAP_MODE | WIFI_STA_MODE) :
-                wifi_mode = ESP32_WIFI_MODE_APSTA;
-                break;
-
-            default :
-                return (-EINVAL);
-        }
-
-        err = esp_wifi_set_mode(wifi_mode);
-        if (err != ESP_OK) {
-            return (-EIO);
-        }
+        return (-ENOTSUP);
     }
 
     return (0);
