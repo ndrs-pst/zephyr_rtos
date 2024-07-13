@@ -211,7 +211,7 @@ static int wifi_utils_validate_chan_str(char const* chan_str) {
     return (0);
 }
 
-int wifi_utils_parse_scan_bands(char const* scan_bands_str, uint8_t* band_map) {
+int wifi_utils_parse_scan_bands(char* scan_bands_str, uint8_t* band_map) {
     char  parse_str[WIFI_MGMT_BAND_STR_SIZE_MAX + 1];
     char const* band_str;
     char* ctx;
@@ -253,7 +253,7 @@ int wifi_utils_parse_scan_bands(char const* scan_bands_str, uint8_t* band_map) {
     return (0);
 }
 
-int wifi_utils_parse_scan_ssids(char const* scan_ssids_str,
+int wifi_utils_parse_scan_ssids(char* scan_ssids_str,
                                 char const* ssids[],
                                 uint8_t num_ssids) {
     int len;
@@ -283,7 +283,7 @@ int wifi_utils_parse_scan_ssids(char const* scan_ssids_str,
     return (0);
 }
 
-int wifi_utils_parse_scan_chan(char const* scan_chan_str,
+int wifi_utils_parse_scan_chan(char* scan_chan_str,
                                struct wifi_band_channel* band_chan,
                                uint8_t max_channels) {
     char band_str[WIFI_UTILS_MAX_BAND_STR_LEN];

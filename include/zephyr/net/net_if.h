@@ -950,7 +950,7 @@ static inline const struct device* net_if_get_device(struct net_if* iface) {
  * @param iface Pointer to a network interface structure
  * @param pkt Pointer to a net packet to queue
  */
-void net_if_queue_tx(struct net_if const* iface, struct net_pkt* pkt);
+void net_if_queue_tx(struct net_if* iface, struct net_pkt* pkt);
 
 /**
  * @brief Return the IP offload status
@@ -1263,7 +1263,7 @@ static inline void net_if_addr_set_lf(struct net_if_addr* ifaddr,
  *
  * @return Network interface or NULL if not found.
  */
-struct net_if* net_if_get_by_link_addr(struct net_linkaddr const* ll_addr);
+struct net_if* net_if_get_by_link_addr(struct net_linkaddr* ll_addr);
 
 /**
  * @brief Find an interface from it's related device
@@ -2156,7 +2156,7 @@ struct net_if_addr* net_if_ipv4_addr_lookup(const struct net_in_addr* addr,
  * @return Pointer to interface address, NULL if cannot be added
  */
 struct net_if_addr* net_if_ipv4_addr_add(struct net_if* iface,
-                                         struct net_in_addr const* addr,
+                                         struct net_in_addr* addr,
                                          enum net_addr_type addr_type,
                                          uint32_t vlifetime);
 
@@ -2324,7 +2324,7 @@ static inline struct net_in_addr* net_if_router_ipv4(struct net_if_router* route
  *
  * @return Pointer to router information, NULL if cannot be found
  */
-struct net_if_router* net_if_ipv4_router_lookup(struct net_if const* iface,
+struct net_if_router* net_if_ipv4_router_lookup(struct net_if* iface,
                                                 struct net_in_addr* addr);
 
 /**
@@ -2336,8 +2336,8 @@ struct net_if_router* net_if_ipv4_router_lookup(struct net_if const* iface,
  *
  * @return Pointer to router information, NULL if cannot be found
  */
-struct net_if_router* net_if_ipv4_router_find_default(struct net_if const* iface,
-                                                      struct net_in_addr const* addr);
+struct net_if_router* net_if_ipv4_router_find_default(struct net_if* iface,
+                                                      struct net_in_addr* addr);
 /**
  * @brief Add IPv4 router to the system.
  *
@@ -2698,7 +2698,7 @@ __syscall struct net_if* net_if_get_by_index(int index);
  *
  * @return Interface index
  */
-int net_if_get_by_iface(struct net_if const* iface);
+int net_if_get_by_iface(struct net_if* iface);
 
 /**
  * @typedef net_if_cb_t

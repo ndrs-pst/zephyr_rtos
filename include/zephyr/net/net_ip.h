@@ -161,6 +161,11 @@ struct /**/net_in_addr {
     };
 };
 
+#if (__GTEST == 0) /* #CUSTOM@NDRS */
+#define in_addr             net_in_addr
+#define in6_addr            net_in6_addr
+#endif
+
 /** Binary size of the IPv4 address */
 #define NET_IPV4_ADDR_SIZE 4
 
@@ -231,6 +236,11 @@ struct net_sockaddr_ll_ptr {
     uint8_t     sll_halen;    /**< Length of address                  */
     uint8_t*    sll_addr;     /**< Physical-layer address, big endian */
 };
+
+#if (__GTEST == 0) /* #CUSTOM@NDRS */
+#define sockaddr_in_ptr     net_sockaddr_in_ptr
+#define sockaddr_ll_ptr     net_sockaddr_ll_ptr
+#endif
 
 struct net_sockaddr_can_ptr {
     sa_family_t can_family;
@@ -409,6 +419,12 @@ struct /**/net_sockaddr_ptr {
     sa_family_t family;
     char data[NET_SOCKADDR_PTR_MAX_SIZE - sizeof(sa_family_t)];
 };
+
+#if (__GTEST == 0) /* #CUSTOM@NDRS */
+#define sockaddr            net_sockaddr
+#define sockaddr_ptr        net_sockaddr_ptr
+#define sockaddr_in_ptr     net_sockaddr_in_ptr
+#endif
 
 /* Same as sockaddr in our case */
 struct /**/net_sockaddr_storage {
@@ -1735,17 +1751,33 @@ char const* net_family2str(sa_family_t family);
 #define sockaddr_nl         net_sockaddr_nl
 #define sockaddr_storage    net_sockaddr_storage
 #define sockaddr_ll         net_sockaddr_ll
+
 #define AF_INET             NET_AF_INET
 #define AF_INET6            NET_AF_INET6
 #define AF_UNSPEC           NET_AF_UNSPEC
+#define AF_PACKET           NET_AF_PACKET
+#define AF_CAN              NET_AF_CAN
+#define AF_NET_MGMT         NET_AF_NET_MGMT
+#define AF_LOCAL            NET_AF_LOCAL
+#define AF_UNIX             NET_AF_UNIX
+
+#define PF_INET             NET_PF_INET
+
 #define SOCK_STREAM         NET_SOCK_STREAM
 #define SOCK_DGRAM          NET_SOCK_DGRAM
+#define SOCK_RAW            NET_SOCK_RAW
+
 #define INADDR_ANY          NET_INADDR_ANY
+#define INADDR_ANY_INIT     NET_INADDR_ANY_INIT
 #define IPPROTO_IP          NET_IPPROTO_IP
+#define IPPROTO_IPIP        NET_IPPROTO_IPIP
 #define IPPROTO_TCP         NET_IPPROTO_TCP
 #define IPPROTO_UDP         NET_IPPROTO_UDP
 #define IPPROTO_IPV6        NET_IPPROTO_IPV6
 #define IPPROTO_ICMP        NET_IPPROTO_ICMP
+#define IPPROTO_IGMP        NET_IPPROTO_IGMP
+#define IPPROTO_ICMPV6      NET_IPPROTO_ICMPV6
+#define IPPROTO_RAW         NET_IPPROTO_RAW
 #define IPPROTO_TLS_1_2     NET_IPPROTO_TLS_1_2
 #define IPPROTO_DTLS_1_2    NET_IPPROTO_DTLS_1_2
 

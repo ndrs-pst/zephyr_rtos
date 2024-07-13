@@ -72,6 +72,10 @@ struct net_sockaddr_can {
 	int         can_ifindex;  /**< SocketCAN network interface index */
 };
 
+#if (__GTEST == 0)
+#define sockaddr_can    net_sockaddr_can
+#endif
+
 /**
  * @name Linux SocketCAN compatibility
  *

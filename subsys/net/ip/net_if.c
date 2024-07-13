@@ -333,7 +333,7 @@ void net_process_tx_packet(struct net_pkt* pkt) {
     #endif
 }
 
-void net_if_queue_tx(struct net_if const* iface, struct net_pkt* pkt) {
+void net_if_queue_tx(struct net_if* iface, struct net_pkt* pkt) {
     if (!net_pkt_filter_send_ok(pkt)) {
         /* silently drop the packet */
         net_pkt_unref(pkt);
@@ -541,7 +541,7 @@ int net_if_set_link_addr_locked(struct net_if* iface,
     return (ret);
 }
 
-struct net_if* net_if_get_by_link_addr(struct net_linkaddr const* ll_addr) {
+struct net_if* net_if_get_by_link_addr(struct net_linkaddr* ll_addr) {
     STRUCT_SECTION_FOREACH(net_if, iface) {
         net_if_lock(iface);
         if (!memcmp(net_if_get_link_addr(iface)->addr, ll_addr->addr,
@@ -3353,13 +3353,13 @@ out :
     net_if_unlock(iface);
 }
 
-struct net_if_router* net_if_ipv4_router_lookup(struct net_if const* iface,
+struct net_if_router* net_if_ipv4_router_lookup(struct net_if* iface,
                                                 struct net_in_addr* addr) {
     return iface_router_lookup(iface, NET_AF_INET, addr);
 }
 
-struct net_if_router* net_if_ipv4_router_find_default(struct net_if const* iface,
-                                                      struct net_in_addr const* addr) {
+struct net_if_router* net_if_ipv4_router_find_default(struct net_if* iface,
+                                                      struct net_in_addr* addr) {
     return iface_router_find_default(iface, NET_AF_INET, addr);
 }
 
@@ -4124,7 +4124,7 @@ void net_if_ipv4_start_acd(struct net_if* iface, struct net_if_addr* ifaddr) {
 #endif /* CONFIG_NET_IPV4_ACD */
 
 struct net_if_addr* net_if_ipv4_addr_add(struct net_if* iface,
-                                         struct net_in_addr const* addr,
+                                         struct net_in_addr* addr,
                                          enum net_addr_type addr_type,
                                          uint32_t vlifetime) {
     struct net_if_addr* ifaddr = NULL;
@@ -4990,7 +4990,7 @@ bool net_if_need_calc_rx_checksum(struct net_if* iface, enum net_if_checksum_typ
     return need_calc_checksum(iface, ETHERNET_HW_RX_CHKSUM_OFFLOAD, chksum_type);
 }
 
-int net_if_get_by_iface(struct net_if const* iface) {
+int net_if_get_by_iface(struct net_if* iface) {
     if (!((iface >= _net_if_list_start) &&
           (iface <  _net_if_list_end  ))) {
         return (-1);
