@@ -45,7 +45,7 @@ static int _sock_connect(struct esp_data* dev, struct esp_socket* sock) {
     dst = sock->dst;
     k_mutex_unlock(&sock->lock);
 
-    if (dst.sa_family == AF_INET) {
+    if (dst.sa_family == NET_AF_INET) {
         net_addr_ntop(dst.sa_family,
                       &net_sin(&dst)->sin_addr,
                       dst_addr_str, sizeof(dst_addr_str));
@@ -58,7 +58,7 @@ static int _sock_connect(struct esp_data* dev, struct esp_socket* sock) {
         snprintk(connect_msg, sizeof(connect_msg),
                  "AT+CIPSTART=%d,\"TCP\",\"%s\",%d,7200",
                  sock->link_id, dst_addr_str,
-                 ntohs(net_sin(&dst)->sin_port));
+                 net_ntohs(net_sin(&dst)->sin_port));
     }
     else {
         if ((src.sa_family == NET_AF_INET) && (net_sin(&src)->sin_port != 0)) {
@@ -68,14 +68,14 @@ static int _sock_connect(struct esp_data* dev, struct esp_socket* sock) {
             snprintk(connect_msg, sizeof(connect_msg),
                      "AT+CIPSTART=%d,\"UDP\",\"%s\",%d,%d,0,\"%s\"",
                      sock->link_id, dst_addr_str,
-            ntohs(net_sin(&dst)->sin_port), ntohs(net_sin(&src)->sin_port),
-                  src_addr_str);
+            net_ntohs(net_sin(&dst)->sin_port), net_ntohs(net_sin(&src)->sin_port),
+                      src_addr_str);
         }
         else {
             snprintk(connect_msg, sizeof(connect_msg),
                      "AT+CIPSTART=%d,\"UDP\",\"%s\",%d",
                      sock->link_id, dst_addr_str,
-                     ntohs(net_sin(&dst)->sin_port));
+                     net_ntohs(net_sin(&dst)->sin_port));
         }
     }
 
@@ -130,7 +130,7 @@ static int esp_bind(struct net_context *context, const struct net_sockaddr *addr
         return (0);
     }
 
-    if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == AF_INET) {
+    if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == NET_AF_INET) {
         LOG_DBG("link %d", sock->link_id);
 
         if (esp_socket_connected(sock)) {
@@ -265,7 +265,7 @@ static int _sock_send(struct esp_socket* sock, struct net_pkt* pkt) {
         snprintk(cmd_buf, sizeof(cmd_buf),
                  "AT+CIPSEND=%d,%d,\"%s\",%d",
                  sock->link_id, pkt_len, addr_str,
-                 ntohs(net_sin(&dst)->sin_port));
+                 net_ntohs(net_sin(&dst)->sin_port));
     }
 
     k_sem_take(&dev->cmd_handler_data.sem_tx_lock, K_FOREVER);
@@ -502,7 +502,7 @@ static int cmd_ciprecvdata_parse(struct esp_socket* sock,
     *data_offset = (endptr - cmd_buf) + 1;
 
     /* FIXME: Inefficient way of waiting for data */
-    if (*data_offset + *data_len > frags_len) {
+    if ((size_t)(*data_offset + *data_len) > frags_len) {
         return (-EAGAIN);
     }
 

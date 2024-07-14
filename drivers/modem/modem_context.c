@@ -63,10 +63,10 @@ int modem_context_get_addr_port(const struct net_sockaddr *addr, uint16_t *port)
 	}
 
 	if (addr->sa_family == NET_AF_INET6) {
-		*port = ntohs(net_sin6(addr)->sin6_port);
+		*port = net_ntohs(net_sin6(addr)->sin6_port);
 		return 0;
 	} else if (addr->sa_family == NET_AF_INET) {
-		*port = ntohs(net_sin(addr)->sin_port);
+		*port = net_ntohs(net_sin(addr)->sin_port);
 		return 0;
 	}
 

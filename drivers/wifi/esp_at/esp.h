@@ -15,9 +15,9 @@
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/wifi_mgmt.h>
 
-#include "modem_context.h"
-#include "modem_cmd_handler.h"
-#include "modem_iface_uart.h"
+#include "modem/modem_context.h"
+#include "modem/modem_cmd_handler.h"
+#include "modem/modem_iface_uart.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -128,7 +128,7 @@ extern "C" {
 #endif
 
 #define ESP_CMD_DHCP_ENABLE(mode, enable) \
-                        _ESP_CMD_DHCP_ENABLE(_CONCAT(ESP_CWDHCP_MODE_, mode), enable)
+                        _ESP_CMD_DHCP_ENABLE(Z_CONCAT(ESP_CWDHCP_MODE_, mode), enable)
 
 #define ESP_CMD_SET_IP(ip, gateway, mask) "AT+"_CIPSTA"=\"" \
                         ip "\",\""  gateway  "\",\""  mask "\""

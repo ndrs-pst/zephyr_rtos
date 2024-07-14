@@ -43,8 +43,14 @@ struct esp_config {
     #endif
 };
 
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+/* Need to provide _ud_size > 0 */
+NET_BUF_POOL_DEFINE(mdm_recv_pool, MDM_RECV_MAX_BUF, MDM_RECV_BUF_SIZE,
+                    8, NULL);
+#else
 NET_BUF_POOL_DEFINE(mdm_recv_pool, MDM_RECV_MAX_BUF, MDM_RECV_BUF_SIZE,
                     0, NULL);
+#endif
 
 /* RX thread structures */
 K_KERNEL_STACK_DEFINE(esp_rx_stack,
@@ -315,8 +321,8 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_cwlap) {
     long ecn_id;
     int err;
 
-    len = net_buf_linearize(cwlap_buf, sizeof(cwlap_buf) - 1,
-                            data->rx_buf, 0, sizeof(cwlap_buf) - 1);
+    len = (uint16_t)net_buf_linearize(cwlap_buf, sizeof(cwlap_buf) - 1,
+                                      data->rx_buf, 0, sizeof(cwlap_buf) - 1);
     cwlap_buf[len] = '\0';
 
     char* str = &cwlap_buf[sizeof("+CWJAP:(") - 1];
@@ -349,10 +355,10 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_cwlap) {
         return (-EBADMSG);
     }
 
-    res.ssid_length = MIN(sizeof(res.ssid), strlen(ssid));
+    res.ssid_length = MIN(sizeof(res.ssid), (uint8_t)strlen(ssid));
     memcpy(res.ssid, ssid, res.ssid_length);
 
-    res.rssi = strtol(rssi, NULL, 10);
+    res.rssi = (int8_t)strtol(rssi, NULL, 10);
 
     if (IS_ENABLED(CONFIG_WIFI_ESP_AT_SCAN_MAC_ADDRESS)) {
         err = esp_pull_quoted(&str, str_end, &mac);
@@ -372,7 +378,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_cwlap) {
         return (err);
     }
 
-    res.channel = strtol(channel, NULL, 10);
+    res.channel = (uint8_t)strtol(channel, NULL, 10);
 
     if (dev->scan_cb) {
         dev->scan_cb(dev->net_iface, 0, &res);
@@ -395,8 +401,8 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_cwjap) {
     char* rssi;
     int err;
 
-    len = net_buf_linearize(cwjap_buf, sizeof(cwjap_buf) - 1,
-                            data->rx_buf, 0, sizeof(cwjap_buf) - 1);
+    len = (uint16_t)net_buf_linearize(cwjap_buf, sizeof(cwjap_buf) - 1,
+                                      data->rx_buf, 0, sizeof(cwjap_buf) - 1);
     cwjap_buf[len] = '\0';
 
     char* str = &cwjap_buf[sizeof("+CWJAP:") - 1];
@@ -786,7 +792,8 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd) {
     struct esp_data* dev = CONTAINER_OF(data, struct esp_data,
                                         cmd_handler_data);
     struct esp_socket* sock;
-    int data_offset, data_len;
+    int data_offset;
+    int data_len;
     uint8_t link_id;
     char cmd_end;
     int err;
@@ -825,7 +832,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd) {
     }
 
     /* Do we have the whole message? */
-    if (data_offset + data_len > net_buf_frags_len(data->rx_buf)) {
+    if ((size_t)(data_offset + data_len) > net_buf_frags_len(data->rx_buf)) {
         ret = -EAGAIN;
         goto socket_unref;
     }

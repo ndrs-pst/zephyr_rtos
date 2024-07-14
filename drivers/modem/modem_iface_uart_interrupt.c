@@ -52,8 +52,8 @@ static void modem_iface_uart_isr(const struct device *uart_dev,
 {
 	struct modem_context *ctx;
 	struct modem_iface_uart_data *data;
-	int rx = 0, ret;
-	uint8_t *dst;
+	int rx = 0;
+	uint8_t* dst = NULL;
 	uint32_t partial_size = 0;
 	uint32_t total_size = 0;
 
@@ -73,6 +73,7 @@ static void modem_iface_uart_isr(const struct device *uart_dev,
 			partial_size = ring_buf_put_claim(&data->rx_rb, &dst,
 							  UINT32_MAX);
 		}
+
 		if (!partial_size) {
 			if (data->hw_flow_control) {
 				uart_irq_rx_disable(ctx->iface.dev);
@@ -93,7 +94,7 @@ static void modem_iface_uart_isr(const struct device *uart_dev,
 		partial_size -= rx;
 	}
 
-	ret = ring_buf_put_finish(&data->rx_rb, total_size);
+	int ret = ring_buf_put_finish(&data->rx_rb, total_size);
 	__ASSERT_NO_MSG(ret == 0);
 
 	if (total_size > 0) {

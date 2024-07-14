@@ -100,7 +100,7 @@ int wifi_utils_parse_scan_ssids(char* scan_ssids_str,
  * @retval 0 on success.
  * @retval -errno value in case of failure.
  */
-int wifi_utils_parse_scan_chan(char* scan_chan_str,
+int wifi_utils_parse_scan_chan(char const* scan_chan_str,
                                struct wifi_band_channel* chan,
                                uint8_t max_channels);
 

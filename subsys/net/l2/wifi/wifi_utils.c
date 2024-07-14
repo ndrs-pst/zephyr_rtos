@@ -283,7 +283,7 @@ int wifi_utils_parse_scan_ssids(char* scan_ssids_str,
     return (0);
 }
 
-int wifi_utils_parse_scan_chan(char* scan_chan_str,
+int wifi_utils_parse_scan_chan(char const* scan_chan_str,
                                struct wifi_band_channel* band_chan,
                                uint8_t max_channels) {
     char band_str[WIFI_UTILS_MAX_BAND_STR_LEN];
