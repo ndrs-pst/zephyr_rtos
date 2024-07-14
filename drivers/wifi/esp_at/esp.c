@@ -110,7 +110,7 @@ static inline uint8_t esp_mode_from_flags(struct esp_data* data) {
 }
 
 static int esp_mode_switch(struct esp_data* data, uint8_t mode) {
-    char cmd[] = "AT+"_CWMODE"=X";
+    char cmd[] = "AT+" _CWMODE "=X";
     int  err;
 
     cmd[sizeof(cmd) - 2] = ('0' + mode);
@@ -308,7 +308,7 @@ static int esp_pull_raw(char** str, char* str_end, char** raw) {
 /* +CWLAP:(sec,ssid,rssi,channel) */
 /* with: CONFIG_WIFI_ESP_AT_SCAN_MAC_ADDRESS: +CWLAP:<ecn>,<ssid>,<rssi>,<mac>,<ch>*/
 MODEM_CMD_DIRECT_DEFINE(on_cmd_cwlap) {
-    struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
+    struct esp_data* dev = CONTAINER_OF(data, struct esp_data,
                                         cmd_handler_data);
     struct wifi_scan_result res = { 0 };
     char cwlap_buf[sizeof("\"0\",\"\",-100,\"xx:xx:xx:xx:xx:xx\",12") +
@@ -389,7 +389,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_cwlap) {
 
 /* +CWJAP:(ssid,bssid,channel,rssi) */
 MODEM_CMD_DIRECT_DEFINE(on_cmd_cwjap) {
-    struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
+    struct esp_data* dev = CONTAINER_OF(data, struct esp_data,
                                         cmd_handler_data);
     struct wifi_iface_status *status = dev->wifi_status;
     char cwjap_buf[sizeof("\"\",\"xx:xx:xx:xx:xx:xx\",12,-100") +
@@ -618,13 +618,13 @@ static void esp_ip_addr_work(struct k_work* work) {
     int ret;
 
     static const struct modem_cmd cmds[] = {
-        MODEM_CMD("+"_CIPSTA":", on_cmd_cipsta, 2U, ":"),
+        MODEM_CMD("+" _CIPSTA ":", on_cmd_cipsta, 2U, ":"),
     };
     static const struct modem_cmd dns_cmds[] = {
         MODEM_CMD_ARGS_MAX("+CIPDNS:", on_cmd_cipdns, 1U, 3U, ","),
     };
 
-    ret = esp_cmd_send(dev, cmds, ARRAY_SIZE(cmds), "AT+"_CIPSTA"?",
+    ret = esp_cmd_send(dev, cmds, ARRAY_SIZE(cmds), "AT+" _CIPSTA "?",
                        ESP_CMD_TIMEOUT);
     if (ret < 0) {
         LOG_WRN("Failed to query IP settings: ret %d", ret);
@@ -668,7 +668,7 @@ MODEM_CMD_DEFINE(on_cmd_connect) {
     struct esp_data* dev;
     uint8_t link_id;
 
-    link_id = data->match_buf[0] - '0';
+    link_id = (data->match_buf[0] - '0');
 
     dev  = CONTAINER_OF(data, struct esp_data, cmd_handler_data);
     sock = esp_socket_ref_from_link_id(dev, link_id);
@@ -700,7 +700,8 @@ MODEM_CMD_DEFINE(on_cmd_closed) {
     }
 
     old_flags = esp_socket_flags_clear_and_set(sock,
-                            ESP_SOCK_CONNECTED, ESP_SOCK_CLOSE_PENDING);
+                                               ESP_SOCK_CONNECTED,
+                                               ESP_SOCK_CLOSE_PENDING);
 
     if (!(old_flags & ESP_SOCK_CONNECTED)) {
         LOG_DBG("Link %d already closed", link_id);
@@ -754,7 +755,7 @@ static int cmd_ipd_parse_hdr(struct net_buf* buf, uint16_t len,
     *data_len = strtol(&ipd_buf[len + 3], &endptr, 10);
 
     if ((endptr == &ipd_buf[len + 3]) ||
-        (*endptr == 0 && match_len >= MAX_IPD_LEN)) {
+        ((*endptr == 0) && (match_len >= MAX_IPD_LEN))) {
         LOG_ERR("Invalid IPD len: %s", ipd_buf);
         return (-EBADMSG);
     }
@@ -1002,6 +1003,7 @@ static void esp_mgmt_scan_work(struct k_work* work) {
     if (ret < 0) {
         goto out;
     }
+
     ret = esp_cmd_send(dev,
                        cmds, ARRAY_SIZE(cmds),
                        ESP_CMD_CWLAP,
@@ -1073,12 +1075,10 @@ static void esp_mgmt_connect_work(struct k_work* work) {
         net_if_dormant_on(dev->net_iface);
         if (esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
             esp_flags_clear(dev, EDF_STA_CONNECTED);
-            wifi_mgmt_raise_disconnect_result_event(dev->net_iface,
-                                                    0);
+            wifi_mgmt_raise_disconnect_result_event(dev->net_iface, 0);
         }
         else {
-            wifi_mgmt_raise_connect_result_event(dev->net_iface,
-                                                 ret);
+            wifi_mgmt_raise_connect_result_event(dev->net_iface, ret);
         }
     }
     else if (!esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
@@ -1094,10 +1094,10 @@ out :
 }
 
 static int esp_conn_cmd_append(struct esp_data* data, size_t* off,
-                               const char* chunk, size_t chunk_len) {
+                               char const* chunk, size_t chunk_len) {
     char* str_end = &data->conn_cmd[sizeof(data->conn_cmd)];
     char* str = &data->conn_cmd[*off];
-    const char *chunk_end = chunk + chunk_len;
+    char const* chunk_end = chunk + chunk_len;
 
     for (; chunk < chunk_end; chunk++) {
         if (str_end - str < 1) {
@@ -1117,16 +1117,16 @@ static int esp_conn_cmd_append(struct esp_data* data, size_t* off,
     esp_conn_cmd_append(data, off, chunk, sizeof(chunk) - 1)
 
 static int esp_conn_cmd_escape_and_append(struct esp_data* data, size_t* off,
-                                          const char *chunk, size_t chunk_len) {
+                                          char const* chunk, size_t chunk_len) {
     char* str_end = &data->conn_cmd[sizeof(data->conn_cmd)];
     char* str = &data->conn_cmd[*off];
-    const char* chunk_end = chunk + chunk_len;
+    char const* chunk_end = chunk + chunk_len;
 
     for (; chunk < chunk_end; chunk++) {
         switch (*chunk) {
             case ',' :
             case '\\' :
-            case '"':
+            case '"' :
                 if (str_end - str < 2) {
                     return (-ENOSPC);
                 }
@@ -1166,7 +1166,7 @@ static int esp_mgmt_connect(const struct device* dev,
 
     esp_flags_set(data, EDF_STA_CONNECTING);
 
-    err = esp_conn_cmd_append_literal(data, &off, "AT+"_CWJAP"=\"");
+    err = esp_conn_cmd_append_literal(data, &off, "AT+" _CWJAP "=\"");
     if (err) {
         return (err);
     }
@@ -1211,10 +1211,12 @@ static int esp_mgmt_disconnect(const struct device* dev) {
 
 static int esp_mgmt_ap_enable(const struct device* dev,
                               struct wifi_connect_req_params* params) {
-    char cmd[sizeof("AT+"_CWSAP"=\"\",\"\",xx,x") + WIFI_SSID_MAX_LEN +
+    char cmd[sizeof("AT+" _CWSAP "=\"\",\"\",xx,x") + WIFI_SSID_MAX_LEN +
              WIFI_PSK_MAX_LEN];
     struct esp_data* data = dev->data;
-    int              ecn  = 0, len, ret;
+    int ecn = 0;
+    int len;
+    int ret;
 
     ret = esp_mode_flags_set(data, EDF_AP_ENABLED);
     if (ret < 0) {
@@ -1222,7 +1224,7 @@ static int esp_mgmt_ap_enable(const struct device* dev,
         return (ret);
     }
 
-    len = snprintk(cmd, sizeof(cmd), "AT+"_CWSAP"=\"");
+    len = snprintk(cmd, sizeof(cmd), "AT+" _CWSAP "=\"");
     memcpy(&cmd[len], params->ssid, params->ssid_length);
     len += params->ssid_length;
 
@@ -1264,17 +1266,21 @@ static void esp_init_work(struct k_work* work) {
         /* turn off echo */
         SETUP_CMD_NOHANDLE("ATE0"),
         SETUP_CMD_NOHANDLE("AT+UART_CUR="_UART_CUR),
+
     #if DT_INST_NODE_HAS_PROP(0, target_speed)
     };
     static const struct setup_cmd setup_cmds_target_baudrate[] = {
         SETUP_CMD_NOHANDLE("AT"),
     #endif
+
         #if defined(CONFIG_WIFI_ESP_AT_FETCH_VERSION)
         SETUP_CMD_NOHANDLE("AT+GMR"),
         #endif
+
         #if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
         SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(STA)),
         #endif
+
         #if defined(CONFIG_WIFI_ESP_AT_IP_STATIC)
         /* enable Static IP Config */
         SETUP_CMD_NOHANDLE(ESP_CMD_DHCP_ENABLE(STATION, 0)),
@@ -1285,6 +1291,7 @@ static void esp_init_work(struct k_work* work) {
         /* enable DHCP */
         SETUP_CMD_NOHANDLE(ESP_CMD_DHCP_ENABLE(STATION, 1)),
         #endif
+
         /* enable multiple socket support */
         SETUP_CMD_NOHANDLE("AT+CIPMUX=1"),
 
@@ -1305,7 +1312,7 @@ static void esp_init_work(struct k_work* work) {
         SETUP_CMD_NOHANDLE("AT+CIPDINFO=1"),
         #endif
 
-        SETUP_CMD("AT+"_CIPSTAMAC"?", "+"_CIPSTAMAC":",
+        SETUP_CMD("AT+" _CIPSTAMAC "?", "+" _CIPSTAMAC ":",
                   on_cmd_cipstamac, 1U, ""),
     };
 
@@ -1397,7 +1404,7 @@ static int esp_reset(const struct device* dev) {
     #else
     #if DT_INST_NODE_HAS_PROP(0, external_reset)
     /* Wait to see if the interface comes up by itself */
-    ret         = k_sem_take(&data->sem_if_ready, K_MSEC(CONFIG_WIFI_ESP_AT_RESET_TIMEOUT));
+    ret = k_sem_take(&data->sem_if_ready, K_MSEC(CONFIG_WIFI_ESP_AT_RESET_TIMEOUT));
     #endif
     int retries = 3;
 
@@ -1416,6 +1423,7 @@ static int esp_reset(const struct device* dev) {
         return (-EAGAIN);
     }
     #endif
+
     LOG_INF("Waiting for interface to come up");
 
     ret = k_sem_take(&data->sem_if_up, ESP_INIT_TIMEOUT);
@@ -1467,7 +1475,7 @@ CONNECTIVITY_WIFI_MGMT_BIND(Z_DEVICE_DT_DEV_ID(DT_DRV_INST(0)));
 
 static int esp_init(const struct device* dev) {
     #if (DT_INST_NODE_HAS_PROP(0, power_gpios) || DT_INST_NODE_HAS_PROP(0, reset_gpios))
-    const struct esp_config *config = dev->config;
+    const struct esp_config* config = dev->config;
     #endif
     struct esp_data* data = dev->data;
     int ret = 0;

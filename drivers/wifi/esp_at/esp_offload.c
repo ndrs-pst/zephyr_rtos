@@ -123,8 +123,8 @@ static int esp_bind(struct net_context *context, const struct net_sockaddr *addr
     struct esp_socket* sock;
     struct esp_data* dev;
 
-    sock = (struct esp_socket *)context->offload_context;
-    dev = esp_socket_to_dev(sock);
+    sock = (struct esp_socket*)context->offload_context;
+    dev  = esp_socket_to_dev(sock);
 
     if (esp_socket_ip_proto(sock) == NET_IPPROTO_TCP) {
         return (0);
@@ -468,8 +468,8 @@ static int cmd_ciprecvdata_parse(struct esp_socket* sock,
     *data_len = strtol(&cmd_buf[len], &endptr, 10);
 
     #if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
-    char *strstart = endptr + 1;
-    char *strend = strchr(strstart, ',');
+    char* strstart = endptr + 1;
+    char* strend   = strchr(strstart, ',');
 
     if (strstart == NULL || strend == NULL) {
         return (-EAGAIN);
@@ -484,7 +484,7 @@ static int cmd_ciprecvdata_parse(struct esp_socket* sock,
     #endif
 
     if (endptr == &cmd_buf[len] ||
-        (*endptr == 0 && match_len >= CIPRECVDATA_CMD_MAX_LEN) ||
+        ((*endptr == 0) && (match_len >= CIPRECVDATA_CMD_MAX_LEN)) ||
         *data_len > CIPRECVDATA_MAX_LEN) {
         LOG_ERR("Invalid cmd: %s", cmd_buf);
         return (-EBADMSG);
@@ -541,7 +541,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata) {
     struct net_sockaddr_in* recv_addr =
             (struct net_sockaddr_in*)&sock->context->remote;
 
-    recv_addr->sin_port = ntohs(port);
+    recv_addr->sin_port   = net_ntohs(port);
     recv_addr->sin_family = NET_AF_INET;
 
     /* IP addr comes within quotation marks, which is disliked by
@@ -571,7 +571,7 @@ void esp_recvdata_work(struct k_work* work) {
     struct esp_socket* sock = CONTAINER_OF(work, struct esp_socket,
                                            recvdata_work);
     struct esp_data* data = esp_socket_to_dev(sock);
-    char cmd[sizeof("AT+CIPRECVDATA=000,"STRINGIFY(CIPRECVDATA_MAX_LEN))];
+    char cmd[sizeof("AT+CIPRECVDATA=000," STRINGIFY(CIPRECVDATA_MAX_LEN))];
     static const struct modem_cmd cmds[] = {
         MODEM_CMD_DIRECT(_CIPRECVDATA, on_cmd_ciprecvdata),
     };
@@ -621,7 +621,7 @@ static int esp_recv(struct net_context* context,
                     int32_t timeout,
                     void* user_data) {
     struct esp_socket* sock = context->offload_context;
-    struct esp_data *dev = esp_socket_to_dev(sock);
+    struct esp_data* dev = esp_socket_to_dev(sock);
     int ret;
 
     LOG_DBG("link_id %d, timeout %d, cb %p, data %p",
