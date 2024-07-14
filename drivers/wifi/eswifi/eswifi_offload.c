@@ -19,7 +19,6 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 
 #include "eswifi.h"
 
-
 static int eswifi_off_bind(struct net_context *context,
 			   const struct net_sockaddr *addr,
 			   socklen_t addrlen)
@@ -488,7 +487,7 @@ void eswifi_offload_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len)
 
 		sin_addr = &peer->sin_addr;
 		memcpy(&sin_addr->s4_addr, ip, 4);
-		peer->sin_port = htons(port);
+		peer->sin_port = net_htons(port);
 		peer->sin_family = NET_AF_INET;
 		socket->state = ESWIFI_SOCKET_STATE_CONNECTED;
 		socket->usage++;

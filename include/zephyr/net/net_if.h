@@ -3142,6 +3142,8 @@ struct net_if_api {
     }
 #endif
 
+#if !defined(_MSC_VER)  /* #CUSTOM@NDRS not support [0 ...(_num_configs - 1)] 
+                         * The NET_IF_INIT macro uses a GNU extension for array initialization which is not supported by MSVC. */
 #define NET_IF_OFFLOAD_INIT(dev_id, sfx, _mtu)                  \
     static STRUCT_SECTION_ITERABLE(net_if_dev,                  \
                 NET_IF_DEV_GET_NAME(dev_id, sfx)) = {           \
@@ -3159,6 +3161,25 @@ struct net_if_api {
             NET_IF_CONFIG_INIT                                  \
         }                                                       \
     }
+#else
+#define NET_IF_OFFLOAD_INIT(dev_id, sfx, _mtu)                  \
+    static STRUCT_SECTION_ITERABLE(net_if_dev,                  \
+                NET_IF_DEV_GET_NAME(dev_id, sfx)) = {           \
+        .dev   = &(DEVICE_NAME_GET(dev_id)),                    \
+        .mtu   = _mtu,                                          \
+        .l2    = &(NET_L2_GET_NAME(OFFLOADED_NETDEV)),          \
+        .flags = {BIT(NET_IF_LOWER_UP)},                        \
+    };                                                          \
+    static Z_DECL_ALIGN(struct net_if)                          \
+                        NET_IF_GET_NAME(dev_id, sfx)[NET_IF_MAX_CONFIGS] \
+                        __used __in_section(_net_if, static,    \
+                                            dev_id) = {         \
+        [0] = {                                                 \
+            .if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),      \
+            NET_IF_CONFIG_INIT                                  \
+        }                                                       \
+    }
+#endif
 
 /** @endcond */
 
