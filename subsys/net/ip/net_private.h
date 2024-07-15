@@ -181,7 +181,15 @@ extern bool net_tc_submit_to_tx_queue(uint8_t tc, struct net_pkt* pkt);
 extern void net_tc_submit_to_rx_queue(uint8_t tc, struct net_pkt* pkt);
 extern enum net_verdict net_promisc_mode_input(struct net_pkt* pkt);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 char* net_sprint_addr(sa_family_t af, void const* addr);
+
+#ifdef __cplusplus
+}
+#endif
 
 #define net_sprint_ipv4_addr(_addr) net_sprint_addr(NET_AF_INET, _addr)
 
