@@ -77,12 +77,12 @@ void esp_socket_unref(struct esp_socket* sock) {
 
 void esp_socket_init(struct esp_data* data) {
     struct esp_socket* sock;
-    int i;
 
-    for (i = 0; i < ARRAY_SIZE(data->sockets); ++i) {
-        sock          = &data->sockets[i];
-        sock->idx     = i;
+    for (int i = 0; i < ARRAY_SIZE(data->sockets); ++i) {
+        sock = &data->sockets[i];
+        sock->idx = i;
         sock->link_id = i;
+
         atomic_clear(&sock->refcount);
         atomic_clear(&sock->flags);
         k_mutex_init(&sock->lock);

@@ -109,9 +109,10 @@ static inline uint8_t esp_mode_from_flags(struct esp_data* data) {
     return (mode);
 }
 
+/* @note AT+CWMODE: Query/Set the Wi-Fi Mode (Station/SoftAP/Station+SoftAP) */
 static int esp_mode_switch(struct esp_data* data, uint8_t mode) {
     char cmd[] = "AT+" _CWMODE "=X";
-    int  err;
+    int err;
 
     cmd[sizeof(cmd) - 2] = ('0' + mode);
     LOG_DBG("Switch to mode %hhu", mode);
@@ -237,10 +238,10 @@ static char* str_unquote(char* str) {
 }
 
 /* +CIPSTAMAC:"xx:xx:xx:xx:xx:xx" */
-MODEM_CMD_DEFINE(on_cmd_cipstamac) {
+MODEM_CMD_DEFINE(on_cmd_cipstamac) {            /* ESP_AT_STA_SEQ04 */
     struct esp_data* dev = CONTAINER_OF(data, struct esp_data,
                                         cmd_handler_data);
-    char* mac;
+    char const* mac;
     int err;
 
     mac = str_unquote(argv[0]);
@@ -252,7 +253,7 @@ MODEM_CMD_DEFINE(on_cmd_cipstamac) {
     return (0);
 }
 
-static int esp_pull_quoted(char** str, char* str_end, char** unquoted) {
+static int esp_pull_quoted(char** str, char const* str_end, char** unquoted) {
     if (**str != '"') {
         return (-EAGAIN);
     }
@@ -279,7 +280,7 @@ static int esp_pull_quoted(char** str, char* str_end, char** unquoted) {
     return (-EAGAIN);
 }
 
-static int esp_pull(char** str, char* str_end) {
+static int esp_pull(char** str, char const* str_end) {
     while (*str < str_end) {
         if (**str == ',' || **str == '\r' || **str == '\n') {
             char last_c = **str;
@@ -299,7 +300,7 @@ static int esp_pull(char** str, char* str_end) {
     return (-EAGAIN);
 }
 
-static int esp_pull_raw(char** str, char* str_end, char** raw) {
+static int esp_pull_raw(char** str, char const* str_end, char** raw) {
     *raw = *str;
 
     return (esp_pull(str, str_end));
@@ -326,7 +327,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_cwlap) {
     cwlap_buf[len] = '\0';
 
     char* str = &cwlap_buf[sizeof("+CWJAP:(") - 1];
-    char* str_end = cwlap_buf + len;
+    char const* str_end = cwlap_buf + len;
 
     err = esp_pull_raw(&str, str_end, &ecn);
     if (err) {
@@ -861,8 +862,10 @@ MODEM_CMD_DEFINE(on_cmd_busy_processing) {
 /*
  * The 'ready' command is sent when device has booted and is ready to receive
  * commands. It is only expected after a reset of the device.
+ * ESP-AT Message Reports:
+ * ESP-AT will report important state changes or messages in the system.
  */
-MODEM_CMD_DEFINE(on_cmd_ready) {
+MODEM_CMD_DEFINE(on_cmd_ready) {            /* ESP_AT_STA_SEQ01, @see Table 5: ESP-AT Message Reports */
     struct esp_data* dev = CONTAINER_OF(data, struct esp_data,
                                         cmd_handler_data);
     k_sem_give(&dev->sem_if_ready);
@@ -886,7 +889,7 @@ MODEM_CMD_DEFINE(on_cmd_ready) {
     #if defined(CONFIG_NET_NATIVE_IPV4)
     net_if_ipv4_addr_rm(dev->net_iface, &dev->ip);
     #endif
-    k_work_submit_to_queue(&dev->workq, &dev->init_work);
+    k_work_submit_to_queue(&dev->workq, &dev->init_work);       /* ESP_AT_STA_SEQ02 */
 
     return (0);
 }
@@ -1258,15 +1261,16 @@ static int esp_mgmt_ap_disable(const struct device* dev) {
     return esp_mode_flags_clear(data, EDF_AP_ENABLED);
 }
 
-static void esp_init_work(struct k_work* work) {
+static void esp_init_work(struct k_work* work) {                /* ESP_AT_STA_SEQ03 */
     struct esp_data* dev;
     int ret;
     static const struct setup_cmd setup_cmds[] = {
         SETUP_CMD_NOHANDLE("AT"),
-        /* turn off echo */
-        SETUP_CMD_NOHANDLE("ATE0"),
+        SETUP_CMD_NOHANDLE("ATE0"),                             /* ATE0: Switch echo off */
         SETUP_CMD_NOHANDLE("AT+UART_CUR="_UART_CUR),
 
+        /* AT+UART_CUR: Current UART Configuration, Not Saved in Flash */
+        /* AT+UART_DEF: Default UART Configuration, Saved in Flash     */
     #if DT_INST_NODE_HAS_PROP(0, target_speed)
     };
     static const struct setup_cmd setup_cmds_target_baudrate[] = {
@@ -1274,7 +1278,7 @@ static void esp_init_work(struct k_work* work) {
     #endif
 
         #if defined(CONFIG_WIFI_ESP_AT_FETCH_VERSION)
-        SETUP_CMD_NOHANDLE("AT+GMR"),
+        SETUP_CMD_NOHANDLE("AT+GMR"),                           /* AT+GMR: Check Version Information */
         #endif
 
         #if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
@@ -1293,7 +1297,7 @@ static void esp_init_work(struct k_work* work) {
         #endif
 
         /* enable multiple socket support */
-        SETUP_CMD_NOHANDLE("AT+CIPMUX=1"),
+        SETUP_CMD_NOHANDLE("AT+CIPMUX=1"),                      /* AT+CIPMUX: Enable/disable Multiple Connections */
 
         SETUP_CMD_NOHANDLE(
                 ESP_CMD_CWLAPOPT(ESP_CMD_CWLAPOPT_ORDERED, ESP_CMD_CWLAPOPT_MASK)),
@@ -1312,7 +1316,7 @@ static void esp_init_work(struct k_work* work) {
         SETUP_CMD_NOHANDLE("AT+CIPDINFO=1"),
         #endif
 
-        SETUP_CMD("AT+" _CIPSTAMAC "?", "+" _CIPSTAMAC ":",
+        SETUP_CMD("AT+" _CIPSTAMAC "?", "+" _CIPSTAMAC ":",     /* AT+CIPSTAMAC: Query/Set the MAC Address */
                   on_cmd_cipstamac, 1U, ""),
     };
 
@@ -1383,7 +1387,7 @@ static void esp_init_work(struct k_work* work) {
 
 static int esp_reset(const struct device* dev) {
     struct esp_data* data = dev->data;
-    int              ret  = -EAGAIN;
+    int ret = -EAGAIN;
 
     if (net_if_is_carrier_ok(data->net_iface)) {
         net_if_carrier_off(data->net_iface);
@@ -1406,14 +1410,15 @@ static int esp_reset(const struct device* dev) {
     /* Wait to see if the interface comes up by itself */
     ret = k_sem_take(&data->sem_if_ready, K_MSEC(CONFIG_WIFI_ESP_AT_RESET_TIMEOUT));
     #endif
+
     int retries = 3;
 
     /* Don't need to run this if the interface came up by itself */
-    while ((ret != 0) && retries--) {
+    while ((ret != 0) && retries--) {       /* ESP_AT_STA_SEQ00, AT+RST: Restart a Module */
         ret = modem_cmd_send(&data->mctx.iface, &data->mctx.cmd_handler,
                              NULL, 0, "AT+RST", &data->sem_if_ready,
                              K_MSEC(CONFIG_WIFI_ESP_AT_RESET_TIMEOUT));
-        if (ret == 0 || ret != -ETIMEDOUT) {
+        if ((ret == 0) || (ret != -ETIMEDOUT)) {
             break;
         }
     }

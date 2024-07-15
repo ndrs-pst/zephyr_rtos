@@ -107,9 +107,9 @@ extern "C" {
 #define ESP_MODE_STA_AP         3
 
 #if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7) || defined(CONFIG_WIFI_ESP_AT_VERSION_2_0)
-#define ESP_CMD_CWMODE(mode) "AT+"_CWMODE"="STRINGIFY(_CONCAT(ESP_MODE_, mode))
+#define ESP_CMD_CWMODE(mode) "AT+" _CWMODE "=" STRINGIFY(Z_CONCAT(ESP_MODE_, mode))
 #else
-#define ESP_CMD_CWMODE(mode) "AT+"_CWMODE"="STRINGIFY(_CONCAT(ESP_MODE_, mode))",0"
+#define ESP_CMD_CWMODE(mode) "AT+" _CWMODE "=" STRINGIFY(Z_CONCAT(ESP_MODE_, mode)) ",0"
 #endif
 
 #define ESP_CWDHCP_MODE_STATION "1"
@@ -277,9 +277,9 @@ void esp_socket_init(struct esp_data* data);
 void esp_socket_close(struct esp_socket* sock);
 void esp_socket_rx(struct esp_socket* sock, struct net_buf* buf,
                    size_t offset, size_t len);
-void               esp_socket_workq_stop_and_flush(struct esp_socket* sock);
+void esp_socket_workq_stop_and_flush(struct esp_socket* sock);
 struct esp_socket* esp_socket_ref(struct esp_socket* sock);
-void               esp_socket_unref(struct esp_socket* sock);
+void esp_socket_unref(struct esp_socket* sock);
 
 static inline
 struct esp_socket* esp_socket_ref_from_link_id(struct esp_data* data,
