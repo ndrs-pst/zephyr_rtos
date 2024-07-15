@@ -84,20 +84,14 @@ char const* net_proto2str(int family, int proto) {
 }
 
 char* net_byte_to_hex(char* ptr, uint8_t byte, char base, bool pad) {
-    int i, val;
+    uint8_t high = (byte >> 4) & 0x0f;
+    uint8_t low = byte & 0x0f;
 
-    for (i = 0, val = (byte & 0xf0) >> 4; i < 2; i++, val = byte & 0x0f) {
-        if (i == 0 && !pad && !val) {
-            continue;
-        }
-
-        if (val < 10) {
-            *ptr++ = (char)(val + '0');
-        }
-        else {
-            *ptr++ = (char)(val - 10 + base);
-        }
+    if (pad || high > 0) {
+        *ptr++ = (high < 10) ? (char)(high + '0') : (char)(high - 10 + base);
     }
+
+    *ptr++ = (low < 10) ? (char)(low + '0') : (char)(low - 10 + base);
 
     *ptr = '\0';
 
@@ -106,7 +100,9 @@ char* net_byte_to_hex(char* ptr, uint8_t byte, char base, bool pad) {
 
 char* net_sprint_ll_addr_buf(uint8_t const* ll, uint8_t ll_len,
                              char* buf, int buflen) {
-    uint8_t i, len, blen;
+    uint8_t i;
+    uint8_t len;
+    uint8_t blen;
     char* ptr = buf;
 
     if (ll == NULL) {
@@ -131,7 +127,7 @@ char* net_sprint_ll_addr_buf(uint8_t const* ll, uint8_t ll_len,
             break;
     }
 
-    for (i = 0U, blen = buflen; i < len && blen > 0; i++) {
+    for (i = 0U, blen = (uint8_t)buflen; i < len && blen > 0; i++) {
         ptr = net_byte_to_hex(ptr, (char)ll[i], 'A', true);
         *ptr++ = ':';
         blen -= 3U;
@@ -147,16 +143,15 @@ char* net_sprint_ll_addr_buf(uint8_t const* ll, uint8_t ll_len,
 
 static int net_value_to_udec(char* buf, uint32_t value, int precision) {
     uint32_t divisor;
-    int i;
     int temp;
-    char* start = buf;
+    char const* start = buf;
 
     divisor = 1000000000U;
     if (precision < 0) {
         precision = 1;
     }
 
-    for (i = 9; i >= 0; i--, divisor /= 10U) {
+    for (int i = 9; i >= 0; i--, divisor /= 10U) {
         temp  = value / divisor;
         value = value % divisor;
         if ((precision > i) || (temp != 0)) {
@@ -171,22 +166,23 @@ static int net_value_to_udec(char* buf, uint32_t value, int precision) {
 
 char* z_impl_net_addr_ntop(sa_family_t family, void const* src,
                            char* dst, size_t size) {
-    struct net_in_addr*  addr  = NULL;
-    struct net_in6_addr* addr6 = NULL;
-    uint16_t* w = NULL;
-    uint8_t i, bl, bh, longest = 1U;
+    struct net_in_addr const*  addr  = NULL;
+    struct net_in6_addr const* addr6 = NULL;
+    uint16_t const* w = NULL;
+    uint_fast8_t i;
+    uint8_t bl, bh, longest = 1U;
     int8_t pos = -1;
     char delim = ':';
     unsigned char zeros[8] = {0};
     char* ptr = dst;
     int len = -1;
-    uint16_t value;
+    uint32_t value;
     bool needcolon = false;
     bool mapped = false;
 
     if (family == NET_AF_INET6) {
-        addr6 = (struct net_in6_addr*)src;
-        w = (uint16_t*)addr6->s6_addr16;
+        addr6 = src;
+        w = addr6->s6_addr16;
         len = 8;
 
         if (net_ipv6_addr_is_v4_mapped(addr6)) {
@@ -194,9 +190,7 @@ char* z_impl_net_addr_ntop(sa_family_t family, void const* src,
         }
 
         for (i = 0U; i < 8; i++) {
-            uint8_t j;
-
-            for (j = i; j < 8; j++) {
+            for (uint8_t j = i; j < 8; j++) {
                 if (UNALIGNED_GET(&w[j]) != 0) {
                     break;
                 }
@@ -217,7 +211,7 @@ char* z_impl_net_addr_ntop(sa_family_t family, void const* src,
         }
     }
     else if (family == NET_AF_INET) {
-        addr  = (struct net_in_addr*)src;
+        addr  = src;
         len   = 4;
         delim = '.';
     }
@@ -229,7 +223,7 @@ print_mapped :
     for (i = 0U; i < len; i++) {
         /* IPv4 address a.b.c.d */
         if (len == 4) {
-            uint8_t l;
+            int l;
 
             value = (uint32_t)addr->s4_addr[i];
 
@@ -251,9 +245,10 @@ print_mapped :
         if (mapped && (i > 5)) {
             delim  = '.';
             len    = 4;
-            addr   = (struct net_in_addr*)(&addr6->s6_addr32[3]);
+            addr   = (struct net_in_addr const*)(&addr6->s6_addr32[3]);
             *ptr++ = ':';
             family = NET_AF_INET;
+
             goto print_mapped;
         }
 
@@ -275,8 +270,8 @@ print_mapped :
         }
 
         value = (uint32_t)sys_be16_to_cpu(UNALIGNED_GET(&w[i]));
-        bh    = value >> 8;
-        bl    = value & 0xff;
+        bh    = (uint8_t)(value >> 8);
+        bl    = (uint8_t)(value & 0xff);
 
         if (bh) {
             if (bh > 0x0f) {
