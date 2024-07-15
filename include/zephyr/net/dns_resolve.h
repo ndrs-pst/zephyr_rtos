@@ -436,22 +436,22 @@ struct dns_resolve_context {
  * the stack, then the variable needs to be valid for the whole duration of
  * the resolving. Caller does not need to fill the variable beforehand or
  * edit the context afterwards.
- * @param dns_servers_str DNS server addresses using textual strings. The
+ * @param servers DNS server addresses using textual strings. The
  * array is NULL terminated. The port number can be given in the string.
  * Syntax for the server addresses with or without port numbers:
  *    IPv4        : 10.0.9.1
  *    IPv4 + port : 10.0.9.1:5353
  *    IPv6        : 2001:db8::22:42
  *    IPv6 + port : [2001:db8::22:42]:5353
- * @param dns_servers_sa DNS server addresses as struct net_sockaddr. The array
+ * @param servers_sa DNS server addresses as struct net_sockaddr. The array
  * is NULL terminated. Port numbers are optional in struct net_sockaddr, the
  * default will be used if set to 0.
  *
  * @return 0 if ok, <0 if error.
  */
 int dns_resolve_init(struct dns_resolve_context *ctx,
-		     const char *dns_servers_str[],
-		     const struct net_sockaddr *dns_servers_sa[]);
+		     const char *servers[],
+		     const struct net_sockaddr *servers_sa[]);
 
 /**
  * @brief Init DNS resolving context with default Kconfig options.

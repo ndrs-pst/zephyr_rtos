@@ -236,7 +236,7 @@ static int stm32_exti_init(const struct device* dev) {
 }
 
 static struct stm32_exti_data exti_data;
-DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init,
+DEVICE_DT_DEFINE(EXTI_NODE, stm32_exti_init,
                  NULL,
                  &exti_data, NULL,
                  PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
@@ -245,11 +245,11 @@ DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init,
 /**
  * @brief set & unset for the interrupt callbacks
  */
-int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void* arg) {
+int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void* user) {
     const struct device* const dev = DEVICE_DT_GET(EXTI_NODE);
-    struct stm32_exti_data* data   = dev->data;
+    struct stm32_exti_data* data = dev->data;
 
-    if ((data->cb[line].cb == cb) && (data->cb[line].data == arg)) {
+    if ((data->cb[line].cb == cb) && (data->cb[line].data == user)) {
         return (0);
     }
 
@@ -259,7 +259,7 @@ int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void* arg) {
     }
 
     data->cb[line].cb   = cb;
-    data->cb[line].data = arg;
+    data->cb[line].data = user;
 
     return (0);
 }

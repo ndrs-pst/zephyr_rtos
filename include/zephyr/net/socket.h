@@ -592,7 +592,7 @@ static inline int zsock_fcntl_wrapper(int sock, int cmd, ...)
  * it may conflict with generic POSIX ``ioctl()`` function).
  * @endrst
  */
-__syscall int zsock_ioctl_impl(int sock, unsigned long request, va_list ap);
+__syscall int zsock_ioctl_impl(int sock, unsigned long request, va_list args);
 
 /** @cond INTERNAL_HIDDEN */
 

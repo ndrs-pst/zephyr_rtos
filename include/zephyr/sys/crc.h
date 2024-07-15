@@ -331,13 +331,13 @@ uint32_t crc32_c(uint32_t crc, uint8_t const* data,
  *
  * Normal CCITT variant of CRC 8 is using 0x07.
  *
- * @param initial_value Initial value for the CRC computation
+ * @param val Initial value for the CRC computation
  * @param buf Input bytes for the computation
  * @param len Length of the input in bytes
  *
  * @return The computed CRC8 value
  */
-uint8_t crc8_ccitt(uint8_t initial_value, void const* buf, size_t len);
+uint8_t crc8_ccitt(uint8_t val, void const* buf, size_t len);
 
 /**
  * @brief Compute ROHC variant of CRC 8
@@ -345,13 +345,13 @@ uint8_t crc8_ccitt(uint8_t initial_value, void const* buf, size_t len);
  * ROHC (Robust Header Compression) variant of CRC 8.
  * Uses 0x07 as the polynomial with reflection.
  *
- * @param initial_value Initial value for the CRC computation
+ * @param val Initial value for the CRC computation
  * @param buf Input bytes for the computation
  * @param len Length of the input in bytes
  *
  * @return The computed CRC8 value
  */
-uint8_t crc8_rohc(uint8_t val, void const* buf, size_t cnt);
+uint8_t crc8_rohc(uint8_t val, void const* buf, size_t len);
 
 /**
  * @brief Compute the CRC-7 checksum of a buffer.

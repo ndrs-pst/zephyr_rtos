@@ -3915,7 +3915,7 @@ int net_tcp_connect(struct net_context* context,
                     k_timeout_t timeout, net_context_connect_cb_t cb,
                     void* user_data) {
     struct tcp* conn;
-    int         ret = 0;
+    int ret = 0;
 
     NET_DBG("context: %p, local: %s, remote: %s", context,
             net_sprint_addr(local_addr->sa_family,

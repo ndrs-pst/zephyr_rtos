@@ -1682,18 +1682,18 @@ static int net_pkt_cursor_operate(struct net_pkt *pkt,
 	return 0;
 }
 
-int net_pkt_skip(struct net_pkt *pkt, size_t skip)
+int net_pkt_skip(struct net_pkt *pkt, size_t length)
 {
-	NET_DBG("pkt %p skip %zu", pkt, skip);
+	NET_DBG("pkt %p skip %zu", pkt, length);
 
-	return net_pkt_cursor_operate(pkt, NULL, skip, false, true);
+	return net_pkt_cursor_operate(pkt, NULL, length, false, true);
 }
 
-int net_pkt_memset(struct net_pkt *pkt, int byte, size_t amount)
+int net_pkt_memset(struct net_pkt *pkt, int byte, size_t length)
 {
-	NET_DBG("pkt %p byte %d amount %zu", pkt, byte, amount);
+	NET_DBG("pkt %p byte %d amount %zu", pkt, byte, length);
 
-	return net_pkt_cursor_operate(pkt, &byte, amount, false, true);
+	return net_pkt_cursor_operate(pkt, &byte, length, false, true);
 }
 
 int net_pkt_read(struct net_pkt *pkt, void *data, size_t length)

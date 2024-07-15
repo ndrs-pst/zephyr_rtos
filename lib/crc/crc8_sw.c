@@ -18,22 +18,22 @@ static const uint8_t crc8_rohc_small_table[16] = {
     0xE0, 0xFC, 0xD8, 0xC4, 0x90, 0x8C, 0xA8, 0xB4
 };
 
-uint8_t crc8_ccitt(uint8_t val, void const* buf, size_t cnt) {
+uint8_t crc8_ccitt(uint8_t val, void const* buf, size_t len) {
     uint8_t const* p = buf;
 
-    for (size_t i = 0U; i < cnt; i++) {
-		val ^= p[i];
+    for (size_t i = 0U; i < len; i++) {
+        val ^= p[i];
         val = (uint8_t)((val << 4) ^ crc8_ccitt_small_table[val >> 4]);
         val = (uint8_t)((val << 4) ^ crc8_ccitt_small_table[val >> 4]);
-	}
+    }
 
     return (val);
 }
 
-uint8_t crc8_rohc(uint8_t val, void const* buf, size_t cnt) {
+uint8_t crc8_rohc(uint8_t val, void const* buf, size_t len) {
     uint8_t const* p = buf;
 
-    for (size_t i = 0U; i < cnt; i++) {
+    for (size_t i = 0U; i < len; i++) {
         val ^= p[i];
         val = (uint8_t)((val >> 4) ^ crc8_rohc_small_table[val & 0x0F]);
         val = (uint8_t)((val >> 4) ^ crc8_rohc_small_table[val & 0x0F]);
@@ -44,13 +44,13 @@ uint8_t crc8_rohc(uint8_t val, void const* buf, size_t cnt) {
 
 uint8_t crc8(uint8_t const* src, size_t len,
              uint8_t polynomial, uint8_t initial_value, bool reversed) {
-	uint8_t crc = initial_value;
+    uint8_t crc = initial_value;
 
     for (size_t i = 0U; i < len; i++) {
-		crc ^= src[i];
+        crc ^= src[i];
 
         for (size_t j = 0U; j < 8U; j++) {
-			if (reversed) {
+            if (reversed) {
                 if (crc & 0x01U) {
                     crc = (uint8_t)((crc >> 1U) ^ polynomial);
                 }

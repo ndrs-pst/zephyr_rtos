@@ -1273,12 +1273,12 @@ int shell_echo_set(const struct shell* sh, bool val);
  * Value is modified atomically and the previous value is returned.
  *
  * @param[in] sh Pointer to the shell instance.
- * @param[in] obscure Obscure mode.
+ * @param[in] val Obscure mode.
  *
  * @retval 0 or 1: previous value.
  * @retval -EINVAL if shell is NULL.
  */
-int shell_obscure_set(const struct shell* sh, bool obscure);
+int shell_obscure_set(const struct shell* sh, bool val);
 
 /**
  * @brief Allow application to control whether the delete key backspaces or

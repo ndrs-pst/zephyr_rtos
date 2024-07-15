@@ -103,7 +103,7 @@ struct i2c_stm32_data {
 int32_t stm32_i2c_transaction(const struct device* dev,
                               struct i2c_msg msg, uint8_t* next_msg_flags,
                               uint16_t periph);
-int32_t stm32_i2c_configure_timing(const struct device* dev, uint32_t clk);
+int32_t stm32_i2c_configure_timing(const struct device* dev, uint32_t clock);
 int     i2c_stm32_runtime_configure(const struct device* dev, uint32_t config);
 int     i2c_stm32_get_config(const struct device* dev, uint32_t* config);
 

@@ -165,7 +165,7 @@ extern void net_socket_service_callback(struct k_work* work);
 /**
  * @brief Register pollable sockets.
  *
- * @param service Pointer to a service description.
+ * @param svc Pointer to a service description.
  * @param fds Socket array to poll.
  * @param len Length of the socket array.
  * @param user_data User specific data.
@@ -174,20 +174,20 @@ extern void net_socket_service_callback(struct k_work* work);
  * @retval -ENOENT Service is not found.
  * @retval -ENINVAL Invalid parameter.
  */
-__syscall int net_socket_service_register(const struct net_socket_service_desc* service,
+__syscall int net_socket_service_register(const struct net_socket_service_desc* svc,
                                           struct zsock_pollfd* fds, int len, void* user_data);
 
 /**
  * @brief Unregister pollable sockets.
  *
- * @param service Pointer to a service description.
+ * @param svc Pointer to a service description.
  *
  * @retval 0 No error
  * @retval -ENOENT Service is not found.
  * @retval -ENINVAL Invalid parameter.
  */
-static inline int net_socket_service_unregister(const struct net_socket_service_desc* service) {
-    return net_socket_service_register(service, NULL, 0, NULL);
+static inline int net_socket_service_unregister(const struct net_socket_service_desc* svc) {
+    return net_socket_service_register(svc, NULL, 0, NULL);
 }
 
 /**
