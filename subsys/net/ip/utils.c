@@ -166,14 +166,14 @@ static int net_value_to_udec(char* buf, uint32_t value, int precision) {
 
 char* z_impl_net_addr_ntop(sa_family_t family, void const* src,
                            char* dst, size_t size) {
-    struct net_in_addr const*  addr  = NULL;
+    struct net_in_addr const* addr = NULL;
     struct net_in6_addr const* addr6 = NULL;
     uint16_t const* w = NULL;
-    uint_fast8_t i;
-    uint8_t bl, bh, longest = 1U;
-    int8_t pos = -1;
+    int i;
+    uint8_t longest = 1U;
+    int pos = -1;
     char delim = ':';
-    unsigned char zeros[8] = {0};
+    uint8_t zeros[8] = {0};
     char* ptr = dst;
     int len = -1;
     uint32_t value;
@@ -189,8 +189,8 @@ char* z_impl_net_addr_ntop(sa_family_t family, void const* src,
             mapped = true;
         }
 
-        for (i = 0U; i < 8; i++) {
-            for (uint8_t j = i; j < 8; j++) {
+        for (i = 0; i < 8; i++) {
+            for (int j = i; j < 8; j++) {
                 if (UNALIGNED_GET(&w[j]) != 0) {
                     break;
                 }
@@ -199,10 +199,10 @@ char* z_impl_net_addr_ntop(sa_family_t family, void const* src,
             }
         }
 
-        for (i = 0U; i < 8; i++) {
+        for (i = 0; i < 8; i++) {
             if (zeros[i] > longest) {
                 longest = zeros[i];
-                pos     = i;
+                pos = i;
             }
         }
 
@@ -220,7 +220,7 @@ char* z_impl_net_addr_ntop(sa_family_t family, void const* src,
     }
 
 print_mapped :
-    for (i = 0U; i < len; i++) {
+    for (i = 0; i < len; i++) {
         /* IPv4 address a.b.c.d */
         if (len == 4) {
             int l;
@@ -258,9 +258,9 @@ print_mapped :
                 *ptr++ = ':';
             }
 
-            *ptr++    = ':';
+            *ptr++ = ':';
             needcolon = false;
-            i += longest - 1U;
+            i += (int)longest - 1;
 
             continue;
         }
@@ -270,34 +270,21 @@ print_mapped :
         }
 
         value = (uint32_t)sys_be16_to_cpu(UNALIGNED_GET(&w[i]));
-        bh    = (uint8_t)(value >> 8);
-        bl    = (uint8_t)(value & 0xff);
+        uint8_t bh = (uint8_t)(value >> 8);
+        uint8_t bl = (uint8_t)(value & 0xff);
 
         if (bh) {
-            if (bh > 0x0f) {
-                ptr = net_byte_to_hex(ptr, bh, 'a', false);
-            }
-            else {
-                if (bh < 10) {
-                    *ptr++ = (char)(bh + '0');
-                }
-                else {
-                    *ptr++ = (char)(bh - 10 + 'a');
-                }
-            }
+            /* Convert high byte to hex without padding */
+            ptr = net_byte_to_hex(ptr, bh, 'a', false);
 
+            /* Always pad the low byte if high byte is non - zero */
             ptr = net_byte_to_hex(ptr, bl, 'a', true);
         }
-        else if (bl > 0x0f) {
-            ptr = net_byte_to_hex(ptr, bl, 'a', false);
-        }
         else {
-            if (bl < 10) {
-                *ptr++ = (char)(bl + '0');
-            }
-            else {
-                *ptr++ = (char)(bl - 10 + 'a');
-            }
+            /* For the case where the high byte is zero, only process the low byte
+             * Do not pad the low byte if high byte is zero
+             */
+            ptr = net_byte_to_hex(ptr, bl, 'a', false);
         }
 
         needcolon = true;
