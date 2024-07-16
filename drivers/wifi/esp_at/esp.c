@@ -308,7 +308,7 @@ static int esp_pull_raw(char** str, char const* str_end, char** raw) {
 
 /* +CWLAP:(sec,ssid,rssi,channel) */
 /* with: CONFIG_WIFI_ESP_AT_SCAN_MAC_ADDRESS: +CWLAP:<ecn>,<ssid>,<rssi>,<mac>,<ch>*/
-MODEM_CMD_DIRECT_DEFINE(on_cmd_cwlap) {
+MODEM_CMD_DIRECT_DEFINE(on_cmd_cwlap) {                         /* ESP_AT_STA_SEQ08 */
     struct esp_data* dev = CONTAINER_OF(data, struct esp_data,
                                         cmd_handler_data);
     struct wifi_scan_result res = { 0 };
@@ -531,7 +531,7 @@ static const struct modem_cmd response_cmds[] = {
     MODEM_CMD("ERROR", on_cmd_error, 0U, ""), /* 3GPP */
 };
 
-MODEM_CMD_DEFINE(on_cmd_wifi_connected) {
+MODEM_CMD_DEFINE(on_cmd_wifi_connected) {                       /* ESP_AT_STA_SEQ11 */
     struct esp_data* dev = CONTAINER_OF(data, struct esp_data,
                                         cmd_handler_data);
 
@@ -993,11 +993,11 @@ static int esp_mgmt_iface_status(const struct device* dev,
     return (0);
 }
 
-static void esp_mgmt_scan_work(struct k_work* work) {
+static void esp_mgmt_scan_work(struct k_work* work) {           /* ESP_AT_STA_SEQ07 */
     struct esp_data* dev;
     int ret;
     static const struct modem_cmd cmds[] = {
-        MODEM_CMD_DIRECT("+CWLAP:", on_cmd_cwlap),
+        MODEM_CMD_DIRECT("+CWLAP:", on_cmd_cwlap),              /* AT+CWLAP: List Available APs */
     };
 
     dev = CONTAINER_OF(work, struct esp_data, scan_work);
@@ -1040,7 +1040,7 @@ static int esp_mgmt_scan(const struct device* dev,
 
     data->scan_cb = cb;
 
-    k_work_submit_to_queue(&data->workq, &data->scan_work);
+    k_work_submit_to_queue(&data->workq, &data->scan_work);     /* ESP_AT_STA_SEQ06 */
 
     return (0);
 };
@@ -1055,7 +1055,7 @@ MODEM_CMD_DEFINE(on_cmd_fail) {
     return (0);
 }
 
-static void esp_mgmt_connect_work(struct k_work* work) {
+static void esp_mgmt_connect_work(struct k_work* work) {        /* ESP_AT_STA_SEQ10 */
     struct esp_data* dev;
     int ret;
     static const struct modem_cmd cmds[] = {
@@ -1154,7 +1154,7 @@ static int esp_conn_cmd_escape_and_append(struct esp_data* data, size_t* off,
 
 static int esp_mgmt_connect(const struct device* dev,
                             struct wifi_connect_req_params* params) {
-    struct esp_data* data = dev->data;
+    struct esp_data* data = dev->data;                          /* ESP_AT_STA_SEQ09 */
     size_t off = 0;
     int err;
 
@@ -1169,6 +1169,7 @@ static int esp_mgmt_connect(const struct device* dev,
 
     esp_flags_set(data, EDF_STA_CONNECTING);
 
+    /* AT+CWJAP: Connect to an AP */
     err = esp_conn_cmd_append_literal(data, &off, "AT+" _CWJAP "=\"");
     if (err) {
         return (err);
@@ -1198,6 +1199,7 @@ static int esp_mgmt_connect(const struct device* dev,
         return (err);
     }
 
+    /* AT+CWJAP=[<ssid>],[<pwd>] */
     k_work_submit_to_queue(&data->workq, &data->connect_work);
 
     return (0);
@@ -1382,7 +1384,7 @@ static void esp_init_work(struct k_work* work) {                /* ESP_AT_STA_SE
     /* L1 network layer (physical layer) is up */
     net_if_carrier_on(dev->net_iface);
 
-    k_sem_give(&dev->sem_if_up);
+    k_sem_give(&dev->sem_if_up);            /* ESP_AT_STA_SEQ05 */
 }
 
 static int esp_reset(const struct device* dev) {
