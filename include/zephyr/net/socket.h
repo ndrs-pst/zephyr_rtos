@@ -624,6 +624,7 @@ static inline int zsock_ioctl_wrapper(int sock, unsigned long request, ...)
  * if :kconfig:option:`CONFIG_POSIX_API` is defined (in which case
  * it may conflict with generic POSIX ``poll()`` function).
  * @endrst
+ * @see z_impl_zsock_poll() in `subsys/net/lib/sockets/sockets.c`
  */
 __syscall int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout);
 

@@ -1628,8 +1628,8 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 		    net_if_is_ip_offloaded(net_context_get_iface(ctx))) {
 			int ret;
 
-			ret  = sock_get_offload_pkt_src_addr(pkt, ctx, src_addr,
-								*addrlen);
+			ret = sock_get_offload_pkt_src_addr(pkt, ctx, src_addr,
+							    *addrlen);
 			if (ret < 0) {
 				errno = -ret;
 				NET_DBG("sock_get_offload_pkt_src_addr %d", ret);

@@ -648,7 +648,7 @@ static int esp_recv(struct net_context* context,
         return (0);
     }
 
-    ret = k_sem_take(&sock->sem_data_ready, K_MSEC(timeout));
+    ret = k_sem_take(&sock->sem_data_ready, K_MSEC(timeout));   /* ESP_AT_RCV_SEQ02 */
 
     k_mutex_lock(&sock->lock, K_FOREVER);
     sock->recv_cb        = NULL;
@@ -723,13 +723,46 @@ static int esp_get(sa_family_t family,
 
 static struct net_offload esp_offload = {
     .get     = esp_get,
-    .bind    = esp_bind,
+    .bind    = esp_bind,                    /* zsock_bind_ctx */
     .listen  = esp_listen,
-    .connect = esp_connect,
+    .connect = esp_connect,                 /* zsock_connect_ctx */
     .accept  = esp_accept,
     .send    = esp_send,
-    .sendto  = esp_sendto,
+    .sendto  = esp_sendto,                  /* sock_write_vmeth / sock_sendto_vmeth
+                                             *       ↓
+                                             * zsock_sendto_ctx (no callback passing)
+                                             *       ↓
+                                             * net_context_send
+                                             *       ↓
+                                             * context_sendto
+                                             *       ↓
+                                             * net_offload_sendto
+                                             *       ↓
+                                             * esp_sendto
+                                             *       ↓
+                                             * esp_socket_queue_tx
+                                             *       ↓
+                                             * esp_send_work
+                                             *       ↓
+                                             * esp_socket_send_one_pkt
+                                             *       ↓
+                                             * _sock_send   (ESP_AT)
+                                             *       ↓
+                                             * context->send_cb == NULL
+                                             */
+
     .recv    = esp_recv,
+
+                                            /* zsock_recvfrom_ctx / sock_recvfrom_vmeth
+                                             *       ↓
+                                             * zsock_recv_dgram, zsock_recv_stream
+                                             *       ↓
+                                             * zsock_wait_data  (trigger by zsock_received_cb)
+                                             *       ↓
+                                             * sock_get_offload_pkt_src_addr
+                                             *       ↓
+                                             * net_pkt_read
+                                             */
     .put     = esp_put,
 };
 

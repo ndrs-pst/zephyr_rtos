@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/** @file mqtt_transport_socket_tcp.h
+/** @file mqtt_transport_socket_tcp.c
  *
  * @brief Internal functions to handle transport over TCP socket.
  */

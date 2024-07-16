@@ -188,8 +188,8 @@ void esp_socket_rx(struct esp_socket* sock, struct net_buf* buf,
     #endif /* CONFIG_NET_SOCKETS */
 
     k_mutex_lock(&sock->lock, K_FOREVER);
-    if (sock->recv_cb) {
-        sock->recv_cb(sock->context, pkt, NULL, NULL,
+    if (sock->recv_cb) {                                        /* ESP_AT_RCV_SEQ03 */
+        sock->recv_cb(sock->context, pkt, NULL, NULL,           /* @see zsock_received_cb, socks5_cmd_rsp_cb */
                       0, sock->recv_user_data);
         k_sem_give(&sock->sem_data_ready);
     }
