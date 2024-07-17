@@ -268,7 +268,7 @@ static void tc_tx_handler(void *p1, void *p2, void *p3)
 	struct k_fifo *fifo = p1;
 	struct net_pkt *pkt;
 
-	while (1) {
+	while (true) {
 		pkt = k_fifo_get(fifo, K_FOREVER);
 		if (pkt == NULL) {
 			continue;

@@ -438,7 +438,8 @@ static int net_context_check(sa_family_t family, enum net_sock_type type,
 int net_context_get(sa_family_t family, enum net_sock_type type, uint16_t proto,
 		    struct net_context **context)
 {
-	int i, ret;
+	int i;
+	int ret;
 
 	if (IS_ENABLED(CONFIG_NET_CONTEXT_CHECK)) {
 		ret = net_context_check(family, type, proto, context);
@@ -456,6 +457,7 @@ int net_context_get(sa_family_t family, enum net_sock_type type, uint16_t proto,
 		}
 
 		memset(&contexts[i], 0, sizeof(contexts[i]));
+
 		/* FIXME - Figure out a way to get the correct network interface
 		 * as it is not known at this point yet.
 		 */
@@ -489,8 +491,8 @@ int net_context_get(sa_family_t family, enum net_sock_type type, uint16_t proto,
 		contexts[i].options.ipv6_v6only = true;
 #endif
 		if (IS_ENABLED(CONFIG_NET_IP)) {
-			(void)memset(&contexts[i].remote, 0, sizeof(struct net_sockaddr));
-			(void)memset(&contexts[i].local, 0, sizeof(struct net_sockaddr_ptr));
+			(void) memset(&contexts[i].remote, 0, sizeof(struct net_sockaddr));
+			(void) memset(&contexts[i].local, 0, sizeof(struct net_sockaddr_ptr));
 
 			if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6) {
 				struct net_sockaddr_in6 *addr6 =
@@ -506,6 +508,7 @@ int net_context_get(sa_family_t family, enum net_sock_type type, uint16_t proto,
 				contexts[i].ipv6_hop_limit = INITIAL_HOP_LIMIT;
 				contexts[i].ipv6_mcast_hop_limit = INITIAL_MCAST_HOP_LIMIT;
 			}
+
 			if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET) {
 				struct net_sockaddr_in *addr = (struct net_sockaddr_in *)&contexts[i].local;
 

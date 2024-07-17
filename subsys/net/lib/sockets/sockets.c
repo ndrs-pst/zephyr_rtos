@@ -216,6 +216,7 @@ static int zsock_socket_internal(int family, int type, int proto)
 }
 #endif /* CONFIG_NET_NATIVE */
 
+/* @see NET_SOCKET_REGISTER(...) for the instance of net_socket_register */
 int z_impl_zsock_socket(int family, int type, int proto)
 {
 	STRUCT_SECTION_FOREACH(net_socket_register, sock_family) {
@@ -233,7 +234,7 @@ int z_impl_zsock_socket(int family, int type, int proto)
 		}
 
 		errno = 0;
-		ret = sock_family->handler(family, type, proto);
+		ret = sock_family->handler(family, type, proto);        /* @see zsock_socket_internal */
 
 		SYS_PORT_TRACING_OBJ_INIT(socket, ret < 0 ? -errno : ret,
 					  family, type, proto);

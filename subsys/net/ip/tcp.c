@@ -883,7 +883,7 @@ static int tcp_conn_unref(struct tcp* conn) {
 static int tcp_conn_close_debug(struct tcp* conn, int status,
                                 char const* caller, int line)
 #else
-static int              tcp_conn_close(struct tcp* conn, int status)
+static int tcp_conn_close(struct tcp* conn, int status)
 #endif
 {
     #if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
@@ -2827,7 +2827,7 @@ static void tcp_check_sock_options(struct tcp* conn) {
                                       &rcvbuf_opt, NULL);
     }
 
-    if (sndbuf_opt > 0 && sndbuf_opt != conn->send_win_max) {
+    if ((sndbuf_opt > 0) && (sndbuf_opt != conn->send_win_max)) {
         k_mutex_lock(&conn->lock, K_FOREVER);
 
         conn->send_win_max = sndbuf_opt;
@@ -2843,7 +2843,7 @@ static void tcp_check_sock_options(struct tcp* conn) {
 
         k_mutex_lock(&conn->lock, K_FOREVER);
 
-        diff               = rcvbuf_opt - conn->recv_win_max;
+        diff = (rcvbuf_opt - conn->recv_win_max);
         conn->recv_win_max = rcvbuf_opt;
         tcp_update_recv_wnd(conn, diff);
 
@@ -3923,7 +3923,7 @@ int net_tcp_connect(struct net_context* context,
             net_sprint_addr(remote_addr->sa_family,
                             (void const*)&net_sin(remote_addr)->sin_addr));
 
-    conn        = context->tcp;
+    conn = context->tcp;
     conn->iface = net_context_get_iface(context);
     tcp_derive_rto(conn);
 

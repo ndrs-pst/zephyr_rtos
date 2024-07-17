@@ -38,7 +38,7 @@ extern "C" {
 #define NET_VLAN_TAG_UNSPEC 0x0fff
 /** @endcond */
 
-/* Protocol families. */
+/* Protocol families. (PF) */
 #define NET_PF_UNSPEC   0                   /**< Unspecified protocol family.  */
 #define NET_PF_INET     1                   /**< IP protocol family version 4. */
 #define NET_PF_INET6    2                   /**< IP protocol family version 6. */
@@ -48,7 +48,7 @@ extern "C" {
 #define NET_PF_LOCAL    6                   /**< Inter-process communication   */
 #define NET_PF_UNIX     NET_PF_LOCAL        /**< Inter-process communication   */
 
-/* Address families. */
+/* Address families. (AF) */
 #define NET_AF_UNSPEC   NET_PF_UNSPEC       /**< Unspecified address family.   */
 #define NET_AF_INET     NET_PF_INET         /**< IP protocol family version 4. */
 #define NET_AF_INET6    NET_PF_INET6        /**< IP protocol family version 6. */

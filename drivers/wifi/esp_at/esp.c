@@ -790,7 +790,7 @@ static int cmd_ipd_check_hdr_end(struct esp_socket* sock, char actual) {
     return (0);
 }
 
-MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd) {                           /* ESP_AT_RCV_SEQ00 */
+MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd) {                           /* ESP_AT_RCV_SEQ01 */
     struct esp_data* dev = CONTAINER_OF(data, struct esp_data,
                                         cmd_handler_data);
     struct esp_socket* sock;
@@ -839,7 +839,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ipd) {                           /* ESP_AT_RCV_SE
         goto socket_unref;
     }
 
-    esp_socket_rx(sock, data->rx_buf, data_offset, data_len);   /* ESP_AT_RCV_SEQ01 */
+    esp_socket_rx(sock, data->rx_buf, data_offset, data_len);   /* ESP_AT_RCV_SEQ02 */
 
     ret = (data_offset + data_len);
 

@@ -648,7 +648,7 @@ static int esp_recv(struct net_context* context,
         return (0);
     }
 
-    ret = k_sem_take(&sock->sem_data_ready, K_MSEC(timeout));   /* ESP_AT_RCV_SEQ02 */
+    ret = k_sem_take(&sock->sem_data_ready, K_MSEC(timeout));   /* ESP_AT_RCV_SEQ00 */
 
     k_mutex_lock(&sock->lock, K_FOREVER);
     sock->recv_cb        = NULL;
@@ -732,6 +732,8 @@ static struct net_offload esp_offload = {
                                              *       ↓
                                              * zsock_sendto_ctx (no callback passing)
                                              *       ↓
+                                             * net_context_recv
+                                             *       ↓
                                              * net_context_send
                                              *       ↓
                                              * context_sendto
@@ -751,7 +753,7 @@ static struct net_offload esp_offload = {
                                              * context->send_cb == NULL
                                              */
 
-    .recv    = esp_recv,
+    .recv    = esp_recv,                    /* net_context_recv will call esp_recv */
 
                                             /* zsock_recvfrom_ctx / sock_recvfrom_vmeth
                                              *       ↓
