@@ -267,9 +267,9 @@ int mqtt_publish(struct mqtt_client *client,
 	}
 
 	io_vector[0].iov_base = packet.cur;
-	io_vector[0].iov_len = packet.end - packet.cur;
+	io_vector[0].iov_len  = packet.end - packet.cur;
 	io_vector[1].iov_base = param->message.payload.data;
-	io_vector[1].iov_len = param->message.payload.len;
+	io_vector[1].iov_len  = param->message.payload.len;
 
 	memset(&msg, 0, sizeof(msg));
 

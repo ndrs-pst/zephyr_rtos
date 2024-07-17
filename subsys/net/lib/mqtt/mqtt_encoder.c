@@ -269,7 +269,7 @@ static int mqtt_message_id_only_enc(uint8_t message_type, uint16_t message_id,
 int connect_request_encode(const struct mqtt_client *client,
 			   struct buf_ctx *buf)
 {
-	uint8_t connect_flags = client->clean_session << 1;
+	uint8_t connect_flags = (uint8_t)(client->clean_session << 1);
 	const uint8_t message_type =
 			MQTT_MESSAGES_OPTIONS(MQTT_PKT_TYPE_CONNECT, 0, 0, 0);
 	const struct mqtt_utf8 *mqtt_proto_desc;
@@ -485,7 +485,7 @@ int subscribe_encode(const struct mqtt_subscription_list *param,
 {
 	const uint8_t message_type = MQTT_MESSAGES_OPTIONS(
 			MQTT_PKT_TYPE_SUBSCRIBE, 0, 1, 0);
-	int err_code, i;
+	int err_code;
 	uint8_t *start;
 
 	/* Message id zero is not permitted by spec. */
@@ -502,7 +502,7 @@ int subscribe_encode(const struct mqtt_subscription_list *param,
 		return err_code;
 	}
 
-	for (i = 0; i < param->list_count; i++) {
+	for (int i = 0; i < param->list_count; i++) {
 		err_code = pack_utf8_str(&param->list[i].topic, buf);
 		if (err_code != 0) {
 			return err_code;
@@ -522,7 +522,7 @@ int unsubscribe_encode(const struct mqtt_subscription_list *param,
 {
 	const uint8_t message_type = MQTT_MESSAGES_OPTIONS(
 		MQTT_PKT_TYPE_UNSUBSCRIBE, 0, MQTT_QOS_1_AT_LEAST_ONCE, 0);
-	int err_code, i;
+	int err_code;
 	uint8_t *start;
 
 	/* Reserve space for fixed header. */
@@ -534,7 +534,7 @@ int unsubscribe_encode(const struct mqtt_subscription_list *param,
 		return err_code;
 	}
 
-	for (i = 0; i < param->list_count; i++) {
+	for (int i = 0; i < param->list_count; i++) {
 		err_code = pack_utf8_str(&param->list[i].topic, buf);
 		if (err_code != 0) {
 			return err_code;
