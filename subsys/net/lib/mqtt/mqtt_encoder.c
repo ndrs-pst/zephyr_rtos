@@ -108,7 +108,7 @@ static int pack_utf8_str(const struct mqtt_utf8* str, struct buf_ctx* buf) {
             (uint32_t)GET_UT8STR_BUFFER_SIZE(str), (void*)cur, (void*)end);
 
     /* Pack length followed by string. */
-    (void) pack_uint16((uint16_t)str->size, buf);
+    sys_put_be16((uint16_t)str->size, cur);
 
     /* Since pack_uint16 already increments buf->cur by 2 so (cur + 2) */
     memcpy((cur + sizeof(uint16_t)), str->utf8, str->size);
@@ -144,28 +144,26 @@ static int pack_utf8_str(const struct mqtt_utf8* str, struct buf_ctx* buf) {
  */
 static uint8_t packet_length_encode(uint32_t length, struct buf_ctx* buf) {
     uint_fast8_t encoded_bytes = 0U;
-    uint8_t* cur = (buf != NULL) ? buf->cur : NULL;
 
     NET_DBG(">> length:0x%08x cur:%p, end:%p", length,
-            (buf == NULL) ? 0 : (void *)buf->cur, (buf == NULL) ? 0 : (void *)buf->end);
+        (buf == NULL) ? 0 : (void *)buf->cur, (buf == NULL) ? 0 : (void *)buf->end);
 
     do {
         encoded_bytes++;
 
-        if (cur != NULL) {
-            *cur = length & MQTT_LENGTH_VALUE_MASK;
-            if (length > BIT(MQTT_LENGTH_SHIFT)) {
-                *cur |= MQTT_LENGTH_CONTINUATION_BIT;
-            }
-            cur++;
+        if (buf != NULL) {
+            *(buf->cur) = length & MQTT_LENGTH_VALUE_MASK;
         }
 
         length >>= MQTT_LENGTH_SHIFT;
-    } while (length > 0);
 
-    if (cur != NULL) {
-        buf->cur = cur;
-    }
+        if (buf != NULL) {
+            if (length > 0) {
+                *(buf->cur) |= MQTT_LENGTH_CONTINUATION_BIT;
+            }
+            buf->cur++;
+        }
+    } while (length > 0);
 
     return (encoded_bytes);
 }
