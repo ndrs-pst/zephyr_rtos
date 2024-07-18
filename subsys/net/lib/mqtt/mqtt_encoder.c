@@ -16,21 +16,21 @@ LOG_MODULE_REGISTER(net_mqtt_enc, CONFIG_MQTT_LOG_LEVEL);
 #include "mqtt_os.h"
 
 static const struct mqtt_utf8 mqtt_3_1_0_proto_desc =
-	MQTT_UTF8_LITERAL("MQIsdp");
+    MQTT_UTF8_LITERAL("MQIsdp");
 
 static const struct mqtt_utf8 mqtt_3_1_1_proto_desc =
-	MQTT_UTF8_LITERAL("MQTT");
+    MQTT_UTF8_LITERAL("MQTT");
 
 /** Never changing ping request, needed for Keep Alive. */
 static const uint8_t ping_packet[MQTT_FIXED_HEADER_MIN_SIZE] = {
-	MQTT_PKT_TYPE_PINGREQ,
-	0x00
+    MQTT_PKT_TYPE_PINGREQ,
+    0x00
 };
 
 /** Never changing disconnect request. */
 static const uint8_t disc_packet[MQTT_FIXED_HEADER_MIN_SIZE] = {
-	MQTT_PKT_TYPE_DISCONNECT,
-	0x00
+    MQTT_PKT_TYPE_DISCONNECT,
+    0x00
 };
 
 /**
@@ -43,18 +43,21 @@ static const uint8_t disc_packet[MQTT_FIXED_HEADER_MIN_SIZE] = {
  * @retval 0 if procedure is successful.
  * @retval -ENOMEM if there is no place in the buffer to store the value.
  */
-static int pack_uint8(uint8_t val, struct buf_ctx *buf)
-{
-	if ((buf->end - buf->cur) < sizeof(uint8_t)) {
-		return -ENOMEM;
-	}
+static int pack_uint8(uint8_t val, struct buf_ctx* buf) {
+    uint8_t* cur = buf->cur;
+    uint8_t* end = buf->end;
 
-	NET_DBG(">> val:%02x cur:%p, end:%p", val, (void *)buf->cur, (void *)buf->end);
+    if ((end - cur) < sizeof(uint8_t)) {
+        return (-ENOMEM);
+    }
 
-	/* Pack value. */
-	*(buf->cur++) = val;
+    NET_DBG(">> val:%02x cur:%p, end:%p", val, (void*)cur, (void*)end);
 
-	return 0;
+    /* Pack value. */
+    cur[0]   = val;
+    buf->cur = (cur + sizeof(uint8_t));
+
+    return (0);
 }
 
 /**
@@ -67,19 +70,20 @@ static int pack_uint8(uint8_t val, struct buf_ctx *buf)
  * @retval 0 if the procedure is successful.
  * @retval -ENOMEM if there is no place in the buffer to store the value.
  */
-static int pack_uint16(uint16_t val, struct buf_ctx *buf)
-{
-	if ((buf->end - buf->cur) < sizeof(uint16_t)) {
-		return -ENOMEM;
-	}
+static int pack_uint16(uint16_t val, struct buf_ctx* buf) {
+    uint8_t* cur = buf->cur;
+    uint8_t* end = buf->end;
 
-	NET_DBG(">> val:%04x cur:%p, end:%p", val, (void *)buf->cur, (void *)buf->end);
+    if ((end - cur) < sizeof(uint16_t)) {
+        return (-ENOMEM);
+    }
 
-	/* Pack value. */
-	*(buf->cur++) = (val >> 8) & 0xFF;
-	*(buf->cur++) = val & 0xFF;
+    NET_DBG(">> val:%04x cur:%p, end:%p", val, (void*)cur, (void*)end);
 
-	return 0;
+    sys_put_be16(val, cur);
+    buf->cur = (cur + sizeof(uint16_t));
+
+    return (0);
 }
 
 /**
@@ -92,22 +96,25 @@ static int pack_uint16(uint16_t val, struct buf_ctx *buf)
  * @retval 0 if the procedure is successful.
  * @retval -ENOMEM if there is no place in the buffer to store the string.
  */
-static int pack_utf8_str(const struct mqtt_utf8 *str, struct buf_ctx *buf)
-{
-	if ((uintptr_t)(buf->end - buf->cur) < GET_UT8STR_BUFFER_SIZE(str)) {
-		return -ENOMEM;
-	}
+static int pack_utf8_str(const struct mqtt_utf8* str, struct buf_ctx* buf) {
+    uint8_t* cur = buf->cur;
+    uint8_t* end = buf->end;
 
-	NET_DBG(">> str_size:%08x cur:%p, end:%p",
-		 (uint32_t)GET_UT8STR_BUFFER_SIZE(str), (void *)buf->cur, (void *)buf->end);
+    if ((uintptr_t)(end - cur) < GET_UT8STR_BUFFER_SIZE(str)) {
+        return (-ENOMEM);
+    }
 
-	/* Pack length followed by string. */
-	(void) pack_uint16((uint16_t)str->size, buf);
+    NET_DBG(">> str_size:%08x cur:%p, end:%p",
+            (uint32_t)GET_UT8STR_BUFFER_SIZE(str), (void*)cur, (void*)end);
 
-	memcpy(buf->cur, str->utf8, str->size);
-	buf->cur += str->size;
+    /* Pack length followed by string. */
+    (void) pack_uint16((uint16_t)str->size, buf);
 
-	return 0;
+    /* Since pack_uint16 already increments buf->cur by 2 so (cur + 2) */
+    memcpy((cur + sizeof(uint16_t)), str->utf8, str->size);
+    buf->cur = (cur + sizeof(uint16_t) + str->size);
+
+    return (0);
 }
 
 /**
@@ -135,31 +142,32 @@ static int pack_utf8_str(const struct mqtt_utf8 *str, struct buf_ctx *buf)
  *
  * @return Number of bytes needed to encode length value.
  */
-static uint8_t packet_length_encode(uint32_t length, struct buf_ctx *buf)
-{
-	uint8_t encoded_bytes = 0U;
+static uint8_t packet_length_encode(uint32_t length, struct buf_ctx* buf) {
+    uint_fast8_t encoded_bytes = 0U;
+    uint8_t* cur = (buf != NULL) ? buf->cur : NULL;
 
-	NET_DBG(">> length:0x%08x cur:%p, end:%p", length,
-		 (buf == NULL) ? 0 : (void *)buf->cur, (buf == NULL) ? 0 : (void *)buf->end);
+    NET_DBG(">> length:0x%08x cur:%p, end:%p", length,
+            (buf == NULL) ? 0 : (void *)buf->cur, (buf == NULL) ? 0 : (void *)buf->end);
 
-	do {
-		encoded_bytes++;
+    do {
+        encoded_bytes++;
 
-		if (buf != NULL) {
-			*(buf->cur) = length & MQTT_LENGTH_VALUE_MASK;
-		}
+        if (cur != NULL) {
+            *cur = length & MQTT_LENGTH_VALUE_MASK;
+            if (length > BIT(MQTT_LENGTH_SHIFT)) {
+                *cur |= MQTT_LENGTH_CONTINUATION_BIT;
+            }
+            cur++;
+        }
 
-		length >>= MQTT_LENGTH_SHIFT;
+        length >>= MQTT_LENGTH_SHIFT;
+    } while (length > 0);
 
-		if (buf != NULL) {
-			if (length > 0) {
-				*(buf->cur) |= MQTT_LENGTH_CONTINUATION_BIT;
-			}
-			buf->cur++;
-		}
-	} while (length > 0);
+    if (cur != NULL) {
+        buf->cur = cur;
+    }
 
-	return encoded_bytes;
+    return (encoded_bytes);
 }
 
 /**
@@ -183,36 +191,35 @@ static uint8_t packet_length_encode(uint32_t length, struct buf_ctx *buf)
  * @retval 0 if the procedure is successful.
  * @retval -EMSGSIZE if the message is too big for MQTT.
  */
-static uint32_t mqtt_encode_fixed_header(uint8_t message_type, uint8_t *start,
-				      struct buf_ctx *buf)
-{
-	uint32_t length = buf->cur - start;
-	uint8_t fixed_header_length;
+static uint32_t mqtt_encode_fixed_header(uint8_t message_type, uint8_t* start,
+                                         struct buf_ctx* buf) {
+    uint32_t length = (buf->cur - start);
+    uint8_t  fixed_header_length;
 
-	if (length > MQTT_MAX_PAYLOAD_SIZE) {
-		return -EMSGSIZE;
-	}
+    if (length > MQTT_MAX_PAYLOAD_SIZE) {
+        return (-EMSGSIZE);
+    }
 
-	NET_DBG("<< msg type:0x%02x length:0x%08x", message_type, length);
+    NET_DBG("<< msg type:0x%02x length:0x%08x", message_type, length);
 
-	fixed_header_length = packet_length_encode(length, NULL);
-	fixed_header_length += sizeof(uint8_t);
+    fixed_header_length = packet_length_encode(length, NULL);
+    fixed_header_length += sizeof(uint8_t);
 
-	NET_DBG("Fixed header length = %02x", fixed_header_length);
+    NET_DBG("Fixed header length = %02x", fixed_header_length);
 
-	/* Set the pointer at the start of the frame before encoding. */
-	buf->cur = start - fixed_header_length;
+    /* Set the pointer at the start of the frame before encoding. */
+    buf->cur = (start - fixed_header_length);
 
-	(void)pack_uint8(message_type, buf);
-	(void)packet_length_encode(length, buf);
+    (void) pack_uint8(message_type, buf);
+    (void) packet_length_encode(length, buf);
 
-	/* Set the cur pointer back at the start of the frame,
-	 * and end pointer to the end of the frame.
-	 */
-	buf->cur = buf->cur - fixed_header_length;
-	buf->end = buf->cur + length + fixed_header_length;
+    /* Set the cur pointer back at the start of the frame,
+     * and end pointer to the end of the frame.
+     */
+    buf->cur = (buf->cur - fixed_header_length);
+    buf->end = (buf->cur + length + fixed_header_length);
 
-	return 0;
+    return (0);
 }
 
 /**
@@ -227,9 +234,8 @@ static uint32_t mqtt_encode_fixed_header(uint8_t message_type, uint8_t *start,
  * @retval -ENOMEM if there is no place in the buffer to store the binary
  *                 string.
  */
-static int zero_len_str_encode(struct buf_ctx *buf)
-{
-	return pack_uint16(0x0000, buf);
+static int zero_len_str_encode(struct buf_ctx* buf) {
+    return pack_uint16(0x0000, buf);
 }
 
 /**
@@ -244,314 +250,311 @@ static int zero_len_str_encode(struct buf_ctx *buf)
  * @retval 0 or an error code indicating a reason for failure.
  */
 static int mqtt_message_id_only_enc(uint8_t message_type, uint16_t message_id,
-				    struct buf_ctx *buf)
-{
-	int err_code;
-	uint8_t *start;
+                                    struct buf_ctx* buf) {
+    int err_code;
+    uint8_t* start;
 
-	/* Message id zero is not permitted by spec. */
-	if (message_id == 0U) {
-		return -EINVAL;
-	}
+    /* Message id zero is not permitted by spec. */
+    if (message_id == 0U) {
+        return (-EINVAL);
+    }
 
-	/* Reserve space for fixed header. */
-	buf->cur += MQTT_FIXED_HEADER_MAX_SIZE;
-	start = buf->cur;
+    /* Reserve space for fixed header. */
+    buf->cur += MQTT_FIXED_HEADER_MAX_SIZE;
+    start = buf->cur;
 
-	err_code = pack_uint16(message_id, buf);
-	if (err_code != 0) {
-		return err_code;
-	}
+    err_code = pack_uint16(message_id, buf);
+    if (err_code != 0) {
+        return (err_code);
+    }
 
-	return mqtt_encode_fixed_header(message_type, start, buf);
+    return mqtt_encode_fixed_header(message_type, start, buf);
 }
 
-int connect_request_encode(const struct mqtt_client *client,
-			   struct buf_ctx *buf)
-{
-	uint8_t connect_flags = (uint8_t)(client->clean_session << 1);
-	const uint8_t message_type =
-			MQTT_MESSAGES_OPTIONS(MQTT_PKT_TYPE_CONNECT, 0, 0, 0);
-	const struct mqtt_utf8 *mqtt_proto_desc;
-	uint8_t *connect_flags_pos;
-	int err_code;
-	uint8_t *start;
+int connect_request_encode(const struct mqtt_client* client,
+                           struct buf_ctx* buf) {
+    uint8_t connect_flags = (uint8_t)(client->clean_session << 1);
+    const uint8_t message_type =
+                MQTT_MESSAGES_OPTIONS(MQTT_PKT_TYPE_CONNECT, 0, 0, 0);
+    const struct mqtt_utf8* mqtt_proto_desc;
+    uint8_t* connect_flags_pos;
+    int err_code;
+    uint8_t* start;
 
-	if (client->protocol_version == MQTT_VERSION_3_1_1) {
-		mqtt_proto_desc = &mqtt_3_1_1_proto_desc;
-	} else {
-		mqtt_proto_desc = &mqtt_3_1_0_proto_desc;
-	}
+    if (client->protocol_version == MQTT_VERSION_3_1_1) {
+        mqtt_proto_desc = &mqtt_3_1_1_proto_desc;
+    }
+    else {
+        mqtt_proto_desc = &mqtt_3_1_0_proto_desc;
+    }
 
-	/* Reserve space for fixed header. */
-	buf->cur += MQTT_FIXED_HEADER_MAX_SIZE;
-	start = buf->cur;
+    /* Reserve space for fixed header. */
+    buf->cur += MQTT_FIXED_HEADER_MAX_SIZE;
+    start = buf->cur;
 
-	NET_HEXDUMP_DBG(mqtt_proto_desc->utf8, mqtt_proto_desc->size,
-			 "Encoding Protocol Description.");
+    NET_HEXDUMP_DBG(mqtt_proto_desc->utf8, mqtt_proto_desc->size,
+                    "Encoding Protocol Description.");
 
-	err_code = pack_utf8_str(mqtt_proto_desc, buf);
-	if (err_code != 0) {
-		return err_code;
-	}
+    err_code = pack_utf8_str(mqtt_proto_desc, buf);
+    if (err_code != 0) {
+        return (err_code);
+    }
 
-	NET_DBG("Encoding Protocol Version %02x.", client->protocol_version);
-	err_code = pack_uint8(client->protocol_version, buf);
-	if (err_code != 0) {
-		return err_code;
-	}
+    NET_DBG("Encoding Protocol Version %02x.", client->protocol_version);
+    err_code = pack_uint8(client->protocol_version, buf);
+    if (err_code != 0) {
+        return (err_code);
+    }
 
-	/* Remember position of connect flag and leave one byte for it to
-	 * be packed once we determine its value.
-	 */
-	connect_flags_pos = buf->cur;
+    /* Remember position of connect flag and leave one byte for it to
+     * be packed once we determine its value.
+     */
+    connect_flags_pos = buf->cur;
 
-	err_code = pack_uint8(0, buf);
-	if (err_code != 0) {
-		return err_code;
-	}
+    err_code = pack_uint8(0, buf);
+    if (err_code != 0) {
+        return (err_code);
+    }
 
-	NET_DBG("Encoding Keep Alive Time %04x.", client->keepalive);
-	err_code = pack_uint16(client->keepalive, buf);
-	if (err_code != 0) {
-		return err_code;
-	}
+    NET_DBG("Encoding Keep Alive Time %04x.", client->keepalive);
+    err_code = pack_uint16(client->keepalive, buf);
+    if (err_code != 0) {
+        return (err_code);
+    }
 
-	NET_HEXDUMP_DBG(client->client_id.utf8, client->client_id.size,
-			 "Encoding Client Id.");
-	err_code = pack_utf8_str(&client->client_id, buf);
-	if (err_code != 0) {
-		return err_code;
-	}
+    NET_HEXDUMP_DBG(client->client_id.utf8, client->client_id.size,
+                    "Encoding Client Id.");
+    err_code = pack_utf8_str(&client->client_id, buf);
+    if (err_code != 0) {
+        return (err_code);
+    }
 
-	/* Pack will topic and QoS */
-	if (client->will_topic != NULL) {
-		connect_flags |= MQTT_CONNECT_FLAG_WILL_TOPIC;
-		/* QoS is always 1 as of now. */
-		connect_flags |= ((client->will_topic->qos & 0x03) << 3);
-		connect_flags |= client->will_retain << 5;
+    /* Pack will topic and QoS */
+    if (client->will_topic != NULL) {
+        connect_flags |= MQTT_CONNECT_FLAG_WILL_TOPIC;
+        /* QoS is always 1 as of now. */
+        connect_flags |= ((client->will_topic->qos & 0x03) << 3);
+        connect_flags |= client->will_retain << 5;
 
-		NET_HEXDUMP_DBG(client->will_topic->topic.utf8,
-				 client->will_topic->topic.size,
-				 "Encoding Will Topic.");
-		err_code = pack_utf8_str(&client->will_topic->topic, buf);
-		if (err_code != 0) {
-			return err_code;
-		}
+        NET_HEXDUMP_DBG(client->will_topic->topic.utf8,
+                        client->will_topic->topic.size,
+                        "Encoding Will Topic.");
+        err_code = pack_utf8_str(&client->will_topic->topic, buf);
+        if (err_code != 0) {
+            return (err_code);
+        }
 
-		if (client->will_message != NULL) {
-			NET_HEXDUMP_DBG(client->will_message->utf8,
-					 client->will_message->size,
-					 "Encoding Will Message.");
-			err_code = pack_utf8_str(client->will_message, buf);
-			if (err_code != 0) {
-				return err_code;
-			}
-		} else {
-			NET_DBG("Encoding Zero Length Will Message.");
-			err_code = zero_len_str_encode(buf);
-			if (err_code != 0) {
-				return err_code;
-			}
-		}
-	}
+        if (client->will_message != NULL) {
+            NET_HEXDUMP_DBG(client->will_message->utf8,
+                            client->will_message->size,
+                            "Encoding Will Message.");
+            err_code = pack_utf8_str(client->will_message, buf);
+            if (err_code != 0) {
+                return (err_code);
+            }
+        }
+        else {
+            NET_DBG("Encoding Zero Length Will Message.");
+            err_code = zero_len_str_encode(buf);
+            if (err_code != 0) {
+                return (err_code);
+            }
+        }
+    }
 
-	/* Pack Username if any. */
-	if (client->user_name != NULL) {
-		connect_flags |= MQTT_CONNECT_FLAG_USERNAME;
+    /* Pack Username if any. */
+    if (client->user_name != NULL) {
+        connect_flags |= MQTT_CONNECT_FLAG_USERNAME;
 
-		NET_HEXDUMP_DBG(client->user_name->utf8,
-				 client->user_name->size,
-				 "Encoding Username.");
-		err_code = pack_utf8_str(client->user_name, buf);
-		if (err_code != 0) {
-			return err_code;
-		}
-	}
+        NET_HEXDUMP_DBG(client->user_name->utf8,
+                        client->user_name->size,
+                        "Encoding Username.");
+        err_code = pack_utf8_str(client->user_name, buf);
+        if (err_code != 0) {
+            return (err_code);
+        }
+    }
 
-	/* Pack Password if any. */
-	if (client->password != NULL) {
-		connect_flags |= MQTT_CONNECT_FLAG_PASSWORD;
+    /* Pack Password if any. */
+    if (client->password != NULL) {
+        connect_flags |= MQTT_CONNECT_FLAG_PASSWORD;
 
-		NET_HEXDUMP_DBG(client->password->utf8,
-				 client->password->size,
-				 "Encoding Password.");
-		err_code = pack_utf8_str(client->password, buf);
-		if (err_code != 0) {
-			return err_code;
-		}
-	}
+        NET_HEXDUMP_DBG(client->password->utf8,
+                        client->password->size,
+                        "Encoding Password.");
+        err_code = pack_utf8_str(client->password, buf);
+        if (err_code != 0) {
+            return (err_code);
+        }
+    }
 
-	/* Write the flags the connect flags. */
-	*connect_flags_pos = connect_flags;
+    /* Write the flags the connect flags. */
+    *connect_flags_pos = connect_flags;
 
-	return mqtt_encode_fixed_header(message_type, start, buf);
+    return mqtt_encode_fixed_header(message_type, start, buf);
 }
 
-int publish_encode(const struct mqtt_publish_param *param, struct buf_ctx *buf)
-{
-	const uint8_t message_type = MQTT_MESSAGES_OPTIONS(
-			MQTT_PKT_TYPE_PUBLISH, param->dup_flag,
-			param->message.topic.qos, param->retain_flag);
-	int err_code;
-	uint8_t *start;
+int publish_encode(const struct mqtt_publish_param* param, struct buf_ctx* buf) {
+    const uint8_t message_type = MQTT_MESSAGES_OPTIONS(
+            MQTT_PKT_TYPE_PUBLISH, param->dup_flag,
+            param->message.topic.qos, param->retain_flag);
+    int      err_code;
+    uint8_t* start;
 
-	/* Message id zero is not permitted by spec. */
-	if ((param->message.topic.qos) && (param->message_id == 0U)) {
-		return -EINVAL;
-	}
+    /* Message id zero is not permitted by spec. */
+    if ((param->message.topic.qos) && (param->message_id == 0U)) {
+        return (-EINVAL);
+    }
 
-	/* Reserve space for fixed header. */
-	buf->cur += MQTT_FIXED_HEADER_MAX_SIZE;
-	start = buf->cur;
+    /* Reserve space for fixed header. */
+    buf->cur += MQTT_FIXED_HEADER_MAX_SIZE;
+    start = buf->cur;
 
-	err_code = pack_utf8_str(&param->message.topic.topic, buf);
-	if (err_code != 0) {
-		return err_code;
-	}
+    err_code = pack_utf8_str(&param->message.topic.topic, buf);
+    if (err_code != 0) {
+        return (err_code);
+    }
 
-	if (param->message.topic.qos) {
-		err_code = pack_uint16(param->message_id, buf);
-		if (err_code != 0) {
-			return err_code;
-		}
-	}
+    if (param->message.topic.qos) {
+        err_code = pack_uint16(param->message_id, buf);
+        if (err_code != 0) {
+            return (err_code);
+        }
+    }
 
-	/* Do not copy payload. We move the buffer pointer to ensure that
-	 * message length in fixed header is encoded correctly.
-	 */
-	buf->cur += param->message.payload.len;
+    /* Do not copy payload. We move the buffer pointer to ensure that
+     * message length in fixed header is encoded correctly.
+     */
+    buf->cur += param->message.payload.len;
 
-	err_code = mqtt_encode_fixed_header(message_type, start, buf);
-	if (err_code != 0) {
-		return err_code;
-	}
+    err_code = mqtt_encode_fixed_header(message_type, start, buf);
+    if (err_code != 0) {
+        return (err_code);
+    }
 
-	buf->end -= param->message.payload.len;
+    buf->end -= param->message.payload.len;
 
-	return 0;
+    return (0);
 }
 
-int publish_ack_encode(const struct mqtt_puback_param *param,
-		       struct buf_ctx *buf)
-{
-	const uint8_t message_type =
-		MQTT_MESSAGES_OPTIONS(MQTT_PKT_TYPE_PUBACK, 0, 0, 0);
+int publish_ack_encode(const struct mqtt_puback_param* param,
+                       struct buf_ctx* buf) {
+    const uint8_t message_type =
+        MQTT_MESSAGES_OPTIONS(MQTT_PKT_TYPE_PUBACK, 0, 0, 0);
 
-	return mqtt_message_id_only_enc(message_type, param->message_id, buf);
+    return mqtt_message_id_only_enc(message_type, param->message_id, buf);
 }
 
-int publish_receive_encode(const struct mqtt_pubrec_param *param,
-			   struct buf_ctx *buf)
-{
-	const uint8_t message_type =
-		MQTT_MESSAGES_OPTIONS(MQTT_PKT_TYPE_PUBREC, 0, 0, 0);
+int publish_receive_encode(const struct mqtt_pubrec_param* param,
+                           struct buf_ctx* buf) {
+    const uint8_t message_type =
+        MQTT_MESSAGES_OPTIONS(MQTT_PKT_TYPE_PUBREC, 0, 0, 0);
 
-	return mqtt_message_id_only_enc(message_type, param->message_id, buf);
+    return mqtt_message_id_only_enc(message_type, param->message_id, buf);
 }
 
-int publish_release_encode(const struct mqtt_pubrel_param *param,
-			   struct buf_ctx *buf)
-{
-	const uint8_t message_type =
-		MQTT_MESSAGES_OPTIONS(MQTT_PKT_TYPE_PUBREL, 0, 1, 0);
+int publish_release_encode(const struct mqtt_pubrel_param* param,
+                           struct buf_ctx* buf) {
+    const uint8_t message_type =
+        MQTT_MESSAGES_OPTIONS(MQTT_PKT_TYPE_PUBREL, 0, 1, 0);
 
-	return mqtt_message_id_only_enc(message_type, param->message_id, buf);
+    return mqtt_message_id_only_enc(message_type, param->message_id, buf);
 }
 
-int publish_complete_encode(const struct mqtt_pubcomp_param *param,
-			    struct buf_ctx *buf)
-{
-	const uint8_t message_type =
-		MQTT_MESSAGES_OPTIONS(MQTT_PKT_TYPE_PUBCOMP, 0, 0, 0);
+int publish_complete_encode(const struct mqtt_pubcomp_param* param,
+                            struct buf_ctx* buf) {
+    const uint8_t message_type =
+        MQTT_MESSAGES_OPTIONS(MQTT_PKT_TYPE_PUBCOMP, 0, 0, 0);
 
-	return mqtt_message_id_only_enc(message_type, param->message_id, buf);
+    return mqtt_message_id_only_enc(message_type, param->message_id, buf);
 }
 
-int disconnect_encode(struct buf_ctx *buf)
-{
-	if (buf->end - buf->cur < sizeof(disc_packet)) {
-		return -ENOMEM;
-	}
+int disconnect_encode(struct buf_ctx* buf) {
+    uint8_t* cur = buf->cur;
+    uint8_t* end = buf->end;
 
-	memcpy(buf->cur, disc_packet, sizeof(disc_packet));
-	buf->end = buf->cur + sizeof(disc_packet);
+    if ((end - cur) < sizeof(disc_packet)) {
+        return (-ENOMEM);
+    }
 
-	return 0;
+    memcpy(cur, disc_packet, sizeof(disc_packet));
+    buf->end = (cur + sizeof(disc_packet));
+
+    return (0);
 }
 
-int subscribe_encode(const struct mqtt_subscription_list *param,
-		     struct buf_ctx *buf)
-{
-	const uint8_t message_type = MQTT_MESSAGES_OPTIONS(
-			MQTT_PKT_TYPE_SUBSCRIBE, 0, 1, 0);
-	int err_code;
-	uint8_t *start;
+int subscribe_encode(const struct mqtt_subscription_list* param,
+                     struct buf_ctx* buf) {
+    const uint8_t message_type = MQTT_MESSAGES_OPTIONS(
+                    MQTT_PKT_TYPE_SUBSCRIBE, 0, 1, 0);
+    int err_code;
+    uint8_t* start;
 
-	/* Message id zero is not permitted by spec. */
-	if (param->message_id == 0U) {
-		return -EINVAL;
-	}
+    /* Message id zero is not permitted by spec. */
+    if (param->message_id == 0U) {
+        return (-EINVAL);
+    }
 
-	/* Reserve space for fixed header. */
-	buf->cur += MQTT_FIXED_HEADER_MAX_SIZE;
-	start = buf->cur;
+    /* Reserve space for fixed header. */
+    buf->cur += MQTT_FIXED_HEADER_MAX_SIZE;
+    start = buf->cur;
 
-	err_code = pack_uint16(param->message_id, buf);
-	if (err_code != 0) {
-		return err_code;
-	}
+    err_code = pack_uint16(param->message_id, buf);
+    if (err_code != 0) {
+        return (err_code);
+    }
 
-	for (int i = 0; i < param->list_count; i++) {
-		err_code = pack_utf8_str(&param->list[i].topic, buf);
-		if (err_code != 0) {
-			return err_code;
-		}
+    for (int i = 0; i < param->list_count; i++) {
+        err_code = pack_utf8_str(&param->list[i].topic, buf);
+        if (err_code != 0) {
+            return (err_code);
+        }
 
-		err_code = pack_uint8(param->list[i].qos, buf);
-		if (err_code != 0) {
-			return err_code;
-		}
-	}
+        err_code = pack_uint8(param->list[i].qos, buf);
+        if (err_code != 0) {
+            return (err_code);
+        }
+    }
 
-	return mqtt_encode_fixed_header(message_type, start, buf);
+    return mqtt_encode_fixed_header(message_type, start, buf);
 }
 
-int unsubscribe_encode(const struct mqtt_subscription_list *param,
-		       struct buf_ctx *buf)
-{
-	const uint8_t message_type = MQTT_MESSAGES_OPTIONS(
-		MQTT_PKT_TYPE_UNSUBSCRIBE, 0, MQTT_QOS_1_AT_LEAST_ONCE, 0);
-	int err_code;
-	uint8_t *start;
+int unsubscribe_encode(const struct mqtt_subscription_list* param,
+                       struct buf_ctx* buf) {
+    const uint8_t message_type = MQTT_MESSAGES_OPTIONS(
+            MQTT_PKT_TYPE_UNSUBSCRIBE, 0, MQTT_QOS_1_AT_LEAST_ONCE, 0);
+    int err_code;
+    uint8_t* start;
 
-	/* Reserve space for fixed header. */
-	buf->cur += MQTT_FIXED_HEADER_MAX_SIZE;
-	start = buf->cur;
+    /* Reserve space for fixed header. */
+    buf->cur += MQTT_FIXED_HEADER_MAX_SIZE;
+    start = buf->cur;
 
-	err_code = pack_uint16(param->message_id, buf);
-	if (err_code != 0) {
-		return err_code;
-	}
+    err_code = pack_uint16(param->message_id, buf);
+    if (err_code != 0) {
+        return (err_code);
+    }
 
-	for (int i = 0; i < param->list_count; i++) {
-		err_code = pack_utf8_str(&param->list[i].topic, buf);
-		if (err_code != 0) {
-			return err_code;
-		}
-	}
+    for (int i = 0; i < param->list_count; i++) {
+        err_code = pack_utf8_str(&param->list[i].topic, buf);
+        if (err_code != 0) {
+            return (err_code);
+        }
+    }
 
-	return mqtt_encode_fixed_header(message_type, start, buf);
+    return mqtt_encode_fixed_header(message_type, start, buf);
 }
 
-int ping_request_encode(struct buf_ctx *buf)
-{
-	if (buf->end - buf->cur < sizeof(ping_packet)) {
-		return -ENOMEM;
-	}
+int ping_request_encode(struct buf_ctx* buf) {
+    uint8_t* cur = buf->cur;
+    uint8_t* end = buf->end;
 
-	memcpy(buf->cur, ping_packet, sizeof(ping_packet));
-	buf->end = buf->cur + sizeof(ping_packet);
+    if ((end - cur) < sizeof(ping_packet)) {
+        return (-ENOMEM);
+    }
 
-	return 0;
+    memcpy(cur, ping_packet, sizeof(ping_packet));
+    buf->end = (cur + sizeof(ping_packet));
+
+    return (0);
 }
