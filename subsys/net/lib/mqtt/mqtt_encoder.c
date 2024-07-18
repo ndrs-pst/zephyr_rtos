@@ -45,7 +45,7 @@ static const uint8_t disc_packet[MQTT_FIXED_HEADER_MIN_SIZE] = {
  */
 static int pack_uint8(uint8_t val, struct buf_ctx* buf) {
     uint8_t* cur = buf->cur;
-    uint8_t* end = buf->end;
+    uint8_t const* end = buf->end;
 
     if ((end - cur) < sizeof(uint8_t)) {
         return (-ENOMEM);
@@ -72,7 +72,7 @@ static int pack_uint8(uint8_t val, struct buf_ctx* buf) {
  */
 static int pack_uint16(uint16_t val, struct buf_ctx* buf) {
     uint8_t* cur = buf->cur;
-    uint8_t* end = buf->end;
+    uint8_t const* end = buf->end;
 
     if ((end - cur) < sizeof(uint16_t)) {
         return (-ENOMEM);
@@ -98,7 +98,7 @@ static int pack_uint16(uint16_t val, struct buf_ctx* buf) {
  */
 static int pack_utf8_str(const struct mqtt_utf8* str, struct buf_ctx* buf) {
     uint8_t* cur = buf->cur;
-    uint8_t* end = buf->end;
+    uint8_t const* end = buf->end;
 
     if ((uintptr_t)(end - cur) < GET_UT8STR_BUFFER_SIZE(str)) {
         return (-ENOMEM);
@@ -144,24 +144,23 @@ static int pack_utf8_str(const struct mqtt_utf8* str, struct buf_ctx* buf) {
  */
 static uint8_t packet_length_encode(uint32_t length, struct buf_ctx* buf) {
     uint_fast8_t encoded_bytes = 0U;
+    uint8_t byte;
 
     NET_DBG(">> length:0x%08x cur:%p, end:%p", length,
-        (buf == NULL) ? 0 : (void *)buf->cur, (buf == NULL) ? 0 : (void *)buf->end);
+        (buf == NULL) ? 0 : (void*)buf->cur, (buf == NULL) ? 0 : (void*)buf->end);
 
     do {
         encoded_bytes++;
 
-        if (buf != NULL) {
-            *(buf->cur) = length & MQTT_LENGTH_VALUE_MASK;
-        }
-
+        byte = length & MQTT_LENGTH_VALUE_MASK;
         length >>= MQTT_LENGTH_SHIFT;
 
+        if (length > 0) {
+            byte |= MQTT_LENGTH_CONTINUATION_BIT;
+        }
+
         if (buf != NULL) {
-            if (length > 0) {
-                *(buf->cur) |= MQTT_LENGTH_CONTINUATION_BIT;
-            }
-            buf->cur++;
+            *(buf->cur++) = byte;
         }
     } while (length > 0);
 
@@ -396,7 +395,7 @@ int publish_encode(const struct mqtt_publish_param* param, struct buf_ctx* buf) 
     const uint8_t message_type = MQTT_MESSAGES_OPTIONS(
             MQTT_PKT_TYPE_PUBLISH, param->dup_flag,
             param->message.topic.qos, param->retain_flag);
-    int      err_code;
+    int err_code;
     uint8_t* start;
 
     /* Message id zero is not permitted by spec. */
@@ -469,7 +468,7 @@ int publish_complete_encode(const struct mqtt_pubcomp_param* param,
 
 int disconnect_encode(struct buf_ctx* buf) {
     uint8_t* cur = buf->cur;
-    uint8_t* end = buf->end;
+    uint8_t const* end = buf->end;
 
     if ((end - cur) < sizeof(disc_packet)) {
         return (-ENOMEM);
@@ -545,7 +544,7 @@ int unsubscribe_encode(const struct mqtt_subscription_list* param,
 
 int ping_request_encode(struct buf_ctx* buf) {
     uint8_t* cur = buf->cur;
-    uint8_t* end = buf->end;
+    uint8_t const* end = buf->end;
 
     if ((end - cur) < sizeof(ping_packet)) {
         return (-ENOMEM);
