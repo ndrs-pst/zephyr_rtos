@@ -27,10 +27,9 @@ static void client_reset(struct mqtt_client *client)
 	client->internal.remaining_payload = 0U;
 }
 
-/** @brief Initialize tx buffer. */
-static void tx_buf_init(struct mqtt_client *client, struct buf_ctx *buf)
+/** @brief Initialize buffer context. */
+static void buf_ctx_init(struct mqtt_client *client, struct buf_ctx *buf)
 {
-	memset(client->tx_buf, 0, client->tx_buf_size);
 	buf->cur = client->tx_buf;
 	buf->end = client->tx_buf + client->tx_buf_size;
 }
@@ -80,7 +79,7 @@ static int client_connect(struct mqtt_client *client)
 		return err_code;
 	}
 
-	tx_buf_init(client, &packet);
+	buf_ctx_init(client, &packet);
 	MQTT_SET_STATE(client, MQTT_STATE_TCP_CONNECTED);
 
 	err_code = connect_request_encode(client, &packet);
@@ -254,7 +253,7 @@ int mqtt_publish(struct mqtt_client *client,
 
 	mqtt_mutex_lock(client);
 
-	tx_buf_init(client, &packet);
+	buf_ctx_init(client, &packet);
 
 	err_code = verify_tx_state(client);
 	if (err_code < 0) {
@@ -301,7 +300,7 @@ int mqtt_publish_qos1_ack(struct mqtt_client *client,
 
 	mqtt_mutex_lock(client);
 
-	tx_buf_init(client, &packet);
+	buf_ctx_init(client, &packet);
 
 	err_code = verify_tx_state(client);
 	if (err_code < 0) {
@@ -338,7 +337,7 @@ int mqtt_publish_qos2_receive(struct mqtt_client *client,
 
 	mqtt_mutex_lock(client);
 
-	tx_buf_init(client, &packet);
+	buf_ctx_init(client, &packet);
 
 	err_code = verify_tx_state(client);
 	if (err_code < 0) {
@@ -375,7 +374,7 @@ int mqtt_publish_qos2_release(struct mqtt_client *client,
 
 	mqtt_mutex_lock(client);
 
-	tx_buf_init(client, &packet);
+	buf_ctx_init(client, &packet);
 
 	err_code = verify_tx_state(client);
 	if (err_code < 0) {
@@ -412,7 +411,7 @@ int mqtt_publish_qos2_complete(struct mqtt_client *client,
 
 	mqtt_mutex_lock(client);
 
-	tx_buf_init(client, &packet);
+	buf_ctx_init(client, &packet);
 
 	err_code = verify_tx_state(client);
 	if (err_code < 0) {
@@ -447,7 +446,7 @@ int mqtt_disconnect(struct mqtt_client *client)
 
 	mqtt_mutex_lock(client);
 
-	tx_buf_init(client, &packet);
+	buf_ctx_init(client, &packet);
 
 	err_code = verify_tx_state(client);
 	if (err_code < 0) {
@@ -487,7 +486,7 @@ int mqtt_subscribe(struct mqtt_client *client,
 
 	mqtt_mutex_lock(client);
 
-	tx_buf_init(client, &packet);
+	buf_ctx_init(client, &packet);
 
 	err_code = verify_tx_state(client);
 	if (err_code < 0) {
@@ -521,7 +520,7 @@ int mqtt_unsubscribe(struct mqtt_client *client,
 
 	mqtt_mutex_lock(client);
 
-	tx_buf_init(client, &packet);
+	buf_ctx_init(client, &packet);
 
 	err_code = verify_tx_state(client);
 	if (err_code < 0) {
@@ -550,7 +549,7 @@ int mqtt_ping(struct mqtt_client *client)
 
 	mqtt_mutex_lock(client);
 
-	tx_buf_init(client, &packet);
+	buf_ctx_init(client, &packet);
 
 	err_code = verify_tx_state(client);
 	if (err_code < 0) {
