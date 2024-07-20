@@ -1332,15 +1332,18 @@ static int lwm2m_engine_init(void)
 	if (IS_ENABLED(CONFIG_LWM2M_TICKLESS)) {
 		/* Create socketpair that is used to wake zsock_poll() in the main loop */
 		int s[2];
-		int ret = zsock_socketpair(NET_AF_UNIX, NET_SOCK_STREAM, 0, s);
+		int ret;
 
+		ret = zsock_socketpair(NET_AF_UNIX, NET_SOCK_STREAM, 0, s);
 		if (ret) {
 			LOG_ERR("Error; socketpair() returned %d", ret);
 			return ret;
 		}
+
 		/* Last poll-handle is reserved for control socket */
 		engine->sock_fds[MAX_POLL_FD - 1].fd = s[0];
 		engine->control_sock = s[1];
+
 		ret = zsock_fcntl(s[0], F_SETFL, O_NONBLOCK);
 		if (ret) {
 			LOG_ERR("zsock_fcntl() %d", ret);
@@ -1348,6 +1351,7 @@ static int lwm2m_engine_init(void)
 			zsock_close(s[1]);
 			return ret;
 		}
+
 		ret = zsock_fcntl(s[1], F_SETFL, O_NONBLOCK);
 		if (ret) {
 			LOG_ERR("zsock_fcntl() %d", ret);
