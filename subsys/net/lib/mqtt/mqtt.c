@@ -637,7 +637,7 @@ int mqtt_keepalive_time_left(const struct mqtt_client *client)
 
 int mqtt_input(struct mqtt_client *client)
 {
-	int err_code = 0;
+	int err_code;
 
 	NULL_PARAM_CHECK(client);
 

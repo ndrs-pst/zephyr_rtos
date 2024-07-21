@@ -208,8 +208,9 @@ struct lwm2m_engine_obj_inst *next_engine_obj_inst(int obj_id, int obj_inst_id)
 	struct lwm2m_engine_obj_inst *obj_inst, *next = NULL;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_inst_list, obj_inst, node) {
-		if (obj_inst->obj->obj_id == obj_id && obj_inst->obj_inst_id > obj_inst_id &&
-		    (!next || next->obj_inst_id > obj_inst->obj_inst_id)) {
+		if ((obj_inst->obj->obj_id == obj_id) &&
+		    (obj_inst->obj_inst_id > obj_inst_id) &&
+		    (!next || (next->obj_inst_id > obj_inst->obj_inst_id))) {
 			next = obj_inst;
 		}
 	}
@@ -633,22 +634,22 @@ static int lwm2m_engine_set(const struct lwm2m_obj_path *path, const void *value
 	case LWM2M_RES_TYPE_STRING:
 		if (len) {
 			strncpy(data_ptr, value, len - 1);
-			((char *)data_ptr)[len - 1] = '\0';
+			((char*)data_ptr)[len - 1] = '\0';
 		} else {
-			((char *)data_ptr)[0] = '\0';
+			((char*)data_ptr)[0] = '\0';
 		}
 		break;
 
 	case LWM2M_RES_TYPE_U32:
-		*((uint32_t *)data_ptr) = *(uint32_t *)value;
+		*((uint32_t*)data_ptr) = *(uint32_t*)value;
 		break;
 
 	case LWM2M_RES_TYPE_U16:
-		*((uint16_t *)data_ptr) = *(uint16_t *)value;
+		*((uint16_t*)data_ptr) = *(uint16_t*)value;
 		break;
 
 	case LWM2M_RES_TYPE_U8:
-		*((uint8_t *)data_ptr) = *(uint8_t *)value;
+		*((uint8_t*)data_ptr) = *(uint8_t*)value;
 		break;
 
 	case LWM2M_RES_TYPE_TIME:
@@ -660,49 +661,49 @@ static int lwm2m_engine_set(const struct lwm2m_obj_path *path, const void *value
 
 		if (max_data_len == sizeof(time_t)) {
 			if (len == sizeof(time_t)) {
-                *((time_t*)data_ptr) = *(time_t*)value;
+				*((time_t*)data_ptr) = *(time_t*)value;
 			} else {
-                *((time_t*)data_ptr) = (time_t)*((uint32_t*)value);
+				*((time_t*)data_ptr) = (time_t)*((uint32_t*)value);
 			}
 		} else {
 			LOG_WRN("Converting time to 32bit may cause integer overflow on resource "
 				"[%u/%u/%u/%u:%u]", path->obj_id, path->obj_inst_id, path->res_id,
 				path->res_inst_id, path->level);
 			if (len == sizeof(uint32_t)) {
-				*((uint32_t *)data_ptr) = *(uint32_t *)value;
+				*((uint32_t*)data_ptr) = *(uint32_t*)value;
 			} else {
-				*((uint32_t *)data_ptr) = (uint32_t) *((time_t *)value);
+				*((uint32_t*)data_ptr) = (uint32_t)*((time_t*)value);
 			}
 		}
 
 		break;
 
 	case LWM2M_RES_TYPE_S64:
-        *((int64_t*)data_ptr) = *(int64_t*)value;
+	*((int64_t*)data_ptr) = *(int64_t*)value;
 		break;
 
 	case LWM2M_RES_TYPE_S32:
-        *((int32_t*)data_ptr) = *(int32_t*)value;
+	*((int32_t*)data_ptr) = *(int32_t*)value;
 		break;
 
 	case LWM2M_RES_TYPE_S16:
-        *((int16_t*)data_ptr) = *(int16_t*)value;
+	*((int16_t*)data_ptr) = *(int16_t*)value;
 		break;
 
 	case LWM2M_RES_TYPE_S8:
-        *((int8_t*)data_ptr) = *(int8_t*)value;
+	*((int8_t*)data_ptr) = *(int8_t*)value;
 		break;
 
 	case LWM2M_RES_TYPE_BOOL:
-        *((bool*)data_ptr) = *(bool*)value;
+	*((bool*)data_ptr) = *(bool*)value;
 		break;
 
 	case LWM2M_RES_TYPE_FLOAT:
-        *(double*)data_ptr = *(double*)value;
+	*(double*)data_ptr = *(double*)value;
 		break;
 
 	case LWM2M_RES_TYPE_OBJLNK:
-        *((struct lwm2m_objlnk*)data_ptr) = *(struct lwm2m_objlnk*)value;
+	*((struct lwm2m_objlnk*)data_ptr) = *(struct lwm2m_objlnk*)value;
 		break;
 
 	default:
