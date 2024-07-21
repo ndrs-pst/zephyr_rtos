@@ -58,11 +58,13 @@ const struct transport_procedure transport_fn[MQTT_TRANSPORT_NUM] = {
 #endif /* CONFIG_MQTT_LIB_CUSTOM_TRANSPORT */
 };
 
+/* @see mqtt_client_tcp_connect, mqtt_client_tls_connect */
 int mqtt_transport_connect(struct mqtt_client *client)
 {
 	return transport_fn[client->transport.type].connect(client);
 }
 
+/* @see mqtt_client_tcp_write, mqtt_client_tls_write */
 int mqtt_transport_write(struct mqtt_client *client, const uint8_t *data,
 			 uint32_t datalen)
 {
@@ -76,6 +78,7 @@ int mqtt_transport_write_msg(struct mqtt_client *client,
 	return transport_fn[client->transport.type].write_msg(client, message);
 }
 
+/* @see mqtt_client_tcp_read, mqtt_client_tls_read */
 int mqtt_transport_read(struct mqtt_client *client, uint8_t *data, uint32_t buflen,
 			bool shall_block)
 {
