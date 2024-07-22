@@ -115,9 +115,9 @@ struct smf_ctx {
      * run_state function.
      */
     int32_t terminate_val;
+
     /**
-     * The state machine casts this to a "struct internal_ctx" and it's
-     * used to track state machine context
+     * The state machine uses this variable to track its context.
      */
     uint32_t internal;
 };

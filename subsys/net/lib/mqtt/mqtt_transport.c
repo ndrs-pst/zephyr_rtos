@@ -12,7 +12,7 @@
 #include "mqtt_transport.h"
 
 /**@brief Function pointer array for TCP/TLS transport handlers. */
-const struct transport_procedure transport_fn[MQTT_TRANSPORT_NUM] = {
+static const struct transport_procedure transport_fn[MQTT_TRANSPORT_NUM] = {
 	{
 		mqtt_client_tcp_connect,
 		mqtt_client_tcp_write,
@@ -72,6 +72,7 @@ int mqtt_transport_write(struct mqtt_client *client, const uint8_t *data,
 							  datalen);
 }
 
+/* @see mqtt_client_tcp_write_msg, mqtt_client_tls_write_msg */
 int mqtt_transport_write_msg(struct mqtt_client *client,
 			     const struct msghdr *message)
 {
@@ -86,6 +87,7 @@ int mqtt_transport_read(struct mqtt_client *client, uint8_t *data, uint32_t bufl
 							 shall_block);
 }
 
+/* @see mqtt_client_tcp_disconnect, mqtt_client_tls_disconnect */
 int mqtt_transport_disconnect(struct mqtt_client *client)
 {
 	return transport_fn[client->transport.type].disconnect(client);
