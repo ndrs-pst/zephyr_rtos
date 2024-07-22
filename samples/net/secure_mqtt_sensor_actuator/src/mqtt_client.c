@@ -89,7 +89,7 @@ static void clear_fds(void)
 	nfds = 0;
 }
 
-/** Initialise the MQTT client ID as the board name with random hex postfix */
+/** Initialize the MQTT client ID as the board name with random hex postfix */
 static void init_mqtt_client_id(void)
 {
 	snprintk(client_id, sizeof(client_id), CONFIG_BOARD"_%x", (uint8_t)sys_rand32_get());
