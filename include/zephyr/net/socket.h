@@ -1112,74 +1112,74 @@ struct ifreq {
  * @{
  */
 /** Socket-level option */
-#define SOL_SOCKET 1
+#define NET_SOL_SOCKET 1
 
 /* Socket options for SOL_SOCKET level */
 
 /** Recording debugging information (ignored, for compatibility) */
-#define SO_DEBUG 1
+#define NET_SO_DEBUG 1
 /** address reuse */
-#define SO_REUSEADDR 2
+#define NET_SO_REUSEADDR 2
 /** Type of the socket */
-#define SO_TYPE 3
+#define NET_SO_TYPE 3
 /** Async error */
-#define SO_ERROR 4
+#define NET_SO_ERROR 4
 /** Bypass normal routing and send directly to host (ignored, for compatibility) */
-#define SO_DONTROUTE 5
+#define NET_SO_DONTROUTE 5
 /** Transmission of broadcast messages is supported (ignored, for compatibility) */
-#define SO_BROADCAST 6
+#define NET_SO_BROADCAST 6
 
 /** Size of socket send buffer */
-#define SO_SNDBUF 7
+#define NET_SO_SNDBUF 7
 /** Size of socket recv buffer */
-#define SO_RCVBUF 8
+#define NET_SO_RCVBUF 8
 
 /** Enable sending keep-alive messages on connections */
-#define SO_KEEPALIVE 9
+#define NET_SO_KEEPALIVE 9
 /** Place out-of-band data into receive stream (ignored, for compatibility) */
-#define SO_OOBINLINE 10
+#define NET_SO_OOBINLINE 10
 /** Socket priority */
-#define SO_PRIORITY 12
+#define NET_SO_PRIORITY 12
 /** Socket lingers on close (ignored, for compatibility) */
-#define SO_LINGER 13
+#define NET_SO_LINGER 13
 /** Allow multiple sockets to reuse a single port */
-#define SO_REUSEPORT 15
+#define NET_SO_REUSEPORT 15
 
 /** Receive low watermark (ignored, for compatibility) */
-#define SO_RCVLOWAT 18
+#define NET_SO_RCVLOWAT 18
 /** Send low watermark (ignored, for compatibility) */
-#define SO_SNDLOWAT 19
+#define NET_SO_SNDLOWAT 19
 
 /**
  * Receive timeout
  * Applies to receive functions like recv(), but not to connect()
  */
-#define SO_RCVTIMEO 20
+#define NET_SO_RCVTIMEO 20
 /** Send timeout */
-#define SO_SNDTIMEO 21
+#define NET_SO_SNDTIMEO 21
 
 /** Bind a socket to an interface */
-#define SO_BINDTODEVICE	25
+#define NET_SO_BINDTODEVICE 25
 
 /** Socket accepts incoming connections (ignored, for compatibility) */
-#define SO_ACCEPTCONN 30
+#define NET_SO_ACCEPTCONN 30
 
 /** Timestamp TX RX or both packets. Supports multiple timestamp sources. */
-#define SO_TIMESTAMPING 37
+#define NET_SO_TIMESTAMPING 37
 
 /** Protocol used with the socket */
-#define SO_PROTOCOL 38
+#define NET_SO_PROTOCOL 38
 
 /** Domain used with SOCKET */
-#define SO_DOMAIN 39
+#define NET_SO_DOMAIN 39
 
 /** Enable SOCKS5 for Socket */
-#define SO_SOCKS5 60
+#define NET_SO_SOCKS5 60
 
 /** Socket TX time (when the data should be sent) */
-#define SO_TXTIME 61
+#define NET_SO_TXTIME 61
 /** Socket TX time (same as SO_TXTIME) */
-#define SCM_TXTIME SO_TXTIME
+#define NET_SCM_TXTIME NET_SO_TXTIME
 
 /** Timestamp generation flags */
 
@@ -1201,13 +1201,13 @@ struct ifreq {
  */
 /* Socket options for NET_IPPROTO_TCP level */
 /** Disable TCP buffering (ignored, for compatibility) */
-#define TCP_NODELAY 1
+#define NET_TCP_NODELAY 1
 /** Start keepalives after this period (seconds) */
-#define TCP_KEEPIDLE 2
+#define NET_TCP_KEEPIDLE 2
 /** Interval between keepalives (seconds) */
-#define TCP_KEEPINTVL 3
+#define NET_TCP_KEEPINTVL 3
 /** Number of keepalives before dropping connection */
-#define TCP_KEEPCNT 4
+#define NET_TCP_KEEPCNT 4
 
 /** @} */
 
@@ -1217,16 +1217,16 @@ struct ifreq {
  */
 /* Socket options for NET_IPPROTO_IP level */
 /** Set or receive the Type-Of-Service value for an outgoing packet. */
-#define IP_TOS 1
+#define NET_IP_TOS 1
 
 /** Set or receive the Time-To-Live value for an outgoing packet. */
-#define IP_TTL 2
+#define NET_IP_TTL 2
 
 /** Pass an IP_PKTINFO ancillary message that contains a
  *  pktinfo structure that supplies some information about the
  *  incoming packet.
  */
-#define IP_PKTINFO 8
+#define NET_IP_PKTINFO 8
 
 /**
  * @brief Incoming IPv4 packet information.
@@ -1241,11 +1241,11 @@ struct in_pktinfo {
 };
 
 /** Set IPv4 multicast TTL value. */
-#define IP_MULTICAST_TTL 33
+#define NET_IP_MULTICAST_TTL 33
 /** Join IPv4 multicast group. */
-#define IP_ADD_MEMBERSHIP 35
+#define NET_IP_ADD_MEMBERSHIP 35
 /** Leave IPv4 multicast group. */
-#define IP_DROP_MEMBERSHIP 36
+#define NET_IP_DROP_MEMBERSHIP 36
 
 /**
  * @brief Struct used when joining or leaving a IPv4 multicast group.
@@ -1253,7 +1253,7 @@ struct in_pktinfo {
 struct ip_mreqn {
 	struct net_in_addr imr_multiaddr; /**< IP multicast group address */
 	struct net_in_addr imr_address;   /**< IP address of local interface */
-	int            imr_ifindex;   /**< Network interface index */
+	int imr_ifindex;                  /**< Network interface index */
 };
 
 /** @} */
@@ -1336,7 +1336,7 @@ struct in6_pktinfo {
  * @{
  */
 /** listen: The maximum backlog queue length */
-#define SOMAXCONN 128
+#define NET_SOMAXCONN 128
 /** @} */
 
 /** @cond INTERNAL_HIDDEN */

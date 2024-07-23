@@ -261,7 +261,7 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 
 	ai_state.hints = hints;
 	ai_state.idx = 0U;
-	ai_state.port = htons(port);
+	ai_state.port = net_htons(port);
 	ai_state.ai_arr = res;
 	ai_state.dns_id = 0;
 	k_sem_init(&ai_state.sem, 0, K_SEM_MAX_LIMIT);
@@ -288,7 +288,7 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 
 	for (uint16_t idx = 0; idx < ai_state.idx; idx++) {
 		ai_addr = &ai_state.ai_arr[idx]._ai_addr;
-		net_sin(ai_addr)->sin_port = htons(port);
+		net_sin(ai_addr)->sin_port = net_htons(port);
 	}
 
 	/* If both attempts failed, it's error */
@@ -416,7 +416,7 @@ static int try_resolve_literal_addr(const char *host, const char *service,
 			(struct net_sockaddr_in6 *)&res->_ai_addr;
 
 		INIT_ADDRINFO(res, addr);
-		addr->sin6_port = htons(port);
+		addr->sin6_port = net_htons(port);
 		addr->sin6_family = NET_AF_INET6;
 		break;
 	}
@@ -472,7 +472,7 @@ int zsock_getaddrinfo(const char *host, const char *service,
 void zsock_freeaddrinfo(struct zsock_addrinfo *ai)
 {
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_OFFLOAD)) {
-		return socket_offload_freeaddrinfo(ai);
+		socket_offload_freeaddrinfo(ai);
 	}
 
 	free(ai);

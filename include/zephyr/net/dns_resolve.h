@@ -144,6 +144,10 @@ BUILD_ASSERT(CONFIG_NET_SOCKETS_POLL_MAX >= DNS_DISPATCHER_MAX_POLL,
 	     "CONFIG_NET_SOCKETS_POLL_MAX must be larger than " STRINGIFY(DNS_DISPATCHER_MAX_POLL));
 #endif
 
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define EPFNOSUPPORT         135
+#endif
+
 /** @brief What is the type of the socket given to DNS socket dispatcher,
  * resolver or responder.
  */

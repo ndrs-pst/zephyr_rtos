@@ -1501,7 +1501,7 @@ static int add_timestamping(struct net_context *ctx,
 	net_context_get_option(ctx, NET_OPT_TIMESTAMPING, &timestamping, NULL);
 
 	if (timestamping) {
-		return insert_pktinfo(msg, SOL_SOCKET, SO_TIMESTAMPING,
+		return insert_pktinfo(msg, NET_SOL_SOCKET, NET_SO_TIMESTAMPING,
 				      net_pkt_timestamp(pkt), sizeof(struct net_ptp_time));
 	}
 
@@ -1538,7 +1538,7 @@ static int add_pktinfo(struct net_context *ctx,
 				       (uint8_t *)net_sin_ptr(&ctx->local)->sin_addr);
 		info.ipi_ifindex = ctx->iface;
 
-		ret = insert_pktinfo(msg, NET_IPPROTO_IP, IP_PKTINFO,
+		ret = insert_pktinfo(msg, NET_IPPROTO_IP, NET_IP_PKTINFO,
 				     &info, sizeof(info));
 
 		goto out;
@@ -2764,11 +2764,11 @@ static inline int z_vrfy_zsock_inet_pton(sa_family_t family,
 static enum tcp_conn_option get_tcp_option(int optname)
 {
 	switch (optname) {
-	case TCP_KEEPIDLE:
+	case NET_TCP_KEEPIDLE:
 		return TCP_OPT_KEEPIDLE;
-	case TCP_KEEPINTVL:
+	case NET_TCP_KEEPINTVL:
 		return TCP_OPT_KEEPINTVL;
-	case TCP_KEEPCNT:
+	case NET_TCP_KEEPCNT:
 		return TCP_OPT_KEEPCNT;
 	}
 
@@ -2781,9 +2781,9 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 	int ret;
 
 	switch (level) {
-	case SOL_SOCKET:
+	case NET_SOL_SOCKET:
 		switch (optname) {
-		case SO_ERROR: {
+		case NET_SO_ERROR: {
 			if (*optlen != sizeof(int)) {
 				errno = EINVAL;
 				return -1;
@@ -2794,7 +2794,7 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			return 0;
 		}
 
-		case SO_TYPE: {
+		case NET_SO_TYPE: {
 			int type = (int)net_context_get_type(ctx);
 
 			if (*optlen != sizeof(type)) {
@@ -2807,7 +2807,7 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			return 0;
 		}
 
-		case SO_TXTIME:
+		case NET_SO_TXTIME:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_TXTIME)) {
 				ret = net_context_get_option(ctx,
 							     NET_OPT_TXTIME,
@@ -2821,7 +2821,7 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 			break;
 
-		case SO_PROTOCOL: {
+		case NET_SO_PROTOCOL: {
 			int proto = (int)net_context_get_proto(ctx);
 
 			if (*optlen != sizeof(proto)) {
@@ -2834,7 +2834,7 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			return 0;
 		}
 
-		case SO_DOMAIN: {
+		case NET_SO_DOMAIN: {
 			if (*optlen != sizeof(int)) {
 				errno = EINVAL;
 				return -1;
@@ -2847,7 +2847,7 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 		break;
 
-		case SO_RCVBUF:
+		case NET_SO_RCVBUF:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_RCVBUF)) {
 				ret = net_context_get_option(ctx,
 							     NET_OPT_RCVBUF,
@@ -2861,7 +2861,7 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 			break;
 
-		case SO_SNDBUF:
+		case NET_SO_SNDBUF:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_SNDBUF)) {
 				ret = net_context_get_option(ctx,
 							     NET_OPT_SNDBUF,
@@ -2875,7 +2875,7 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 			break;
 
-		case SO_REUSEADDR:
+		case NET_SO_REUSEADDR:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_REUSEADDR)) {
 				ret = net_context_get_option(ctx,
 							     NET_OPT_REUSEADDR,
@@ -2889,7 +2889,7 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 			break;
 
-		case SO_REUSEPORT:
+		case NET_SO_REUSEPORT:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_REUSEPORT)) {
 				ret = net_context_get_option(ctx,
 							     NET_OPT_REUSEPORT,
@@ -2903,7 +2903,7 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 			break;
 
-		case SO_KEEPALIVE:
+		case NET_SO_KEEPALIVE:
 			if (IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE) &&
 			    net_context_get_proto(ctx) == NET_IPPROTO_TCP) {
 				ret = net_tcp_get_option(ctx,
@@ -2919,7 +2919,7 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			break;
 
-		case SO_TIMESTAMPING:
+		case NET_SO_TIMESTAMPING:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_TIMESTAMPING)) {
 				ret = net_context_get_option(ctx,
 							     NET_OPT_TIMESTAMPING,
@@ -2940,15 +2940,15 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 	case NET_IPPROTO_TCP:
 		switch (optname) {
-		case TCP_NODELAY:
+		case NET_TCP_NODELAY:
 			ret = net_tcp_get_option(ctx, TCP_OPT_NODELAY, optval, optlen);
 			return ret;
 
-		case TCP_KEEPIDLE:
+		case NET_TCP_KEEPIDLE:
 			__fallthrough;
-		case TCP_KEEPINTVL:
+		case NET_TCP_KEEPINTVL:
 			__fallthrough;
-		case TCP_KEEPCNT:
+		case NET_TCP_KEEPCNT:
 			if (IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)) {
 				ret = net_tcp_get_option(ctx,
 							 get_tcp_option(optname),
@@ -2968,7 +2968,7 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 	case NET_IPPROTO_IP:
 		switch (optname) {
-		case IP_TOS:
+		case NET_IP_TOS:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_DSCP_ECN)) {
 				ret = net_context_get_option(ctx,
 							     NET_OPT_DSCP_ECN,
@@ -2984,7 +2984,7 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			break;
 
-		case IP_TTL:
+		case NET_IP_TTL:
 			ret = net_context_get_option(ctx, NET_OPT_TTL,
 						     optval, optlen);
 			if (ret < 0) {
@@ -2994,7 +2994,7 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			return 0;
 
-		case IP_MULTICAST_TTL:
+		case NET_IP_MULTICAST_TTL:
 			ret = net_context_get_option(ctx, NET_OPT_MCAST_TTL,
 						     optval, optlen);
 			if (ret < 0) {
@@ -3271,9 +3271,9 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 	int ret;
 
 	switch (level) {
-	case SOL_SOCKET:
+	case NET_SOL_SOCKET:
 		switch (optname) {
-		case SO_RCVBUF:
+		case NET_SO_RCVBUF:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_RCVBUF)) {
 				ret = net_context_set_option(ctx,
 							     NET_OPT_RCVBUF,
@@ -3288,7 +3288,7 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			break;
 
-		case SO_SNDBUF:
+		case NET_SO_SNDBUF:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_SNDBUF)) {
 				ret = net_context_set_option(ctx,
 							     NET_OPT_SNDBUF,
@@ -3303,7 +3303,7 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			break;
 
-		case SO_REUSEADDR:
+		case NET_SO_REUSEADDR:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_REUSEADDR)) {
 				ret = net_context_set_option(ctx,
 							     NET_OPT_REUSEADDR,
@@ -3318,7 +3318,7 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			break;
 
-		case SO_REUSEPORT:
+		case NET_SO_REUSEPORT:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_REUSEPORT)) {
 				ret = net_context_set_option(ctx,
 							     NET_OPT_REUSEPORT,
@@ -3333,7 +3333,7 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			break;
 
-		case SO_PRIORITY:
+		case NET_SO_PRIORITY:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_PRIORITY)) {
 				ret = net_context_set_option(ctx,
 							     NET_OPT_PRIORITY,
@@ -3348,7 +3348,7 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			break;
 
-		case SO_RCVTIMEO:
+		case NET_SO_RCVTIMEO:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_RCVTIMEO)) {
 				const struct zsock_timeval *tv = optval;
 				k_timeout_t timeout;
@@ -3380,7 +3380,7 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			break;
 
-		case SO_SNDTIMEO:
+		case NET_SO_SNDTIMEO:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_SNDTIMEO)) {
 				const struct zsock_timeval *tv = optval;
 				k_timeout_t timeout;
@@ -3411,7 +3411,7 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			break;
 
-		case SO_TXTIME:
+		case NET_SO_TXTIME:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_TXTIME)) {
 				ret = net_context_set_option(ctx,
 							     NET_OPT_TXTIME,
@@ -3426,7 +3426,7 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			break;
 
-		case SO_SOCKS5:
+		case NET_SO_SOCKS5:
 			if (IS_ENABLED(CONFIG_SOCKS)) {
 				ret = net_context_set_option(ctx,
 							     NET_OPT_SOCKS5,
@@ -3443,7 +3443,7 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			break;
 
-		case SO_BINDTODEVICE: {
+		case NET_SO_BINDTODEVICE: {
 			struct net_if *iface;
 			const struct ifreq *ifreq = optval;
 
@@ -3500,11 +3500,11 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			return 0;
 		}
 
-		case SO_LINGER:
+		case NET_SO_LINGER:
 			/* ignored. for compatibility purposes only */
 			return 0;
 
-		case SO_KEEPALIVE:
+		case NET_SO_KEEPALIVE:
 			if (IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE) &&
 			    net_context_get_proto(ctx) == NET_IPPROTO_TCP) {
 				ret = net_tcp_set_option(ctx,
@@ -3520,7 +3520,7 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			break;
 
-		case SO_TIMESTAMPING:
+		case NET_SO_TIMESTAMPING:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_TIMESTAMPING)) {
 				ret = net_context_set_option(ctx,
 							     NET_OPT_TIMESTAMPING,
@@ -3541,16 +3541,16 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 	case NET_IPPROTO_TCP:
 		switch (optname) {
-		case TCP_NODELAY:
+		case NET_TCP_NODELAY:
 			ret = net_tcp_set_option(ctx,
 						 TCP_OPT_NODELAY, optval, optlen);
 			return ret;
 
-		case TCP_KEEPIDLE:
+		case NET_TCP_KEEPIDLE:
 			__fallthrough;
-		case TCP_KEEPINTVL:
+		case NET_TCP_KEEPINTVL:
 			__fallthrough;
-		case TCP_KEEPCNT:
+		case NET_TCP_KEEPCNT:
 			if (IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)) {
 				ret = net_tcp_set_option(ctx,
 							 get_tcp_option(optname),
@@ -3569,7 +3569,7 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 	case NET_IPPROTO_IP:
 		switch (optname) {
-		case IP_TOS:
+		case NET_IP_TOS:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_DSCP_ECN)) {
 				ret = net_context_set_option(ctx,
 							     NET_OPT_DSCP_ECN,
@@ -3585,7 +3585,7 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			break;
 
-		case IP_PKTINFO:
+		case NET_IP_PKTINFO:
 			if (IS_ENABLED(CONFIG_NET_IPV4) &&
 			    IS_ENABLED(CONFIG_NET_CONTEXT_RECV_PKTINFO)) {
 				ret = net_context_set_option(ctx,
@@ -3602,7 +3602,7 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			break;
 
-		case IP_MULTICAST_TTL:
+		case NET_IP_MULTICAST_TTL:
 			ret = net_context_set_option(ctx, NET_OPT_MCAST_TTL,
 						     optval, optlen);
 			if (ret < 0) {
@@ -3612,7 +3612,7 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			return 0;
 
-		case IP_TTL:
+		case NET_IP_TTL:
 			ret = net_context_set_option(ctx, NET_OPT_TTL,
 						     optval, optlen);
 			if (ret < 0) {
@@ -3622,7 +3622,7 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			return 0;
 
-		case IP_ADD_MEMBERSHIP:
+		case NET_IP_ADD_MEMBERSHIP:
 			if (IS_ENABLED(CONFIG_NET_IPV4)) {
 				return ipv4_multicast_group(ctx, optval,
 							    optlen, true);
@@ -3630,7 +3630,7 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			break;
 
-		case IP_DROP_MEMBERSHIP:
+		case NET_IP_DROP_MEMBERSHIP:
 			if (IS_ENABLED(CONFIG_NET_IPV4)) {
 				return ipv4_multicast_group(ctx, optval,
 							    optlen, false);

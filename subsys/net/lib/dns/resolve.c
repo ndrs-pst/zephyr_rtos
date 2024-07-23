@@ -71,8 +71,6 @@ NET_BUF_POOL_DEFINE(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
 
 NET_BUF_POOL_DEFINE(dns_qname_pool, DNS_RESOLVER_BUF_CTR,
                     CONFIG_DNS_RESOLVER_MAX_QUERY_LEN, 4, NULL);
-
-#define EPFNOSUPPORT        135
 #else
 NET_BUF_POOL_DEFINE(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
                     DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);
@@ -992,7 +990,7 @@ static int dns_write(struct dns_resolve_context *ctx,
 						IPV6_UNICAST_HOPS,
 						hop_limit);
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET) {
-			ret = set_ttl_hop_limit(sock, NET_IPPROTO_IP, IP_TTL,
+			ret = set_ttl_hop_limit(sock, NET_IPPROTO_IP, NET_IP_TTL,
 						hop_limit);
 		} else {
 			ret = -ENOTSUP;
@@ -1000,8 +998,8 @@ static int dns_write(struct dns_resolve_context *ctx,
 
 		if (ret < 0) {
 			NET_DBG("Cannot set %s to socket (%d)",
-				family == AF_INET6 ? "hop limit" :
-				(family == AF_INET ? "TTL" : "<unknown>"),
+				family == NET_AF_INET6 ? "hop limit" :
+				(family == NET_AF_INET ? "TTL" : "<unknown>"),
 				ret);
 			return ret;
 		}

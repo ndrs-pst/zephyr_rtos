@@ -761,7 +761,7 @@ static int wait(int sock, int timeout, int event)
 			int optval;
 			socklen_t optlen = sizeof(optval);
 
-			if (zsock_getsockopt(fds.fd, SOL_SOCKET, SO_ERROR,
+			if (zsock_getsockopt(fds.fd, NET_SOL_SOCKET, NET_SO_ERROR,
 					     &optval, &optlen) == 0) {
 				NET_ERR("TLS underlying socket poll error %d",
 					-optval);
@@ -3417,7 +3417,8 @@ int ztls_getsockopt_ctx(struct tls_context *ctx, int level, int optname,
 		return -1;
 	}
 
-	if ((level == SOL_SOCKET) && (optname == SO_PROTOCOL)) {
+	if ((level == NET_SOL_SOCKET) &&
+	    (optname == NET_SO_PROTOCOL)) {
 		/* Protocol type is overridden during socket creation. Its
 		 * value is restored here to return current value.
 		 */
@@ -3434,7 +3435,9 @@ int ztls_getsockopt_ctx(struct tls_context *ctx, int level, int optname,
 	 * Otherwise, forward the SO_ERROR option request to the underlying
 	 * TCP/UDP socket to handle.
 	 */
-	if ((level == SOL_SOCKET) && (optname == SO_ERROR) && ctx->error != 0) {
+	if ((level == NET_SOL_SOCKET) &&
+	    (optname == NET_SO_ERROR) &&
+	    (ctx->error != 0)) {
 		if (*optlen != sizeof(int)) {
 			errno = EINVAL;
 			return -1;
@@ -3541,12 +3544,12 @@ int ztls_setsockopt_ctx(struct tls_context *ctx, int level, int optname,
 	/* Underlying socket is used in non-blocking mode, hence implement
 	 * timeout at the TLS socket level.
 	 */
-	if ((level == SOL_SOCKET) && (optname == SO_SNDTIMEO)) {
+	if ((level == NET_SOL_SOCKET) && (optname == NET_SO_SNDTIMEO)) {
 		err = set_timeout_opt(&ctx->options.timeout_tx, optval, optlen);
 		goto out;
 	}
 
-	if ((level == SOL_SOCKET) && (optname == SO_RCVTIMEO)) {
+	if ((level == NET_SOL_SOCKET) && (optname == NET_SO_RCVTIMEO)) {
 		err = set_timeout_opt(&ctx->options.timeout_rx, optval, optlen);
 		goto out;
 	}

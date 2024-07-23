@@ -475,8 +475,8 @@ static void telnet_server_cb(struct k_work *work)
 
 	if ((evt->event.revents & ZSOCK_POLLERR) ||
 	    (evt->event.revents & ZSOCK_POLLNVAL)) {
-		(void)zsock_getsockopt(evt->event.fd, SOL_SOCKET,
-				       SO_ERROR, &sock_error, &optlen);
+		(void)zsock_getsockopt(evt->event.fd, NET_SOL_SOCKET,
+				       NET_SO_ERROR, &sock_error, &optlen);
 		NET_ERR("Telnet socket %d error (%d)", evt->event.fd, sock_error);
 
 		if (evt->event.fd == sh_telnet->fds[SOCK_ID_CLIENT].fd) {
