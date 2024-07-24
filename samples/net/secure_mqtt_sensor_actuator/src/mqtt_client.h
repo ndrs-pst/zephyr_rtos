@@ -15,7 +15,7 @@
 extern bool mqtt_connected;
 
 /**
- *  @brief Initialise the MQTT client & broker configuration
+ *  @brief Initialize the MQTT client & broker configuration
  */
 int app_mqtt_init(struct mqtt_client *client);
 
