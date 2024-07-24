@@ -710,7 +710,8 @@ int zsock_accept_ctx(struct net_context *parent, struct net_sockaddr *addr,
 {
 	struct net_context *ctx;
 	struct net_pkt *last_pkt;
-	int fd, ret;
+	int fd;
+	int ret;
 
 	if (!sock_is_nonblock(parent)) {
 		k_timeout_t timeout = K_FOREVER;
@@ -938,7 +939,8 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 {
 	k_timeout_t timeout = K_FOREVER;
 	uint32_t retry_timeout = WAIT_BUFS_INITIAL_MS;
-	k_timepoint_t buf_timeout, end;
+	k_timepoint_t buf_timeout;
+	k_timepoint_t end;
 	int status;
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
@@ -1070,7 +1072,8 @@ ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 {
 	k_timeout_t timeout = K_FOREVER;
 	uint32_t retry_timeout = WAIT_BUFS_INITIAL_MS;
-	k_timepoint_t buf_timeout, end;
+	k_timepoint_t buf_timeout;
+	k_timepoint_t end;
 	int status;
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
@@ -1280,7 +1283,7 @@ static int sock_get_pkt_src_addr(struct net_pkt *pkt,
 		NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access,
 						      struct net_ipv6_hdr);
 		struct net_sockaddr_in6 *addr6 = net_sin6(addr);
-		struct net_ipv6_hdr *ipv6_hdr;
+		const struct net_ipv6_hdr *ipv6_hdr;
 
 		if (addrlen < sizeof(struct net_sockaddr_in6)) {
 			ret = -EINVAL;
@@ -1305,7 +1308,7 @@ static int sock_get_pkt_src_addr(struct net_pkt *pkt,
 
 	if (IS_ENABLED(CONFIG_NET_UDP) && proto == NET_IPPROTO_UDP) {
 		NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
-		struct net_udp_hdr *udp_hdr;
+		const struct net_udp_hdr *udp_hdr;
 
 		udp_hdr = (struct net_udp_hdr *)net_pkt_get_data(pkt,
 								 &udp_access);
@@ -1317,7 +1320,7 @@ static int sock_get_pkt_src_addr(struct net_pkt *pkt,
 		*port = udp_hdr->src_port;
 	} else if (IS_ENABLED(CONFIG_NET_TCP) && proto == NET_IPPROTO_TCP) {
 		NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
-		struct net_tcp_hdr *tcp_hdr;
+		const struct net_tcp_hdr *tcp_hdr;
 
 		tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data(pkt,
 								 &tcp_access);
@@ -1414,10 +1417,11 @@ void net_socket_update_tc_rx_time(struct net_pkt *pkt, uint32_t end_tick)
 				    end_tick);
 
 	if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)) {
-		uint32_t val, prev = net_pkt_create_time(pkt);
-		int i;
+		uint32_t val;
+		uint32_t prev;
 
-		for (i = 0; i < net_pkt_stats_tick_count(pkt); i++) {
+		prev = net_pkt_create_time(pkt);
+		for (int i = 0; i < net_pkt_stats_tick_count(pkt); i++) {
 			if (!net_pkt_stats_tick(pkt)[i]) {
 				break;
 			}
@@ -1465,7 +1469,7 @@ int zsock_wait_data(struct net_context *ctx, k_timeout_t *timeout)
 }
 
 static int insert_pktinfo(struct msghdr *msg, int level, int type,
-			  void *pktinfo, size_t pktinfo_len)
+			  const void *pktinfo, size_t pktinfo_len)
 {
 	struct cmsghdr *cmsg;
 
@@ -1508,7 +1512,7 @@ static int add_timestamping(struct net_context *ctx,
 	return -ENOTSUP;
 }
 
-static int add_pktinfo(struct net_context *ctx,
+static int add_pktinfo(const struct net_context *ctx,
 			struct net_pkt *pkt,
 			struct msghdr *msg)
 {
@@ -1522,7 +1526,7 @@ static int add_pktinfo(struct net_context *ctx,
 		NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access,
 						      struct net_ipv4_hdr);
 		struct in_pktinfo info;
-		struct net_ipv4_hdr *ipv4_hdr;
+		const struct net_ipv4_hdr *ipv4_hdr;
 
 		ipv4_hdr = (struct net_ipv4_hdr *)net_pkt_get_data(
 							pkt, &ipv4_access);
@@ -1548,7 +1552,7 @@ static int add_pktinfo(struct net_context *ctx,
 		NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access,
 						      struct net_ipv6_hdr);
 		struct in6_pktinfo info;
-		struct net_ipv6_hdr *ipv6_hdr;
+		const struct net_ipv6_hdr *ipv6_hdr;
 
 		ipv6_hdr = (struct net_ipv6_hdr *)net_pkt_get_data(
 							pkt, &ipv6_access);
@@ -1773,7 +1777,7 @@ static size_t zsock_recv_stream_immediate(struct net_context *ctx, uint8_t **buf
 	size_t recv_len = 0;
 	struct net_pkt *pkt;
 	struct net_pkt_cursor backup;
-	struct net_pkt *origin = NULL;
+	const struct net_pkt *origin = NULL;
 	const bool do_recv = !(buf == NULL || max_len == NULL);
 	size_t _max_len = (max_len == NULL) ? SIZE_MAX : *max_len;
 	const bool peek = (flags & ZSOCK_MSG_PEEK) == ZSOCK_MSG_PEEK;
@@ -2079,7 +2083,7 @@ ssize_t zsock_recvmsg_ctx(struct net_context *ctx, struct msghdr *msg,
 			  int flags)
 {
 	enum net_sock_type sock_type = net_context_get_type(ctx);
-	size_t i, max_len = 0;
+	size_t max_len = 0;
 
 	if (msg == NULL) {
 		errno = EINVAL;
@@ -2091,7 +2095,7 @@ ssize_t zsock_recvmsg_ctx(struct net_context *ctx, struct msghdr *msg,
 		return -1;
 	}
 
-	for (i = 0; i < msg->msg_iovlen; i++) {
+	for (size_t i = 0; i < msg->msg_iovlen; i++) {
 		max_len += msg->msg_iov[i].iov_len;
 	}
 
@@ -3160,9 +3164,10 @@ int z_vrfy_zsock_getsockopt(int sock, int level, int optname,
 static int ipv4_multicast_group(struct net_context *ctx, const void *optval,
 				socklen_t optlen, bool do_join)
 {
-	struct ip_mreqn *mreqn;
+	const struct ip_mreqn *mreqn;
 	struct net_if *iface;
-	int ifindex, ret;
+	int ifindex;
+	int ret;
 
 	if (optval == NULL || optlen != sizeof(struct ip_mreqn)) {
 		errno = EINVAL;
@@ -3216,7 +3221,7 @@ static int ipv4_multicast_group(struct net_context *ctx, const void *optval,
 static int ipv6_multicast_group(struct net_context *ctx, const void *optval,
 				socklen_t optlen, bool do_join)
 {
-	struct ipv6_mreq *mreq;
+	const struct ipv6_mreq *mreq;
 	struct net_if *iface;
 	int ret;
 
