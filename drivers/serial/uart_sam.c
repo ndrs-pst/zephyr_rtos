@@ -154,7 +154,6 @@ static uint8_t uart_sam_get_parity(const struct device* dev) {
 	}
 }
 
-// @RESUME
 static int uart_sam_configure(const struct device *dev,
                               const struct uart_config* cfg) {
 	int retval;

@@ -191,7 +191,7 @@ struct mqtt_topic {
 
 /** @brief Parameters for a publish message. */
 struct mqtt_publish_message {
-	struct mqtt_topic topic;     /**< Topic on which data was published. */
+	struct mqtt_topic topic;    /**< Topic on which data was published. */
 	struct mqtt_binstr payload; /**< Payload on the topic published. */
 };
 

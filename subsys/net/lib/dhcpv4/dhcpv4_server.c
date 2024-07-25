@@ -1536,14 +1536,14 @@ int net_dhcpv4_server_start(struct net_if *iface, struct net_in_addr *base_addr)
 		goto error;
 	}
 
-	sock = zsock_socket(AF_INET, SOCK_DGRAM, NET_IPPROTO_UDP);
+	sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	if (sock < 0) {
 		ret = -errno;
 		LOG_ERR("Failed to create DHCPv4 server socket, %d", ret);
 		goto error;
 	}
 
-	ret = zsock_setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, &ifreq,
+	ret = zsock_setsockopt(sock, NET_SOL_SOCKET, NET_SO_BINDTODEVICE, &ifreq,
 			       sizeof(ifreq));
 	if (ret < 0) {
 		ret = -errno;
