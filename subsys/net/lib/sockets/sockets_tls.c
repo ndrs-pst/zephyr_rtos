@@ -3000,8 +3000,7 @@ static int ztls_poll_prepare_ctx(struct tls_context *ctx,
 		pfd->events &= ~ZSOCK_POLLIN;
 	}
 
-	obj = zvfs_get_fd_obj_and_vtable(
-		ctx->sock, (const struct fd_op_vtable **)&vtable, &lock);
+	obj = zvfs_get_fd_obj_and_vtable(ctx->sock, &vtable, &lock);
 	if (obj == NULL) {
 		ret = -EBADF;
 		goto exit;
@@ -3195,8 +3194,7 @@ static int ztls_poll_update_ctx(struct tls_context *ctx,
 	int ret;
 	short events = pfd->events;
 
-	obj = zvfs_get_fd_obj_and_vtable(
-		ctx->sock, (const struct fd_op_vtable **)&vtable, &lock);
+	obj = zvfs_get_fd_obj_and_vtable(ctx->sock, &vtable, &lock);
 	if (obj == NULL) {
 		return -EBADF;
 	}

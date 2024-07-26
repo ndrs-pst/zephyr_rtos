@@ -1406,7 +1406,7 @@ __maybe_unused static int get_bool_option(bool option, int *value, size_t *len)
 		*len = sizeof(int);
 	}
 
-	*((int *)value) = (int)option;
+	*value = (int)option;
 
 	return 0;
 }

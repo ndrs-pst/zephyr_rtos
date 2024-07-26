@@ -299,12 +299,12 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 		net_ipaddr_copy(&entry->ip, next_addr);
 
 		net_pkt_lladdr_src(pkt)->addr =
-			(uint8_t *)net_if_get_link_addr(entry->iface)->addr;
+			net_if_get_link_addr(entry->iface)->addr;
 
 		arp_entry_register_pending(entry);
 	} else {
 		net_pkt_lladdr_src(pkt)->addr =
-			(uint8_t *)net_if_get_link_addr(iface)->addr;
+			net_if_get_link_addr(iface)->addr;
 	}
 
 	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
