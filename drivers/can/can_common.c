@@ -354,7 +354,7 @@ int can_calc_prescaler(const struct device* dev, struct can_timing* timing,
 
     timing->prescaler = (uint16_t)(core_clock / (bitrate * ts));
 
-    return (core_clock % (ts * timing->prescaler));
+    return (int)(core_clock % (ts * timing->prescaler));
 }
 
 static int check_timing_in_range(const struct can_timing* timing,
