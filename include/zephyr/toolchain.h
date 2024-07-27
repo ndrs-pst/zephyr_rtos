@@ -46,8 +46,38 @@
 #include <zephyr/toolchain/armclang.h>
 #elif defined(__llvm__) || (defined(_LINKER) && defined(__LLD_LINKER_CMD__))
 #include <zephyr/toolchain/llvm.h>
-#elif defined(__GNUC__) || (defined(_LINKER) && defined(__GCC_LINKER_CMD__))
+#elif defined(__GNUC__) || defined(_MSC_VER) || (defined(_LINKER) && defined(__GCC_LINKER_CMD__))
 #include <zephyr/toolchain/gcc.h>
+
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#include <immintrin.h>
+#include <stdalign.h>
+#define __attribute__(...)
+#define __alignof__             alignof
+#define __builtin_ctz           _tzcnt_u32
+#define __builtin_clz           _lzcnt_u32
+static inline int __builtin_clzll(unsigned long long int x) {
+    if (x == 0) {
+        // If x is 0, return 64.
+        return 64;
+    }
+
+    // Split the 64-bit integer into two 32-bit integers.
+    unsigned int upper = x >> 32;
+    unsigned int lower = x & 0xFFFFFFFF;
+
+    if (upper != 0) {
+        // If the upper 32 bits are not all zero, apply __builtin_clz to them.
+        return __builtin_clz(upper);
+    }
+    else {
+        // Otherwise, apply __builtin_clz to the lower 32 bits and add 32 to the result.
+        return __builtin_clz(lower) + 32;
+    }
+}
+
+#endif
+
 #else
 #error "Invalid/unknown toolchain configuration"
 #endif
