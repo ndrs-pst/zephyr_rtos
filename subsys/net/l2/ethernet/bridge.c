@@ -213,10 +213,10 @@ enum net_verdict net_eth_bridge_input(struct ethernet_context *ctx,
 		NET_DBG("sending pkt %p as %p on iface %p", pkt, out_pkt, out_ctx->iface);
 
 		/*
-		 * Use AF_UNSPEC to avoid interference, set the output
+		 * Use NET_AF_UNSPEC to avoid interference, set the output
 		 * interface and send the packet.
 		 */
-		net_pkt_set_family(out_pkt, AF_UNSPEC);
+		net_pkt_set_family(out_pkt, NET_AF_UNSPEC);
 		net_pkt_set_orig_iface(out_pkt, net_pkt_iface(pkt));
 		net_pkt_set_iface(out_pkt, out_ctx->iface);
 		net_if_queue_tx(out_ctx->iface, out_pkt);
