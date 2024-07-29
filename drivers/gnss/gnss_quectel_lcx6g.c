@@ -88,6 +88,12 @@ MODEM_CHAT_SCRIPT_NO_ABORT_DEFINE(suspend_script, suspend_script_cmds,
                                   NULL, QUECTEL_LCX6G_SCRIPT_TIMEOUT_S);
 #endif /* CONFIG_PM_DEVICE */
 
+#if CONFIG_GNSS_SATELLITES
+#define $PAIR062_CHAT           "$PAIR062,3,5*38"
+#else
+#define $PAIR062_CHAT           "$PAIR062,3,0*3D"
+#endif
+
 MODEM_CHAT_MATCH_DEFINE(pair062_ack_match, "$PAIR001,062,0*3F", "", NULL);
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
     resume_script_cmds,
@@ -95,11 +101,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
     MODEM_CHAT_SCRIPT_CMD_RESP("$PAIR062,0,1*3F", pair062_ack_match),
     MODEM_CHAT_SCRIPT_CMD_RESP("$PAIR062,1,0*3F", pair062_ack_match),
     MODEM_CHAT_SCRIPT_CMD_RESP("$PAIR062,2,0*3C", pair062_ack_match),
-    #if CONFIG_GNSS_SATELLITES
-    MODEM_CHAT_SCRIPT_CMD_RESP("$PAIR062,3,5*38", pair062_ack_match),
-    #else
-    MODEM_CHAT_SCRIPT_CMD_RESP("$PAIR062,3,0*3D", pair062_ack_match),
-    #endif
+    MODEM_CHAT_SCRIPT_CMD_RESP( $PAIR062_CHAT   , pair062_ack_match),
     MODEM_CHAT_SCRIPT_CMD_RESP("$PAIR062,4,1*3B", pair062_ack_match),
     MODEM_CHAT_SCRIPT_CMD_RESP("$PAIR062,5,0*3B", pair062_ack_match)
 );
@@ -107,13 +109,18 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 MODEM_CHAT_SCRIPT_NO_ABORT_DEFINE(resume_script, resume_script_cmds,
                                   NULL, QUECTEL_LCX6G_SCRIPT_TIMEOUT_S);
 
+#if CONFIG_GNSS_SATELLITES
 MODEM_CHAT_MATCHES_DEFINE(unsol_matches,
     MODEM_CHAT_MATCH_WILDCARD("$??GGA,", ",*", gnss_nmea0183_match_gga_callback),
     MODEM_CHAT_MATCH_WILDCARD("$??RMC,", ",*", gnss_nmea0183_match_rmc_callback),
-    #if CONFIG_GNSS_SATELLITES
     MODEM_CHAT_MATCH_WILDCARD("$??GSV,", ",*", gnss_nmea0183_match_gsv_callback),
-    #endif
 );
+#else
+MODEM_CHAT_MATCHES_DEFINE(unsol_matches,
+    MODEM_CHAT_MATCH_WILDCARD("$??GGA,", ",*", gnss_nmea0183_match_gga_callback),
+    MODEM_CHAT_MATCH_WILDCARD("$??RMC,", ",*", gnss_nmea0183_match_rmc_callback),
+);
+#endif
 
 static int quectel_lcx6g_configure_pps(const struct device* dev) {
     const struct quectel_lcx6g_config* config = dev->config;
@@ -181,7 +188,7 @@ static void quectel_lcx6g_pm_changed(const struct device* dev) {
     struct quectel_lcx6g_data* data = dev->data;
     uint32_t pm_ready_at_ms;
 
-    pm_ready_at_ms   = k_uptime_get() + QUECTEL_LCX6G_PM_TIMEOUT_MS;
+    pm_ready_at_ms   = (uint32_t)k_uptime_get() + QUECTEL_LCX6G_PM_TIMEOUT_MS;
     data->pm_timeout = K_TIMEOUT_ABS_MS(pm_ready_at_ms);
 }
 
@@ -815,7 +822,7 @@ static int quectel_lcx6g_init(const struct device* dev) {
 }
 
 #define LCX6G_INST_NAME(inst, name) \
-    _CONCAT(_CONCAT(_CONCAT(name, _), DT_DRV_COMPAT), inst)
+    Z_CONCAT(Z_CONCAT(Z_CONCAT(name, _), DT_DRV_COMPAT), inst)
 
 #define LCX6G_DEVICE(inst)                                      \
     static const struct quectel_lcx6g_config LCX6G_INST_NAME(inst, config) = { \

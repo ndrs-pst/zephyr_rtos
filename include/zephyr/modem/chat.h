@@ -91,7 +91,11 @@ extern const struct modem_chat_match modem_chat_any_match;
     const static struct modem_chat_match _sym[] = {__VA_ARGS__}
 
 /* Helper struct to match nothing. */
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 extern const struct modem_chat_match modem_chat_empty_matches[0];
+#else
+extern const struct modem_chat_match modem_chat_empty_matches[1];
+#endif
 
 /**
  * @brief Modem chat script chat
@@ -115,7 +119,7 @@ struct modem_chat_script_chat {
         .request_size = (uint16_t)(sizeof(_request) - 1),               \
         .response_matches = &_response_match,                           \
         .response_matches_size = 1,                                     \
-        .timeout = 0,                                                   \
+        .timeout = 0                                                    \
     }
 
 #define MODEM_CHAT_SCRIPT_CMD_RESP_MULT(_request, _response_matches)    \
@@ -124,7 +128,7 @@ struct modem_chat_script_chat {
         .request_size = (uint16_t)(sizeof(_request) - 1),               \
         .response_matches = _response_matches,                          \
         .response_matches_size = ARRAY_SIZE(_response_matches),         \
-        .timeout = 0,                                                   \
+        .timeout = 0                                                    \
     }
 
 #define MODEM_CHAT_SCRIPT_CMD_RESP_NONE(_request, _timeout_ms)          \
@@ -133,14 +137,18 @@ struct modem_chat_script_chat {
         .request_size = (uint16_t)(sizeof(_request) - 1),               \
         .response_matches = NULL,                                       \
         .response_matches_size = 0,                                     \
-        .timeout = _timeout_ms,                                         \
+        .timeout = (_timeout_ms)                                        \
     }
 
 #define MODEM_CHAT_SCRIPT_CMDS_DEFINE(_sym, ...)                \
     const struct modem_chat_script_chat _sym[] = {__VA_ARGS__}
 
 /* Helper struct to have no chat script command. */
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 extern const struct modem_chat_script_chat modem_chat_empty_script_chats[0];
+#else
+extern const struct modem_chat_script_chat modem_chat_empty_script_chats[1];
+#endif
 
 enum modem_chat_script_result {
     MODEM_CHAT_SCRIPT_RESULT_SUCCESS,

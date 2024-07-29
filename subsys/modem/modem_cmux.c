@@ -941,7 +941,7 @@ static void modem_cmux_transmit_handler(struct k_work* item) {
 
         ring_buf_get_finish(&cmux->transmit_rb, (uint32_t)ret);
 
-        if (ret < reserved_size) {
+        if (ret < (int)reserved_size) {
             LOG_DBG("Transmitted only %u out of %u bytes at once.", ret, reserved_size);
             break;
         }
@@ -1069,12 +1069,12 @@ static int modem_cmux_dlci_pipe_api_transmit(void* data, uint8_t const* buf, siz
         }
 
         struct modem_cmux_frame frame = {
-            .dlci_address = dlci->dlci_address,
+            .dlci_address = (uint8_t)dlci->dlci_address,
             .cr = true,
             .pf = false,
             .type = MODEM_CMUX_FRAME_TYPE_UIH,
             .data = buf,
-            .data_len = size,
+            .data_len = (uint16_t)size,
         };
 
         ret = modem_cmux_transmit_data_frame(cmux, &frame);
@@ -1141,7 +1141,7 @@ static void modem_cmux_dlci_open_handler(struct k_work* item) {
     dlci->state = MODEM_CMUX_DLCI_STATE_OPENING;
 
     struct modem_cmux_frame frame = {
-        .dlci_address = dlci->dlci_address,
+        .dlci_address = (uint8_t)dlci->dlci_address,
         .cr           = true,
         .pf           = true,
         .type         = MODEM_CMUX_FRAME_TYPE_SABM,
@@ -1169,7 +1169,7 @@ static void modem_cmux_dlci_close_handler(struct k_work* item) {
     dlci->state = MODEM_CMUX_DLCI_STATE_CLOSING;
 
     struct modem_cmux_frame frame = {
-        .dlci_address = dlci->dlci_address,
+        .dlci_address = (uint8_t)dlci->dlci_address,
         .cr           = true,
         .pf           = true,
         .type         = MODEM_CMUX_FRAME_TYPE_DISC,

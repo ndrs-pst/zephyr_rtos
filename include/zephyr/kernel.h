@@ -3317,7 +3317,7 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem* sem) {
         Z_SEM_INITIALIZER(name, initial_count, count_limit); \
     BUILD_ASSERT(((count_limit) != 0) && \
                  ((initial_count) <= (count_limit)) && \
-                 ((count_limit) <= K_SEM_MAX_LIMIT));
+                 ((count_limit) <= K_SEM_MAX_LIMIT), "K_SEM_DEFINE error !!!");
 
 /** @} */
 
