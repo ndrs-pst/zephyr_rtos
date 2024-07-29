@@ -163,8 +163,12 @@ struct mqtt_utf8 {
  *
  * @param[in] literal Literal string from which to generate mqtt_utf8 object.
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define MQTT_UTF8_LITERAL(literal)	{literal, sizeof(literal) - 1}
+#else
 #define MQTT_UTF8_LITERAL(literal)				\
 	((struct mqtt_utf8) {literal, sizeof(literal) - 1})
+#endif
 
 /** @brief Abstracts binary strings. */
 struct mqtt_binstr {
@@ -187,7 +191,7 @@ struct mqtt_topic {
 
 /** @brief Parameters for a publish message. */
 struct mqtt_publish_message {
-	struct mqtt_topic topic;     /**< Topic on which data was published. */
+	struct mqtt_topic topic;    /**< Topic on which data was published. */
 	struct mqtt_binstr payload; /**< Payload on the topic published. */
 };
 
@@ -461,7 +465,7 @@ struct mqtt_transport {
 
 #if defined(CONFIG_SOCKS)
 	struct {
-		struct sockaddr addr;
+		struct net_sockaddr addr;
 		socklen_t addrlen;
 	} proxy;
 #endif
@@ -590,7 +594,7 @@ void mqtt_client_init(struct mqtt_client *client);
  * @note Must be called before calling mqtt_connect().
  */
 int mqtt_client_set_proxy(struct mqtt_client *client,
-			  struct sockaddr *proxy_addr,
+			  struct net_sockaddr *proxy_addr,
 			  socklen_t addrlen);
 #endif
 

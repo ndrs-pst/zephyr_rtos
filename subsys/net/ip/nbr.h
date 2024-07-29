@@ -54,7 +54,11 @@ struct net_nbr {
 	uint8_t idx;
 
 	/** Amount of data that this neighbor buffer can store. */
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	uint16_t size;
+	#else
 	const uint16_t size;
+	#endif
 
 	/** Interface this neighbor is found */
 	struct net_if *iface;
@@ -63,15 +67,37 @@ struct net_nbr {
 	uint8_t *data;
 
 	/** Function to be called when the neighbor is removed. */
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	void (* remove)(struct net_nbr *nbr);
+	#else
 	void (*const remove)(struct net_nbr *nbr);
+	#endif
 
 	/** Start of the data storage. Not to be accessed directly
 	 *  (the data pointer should be used instead).
 	 */
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	uint8_t __nbr[1] __net_nbr_align;
+	#else
 	uint8_t __nbr[0] __net_nbr_align;
+	#endif
 };
 
 /* This is an array of struct net_nbr + some additional data */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define NET_NBR_POOL_INIT(_name, _count, _size, _remove)		\
+	struct _name##_t {						\
+		struct net_nbr nbr;					\
+		uint8_t data[ROUND_UP(_size, 4)] __net_nbr_align;	\
+	} _name[_count];						\
+	void _name##_init(struct _name##_t* obj, uint16_t count, uint16_t sz, void (* fp)(struct net_nbr *nbr)) { \
+		for (int i = 0; i < count; i++) {			\
+			obj[i].nbr.idx    = NET_NBR_LLADDR_UNKNOWN;	\
+			obj[i].nbr.remove = fp;				\
+			obj[i].nbr.size   = ROUND_UP(sz, 4);		\
+		}							\
+	}
+#else
 #define NET_NBR_POOL_INIT(_name, _count, _size, _remove)		\
 	struct {							\
 		struct net_nbr nbr;					\
@@ -82,16 +108,25 @@ struct net_nbr {
 			.remove = _remove,				\
 			.size = ROUND_UP(_size, 4) } },			\
 	}
+#endif
 
 struct net_nbr_table {
 	/** Link to a neighbor pool */
 	struct net_nbr *nbr;
 
 	/** Function to be called when the table is cleared. */
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	void (* clear)(struct net_nbr_table *table);
+	#else
 	void (*const clear)(struct net_nbr_table *table);
+	#endif
 
 	/** Max number of neighbors in the pool */
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	uint16_t nbr_count;
+	#else
 	const uint16_t nbr_count;
+	#endif
 };
 
 #define NET_NBR_LOCAL static
