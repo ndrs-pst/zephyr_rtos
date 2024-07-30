@@ -1376,7 +1376,7 @@ void modem_cmux_release(struct modem_cmux* cmux) {
     k_work_cancel_delayable_sync(&cmux->transmit_work, &sync);
     k_work_cancel_delayable_sync(&cmux->receive_work, &sync);
 
-    /* Unreference pipe */
+    /* Unreferenced pipe */
     cmux->pipe = NULL;
 
     /* Reset events */

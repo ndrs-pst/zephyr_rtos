@@ -270,7 +270,7 @@ int modbus_serial_init(struct modbus_context* ctx,
  */
 void modbus_serial_disable(struct modbus_context* ctx);
 
-int modbus_raw_rx_adu(struct modbus_context* ctx);
+int modbus_raw_rx_adu(struct modbus_context const* ctx);
 int modbus_raw_tx_adu(struct modbus_context* ctx);
 int modbus_raw_init(struct modbus_context* ctx,
                     struct modbus_iface_param param);

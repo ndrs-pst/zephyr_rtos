@@ -27,10 +27,10 @@ LOG_MODULE_REGISTER(modbus_serial, CONFIG_MODBUS_LOG_LEVEL);
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/crc.h>
-#include <modbus_internal.h>
+#include "modbus_internal.h"
 
 static void modbus_serial_tx_on(struct modbus_context* ctx) {
-    struct modbus_serial_config* cfg = ctx->cfg;
+    struct modbus_serial_config const* cfg = ctx->cfg;
 
     if (cfg->de != NULL) {
         gpio_pin_set(cfg->de->port, cfg->de->pin, 1);

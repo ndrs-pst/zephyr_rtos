@@ -21,7 +21,7 @@
 
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
-#include <modbus_internal.h>
+#include "modbus_internal.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modbus_s, CONFIG_MODBUS_LOG_LEVEL);
@@ -776,6 +776,7 @@ static bool mbs_fc15_coils_write(struct modbus_context* ctx) {
 
         /* Shift the data one bit position * to the right. */
         temp >>= 1;
+
         /* Increment the COIL counter. */
         coil_cntr++;
     }
@@ -812,7 +813,7 @@ static bool mbs_fc16_hregs_write(struct modbus_context* ctx) {
     const uint16_t regs_limit  = 125;
     const uint8_t request_len  = 6;
     const uint8_t response_len = 4;
-    uint8_t* prx_data;
+    uint8_t const* prx_data;
     int err;
     uint16_t reg_addr;
     uint16_t reg_qty;
@@ -1014,6 +1015,7 @@ bool modbus_server_handler(struct modbus_context* ctx) {
 
         default :
             send_reply = mbs_try_user_fc(ctx, fc);
+            break;
     }
 
     if (addr == 0) {

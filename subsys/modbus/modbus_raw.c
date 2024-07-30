@@ -9,13 +9,13 @@ LOG_MODULE_REGISTER(modbus_raw, CONFIG_MODBUS_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
-#include <modbus_internal.h>
+#include "modbus_internal.h"
 
 #define MODBUS_ADU_LENGTH_DEVIATION         2
 #define MODBUS_RAW_MIN_MSG_SIZE             (MODBUS_RTU_MIN_MSG_SIZE - 2)
 #define MODBUS_RAW_BUFFER_SIZE              (CONFIG_MODBUS_BUFFER_SIZE - 2)
 
-int modbus_raw_rx_adu(struct modbus_context* ctx) {
+int modbus_raw_rx_adu(struct modbus_context const* ctx) {
     if ((ctx->rx_adu.length < MODBUS_RAW_MIN_MSG_SIZE) ||
         (ctx->rx_adu.length > MODBUS_RAW_BUFFER_SIZE)) {
         LOG_WRN("Frame length error");
@@ -49,7 +49,7 @@ int modbus_raw_tx_adu(struct modbus_context* ctx) {
 int modbus_raw_submit_rx(int const iface, const struct modbus_adu* adu) {
     struct modbus_context* ctx;
 
-    ctx = modbus_get_context(iface);
+    ctx = modbus_get_context((uint8_t const)iface);
 
     if (ctx == NULL) {
         LOG_ERR("Interface not available");

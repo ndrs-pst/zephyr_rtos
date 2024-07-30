@@ -11,7 +11,7 @@ LOG_MODULE_REGISTER(modbus, CONFIG_MODBUS_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
-#include <modbus_internal.h>
+#include "modbus_internal.h"
 
 #define DT_DRV_COMPAT zephyr_modbus_serial
 
@@ -106,7 +106,7 @@ static void modbus_rx_handler(struct k_work* item) {
             case MODBUS_MODE_RTU :
             case MODBUS_MODE_ASCII :
                 if (IS_ENABLED(CONFIG_MODBUS_SERIAL) &&
-                    respond == false) {
+                    (respond == false)) {
                     modbus_serial_rx_enable(ctx);
                 }
                 break;
@@ -151,7 +151,7 @@ int modbus_tx_wait_rx_adu(struct modbus_context* ctx) {
     return (ctx->rx_adu_err);
 }
 
-struct modbus_context* modbus_get_context(const uint8_t iface) {
+struct modbus_context* modbus_get_context(uint8_t const iface) {
     struct modbus_context* ctx;
 
     if (iface >= ARRAY_SIZE(mb_ctx_tbl)) {
@@ -189,7 +189,7 @@ int modbus_iface_get_by_name(char const* iface_name) {
     return (-ENODEV);
 }
 
-static struct modbus_context* modbus_init_iface(const uint8_t iface) {
+static struct modbus_context* modbus_init_iface(uint8_t const iface) {
     struct modbus_context* ctx;
 
     if (iface >= ARRAY_SIZE(mb_ctx_tbl)) {
@@ -272,7 +272,6 @@ int modbus_init_server(int const iface, struct modbus_iface_param param) {
             LOG_ERR("Unknown MODBUS mode");
             rc = -ENOTSUP;
             goto init_server_error;
-            break;
     }
 
     ctx->unit_id     = param.server.unit_id;
@@ -324,7 +323,7 @@ int modbus_init_client(int const iface, struct modbus_iface_param param) {
         goto init_client_error;
     }
 
-    ctx = modbus_init_iface(iface);
+    ctx = modbus_init_iface((uint8_t const)iface);
     if (ctx == NULL) {
         rc = -EINVAL;
         goto init_client_error;
@@ -336,7 +335,7 @@ int modbus_init_client(int const iface, struct modbus_iface_param param) {
         case MODBUS_MODE_RTU :
         case MODBUS_MODE_ASCII :
             if (IS_ENABLED(CONFIG_MODBUS_SERIAL) &&
-                modbus_serial_init(ctx, param) != 0) {
+                (modbus_serial_init(ctx, param) != 0)) {
                 LOG_ERR("Failed to init MODBUS over serial line");
                 rc = -EINVAL;
                 goto init_client_error;
@@ -345,7 +344,7 @@ int modbus_init_client(int const iface, struct modbus_iface_param param) {
 
         case MODBUS_MODE_RAW :
             if (IS_ENABLED(CONFIG_MODBUS_RAW_ADU) &&
-                modbus_raw_init(ctx, param) != 0) {
+                (modbus_raw_init(ctx, param) != 0)) {
                 LOG_ERR("Failed to init MODBUS raw ADU support");
                 rc = -EINVAL;
                 goto init_client_error;
@@ -356,7 +355,6 @@ int modbus_init_client(int const iface, struct modbus_iface_param param) {
             LOG_ERR("Unknown MODBUS mode");
             rc = -ENOTSUP;
             goto init_client_error;
-            break;
     }
 
     ctx->unit_id     = 0;
