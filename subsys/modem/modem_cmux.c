@@ -1038,8 +1038,9 @@ static void modem_cmux_dlci_advertise_receive_buf_stat(struct modem_cmux_dlci* d
 static int modem_cmux_dlci_pipe_api_open(void* data) {
     struct modem_cmux_dlci* dlci = (struct modem_cmux_dlci*)data;
     struct modem_cmux *cmux = dlci->cmux;
-    int ret = 0;
+    int ret;
 
+    ret = 0;
     K_SPINLOCK(&cmux->work_lock) {
         if (!cmux->attached) {
             ret = -EPERM;
@@ -1062,9 +1063,9 @@ static int modem_cmux_dlci_pipe_api_transmit(void* data, uint8_t const* buf, siz
     struct modem_cmux* cmux = dlci->cmux;
     int ret;
 
+    ret = -EPERM;
     K_SPINLOCK(&cmux->work_lock) {
         if (!cmux->attached) {
-            ret = -EPERM;
             K_SPINLOCK_BREAK;
         }
 
@@ -1101,8 +1102,9 @@ static int modem_cmux_dlci_pipe_api_receive(void* data, uint8_t* buf, size_t siz
 static int modem_cmux_dlci_pipe_api_close(void* data) {
     struct modem_cmux_dlci* dlci = (struct modem_cmux_dlci*)data;
     struct modem_cmux* cmux = dlci->cmux;
-    int ret = 0;
+    int ret;
 
+    ret = 0;
     K_SPINLOCK(&cmux->work_lock) {
         if (!cmux->attached) {
             ret = -EPERM;
@@ -1129,7 +1131,7 @@ static struct modem_pipe_api const modem_cmux_dlci_pipe_api = {
 
 static void modem_cmux_dlci_open_handler(struct k_work* item) {
     struct k_work_delayable* dwork;
-    struct modem_cmux_dlci*  dlci;
+    struct modem_cmux_dlci* dlci;
 
     if (item == NULL) {
         return;
@@ -1207,14 +1209,18 @@ void modem_cmux_init(struct modem_cmux* cmux, const struct modem_cmux_config* co
     cmux->user_data        = config->user_data;
     cmux->receive_buf      = config->receive_buf;
     cmux->receive_buf_size = config->receive_buf_size;
+
     sys_slist_init(&cmux->dlcis);
     cmux->state = MODEM_CMUX_STATE_DISCONNECTED;
+
     ring_buf_init(&cmux->transmit_rb, config->transmit_buf_size, config->transmit_buf);
     k_mutex_init(&cmux->transmit_rb_lock);
-    k_work_init_delayable(&cmux->receive_work, modem_cmux_receive_handler);
-    k_work_init_delayable(&cmux->transmit_work, modem_cmux_transmit_handler);
-    k_work_init_delayable(&cmux->connect_work, modem_cmux_connect_handler);
+
+    k_work_init_delayable(&cmux->receive_work   , modem_cmux_receive_handler   );
+    k_work_init_delayable(&cmux->transmit_work  , modem_cmux_transmit_handler  );
+    k_work_init_delayable(&cmux->connect_work   , modem_cmux_connect_handler   );
     k_work_init_delayable(&cmux->disconnect_work, modem_cmux_disconnect_handler);
+
     k_event_init(&cmux->event);
     k_event_clear(&cmux->event, MODEM_CMUX_EVENT_CONNECTED_BIT);
     k_event_post(&cmux->event, MODEM_CMUX_EVENT_DISCONNECTED_BIT);
@@ -1239,7 +1245,7 @@ struct modem_pipe* modem_cmux_dlci_init(struct modem_cmux* cmux, struct modem_cm
     ring_buf_init(&dlci->receive_rb, config->receive_buf_size, config->receive_buf);
     k_mutex_init(&dlci->receive_rb_lock);
     modem_pipe_init(&dlci->pipe, dlci, &modem_cmux_dlci_pipe_api);
-    k_work_init_delayable(&dlci->open_work, modem_cmux_dlci_open_handler);
+    k_work_init_delayable(&dlci->open_work , modem_cmux_dlci_open_handler );
     k_work_init_delayable(&dlci->close_work, modem_cmux_dlci_close_handler);
     dlci->state = MODEM_CMUX_DLCI_STATE_CLOSED;
     sys_slist_append(&dlci->cmux->dlcis, &dlci->node);
@@ -1291,9 +1297,9 @@ int modem_cmux_connect_async(struct modem_cmux* cmux) {
         return (-EALREADY);
     }
 
+    ret = -EPERM;
     K_SPINLOCK(&cmux->work_lock) {
         if (!cmux->attached) {
-            ret = -EPERM;
             K_SPINLOCK_BREAK;
         }
 
@@ -1320,17 +1326,17 @@ int modem_cmux_disconnect(struct modem_cmux* cmux) {
         return (-EAGAIN);
     }
 
-
     return (0);
 }
 
 int modem_cmux_disconnect_async(struct modem_cmux* cmux) {
-    int ret = 0;
+    int ret;
 
     if (k_event_test(&cmux->event, MODEM_CMUX_EVENT_DISCONNECTED_BIT)) {
         return (-EALREADY);
     }
 
+    ret = 0;
     K_SPINLOCK(&cmux->work_lock) {
         if (!cmux->attached) {
             ret = -EPERM;
