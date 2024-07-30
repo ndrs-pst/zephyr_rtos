@@ -48,7 +48,7 @@ typedef int64_t k_ticks_t;
 typedef uint32_t k_ticks_t;
 #endif
 
-#define K_TICKS_FOREVER ((k_ticks_t) -1)
+#define K_TICKS_FOREVER ((k_ticks_t)-1)
 
 /**
  * @brief Kernel timeout type
@@ -63,7 +63,7 @@ typedef uint32_t k_ticks_t;
  * equality with the `K_TIMEOUT_EQ()` macro.
  */
 typedef struct {
-	k_ticks_t ticks;
+    k_ticks_t ticks;
 } k_timeout_t;
 
 /**
@@ -80,25 +80,25 @@ typedef struct {
 #define K_TIMEOUT_EQ(a, b) ((a).ticks == (b).ticks)
 
 /** number of nanoseconds per micorsecond */
-#define NSEC_PER_USEC 1000U
+#define NSEC_PER_USEC           1000U
 
 /** number of nanoseconds per millisecond */
-#define NSEC_PER_MSEC 1000000U
+#define NSEC_PER_MSEC           1000000U
 
 /** number of microseconds per millisecond */
-#define USEC_PER_MSEC 1000U
+#define USEC_PER_MSEC           1000U
 
 /** number of milliseconds per second */
-#define MSEC_PER_SEC 1000U
+#define MSEC_PER_SEC            1000U
 
 /** number of seconds per minute */
-#define SEC_PER_MIN 60U
+#define SEC_PER_MIN             60U
 
 /** number of minutes per hour */
-#define MIN_PER_HOUR 60U
+#define MIN_PER_HOUR            60U
 
 /** number of hours per day */
-#define HOUR_PER_DAY 24U
+#define HOUR_PER_DAY            24U
 
 /** number of microseconds per second */
 #define USEC_PER_SEC ((USEC_PER_MSEC) * (MSEC_PER_SEC))
@@ -109,26 +109,37 @@ typedef struct {
 /** @} */
 
 /** @cond INTERNAL_HIDDEN */
-#define Z_TIMEOUT_NO_WAIT ((k_timeout_t) {0})
+
+#if defined(_MSVC_LANG)                       /* #CUSTOM@NDRS, use _MSVC_LANG to distinguish between C and C++ */
+#define Z_TIMEOUT_NO_WAIT  (k_timeout_t {0})
+#if defined(__cplusplus) && ((__cplusplus - 0) < 202002L)
+#define Z_TIMEOUT_TICKS(t) (k_timeout_t { (t) })
+#else
+#define Z_TIMEOUT_TICKS(t) (k_timeout_t { .ticks = (t) })
+#endif
+#else
+#define Z_TIMEOUT_NO_WAIT  ((k_timeout_t) {0})
 #if defined(__cplusplus) && ((__cplusplus - 0) < 202002L)
 #define Z_TIMEOUT_TICKS(t) ((k_timeout_t) { (t) })
 #else
 #define Z_TIMEOUT_TICKS(t) ((k_timeout_t) { .ticks = (t) })
 #endif
+#endif
+
 #define Z_FOREVER Z_TIMEOUT_TICKS(K_TICKS_FOREVER)
 
 #ifdef CONFIG_TIMEOUT_64BIT
-# define Z_TIMEOUT_MS(t) Z_TIMEOUT_TICKS((k_ticks_t)k_ms_to_ticks_ceil64(MAX(t, 0)))
-# define Z_TIMEOUT_US(t) Z_TIMEOUT_TICKS((k_ticks_t)k_us_to_ticks_ceil64(MAX(t, 0)))
-# define Z_TIMEOUT_NS(t) Z_TIMEOUT_TICKS((k_ticks_t)k_ns_to_ticks_ceil64(MAX(t, 0)))
-# define Z_TIMEOUT_CYC(t) Z_TIMEOUT_TICKS((k_ticks_t)k_cyc_to_ticks_ceil64(MAX(t, 0)))
-# define Z_TIMEOUT_MS_TICKS(t) ((k_ticks_t)k_ms_to_ticks_ceil64(MAX(t, 0)))
+#define Z_TIMEOUT_MS(t)       Z_TIMEOUT_TICKS((k_ticks_t)k_ms_to_ticks_ceil64(MAX(t, 0)))
+#define Z_TIMEOUT_US(t)       Z_TIMEOUT_TICKS((k_ticks_t)k_us_to_ticks_ceil64(MAX(t, 0)))
+#define Z_TIMEOUT_NS(t)       Z_TIMEOUT_TICKS((k_ticks_t)k_ns_to_ticks_ceil64(MAX(t, 0)))
+#define Z_TIMEOUT_CYC(t)      Z_TIMEOUT_TICKS((k_ticks_t)k_cyc_to_ticks_ceil64(MAX(t, 0)))
+#define Z_TIMEOUT_MS_TICKS(t) ((k_ticks_t)k_ms_to_ticks_ceil64(MAX(t, 0)))
 #else
-# define Z_TIMEOUT_MS(t) Z_TIMEOUT_TICKS((k_ticks_t)k_ms_to_ticks_ceil32(MAX(t, 0)))
-# define Z_TIMEOUT_US(t) Z_TIMEOUT_TICKS((k_ticks_t)k_us_to_ticks_ceil32(MAX(t, 0)))
-# define Z_TIMEOUT_NS(t) Z_TIMEOUT_TICKS((k_ticks_t)k_ns_to_ticks_ceil32(MAX(t, 0)))
-# define Z_TIMEOUT_CYC(t) Z_TIMEOUT_TICKS((k_ticks_t)k_cyc_to_ticks_ceil32(MAX(t, 0)))
-# define Z_TIMEOUT_MS_TICKS(t) ((k_ticks_t)k_ms_to_ticks_ceil32(MAX(t, 0)))
+#define Z_TIMEOUT_MS(t)       Z_TIMEOUT_TICKS((k_ticks_t)k_ms_to_ticks_ceil32(MAX(t, 0)))
+#define Z_TIMEOUT_US(t)       Z_TIMEOUT_TICKS((k_ticks_t)k_us_to_ticks_ceil32(MAX(t, 0)))
+#define Z_TIMEOUT_NS(t)       Z_TIMEOUT_TICKS((k_ticks_t)k_ns_to_ticks_ceil32(MAX(t, 0)))
+#define Z_TIMEOUT_CYC(t)      Z_TIMEOUT_TICKS((k_ticks_t)k_cyc_to_ticks_ceil32(MAX(t, 0)))
+#define Z_TIMEOUT_MS_TICKS(t) ((k_ticks_t)k_ms_to_ticks_ceil32(MAX(t, 0)))
 #endif
 
 /* Converts between absolute timeout expiration values (packed into
@@ -147,10 +158,9 @@ typedef struct {
 /** @endcond */
 
 #if defined(CONFIG_SYS_CLOCK_EXISTS) && \
-	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 0)
+    (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 0)
 #error "SYS_CLOCK_HW_CYCLES_PER_SEC must be non-zero!"
 #endif
-
 
 /* kernel clocks */
 
@@ -167,8 +177,8 @@ typedef struct {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) || \
-	(MSEC_PER_SEC % CONFIG_SYS_CLOCK_TICKS_PER_SEC) || \
-	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC % CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+    (MSEC_PER_SEC % CONFIG_SYS_CLOCK_TICKS_PER_SEC)      || \
+    (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC % CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 #define _NEED_PRECISE_TICK_MS_CONVERSION
 #endif
 
@@ -179,7 +189,7 @@ typedef struct {
  * and calculates the average cycle time
  */
 #define SYS_CLOCK_HW_CYCLES_TO_NS_AVG(X, NCYCLES) \
-	(uint32_t)(k_cyc_to_ns_floor64(X) / NCYCLES)
+    (uint32_t)(k_cyc_to_ns_floor64(X) / NCYCLES)
 
 /**
  *
@@ -200,7 +210,7 @@ uint32_t sys_clock_tick_get_32(void);
 int64_t sys_clock_tick_get(void);
 
 #ifndef CONFIG_SYS_CLOCK_EXISTS
-#define sys_clock_tick_get() (0)
+#define sys_clock_tick_get()    (0)
 #define sys_clock_tick_get_32() (0)
 #endif
 
@@ -216,7 +226,9 @@ int64_t sys_clock_tick_get(void);
  * @see sys_timepoint_timeout()
  * @see sys_timepoint_expired()
  */
-typedef struct { uint64_t tick; } k_timepoint_t;
+typedef struct {
+    uint64_t tick;
+} k_timepoint_t;
 
 /**
  * @brief Calculate a timepoint value
@@ -259,11 +271,10 @@ k_timeout_t sys_timepoint_timeout(k_timepoint_t timepoint);
  * @see sys_timepoint_calc()
  */
 __deprecated
-static inline uint64_t sys_clock_timeout_end_calc(k_timeout_t timeout)
-{
-	k_timepoint_t tp = sys_timepoint_calc(timeout);
+static inline uint64_t sys_clock_timeout_end_calc(k_timeout_t timeout) {
+    k_timepoint_t tp = sys_timepoint_calc(timeout);
 
-	return tp.tick;
+    return tp.tick;
 }
 
 /**
@@ -276,12 +287,12 @@ static inline uint64_t sys_clock_timeout_end_calc(k_timeout_t timeout)
  * @return zero if both timepoints are the same. Negative value if timepoint @a a is before
  * timepoint @a b, positive otherwise.
  */
-static inline int sys_timepoint_cmp(k_timepoint_t a, k_timepoint_t b)
-{
-	if (a.tick == b.tick) {
-		return 0;
-	}
-	return a.tick < b.tick ? -1 : 1;
+static inline int sys_timepoint_cmp(k_timepoint_t a, k_timepoint_t b) {
+    if (a.tick == b.tick) {
+        return 0;
+    }
+
+    return a.tick < b.tick ? -1 : 1;
 }
 
 #else
@@ -291,27 +302,26 @@ static inline int sys_timepoint_cmp(k_timepoint_t a, k_timepoint_t b)
  * The best we can do is to preserve whether or not they are derived from
  * K_NO_WAIT. Anything else will translate back to K_FOREVER.
  */
-typedef struct { bool wait; } k_timepoint_t;
+typedef struct {
+    bool wait;
+} k_timepoint_t;
 
-static inline k_timepoint_t sys_timepoint_calc(k_timeout_t timeout)
-{
-	k_timepoint_t timepoint;
+static inline k_timepoint_t sys_timepoint_calc(k_timeout_t timeout) {
+    k_timepoint_t timepoint;
 
-	timepoint.wait = !K_TIMEOUT_EQ(timeout, Z_TIMEOUT_NO_WAIT);
-	return timepoint;
+    timepoint.wait = !K_TIMEOUT_EQ(timeout, Z_TIMEOUT_NO_WAIT);
+    return timepoint;
 }
 
-static inline k_timeout_t sys_timepoint_timeout(k_timepoint_t timepoint)
-{
-	return timepoint.wait ? Z_FOREVER : Z_TIMEOUT_NO_WAIT;
+static inline k_timeout_t sys_timepoint_timeout(k_timepoint_t timepoint) {
+    return timepoint.wait ? Z_FOREVER : Z_TIMEOUT_NO_WAIT;
 }
 
-static inline int sys_timepoint_cmp(k_timepoint_t a, k_timepoint_t b)
-{
-	if (a.wait == b.wait) {
-		return 0;
-	}
-	return b.wait ? -1 : 1;
+static inline int sys_timepoint_cmp(k_timepoint_t a, k_timepoint_t b) {
+    if (a.wait == b.wait) {
+        return 0;
+    }
+    return b.wait ? -1 : 1;
 }
 
 #endif
@@ -324,9 +334,8 @@ static inline int sys_timepoint_cmp(k_timepoint_t a, k_timepoint_t b)
  *
  * @see sys_timepoint_calc()
  */
-static inline bool sys_timepoint_expired(k_timepoint_t timepoint)
-{
-	return K_TIMEOUT_EQ(sys_timepoint_timeout(timepoint), Z_TIMEOUT_NO_WAIT);
+static inline bool sys_timepoint_expired(k_timepoint_t timepoint) {
+    return K_TIMEOUT_EQ(sys_timepoint_timeout(timepoint), Z_TIMEOUT_NO_WAIT);
 }
 
 /** @} */
