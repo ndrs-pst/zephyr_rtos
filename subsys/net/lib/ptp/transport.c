@@ -308,7 +308,8 @@ int ptp_transport_recv(struct ptp_port *port, struct ptp_msg *msg, enum ptp_sock
 	}
 
 	for (cmsg = CMSG_FIRSTHDR(&msghdr); cmsg != NULL; cmsg = CMSG_NXTHDR(&msghdr, cmsg)) {
-		if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_TIMESTAMPING) {
+		if ((cmsg->cmsg_level == NET_SOL_SOCKET) &&
+		    (cmsg->cmsg_type == NET_SO_TIMESTAMPING)) {
 			memcpy(&msg->timestamp.host, CMSG_DATA(cmsg), sizeof(struct net_ptp_time));
 		}
 	}
