@@ -25,7 +25,7 @@ void modem_pipelink_attach(struct modem_pipelink *link,
 	}
 }
 
-bool modem_pipelink_is_connected(struct modem_pipelink* link) {
+bool modem_pipelink_is_connected(struct modem_pipelink const* link) {
     bool connected;
 
     connected = link->connected;

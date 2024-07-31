@@ -247,7 +247,7 @@ static void modem_cmux_raise_event(struct modem_cmux* cmux, enum modem_cmux_even
     cmux->callback(cmux, event, cmux->user_data);
 }
 
-static void modem_cmux_bus_callback(struct modem_pipe* pipe, enum modem_pipe_event event,
+static void modem_cmux_bus_callback(struct modem_pipe const* pipe, enum modem_pipe_event event,
                                     void* user_data) {
     struct modem_cmux* cmux = (struct modem_cmux*)user_data;
 
@@ -374,7 +374,7 @@ static int16_t modem_cmux_transmit_data_frame(struct modem_cmux* cmux,
     modem_cmux_log_transmit_frame(frame);
     ret = modem_cmux_transmit_frame(cmux, frame);
     k_mutex_unlock(&cmux->transmit_rb_lock);
-    return (ret);
+    return (int16_t)(ret);
 }
 
 static void modem_cmux_acknowledge_received_frame(struct modem_cmux* cmux) {
@@ -506,11 +506,11 @@ static void modem_cmux_connect_response_transmit(struct modem_cmux* cmux) {
 
     struct modem_cmux_frame frame = {
         .dlci_address = cmux->frame.dlci_address,
-        .cr = cmux->frame.cr,
-        .pf = cmux->frame.pf,
-        .type = MODEM_CMUX_FRAME_TYPE_UA,
-        .data = NULL,
-        .data_len = 0,
+        .cr           = cmux->frame.cr,
+        .pf           = cmux->frame.pf,
+        .type         = MODEM_CMUX_FRAME_TYPE_UA,
+        .data         = NULL,
+        .data_len     = 0
     };
 
     LOG_DBG("SABM/DISC request state send ack");
@@ -596,7 +596,7 @@ static void modem_cmux_on_dlci_frame_ua(struct modem_cmux_dlci* dlci) {
 }
 
 static void modem_cmux_on_dlci_frame_uih(struct modem_cmux_dlci* dlci) {
-    struct modem_cmux* cmux = dlci->cmux;
+    struct modem_cmux const* cmux = dlci->cmux;
     uint32_t written;
 
     if (dlci->state != MODEM_CMUX_DLCI_STATE_OPEN) {
@@ -988,7 +988,7 @@ static void modem_cmux_disconnect_handler(struct k_work* item) {
 
     cmux->state = MODEM_CMUX_STATE_DISCONNECTING;
 
-    command               = modem_cmux_command_wrap(data);
+    command = modem_cmux_command_wrap(data);
     command->type.ea      = 1;
     command->type.cr      = 1;
     command->type.value   = MODEM_CMUX_COMMAND_CLD;
@@ -1071,11 +1071,11 @@ static int modem_cmux_dlci_pipe_api_transmit(void* data, uint8_t const* buf, siz
 
         struct modem_cmux_frame frame = {
             .dlci_address = (uint8_t)dlci->dlci_address,
-            .cr = true,
-            .pf = false,
-            .type = MODEM_CMUX_FRAME_TYPE_UIH,
-            .data = buf,
-            .data_len = (uint16_t)size,
+            .cr           = true,
+            .pf           = false,
+            .type         = MODEM_CMUX_FRAME_TYPE_UIH,
+            .data         = buf,
+            .data_len     = (uint16_t)size,
         };
 
         ret = modem_cmux_transmit_data_frame(cmux, &frame);
@@ -1086,7 +1086,7 @@ static int modem_cmux_dlci_pipe_api_transmit(void* data, uint8_t const* buf, siz
 
 static int modem_cmux_dlci_pipe_api_receive(void* data, uint8_t* buf, size_t size) {
     struct modem_cmux_dlci* dlci = (struct modem_cmux_dlci*)data;
-    uint32_t                ret;
+    uint32_t ret;
 
     k_mutex_lock(&dlci->receive_rb_lock, K_FOREVER);
 
@@ -1204,7 +1204,7 @@ void modem_cmux_init(struct modem_cmux* cmux, const struct modem_cmux_config* co
     __ASSERT_NO_MSG(config->transmit_buf != NULL);
     __ASSERT_NO_MSG(config->transmit_buf_size >= 148);
 
-    memset(cmux, 0x00, sizeof(*cmux));
+    (void) memset(cmux, 0x00, sizeof(*cmux));
     cmux->callback         = config->callback;
     cmux->user_data        = config->user_data;
     cmux->receive_buf      = config->receive_buf;

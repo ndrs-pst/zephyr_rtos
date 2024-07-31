@@ -39,7 +39,7 @@ struct modem_pipe;
  * @endcond
  */
 
-typedef void (*modem_pipe_api_callback)(struct modem_pipe* pipe, enum modem_pipe_event event,
+typedef void (*modem_pipe_api_callback)(struct modem_pipe const* pipe, enum modem_pipe_event event,
                                         void* user_data);
 
 /**
