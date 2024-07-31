@@ -285,23 +285,23 @@ static void print_twt_params(uint8_t dialog_token, uint8_t flow_id,
 	const struct shell *sh = context.sh;
 
 	PR("TWT Dialog token: %d\n",
-	      dialog_token);
+	   dialog_token);
 	PR("TWT flow ID: %d\n",
-	      flow_id);
+	   flow_id);
 	PR("TWT negotiation type: %s\n",
-	      wifi_twt_negotiation_type_txt(negotiation_type));
+	   wifi_twt_negotiation_type_txt(negotiation_type));
 	PR("TWT responder: %s\n",
-	       responder ? "true" : "false");
+	   responder ? "true" : "false");
 	PR("TWT implicit: %s\n",
-	      implicit ? "true" : "false");
+	   implicit ? "true" : "false");
 	PR("TWT announce: %s\n",
-	      announce ? "true" : "false");
+	   announce ? "true" : "false");
 	PR("TWT trigger: %s\n",
-	      trigger ? "true" : "false");
+	   trigger ? "true" : "false");
 	PR("TWT wake interval: %d us\n",
-	      twt_wake_interval);
+	   twt_wake_interval);
 	PR("TWT interval: %lld us\n",
-	      twt_interval);
+	   twt_interval);
 	PR("========================\n");
 }
 
@@ -314,10 +314,10 @@ static void handle_wifi_twt_event(const struct net_mgmt_event_callback *cb)
 	if (resp->operation == WIFI_TWT_TEARDOWN) {
 		if (resp->teardown_status == WIFI_TWT_TEARDOWN_SUCCESS) {
 			PR("TWT teardown succeeded for flow ID %d\n",
-			      resp->flow_id);
+			   resp->flow_id);
 		} else {
 			PR("TWT teardown failed for flow ID %d\n",
-			      resp->flow_id);
+			   resp->flow_id);
 		}
 		return;
 	}
@@ -473,16 +473,17 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	struct getopt_state *state;
 	int opt;
 	bool secure_connection = false;
-	static struct option long_options[] = {{"ssid", required_argument, 0, 's'},
-					       {"passphrase", required_argument, 0, 'p'},
-					       {"key-mgmt", required_argument, 0, 'k'},
-					       {"ieee-80211w", required_argument, 0, 'w'},
-					       {"bssid", required_argument, 0, 'm'},
-					       {"band", required_argument, 0, 'b'},
-					       {"channel", required_argument, 0, 'c'},
-					       {"timeout", required_argument, 0, 't'},
-					       {"help", no_argument, 0, 'h'},
-					       {0, 0, 0, 0}};
+	static const struct option long_options[] = {
+		{"ssid", required_argument, 0, 's'},
+		{"passphrase", required_argument, 0, 'p'},
+		{"key-mgmt", required_argument, 0, 'k'},
+		{"ieee-80211w", required_argument, 0, 'w'},
+		{"bssid", required_argument, 0, 'm'},
+		{"band", required_argument, 0, 'b'},
+		{"channel", required_argument, 0, 'c'},
+		{"timeout", required_argument, 0, 't'},
+		{"help", no_argument, 0, 'h'},
+		{0, 0, 0, 0}};
 	int opt_index = 0;
 	uint8_t band;
 	const uint8_t all_bands[] = {
@@ -510,7 +511,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			params->ssid_length = (uint8_t)strlen(params->ssid);
 			if (params->ssid_length > WIFI_SSID_MAX_LEN) {
 				PR_WARNING("SSID too long (max %d characters)\n",
-					    WIFI_SSID_MAX_LEN);
+					   WIFI_SSID_MAX_LEN);
 				return -EINVAL;
 			}
 			break;
@@ -575,9 +576,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'w':
 			if (params->security == WIFI_SECURITY_TYPE_NONE ||
-				params->security == WIFI_SECURITY_TYPE_WPA_PSK) {
+			    params->security == WIFI_SECURITY_TYPE_WPA_PSK) {
 				PR_ERROR("MFP not supported for security type %s\n",
-						 wifi_security_txt(params->security));
+					 wifi_security_txt(params->security));
 				return -EINVAL;
 			}
 			params->mfp = atoi(optarg);
@@ -680,15 +681,16 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 {
 	struct getopt_state *state;
 	int opt;
-	static const struct option long_options[] = {{"type", required_argument, 0, 't'},
-					       {"bands", required_argument, 0, 'b'},
-					       {"dwell_time_active", required_argument, 0, 'a'},
-					       {"dwell_time_passive", required_argument, 0, 'p'},
-					       {"ssid", required_argument, 0, 's'},
-					       {"max_bss", required_argument, 0, 'm'},
-					       {"chans", required_argument, 0, 'c'},
-					       {"help", no_argument, 0, 'h'},
-					       {0, 0, 0, 0}};
+	static const struct option long_options[] = {
+		{"type", required_argument, 0, 't'},
+		{"bands", required_argument, 0, 'b'},
+		{"dwell_time_active", required_argument, 0, 'a'},
+		{"dwell_time_passive", required_argument, 0, 'p'},
+		{"ssid", required_argument, 0, 's'},
+		{"max_bss", required_argument, 0, 'm'},
+		{"chans", required_argument, 0, 'c'},
+		{"help", no_argument, 0, 'h'},
+		{0, 0, 0, 0}};
 	int opt_index = 0;
 	int val;
 	int opt_num = 0;
@@ -1371,10 +1373,11 @@ static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, ch
 {
 	const struct getopt_state *state;
 	int opt;
-	static struct option long_options[] = {{"max_inactivity", required_argument, 0, 'i'},
-					       {"max_num_sta", required_argument, 0, 's'},
-					       {"help", no_argument, 0, 'h'},
-					       {0, 0, 0, 0}};
+	static const struct option long_options[] = {
+		{"max_inactivity", required_argument, 0, 'i'},
+		{"max_num_sta", required_argument, 0, 's'},
+		{"help", no_argument, 0, 'h'},
+		{0, 0, 0, 0}};
 	int opt_index = 0;
 	long val;
 
@@ -1608,14 +1611,15 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 	int option_index = 0;
 	const struct getopt_state *state;
 
-	static const struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
-					       {"sta", no_argument, 0, 's'},
-					       {"monitor", no_argument, 0, 'm'},
-					       {"ap", no_argument, 0, 'a'},
-					       {"softap", no_argument, 0, 'k'},
-					       {"get", no_argument, 0, 'g'},
-					       {"help", no_argument, 0, 'h'},
-					       {0, 0, 0, 0}};
+	static const struct option long_options[] = {
+		{"if-index", optional_argument, 0, 'i'},
+		{"sta", no_argument, 0, 's'},
+		{"monitor", no_argument, 0, 'm'},
+		{"ap", no_argument, 0, 'a'},
+		{"softap", no_argument, 0, 'k'},
+		{"get", no_argument, 0, 'g'},
+		{"help", no_argument, 0, 'h'},
+		{0, 0, 0, 0}};
 
 	while ((opt = getopt_long(argc, argv, "i:smtpakgh", long_options, &option_index)) != -1) {
 		state = getopt_state_get();
@@ -1709,11 +1713,12 @@ void parse_channel_args_to_params(const struct shell *sh, int argc,
 	int option_index = 0;
 	const struct getopt_state *state;
 
-	static const struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
-					       {"channel", required_argument, 0, 'c'},
-					       {"get", no_argument, 0, 'g'},
-					       {"help", no_argument, 0, 'h'},
-					       {0, 0, 0, 0}};
+	static const struct option long_options[] = {
+		{"if-index", optional_argument, 0, 'i'},
+		{"channel", required_argument, 0, 'c'},
+		{"get", no_argument, 0, 'g'},
+		{"help", no_argument, 0, 'h'},
+		{0, 0, 0, 0}};
 
 	while ((opt = getopt_long(argc, argv, "i:c:gh", long_options, &option_index)) != -1) {
 		state = getopt_state_get();
@@ -1806,15 +1811,16 @@ void parse_filter_args_to_params(const struct shell *sh, int argc,
 	int option_index = 0;
 	const struct getopt_state *state;
 
-	static const struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
-					       {"capture-len", optional_argument, 0, 'b'},
-					       {"all", no_argument, 0, 'a'},
-					       {"mgmt", no_argument, 0, 'm'},
-					       {"ctrl", no_argument, 0, 'c'},
-					       {"data", no_argument, 0, 'd'},
-					       {"get", no_argument, 0, 'g'},
-					       {"help", no_argument, 0, 'h'},
-					       {0, 0, 0, 0}};
+	static const struct option long_options[] = {
+		{"if-index", optional_argument, 0, 'i'},
+		{"capture-len", optional_argument, 0, 'b'},
+		{"all", no_argument, 0, 'a'},
+		{"mgmt", no_argument, 0, 'm'},
+		{"ctrl", no_argument, 0, 'c'},
+		{"data", no_argument, 0, 'd'},
+		{"get", no_argument, 0, 'g'},
+		{"help", no_argument, 0, 'h'},
+		{0, 0, 0, 0}};
 
 	while ((opt = getopt_long(argc, argv, "i:b:amcdgh", long_options, &option_index)) != -1) {
 		state = getopt_state_get();
@@ -2102,15 +2108,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		      cmd_wifi_listen_interval,
 		      2, 0),
 	SHELL_CMD_ARG(ps_wakeup_mode,
-		     NULL,
-		     "<wakeup_mode: DTIM/Listen Interval>.\n",
-		     cmd_wifi_ps_wakeup_mode,
-		     2, 0),
+		      NULL,
+		      "<wakeup_mode: DTIM/Listen Interval>.\n",
+		      cmd_wifi_ps_wakeup_mode,
+		      2, 0),
 	SHELL_CMD_ARG(rts_threshold,
-		     NULL,
-		     "<rts_threshold: rts threshold/off>.\n",
-		     cmd_wifi_set_rts_threshold,
-		     2, 0),
+		      NULL,
+		      "<rts_threshold: rts threshold/off>.\n",
+		      cmd_wifi_set_rts_threshold,
+		      2, 0),
 	SHELL_SUBCMD_SET_END
 );
 
