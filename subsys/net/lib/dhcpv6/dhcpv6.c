@@ -38,7 +38,7 @@ struct dhcpv6_options_include {
 static K_MUTEX_DEFINE(lock);
 
 /* All_DHCP_Relay_Agents_and_Servers (ff02::1:2) */
-static const struct in6_addr all_dhcpv6_ra_and_servers = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
+static const struct net_in6_addr all_dhcpv6_ra_and_servers = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
 							       0, 0, 0, 0, 0, 0x01, 0, 0x02 } } };
 
 static sys_slist_t dhcpv6_ifaces = SYS_SLIST_STATIC_INIT(&dhcpv6_ifaces);
@@ -569,7 +569,7 @@ static struct net_pkt *dhcpv6_create_message(struct net_if *iface,
 					     enum dhcpv6_msg_type msg_type,
 					     struct dhcpv6_options_include *options)
 {
-	struct in6_addr *local_addr;
+	struct net_in6_addr *local_addr;
 	struct net_pkt *pkt;
 	size_t msg_size;
 
@@ -604,7 +604,7 @@ static struct net_pkt *dhcpv6_create_message(struct net_if *iface,
 	}
 
 	net_pkt_cursor_init(pkt);
-	net_ipv6_finalize(pkt, IPPROTO_UDP);
+	net_ipv6_finalize(pkt, NET_IPPROTO_UDP);
 
 	return pkt;
 
@@ -1675,7 +1675,7 @@ static int dhcpv6_handle_reply(struct net_if *iface, struct net_pkt *pkt,
 		    ia_na.iaaddr.valid_lifetime == 0) {
 			/* Remove old lease. */
 			net_if_ipv6_addr_rm(iface, &iface->config.dhcpv6.addr);
-			memset(&iface->config.dhcpv6.addr, 0, sizeof(struct in6_addr));
+			memset(&iface->config.dhcpv6.addr, 0, sizeof(struct net_in6_addr));
 			rediscover = true;
 			goto prefix;
 		}
@@ -1719,7 +1719,7 @@ prefix:
 			/* Remove old lease. */
 			net_if_ipv6_prefix_rm(iface, &iface->config.dhcpv6.prefix,
 					      iface->config.dhcpv6.prefix_len);
-			memset(&iface->config.dhcpv6.prefix, 0, sizeof(struct in6_addr));
+			memset(&iface->config.dhcpv6.prefix, 0, sizeof(struct net_in6_addr));
 			iface->config.dhcpv6.prefix_len = 0;
 			rediscover = true;
 			goto out;
@@ -2205,12 +2205,12 @@ void net_dhcpv6_restart(struct net_if *iface)
 
 int net_dhcpv6_init(void)
 {
-	struct sockaddr unspec_addr;
+	struct net_sockaddr unspec_addr;
 	int ret;
 
 	net_ipaddr_copy(&net_sin6(&unspec_addr)->sin6_addr,
 			net_ipv6_unspecified_address());
-	unspec_addr.sa_family = AF_INET6;
+	unspec_addr.sa_family = NET_AF_INET6;
 
 	ret = net_udp_register(AF_INET6, NULL, &unspec_addr,
 			       DHCPV6_SERVER_PORT, DHCPV6_CLIENT_PORT,
