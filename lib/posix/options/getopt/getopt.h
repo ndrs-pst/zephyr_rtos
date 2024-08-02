@@ -13,6 +13,10 @@ extern "C" {
 
 #include <zephyr/kernel.h>
 
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define CONFIG_GETOPT_LONG                  1
+#endif
+
 struct getopt_state {
 	int opterr;	/* if error message should be printed */
 	int optind;	/* index into parent argv vector */

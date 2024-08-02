@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Bjarki Arge Andreasen
+# Copyright (c) 2023 NDR Solution (Thailand) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_ATMEL_SAM0
+	bool "Atmel SAM0 RTC driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM0_RTC_ENABLED
+	help
+	  Atmel Real-Time Clock (RTC) driver used on SAM0 SoC series.
