@@ -1629,7 +1629,7 @@ bool net_ipaddr_parse(char const* str, size_t str_len,
  *
  * @return 0 if ok, <0 if error
  */
-int net_port_set_default(struct net_sockaddr* addr, uint16_t default_port);
+int net_port_set_default(struct net_sockaddr const* addr, uint16_t default_port);
 
 /**
  * @brief Compare TCP sequence numbers.
