@@ -15,8 +15,12 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
+#if !defined(_MSC_VER)
+#include <strings.h>                        /* strncasecmp */
+#endif
 #include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_uart.h>
+#include <zephyr/shell/shell_rtt.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/init.h>
 
@@ -56,7 +60,6 @@ static struct {
 
 	union {
 		struct {
-
 			uint8_t connecting: 1;
 			uint8_t disconnecting: 1;
 			uint8_t _unused: 6;
@@ -73,6 +76,19 @@ struct wifi_ap_sta_node {
 	bool valid;
 	struct wifi_ap_sta_info sta_info;
 };
+
+#if defined(_MSC_VER)
+#define strncasecmp                         _strnicmp
+#endif
+
+#if !defined(CONFIG_WIFI_SHELL_MAX_AP_STA)
+#define CONFIG_WIFI_SHELL_MAX_AP_STA        2
+#endif
+
+#if !defined(CONFIG_WIFI_MGMT_AP_MAX_NUM_STA)
+#define CONFIG_WIFI_MGMT_AP_MAX_NUM_STA     2
+#endif
+
 static struct wifi_ap_sta_node sta_list[CONFIG_WIFI_SHELL_MAX_AP_STA];
 
 static bool parse_number(const struct shell *sh, long *param, char *str,
@@ -108,7 +124,7 @@ static bool parse_number(const struct shell *sh, long *param, char *str,
 	return true;
 }
 
-static void handle_wifi_scan_result(struct net_mgmt_event_callback *cb)
+static void handle_wifi_scan_result(const struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_scan_result *entry =
 		(const struct wifi_scan_result *)cb->info;
@@ -212,7 +228,7 @@ static void handle_wifi_raw_scan_result(struct net_mgmt_event_callback *cb)
 }
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
 
-static void handle_wifi_scan_done(struct net_mgmt_event_callback *cb)
+static void handle_wifi_scan_done(const struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_status *status =
 		(const struct wifi_status *)cb->info;
@@ -227,7 +243,7 @@ static void handle_wifi_scan_done(struct net_mgmt_event_callback *cb)
 	context.scan_result = 0U;
 }
 
-static void handle_wifi_connect_result(struct net_mgmt_event_callback *cb)
+static void handle_wifi_connect_result(const struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_status *status =
 		(const struct wifi_status *) cb->info;
@@ -242,7 +258,7 @@ static void handle_wifi_connect_result(struct net_mgmt_event_callback *cb)
 	context.connecting = false;
 }
 
-static void handle_wifi_disconnect_result(struct net_mgmt_event_callback *cb)
+static void handle_wifi_disconnect_result(const struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_status *status =
 		(const struct wifi_status *) cb->info;
@@ -252,7 +268,7 @@ static void handle_wifi_disconnect_result(struct net_mgmt_event_callback *cb)
 		if (status->status) {
 			PR_WARNING("Disconnection request failed (%d)\n", status->status);
 		} else {
-			PR("Disconnection request done (%d)\n", status->status);
+			PR("Disconnection request done\n");
 		}
 		context.disconnecting = false;
 	} else {
@@ -269,27 +285,27 @@ static void print_twt_params(uint8_t dialog_token, uint8_t flow_id,
 	const struct shell *sh = context.sh;
 
 	PR("TWT Dialog token: %d\n",
-	      dialog_token);
+	   dialog_token);
 	PR("TWT flow ID: %d\n",
-	      flow_id);
+	   flow_id);
 	PR("TWT negotiation type: %s\n",
-	      wifi_twt_negotiation_type_txt(negotiation_type));
+	   wifi_twt_negotiation_type_txt(negotiation_type));
 	PR("TWT responder: %s\n",
-	       responder ? "true" : "false");
+	   responder ? "true" : "false");
 	PR("TWT implicit: %s\n",
-	      implicit ? "true" : "false");
+	   implicit ? "true" : "false");
 	PR("TWT announce: %s\n",
-	      announce ? "true" : "false");
+	   announce ? "true" : "false");
 	PR("TWT trigger: %s\n",
-	      trigger ? "true" : "false");
+	   trigger ? "true" : "false");
 	PR("TWT wake interval: %d us\n",
-	      twt_wake_interval);
+	   twt_wake_interval);
 	PR("TWT interval: %lld us\n",
-	      twt_interval);
+	   twt_interval);
 	PR("========================\n");
 }
 
-static void handle_wifi_twt_event(struct net_mgmt_event_callback *cb)
+static void handle_wifi_twt_event(const struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_twt_params *resp =
 		(const struct wifi_twt_params *)cb->info;
@@ -298,10 +314,10 @@ static void handle_wifi_twt_event(struct net_mgmt_event_callback *cb)
 	if (resp->operation == WIFI_TWT_TEARDOWN) {
 		if (resp->teardown_status == WIFI_TWT_TEARDOWN_SUCCESS) {
 			PR("TWT teardown succeeded for flow ID %d\n",
-			      resp->flow_id);
+			   resp->flow_id);
 		} else {
 			PR("TWT teardown failed for flow ID %d\n",
-			      resp->flow_id);
+			   resp->flow_id);
 		}
 		return;
 	}
@@ -324,7 +340,7 @@ static void handle_wifi_twt_event(struct net_mgmt_event_callback *cb)
 	}
 }
 
-static void handle_wifi_ap_enable_result(struct net_mgmt_event_callback *cb)
+static void handle_wifi_ap_enable_result(const struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_status *status =
 		(const struct wifi_status *)cb->info;
@@ -337,7 +353,7 @@ static void handle_wifi_ap_enable_result(struct net_mgmt_event_callback *cb)
 	}
 }
 
-static void handle_wifi_ap_disable_result(struct net_mgmt_event_callback *cb)
+static void handle_wifi_ap_disable_result(const struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_status *status =
 		(const struct wifi_status *)cb->info;
@@ -354,7 +370,7 @@ static void handle_wifi_ap_disable_result(struct net_mgmt_event_callback *cb)
 	k_mutex_unlock(&wifi_ap_sta_list_lock);
 }
 
-static void handle_wifi_ap_sta_connected(struct net_mgmt_event_callback *cb)
+static void handle_wifi_ap_sta_connected(const struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_ap_sta_info *sta_info =
 		(const struct wifi_ap_sta_info *)cb->info;
@@ -381,7 +397,7 @@ static void handle_wifi_ap_sta_connected(struct net_mgmt_event_callback *cb)
 	k_mutex_unlock(&wifi_ap_sta_list_lock);
 }
 
-static void handle_wifi_ap_sta_disconnected(struct net_mgmt_event_callback *cb)
+static void handle_wifi_ap_sta_disconnected(const struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_ap_sta_info *sta_info =
 		(const struct wifi_ap_sta_info *)cb->info;
@@ -453,20 +469,21 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 				 enum wifi_iface_mode iface_mode)
 {
 	char *endptr;
-	int idx = 1;
+	uint_fast16_t idx = 1U;
 	struct getopt_state *state;
 	int opt;
 	bool secure_connection = false;
-	static struct option long_options[] = {{"ssid", required_argument, 0, 's'},
-					       {"passphrase", required_argument, 0, 'p'},
-					       {"key-mgmt", required_argument, 0, 'k'},
-					       {"ieee-80211w", required_argument, 0, 'w'},
-					       {"bssid", required_argument, 0, 'm'},
-					       {"band", required_argument, 0, 'b'},
-					       {"channel", required_argument, 0, 'c'},
-					       {"timeout", required_argument, 0, 't'},
-					       {"help", no_argument, 0, 'h'},
-					       {0, 0, 0, 0}};
+	static const struct option long_options[] = {
+		{"ssid", required_argument, 0, 's'},
+		{"passphrase", required_argument, 0, 'p'},
+		{"key-mgmt", required_argument, 0, 'k'},
+		{"ieee-80211w", required_argument, 0, 'w'},
+		{"bssid", required_argument, 0, 'm'},
+		{"band", required_argument, 0, 'b'},
+		{"channel", required_argument, 0, 'c'},
+		{"timeout", required_argument, 0, 't'},
+		{"help", no_argument, 0, 'h'},
+		{0, 0, 0, 0}};
 	int opt_index = 0;
 	uint8_t band;
 	const uint8_t all_bands[] = {
@@ -491,10 +508,10 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		switch (opt) {
 		case 's':
 			params->ssid = optarg;
-			params->ssid_length = strlen(params->ssid);
+			params->ssid_length = (uint8_t)strlen(params->ssid);
 			if (params->ssid_length > WIFI_SSID_MAX_LEN) {
 				PR_WARNING("SSID too long (max %d characters)\n",
-					    WIFI_SSID_MAX_LEN);
+					   WIFI_SSID_MAX_LEN);
 				return -EINVAL;
 			}
 			break;
@@ -506,7 +523,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'p':
 			params->psk = optarg;
-			params->psk_length = strlen(params->psk);
+			params->psk_length = (uint8_t)strlen(params->psk);
 			break;
 		case 'c':
 			channel = strtol(optarg, &endptr, 10);
@@ -524,7 +541,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 				}
 
 				if (wifi_utils_validate_chan(all_bands[band],
-							     channel)) {
+							     (uint8_t)channel)) {
 					found = true;
 					break;
 				}
@@ -537,7 +554,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 				return -EINVAL;
 			}
 
-			params->channel = channel;
+			params->channel = (uint8_t)channel;
 			break;
 		case 'b':
 			if (iface_mode == WIFI_MODE_INFRA) {
@@ -559,9 +576,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'w':
 			if (params->security == WIFI_SECURITY_TYPE_NONE ||
-				params->security == WIFI_SECURITY_TYPE_WPA_PSK) {
+			    params->security == WIFI_SECURITY_TYPE_WPA_PSK) {
 				PR_ERROR("MFP not supported for security type %s\n",
-						 wifi_security_txt(params->security));
+					 wifi_security_txt(params->security));
 				return -EINVAL;
 			}
 			params->mfp = atoi(optarg);
@@ -612,7 +629,6 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 	struct wifi_connect_req_params cnx_params = { 0 };
 	int ret;
 
-	context.sh = sh;
 	if (__wifi_args_to_params(sh, argc, argv, &cnx_params, WIFI_MODE_INFRA)) {
 		shell_help(sh);
 		return -ENOEXEC;
@@ -620,7 +636,7 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 
 	context.connecting = true;
 	ret = net_mgmt(NET_REQUEST_WIFI_CONNECT, iface,
-		       &cnx_params, sizeof(struct wifi_connect_req_params));
+		       &cnx_params, sizeof(struct wifi_connect_req_params));    /* @see esp32_wifi_connect */
 	if (ret) {
 		printk("Connection request failed with error: %d\n", ret);
 		context.connecting = false;
@@ -639,10 +655,8 @@ static int cmd_wifi_disconnect(const struct shell *sh, size_t argc,
 	int status;
 
 	context.disconnecting = true;
-	context.sh = sh;
 
-	status = net_mgmt(NET_REQUEST_WIFI_DISCONNECT, iface, NULL, 0);
-
+	status = net_mgmt(NET_REQUEST_WIFI_DISCONNECT, iface, NULL, 0);     /* @see esp32_wifi_disconnect */
 	if (status) {
 		context.disconnecting = false;
 
@@ -667,15 +681,16 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 {
 	struct getopt_state *state;
 	int opt;
-	static const struct option long_options[] = {{"type", required_argument, 0, 't'},
-					       {"bands", required_argument, 0, 'b'},
-					       {"dwell_time_active", required_argument, 0, 'a'},
-					       {"dwell_time_passive", required_argument, 0, 'p'},
-					       {"ssid", required_argument, 0, 's'},
-					       {"max_bss", required_argument, 0, 'm'},
-					       {"chans", required_argument, 0, 'c'},
-					       {"help", no_argument, 0, 'h'},
-					       {0, 0, 0, 0}};
+	static const struct option long_options[] = {
+		{"type", required_argument, 0, 't'},
+		{"bands", required_argument, 0, 'b'},
+		{"dwell_time_active", required_argument, 0, 'a'},
+		{"dwell_time_passive", required_argument, 0, 'p'},
+		{"ssid", required_argument, 0, 's'},
+		{"max_bss", required_argument, 0, 'm'},
+		{"chans", required_argument, 0, 'c'},
+		{"help", no_argument, 0, 'h'},
+		{0, 0, 0, 0}};
 	int opt_index = 0;
 	int val;
 	int opt_num = 0;
@@ -745,7 +760,7 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 				return -ENOEXEC;
 			}
 
-			params->max_bss_cnt = val;
+			params->max_bss_cnt = (uint16_t)val;
 			opt_num++;
 			break;
 		case 'c':
@@ -781,8 +796,6 @@ static int cmd_wifi_scan(const struct shell *sh, size_t argc, char *argv[])
 	bool do_scan = true;
 	int opt_num;
 
-	context.sh = sh;
-
 	if (argc > 1) {
 		opt_num = wifi_scan_args_to_params(sh, argc, argv, &params, &do_scan);
 
@@ -797,6 +810,7 @@ static int cmd_wifi_scan(const struct shell *sh, size_t argc, char *argv[])
 
 	if (do_scan) {
 		if (net_mgmt(NET_REQUEST_WIFI_SCAN, iface, &params, sizeof(params))) {
+			/* @see esp32_wifi_scan */
 			PR_WARNING("Scan request failed\n");
 			return -ENOEXEC;
 		}
@@ -815,10 +829,9 @@ static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_iface_status status = { 0 };
 
-	context.sh = sh;
-
 	if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &status,
 		     sizeof(struct wifi_iface_status))) {
+		/* @see esp32_wifi_status */
 		PR_WARNING("Status request failed\n");
 
 		return -ENOEXEC;
@@ -909,8 +922,6 @@ static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_ps_params params = { 0 };
 
-	context.sh = sh;
-
 	if (argc > 2) {
 		PR_WARNING("Invalid number of arguments\n");
 		return -ENOEXEC;
@@ -994,8 +1005,6 @@ static int cmd_wifi_ps_mode(const struct shell *sh, size_t argc, char *argv[])
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_ps_params params = { 0 };
 
-	context.sh = sh;
-
 	if (!strncasecmp(argv[1], "legacy", 6)) {
 		params.mode = WIFI_PS_MODE_LEGACY;
 	} else if (!strncasecmp(argv[1], "WMM", 3)) {
@@ -1023,10 +1032,8 @@ static int cmd_wifi_ps_timeout(const struct shell *sh, size_t argc, char *argv[]
 {
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_ps_params params = { 0 };
-	long timeout_ms = 0;
+	long timeout_ms;
 	int err = 0;
-
-	context.sh = sh;
 
 	timeout_ms = shell_strtol(argv[1], 10, &err);
 
@@ -1058,10 +1065,7 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 {
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_twt_params params = { 0 };
-	int idx = 1;
 	long value;
-
-	context.sh = sh;
 
 	/* Sensible defaults */
 	params.operation = WIFI_TWT_SETUP;
@@ -1074,12 +1078,12 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 	params.setup.trigger = 0;
 	params.setup.announce = 0;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 1, WIFI_MAX_TWT_WAKE_INTERVAL_US)) {
+	if (!parse_number(sh, &value, argv[1], NULL, 1, WIFI_MAX_TWT_WAKE_INTERVAL_US)) {
 		return -EINVAL;
 	}
 	params.setup.twt_wake_interval = (uint32_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 1, WIFI_MAX_TWT_INTERVAL_US)) {
+	if (!parse_number(sh, &value, argv[2], NULL, 1, WIFI_MAX_TWT_INTERVAL_US)) {
 		return -EINVAL;
 	}
 	params.setup.twt_interval = (uint64_t)value;
@@ -1105,66 +1109,63 @@ static int cmd_wifi_twt_setup(const struct shell *sh, size_t argc,
 {
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_twt_params params = { 0 };
-	int idx = 1;
 	long value;
-
-	context.sh = sh;
 
 	params.operation = WIFI_TWT_SETUP;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, WIFI_TWT_INDIVIDUAL,
+	if (!parse_number(sh, &value, argv[1], NULL, WIFI_TWT_INDIVIDUAL,
 			  WIFI_TWT_WAKE_TBTT)) {
 		return -EINVAL;
 	}
 	params.negotiation_type = (enum wifi_twt_negotiation_type)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, WIFI_TWT_SETUP_CMD_REQUEST,
+	if (!parse_number(sh, &value, argv[2], NULL, WIFI_TWT_SETUP_CMD_REQUEST,
 			  WIFI_TWT_SETUP_CMD_DEMAND)) {
 		return -EINVAL;
 	}
 	params.setup_cmd = (enum wifi_twt_setup_cmd)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 1, 255)) {
+	if (!parse_number(sh, &value, argv[3], NULL, 1, 255)) {
 		return -EINVAL;
 	}
 	params.dialog_token = (uint8_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0, (WIFI_MAX_TWT_FLOWS - 1))) {
+	if (!parse_number(sh, &value, argv[4], NULL, 0, (WIFI_MAX_TWT_FLOWS - 1))) {
 		return -EINVAL;
 	}
 	params.flow_id = (uint8_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0, 1)) {
+	if (!parse_number(sh, &value, argv[5], NULL, 0, 1)) {
 		return -EINVAL;
 	}
 	params.setup.responder = (bool)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0, 1)) {
+	if (!parse_number(sh, &value, argv[6], NULL, 0, 1)) {
 		return -EINVAL;
 	}
 	params.setup.trigger = (bool)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0, 1)) {
+	if (!parse_number(sh, &value, argv[7], NULL, 0, 1)) {
 		return -EINVAL;
 	}
 	params.setup.implicit = (bool)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0, 1)) {
+	if (!parse_number(sh, &value, argv[8], NULL, 0, 1)) {
 		return -EINVAL;
 	}
 	params.setup.announce = (bool)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 1, WIFI_MAX_TWT_WAKE_INTERVAL_US)) {
+	if (!parse_number(sh, &value, argv[9], NULL, 1, WIFI_MAX_TWT_WAKE_INTERVAL_US)) {
 		return -EINVAL;
 	}
 	params.setup.twt_wake_interval = (uint32_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 1, WIFI_MAX_TWT_INTERVAL_US)) {
+	if (!parse_number(sh, &value, argv[10], NULL, 1, WIFI_MAX_TWT_INTERVAL_US)) {
 		return -EINVAL;
 	}
 	params.setup.twt_interval = (uint64_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0, WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US)) {
+	if (!parse_number(sh, &value, argv[11], NULL, 0, WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US)) {
 		return -EINVAL;
 	}
 	params.setup.twt_wake_ahead_duration = (uint32_t)value;
@@ -1192,29 +1193,26 @@ static int cmd_wifi_twt_teardown(const struct shell *sh, size_t argc,
 	struct wifi_twt_params params = { 0 };
 	long value;
 
-	context.sh = sh;
-	int idx = 1;
-
 	params.operation = WIFI_TWT_TEARDOWN;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, WIFI_TWT_INDIVIDUAL,
+	if (!parse_number(sh, &value, argv[1], NULL, WIFI_TWT_INDIVIDUAL,
 			  WIFI_TWT_WAKE_TBTT)) {
 		return -EINVAL;
 	}
 	params.negotiation_type = (enum wifi_twt_negotiation_type)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, WIFI_TWT_SETUP_CMD_REQUEST,
+	if (!parse_number(sh, &value, argv[2], NULL, WIFI_TWT_SETUP_CMD_REQUEST,
 			  WIFI_TWT_SETUP_CMD_DEMAND)) {
 		return -EINVAL;
 	}
 	params.setup_cmd = (enum wifi_twt_setup_cmd)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 1, 255)) {
+	if (!parse_number(sh, &value, argv[3], NULL, 1, 255)) {
 		return -EINVAL;
 	}
 	params.dialog_token = (uint8_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0, (WIFI_MAX_TWT_FLOWS - 1))) {
+	if (!parse_number(sh, &value, argv[4], NULL, 0, (WIFI_MAX_TWT_FLOWS - 1))) {
 		return -EINVAL;
 	}
 	params.flow_id = (uint8_t)value;
@@ -1241,8 +1239,6 @@ static int cmd_wifi_twt_teardown_all(const struct shell *sh, size_t argc,
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_twt_params params = { 0 };
 
-	context.sh = sh;
-
 	params.operation = WIFI_TWT_TEARDOWN;
 	params.teardown.teardown_all = 1;
 
@@ -1268,7 +1264,6 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 	static struct wifi_connect_req_params cnx_params;
 	int ret;
 
-	context.sh = sh;
 	if (__wifi_args_to_params(sh, argc, &argv[0], &cnx_params, WIFI_MODE_AP)) {
 		shell_help(sh);
 		return -ENOEXEC;
@@ -1276,6 +1271,7 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 
 	k_mutex_init(&wifi_ap_sta_list_lock);
 
+	/* @see esp32_wifi_ap_enable */
 	ret = net_mgmt(NET_REQUEST_WIFI_AP_ENABLE, iface, &cnx_params,
 		       sizeof(struct wifi_connect_req_params));
 	if (ret) {
@@ -1294,6 +1290,7 @@ static int cmd_wifi_ap_disable(const struct shell *sh, size_t argc,
 	struct net_if *iface = net_if_get_wifi_sap();
 	int ret;
 
+	/* @see esp32_wifi_ap_disable */
 	ret = net_mgmt(NET_REQUEST_WIFI_AP_DISABLE, iface, NULL, 0);
 	if (ret) {
 		PR_WARNING("AP mode disable failed: %s\n", strerror(-ret));
@@ -1317,7 +1314,7 @@ static int cmd_wifi_ap_stations(const struct shell *sh, size_t argc,
 
 	k_mutex_lock(&wifi_ap_sta_list_lock, K_FOREVER);
 	for (int i = 0; i < CONFIG_WIFI_SHELL_MAX_AP_STA; i++) {
-		struct wifi_ap_sta_info *sta;
+		const struct wifi_ap_sta_info *sta;
 		uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
 
 		if (!sta_list[i].valid) {
@@ -1359,6 +1356,7 @@ static int cmd_wifi_ap_sta_disconnect(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
+	/* @see esp32_wifi_ap_sta_disconnect */
 	ret = net_mgmt(NET_REQUEST_WIFI_AP_STA_DISCONNECT, iface, mac, sizeof(mac));
 	if (ret) {
 		PR_WARNING("AP station disconnect failed: %s\n",
@@ -1373,12 +1371,13 @@ static int cmd_wifi_ap_sta_disconnect(const struct shell *sh, size_t argc,
 static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 					 struct wifi_ap_config_params *params)
 {
-	struct getopt_state *state;
+	const struct getopt_state *state;
 	int opt;
-	static struct option long_options[] = {{"max_inactivity", required_argument, 0, 'i'},
-					       {"max_num_sta", required_argument, 0, 's'},
-					       {"help", no_argument, 0, 'h'},
-					       {0, 0, 0, 0}};
+	static const struct option long_options[] = {
+		{"max_inactivity", required_argument, 0, 'i'},
+		{"max_num_sta", required_argument, 0, 's'},
+		{"help", no_argument, 0, 'h'},
+		{0, 0, 0, 0}};
 	int opt_index = 0;
 	long val;
 
@@ -1419,7 +1418,7 @@ static int cmd_wifi_ap_config_params(const struct shell *sh, size_t argc,
 {
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_ap_config_params ap_config_params = { 0 };
-	int ret = -1;
+	int ret;
 
 	context.sh = sh;
 
@@ -1443,7 +1442,7 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 {
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_reg_domain regd = {0};
-	int ret, chan_idx = 0;
+	int ret;
 
 	if (argc == 1) {
 		regd.chan_info = &chan_info[0];
@@ -1491,7 +1490,7 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 		   regd.country_code[0], regd.country_code[1]);
 		PR("<channel>\t<center frequency>\t<supported(y/n)>\t"
 		   "<max power(dBm)>\t<passive transmission only(y/n)>\t<DFS supported(y/n)>\n");
-		for (chan_idx = 0; chan_idx < regd.num_channels; chan_idx++) {
+		for (unsigned int chan_idx = 0; chan_idx < regd.num_channels; chan_idx++) {
 			PR("  %d\t\t\t%d\t\t\t%s\t\t\t%d\t\t\t%s\t\t\t\t%s\n",
 			   wifi_freq_to_channel(chan_info[chan_idx].center_frequency),
 			   chan_info[chan_idx].center_frequency,
@@ -1514,15 +1513,13 @@ static int cmd_wifi_listen_interval(const struct shell *sh, size_t argc, char *a
 	struct wifi_ps_params params = { 0 };
 	long interval;
 
-	context.sh = sh;
-
 	if (!parse_number(sh, &interval, argv[1], NULL,
 			  WIFI_LISTEN_INTERVAL_MIN,
 			  WIFI_LISTEN_INTERVAL_MAX)) {
 		return -EINVAL;
 	}
 
-	params.listen_interval = interval;
+	params.listen_interval = (unsigned short)interval;
 	params.type = WIFI_PS_PARAM_LISTEN_INTERVAL;
 
 	if (net_mgmt(NET_REQUEST_WIFI_PS, iface, &params, sizeof(params))) {
@@ -1547,8 +1544,6 @@ static int cmd_wifi_ps_wakeup_mode(const struct shell *sh, size_t argc, char *ar
 {
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_ps_params params = { 0 };
-
-	context.sh = sh;
 
 	if (!strncasecmp(argv[1], "dtim", 4)) {
 		params.wakeup_mode = WIFI_PS_WAKEUP_MODE_DTIM;
@@ -1595,15 +1590,15 @@ static int cmd_wifi_set_rts_threshold(const struct shell *sh, size_t argc, char 
 
 	if (net_mgmt(NET_REQUEST_WIFI_RTS_THRESHOLD, iface,
 		     &rts_threshold, sizeof(rts_threshold))) {
-		shell_fprintf(sh, SHELL_WARNING,
-			      "Setting RTS threshold failed.\n");
+		shell_warn(sh, "Setting RTS threshold failed.");
 		return -ENOEXEC;
 	}
 
-	if ((int)rts_threshold >= 0)
-		shell_fprintf(sh, SHELL_NORMAL, "RTS threshold: %d\n", rts_threshold);
-	else
-		shell_fprintf(sh, SHELL_NORMAL, "RTS threshold is off\n");
+	if ((int)rts_threshold >= 0) {
+		shell_print(sh, "RTS threshold: %d", rts_threshold);
+	} else {
+		shell_print(sh, "RTS threshold is off");
+	}
 
 	return 0;
 }
@@ -1614,16 +1609,17 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 {
 	int opt;
 	int option_index = 0;
-	struct getopt_state *state;
+	const struct getopt_state *state;
 
-	static const struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
-					       {"sta", no_argument, 0, 's'},
-					       {"monitor", no_argument, 0, 'm'},
-					       {"ap", no_argument, 0, 'a'},
-					       {"softap", no_argument, 0, 'k'},
-					       {"get", no_argument, 0, 'g'},
-					       {"help", no_argument, 0, 'h'},
-					       {0, 0, 0, 0}};
+	static const struct option long_options[] = {
+		{"if-index", optional_argument, 0, 'i'},
+		{"sta", no_argument, 0, 's'},
+		{"monitor", no_argument, 0, 'm'},
+		{"ap", no_argument, 0, 'a'},
+		{"softap", no_argument, 0, 'k'},
+		{"get", no_argument, 0, 'g'},
+		{"help", no_argument, 0, 'h'},
+		{0, 0, 0, 0}};
 
 	while ((opt = getopt_long(argc, argv, "i:smtpakgh", long_options, &option_index)) != -1) {
 		state = getopt_state_get();
@@ -1682,7 +1678,7 @@ static int cmd_wifi_mode(const struct shell *sh, size_t argc, char *argv[])
 				PR_ERROR("Cannot find the default wifi interface\n");
 				return -ENOEXEC;
 			}
-			mode_info.if_index = net_if_get_by_iface(iface);
+			mode_info.if_index = (uint8_t)net_if_get_by_iface(iface);
 		} else {
 			iface = net_if_get_by_index(mode_info.if_index);
 			if (iface == NULL) {
@@ -1701,9 +1697,9 @@ static int cmd_wifi_mode(const struct shell *sh, size_t argc, char *argv[])
 		}
 
 		if (mode_info.oper == WIFI_MGMT_GET) {
-			PR("Wi-Fi current mode is %x\n", mode_info.mode);
+			PR("Wi-Fi current mode is 0x%02x\n", mode_info.mode);
 		} else {
-			PR("Wi-Fi mode set to %x\n", mode_info.mode);
+			PR("Wi-Fi mode set to 0x%02x\n", mode_info.mode);
 		}
 	}
 	return 0;
@@ -1715,13 +1711,14 @@ void parse_channel_args_to_params(const struct shell *sh, int argc,
 {
 	int opt;
 	int option_index = 0;
-	struct getopt_state *state;
+	const struct getopt_state *state;
 
-	static const struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
-					       {"channel", required_argument, 0, 'c'},
-					       {"get", no_argument, 0, 'g'},
-					       {"help", no_argument, 0, 'h'},
-					       {0, 0, 0, 0}};
+	static const struct option long_options[] = {
+		{"if-index", optional_argument, 0, 'i'},
+		{"channel", required_argument, 0, 'c'},
+		{"get", no_argument, 0, 'g'},
+		{"help", no_argument, 0, 'h'},
+		{0, 0, 0, 0}};
 
 	while ((opt = getopt_long(argc, argv, "i:c:gh", long_options, &option_index)) != -1) {
 		state = getopt_state_get();
@@ -1770,7 +1767,7 @@ static int cmd_wifi_channel(const struct shell *sh, size_t argc, char *argv[])
 				PR_ERROR("Cannot find the default wifi interface\n");
 				return -ENOEXEC;
 			}
-			channel_info.if_index = net_if_get_by_iface(iface);
+			channel_info.if_index = (uint8_t)net_if_get_by_iface(iface);
 		} else {
 			iface = net_if_get_by_index(channel_info.if_index);
 			if (iface == NULL) {
@@ -1812,17 +1809,18 @@ void parse_filter_args_to_params(const struct shell *sh, int argc,
 {
 	int opt;
 	int option_index = 0;
-	struct getopt_state *state;
+	const struct getopt_state *state;
 
-	static const struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
-					       {"capture-len", optional_argument, 0, 'b'},
-					       {"all", no_argument, 0, 'a'},
-					       {"mgmt", no_argument, 0, 'm'},
-					       {"ctrl", no_argument, 0, 'c'},
-					       {"data", no_argument, 0, 'd'},
-					       {"get", no_argument, 0, 'g'},
-					       {"help", no_argument, 0, 'h'},
-					       {0, 0, 0, 0}};
+	static const struct option long_options[] = {
+		{"if-index", optional_argument, 0, 'i'},
+		{"capture-len", optional_argument, 0, 'b'},
+		{"all", no_argument, 0, 'a'},
+		{"mgmt", no_argument, 0, 'm'},
+		{"ctrl", no_argument, 0, 'c'},
+		{"data", no_argument, 0, 'd'},
+		{"get", no_argument, 0, 'g'},
+		{"help", no_argument, 0, 'h'},
+		{0, 0, 0, 0}};
 
 	while ((opt = getopt_long(argc, argv, "i:b:amcdgh", long_options, &option_index)) != -1) {
 		state = getopt_state_get();
@@ -1883,7 +1881,7 @@ static int cmd_wifi_packet_filter(const struct shell *sh, size_t argc, char *arg
 				PR_ERROR("Cannot find the default wifi interface\n");
 				return -ENOEXEC;
 			}
-			packet_filter.if_index = net_if_get_by_iface(iface);
+			packet_filter.if_index = (uint8_t)net_if_get_by_iface(iface);
 		} else {
 			iface = net_if_get_by_index(packet_filter.if_index);
 			if (iface == NULL) {
@@ -1934,6 +1932,7 @@ static int cmd_wifi_version(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+#if (__GTEST == 0U) /* #CUSTOM@NDRS */
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 	SHELL_CMD_ARG(disable, NULL,
 		  "Disable Access Point mode.\n",
@@ -2028,8 +2027,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		      NULL,
 		      "<mode: legacy/WMM>.\n",
 		      cmd_wifi_ps_mode,
-		      2,
-		      0),
+		      2, 0),
 	SHELL_CMD_ARG(scan, NULL,
 		  "Scan for Wi-Fi APs\n"
 		    "[-t, --type <active/passive>] : Preferred mode of scan. The actual mode of scan can depend on factors such as the Wi-Fi chip implementation, regulatory domain restrictions. Default type is active\n"
@@ -2103,35 +2101,38 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		      NULL,
 		      "<val> - PS inactivity timer(in ms).\n",
 		      cmd_wifi_ps_timeout,
-		      2,
-		      0),
+		      2, 0),
 	SHELL_CMD_ARG(ps_listen_interval,
 		      NULL,
 		      "<val> - Listen interval in the range of <0-65535>.\n",
 		      cmd_wifi_listen_interval,
-		      2,
-		      0),
+		      2, 0),
 	SHELL_CMD_ARG(ps_wakeup_mode,
-		     NULL,
-		     "<wakeup_mode: DTIM/Listen Interval>.\n",
-		     cmd_wifi_ps_wakeup_mode,
-		     2,
-		     0),
+		      NULL,
+		      "<wakeup_mode: DTIM/Listen Interval>.\n",
+		      cmd_wifi_ps_wakeup_mode,
+		      2, 0),
 	SHELL_CMD_ARG(rts_threshold,
-		     NULL,
-		     "<rts_threshold: rts threshold/off>.\n",
-		     cmd_wifi_set_rts_threshold,
-		     2,
-		     0),
+		      NULL,
+		      "<rts_threshold: rts threshold/off>.\n",
+		      cmd_wifi_set_rts_threshold,
+		      2, 0),
 	SHELL_SUBCMD_SET_END
 );
 
 SHELL_CMD_REGISTER(wifi, &wifi_commands, "Wi-Fi commands", NULL);
+#endif
 
 static int wifi_shell_init(void)
 {
 
-	context.sh = NULL;
+#if IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL)
+	context.sh = shell_backend_uart_get_ptr();
+#elif IS_ENABLED(CONFIG_LOG_BACKEND_RTT)
+	context.sh = shell_backend_rtt_get_ptr();
+#else
+	BUILD_ASSERT(0, "Unsupported shell backend");
+#endif
 	context.all = 0U;
 	context.scan_result = 0U;
 
@@ -2145,3 +2146,15 @@ static int wifi_shell_init(void)
 }
 
 SYS_INIT(wifi_shell_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+/* Unit test, helper function */
+__maybe_unused int ut_cmd_wifi_scan(const struct shell *sh, size_t argc, const char *argv[]) {
+    int rc;
+
+    rc = cmd_wifi_scan(sh, argc, (char**)argv);
+    if (rc) {
+        shell_error(sh, "Error: %d", rc);
+    }
+
+    return rc;
+}

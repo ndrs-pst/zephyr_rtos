@@ -33,10 +33,15 @@ static inline uint64_t arch_k_cycle_get_64(void)
 	return sys_clock_cycle_get_64();
 }
 
-static ALWAYS_INLINE void arch_nop(void)
-{
-	__asm__ volatile("nop");
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+static ALWAYS_INLINE void arch_nop(void) {
+    /* pass */
 }
+#else
+static ALWAYS_INLINE void arch_nop(void) {
+    __asm__ volatile("nop");
+}
+#endif
 
 #if defined(CONFIG_USERSPACE)
 extern bool z_arm_thread_is_in_user_mode(void);
