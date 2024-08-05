@@ -454,12 +454,12 @@ struct modbus_custom_fc {
 /**
  * @brief Helper macro for initializing custom function code structs
  */
-#define MODBUS_CUSTOM_FC_DEFINE(name, user_cb, user_fc, userdata)                                                      \
-    static struct modbus_custom_fc modbus_cfg_##name = {                                                               \
-        .cb         = user_cb,                                                                                         \
-        .user_data  = userdata,                                                                                        \
-        .fc         = user_fc,                                                                                         \
-        .excep_code = MODBUS_EXC_NONE,                                                                                 \
+#define MODBUS_CUSTOM_FC_DEFINE(name, user_cb, user_fc, userdata)       \
+    static struct modbus_custom_fc modbus_cfg_##name = {                \
+        .cb         = user_cb,                                          \
+        .user_data  = userdata,                                         \
+        .fc         = user_fc,                                          \
+        .excep_code = MODBUS_EXC_NONE,                                  \
     }
 
 /**
@@ -480,12 +480,14 @@ enum modbus_mode {
 struct modbus_serial_param {
     /** Baudrate of the serial line */
     uint32_t baud;
+
     /** parity UART's parity setting:
      *    UART_CFG_PARITY_NONE,
      *    UART_CFG_PARITY_EVEN,
      *    UART_CFG_PARITY_ODD
      */
     enum uart_config_parity parity;
+
     /** stop_bits_client UART's stop bits setting if in client mode:
      *    UART_CFG_STOP_BITS_0_5,
      *    UART_CFG_STOP_BITS_1,
@@ -500,14 +502,15 @@ struct modbus_serial_param {
  */
 struct modbus_server_param {
     /** Pointer to the User Callback structure */
-    struct modbus_user_callbacks* user_cb;
+    struct modbus_user_callbacks const* user_cb;
+
     /** Modbus unit ID of the server */
     uint8_t unit_id;
 };
 
 struct modbus_raw_cb {
     modbus_raw_cb_t raw_tx_cb;
-    void*           user_data;
+    void* user_data;
 };
 
 /**
@@ -520,6 +523,7 @@ struct modbus_iface_param {
 
     union {
         struct modbus_server_param server;
+
         /** Amount of time client will wait for
          *  a response from the server.
          */
@@ -529,6 +533,7 @@ struct modbus_iface_param {
     union {
         /** Serial support parameter of the interface */
         struct modbus_serial_param serial;
+
         /** Pointer to raw ADU callback function */
         struct modbus_raw_cb rawcb;
     };

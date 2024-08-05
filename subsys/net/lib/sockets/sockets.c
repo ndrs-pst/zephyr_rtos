@@ -239,9 +239,9 @@ int z_impl_zsock_socket(int family, int type, int proto)
 		SYS_PORT_TRACING_OBJ_INIT(socket, ret < 0 ? -errno : ret,
 					  family, type, proto);
 
-		(void)sock_obj_core_alloc(ret, sock_family, family, type, proto);
+		(void) sock_obj_core_alloc(ret, sock_family, family, type, proto);
 
-		return ret;
+		return (ret);
 	}
 
 	errno = EAFNOSUPPORT;
@@ -693,7 +693,7 @@ int z_impl_zsock_listen(int sock, int backlog) {
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, listen, sock,
 				       ret < 0 ? -errno : ret);
-	return ret;
+	return (ret);
 	#endif
 }
 

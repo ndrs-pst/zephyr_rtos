@@ -122,7 +122,7 @@ struct modbus_context {
     uint32_t rxwait_to;
 
     /* Pointer to user server callbacks */
-    struct modbus_user_callbacks* mbs_user_cb;
+    struct modbus_user_callbacks const* mbs_user_cb;
 
     /* Interface state */
     atomic_t state;
