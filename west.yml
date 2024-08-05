@@ -340,13 +340,19 @@ manifest:
       revision: 84ef879a46d7bfd9a423fbfb502b04289861f9ea
       path: modules/lib/uoscore-uedhoc
     - name: zcbor
-      revision: 2d2edb19d0112400b6579ef0503f9a974f745b2e
+      revision: 766722907450178b758bfd8501637b3e3ce30140
       path: modules/lib/zcbor
     - name: golioth
       path: modules/lib/golioth
       revision: 89515756cf7fe0a8b44fb23ca4e372cefdf487f8
       url: https://github.com/DDC-NDRS/golioth-zephyr-sdk.git
       import: west-external.yml
+    - name: thingset
+      path: modules/lib/thingset
+      revision: 2cd8dda5a38038a1a75667d9369f8e976f908ebf
+    - name: thingset-node-c
+      path: modules/lib/thingset-node-c
+      revision: ecd807b7ab26f3b0fd818b2118b2258736851a22
 
   self:
     path: zephyr_rtos
