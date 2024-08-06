@@ -541,8 +541,8 @@ static void set_baud_rate(const struct device *dev, uint32_t baud_rate, uint32_t
 		/* set the DLAB to access the baud rate divisor registers */
 		lcr_cache = ns16550_inbyte(dev_cfg, LCR(dev));
 		ns16550_outbyte(dev_cfg, LCR(dev), LCR_DLAB | lcr_cache);
-		ns16550_outbyte(dev_cfg, BRDL(dev), (unsigned char)(divisor & 0xff));
-		ns16550_outbyte(dev_cfg, BRDH(dev), (unsigned char)((divisor >> 8) & 0xff));
+		ns16550_outbyte(dev_cfg, BRDL(dev), (uint8_t)(divisor & 0xff));
+		ns16550_outbyte(dev_cfg, BRDH(dev), (uint8_t)((divisor >> 8) & 0xff));
 
 		/* restore the DLAB to access the baud rate divisor registers */
 		ns16550_outbyte(dev_cfg, LCR(dev), lcr_cache);
@@ -556,7 +556,6 @@ static int uart_ns16550_configure(const struct device *dev,
 {
 	struct uart_ns16550_dev_data * const dev_data = dev->data;
 	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
-	uint8_t mdc = 0U;
 	uint32_t pclk = 0U;
 
 	/* temp for return value if error occurs in this locked region */
@@ -668,7 +667,7 @@ static int uart_ns16550_configure(const struct device *dev,
 	ns16550_outbyte(dev_cfg, LCR(dev),
 			uart_cfg.data_bits | uart_cfg.stop_bits | uart_cfg.parity);
 
-	mdc = MCR_OUT2 | MCR_RTS | MCR_DTR;
+	uint8_t mdc = MCR_OUT2 | MCR_RTS | MCR_DTR;
 #if defined(CONFIG_UART_NS16550_VARIANT_NS16750) || \
 	defined(CONFIG_UART_NS16550_VARIANT_NS16950)
 	if (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS) {
