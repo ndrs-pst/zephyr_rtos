@@ -84,6 +84,14 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define UART_NS16550_IOPORT_ENABLED \
 	(DT_INST_FOREACH_STATUS_OKAY_VARGS(UART_NS16550_DT_PROP_IOMAPPED_HELPER, io_mapped, 0) 0)
 
+#if (UART_NS16550_IOPORT_ENABLED == 0)
+/* Just provide function prototype to avoid compilation warning */
+void sys_out32(uint32_t data, io_port_t port);
+void sys_out8(uint8_t data, io_port_t port);
+uint32_t sys_in32(io_port_t port);
+uint8_t sys_in8(io_port_t port);
+#endif
+
 /* register definitions */
 
 #define REG_THR 0x00  /* Transmitter holding reg.       */
@@ -345,9 +353,9 @@ struct uart_ns16550_device_config {
 #if defined(CONFIG_PINCTRL)
 	const struct pinctrl_dev_config *pincfg;
 #endif
-#if UART_NS16550_IOPORT_ENABLED
-	bool io_map;
-#endif
+
+	bool io_map;                            /* UART_NS16550_IOPORT_ENABLED */
+
 #if UART_NS16550_RESET_ENABLED
 	struct reset_dt_spec reset_spec;
 #endif
@@ -383,17 +391,13 @@ struct uart_ns16550_dev_data {
 static void ns16550_outbyte(const struct uart_ns16550_device_config *cfg,
 			    uintptr_t port, uint8_t val)
 {
-#if UART_NS16550_IOPORT_ENABLED
-	if (cfg->io_map) {
+	if (UART_NS16550_IOPORT_ENABLED && cfg->io_map) {
 		if (IS_ENABLED(CONFIG_UART_NS16550_ACCESS_WORD_ONLY)) {
 			sys_out32(val, port);
 		} else {
 			sys_out8(val, port);
 		}
 	} else {
-#else
-	{
-#endif
 		/* MMIO mapped */
 		if (IS_ENABLED(CONFIG_UART_NS16550_ACCESS_WORD_ONLY)) {
 			sys_write32(val, port);
@@ -406,17 +410,13 @@ static void ns16550_outbyte(const struct uart_ns16550_device_config *cfg,
 static uint8_t ns16550_inbyte(const struct uart_ns16550_device_config *cfg,
 			      uintptr_t port)
 {
-#if UART_NS16550_IOPORT_ENABLED
-	if (cfg->io_map) {
+	if (UART_NS16550_IOPORT_ENABLED && cfg->io_map) {
 		if (IS_ENABLED(CONFIG_UART_NS16550_ACCESS_WORD_ONLY)) {
 			return sys_in32(port);
 		} else {
 			return sys_in8(port);
 		}
 	} else {
-#else
-	{
-#endif
 		/* MMIO mapped */
 		if (IS_ENABLED(CONFIG_UART_NS16550_ACCESS_WORD_ONLY)) {
 			return sys_read32(port);
@@ -431,13 +431,9 @@ __maybe_unused
 static void ns16550_outword(const struct uart_ns16550_device_config *cfg,
 			    uintptr_t port, uint32_t val)
 {
-#if UART_NS16550_IOPORT_ENABLED
-	if (cfg->io_map) {
+	if (UART_NS16550_IOPORT_ENABLED && cfg->io_map) {
 		sys_out32(val, port);
 	} else {
-#else
-	{
-#endif
 		/* MMIO mapped */
 		sys_write32(val, port);
 	}
@@ -447,11 +443,10 @@ __maybe_unused
 static uint32_t ns16550_inword(const struct uart_ns16550_device_config *cfg,
 			      uintptr_t port)
 {
-#if UART_NS16550_IOPORT_ENABLED
-	if (cfg->io_map) {
+	if (UART_NS16550_IOPORT_ENABLED && cfg->io_map) {
 		return sys_in32(port);
 	}
-#endif
+
 	/* MMIO mapped */
 	return sys_read32(port);
 }
@@ -466,15 +461,11 @@ static inline uint8_t reg_interval(const struct device *dev)
 static inline uintptr_t get_port(const struct device *dev)
 {
 	uintptr_t port;
-#if UART_NS16550_IOPORT_ENABLED
 	const struct uart_ns16550_device_config *config = dev->config;
 
-	if (config->io_map) {
+	if (UART_NS16550_IOPORT_ENABLED && config->io_map) {
 		port = config->port;
 	} else {
-#else
-	{
-#endif
 		port = DEVICE_MMIO_GET(dev);
 	}
 
@@ -816,12 +807,8 @@ static int uart_ns16550_init(const struct device *dev)
 	} else
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie) */
 	{
-#if UART_NS16550_IOPORT_ENABLED
 		/* Map directly from DTS */
-		if (!dev_cfg->io_map) {
-#else
-		{
-#endif
+		if (UART_NS16550_IOPORT_ENABLED && !dev_cfg->io_map) {
 			DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 		}
 	}
@@ -839,10 +826,7 @@ static int uart_ns16550_init(const struct device *dev)
 		data->async.tx_dma_params.dma_cfg.head_block =
 			&data->async.tx_dma_params.active_dma_block;
 #if defined(CONFIG_UART_NS16550_INTEL_LPSS_DMA)
-#if UART_NS16550_IOPORT_ENABLED
-		if (!dev_cfg->io_map)
-#endif
-		{
+		if (UART_NS16550_IOPORT_ENABLED && !dev_cfg->io_map) {
 			uintptr_t base;
 
 			base = DEVICE_MMIO_GET(dev) + DMA_INTEL_LPSS_OFFSET;
