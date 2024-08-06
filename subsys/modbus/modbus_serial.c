@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(modbus_serial, CONFIG_MODBUS_LOG_LEVEL);
 #include <zephyr/sys/crc.h>
 #include "modbus_internal.h"
 
-static void modbus_serial_tx_on(struct modbus_context* ctx) {
+static void modbus_serial_tx_on(struct modbus_context const* ctx) {
     struct modbus_serial_config const* cfg = ctx->cfg;
 
     if (cfg->de != NULL) {
@@ -39,8 +39,8 @@ static void modbus_serial_tx_on(struct modbus_context* ctx) {
     uart_irq_tx_enable(cfg->dev);
 }
 
-static void modbus_serial_tx_off(struct modbus_context* ctx) {
-    struct modbus_serial_config* cfg = ctx->cfg;
+static void modbus_serial_tx_off(struct modbus_context const* ctx) {
+    struct modbus_serial_config const* cfg = ctx->cfg;
 
     uart_irq_tx_disable(cfg->dev);
     if (cfg->de != NULL) {
@@ -48,8 +48,8 @@ static void modbus_serial_tx_off(struct modbus_context* ctx) {
     }
 }
 
-static void modbus_serial_rx_on(struct modbus_context* ctx) {
-    struct modbus_serial_config* cfg = ctx->cfg;
+static void modbus_serial_rx_on(struct modbus_context const* ctx) {
+    struct modbus_serial_config const* cfg = ctx->cfg;
 
     if (cfg->re != NULL) {
         gpio_pin_set(cfg->re->port, cfg->re->pin, 1);
@@ -58,8 +58,8 @@ static void modbus_serial_rx_on(struct modbus_context* ctx) {
     uart_irq_rx_enable(cfg->dev);
 }
 
-static void modbus_serial_rx_off(struct modbus_context* ctx) {
-    struct modbus_serial_config* cfg = ctx->cfg;
+static void modbus_serial_rx_off(struct modbus_context const* ctx) {
+    struct modbus_serial_config const* cfg = ctx->cfg;
 
     uart_irq_rx_disable(cfg->dev);
     if (cfg->re != NULL) {
@@ -67,12 +67,12 @@ static void modbus_serial_rx_off(struct modbus_context* ctx) {
     }
 }
 
-#ifdef CONFIG_MODBUS_ASCII_MODE
+#if defined(CONFIG_MODBUS_ASCII_MODE)
 /* The function calculates an 8-bit Longitudinal Redundancy Check. */
-static uint8_t modbus_ascii_get_lrc(uint8_t* src, size_t length) {
-    uint8_t  lrc = 0;
-    uint8_t  tmp;
-    uint8_t* pblock = src;
+static uint8_t modbus_ascii_get_lrc(uint8_t const* src, size_t length) {
+    uint8_t lrc = 0;
+    uint8_t tmp;
+    uint8_t const* pblock = src;
 
     while (length-- > 0) {
         /* Add the data byte to LRC, increment data pointer. */
@@ -92,8 +92,8 @@ static uint8_t modbus_ascii_get_lrc(uint8_t* src, size_t length) {
 
 /* Parses and converts an ASCII mode frame into a Modbus RTU frame. */
 static int modbus_ascii_rx_adu(struct modbus_context* ctx) {
-    struct modbus_serial_config* cfg = ctx->cfg;
-    uint8_t* pmsg;
+    struct modbus_serial_config const* cfg = ctx->cfg;
+    uint8_t const* pmsg;
     uint8_t* prx_data;
     uint16_t rx_size;
     uint8_t  frame_lrc;
@@ -121,6 +121,7 @@ static int modbus_ascii_rx_adu(struct modbus_context* ctx) {
 
     /* Take away for the ':', CR, and LF */
     rx_size -= 3;
+
     /* Point past the ':' to the address. */
     pmsg = &cfg->uart_buf[1];
 
@@ -221,18 +222,18 @@ static void modbus_ascii_tx_adu(struct modbus_context* ctx) {
     modbus_serial_tx_on(ctx);
 }
 #else
-static int modbus_ascii_rx_adu(struct modbus_context* ctx) {
+static int modbus_ascii_rx_adu(struct modbus_context const* ctx) {
     return (0);
 }
 
-static void modbus_ascii_tx_adu(struct modbus_context* ctx) {
+static void modbus_ascii_tx_adu(struct modbus_context const* ctx) {
     /* pass */
 }
 #endif
 
 /* Copy Modbus RTU frame and check if the CRC is valid. */
 static int modbus_rtu_rx_adu(struct modbus_context* ctx) {
-    struct modbus_serial_config* cfg = ctx->cfg;
+    struct modbus_serial_config const* cfg = ctx->cfg;
     uint16_t calc_crc;
     uint16_t crc_idx;
 
@@ -365,6 +366,8 @@ static void uart_cb_handler(const struct device* dev, void* app_data) {
     struct modbus_context* ctx = (struct modbus_context*)app_data;
     struct modbus_serial_config const* cfg;
 
+    ARG_UNUSED(dev);
+
     if (ctx == NULL) {
         LOG_ERR("Modbus hardware is not properly initialized");
         return;
@@ -385,10 +388,10 @@ static void uart_cb_handler(const struct device* dev, void* app_data) {
 }
 
 /* This function is called when the RTU framing timer expires. */
-static void rtu_tmr_handler(struct k_timer* t_id) {
+static void rtu_tmr_handler(struct k_timer* timer) {
     struct modbus_context* ctx;
 
-    ctx = (struct modbus_context*)k_timer_user_data_get(t_id);
+    ctx = (struct modbus_context*)k_timer_user_data_get(timer);
 
     if (ctx == NULL) {
         LOG_ERR("Failed to get Modbus context");
@@ -398,7 +401,7 @@ static void rtu_tmr_handler(struct k_timer* t_id) {
     k_work_submit(&ctx->server_work);
 }
 
-static int configure_gpio(struct modbus_context* ctx) {
+static int configure_gpio(struct modbus_context const* ctx) {
     struct modbus_serial_config const* cfg = ctx->cfg;
 
     if (cfg->de != NULL) {
@@ -424,9 +427,9 @@ static int configure_gpio(struct modbus_context* ctx) {
     return (0);
 }
 
-static inline int configure_uart(struct modbus_context* ctx,
-                                 struct modbus_iface_param* param) {
-    struct modbus_serial_config* cfg = ctx->cfg;
+static inline int configure_uart(struct modbus_context const* ctx,
+                                 struct modbus_iface_param const* param) {
+    struct modbus_serial_config const* cfg = ctx->cfg;
     struct uart_config uart_cfg = {
         .baudrate  = param->serial.baud,
         .flow_ctrl = UART_CFG_FLOW_CTRL_NONE,
@@ -442,13 +445,13 @@ static inline int configure_uart(struct modbus_context* ctx,
     switch (param->serial.parity) {
         case UART_CFG_PARITY_ODD :
         case UART_CFG_PARITY_EVEN :
-            uart_cfg.parity    = param->serial.parity;
+            uart_cfg.parity    = (uint8_t)param->serial.parity;
             uart_cfg.stop_bits = UART_CFG_STOP_BITS_1;
             break;
 
         case UART_CFG_PARITY_NONE:
             /* Use of no parity requires 2 stop bits */
-            uart_cfg.parity    = param->serial.parity;
+            uart_cfg.parity    = (uint8_t)param->serial.parity;
             uart_cfg.stop_bits = UART_CFG_STOP_BITS_2;
             break;
 
@@ -463,7 +466,7 @@ static inline int configure_uart(struct modbus_context* ctx,
             case UART_CFG_STOP_BITS_1 :
             case UART_CFG_STOP_BITS_1_5 :
             case UART_CFG_STOP_BITS_2 :
-                uart_cfg.stop_bits = param->serial.stop_bits_client;
+                uart_cfg.stop_bits = (uint8_t)param->serial.stop_bits_client;
                 break;
 
             default :
@@ -479,11 +482,11 @@ static inline int configure_uart(struct modbus_context* ctx,
     return (0);
 }
 
-void modbus_serial_rx_disable(struct modbus_context* ctx) {
+void modbus_serial_rx_disable(struct modbus_context const* ctx) {
     modbus_serial_rx_off(ctx);
 }
 
-void modbus_serial_rx_enable(struct modbus_context* ctx) {
+void modbus_serial_rx_enable(struct modbus_context const* ctx) {
     modbus_serial_rx_on(ctx);
 }
 

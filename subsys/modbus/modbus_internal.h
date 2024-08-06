@@ -168,7 +168,7 @@ struct modbus_context {
  * @retval           Pointer to interface context or NULL
  *                   if interface not available or not configured;
  */
-struct modbus_context* modbus_get_context(const uint8_t iface);
+struct modbus_context* modbus_get_context(uint8_t const iface);
 
 /**
  * @brief Get Modbus interface index.
@@ -177,7 +177,7 @@ struct modbus_context* modbus_get_context(const uint8_t iface);
  *
  * @retval           Interface index or negative error value.
  */
-int modbus_iface_get_by_ctx(const struct modbus_context* ctx);
+int modbus_iface_get_by_ctx(struct modbus_context const* ctx);
 
 /**
  * @brief Send ADU.
@@ -221,14 +221,14 @@ void modbus_reset_stats(struct modbus_context* ctx);
  *
  * @param ctx        Modbus interface context
  */
-void modbus_serial_rx_disable(struct modbus_context* ctx);
+void modbus_serial_rx_disable(struct modbus_context const* ctx);
 
 /**
  * @brief Enable serial line reception.
  *
  * @param ctx        Modbus interface context
  */
-void modbus_serial_rx_enable(struct modbus_context* ctx);
+void modbus_serial_rx_enable(struct modbus_context const* ctx);
 
 /**
  * @brief Assemble ADU from serial line RX buffer

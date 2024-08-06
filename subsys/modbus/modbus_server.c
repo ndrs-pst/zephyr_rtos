@@ -33,11 +33,11 @@ LOG_MODULE_REGISTER(modbus_s, CONFIG_MODBUS_LOG_LEVEL);
 #ifdef CONFIG_MODBUS_FC08_DIAGNOSTIC
 void modbus_reset_stats(struct modbus_context* ctx) {
     /* Initialize all MODBUS event counters. */
-    ctx->mbs_msg_ctr        = 0;
-    ctx->mbs_crc_err_ctr    = 0;
-    ctx->mbs_except_ctr     = 0;
-    ctx->mbs_server_msg_ctr = 0;
-    ctx->mbs_noresp_ctr     = 0;
+    ctx->mbs_msg_ctr        = 0U;
+    ctx->mbs_crc_err_ctr    = 0U;
+    ctx->mbs_except_ctr     = 0U;
+    ctx->mbs_server_msg_ctr = 0U;
+    ctx->mbs_noresp_ctr     = 0U;
 }
 
 static void update_msg_ctr(struct modbus_context* ctx) {
@@ -73,7 +73,7 @@ static void update_noresp_ctr(struct modbus_context* ctx) {
  * Then the routine is called to calculate the error check value.
  */
 static void mbs_exception_rsp(struct modbus_context* ctx, uint8_t excep_code) {
-    const uint8_t excep_bit = BIT(7);
+    uint8_t const excep_bit = BIT(7);
 
     LOG_INF("FC 0x%02x Error 0x%02x", ctx->rx_adu.fc, excep_code);
 
@@ -81,7 +81,7 @@ static void mbs_exception_rsp(struct modbus_context* ctx, uint8_t excep_code) {
 
     ctx->tx_adu.fc     |= excep_bit;
     ctx->tx_adu.data[0] = excep_code;
-    ctx->tx_adu.length  = 1;
+    ctx->tx_adu.length  = 1U;
 }
 
 /*
@@ -95,11 +95,11 @@ static void mbs_exception_rsp(struct modbus_context* ctx, uint8_t excep_code) {
  * Response Payload:
  *  Function code         1 Byte
  *  Byte count            1 Bytes
- *  Coil status           N * 1 Byte
+ *  Coil status           N x 1 Byte
  */
 static bool mbs_fc01_coil_read(struct modbus_context* ctx) {
-    const uint16_t coils_limit = 2000;
-    const uint8_t  request_len = 4;
+    uint16_t const coils_limit = 2000U;
+    uint8_t const request_len  = 4U;
     uint8_t* presp;
     bool coil_state;
     int  err;
@@ -123,16 +123,16 @@ static bool mbs_fc01_coil_read(struct modbus_context* ctx) {
     coil_qty  = sys_get_be16(&ctx->rx_adu.data[2]);
 
     /* Make sure we don't exceed the allowed limit per request */
-    if (coil_qty == 0 || coil_qty > coils_limit) {
+    if ((coil_qty == 0U) || (coil_qty > coils_limit)) {
         LOG_ERR("Number of coils limit exceeded");
         mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
         return (true);
     }
 
     /* Calculate byte count for response. */
-    num_bytes = ((coil_qty - 1) / 8) + 1;
+    num_bytes = ((coil_qty - 1U) / 8U) + 1U;
     /* Number of data bytes + byte count. */
-    ctx->tx_adu.length = num_bytes + 1;
+    ctx->tx_adu.length = (num_bytes + 1U);
     /* Set number of data bytes in response message. */
     ctx->tx_adu.data[0] = (uint8_t)num_bytes;
 
@@ -145,7 +145,7 @@ static bool mbs_fc01_coil_read(struct modbus_context* ctx) {
     /* Start with bit 0 in response byte data mask. */
     bit_mask = BIT(0);
     /* Initialize loop counter. */
-    coil_cntr = 0;
+    coil_cntr = 0U;
 
     /* Loop through each coil requested. */
     while (coil_cntr < coil_qty) {
@@ -164,7 +164,7 @@ static bool mbs_fc01_coil_read(struct modbus_context* ctx) {
         /* Increment coil counter. */
         coil_cntr++;
         /* Determine if 8 data bits have been filled. */
-        if ((coil_cntr % 8) == 0) {
+        if ((coil_cntr % 8U) == 0U) {
             /* Reset the data mask. */
             bit_mask = BIT(0);
             /* Increment frame data index. */
@@ -193,18 +193,18 @@ static bool mbs_fc01_coil_read(struct modbus_context* ctx) {
  * Response Payload:
  *  Function code         1 Byte
  *  Byte count            1 Bytes
- *  Input status           N * 1 Byte
+ *  Input status          N x 1 Byte
  */
 static bool mbs_fc02_di_read(struct modbus_context* ctx) {
-    const uint16_t di_limit = 2000;
-    const uint8_t request_len = 4;
+    uint16_t const di_limit   = 2000U;
+    uint8_t const request_len = 4U;
     uint8_t* presp;
     bool di_state;
-    int err;
+    int  err;
     uint16_t di_addr;
     uint16_t di_qty;
     uint16_t num_bytes;
-    uint8_t bit_mask;
+    uint8_t  bit_mask;
     uint16_t di_cntr;
 
     if (ctx->rx_adu.length != request_len) {
@@ -221,14 +221,14 @@ static bool mbs_fc02_di_read(struct modbus_context* ctx) {
     di_qty  = sys_get_be16(&ctx->rx_adu.data[2]);
 
     /* Make sure we don't exceed the allowed limit per request */
-    if (di_qty == 0 || di_qty > di_limit) {
+    if ((di_qty == 0U) || (di_qty > di_limit)) {
         LOG_ERR("Number of inputs limit exceeded");
         mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
         return (true);
     }
 
     /* Get number of bytes needed for response. */
-    num_bytes = ((di_qty - 1) / 8) + 1;
+    num_bytes = ((di_qty - 1U) / 8U) + 1U;
     /* Number of data bytes + byte count. */
     ctx->tx_adu.length = num_bytes + 1;
     /* Set number of data bytes in response message. */
@@ -236,8 +236,8 @@ static bool mbs_fc02_di_read(struct modbus_context* ctx) {
 
     /* Clear bytes in response */
     presp = &ctx->tx_adu.data[1];
-    for (di_cntr = 0; di_cntr < num_bytes; di_cntr++) {
-        *presp++ = 0x00;
+    for (di_cntr = 0U; di_cntr < num_bytes; di_cntr++) {
+        *presp++ = 0x00U;
     }
 
     /* Reset the pointer to the start of the response payload */
@@ -245,7 +245,7 @@ static bool mbs_fc02_di_read(struct modbus_context* ctx) {
     /* Start with bit 0 in response byte data mask. */
     bit_mask = BIT(0);
     /* Initialize loop counter. */
-    di_cntr = 0;
+    di_cntr = 0U;
 
     /* Loop through each DI requested. */
     while (di_cntr < di_qty) {
@@ -264,7 +264,7 @@ static bool mbs_fc02_di_read(struct modbus_context* ctx) {
         /* Increment DI counter. */
         di_cntr++;
         /* Determine if 8 data bits have been filled. */
-        if ((di_cntr % 8) == 0) {
+        if ((di_cntr % 8U) == 0U) {
             /* Reset the data mask. */
             bit_mask = BIT(0);
             /* Increment data frame index. */
@@ -293,13 +293,13 @@ static bool mbs_fc02_di_read(struct modbus_context* ctx) {
  * Response Payload:
  *  Function code         1 Byte
  *  Byte count            1 Bytes
- *  Register Value        N * 2 Byte
+ *  Register Value        N x 2 Byte
  */
 static bool mbs_fc03_hreg_read(struct modbus_context* ctx) {
-    const uint16_t regs_limit = 125;
-    const uint8_t request_len = 4;
+    uint16_t const regs_limit = 125U;
+    uint8_t const request_len = 4U;
     uint8_t* presp;
-    uint16_t err;
+    int err;
     uint16_t reg_addr;
     uint16_t reg_qty;
     uint16_t num_bytes;
@@ -336,7 +336,7 @@ static bool mbs_fc03_hreg_read(struct modbus_context* ctx) {
             return (true);
         }
 
-        if (reg_qty == 0 || reg_qty > (regs_limit / 2)) {
+        if ((reg_qty == 0U) || (reg_qty > (regs_limit / 2U))) {
             LOG_ERR("Number of registers limit exceeded");
             mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
             return (true);
@@ -347,30 +347,30 @@ static bool mbs_fc03_hreg_read(struct modbus_context* ctx) {
     }
 
     /* Number of data bytes + byte count. */
-    ctx->tx_adu.length = num_bytes + 1;
+    ctx->tx_adu.length = (num_bytes + 1U);
     /* Set number of data bytes in response message. */
     ctx->tx_adu.data[0] = (uint8_t)num_bytes;
 
     /* Reset the pointer to the start of the response payload */
     presp = &ctx->tx_adu.data[1];
     /* Loop through each register requested. */
-    while (reg_qty > 0) {
+    while (reg_qty > 0U) {
         if (reg_addr < MODBUS_FP_EXTENSIONS_ADDR) {
             uint16_t reg;
 
             /* Read integer register */
-            err = (uint16_t)ctx->mbs_user_cb->holding_reg_rd(reg_addr, &reg);
+            err = ctx->mbs_user_cb->holding_reg_rd(reg_addr, &reg);
             if (err == 0) {
                 sys_put_be16(reg, presp);
                 presp += sizeof(uint16_t);
             }
         }
         else if (IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
-            float    fp;
+            float fp;
             uint32_t reg;
 
             /* Read floating-point register */
-            err = (uint16_t)ctx->mbs_user_cb->holding_reg_rd_fp(reg_addr, &fp);
+            err = ctx->mbs_user_cb->holding_reg_rd_fp(reg_addr, &fp);
             if (err == 0) {
                 memcpy(&reg, &fp, sizeof(reg));
                 sys_put_be32(reg, presp);
@@ -403,11 +403,11 @@ static bool mbs_fc03_hreg_read(struct modbus_context* ctx) {
  * Response Payload:
  *  Function code         1 Byte
  *  Byte count            1 Bytes
- *  Register Value        N * 2 Byte
+ *  Register Value        N x 2 Byte
  */
 static bool mbs_fc04_inreg_read(struct modbus_context* ctx) {
-    const uint16_t regs_limit = 125;
-    const uint8_t request_len = 4;
+    uint16_t const regs_limit = 125U;
+    uint8_t const request_len = 4U;
     uint8_t* presp;
     int err;
     uint16_t reg_addr;
@@ -446,7 +446,7 @@ static bool mbs_fc04_inreg_read(struct modbus_context* ctx) {
             return (true);
         }
 
-        if (reg_qty == 0 || reg_qty > (regs_limit / 2)) {
+        if ((reg_qty == 0U) || (reg_qty > (regs_limit / 2U))) {
             LOG_ERR("Number of registers limit exceeded");
             mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
             return (true);
@@ -457,14 +457,14 @@ static bool mbs_fc04_inreg_read(struct modbus_context* ctx) {
     }
 
     /* Number of data bytes + byte count. */
-    ctx->tx_adu.length = num_bytes + 1;
+    ctx->tx_adu.length = (num_bytes + 1U);
     /* Set number of data bytes in response message. */
     ctx->tx_adu.data[0] = (uint8_t)num_bytes;
 
     /* Reset the pointer to the start of the response payload */
     presp = &ctx->tx_adu.data[1];
     /* Loop through each register requested. */
-    while (reg_qty > 0) {
+    while (reg_qty > 0U) {
         if (reg_addr < MODBUS_FP_EXTENSIONS_ADDR) {
             uint16_t reg;
 
@@ -476,7 +476,7 @@ static bool mbs_fc04_inreg_read(struct modbus_context* ctx) {
             }
         }
         else if (IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
-            float    fp;
+            float fp;
             uint32_t reg;
 
             /* Read floating-point register */
@@ -516,8 +516,8 @@ static bool mbs_fc04_inreg_read(struct modbus_context* ctx) {
  *  Output Value          2 Bytes
  */
 static bool mbs_fc05_coil_write(struct modbus_context* ctx) {
-    const uint8_t request_len = 4;
-    const uint8_t response_len = 4;
+    uint8_t const request_len  = 4U;
+    uint8_t const response_len = 4U;
     int err;
     uint16_t coil_addr;
     uint16_t coil_val;
@@ -574,8 +574,8 @@ static bool mbs_fc05_coil_write(struct modbus_context* ctx) {
  *  Register Value        2 Bytes
  */
 static bool mbs_fc06_hreg_write(struct modbus_context* ctx) {
-    const uint8_t request_len  = 4;
-    const uint8_t response_len = 4;
+    uint8_t const request_len  = 4U;
+    uint8_t const response_len = 4U;
     int err;
     uint16_t reg_addr;
     uint16_t reg_val;
@@ -614,17 +614,17 @@ static bool mbs_fc06_hreg_write(struct modbus_context* ctx) {
  * Request Payload:
  *  Function code         1 Byte
  *  Sub-function code     2 Bytes
- *  Data                  N * 2 Byte
+ *  Data                  N x 2 Byte
  *
  * Response Payload:
  *  Function code         1 Byte
  *  Sub-function code     2 Bytes
- *  Data                  N * 2 Byte
+ *  Data                  N x 2 Byte
  */
 #ifdef CONFIG_MODBUS_FC08_DIAGNOSTIC
 static bool mbs_fc08_diagnostics(struct modbus_context* ctx) {
-    const uint8_t request_len  = 4;
-    const uint8_t response_len = 4;
+    uint8_t const request_len  = 4U;
+    uint8_t const response_len = 4U;
     uint16_t sfunc;
     uint16_t data;
 
@@ -708,10 +708,10 @@ static bool mbs_fc08_diagnostics(struct modbus_context* ctx) {
  *  Quantity of Outputs   2 Bytes
  */
 static bool mbs_fc15_coils_write(struct modbus_context* ctx) {
-    const uint16_t coils_limit = 2000;
-    const uint8_t request_len = 6;
-    const uint8_t response_len = 4;
-    uint8_t temp = 0;
+    uint16_t const coils_limit = 2000U;
+    uint8_t const request_len  = 6U;
+    uint8_t const response_len = 4U;
+    uint8_t temp = 0U;
     int err;
     uint16_t coil_addr;
     uint16_t coil_qty;
@@ -735,27 +735,27 @@ static bool mbs_fc15_coils_write(struct modbus_context* ctx) {
     /* Get the byte count for the data. */
     num_bytes = ctx->rx_adu.data[4];
 
-    if ((coil_qty == 0) || (coil_qty > coils_limit)) {
+    if ((coil_qty == 0U) || (coil_qty > coils_limit)) {
         LOG_ERR("Number of coils limit exceeded");
         mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
         return (true);
     }
 
     /* Be sure byte count is valid for quantity of coils. */
-    if (((((coil_qty - 1) / 8) + 1) != num_bytes) ||
+    if (((((coil_qty - 1U) / 8U) + 1U) != num_bytes) ||
         (ctx->rx_adu.length != (num_bytes + 5))) {
         LOG_ERR("Mismatch in the number of coils");
         mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
         return (true);
     }
 
-    coil_cntr = 0;
+    coil_cntr = 0U;
     /* The 1st coil data byte is 6th element in payload */
-    data_ix = 5;
+    data_ix = 5U;
     /* Loop through each coil to be forced. */
     while (coil_cntr < coil_qty) {
         /* Move to the next data byte after every eight bits. */
-        if ((coil_cntr % 8) == 0) {
+        if ((coil_cntr % 8U) == 0U) {
             temp = ctx->rx_adu.data[data_ix++];
         }
 
@@ -810,9 +810,9 @@ static bool mbs_fc15_coils_write(struct modbus_context* ctx) {
  * requested is considered as a 32-bit IEEE-754 floating-point format.
  */
 static bool mbs_fc16_hregs_write(struct modbus_context* ctx) {
-    const uint16_t regs_limit  = 125;
-    const uint8_t request_len  = 6;
-    const uint8_t response_len = 4;
+    uint16_t const regs_limit  = 125U;
+    uint8_t const request_len  = 6U;
+    uint8_t const response_len = 4U;
     uint8_t const* prx_data;
     int err;
     uint16_t reg_addr;
@@ -853,7 +853,7 @@ static bool mbs_fc16_hregs_write(struct modbus_context* ctx) {
             return (true);
         }
 
-        if (reg_qty == 0 || reg_qty > (regs_limit / 2)) {
+        if ((reg_qty == 0U) || (reg_qty > (regs_limit / 2U))) {
             LOG_ERR("Number of registers limit exceeded");
             mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
             return (true);
@@ -863,7 +863,7 @@ static bool mbs_fc16_hregs_write(struct modbus_context* ctx) {
     }
 
     /* Compare number of bytes and payload length */
-    if ((ctx->rx_adu.length - 5) != num_bytes) {
+    if ((ctx->rx_adu.length - 5U) != num_bytes) {
         LOG_ERR("Mismatch in the number of bytes");
         mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
         return (true);
@@ -878,7 +878,7 @@ static bool mbs_fc16_hregs_write(struct modbus_context* ctx) {
     /* The 1st registers data byte is 6th element in payload */
     prx_data = &ctx->rx_adu.data[5];
 
-    for (uint16_t reg_cntr = 0; reg_cntr < reg_qty; reg_cntr++) {
+    for (uint16_t reg_cntr = 0U; reg_cntr < reg_qty; reg_cntr++) {
         uint16_t addr = (reg_addr + reg_cntr);
 
         if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) ||
@@ -962,7 +962,7 @@ bool modbus_server_handler(struct modbus_context* ctx) {
         return (false);
     }
 
-    if (addr != 0 && addr != ctx->unit_id) {
+    if ((addr != 0) && (addr != ctx->unit_id)) {
         LOG_DBG("Unit ID doesn't match %u != %u", addr, ctx->unit_id);
         update_noresp_ctr(ctx);
         return (false);
@@ -1018,7 +1018,7 @@ bool modbus_server_handler(struct modbus_context* ctx) {
             break;
     }
 
-    if (addr == 0) {
+    if (addr == 0U) {
         /* Broadcast address, do not reply */
         send_reply = false;
     }

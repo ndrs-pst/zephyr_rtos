@@ -78,7 +78,7 @@ void modbus_raw_put_header(const struct modbus_adu* adu, uint8_t* header) {
 
     sys_put_be16(adu->trans_id, &header[0]);
     sys_put_be16(adu->proto_id, &header[2]);
-    sys_put_be16(length + MODBUS_ADU_LENGTH_DEVIATION, &header[4]);
+    sys_put_be16((length + MODBUS_ADU_LENGTH_DEVIATION), &header[4]);
     header[6] = adu->unit_id;
     header[7] = adu->fc;
 }
@@ -97,26 +97,26 @@ void modbus_raw_get_header(struct modbus_adu* adu, uint8_t const* header) {
 
 static void modbus_set_exception(struct modbus_adu* adu,
                                  const uint8_t excep_code) {
-    const uint8_t excep_bit = BIT(7);
+    uint8_t const excep_bit = BIT(7);
 
-    adu->fc |= excep_bit;
+    adu->fc     |= excep_bit;
     adu->data[0] = excep_code;
-    adu->length  = 1;
+    adu->length  = 1U;
 }
 
 void modbus_raw_set_server_failure(struct modbus_adu* adu) {
-    const uint8_t excep_bit = BIT(7);
+    uint8_t const excep_bit = BIT(7);
 
-    adu->fc |= excep_bit;
+    adu->fc     |= excep_bit;
     adu->data[0] = MODBUS_EXC_SERVER_DEVICE_FAILURE;
-    adu->length  = 1;
+    adu->length  = 1U;
 }
 
 int modbus_raw_backend_txn(int const iface, struct modbus_adu* adu) {
     struct modbus_context* ctx;
     int err;
 
-    ctx = modbus_get_context(iface);
+    ctx = modbus_get_context((uint8_t const)iface);
     if (ctx == NULL) {
         LOG_ERR("Interface %d not available", iface);
         modbus_set_exception(adu, MODBUS_EXC_GW_PATH_UNAVAILABLE);
@@ -128,7 +128,7 @@ int modbus_raw_backend_txn(int const iface, struct modbus_adu* adu) {
      * since no other medium is directly supported.
      */
     if ((ctx->client == false) ||
-        (ctx->mode != MODBUS_MODE_RTU && ctx->mode != MODBUS_MODE_ASCII)) {
+        ((ctx->mode != MODBUS_MODE_RTU) && (ctx->mode != MODBUS_MODE_ASCII))) {
         LOG_ERR("Interface %d has wrong configuration", iface);
         modbus_set_exception(adu, MODBUS_EXC_GW_PATH_UNAVAILABLE);
         return (-ENOTSUP);

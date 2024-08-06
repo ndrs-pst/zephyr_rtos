@@ -115,10 +115,10 @@ struct modbus_adu {
  * @retval           0 If the function was successful
  */
 int modbus_read_coils(int const iface,
-                      const uint8_t unit_id,
-                      const uint16_t start_addr,
+                      uint8_t const unit_id,
+                      uint16_t const start_addr,
                       uint8_t* const coil_tbl,
-                      const uint16_t num_coils);
+                      uint16_t const num_coils);
 
 /**
  * @brief Read discrete inputs (FC02)
@@ -149,10 +149,10 @@ int modbus_read_coils(int const iface,
  * @retval           0 If the function was successful
  */
 int modbus_read_dinputs(int const iface,
-                        const uint8_t unit_id,
-                        const uint16_t start_addr,
+                        uint8_t const unit_id,
+                        uint16_t const start_addr,
                         uint8_t* const di_tbl,
-                        const uint16_t num_di);
+                        uint16_t const num_di);
 
 /**
  * @brief Read holding registers (FC03)
@@ -172,10 +172,10 @@ int modbus_read_dinputs(int const iface,
  * @retval           0 If the function was successful
  */
 int modbus_read_holding_regs(int const iface,
-                             const uint8_t unit_id,
-                             const uint16_t start_addr,
+                             uint8_t const unit_id,
+                             uint16_t const start_addr,
                              uint16_t* const reg_buf,
-                             const uint16_t num_regs);
+                             uint16_t const num_regs);
 
 /**
  * @brief Read input registers (FC04)
@@ -195,10 +195,10 @@ int modbus_read_holding_regs(int const iface,
  * @retval           0 If the function was successful
  */
 int modbus_read_input_regs(int const iface,
-                           const uint8_t unit_id,
-                           const uint16_t start_addr,
+                           uint8_t const unit_id,
+                           uint16_t const start_addr,
                            uint16_t* const reg_buf,
-                           const uint16_t num_regs);
+                           uint16_t const num_regs);
 
 /**
  * @brief Write single coil (FC05)
@@ -213,8 +213,8 @@ int modbus_read_input_regs(int const iface,
  * @retval           0 If the function was successful
  */
 int modbus_write_coil(int const iface,
-                      const uint8_t unit_id,
-                      const uint16_t coil_addr,
+                      uint8_t const unit_id,
+                      uint16_t const coil_addr,
                       bool const coil_state);
 
 /**
@@ -231,9 +231,9 @@ int modbus_write_coil(int const iface,
  * @retval           0 If the function was successful
  */
 int modbus_write_holding_reg(int const iface,
-                             const uint8_t unit_id,
-                             const uint16_t start_addr,
-                             const uint16_t reg_val);
+                             uint8_t const unit_id,
+                             uint16_t const start_addr,
+                             uint16_t const reg_val);
 
 /**
  * @brief Read diagnostic (FC08)
@@ -249,9 +249,9 @@ int modbus_write_holding_reg(int const iface,
  * @retval           0 If the function was successful
  */
 int modbus_request_diagnostic(int const iface,
-                              const uint8_t unit_id,
-                              const uint16_t sfunc,
-                              const uint16_t data,
+                              uint8_t const unit_id,
+                              uint16_t const sfunc,
+                              uint16_t const data,
                               uint16_t* const data_out);
 
 /**
@@ -282,10 +282,10 @@ int modbus_request_diagnostic(int const iface,
  * @retval           0 If the function was successful
  */
 int modbus_write_coils(int const iface,
-                       const uint8_t unit_id,
-                       const uint16_t start_addr,
-                       uint8_t* const coil_tbl,
-                       const uint16_t num_coils);
+                       uint8_t const unit_id,
+                       uint16_t const start_addr,
+                       uint8_t const* const coil_tbl,
+                       uint16_t const num_coils);
 
 /**
  * @brief Write holding registers (FC16)
@@ -305,10 +305,10 @@ int modbus_write_coils(int const iface,
  * @retval           0 If the function was successful
  */
 int modbus_write_holding_regs(int const iface,
-                              const uint8_t unit_id,
-                              const uint16_t start_addr,
-                              uint16_t* const reg_buf,
-                              const uint16_t num_regs);
+                              uint8_t const unit_id,
+                              uint16_t const start_addr,
+                              uint16_t const* const reg_buf,
+                              uint16_t const num_regs);
 
 /**
  * @brief Read floating-point holding registers (FC03)
@@ -328,10 +328,10 @@ int modbus_write_holding_regs(int const iface,
  * @retval           0 If the function was successful
  */
 int modbus_read_holding_regs_fp(int const iface,
-                                const uint8_t unit_id,
-                                const uint16_t start_addr,
+                                uint8_t const unit_id,
+                                uint16_t const start_addr,
                                 float* const reg_buf,
-                                const uint16_t num_regs);
+                                uint16_t const num_regs);
 
 /**
  * @brief Write floating-point holding registers (FC16)
@@ -351,10 +351,10 @@ int modbus_read_holding_regs_fp(int const iface,
  * @retval           0 If the function was successful
  */
 int modbus_write_holding_regs_fp(int const iface,
-                                 const uint8_t unit_id,
-                                 const uint16_t start_addr,
+                                 uint8_t const unit_id,
+                                 uint16_t const start_addr,
                                  float const* const reg_buf,
-                                 const uint16_t num_regs);
+                                 uint16_t const num_regs);
 
 /** Modbus Server User Callback structure */
 struct modbus_user_callbacks {
@@ -432,7 +432,7 @@ typedef int (*modbus_raw_cb_t)(int const iface, const struct modbus_adu* adu,
  * @retval           true If response should be sent, false otherwise
  */
 typedef bool (*modbus_custom_cb_t)(int const iface,
-                                   const struct modbus_adu* const rx_adu,
+                                   struct modbus_adu const* const rx_adu,
                                    struct modbus_adu* const tx_adu,
                                    uint8_t* const excep_code,
                                    void* const user_data);

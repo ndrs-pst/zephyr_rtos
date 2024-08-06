@@ -169,7 +169,7 @@ struct modbus_context* modbus_get_context(uint8_t const iface) {
     return (ctx);
 }
 
-int modbus_iface_get_by_ctx(const struct modbus_context* ctx) {
+int modbus_iface_get_by_ctx(struct modbus_context const* ctx) {
     for (int i = 0; i < ARRAY_SIZE(mb_ctx_tbl); i++) {
         if (&mb_ctx_tbl[i] == ctx) {
             return (i);
@@ -212,6 +212,8 @@ static struct modbus_context* modbus_init_iface(uint8_t const iface) {
 }
 
 static int modbus_user_fc_init(struct modbus_context* ctx, struct modbus_iface_param param) {
+    ARG_UNUSED(param);
+
     sys_slist_init(&ctx->user_defined_cbs);
     LOG_DBG("Initializing user-defined function code support.");
 
@@ -234,7 +236,7 @@ int modbus_init_server(int const iface, struct modbus_iface_param param) {
         goto init_server_error;
     }
 
-    ctx = modbus_init_iface(iface);
+    ctx = modbus_init_iface((uint8_t const)iface);
     if (ctx == NULL) {
         rc = -EINVAL;
         goto init_server_error;
@@ -293,7 +295,7 @@ init_server_error :
 }
 
 int modbus_register_user_fc(int const iface, struct modbus_custom_fc* custom_fc) {
-    struct modbus_context* ctx = modbus_get_context(iface);
+    struct modbus_context* ctx = modbus_get_context((uint8_t const)iface);
 
     if (!custom_fc) {
         LOG_ERR("Provided function code handler was NULL");
@@ -398,8 +400,8 @@ int modbus_disable(const uint8_t iface) {
     }
 
     k_work_cancel_sync(&ctx->server_work, &work_sync);
-    ctx->rxwait_to   = 0;
-    ctx->unit_id     = 0;
+    ctx->rxwait_to   = 0U;
+    ctx->unit_id     = 0U;
     ctx->mbs_user_cb = NULL;
     atomic_clear_bit(&ctx->state, MODBUS_STATE_CONFIGURED);
 
