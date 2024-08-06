@@ -53,9 +53,9 @@ bool thread_is_sliceable(struct k_thread *thread)
 
 static void slice_timeout(struct _timeout const *timeout)
 {
-	int cpu;
+	intptr_t cpu;
 
-	cpu = (int)ARRAY_INDEX_WITH_TYPE(slice_timeouts, struct _timeout, timeout);
+	cpu = (intptr_t)ARRAY_INDEX_WITH_TYPE(slice_timeouts, struct _timeout, timeout);
 	slice_expired[cpu] = true;
 
 	/* We need an IPI if we just handled a timeslice expiration
