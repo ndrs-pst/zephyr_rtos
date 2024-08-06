@@ -84,6 +84,14 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define UART_NS16550_IOPORT_ENABLED \
 	(DT_INST_FOREACH_STATUS_OKAY_VARGS(UART_NS16550_DT_PROP_IOMAPPED_HELPER, io_mapped, 0) 0)
 
+#if (UART_NS16550_IOPORT_ENABLED == 0)
+/* Just provide function prototype to avoid compilation warning */
+void sys_out32(uint32_t data, io_port_t port);
+void sys_out8(uint8_t data, io_port_t port);
+uint32_t sys_in32(io_port_t port);
+uint8_t sys_in8(io_port_t port);
+#endif
+
 /* register definitions */
 
 #define REG_THR 0x00  /* Transmitter holding reg.       */
@@ -267,7 +275,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 
 #define IIRC(dev) (((struct uart_ns16550_dev_data *)(dev)->data)->iir_cache)
 
-#ifdef CONFIG_UART_NS16550_ITE_HIGH_SPEED_BUADRATE
+#ifdef CONFIG_UART_NS16550_ITE_HIGH_SPEED_BAUDRATE
 /* Register definitions (ITE_IT8XXX2) */
 #define REG_ECSPMR 0x08 /* EC Serial port mode reg */
 
@@ -345,9 +353,9 @@ struct uart_ns16550_device_config {
 #if defined(CONFIG_PINCTRL)
 	const struct pinctrl_dev_config *pincfg;
 #endif
-#if UART_NS16550_IOPORT_ENABLED
-	bool io_map;
-#endif
+
+	bool io_map;                            /* UART_NS16550_IOPORT_ENABLED */
+
 #if UART_NS16550_RESET_ENABLED
 	struct reset_dt_spec reset_spec;
 #endif
@@ -383,17 +391,13 @@ struct uart_ns16550_dev_data {
 static void ns16550_outbyte(const struct uart_ns16550_device_config *cfg,
 			    uintptr_t port, uint8_t val)
 {
-#if UART_NS16550_IOPORT_ENABLED
-	if (cfg->io_map) {
+	if (UART_NS16550_IOPORT_ENABLED && cfg->io_map) {
 		if (IS_ENABLED(CONFIG_UART_NS16550_ACCESS_WORD_ONLY)) {
 			sys_out32(val, port);
 		} else {
 			sys_out8(val, port);
 		}
 	} else {
-#else
-	{
-#endif
 		/* MMIO mapped */
 		if (IS_ENABLED(CONFIG_UART_NS16550_ACCESS_WORD_ONLY)) {
 			sys_write32(val, port);
@@ -406,17 +410,13 @@ static void ns16550_outbyte(const struct uart_ns16550_device_config *cfg,
 static uint8_t ns16550_inbyte(const struct uart_ns16550_device_config *cfg,
 			      uintptr_t port)
 {
-#if UART_NS16550_IOPORT_ENABLED
-	if (cfg->io_map) {
+	if (UART_NS16550_IOPORT_ENABLED && cfg->io_map) {
 		if (IS_ENABLED(CONFIG_UART_NS16550_ACCESS_WORD_ONLY)) {
 			return sys_in32(port);
 		} else {
 			return sys_in8(port);
 		}
 	} else {
-#else
-	{
-#endif
 		/* MMIO mapped */
 		if (IS_ENABLED(CONFIG_UART_NS16550_ACCESS_WORD_ONLY)) {
 			return sys_read32(port);
@@ -427,35 +427,29 @@ static uint8_t ns16550_inbyte(const struct uart_ns16550_device_config *cfg,
 	return 0;
 }
 
-#if (defined(CONFIG_UART_NS16550_INTEL_LPSS_DMA) & (defined(CONFIG_UART_ASYNC_API)))\
-	| UART_NS16550_PCP_ENABLED
+__maybe_unused
 static void ns16550_outword(const struct uart_ns16550_device_config *cfg,
 			    uintptr_t port, uint32_t val)
 {
-#if UART_NS16550_IOPORT_ENABLED
-	if (cfg->io_map) {
+	if (UART_NS16550_IOPORT_ENABLED && cfg->io_map) {
 		sys_out32(val, port);
 	} else {
-#else
-	{
-#endif
 		/* MMIO mapped */
 		sys_write32(val, port);
 	}
 }
 
+__maybe_unused
 static uint32_t ns16550_inword(const struct uart_ns16550_device_config *cfg,
 			      uintptr_t port)
 {
-#if UART_NS16550_IOPORT_ENABLED
-	if (cfg->io_map) {
+	if (UART_NS16550_IOPORT_ENABLED && cfg->io_map) {
 		return sys_in32(port);
 	}
-#endif
+
 	/* MMIO mapped */
 	return sys_read32(port);
 }
-#endif
 
 static inline uint8_t reg_interval(const struct device *dev)
 {
@@ -467,22 +461,18 @@ static inline uint8_t reg_interval(const struct device *dev)
 static inline uintptr_t get_port(const struct device *dev)
 {
 	uintptr_t port;
-#if UART_NS16550_IOPORT_ENABLED
 	const struct uart_ns16550_device_config *config = dev->config;
 
-	if (config->io_map) {
+	if (UART_NS16550_IOPORT_ENABLED && config->io_map) {
 		port = config->port;
 	} else {
-#else
-	{
-#endif
 		port = DEVICE_MMIO_GET(dev);
 	}
 
 	return port;
 }
 
-static uint32_t get_uart_burdrate_divisor(const struct device *dev,
+static uint32_t get_uart_baudrate_divisor(const struct device *dev,
 					  uint32_t baud_rate,
 					  uint32_t pclk)
 {
@@ -494,8 +484,8 @@ static uint32_t get_uart_burdrate_divisor(const struct device *dev,
 	return ((pclk + (baud_rate << 3)) / baud_rate) >> 4;
 }
 
-#ifdef CONFIG_UART_NS16550_ITE_HIGH_SPEED_BUADRATE
-static uint32_t get_ite_uart_burdrate_divisor(const struct device *dev,
+#ifdef CONFIG_UART_NS16550_ITE_HIGH_SPEED_BAUDRATE
+static uint32_t get_ite_uart_baudrate_divisor(const struct device *dev,
 					      uint32_t baud_rate,
 					      uint32_t pclk)
 {
@@ -517,7 +507,7 @@ static uint32_t get_ite_uart_burdrate_divisor(const struct device *dev,
 		 */
 		ns16550_outbyte(dev_cfg, ECSPMR(dev), ECSPMR_ECHS);
 	} else {
-		divisor = get_uart_burdrate_divisor(dev, baud_rate, pclk);
+		divisor = get_uart_baudrate_divisor(dev, baud_rate, pclk);
 		/* Set ECSPMR register as default */
 		ns16550_outbyte(dev_cfg, ECSPMR(dev), 0);
 	}
@@ -534,16 +524,16 @@ static void set_baud_rate(const struct device *dev, uint32_t baud_rate, uint32_t
 	uint8_t lcr_cache;
 
 	if ((baud_rate != 0U) && (pclk != 0U)) {
-#ifdef CONFIG_UART_NS16550_ITE_HIGH_SPEED_BUADRATE
-		divisor = get_ite_uart_burdrate_divisor(dev, baud_rate, pclk);
+#ifdef CONFIG_UART_NS16550_ITE_HIGH_SPEED_BAUDRATE
+		divisor = get_ite_uart_baudrate_divisor(dev, baud_rate, pclk);
 #else
-		divisor = get_uart_burdrate_divisor(dev, baud_rate, pclk);
+		divisor = get_uart_baudrate_divisor(dev, baud_rate, pclk);
 #endif
 		/* set the DLAB to access the baud rate divisor registers */
 		lcr_cache = ns16550_inbyte(dev_cfg, LCR(dev));
 		ns16550_outbyte(dev_cfg, LCR(dev), LCR_DLAB | lcr_cache);
-		ns16550_outbyte(dev_cfg, BRDL(dev), (unsigned char)(divisor & 0xff));
-		ns16550_outbyte(dev_cfg, BRDH(dev), (unsigned char)((divisor >> 8) & 0xff));
+		ns16550_outbyte(dev_cfg, BRDL(dev), (uint8_t)(divisor & 0xff));
+		ns16550_outbyte(dev_cfg, BRDH(dev), (uint8_t)((divisor >> 8) & 0xff));
 
 		/* restore the DLAB to access the baud rate divisor registers */
 		ns16550_outbyte(dev_cfg, LCR(dev), lcr_cache);
@@ -557,7 +547,6 @@ static int uart_ns16550_configure(const struct device *dev,
 {
 	struct uart_ns16550_dev_data * const dev_data = dev->data;
 	const struct uart_ns16550_device_config * const dev_cfg = dev->config;
-	uint8_t mdc = 0U;
 	uint32_t pclk = 0U;
 
 	/* temp for return value if error occurs in this locked region */
@@ -669,7 +658,7 @@ static int uart_ns16550_configure(const struct device *dev,
 	ns16550_outbyte(dev_cfg, LCR(dev),
 			uart_cfg.data_bits | uart_cfg.stop_bits | uart_cfg.parity);
 
-	mdc = MCR_OUT2 | MCR_RTS | MCR_DTR;
+	uint8_t mdc = MCR_OUT2 | MCR_RTS | MCR_DTR;
 #if defined(CONFIG_UART_NS16550_VARIANT_NS16750) || \
 	defined(CONFIG_UART_NS16550_VARIANT_NS16950)
 	if (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS) {
@@ -818,12 +807,8 @@ static int uart_ns16550_init(const struct device *dev)
 	} else
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie) */
 	{
-#if UART_NS16550_IOPORT_ENABLED
 		/* Map directly from DTS */
-		if (!dev_cfg->io_map) {
-#else
-		{
-#endif
+		if (UART_NS16550_IOPORT_ENABLED && !dev_cfg->io_map) {
 			DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 		}
 	}
@@ -841,10 +826,7 @@ static int uart_ns16550_init(const struct device *dev)
 		data->async.tx_dma_params.dma_cfg.head_block =
 			&data->async.tx_dma_params.active_dma_block;
 #if defined(CONFIG_UART_NS16550_INTEL_LPSS_DMA)
-#if UART_NS16550_IOPORT_ENABLED
-		if (!dev_cfg->io_map)
-#endif
-		{
+		if (UART_NS16550_IOPORT_ENABLED && !dev_cfg->io_map) {
 			uintptr_t base;
 
 			base = DEVICE_MMIO_GET(dev) + DMA_INTEL_LPSS_OFFSET;

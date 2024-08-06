@@ -1,0 +1,25 @@
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# Copyright (c) 2023 NDR Solution (Thailand) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for Infineon (CY15BxxxQ) FRAM
+
+include: fram-base.yaml
+
+properties:
+  size:
+    required: true
+  address-width:
+    type: int
+    required: true
+    description: FRAM address width in bits
+  timeout:
+    type: int
+    required: true
+    description: FRAM write cycle timeout in milliseconds
+  wp-gpios:
+    type: phandle-array
+    description: |
+      GPIO to which the write-protect pin of the chip is connected.
+
+      The device will interpret this signal as active-low.
