@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/device.h>
 #include <soc.h>
 #include "esp_private/wifi.h"
+#include "esp_dpp.h"
 #include "esp_event.h"
 #include "esp_timer.h"
 #include "esp_system.h"
@@ -899,6 +900,65 @@ int esp32_wifi_ap_config_params(const struct device* dev, struct wifi_ap_config_
     return (0);
 }
 
+#define ESP32_WIFI_DPP_CMD_BUF_SIZE 384
+#define STR_CUR_TO_END(cur) (cur) = (&(cur)[0] + strlen((cur)))
+
+int esp32_wifi_dpp_dispatch(const struct device* dev, struct wifi_dpp_params* params) {
+    char* pos;
+    static char dpp_cmd_buf[ESP32_WIFI_DPP_CMD_BUF_SIZE] = {0};
+    char* end = &dpp_cmd_buf[ESP32_WIFI_DPP_CMD_BUF_SIZE - 2];
+
+    memset(dpp_cmd_buf, 0x0, ESP32_WIFI_DPP_CMD_BUF_SIZE);
+
+    pos = &dpp_cmd_buf[0];
+
+    switch (params->action) {
+        case WIFI_DPP_CONFIGURATOR_ADD :
+            /* pass */
+            break;
+
+        case WIFI_DPP_AUTH_INIT :
+            /* pass */
+            // esp_supp_dpp_init
+            break;
+
+        case WIFI_DPP_QR_CODE :
+            /* pass */
+            break;
+
+        case WIFI_DPP_CHIRP :
+            /* pass */
+            break;
+
+        case WIFI_DPP_LISTEN :
+            /* pass */
+            // esp_supp_dpp_start_listen
+            break;
+
+        case WIFI_DPP_BOOTSTRAP_GEN :
+            /* pass */
+            // esp_supp_dpp_bootstrap_gen
+            break;
+
+        case WIFI_DPP_BOOTSTRAP_GET_URI :
+            /* pass */
+            break;
+
+        case WIFI_DPP_SET_CONF_PARAM :
+            /* pass */
+            break;
+
+        case WIFI_DPP_SET_WAIT_RESP_TIME :
+            /* pass */
+            break;
+
+        default :
+            return (-1);
+    }
+
+    return (0);
+}
+
 static void esp32_wifi_init(struct net_if* iface) {
     const struct device* dev = net_if_get_device(iface);
     struct esp32_wifi_runtime* dev_data = dev->data;
@@ -980,7 +1040,9 @@ static const struct wifi_mgmt_ops esp32_wifi_mgmt = {
     .mode       = esp32_wifi_mode,
     .channel    = esp32_wifi_channel,
 
-    .ap_config_params = esp32_wifi_ap_config_params
+    .ap_config_params = esp32_wifi_ap_config_params,
+
+    .dpp_dispatch = esp32_wifi_dpp_dispatch
 };
 
 static const struct net_wifi_mgmt_offload esp32_api = {
