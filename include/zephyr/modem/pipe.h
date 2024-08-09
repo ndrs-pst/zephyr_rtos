@@ -23,10 +23,10 @@ extern "C" {
 
 /** Modem pipe event */
 enum modem_pipe_event {
-	MODEM_PIPE_EVENT_OPENED = 0,
-	MODEM_PIPE_EVENT_RECEIVE_READY,
-	MODEM_PIPE_EVENT_TRANSMIT_IDLE,
-	MODEM_PIPE_EVENT_CLOSED,
+    MODEM_PIPE_EVENT_OPENED = 0,
+    MODEM_PIPE_EVENT_RECEIVE_READY,
+    MODEM_PIPE_EVENT_TRANSMIT_IDLE,
+    MODEM_PIPE_EVENT_CLOSED
 };
 
 /**
@@ -39,35 +39,35 @@ struct modem_pipe;
  * @endcond
  */
 
-typedef void (*modem_pipe_api_callback)(struct modem_pipe *pipe, enum modem_pipe_event event,
-					void *user_data);
+typedef void (*modem_pipe_api_callback)(struct modem_pipe const* pipe, enum modem_pipe_event event,
+                                        void* user_data);
 
 /**
  * @cond INTERNAL_HIDDEN
  */
 
-typedef int (*modem_pipe_api_open)(void *data);
+typedef int (*modem_pipe_api_open)(void* data);
 
-typedef int (*modem_pipe_api_transmit)(void *data, const uint8_t *buf, size_t size);
+typedef int (*modem_pipe_api_transmit)(void* data, uint8_t const* buf, size_t size);
 
-typedef int (*modem_pipe_api_receive)(void *data, uint8_t *buf, size_t size);
+typedef int (*modem_pipe_api_receive)(void* data, uint8_t* buf, size_t size);
 
-typedef int (*modem_pipe_api_close)(void *data);
+typedef int (*modem_pipe_api_close)(void* data);
 
 struct modem_pipe_api {
-	modem_pipe_api_open open;
-	modem_pipe_api_transmit transmit;
-	modem_pipe_api_receive receive;
-	modem_pipe_api_close close;
+    modem_pipe_api_open     open;
+    modem_pipe_api_transmit transmit;
+    modem_pipe_api_receive  receive;
+    modem_pipe_api_close    close;
 };
 
 struct modem_pipe {
-	void *data;
-	const struct modem_pipe_api *api;
-	modem_pipe_api_callback callback;
-	void *user_data;
-	struct k_spinlock spinlock;
-	struct k_event event;
+    void* data;
+    struct modem_pipe_api const* api;
+    modem_pipe_api_callback callback;
+    void* user_data;
+    struct k_spinlock spinlock;
+    struct k_event event;
 };
 
 /**
@@ -77,7 +77,7 @@ struct modem_pipe {
  * @param data Pipe data to bind to pipe instance
  * @param api Pipe API implementation to bind to pipe instance
  */
-void modem_pipe_init(struct modem_pipe *pipe, void *data, const struct modem_pipe_api *api);
+void modem_pipe_init(struct modem_pipe* pipe, void* data, struct modem_pipe_api const* api);
 
 /**
  * @endcond
@@ -96,7 +96,7 @@ void modem_pipe_init(struct modem_pipe *pipe, void *data, const struct modem_pip
  * It may block the calling thread, which in the case of the system workqueue
  * can result in a deadlock until this call times out waiting for the pipe to be open.
  */
-int modem_pipe_open(struct modem_pipe *pipe, k_timeout_t timeout);
+int modem_pipe_open(struct modem_pipe* pipe, k_timeout_t timeout);
 
 /**
  * @brief Open pipe asynchronously
@@ -109,7 +109,7 @@ int modem_pipe_open(struct modem_pipe *pipe, k_timeout_t timeout);
  * @retval 0 if pipe open was called successfully or pipe was already open
  * @retval -errno code otherwise
  */
-int modem_pipe_open_async(struct modem_pipe *pipe);
+int modem_pipe_open_async(struct modem_pipe* pipe);
 
 /**
  * @brief Attach pipe to callback
@@ -121,7 +121,7 @@ int modem_pipe_open_async(struct modem_pipe *pipe);
  * @note The MODEM_PIPE_EVENT_RECEIVE_READY event is invoked immediately if pipe has pending
  * data ready to receive.
  */
-void modem_pipe_attach(struct modem_pipe *pipe, modem_pipe_api_callback callback, void *user_data);
+void modem_pipe_attach(struct modem_pipe* pipe, modem_pipe_api_callback callback, void* user_data);
 
 /**
  * @brief Transmit data through pipe
@@ -136,7 +136,7 @@ void modem_pipe_attach(struct modem_pipe *pipe, modem_pipe_api_callback callback
  *
  * @warning This call must be non-blocking
  */
-int modem_pipe_transmit(struct modem_pipe *pipe, const uint8_t *buf, size_t size);
+int modem_pipe_transmit(struct modem_pipe* pipe, uint8_t const* buf, size_t size);
 
 /**
  * @brief Receive data through pipe
@@ -151,14 +151,14 @@ int modem_pipe_transmit(struct modem_pipe *pipe, const uint8_t *buf, size_t size
  *
  * @warning This call must be non-blocking
  */
-int modem_pipe_receive(struct modem_pipe *pipe, uint8_t *buf, size_t size);
+int modem_pipe_receive(struct modem_pipe* pipe, uint8_t* buf, size_t size);
 
 /**
  * @brief Clear callback
  *
  * @param pipe Pipe instance
  */
-void modem_pipe_release(struct modem_pipe *pipe);
+void modem_pipe_release(struct modem_pipe* pipe);
 
 /**
  * @brief Close pipe
@@ -173,7 +173,7 @@ void modem_pipe_release(struct modem_pipe *pipe);
  * It may block the calling thread, which in the case of the system workqueue
  * can result in a deadlock until this call times out waiting for the pipe to be closed.
  */
-int modem_pipe_close(struct modem_pipe *pipe, k_timeout_t timeout);
+int modem_pipe_close(struct modem_pipe* pipe, k_timeout_t timeout);
 
 /**
  * @brief Close pipe asynchronously
@@ -186,7 +186,7 @@ int modem_pipe_close(struct modem_pipe *pipe, k_timeout_t timeout);
  * @retval 0 if pipe close was called successfully or pipe was already closed
  * @retval -errno code otherwise
  */
-int modem_pipe_close_async(struct modem_pipe *pipe);
+int modem_pipe_close_async(struct modem_pipe* pipe);
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -199,7 +199,7 @@ int modem_pipe_close_async(struct modem_pipe *pipe);
  *
  * @note Invoked from instance which initialized the pipe instance
  */
-void modem_pipe_notify_opened(struct modem_pipe *pipe);
+void modem_pipe_notify_opened(struct modem_pipe* pipe);
 
 /**
  * @brief Notify user of pipe that it has closed
@@ -208,7 +208,7 @@ void modem_pipe_notify_opened(struct modem_pipe *pipe);
  *
  * @note Invoked from instance which initialized the pipe instance
  */
-void modem_pipe_notify_closed(struct modem_pipe *pipe);
+void modem_pipe_notify_closed(struct modem_pipe* pipe);
 
 /**
  * @brief Notify user of pipe that data is ready to be received
@@ -217,7 +217,7 @@ void modem_pipe_notify_closed(struct modem_pipe *pipe);
  *
  * @note Invoked from instance which initialized the pipe instance
  */
-void modem_pipe_notify_receive_ready(struct modem_pipe *pipe);
+void modem_pipe_notify_receive_ready(struct modem_pipe* pipe);
 
 /**
  * @brief Notify user of pipe that pipe has no more data to transmit
@@ -226,7 +226,7 @@ void modem_pipe_notify_receive_ready(struct modem_pipe *pipe);
  *
  * @note Invoked from instance which initialized the pipe instance
  */
-void modem_pipe_notify_transmit_idle(struct modem_pipe *pipe);
+void modem_pipe_notify_transmit_idle(struct modem_pipe* pipe);
 
 /**
  * @endcond
