@@ -168,18 +168,18 @@ uint8_t sys_in8(io_port_t port);
  * the FIFO Mode (FCR0 = 1, FCR3 = 0) and there is at least 1
  * character in the RCVR FIFO or RCVR holding register, the
  * RXRDY pin (29) will be low active. Once it is activated the
- * RXRDY pin will go inactive when there are no more charac-
- * ters in the FIFO or holding register.
+ * RXRDY pin will go inactive when there are no more characters
+ * in the FIFO or holding register.
  *
  * RXRDY, Mode 1: In the FIFO Mode (FCR0 = 1) when the
  * FCR3 = 1 and the trigger level or the timeout has been
- * reached, the RXRDY pin will go low active. Once it is acti-
- * vated it will go inactive when there are no more characters
+ * reached, the RXRDY pin will go low active. Once it is activated
+ * it will go inactive when there are no more characters
  * in the FIFO or holding register.
  *
  * TXRDY, Mode 0: In the 16450 Mode (FCR0 = 0) or in the
- * FIFO Mode (FCR0 = 1, FCR3 = 0) and there are no charac-
- * ters in the XMIT FIFO or XMIT holding register, the TXRDY
+ * FIFO Mode (FCR0 = 1, FCR3 = 0) and there are no characters
+ * in the XMIT FIFO or XMIT holding register, the TXRDY
  * pin (24) will be low active. Once it is activated the TXRDY
  * pin will go inactive after the first character is loaded into the
  * XMIT FIFO or holding register.
@@ -340,21 +340,27 @@ struct uart_ns16550_device_config {
 	uint32_t sys_clk_freq;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 	uart_irq_config_func_t	irq_config_func;
 #endif
+
 #if UART_NS16550_PCP_ENABLED
 	uint32_t pcp;
 #endif
+
 	uint8_t reg_interval;
+
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 	struct pcie_dev *pcie;
 #endif
+
 #if defined(CONFIG_PINCTRL)
 	const struct pinctrl_dev_config *pincfg;
 #endif
 
-	bool io_map;                            /* UART_NS16550_IOPORT_ENABLED */
+	/* Use in conjunction with UART_NS16550_IOPORT_ENABLED */
+	bool io_map;
 
 #if UART_NS16550_RESET_ENABLED
 	struct reset_dt_spec reset_spec;
