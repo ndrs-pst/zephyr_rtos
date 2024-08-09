@@ -687,13 +687,7 @@ static int uart_ns16550_configure(const struct device *dev,
 			);
 
 	if ((ns16550_inbyte(dev_cfg, IIR(dev)) & IIR_FE) == IIR_FE) {
-#ifdef CONFIG_UART_NS16550_VARIANT_NS16750
-		dev_data->fifo_size = 64;
-#elif defined(CONFIG_UART_NS16550_VARIANT_NS16950)
-		dev_data->fifo_size = 128;
-#else
-		dev_data->fifo_size = 16;
-#endif
+		dev_data->fifo_size = CONFIG_UART_NS16550_FIFO_SIZE;
 	} else {
 		dev_data->fifo_size = 1;
 	}
