@@ -20,15 +20,15 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_mqtt_sn, CONFIG_MQTT_SN_LOG_LEVEL);
 
-static char *get_ip_str(const struct sockaddr *sa, char *s, size_t maxlen)
+static char *get_ip_str(const struct net_sockaddr *sa, char *s, size_t maxlen)
 {
 	switch (sa->sa_family) {
-	case AF_INET:
-		inet_ntop(AF_INET, &(((struct sockaddr_in *)sa)->sin_addr), s, maxlen);
+	case NET_AF_INET:
+		inet_ntop(AF_INET, &(((struct net_sockaddr_in *)sa)->sin_addr), s, maxlen);
 		break;
 
-	case AF_INET6:
-		inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)sa)->sin6_addr), s, maxlen);
+	case NET_AF_INET6:
+		inet_ntop(AF_INET6, &(((struct net_sockaddr_in6 *)sa)->sin6_addr), s, maxlen);
 		break;
 
 	default:
@@ -44,7 +44,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 	struct mqtt_sn_transport_udp *udp = UDP_TRANSPORT(transport);
 	int err;
 
-	udp->sock = zsock_socket(udp->gwaddr.sa_family, SOCK_DGRAM, 0);
+	udp->sock = zsock_socket(udp->gwaddr.sa_family, NET_SOCK_DGRAM, 0);
 	if (udp->sock < 0) {
 		return errno;
 	}
@@ -54,14 +54,14 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 #ifdef LOG_DBG
 	char ip[30], *out;
 
-	out = get_ip_str((struct sockaddr *)&udp->gwaddr, ip, sizeof(ip));
+	out = get_ip_str((struct net_sockaddr *)&udp->gwaddr, ip, sizeof(ip));
 	if (out != NULL) {
 		LOG_DBG("Connecting to IP %s:%u", out,
-			ntohs(((struct sockaddr_in *)&udp->gwaddr)->sin_port));
+			ntohs(((struct net_sockaddr_in *)&udp->gwaddr)->sin_port));
 	}
 #endif
 
-	err = zsock_connect(udp->sock, (struct sockaddr *)&udp->gwaddr, udp->gwaddrlen);
+	err = zsock_connect(udp->sock, (struct net_sockaddr *)&udp->gwaddr, udp->gwaddrlen);
 	if (err < 0) {
 		return errno;
 	}
@@ -131,7 +131,7 @@ static int tp_udp_poll(struct mqtt_sn_client *client)
 	return pollfd.revents & ZSOCK_POLLIN;
 }
 
-int mqtt_sn_transport_udp_init(struct mqtt_sn_transport_udp *udp, struct sockaddr *gwaddr,
+int mqtt_sn_transport_udp_init(struct mqtt_sn_transport_udp *udp, struct net_sockaddr *gwaddr,
 			       socklen_t addrlen)
 {
 	if (!udp || !gwaddr || !addrlen) {

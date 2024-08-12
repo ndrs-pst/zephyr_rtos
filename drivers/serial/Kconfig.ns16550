@@ -60,6 +60,12 @@ config UART_NS16550_VARIANT_NS16950
 	  This enables support for 128-bytes FIFO and automatic hardware flow control.
 endchoice
 
+config UART_NS16550_FIFO_SIZE
+	int
+	default 128 if UART_NS16550_VARIANT_NS16950
+	default 64 if UART_NS16550_VARIANT_NS16750
+	default 16
+
 config UART_NS16550_ACCESS_WORD_ONLY
 	bool "NS16550 only allows word access"
 	help
@@ -74,7 +80,7 @@ config UART_NS16550_TI_K3
 	  Texas Instruments K3 SoCs by enabling a vendor specific extended register
 	  set.
 
-config UART_NS16550_ITE_HIGH_SPEED_BUADRATE
+config UART_NS16550_ITE_HIGH_SPEED_BAUDRATE
 	bool "IT8XXX2 specific baud rate configuration"
 	help
 	  Enable IT8XXX2 specific baud rate configuration.
