@@ -103,7 +103,12 @@ LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
  * DBP bit in the power control peripheral (PWR).
  * Hence, DBP bit must be set in order to enable RTC registers write access.
  */
+#if (IS_ENABLED(CONFIG_BOARD_EMU_B20MC) || IS_ENABLED(CONFIG_BOARD_EMU_B20SM))
+/* #CUSTOM@NDRS, intent to disable write protection !!! */
+#define RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION    (0)
+#else
 #define RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION    (1)
+#endif
 #else
 #define RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION    (0)
 #endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPCR_DBP || PWR_DBPR_DBP */
@@ -507,7 +512,7 @@ static int rtc_stm32_get_time(const struct device* dev, struct rtc_time* timeptr
     }
 
     if (!LL_RTC_IsActiveFlag_INITS(RTC)) {
-        /* INITS flag is set when the calendar has been initialiazed. This flag is
+        /* INITS flag is set when the calendar has been initialized. This flag is
          * reset only on backup domain reset, so it can be read after a system
          * reset to check if the calendar has been initialized.
          */
