@@ -20,14 +20,14 @@ LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 static struct session sessions[SESSION_PROTO_END][SESSION_MAX];
 
 /* Get session from a given packet */
-struct session *get_session(const struct sockaddr *addr,
+struct session *get_session(const struct net_sockaddr *addr,
 			    enum session_proto proto)
 {
 	struct session *active = NULL;
 	struct session *free = NULL;
 	int i = 0;
-	const struct sockaddr_in *addr4 = (const struct sockaddr_in *)addr;
-	const struct sockaddr_in6 *addr6 = (const struct sockaddr_in6 *)addr;
+	const struct net_sockaddr_in *addr4 = (const struct net_sockaddr_in *)addr;
+	const struct net_sockaddr_in6 *addr6 = (const struct net_sockaddr_in6 *)addr;
 
 	if (proto != SESSION_TCP && proto != SESSION_UDP) {
 		NET_ERR("Error! unsupported proto.\n");
@@ -39,8 +39,8 @@ struct session *get_session(const struct sockaddr *addr,
 		struct session *ptr = &sessions[proto][i];
 
 		if (IS_ENABLED(CONFIG_NET_IPV4) &&
-		    addr->sa_family == AF_INET &&
-		    ptr->ip.family == AF_INET &&
+		    addr->sa_family == NET_AF_INET &&
+		    ptr->ip.family == NET_AF_INET &&
 		    ptr->port == addr4->sin_port &&
 		    net_ipv4_addr_cmp(&ptr->ip.in_addr, &addr4->sin_addr)) {
 			/* We found an active session */
@@ -49,8 +49,8 @@ struct session *get_session(const struct sockaddr *addr,
 		}
 
 		if (IS_ENABLED(CONFIG_NET_IPV6) &&
-		    addr->sa_family == AF_INET6 &&
-		    ptr->ip.family == AF_INET6 &&
+		    addr->sa_family == NET_AF_INET6 &&
+		    ptr->ip.family == NET_AF_INET6 &&
 		    ptr->port == addr6->sin6_port &&
 		    net_ipv6_addr_cmp(&ptr->ip.in6_addr, &addr6->sin6_addr)) {
 			/* We found an active session */
@@ -71,14 +71,14 @@ struct session *get_session(const struct sockaddr *addr,
 	if (!active && free) {
 		active = free;
 
-		if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == AF_INET) {
+		if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == NET_AF_INET) {
 			active->port = addr4->sin_port;
-			active->ip.family = AF_INET;
+			active->ip.family = NET_AF_INET;
 			net_ipaddr_copy(&active->ip.in_addr, &addr4->sin_addr);
 		} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
-			   addr->sa_family == AF_INET6) {
+			   addr->sa_family == NET_AF_INET6) {
 			active->port = addr6->sin6_port;
-			active->ip.family = AF_INET6;
+			active->ip.family = NET_AF_INET6;
 			net_ipaddr_copy(&active->ip.in6_addr, &addr6->sin6_addr);
 		}
 	}
