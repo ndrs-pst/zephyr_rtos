@@ -183,7 +183,7 @@ const char *net_icmpv6_type2str(int icmpv6_type);
 int net_icmpv6_send_error(struct net_pkt *pkt, uint8_t type, uint8_t code,
 			  uint32_t param);
 
-#if defined(CONFIG_NET_NATIVE_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6) || defined(_MSC_VER) /* #CUSTOM@NDRS */
 enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 				  struct net_ipv6_hdr *ip_hdr);
 
