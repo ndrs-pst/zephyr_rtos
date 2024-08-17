@@ -9,19 +9,19 @@
 #include <zephyr/net/net_ip.h>
 
 #define PR(fmt, ...)            \
-    shell_print_impl(sh, fmt, ##__VA_ARGS__)
+    shell_fprintf_normal(sh, fmt, ##__VA_ARGS__)
 
 #define PR_SHELL(sh, fmt, ...)  \
-    shell_print_impl(sh, fmt, ##__VA_ARGS__)
+    shell_fprintf_normal(sh, fmt, ##__VA_ARGS__)
 
 #define PR_ERROR(fmt, ...)      \
-    shell_error_impl(sh, fmt, ##__VA_ARGS__)
+    shell_fprintf_error(sh, fmt, ##__VA_ARGS__)
 
 #define PR_INFO(fmt, ...)       \
-    shell_info_impl(sh, fmt, ##__VA_ARGS__)
+    shell_fprintf_info(sh, fmt, ##__VA_ARGS__)
 
 #define PR_WARNING(fmt, ...)    \
-    shell_warn_impl(sh, fmt, ##__VA_ARGS__)
+    shell_fprintf_warn(sh, fmt, ##__VA_ARGS__)
 
 #include "net_private.h"
 #include "../ip/ipv6.h"
