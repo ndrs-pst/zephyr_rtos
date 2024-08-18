@@ -1113,7 +1113,7 @@ static const struct sdhc_driver_api usdhc_api = {
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n,						\
-			&imx_usdhc_init,					\
+			imx_usdhc_init,						\
 			NULL,							\
 			&usdhc_##n##_data,					\
 			&usdhc_##n##_config,					\
