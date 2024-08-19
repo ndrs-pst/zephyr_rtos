@@ -312,18 +312,12 @@ static const struct sdhc_driver_api stm32_sdhc_api = {
 	K_MSGQ_DEFINE(sdhc##n##_queue, sizeof(struct sdmmc_event), SDMMC_EVENT_QUEUE_LENGTH, 1);   \
                                                                                                    \
 	static const struct sdhc_stm32_config sdhc_stm32_##n##_config = {                          \
-		.sdio_hw = (const sdmmc_dev_t *)DT_REG_ADDR(DT_INST_PARENT(n)),                    \
+		.sdmmc = (const sdmmc_dev_t *)DT_REG_ADDR(DT_INST_PARENT(n)),                      \
 		.irq_source = DT_IRQN(DT_INST_PARENT(n)),                                          \
 		.slot = DT_REG_ADDR(DT_DRV_INST(n)),                                               \
 		.bus_width_cfg = DT_INST_PROP(n, bus_width),                                       \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(n)),                                 \
 		.pwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, pwr_gpios, {0}),                           \
-		.clk_pin = DT_INST_PROP_OR(n, clk_pin, GPIO_NUM_NC),                               \
-		.cmd_pin = DT_INST_PROP_OR(n, cmd_pin, GPIO_NUM_NC),                               \
-		.d0_pin = DT_INST_PROP_OR(n, d0_pin, GPIO_NUM_NC),                                 \
-		.d1_pin = DT_INST_PROP_OR(n, d1_pin, GPIO_NUM_NC),                                 \
-		.d2_pin = DT_INST_PROP_OR(n, d2_pin, GPIO_NUM_NC),                                 \
-		.d3_pin = DT_INST_PROP_OR(n, d3_pin, GPIO_NUM_NC),                                 \
 		.props = {.is_spi = false,                                                         \
 			  .f_max = DT_INST_PROP(n, max_bus_freq),                                  \
 			  .f_min = DT_INST_PROP(n, min_bus_freq),                                  \
