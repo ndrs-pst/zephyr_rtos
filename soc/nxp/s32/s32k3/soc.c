@@ -15,20 +15,20 @@
 #ifdef CONFIG_XIP
 /* Image Vector Table structure definition for S32K3XX */
 struct ivt {
-	uint32_t header;
-	uint32_t boot_configure;
-	const uint32_t reserved_1;
-	const uint32_t *cm7_0_start_address;
-	const uint32_t reserved_2;
-	const uint32_t *cm7_1_start_address;
-	const uint32_t reserved_3;
-	const uint32_t *cm7_2_start_address;
-	const uint32_t reserved_4;
-	const uint32_t *lc_configure;
-	uint8_t reserved7[216];
+    uint32_t header;
+    uint32_t boot_configure;
+    const uint32_t  reserved_1;
+    uint32_t const* cm7_0_start_address;
+    const uint32_t  reserved_2;
+    uint32_t const* cm7_1_start_address;
+    const uint32_t  reserved_3;
+    uint32_t const* cm7_2_start_address;
+    const uint32_t  reserved_4;
+    uint32_t const* lc_configure;
+    uint8_t reserved7[216];
 };
 
-#define IVT_MAGIC_MARKER 0x5AA55AA5
+#define IVT_MAGIC_MARKER        0x5AA55AA5
 
 extern char _vector_start[];
 
@@ -40,23 +40,22 @@ extern char _vector_start[];
  * - Application start address of Cortex-M7_0 is application's vector table.
  */
 const struct ivt ivt_header __attribute__((section(".ivt_header"))) = {
-	.header = IVT_MAGIC_MARKER,
-	.boot_configure = 1,
-	.cm7_0_start_address = (const void *)_vector_start,
-	.cm7_1_start_address = NULL,
-	.cm7_2_start_address = NULL,
-	.lc_configure = NULL,
+    .header              = IVT_MAGIC_MARKER,
+    .boot_configure      = 1,
+    .cm7_0_start_address = (void const*)_vector_start,
+    .cm7_1_start_address = NULL,
+    .cm7_2_start_address = NULL,
+    .lc_configure        = NULL,
 };
 #endif /* CONFIG_XIP */
 
-static int soc_init(void)
-{
-	sys_cache_instr_enable();
-	sys_cache_data_enable();
+static int soc_init(void) {
+    sys_cache_instr_enable();
+    sys_cache_data_enable();
 
-	OsIf_Init(NULL);
+    OsIf_Init(NULL);
 
-	return 0;
+    return (0);
 }
 
 SYS_INIT(soc_init, PRE_KERNEL_1, 0);

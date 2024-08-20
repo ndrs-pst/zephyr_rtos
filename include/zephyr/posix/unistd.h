@@ -17,7 +17,9 @@
 #include <zephyr/net/hostname.h>
 #endif
 #include <zephyr/posix/sys/confstr.h>
+#if !defined(_MSC_VER)  /* #CUSTOM@NDRS */
 #include <zephyr/posix/sys/stat.h>
+#endif
 #include <zephyr/posix/sys/sysconf.h>
 
 #include "posix_features.h"
