@@ -276,16 +276,16 @@ bool npf_ip_src_addr_match(struct npf_test *test, struct net_pkt *pkt)
 	uint8_t pkt_family = net_pkt_family(pkt);
 
 	for (uint32_t ip_it = 0; ip_it < test_ip->ipaddr_num; ip_it++) {
-		if (IS_ENABLED(CONFIG_NET_IPV4) && pkt_family == AF_INET) {
-			struct in_addr *addr = (struct in_addr *)NET_IPV4_HDR(pkt)->src;
+		if (IS_ENABLED(CONFIG_NET_IPV4) && pkt_family == NET_AF_INET) {
+			struct net_in_addr *addr = (struct net_in_addr *)NET_IPV4_HDR(pkt)->src;
 
-			if (net_ipv4_addr_cmp(addr, &((struct in_addr *)test_ip->ipaddr)[ip_it])) {
+			if (net_ipv4_addr_cmp(addr, &((struct net_in_addr *)test_ip->ipaddr)[ip_it])) {
 				return true;
 			}
-		} else if (IS_ENABLED(CONFIG_NET_IPV6) && pkt_family == AF_INET6) {
-			struct in6_addr *addr = (struct in6_addr *)NET_IPV6_HDR(pkt)->src;
+		} else if (IS_ENABLED(CONFIG_NET_IPV6) && pkt_family == NET_AF_INET6) {
+			struct net_in6_addr *addr = (struct net_in6_addr *)NET_IPV6_HDR(pkt)->src;
 
-			if (net_ipv6_addr_cmp(addr, &((struct in6_addr *)test_ip->ipaddr)[ip_it])) {
+			if (net_ipv6_addr_cmp(addr, &((struct net_in6_addr *)test_ip->ipaddr)[ip_it])) {
 				return true;
 			}
 		}

@@ -57,9 +57,9 @@ enum stm32_exti_trigger {
  * @brief set EXTI interrupt line triggers
  *
  * @param line EXTI# line
- * @param trg  OR'ed stm32_exti_trigger flags
+ * @param trigger OR'ed stm32_exti_trigger flags
  */
-void stm32_exti_trigger(int line, int trg);
+void stm32_exti_trigger(int line, int trigger);
 
 /* callback for exti interrupt */
 typedef void (*stm32_exti_callback_t) (int line, void *user);
@@ -69,9 +69,9 @@ typedef void (*stm32_exti_callback_t) (int line, void *user);
  *
  * @param line EXI# line
  * @param cb   user callback
- * @param data user data
+ * @param user user data
  */
-int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *data);
+int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *user);
 
 /**
  * @brief unset EXTI interrupt callback
