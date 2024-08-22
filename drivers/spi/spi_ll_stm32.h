@@ -22,6 +22,7 @@ typedef void (*irq_config_func_t)(const struct device* port);
 struct spi_stm32_config {
     SPI_TypeDef* spi;
     const struct pinctrl_dev_config* pcfg;
+    uint32_t tx_nop;                        /* 4-bytes expansion of overrun character (orc) */
     #ifdef CONFIG_SPI_STM32_INTERRUPT
     irq_config_func_t irq_config;
     unsigned int irq;
@@ -65,6 +66,7 @@ struct spi_stm32_data {
     struct spi_context ctx;
     HAL_SPI_StateTypeDef State;
     uint32_t ErrorCode;
+    uint32_t tx_nop;                        /* 4-bytes expansion of overrun character (orc) */
 
     #ifdef CONFIG_SPI_STM32_DMA
     struct k_sem      status_sem;
@@ -72,7 +74,7 @@ struct spi_stm32_data {
     struct stream     dma_rx;
     struct stream     dma_tx;
     #endif /* CONFIG_SPI_STM32_DMA */
-	bool pm_policy_state_on;
+    bool pm_policy_state_on;
 };
 
 #ifdef CONFIG_SPI_STM32_DMA

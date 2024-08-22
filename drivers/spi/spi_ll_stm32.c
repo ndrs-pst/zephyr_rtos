@@ -186,7 +186,7 @@ static int spi_stm32_dma_tx_load(const struct device* dev, uint8_t const* buf,
     /* tx direction has memory as source and periph as dest. */
     if (buf == NULL) {
         /* if tx buff is null, then sends NOP on the line. */
-        dummy_rx_tx_buffer = 0;
+        dummy_rx_tx_buffer = data->tx_nop;
         #if SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED
         arch_dcache_flush_range((void*)&dummy_rx_tx_buffer, sizeof(uint32_t));
         #endif /* SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED */
@@ -319,7 +319,7 @@ static int spi_dma_move_buffers(const struct device* dev, size_t len) {
 static void spi_stm32_send_next_frame(SPI_TypeDef* spi,
                                       struct spi_stm32_data* data) {
     const uint8_t frame_size = SPI_WORD_SIZE_GET(data->ctx.config->operation);
-    uint32_t tx_frame = SPI_STM32_TX_NOP;
+    uint32_t tx_frame = data->tx_nop;
 
     if (frame_size == 8) {
         if (spi_context_tx_buf_on(&data->ctx)) {
@@ -1567,7 +1567,7 @@ static inline bool spi_stm32_is_subghzspi(const struct device* dev) {
 }
 
 static int spi_stm32_init(const struct device* dev) {
-    struct spi_stm32_data* data __attribute__((unused)) = dev->data;
+    struct spi_stm32_data* data = dev->data;
     const struct spi_stm32_config* cfg = dev->config;
     int err;
 
@@ -1601,6 +1601,11 @@ static int spi_stm32_init(const struct device* dev) {
             return (err);
         }
     }
+
+    /* For easier access during operation,
+     * transfer the `tx_nop` setting to runtime data structure.
+     */
+    data->tx_nop = cfg->tx_nop;
 
     #ifdef CONFIG_SPI_STM32_INTERRUPT
     cfg->irq_config(dev);
@@ -1776,6 +1781,8 @@ static int spi_stm32_pm_action(const struct device* dev,
 #define SPI_DMA_STATUS_SEM(id)
 #endif /* CONFIG_SPI_STM32_DMA */
 
+#define SPI_EXPAND_1BYTE_TO_4BYTES(byte)    ((uint32_t)(byte & 0xFF) * 0x01010101U)
+
 #define SPI_SUPPORTS_FIFO(id)   DT_INST_NODE_HAS_PROP(id, fifo_enable)
 #define SPI_GET_FIFO_PROP(id)   DT_INST_PROP(id, fifo_enable)
 #define SPI_FIFO_ENABLED(id)    COND_CODE_1(SPI_SUPPORTS_FIFO(id), (SPI_GET_FIFO_PROP(id)), (0))
@@ -1794,6 +1801,10 @@ static int spi_stm32_pm_action(const struct device* dev,
         .pclk_len = DT_INST_NUM_CLOCKS(id),                     \
         .pcfg     = PINCTRL_DT_INST_DEV_CONFIG_GET(id),         \
         .fifo_enabled = SPI_FIFO_ENABLED(id),                   \
+        .tx_nop   = SPI_EXPAND_1BYTE_TO_4BYTES(                 \
+                        DT_INST_PROP_OR(id,                     \
+                                        overrun_character,      \
+                                        SPI_STM32_TX_NOP)),     \
         STM32_SPI_IRQ_HANDLER_FUNC(id)                          \
         STM32_SPI_IRQ_NUM(id)                                   \
         IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz),  \
