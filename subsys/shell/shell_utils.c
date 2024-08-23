@@ -517,7 +517,7 @@ const struct device *shell_device_lookup(size_t idx,
 
 long shell_strtol(const char* str, int base, int* err) {
     long val;
-    char *endptr = NULL;
+    char* endptr;
 
     errno = 0;
     val = strtol(str, &endptr, base);
@@ -535,7 +535,7 @@ long shell_strtol(const char* str, int base, int* err) {
 
 unsigned long shell_strtoul(char const* str, int base, int* err) {
     unsigned long val;
-    char* endptr = NULL;
+    char* endptr;
 
     if (*str == '-') {
         *err = -EINVAL;
@@ -558,7 +558,7 @@ unsigned long shell_strtoul(char const* str, int base, int* err) {
 
 unsigned long long shell_strtoull(char const* str, int base, int* err) {
     unsigned long long val;
-    char* endptr = NULL;
+    char* endptr;
 
     if (*str == '-') {
         *err = -EINVAL;
