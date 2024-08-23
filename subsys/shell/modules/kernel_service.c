@@ -48,14 +48,15 @@ static int cmd_kernel_version(const struct shell *sh,
 
 static int cmd_kernel_uptime(const struct shell *sh, size_t argc, char **argv)
 {
-	int64_t milliseconds = k_uptime_get();
-	int64_t days;
-	int64_t hours;
-	int64_t minutes;
-	int64_t seconds;
+	int64_t uptime_ms = k_uptime_get();
+	uint32_t days;
+	uint32_t hours;
+	uint32_t minutes;
+	uint32_t seconds;
+	uint32_t milliseconds;
 
 	if (argc == 1) {
-		shell_print(sh, "Uptime: %llu ms", milliseconds);
+		shell_print(sh, "Uptime: %llu ms", uptime_ms);
 		return 0;
 	}
 
@@ -65,17 +66,17 @@ static int cmd_kernel_uptime(const struct shell *sh, size_t argc, char **argv)
 		return -EIO;
 	}
 
-	days = milliseconds / DAYS_FACTOR;
-	milliseconds %= DAYS_FACTOR;
-	hours = milliseconds / HOURS_FACTOR;
-	milliseconds %= HOURS_FACTOR;
-	minutes = milliseconds / MINUTES_FACTOR;
-	milliseconds %= MINUTES_FACTOR;
-	seconds = milliseconds / MSEC_PER_SEC;
-	milliseconds = milliseconds % MSEC_PER_SEC;
+	days = (uint32_t)(uptime_ms / DAYS_FACTOR);
+	uptime_ms %= DAYS_FACTOR;
+	hours = (uint32_t)(uptime_ms / HOURS_FACTOR);
+	uptime_ms %= HOURS_FACTOR;
+	minutes = (uint32_t)(uptime_ms / MINUTES_FACTOR);
+	uptime_ms %= MINUTES_FACTOR;
+	seconds = (uint32_t)(uptime_ms / MSEC_PER_SEC);
+	milliseconds = (uint32_t)(uptime_ms % MSEC_PER_SEC);
 
 	shell_print(sh,
-		    "uptime: %llu days, %llu hours, %llu minutes, %llu seconds, %llu milliseconds",
+		    "uptime: %u days, %u hours, %u minutes, %u seconds, %u milliseconds",
 		    days, hours, minutes, seconds, milliseconds);
 
 	return 0;
