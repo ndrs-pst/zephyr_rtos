@@ -67,7 +67,7 @@ extern "C" {
  */
 #define GPTP_ANNOUNCE_LEN(pkt) \
 	(sizeof(struct gptp_hdr) + sizeof(struct gptp_announce) \
-	 + ntohs(GPTP_ANNOUNCE(pkt)->tlv.len) \
+	 + net_ntohs(GPTP_ANNOUNCE(pkt)->tlv.len) \
 	 - sizeof(struct gptp_path_trace_tlv) + 4)
 
 #define GPTP_CHECK_LEN(pkt, len) \
