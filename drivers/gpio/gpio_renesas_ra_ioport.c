@@ -28,7 +28,8 @@ static int gpio_ra_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 {
 	const struct gpio_ra_config *config = dev->config;
 
-	struct ra_pinctrl_soc_pin pincfg = {0};
+	struct ra_pinctrl_soc_pin pincfg;
+	uint32_t pfs_cfg;
 
 	if (((flags & GPIO_INPUT) != 0U) && ((flags & GPIO_OUTPUT) != 0U)) {
 		return -ENOTSUP;
@@ -38,14 +39,14 @@ static int gpio_ra_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 		return -ENOTSUP;
 	}
 
-	if ((flags & GPIO_INT_ENABLE) != 0) {
+	if ((flags & GPIO_INT_ENABLE) != 0U) {
 		return -ENOTSUP;
 	}
 
 	if (config->vbatt_pins[0] != 0xFF) {
 		uint32_t clear = 0;
 
-		for (int i = 0; config->vbatt_pins[i] != '\0'; i++) {
+		for (int i = 0; config->vbatt_pins[i] != 0; i++) {
 			if (config->vbatt_pins[i] == pin) {
 				WRITE_BIT(clear, i, 1);
 			}
@@ -62,32 +63,26 @@ static int gpio_ra_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 	pincfg.pin_num = pin;
 
 	/* Change mode to general IO mode and disable IRQ and Analog input */
-	WRITE_BIT(pincfg.cfg, R_PFS_PORT_PIN_PmnPFS_PMR_Pos, 0);
-	WRITE_BIT(pincfg.cfg, R_PFS_PORT_PIN_PmnPFS_ASEL_Pos, 0);
-	WRITE_BIT(pincfg.cfg, R_PFS_PORT_PIN_PmnPFS_ISEL_Pos, 0);
+	pfs_cfg = 0;
 
 	if ((flags & GPIO_OUTPUT) != 0U) {
 		/* Set output pin initial value */
-		if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
-			WRITE_BIT(pincfg.cfg, R_PFS_PORT_PIN_PmnPFS_PODR_Pos, 0);
-		} else if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
-			WRITE_BIT(pincfg.cfg, R_PFS_PORT_PIN_PmnPFS_PODR_Pos, 1);
+		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
+			WRITE_BIT(pfs_cfg, R_PFS_PORT_PIN_PmnPFS_PODR_Pos, 1);
 		}
 
-		WRITE_BIT(pincfg.cfg, R_PFS_PORT_PIN_PmnPFS_PDR_Pos, 1);
-	} else {
-		WRITE_BIT(pincfg.cfg, R_PFS_PORT_PIN_PmnPFS_PDR_Pos, 0);
+		WRITE_BIT(pfs_cfg, R_PFS_PORT_PIN_PmnPFS_PDR_Pos, 1);
 	}
 
-	if ((flags & GPIO_LINE_OPEN_DRAIN) != 0) {
-		WRITE_BIT(pincfg.cfg, R_PFS_PORT_PIN_PmnPFS_NCODR_Pos, 1);
+	if ((flags & GPIO_LINE_OPEN_DRAIN) != 0U) {
+		WRITE_BIT(pfs_cfg, R_PFS_PORT_PIN_PmnPFS_NCODR_Pos, 1);
 	}
 
-	if ((flags & GPIO_PULL_UP) != 0) {
-		WRITE_BIT(pincfg.cfg, R_PFS_PORT_PIN_PmnPFS_PCR_Pos, 1);
+	if ((flags & GPIO_PULL_UP) != 0U) {
+		WRITE_BIT(pfs_cfg, R_PFS_PORT_PIN_PmnPFS_PCR_Pos, 1);
 	}
 
-	pincfg.cfg = pincfg.cfg |
+	pincfg.cfg = pfs_cfg |
 		     (((flags & RENESAS_GPIO_DS_MSK) >> 8) << R_PFS_PORT_PIN_PmnPFS_DSCR_Pos);
 
 	return pinctrl_configure_pins(&pincfg, 1, PINCTRL_REG_NONE);
@@ -98,7 +93,7 @@ static int gpio_ra_port_get_raw(const struct device *dev, uint32_t *value)
 	const struct gpio_ra_config *config = dev->config;
 	R_PORT0_Type *port = config->port;
 
-	*value = port->PIDR;
+	*value = (port->PIDR & config->common.port_pin_mask);
 
 	return 0;
 }
@@ -109,7 +104,8 @@ static int gpio_ra_port_set_masked_raw(const struct device *dev, gpio_port_pins_
 	const struct gpio_ra_config *config = dev->config;
 	R_PORT0_Type *port = config->port;
 
-	port->PODR = ((port->PODR & ~mask) | (value & mask));
+	/* POSR: Output set register */
+	port->POSR = (uint16_t)(value & mask & config->common.port_pin_mask);
 
 	return 0;
 }
@@ -119,7 +115,8 @@ static int gpio_ra_port_set_bits_raw(const struct device *dev, gpio_port_pins_t 
 	const struct gpio_ra_config *config = dev->config;
 	R_PORT0_Type *port = config->port;
 
-	port->PODR = (port->PODR | pins);
+	/* POSR: Output set register */
+	port->POSR = (uint16_t)(pins & config->common.port_pin_mask);
 
 	return 0;
 }
@@ -129,7 +126,8 @@ static int gpio_ra_port_clear_bits_raw(const struct device *dev, gpio_port_pins_
 	const struct gpio_ra_config *config = dev->config;
 	R_PORT0_Type *port = config->port;
 
-	port->PODR = (port->PODR & ~pins);
+	/* PORR: Output reset register */
+	port->PORR = (uint16_t)(pins & config->common.port_pin_mask);
 
 	return 0;
 }
