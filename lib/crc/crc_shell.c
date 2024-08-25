@@ -66,19 +66,19 @@ static void usage(const struct shell* sh) {
 }
 
 static int cmd_crc(const struct shell* sh, size_t argc, char** argv) {
-    int           rv;
-    bool          last    = false;
-    uint32_t      poly    = 0;
-    bool          first   = false;
-    uint32_t      seed    = 0;
-    bool          reflect = false;
-    void*         addr;
-    size_t        size;
+    int rv;
+    bool last     = false;
+    uint32_t poly = 0;
+    bool first    = false;
+    uint32_t seed = 0;
+    bool reflect  = false;
+    void* addr;
+    size_t size;
     enum crc_type type = CRC32_IEEE;
 
-    optind = 1;
+    z_optind = 1;
 
-    while ((rv = getopt(argc, argv, "fhlp:rs:t:")) != -1) {
+    while ((rv = z_getopt(argc, argv, "fhlp:rs:t:")) != -1) {
         switch (rv) {
             case 'f' :
                 first = true;
@@ -93,9 +93,9 @@ static int cmd_crc(const struct shell* sh, size_t argc, char** argv) {
                 break;
 
             case 'p' :
-                poly = (size_t)strtoul(optarg, NULL, 16);
+                poly = (size_t)strtoul(z_optarg, NULL, 16);
                 if ((poly == 0) && (errno == EINVAL)) {
-                    shell_error(sh, "invalid seed '%s'", optarg);
+                    shell_error(sh, "invalid seed '%s'", z_optarg);
                     return (-EINVAL);
                 }
                 break;
@@ -105,17 +105,17 @@ static int cmd_crc(const struct shell* sh, size_t argc, char** argv) {
                 break;
 
             case 's' :
-                seed = (size_t)strtoul(optarg, NULL, 16);
+                seed = (size_t)strtoul(z_optarg, NULL, 16);
                 if ((seed == 0) && (errno == EINVAL)) {
-                    shell_error(sh, "invalid seed '%s'", optarg);
+                    shell_error(sh, "invalid seed '%s'", z_optarg);
                     return (-EINVAL);
                 }
                 break;
 
             case 't' :
-                type = string_to_crc_type(optarg);
+                type = string_to_crc_type(z_optarg);
                 if (type == -1) {
-                    shell_error(sh, "invalid type '%s'", optarg);
+                    shell_error(sh, "invalid type '%s'", z_optarg);
                     return (-EINVAL);
                 }
                 break;
@@ -127,21 +127,21 @@ static int cmd_crc(const struct shell* sh, size_t argc, char** argv) {
         }
     }
 
-    if ((size_t)(optind + 2) > argc) {
+    if ((size_t)(z_optind + 2) > argc) {
         shell_error(sh, "'address' and 'size' arguments are mandatory");
         usage(sh);
         return (-EINVAL);
     }
 
-    addr = (void*)strtoul(argv[optind], NULL, 16);
+    addr = (void*)strtoul(argv[z_optind], NULL, 16);
     if ((addr == 0) && (errno == EINVAL)) {
-        shell_error(sh, "invalid address '%s'", argv[optind]);
+        shell_error(sh, "invalid address '%s'", argv[z_optind]);
         return (-EINVAL);
     }
 
-    size = (size_t)strtoul(argv[optind + 1], NULL, 0);
+    size = (size_t)strtoul(argv[z_optind + 1], NULL, 0);
     if ((size == 0) && (errno == EINVAL)) {
-        shell_error(sh, "invalid size '%s'", argv[optind + 1]);
+        shell_error(sh, "invalid size '%s'", argv[z_optind + 1]);
         return (-EINVAL);
     }
 

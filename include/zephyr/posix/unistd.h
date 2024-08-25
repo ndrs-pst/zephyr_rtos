@@ -60,9 +60,9 @@ static inline int gethostname(char *buf, size_t len)
 #endif /* CONFIG_POSIX_API */
 
 #ifdef CONFIG_POSIX_C_LIB_EXT
-int getopt(int argc, char *const argv[], const char *optstring);
-extern char *optarg;
-extern int opterr, optind, optopt;
+int z_getopt(int argc, char *const argv[], const char *optstring);
+extern char *z_optarg;
+extern int z_opterr, z_optind, z_optopt;
 #endif
 
 int getentropy(void *buffer, size_t length);

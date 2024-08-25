@@ -16,14 +16,14 @@
  * When more threads are using getopt please call getopt_state_get to know
  * getopt state for the current thread.
  */
-int opterr = 1;	/* if error message should be printed */
-int optind = 1;	/* index into parent argv vector */
-int optopt;	/* character checked for validity */
-int optreset;	/* reset getopt */
-char *optarg;	/* argument associated with option */
+int z_opterr = 1;           /* if error message should be printed */
+int z_optind = 1;           /* index into parent argv vector */
+int z_optopt;               /* character checked for validity */
+int z_optreset;             /* reset getopt */
+char *z_optarg;             /* argument associated with option */
 
 /* Common state for all threads that did not have own getopt state. */
-static struct getopt_state m_getopt_common_state = {
+static struct z_getopt_state m_getopt_common_state = {
 	.opterr = 1,
 	.optind = 1,
 	.optopt = 0,
@@ -41,17 +41,17 @@ static struct getopt_state m_getopt_common_state = {
 /* This function is not thread safe. All threads using getopt are calling
  * this function.
  */
-void z_getopt_global_state_update(struct getopt_state *state)
+void z_getopt_global_state_update(struct z_getopt_state *state)
 {
-	opterr = state->opterr;
-	optind = state->optind;
-	optopt = state->optopt;
-	optreset = state->optreset;
-	optarg = state->optarg;
+	z_opterr = state->opterr;
+	z_optind = state->optind;
+	z_optopt = state->optopt;
+	z_optreset = state->optreset;
+	z_optarg = state->optarg;
 }
 
 /* It is internal getopt API function, it shall not be called by the user. */
-struct getopt_state *getopt_state_get(void)
+struct z_getopt_state* z_getopt_state_get(void)
 {
 #if CONFIG_SHELL_GETOPT
 	k_tid_t tid;

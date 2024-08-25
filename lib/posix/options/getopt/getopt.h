@@ -17,7 +17,7 @@ extern "C" {
 #define CONFIG_GETOPT_LONG                  1
 #endif
 
-struct getopt_state {
+struct z_getopt_state {
 	int opterr;	/* if error message should be printed */
 	int optind;	/* index into parent argv vector */
 	int optopt;	/* character checked for validity */
@@ -32,17 +32,17 @@ struct getopt_state {
 #endif
 };
 
-extern int optreset;	/* reset getopt */
-extern char *optarg;
-extern int opterr;
-extern int optind;
-extern int optopt;
+extern int z_optreset;  /* reset getopt */
+extern char *z_optarg;
+extern int z_opterr;
+extern int z_optind;
+extern int z_optopt;
 
 #define no_argument        0
 #define required_argument  1
 #define optional_argument  2
 
-struct option {
+struct z_option {
 	/* name of long option */
 	const char *name;
 	/*
@@ -57,10 +57,10 @@ struct option {
 };
 
 /* Function initializes getopt_state structure for current thread */
-void getopt_init(void);
+void z_getopt_init(void);
 
 /* Function returns getopt_state structure for the current thread. */
-struct getopt_state *getopt_state_get(void);
+struct z_getopt_state* z_getopt_state_get(void);
 
 /**
  * @brief Parses the command-line arguments.
@@ -83,9 +83,9 @@ struct getopt_state *getopt_state_get(void);
  * @return		If an option was successfully found, function returns
  *			the option character.
  */
-int getopt_long(int nargc, char *const *nargv,
-		const char *options, const struct option *long_options,
-		int *idx);
+int z_getopt_long(int nargc, char *const *nargv,
+		  const char *options, const struct z_option *long_options,
+		  int *idx);
 
 /**
  * @brief Parses the command-line arguments.
@@ -110,9 +110,9 @@ int getopt_long(int nargc, char *const *nargv,
  * @return		If an option was successfully found, function returns
  *			the option character.
  */
-int getopt_long_only(int nargc, char *const *nargv,
-		     const char *options, const struct option *long_options,
-		     int *idx);
+int z_getopt_long_only(int nargc, char *const *nargv,
+		       const char *options, const struct z_option *long_options,
+		       int *idx);
 
 #ifdef __cplusplus
 }

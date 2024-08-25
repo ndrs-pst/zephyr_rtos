@@ -842,7 +842,7 @@ struct shell_ctx {
 
     #if defined(CONFIG_SHELL_GETOPT)
     /*!< getopt context for a shell backend. */
-    struct getopt_state getopt;
+    struct z_getopt_state getopt;
     #endif
 
     uint16_t cmd_buff_len; /*!< Command length.*/
