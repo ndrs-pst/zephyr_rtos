@@ -104,8 +104,7 @@ static int gpio_ra_port_set_masked_raw(const struct device *dev, gpio_port_pins_
 	const struct gpio_ra_config *config = dev->config;
 	R_PORT0_Type *port = config->port;
 
-	/* POSR: Output set register */
-	port->POSR = (uint16_t)(value & mask & config->common.port_pin_mask);
+	port->PODR = ((port->PODR & ~mask) | (value & mask));
 
 	return 0;
 }
