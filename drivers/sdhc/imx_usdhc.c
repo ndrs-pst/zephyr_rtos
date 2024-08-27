@@ -574,7 +574,7 @@ static int imx_usdhc_execute_tuning(const struct device *dev)
 	 * adjustable tuning window
 	 */
 	USDHC_SetStandardTuningCounter(cfg->base, IMX_USDHC_STANDARD_TUNING_COUNTER);
-	/* Reenable standard tuning */
+	/* Re-enable standard tuning */
 	USDHC_EnableStandardTuning(cfg->base, IMX_USDHC_STANDARD_TUNING_START,
 		IMX_USDHC_TUNING_STEP, true);
 
@@ -1123,7 +1123,7 @@ static const struct sdhc_driver_api usdhc_api = {
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n,						\
-			&imx_usdhc_init,					\
+			imx_usdhc_init,						\
 			NULL,							\
 			&usdhc_##n##_data,					\
 			&usdhc_##n##_config,					\

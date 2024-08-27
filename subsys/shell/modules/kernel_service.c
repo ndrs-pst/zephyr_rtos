@@ -48,37 +48,35 @@ static int cmd_kernel_version(const struct shell *sh,
 
 static int cmd_kernel_uptime(const struct shell *sh, size_t argc, char **argv)
 {
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-
-	int64_t milliseconds = k_uptime_get();
-	int64_t days;
-	int64_t hours;
-	int64_t minutes;
-	int64_t seconds;
+	int64_t uptime_ms = k_uptime_get();
+	uint32_t days;
+	uint32_t hours;
+	uint32_t minutes;
+	uint32_t seconds;
+	uint32_t milliseconds;
 
 	if (argc == 1) {
-		shell_print(sh, "Uptime: %llu ms", milliseconds);
+		shell_print(sh, "Uptime: %llu ms", uptime_ms);
 		return 0;
 	}
 
 	/* No need to enable the getopt and getopt_long for just one option. */
 	if (strcmp("-p", argv[1]) && strcmp("--pretty", argv[1]) != 0) {
-		shell_error(sh, "Usupported option: %s", argv[1]);
+		shell_error(sh, "Unsupported option: %s", argv[1]);
 		return -EIO;
 	}
 
-	days = milliseconds / DAYS_FACTOR;
-	milliseconds %= DAYS_FACTOR;
-	hours = milliseconds / HOURS_FACTOR;
-	milliseconds %= HOURS_FACTOR;
-	minutes = milliseconds / MINUTES_FACTOR;
-	milliseconds %= MINUTES_FACTOR;
-	seconds = milliseconds / MSEC_PER_SEC;
-	milliseconds = milliseconds % MSEC_PER_SEC;
+	days = (uint32_t)(uptime_ms / DAYS_FACTOR);
+	uptime_ms %= DAYS_FACTOR;
+	hours = (uint32_t)(uptime_ms / HOURS_FACTOR);
+	uptime_ms %= HOURS_FACTOR;
+	minutes = (uint32_t)(uptime_ms / MINUTES_FACTOR);
+	uptime_ms %= MINUTES_FACTOR;
+	seconds = (uint32_t)(uptime_ms / MSEC_PER_SEC);
+	milliseconds = (uint32_t)(uptime_ms % MSEC_PER_SEC);
 
 	shell_print(sh,
-		    "uptime: %llu days, %llu hours, %llu minutes, %llu seconds, %llu milliseconds",
+		    "uptime: %u days, %u hours, %u minutes, %u seconds, %u milliseconds",
 		    days, hours, minutes, seconds, milliseconds);
 
 	return 0;
@@ -290,8 +288,8 @@ static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 	/* Calculate the real size reserved for the stack */
 	pcnt = ((size - unused) * 100U) / size;
 
-	shell_print(
-		(const struct shell *)user_data, "%p %-" STRINGIFY(THREAD_MAX_NAM_LEN) "s "
+	shell_print(sh,
+		"%p %-" STRINGIFY(THREAD_MAX_NAM_LEN) "s "
 		"(real size %4zu):\tunused %4zu\tusage %4zu / %4zu (%2u %%)",
 		thread, tname ? tname : "NA", size, unused, size - unused, size, pcnt);
 }
