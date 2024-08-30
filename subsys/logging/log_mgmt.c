@@ -122,7 +122,7 @@ uint32_t *z_log_link_get_dynamic_filter(uint8_t domain_id, uint32_t source_id)
 {
 	uint8_t rel_domain_id;
 	const struct log_link *link = get_link_domain(domain_id, &rel_domain_id);
-	uint32_t source_offset = 0;
+	uint32_t source_offset;
 
 	__ASSERT_NO_MSG(link != NULL);
 
@@ -531,7 +531,7 @@ static void backend_filter_set(struct log_backend const *const backend,
 		return;
 	}
 
-	for (uint16_t s = 0; s < log_src_cnt_get(0); s++) {
+	for (uint_fast16_t s = 0; s < log_src_cnt_get(0); s++) {
 		log_filter_set(backend, 0, s, level);
 	}
 
