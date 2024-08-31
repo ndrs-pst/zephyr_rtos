@@ -523,7 +523,7 @@ enum net_verdict net_ipv6_input(struct net_pkt* pkt, bool is_loopback) {
          * the packet is ok.
          */
         if (!(IS_ENABLED(CONFIG_NET_IPV6_DAD) &&
-              net_ipv6_is_addr_solicited_node((struct in6_addr *)hdr->dst))) {
+              net_ipv6_is_addr_solicited_node((struct net_in6_addr*)hdr->dst))) {
             NET_DBG("DROP: src addr is %s", "unspecified");
             goto drop;
         }
@@ -558,7 +558,7 @@ enum net_verdict net_ipv6_input(struct net_pkt* pkt, bool is_loopback) {
          * This check is done later on if routing features are enabled.
          */
         if (!IS_ENABLED(CONFIG_NET_ROUTING) && !IS_ENABLED(CONFIG_NET_ROUTE_MCAST) &&
-            is_src_non_tentative_itself((struct net_in6_addr *)hdr->src)) {
+            is_src_non_tentative_itself((struct net_in6_addr*)hdr->src)) {
             NET_DBG("DROP: src addr is %s", "mine");
             goto drop;
         }
@@ -586,7 +586,7 @@ enum net_verdict net_ipv6_input(struct net_pkt* pkt, bool is_loopback) {
     }
 
     if (IS_ENABLED(CONFIG_NET_ROUTE_MCAST) &&
-        net_ipv6_is_addr_mcast((struct net_in6_addr *)hdr->dst) && !net_pkt_forwarding(pkt)) {
+        net_ipv6_is_addr_mcast((struct net_in6_addr*)hdr->dst) && !net_pkt_forwarding(pkt)) {
         /* If the packet is a multicast packet and multicast routing
          * is activated, we give the packet to the routing engine.
          *
