@@ -44,6 +44,11 @@ static inline struct k_thread *z_waitq_head(_wait_q_t *w)
 	SYS_DLIST_FOR_EACH_CONTAINER(&((wq)->waitq), thread_ptr, \
 				     base.qnode_dlist)
 
+/* #CUSTOM@NDRS */
+#define _WAIT_Q_FOR_EACH_WITH_TYPE(wq, __type, thread_ptr) \
+	SYS_DLIST_FOR_EACH_CONTAINER_WITH_TYPE(&((wq)->waitq), __type, thread_ptr, \
+					       base.qnode_dlist)
+
 static inline void z_waitq_init(_wait_q_t *w)
 {
 	sys_dlist_init(&w->waitq);
