@@ -1,0 +1,19 @@
+# Copyright (c) 2024 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 SDMMC controller
+
+compatible: "st,stm32-sdhc"
+
+include: [sdhc.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

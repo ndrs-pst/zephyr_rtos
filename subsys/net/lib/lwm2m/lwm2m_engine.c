@@ -69,6 +69,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define THREAD_PRIORITY K_PRIO_PREEMPT(CONFIG_NUM_PREEMPT_PRIORITIES - 1)
 #endif
 
+#define ENGINE_SLEEP_TICKLESS_MAX_MS 604800000      /* Equal to 1 week !!! (7(d) x 24(h) x 3,600(s) x 1,000(ms)) */
 #define ENGINE_SLEEP_MS 500
 
 #ifdef CONFIG_LWM2M_VERSION_1_1
@@ -78,10 +79,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #endif
 static struct lwm2m_obj_path_list observe_paths[LWM2M_ENGINE_MAX_OBSERVER_PATH];
 #define MAX_PERIODIC_SERVICE 10
-
-static k_tid_t engine_thread_id;
-static bool suspend_engine_thread;
-static bool active_engine_thread;
 
 struct service_node {
 	sys_snode_t node;
@@ -99,11 +96,19 @@ static struct k_thread engine_thread_data;
 #define MAX_POLL_FD CONFIG_NET_SOCKETS_POLL_MAX
 
 /* Resources */
-static struct zsock_pollfd sock_fds[MAX_POLL_FD];
+struct lwm2m_engine_ctx {
+	struct zsock_pollfd sock_fds[MAX_POLL_FD];
 
-static struct lwm2m_ctx *sock_ctx[MAX_POLL_FD];
-static int sock_nfds;
-static int control_sock;
+	struct lwm2m_ctx *sock_ctx[MAX_POLL_FD];
+	int sock_nfds;
+	int control_sock;
+
+	k_tid_t thread_id;
+	bool suspend;
+	bool active;
+};
+
+static struct lwm2m_engine_ctx engine_ctx;
 
 /* Resource wrappers */
 #if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
@@ -111,9 +116,13 @@ static struct coap_block_context output_block_contexts[NUM_OUTPUT_BLOCK_CONTEXT]
 #endif
 
 /* Resource wrappers */
-struct lwm2m_ctx **lwm2m_sock_ctx(void) { return sock_ctx; }
+struct lwm2m_ctx** lwm2m_sock_ctx(void) {
+	return engine_ctx.sock_ctx;
+}
 
-int lwm2m_sock_nfds(void) { return sock_nfds; }
+int lwm2m_sock_nfds(void) {
+	return engine_ctx.sock_nfds;
+}
 
 #if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
 struct coap_block_context *lwm2m_output_block_context(void) { return output_block_contexts; }
@@ -126,7 +135,7 @@ static int lwm2m_socket_update(struct lwm2m_ctx *ctx);
 void lwm2m_engine_wake_up(void)
 {
 	if (IS_ENABLED(CONFIG_LWM2M_TICKLESS)) {
-		zsock_send(control_sock, &(char){0}, 1, 0);
+		zsock_send(engine_ctx.control_sock, &(char){0}, 1, 0);
 	}
 }
 
@@ -137,11 +146,11 @@ int lwm2m_open_socket(struct lwm2m_ctx *client_ctx)
 
 		if (IS_ENABLED(CONFIG_LWM2M_DTLS_SUPPORT) && client_ctx->use_dtls) {
 			client_ctx->sock_fd = zsock_socket(client_ctx->remote_addr.sa_family,
-							   SOCK_DGRAM, IPPROTO_DTLS_1_2);
+							   SOCK_DGRAM, NET_IPPROTO_DTLS_1_2);
 		} else {
 			client_ctx->sock_fd =
-				zsock_socket(client_ctx->remote_addr.sa_family, SOCK_DGRAM,
-					     IPPROTO_UDP);
+				zsock_socket(client_ctx->remote_addr.sa_family, NET_SOCK_DGRAM,
+					     NET_IPPROTO_UDP);
 		}
 
 		if (client_ctx->sock_fd < 0) {
@@ -470,18 +479,19 @@ int lwm2m_engine_call_now(k_work_handler_t service)
 
 int lwm2m_engine_update_service_period(k_work_handler_t service, uint32_t period_ms)
 {
-	int i = 0;
+	for (int i = 0; i < MAX_PERIODIC_SERVICE; i++) {
+		struct service_node *srv = &service_node_data[i];
 
-	for (i = 0; i < MAX_PERIODIC_SERVICE; i++) {
-		if (service_node_data[i].service_work == service) {
+		if (srv->service_work == service) {
 			if (period_ms) {
-				service_node_data[i].call_period = period_ms;
-				service_node_data[i].next_timestamp = k_uptime_get() + period_ms;
+				srv->call_period = period_ms;
+				srv->next_timestamp = k_uptime_get() + period_ms;
 				lwm2m_engine_wake_up();
 				return 0;
 			}
-			sys_slist_find_and_remove(&engine_service_list, &service_node_data[i].node);
-			service_node_data[i].service_work = NULL;
+
+			sys_slist_find_and_remove(&engine_service_list, &srv->node);
+			srv->service_work = NULL;
 			return 1;
 		}
 	}
@@ -525,21 +535,25 @@ static int64_t lwm2m_engine_service(const int64_t timestamp)
 
 int lwm2m_socket_add(struct lwm2m_ctx *ctx)
 {
+	int nfds;
+	struct lwm2m_engine_ctx *engine = &engine_ctx;
+
+	nfds = engine->sock_nfds;
 	if (IS_ENABLED(CONFIG_LWM2M_TICKLESS)) {
 		/* Last poll-handle is reserved for control socket */
-		if (sock_nfds >= (MAX_POLL_FD - 1)) {
+		if (nfds >= (MAX_POLL_FD - 1)) {
 			return -ENOMEM;
 		}
 	} else {
-		if (sock_nfds >= MAX_POLL_FD) {
+		if (nfds >= MAX_POLL_FD) {
 			return -ENOMEM;
 		}
 	}
 
-	sock_ctx[sock_nfds] = ctx;
-	sock_fds[sock_nfds].fd = ctx->sock_fd;
-	sock_fds[sock_nfds].events = ZSOCK_POLLIN;
-	sock_nfds++;
+	engine->sock_ctx[nfds] = ctx;
+	engine->sock_fds[nfds].fd = ctx->sock_fd;
+	engine->sock_fds[nfds].events = ZSOCK_POLLIN;
+	engine->sock_nfds = (nfds + 1);
 
 	lwm2m_engine_wake_up();
 
@@ -548,11 +562,14 @@ int lwm2m_socket_add(struct lwm2m_ctx *ctx)
 
 static int lwm2m_socket_update(struct lwm2m_ctx *ctx)
 {
-	for (int i = 0; i < sock_nfds; i++) {
-		if (sock_ctx[i] != ctx) {
+	struct lwm2m_engine_ctx *engine = &engine_ctx;
+
+	for (int i = 0; i < engine->sock_nfds; i++) {
+		if (engine->sock_ctx[i] != ctx) {
 			continue;
 		}
-		sock_fds[i].fd = ctx->sock_fd;
+
+		engine->sock_fds[i].fd = ctx->sock_fd;
 		lwm2m_engine_wake_up();
 		return 0;
 	}
@@ -561,23 +578,27 @@ static int lwm2m_socket_update(struct lwm2m_ctx *ctx)
 
 void lwm2m_socket_del(struct lwm2m_ctx *ctx)
 {
-	for (int i = 0; i < sock_nfds; i++) {
-		if (sock_ctx[i] != ctx) {
+	struct lwm2m_engine_ctx *engine = &engine_ctx;
+	int nfds;
+
+	for (int i = 0; i < engine->sock_nfds; i++) {
+		if (engine->sock_ctx[i] != ctx) {
 			continue;
 		}
 
-		sock_nfds--;
+		engine->sock_nfds--;
+		nfds = engine->sock_nfds;
 
 		/* If not last, overwrite the entry with the last one. */
-		if (i < sock_nfds) {
-			sock_ctx[i] = sock_ctx[sock_nfds];
-			sock_fds[i].fd = sock_fds[sock_nfds].fd;
-			sock_fds[i].events = sock_fds[sock_nfds].events;
+		if (i < nfds) {
+			engine->sock_ctx[i] = engine->sock_ctx[nfds];
+			engine->sock_fds[i].fd = engine->sock_fds[nfds].fd;
+			engine->sock_fds[i].events = engine->sock_fds[nfds].events;
 		}
 
 		/* Remove the last entry. */
-		sock_ctx[sock_nfds] = NULL;
-		sock_fds[sock_nfds].fd = -1;
+		engine->sock_ctx[nfds] = NULL;
+		engine->sock_fds[nfds].fd = -1;
 		break;
 	}
 	lwm2m_engine_wake_up();
@@ -675,10 +696,10 @@ static void hint_socket_state(struct lwm2m_ctx *ctx, struct lwm2m_message *ongoi
 
 static int socket_recv_message(struct lwm2m_ctx *client_ctx)
 {
-	static uint8_t in_buf[NET_IPV6_MTU];
+	static __noinit uint8_t in_buf[NET_IPV6_MTU];
 	socklen_t from_addr_len;
 	ssize_t len;
-	static struct sockaddr from_addr;
+	static struct net_sockaddr from_addr;
 
 	from_addr_len = sizeof(from_addr);
 	len = zsock_recvfrom(client_ctx->sock_fd, in_buf, sizeof(in_buf) - 1, ZSOCK_MSG_DONTWAIT,
@@ -730,7 +751,6 @@ static int socket_send_message(struct lwm2m_ctx *ctx)
 	hint_socket_state(ctx, msg);
 
 	rc = zsock_send(msg->ctx->sock_fd, msg->cpkt.data, msg->cpkt.offset, 0);
-
 	if (rc < 0) {
 		LOG_ERR("Failed to send packet, err %d", errno);
 		rc = -errno;
@@ -747,15 +767,15 @@ static int socket_send_message(struct lwm2m_ctx *ctx)
 	return rc;
 }
 
-static void socket_reset_pollfd_events(void)
+static void socket_reset_pollfd_events(struct lwm2m_engine_ctx *engine)
 {
 	for (int i = 0; i < MAX_POLL_FD; ++i) {
-		sock_fds[i].events =
+		engine->sock_fds[i].events =
 			ZSOCK_POLLIN |
-			(!sock_ctx[i] || sys_slist_is_empty(&sock_ctx[i]->pending_sends)
+			(!engine->sock_ctx[i] || sys_slist_is_empty(&engine->sock_ctx[i]->pending_sends)
 				 ? 0
 				 : ZSOCK_POLLOUT);
-		sock_fds[i].revents = 0;
+		engine->sock_fds[i].revents = 0;
 	}
 }
 
@@ -768,13 +788,14 @@ static void socket_loop(void *p1, void *p2, void *p3)
 
 	int i, rc;
 	int64_t now, next;
-	int64_t timeout, next_tx;
+	int64_t next_tx;
 	bool rd_client_paused;
+	struct lwm2m_engine_ctx *engine = &engine_ctx;
 
 	while (1) {
 		rd_client_paused = false;
 		/* Check is Thread Suspend Requested */
-		if (suspend_engine_thread) {
+		if (engine->suspend) {
 			rc = lwm2m_rd_client_pause();
 			if (rc == 0) {
 				rd_client_paused = true;
@@ -782,10 +803,10 @@ static void socket_loop(void *p1, void *p2, void *p3)
 				LOG_ERR("Could not pause RD client");
 			}
 
-			suspend_engine_thread = false;
-			active_engine_thread = false;
-			k_thread_suspend(engine_thread_id);
-			active_engine_thread = true;
+			engine->suspend = false;
+			engine->active = false;
+			k_thread_suspend(engine->thread_id);
+			engine->active = true;
 
 			if (rd_client_paused) {
 				rc = lwm2m_rd_client_resume();
@@ -798,19 +819,22 @@ static void socket_loop(void *p1, void *p2, void *p3)
 		now = k_uptime_get();
 		next = lwm2m_engine_service(now);
 
-		for (i = 0; i < sock_nfds; ++i) {
-			struct lwm2m_ctx *ctx = sock_ctx[i];
+		for (i = 0; i < engine->sock_nfds; ++i) {
+			struct lwm2m_ctx *ctx = engine->sock_ctx[i];
 
 			if (ctx == NULL) {
 				continue;
 			}
+
 			if (!sys_slist_is_empty(&ctx->pending_sends)) {
 				continue;
 			}
+
 			next_tx = retransmit_request(ctx, now);
 			if (next_tx < next) {
 				next = next_tx;
 			}
+
 			if (lwm2m_rd_client_is_registred(ctx)) {
 				next_tx = check_notifications(ctx, now);
 				if (next_tx < next) {
@@ -819,17 +843,17 @@ static void socket_loop(void *p1, void *p2, void *p3)
 			}
 		}
 
-		socket_reset_pollfd_events();
+		socket_reset_pollfd_events(engine);
 
-		timeout = next > now ? next - now : 0;
+		int timeout = (next > now) ? (int)(next - now) : 0;
 		if (IS_ENABLED(CONFIG_LWM2M_TICKLESS)) {
 			/* prevent roll-over */
-			timeout = timeout > INT32_MAX ? INT32_MAX : timeout;
+			timeout = MIN(timeout, ENGINE_SLEEP_TICKLESS_MAX_MS);
 		} else {
-			timeout = timeout > ENGINE_SLEEP_MS ? ENGINE_SLEEP_MS : timeout;
+			timeout = MIN(timeout, ENGINE_SLEEP_MS);
 		}
 
-		rc = zsock_poll(sock_fds, MAX_POLL_FD, timeout);
+		rc = zsock_poll(engine->sock_fds, MAX_POLL_FD, timeout);
 		if (rc < 0) {
 			LOG_ERR("Error in poll:%d", errno);
 			errno = 0;
@@ -838,47 +862,50 @@ static void socket_loop(void *p1, void *p2, void *p3)
 		}
 
 		for (i = 0; i < MAX_POLL_FD; i++) {
-			short revents = sock_fds[i].revents;
+			struct lwm2m_ctx *ctx = engine->sock_ctx[i];
+			short revents = engine->sock_fds[i].revents;
 
-			if ((revents & ZSOCK_POLLIN) && sock_fds[i].fd != -1 &&
-			    sock_ctx[i] == NULL) {
+			if ((revents & ZSOCK_POLLIN) &&
+			    (engine->sock_fds[i].fd != -1) &&
+			    (ctx == NULL)) {
 				/* This is the control socket, just read and ignore the data */
 				char tmp;
 
-				zsock_recv(sock_fds[i].fd, &tmp, 1, 0);
+				zsock_recv(engine->sock_fds[i].fd, &tmp, 1, 0);
 				continue;
 			}
-			if (sock_ctx[i] != NULL && sock_ctx[i]->sock_fd < 0) {
+
+			if ((ctx != NULL) && (ctx->sock_fd < 0)) {
 				continue;
 			}
 
 			if (revents & (ZSOCK_POLLERR | ZSOCK_POLLNVAL | ZSOCK_POLLHUP)) {
 				LOG_ERR("Poll reported a socket error, %02x.", revents);
-				if (sock_ctx[i] != NULL && sock_ctx[i]->fault_cb != NULL) {
-					sock_ctx[i]->fault_cb(EIO);
+				if ((ctx != NULL) && (ctx->fault_cb != NULL)) {
+					ctx->fault_cb(EIO);
 				}
 				continue;
 			}
 
 			if (revents & ZSOCK_POLLIN) {
-				while (sock_ctx[i]) {
-					rc = socket_recv_message(sock_ctx[i]);
+				while (ctx) {
+					rc = socket_recv_message(ctx);
 					if (rc) {
 						break;
 					}
 				}
 
-				hint_socket_state(sock_ctx[i], NULL);
+				hint_socket_state(ctx, NULL);
 			}
 
 			if (revents & ZSOCK_POLLOUT) {
-				rc = socket_send_message(sock_ctx[i]);
+				rc = socket_send_message(ctx);
 				/* Drop packets that cannot be send, CoAP layer handles retry */
 				/* Other fatal errors should trigger a recovery */
-				if (rc < 0 && rc != -EAGAIN) {
+				if ((rc < 0) && (rc != -EAGAIN)) {
 					LOG_ERR("send() reported a socket error, %d", -rc);
-					if (sock_ctx[i] != NULL && sock_ctx[i]->fault_cb != NULL) {
-						sock_ctx[i]->fault_cb(-rc);
+					if ((ctx != NULL) && (ctx->fault_cb != NULL)) {
+						ctx->fault_cb(-rc);
 					}
 				}
 			}
@@ -1171,10 +1198,10 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 		goto error;
 	}
 
-	if ((client_ctx->remote_addr).sa_family == AF_INET) {
-		addr_len = sizeof(struct sockaddr_in);
-	} else if ((client_ctx->remote_addr).sa_family == AF_INET6) {
-		addr_len = sizeof(struct sockaddr_in6);
+	if ((client_ctx->remote_addr).sa_family == NET_AF_INET) {
+		addr_len = sizeof(struct net_sockaddr_in);
+	} else if ((client_ctx->remote_addr).sa_family == NET_AF_INET6) {
+		addr_len = sizeof(struct net_sockaddr_in6);
 	} else {
 		ret = -EPROTONOSUPPORT;
 		goto error;
@@ -1231,7 +1258,7 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx)
 	char *url;
 	uint16_t url_len;
 	uint8_t url_data_flags;
-	int ret = 0U;
+	int ret;
 
 	/* get the server URL */
 	ret = lwm2m_get_res_buf(&LWM2M_OBJ(0, client_ctx->sec_obj_inst, 0), (void **)&url, NULL,
@@ -1251,21 +1278,23 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx)
 
 int lwm2m_engine_pause(void)
 {
-	if (suspend_engine_thread || !active_engine_thread) {
+	struct lwm2m_engine_ctx *engine = &engine_ctx;
+
+	if (engine->suspend || !engine->active) {
 		LOG_WRN("Engine thread already suspended");
 		return 0;
 	}
 
-	suspend_engine_thread = true;
+	engine->suspend = true;
 	lwm2m_engine_wake_up();
 
 	/* Check if pause requested within a engine thread, a callback for example. */
-	if (engine_thread_id == k_current_get()) {
+	if (engine->thread_id == k_current_get()) {
 		LOG_DBG("Pause requested");
 		return 0;
 	}
 
-	while (active_engine_thread) {
+	while (engine->active) {
 		k_msleep(10);
 	}
 	LOG_INF("LWM2M engine thread paused");
@@ -1274,12 +1303,14 @@ int lwm2m_engine_pause(void)
 
 int lwm2m_engine_resume(void)
 {
-	if (suspend_engine_thread || active_engine_thread) {
+	struct lwm2m_engine_ctx *engine = &engine_ctx;
+
+	if (engine->suspend || engine->active) {
 		LOG_WRN("LWM2M engine thread state not ok for resume");
 		return -EPERM;
 	}
 
-	k_thread_resume(engine_thread_id);
+	k_thread_resume(engine->thread_id);
 	lwm2m_engine_wake_up();
 
 	return 0;
@@ -1287,27 +1318,32 @@ int lwm2m_engine_resume(void)
 
 static int lwm2m_engine_init(void)
 {
+	struct lwm2m_engine_ctx *engine = &engine_ctx;
+
 	for (int i = 0; i < LWM2M_ENGINE_MAX_OBSERVER_PATH; i++) {
 		sys_slist_append(lwm2m_obs_obj_path_list(), &observe_paths[i].node);
 	}
 
 	/* Reset all socket handles to -1 so unused ones are ignored by zsock_poll() */
 	for (int i = 0; i < MAX_POLL_FD; ++i) {
-		sock_fds[i].fd = -1;
+		engine->sock_fds[i].fd = -1;
 	}
 
 	if (IS_ENABLED(CONFIG_LWM2M_TICKLESS)) {
 		/* Create socketpair that is used to wake zsock_poll() in the main loop */
 		int s[2];
-		int ret = zsock_socketpair(AF_UNIX, SOCK_STREAM, 0, s);
+		int ret;
 
+		ret = zsock_socketpair(NET_AF_UNIX, NET_SOCK_STREAM, 0, s);
 		if (ret) {
 			LOG_ERR("Error; socketpair() returned %d", ret);
 			return ret;
 		}
+
 		/* Last poll-handle is reserved for control socket */
-		sock_fds[MAX_POLL_FD - 1].fd = s[0];
-		control_sock = s[1];
+		engine->sock_fds[MAX_POLL_FD - 1].fd = s[0];
+		engine->control_sock = s[1];
+
 		ret = zsock_fcntl(s[0], F_SETFL, O_NONBLOCK);
 		if (ret) {
 			LOG_ERR("zsock_fcntl() %d", ret);
@@ -1315,6 +1351,7 @@ static int lwm2m_engine_init(void)
 			zsock_close(s[1]);
 			return ret;
 		}
+
 		ret = zsock_fcntl(s[1], F_SETFL, O_NONBLOCK);
 		if (ret) {
 			LOG_ERR("zsock_fcntl() %d", ret);
@@ -1338,12 +1375,12 @@ static int lwm2m_engine_init(void)
 	}
 
 	/* start sock receive thread */
-	engine_thread_id = k_thread_create(&engine_thread_data, &engine_thread_stack[0],
+	engine->thread_id = k_thread_create(&engine_thread_data, &engine_thread_stack[0],
 			K_KERNEL_STACK_SIZEOF(engine_thread_stack), socket_loop,
 			NULL, NULL, NULL, THREAD_PRIORITY, 0, K_NO_WAIT);
 	k_thread_name_set(&engine_thread_data, "lwm2m-sock-recv");
 	LOG_DBG("LWM2M engine socket receive thread started");
-	active_engine_thread = true;
+	engine->active = true;
 
 	return 0;
 }
