@@ -518,7 +518,7 @@ int z_impl_zsock_bind(int sock, const struct net_sockaddr *addr, socklen_t addrl
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, bind, sock, addr, addrlen);
 
-	ret = VTABLE_CALL(bind, sock, addr, addrlen);
+	ret = VTABLE_CALL(bind, sock, addr, addrlen);               /* @see sock_bind_vmeth */
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, bind, sock, ret < 0 ? -errno : ret);
 
@@ -629,7 +629,7 @@ int z_impl_zsock_connect(int sock, const struct net_sockaddr *addr,
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, connect, sock, addr, addrlen);
 
-	ret = VTABLE_CALL(connect, sock, addr, addrlen);
+	ret = VTABLE_CALL(connect, sock, addr, addrlen);            /* @see sock_connect_vmeth */
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, connect, sock,
 				       ret < 0 ? -errno : ret);
@@ -689,7 +689,7 @@ int z_impl_zsock_listen(int sock, int backlog) {
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, listen, sock, backlog);
 
-	ret = VTABLE_CALL(listen, sock, backlog);
+	ret = VTABLE_CALL(listen, sock, backlog);                   /* @see sock_listen_vmeth */
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, listen, sock,
 				       ret < 0 ? -errno : ret);
@@ -821,7 +821,7 @@ int z_impl_zsock_accept(int sock, struct net_sockaddr *addr, socklen_t *addrlen)
 
 	new_sock = ret;
 	#else
-	new_sock = VTABLE_CALL(accept, sock, addr, addrlen);
+	new_sock = VTABLE_CALL(accept, sock, addr, addrlen);        /* @see sock_accept_vmeth */
 	#endif
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, accept, new_sock, addr, addrlen,
@@ -1023,7 +1023,7 @@ ssize_t z_impl_zsock_sendto(int sock, const void *buf, size_t len, int flags,
 
 	bytes_sent = ret;
 	#else
-	bytes_sent = VTABLE_CALL(sendto, sock, buf, len, flags, dest_addr, addrlen);
+	bytes_sent = VTABLE_CALL(sendto, sock, buf, len, flags, dest_addr, addrlen);    /* @see sock_sendto_vmeth */
 	#endif
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, sendto, sock,
@@ -1137,7 +1137,7 @@ ssize_t z_impl_zsock_sendmsg(int sock, const struct msghdr *msg, int flags)
 
 	bytes_sent = ret;
 	#else
-	bytes_sent = VTABLE_CALL(sendmsg, sock, msg, flags);
+	bytes_sent = VTABLE_CALL(sendmsg, sock, msg, flags);        /* @see sock_sendmsg_vmeth */
 	#endif
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, sendmsg, sock,
@@ -2055,7 +2055,7 @@ ssize_t z_impl_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 
 	bytes_received = ret;
 	#else
-	bytes_received = VTABLE_CALL(recvfrom, sock, buf, max_len, flags, src_addr, addrlen);
+	bytes_received = VTABLE_CALL(recvfrom, sock, buf, max_len, flags, src_addr, addrlen); /* @see sock_recvfrom_vmeth */
 	#endif
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, recvfrom, sock,
@@ -2163,7 +2163,7 @@ ssize_t z_impl_zsock_recvmsg(int sock, struct msghdr *msg, int flags)
 
 	bytes_received = ret;
 	#else
-	bytes_received = VTABLE_CALL(recvmsg, sock, msg, flags);
+	bytes_received = VTABLE_CALL(recvmsg, sock, msg, flags);    /* @see sock_recvmsg_vmeth */
 	#endif
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, recvmsg, sock, msg,
@@ -3142,7 +3142,7 @@ int z_impl_zsock_getsockopt(int sock, int level, int optname,
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, getsockopt, sock, level, optname);
 
-	ret = VTABLE_CALL(getsockopt, sock, level, optname, optval, optlen);
+	ret = VTABLE_CALL(getsockopt, sock, level, optname, optval, optlen);    /* @see sock_getsockopt_vmeth */
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, getsockopt, sock, level, optname,
 				       optval, *optlen, ret < 0 ? -errno : ret);
@@ -3809,7 +3809,7 @@ int z_impl_zsock_setsockopt(int sock, int level, int optname,
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, setsockopt, sock,
 					level, optname, optval, optlen);
 
-	ret = VTABLE_CALL(setsockopt, sock, level, optname, optval, optlen);
+	ret = VTABLE_CALL(setsockopt, sock, level, optname, optval, optlen);    /* @see sock_setsockopt_vmeth */
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, setsockopt, sock,
 				       ret < 0 ? -errno : ret);
@@ -3916,7 +3916,7 @@ int z_impl_zsock_getpeername(int sock, struct net_sockaddr *addr,
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, getpeername, sock);
 
-	ret = VTABLE_CALL(getpeername, sock, addr, addrlen);
+	ret = VTABLE_CALL(getpeername, sock, addr, addrlen);        /* @see sock_getpeername_vmeth */
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, getpeername, sock,
 				       addr, addrlen,
@@ -4036,7 +4036,7 @@ int z_impl_zsock_getsockname(int sock, struct net_sockaddr *addr,
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, getsockname, sock);
 
-	ret = VTABLE_CALL(getsockname, sock, addr, addrlen);
+	ret = VTABLE_CALL(getsockname, sock, addr, addrlen);        /* @see sock_getsockname_vmeth */
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, getsockname, sock,
 				       addr, addrlen,

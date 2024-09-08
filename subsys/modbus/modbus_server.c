@@ -946,7 +946,7 @@ static bool mbs_try_user_fc(struct modbus_context* ctx, uint8_t fc) {
 }
 
 bool modbus_server_handler(struct modbus_context* ctx) {
-    bool send_reply = false;
+    bool send_reply;
     uint8_t addr = ctx->rx_adu.unit_id;
     uint8_t fc   = ctx->rx_adu.fc;
 
