@@ -77,7 +77,7 @@ static int serial_tx_rx(const struct device *dev, const uint8_t *tx_data,
 	__ASSERT_NO_MSG(tx_data != NULL);
 	__ASSERT_NO_MSG(rx_data != NULL);
 
-	for (int i = 0; i < len; ++i) {
+	for (size_t i = 0U; i < len; ++i) {
 		while (uart_poll_in(cfg->uart_dev, &dummy) == 0) {
 			/* poll in any buffered data */
 		}
@@ -279,7 +279,7 @@ static const struct w1_serial_config w1_serial_cfg_##inst = {		   \
 	.uart_dev = DEVICE_DT_GET(DT_INST_BUS(inst)),			   \
 	.master_config.slave_count = W1_INST_SLAVE_COUNT(inst)		   \
 };									   \
-static struct w1_serial_data w1_serial_data_##inst = {};		   \
+static struct w1_serial_data w1_serial_data_##inst = {0};		   \
 DEVICE_DT_INST_DEFINE(inst, &w1_serial_init, NULL, &w1_serial_data_##inst, \
 		      &w1_serial_cfg_##inst, POST_KERNEL,		   \
 		      CONFIG_W1_INIT_PRIORITY, &w1_serial_driver_api);	   \

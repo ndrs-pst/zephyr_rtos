@@ -193,7 +193,8 @@ static int parse_params(struct modem_cmd_handler_data *data,  size_t match_len,
 static int process_cmd(const struct modem_cmd *cmd, size_t match_len,
 			struct modem_cmd_handler_data *data)
 {
-	int parsed_len = 0, ret = 0;
+	int parsed_len = 0;
+	int ret = 0;
 	uint8_t *argv[CONFIG_MODEM_CMD_HANDLER_MAX_PARAM_COUNT];
 	uint16_t argc = 0U;
 
@@ -215,7 +216,7 @@ static int process_cmd(const struct modem_cmd *cmd, size_t match_len,
 
 	/* call handler */
 	if (cmd->func) {
-		ret = cmd->func(data, match_len - cmd->cmd_len - parsed_len,
+		ret = cmd->func(data, (uint16_t)(match_len - cmd->cmd_len - parsed_len),
 				argv, argc);
 		if (ret == -EAGAIN) {
 			/* wait for more data */
