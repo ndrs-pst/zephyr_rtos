@@ -25,11 +25,10 @@ void net_timeout_set(struct net_timeout *timeout,
 	}
 
 	expire_timeout = (uint64_t)MSEC_PER_SEC * (uint64_t)lifetime;
-	timeout->wrap_counter = expire_timeout /
-		(uint64_t)NET_TIMEOUT_MAX_VALUE;
-	timeout->timer_timeout = expire_timeout -
-		(uint64_t)NET_TIMEOUT_MAX_VALUE *
-		(uint64_t)timeout->wrap_counter;
+	timeout->wrap_counter =
+		(uint32_t)(expire_timeout / (uint64_t)NET_TIMEOUT_MAX_VALUE);
+	timeout->timer_timeout =
+		(uint32_t)(expire_timeout - ((uint64_t)NET_TIMEOUT_MAX_VALUE * (uint64_t)timeout->wrap_counter));
 
 	/* The implementation requires that the fractional timeout be zero
 	 * only when the timeout has completed, so if the residual is zero

@@ -93,7 +93,7 @@ stats_gen_name(int idx, char *dst)
  *
  */
 int
-stats_walk(struct stats_hdr *hdr, stats_walk_fn *walk_func, void *arg)
+stats_walk(struct stats_hdr *hdr, stats_walk_fn *walk_cb, void *arg)
 {
 	const char *name;
 	char name_buf[STATS_GEN_NAME_MAX_LEN];
@@ -108,7 +108,7 @@ stats_walk(struct stats_hdr *hdr, stats_walk_fn *walk_func, void *arg)
 			name = name_buf;
 		}
 
-		rc = walk_func(hdr, arg, name, stats_get_off(hdr, i));
+		rc = walk_cb(hdr, arg, name, stats_get_off(hdr, i));
 		if (rc != 0) {
 			return rc;
 		}
@@ -149,20 +149,20 @@ stats_init(struct stats_hdr *hdr, uint8_t size, uint16_t cnt,
  * list, and assumes that the list is not being changed by another task.
  * (assumption: all statistics are registered prior to OS start.)
  *
- * @param walk_func The walk function to call, with a statistics header
+ * @param walk_cb The walk function to call, with a statistics header
  *                  and arg.
  * @param arg The argument to call the walk function with.
  *
  * @return 0 on success, non-zero error code on failure
  */
 int
-stats_group_walk(stats_group_walk_fn *walk_func, void *arg)
+stats_group_walk(stats_group_walk_fn *walk_cb, void *arg)
 {
 	struct stats_hdr *hdr;
 	int rc;
 
 	for (hdr = stats_list; hdr != NULL; hdr = hdr->s_next) {
-		rc = walk_func(hdr, arg);
+		rc = walk_cb(hdr, arg);
 		if (rc != 0) {
 			return rc;
 		}
