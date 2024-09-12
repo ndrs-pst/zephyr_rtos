@@ -131,8 +131,8 @@ static int wait(int timeout)
 static int get_mqtt_broker_addrinfo(void)
 {
 	int rc;
-	struct zsock_addrinfo hints = { .ai_family = AF_INET,
-					.ai_socktype = SOCK_STREAM,
+	struct zsock_addrinfo hints = { .ai_family = NET_AF_INET,
+					.ai_socktype = NET_SOCK_STREAM,
 					.ai_protocol = 0 };
 
 	if (sh_mqtt->haddr != NULL) {
@@ -184,9 +184,9 @@ static void sh_mqtt_close_and_cleanup(void)
 
 static void broker_init(void)
 {
-	struct sockaddr_in *broker4 = (struct sockaddr_in *)&sh_mqtt->broker;
+	struct net_sockaddr_in *broker4 = (struct net_sockaddr_in *)&sh_mqtt->broker;
 
-	broker4->sin_family = AF_INET;
+	broker4->sin_family = NET_AF_INET;
 	broker4->sin_port = htons(CONFIG_SHELL_MQTT_SERVER_PORT);
 
 	net_ipaddr_copy(&broker4->sin_addr, &net_sin(sh_mqtt->haddr->ai_addr)->sin_addr);
@@ -538,8 +538,8 @@ static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt
 
 		sh_mqtt->transport_state = SHELL_MQTT_TRANSPORT_CONNECTED;
 		LOG_WRN("MQTT %s", "client connected!");
-
 		break;
+
 	case MQTT_EVT_SUBACK:
 		if (evt->result != 0) {
 			LOG_ERR("MQTT subscribe: %s", "error");
@@ -641,14 +641,14 @@ static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt
 	}
 }
 
-static int init(const struct shell_transport *transport, const void *config,
+static int shell_mqtt_init(const struct shell_transport *transport, const void *config,
 		shell_transport_handler_t evt_handler, void *context)
 {
 	sh_mqtt = (struct shell_mqtt *)transport->ctx;
 
-	(void)memset(sh_mqtt, 0, sizeof(struct shell_mqtt));
+	(void) memset(sh_mqtt, 0, sizeof(struct shell_mqtt));
 
-	(void)k_mutex_init(&sh_mqtt->lock);
+	(void) k_mutex_init(&sh_mqtt->lock);
 
 	if (!shell_mqtt_get_devid(sh_mqtt->device_id, DEVICE_ID_HEX_MAX_SIZE)) {
 		LOG_ERR("Unable to get device identity, using dummy value");
@@ -657,8 +657,8 @@ static int init(const struct shell_transport *transport, const void *config,
 
 	LOG_DBG("Client ID is %s", sh_mqtt->device_id);
 
-	(void)snprintf(sh_mqtt->pub_topic, SH_MQTT_TOPIC_MAX_SIZE, "%s_tx", sh_mqtt->device_id);
-	(void)snprintf(sh_mqtt->sub_topic, SH_MQTT_TOPIC_MAX_SIZE, "%s_rx", sh_mqtt->device_id);
+	(void) snprintf(sh_mqtt->pub_topic, SH_MQTT_TOPIC_MAX_SIZE, "%s_tx", sh_mqtt->device_id);
+	(void) snprintf(sh_mqtt->sub_topic, SH_MQTT_TOPIC_MAX_SIZE, "%s_rx", sh_mqtt->device_id);
 
 	ring_buf_init(&sh_mqtt->rx_rb, RX_RB_SIZE, sh_mqtt->rx_rb_buf);
 
@@ -678,7 +678,7 @@ static int init(const struct shell_transport *transport, const void *config,
 	k_work_queue_init(&sh_mqtt->workq);
 	k_work_queue_start(&sh_mqtt->workq, sh_mqtt_workq_stack,
 			   K_KERNEL_STACK_SIZEOF(sh_mqtt_workq_stack), K_PRIO_COOP(7), NULL);
-	(void)k_thread_name_set(&sh_mqtt->workq.thread, "sh_mqtt_workq");
+	(void) k_thread_name_set(&sh_mqtt->workq.thread, "sh_mqtt_workq");
 	k_work_init(&sh_mqtt->net_disconnected_work, net_disconnect_handler);
 	k_work_init_delayable(&sh_mqtt->connect_dwork, sh_mqtt_connect_handler);
 	k_work_init_delayable(&sh_mqtt->subscribe_dwork, sh_mqtt_subscribe_handler);
@@ -695,7 +695,7 @@ static int init(const struct shell_transport *transport, const void *config,
 	return 0;
 }
 
-static int uninit(const struct shell_transport *transport)
+static int shell_mqtt_uninit(const struct shell_transport *transport)
 {
 	ARG_UNUSED(transport);
 
@@ -707,7 +707,7 @@ static int uninit(const struct shell_transport *transport)
 	return 0;
 }
 
-static int enable(const struct shell_transport *transport, bool blocking)
+static int shell_mqtt_enable(const struct shell_transport *transport, bool blocking)
 {
 	ARG_UNUSED(transport);
 	ARG_UNUSED(blocking);
@@ -724,7 +724,7 @@ static int enable(const struct shell_transport *transport, bool blocking)
 	return 0;
 }
 
-static int write_data(const struct shell_transport *transport, const void *data, size_t length,
+static int shell_mqtt_write(const struct shell_transport *transport, const void *data, size_t length,
 		      size_t *cnt)
 {
 	ARG_UNUSED(transport);
@@ -784,7 +784,7 @@ out:
 	return rc;
 }
 
-static int read_data(const struct shell_transport *transport, void *data, size_t length,
+static int shell_mqtt_read(const struct shell_transport *transport, void *data, size_t length,
 		     size_t *cnt)
 {
 	ARG_UNUSED(transport);
@@ -810,19 +810,22 @@ static int read_data(const struct shell_transport *transport, void *data, size_t
 	return 0;
 }
 
-const struct shell_transport_api shell_mqtt_transport_api = { .init = init,
-							      .uninit = uninit,
-							      .enable = enable,
-							      .write = write_data,
-							      .read = read_data };
+const struct shell_transport_api shell_mqtt_transport_api = {
+	.init   = shell_mqtt_init,
+	.uninit = shell_mqtt_uninit,
+	.enable = shell_mqtt_enable,
+	.write  = shell_mqtt_write,
+	.read   = shell_mqtt_read
+};
 
 static int enable_shell_mqtt(void)
 {
-
 	bool log_backend = CONFIG_SHELL_MQTT_INIT_LOG_LEVEL > 0;
 	uint32_t level = (CONFIG_SHELL_MQTT_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?
 				       CONFIG_LOG_MAX_LEVEL :
 				       CONFIG_SHELL_MQTT_INIT_LOG_LEVEL;
+	int rc;
+
 	static const struct shell_backend_config_flags cfg_flags = {
 		.insert_mode = 0,
 		.echo = 0,
@@ -832,7 +835,9 @@ static int enable_shell_mqtt(void)
 		.use_vt100 = 0,
 	};
 
-	return shell_init(&shell_mqtt, NULL, cfg_flags, log_backend, level);
+	rc = shell_init(&shell_mqtt, NULL, cfg_flags, log_backend, level);
+
+	return rc;
 }
 
 /* Function is used for testing purposes */

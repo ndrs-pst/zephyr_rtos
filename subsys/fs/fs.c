@@ -301,6 +301,17 @@ off_t fs_tell(struct fs_file_t *zfp)
 	return rc;
 }
 
+/* #CUSTOM@NDRS */
+off_t /**/fs_size(struct fs_file_t* zfp)
+{
+    off_t off  = fs_tell(zfp);
+    off_t size = fs_seek(zfp, 0, FS_SEEK_END);
+
+    fs_seek(zfp, off, FS_SEEK_SET);
+
+    return (size);
+}
+
 int fs_truncate(struct fs_file_t *zfp, off_t length)
 {
 	int rc = -EINVAL;
