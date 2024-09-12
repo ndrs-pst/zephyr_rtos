@@ -1,0 +1,64 @@
+# FRAM driver configuration options
+
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# Copyright (c) 2023 NDR Solution (Thailand) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig FRAM
+	bool "FRAM hardware support"
+	help
+	  Enable support for FRAM hardware.
+
+if FRAM
+
+module = FRAM
+module-str = fram
+source "subsys/logging/Kconfig.template.log_config"
+
+config FRAM_INIT_PRIORITY
+	int "FRAM init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  FRAM driver device initialization priority.
+
+config FRAM_SHELL
+	bool "FRAM shell"
+	default n
+	depends on SHELL
+	help
+	  Enable the FRAM shell with FRAM related commands.
+
+config FRAM_SHELL_BUFFER_SIZE
+	int "FRAM shell buffer size"
+	default 256
+	depends on FRAM_SHELL
+	help
+	  Size of the buffer used for FRAM read/write commands in
+	  the FRAM shell.
+
+config FRAM_CY15X
+	bool
+    default y
+	help
+	  Enable support for Infineon CY15X (and compatible) I2C/SPI
+	  FRAMs.
+
+config FRAM_CY15XJ
+	bool "Infineon CY15J (and compatible) I2C FRAM support"
+	default y
+	depends on DT_HAS_INFINEON_CY15XJ_ENABLED
+	select I2C
+	select FRAM_CY15X
+	help
+	  Enable support for Infineon CY15J (and compatible) I2C FRAMs.
+
+config FRAM_CY15XQ
+	bool "Infineon CY15Q (and compatible) SPI FRAM support"
+	default y
+	depends on DT_HAS_INFINEON_CY15XQ_ENABLED
+	select SPI
+	select FRAM_CY15X
+	help
+	  Enable support for Infineon CY15Q (and compatible) SPI FRAMs.
+
+endif # FRAM
