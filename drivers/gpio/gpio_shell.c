@@ -330,13 +330,13 @@ static int cmd_gpio_conf(const struct shell* sh, size_t argc, char** argv, void*
     }
 
     if (((flags & GPIO_INPUT) != 0) && ((flags & GPIO_OUTPUT_INIT_LOGICAL) != 0)) {
-        shell_error(sh, "an input cannot be initialised to a logic level");
+        shell_error(sh, "an input cannot be initialized to a logic level");
         shell_help(sh);
         return (SHELL_CMD_HELP_PRINTED);
     }
 
     if (((flags & GPIO_OUTPUT_INIT_LOW) != 0) && ((flags & GPIO_OUTPUT_INIT_HIGH) != 0)) {
-        shell_error(sh, "cannot initialise to logic 0 and logic 1");
+        shell_error(sh, "cannot initialize to logic 0 and logic 1");
         shell_help(sh);
         return (SHELL_CMD_HELP_PRINTED);
     }

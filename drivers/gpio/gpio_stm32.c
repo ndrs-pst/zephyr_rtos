@@ -39,7 +39,7 @@ LOG_MODULE_REGISTER(stm32, CONFIG_GPIO_LOG_LEVEL);
 /**
  * @brief EXTI interrupt callback
  */
-static void gpio_stm32_isr(gpio_port_pins_t pin, void *arg) {
+static void gpio_stm32_isr(gpio_port_pins_t pin, void* arg) {
     struct gpio_stm32_data* data = arg;
 
     gpio_fire_callbacks(&data->cb, data->dev, pin);
@@ -640,11 +640,6 @@ static int gpio_stm32_pin_interrupt_configure(const struct device* dev,
         err = -EBUSY;
         goto exit;
     }
-
-#if defined(CONFIG_EXTI_STM32)
-
-
-
 
     #if defined(CONFIG_EXTI_STM32)
     stm32_exti_set_line_src_port(pin, cfg->port);
