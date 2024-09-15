@@ -377,6 +377,9 @@ static bool mbs_fc03_hreg_read(struct modbus_context* ctx) {
                 presp += sizeof(uint32_t);
             }
         }
+        else {
+            err = -EINVAL;
+        }
 
         if (err != 0) {
             LOG_INF("Holding register address not supported");
@@ -486,6 +489,9 @@ static bool mbs_fc04_inreg_read(struct modbus_context* ctx) {
                 sys_put_be32(reg, presp);
                 presp += sizeof(uint32_t);
             }
+        }
+        else {
+            err = -EINVAL;
         }
 
         if (err != 0) {
