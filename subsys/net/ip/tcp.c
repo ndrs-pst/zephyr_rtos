@@ -126,7 +126,7 @@ static int tcp_pkt_linearize(struct net_pkt* pkt, size_t pos, size_t len) {
     first->len -= (uint16_t)len1;
 
     while (len2) {
-        size_t          pull_len = MIN(second->len, len2);
+        size_t pull_len = MIN(second->len, len2);
         struct net_buf* next;
 
         len2 -= pull_len;
@@ -245,8 +245,8 @@ int net_tcp_endpoint_copy(struct net_context* ctx,
                           socklen_t* addrlen) {
     const struct tcp* conn = ctx->tcp;
     socklen_t newlen = (ctx->local.family == NET_AF_INET) ?
-            sizeof(struct net_sockaddr_in) :
-            sizeof(struct net_sockaddr_in6);
+        sizeof(struct net_sockaddr_in) :
+        sizeof(struct net_sockaddr_in6);
 
     if (local != NULL) {
         /* If we are connected, then get the address we are actually
@@ -345,7 +345,7 @@ static char const* tcp_th(struct net_pkt* pkt) {
     buf[0] = '\0';
 
     if (th_off(th) < 5) {
-        len += snprintk(buf + len, BUF_SIZE - len,
+        len += snprintk((buf + len), (BUF_SIZE - len),
                         "bogus th_off: %hu", (uint16_t)th_off(th));
         goto end;
     }
@@ -579,7 +579,7 @@ static void keep_alive_param_copy(struct tcp* to, struct tcp* from) {
     to->keep_cnt   = from->keep_cnt;
 }
 
-static void keep_alive_timer_restart(struct tcp* conn) {
+static void /**/keep_alive_timer_restart(struct tcp* conn) {
     if (!conn->keep_alive || (conn->state != TCP_ESTABLISHED)) {
         return;
     }
@@ -617,7 +617,7 @@ static int set_tcp_keep_alive(struct tcp* conn, void const* value, size_t len) {
     return (0);
 }
 
-static int set_tcp_keep_idle(struct tcp* conn, void const* value, size_t len) {
+static int /**/set_tcp_keep_idle(struct tcp* conn, void const* value, size_t len) {
     int keep_idle;
 
     if ((conn == NULL) || (value == NULL) || (len != sizeof(int))) {
@@ -952,7 +952,7 @@ static bool tcp_send_process_no_lock(struct tcp* conn) {
     }
     else {
         uint8_t fl  = th_get(pkt)->th_flags;
-        bool forget = (ACK == fl) || (PSH == fl) || ((ACK | PSH) == fl )||
+        bool forget = (ACK == fl) || (PSH == fl) || ((ACK | PSH) == fl) ||
                       (RST & fl);
 
         #if defined(_MSC_VER) /* #CUSTOM@NDRS */
@@ -1234,8 +1234,8 @@ static bool tcp_need_window_update(struct tcp* conn) {
  */
 static int tcp_update_recv_wnd(struct tcp* conn, int32_t delta) {
     int32_t new_win;
-    bool    short_win_before;
-    bool    short_win_after;
+    bool short_win_before;
+    bool short_win_after;
 
     new_win = conn->recv_win + delta;
     if (new_win < 0) {
@@ -2091,7 +2091,7 @@ static void tcp_cancel_last_ack_timer(struct tcp* conn) {
 #if defined(CONFIG_NET_TCP_KEEPALIVE)
 static void tcp_send_keepalive_probe(struct k_work* work) {
     struct k_work_delayable* dwork = k_work_delayable_from_work(work);
-    struct tcp*              conn  = CONTAINER_OF(dwork, struct tcp, keepalive_timer);
+    struct tcp* conn = CONTAINER_OF(dwork, struct tcp, keepalive_timer);
 
     if (conn->state != TCP_ESTABLISHED) {
         NET_DBG("conn: %p TCP connection not established", conn);
@@ -2349,6 +2349,7 @@ static enum net_verdict tcp_recv(struct net_conn* net_conn,
 
         conn->accepted_conn = conn_old;
     }
+
 in :
     if (conn) {
         verdict = tcp_in(conn, pkt);
@@ -2446,14 +2447,14 @@ static uint32_t tcpv4_init_isn(struct net_in_addr* saddr,
 static uint32_t tcp_init_isn(struct net_sockaddr const* saddr, struct net_sockaddr const* daddr) {
     if (IS_ENABLED(CONFIG_NET_TCP_ISN_RFC6528)) {
         if (IS_ENABLED(CONFIG_NET_IPV6) &&
-            saddr->sa_family == NET_AF_INET6) {
+            (saddr->sa_family == NET_AF_INET6)) {
             return tcpv6_init_isn(&net_sin6(saddr)->sin6_addr,
                                   &net_sin6(daddr)->sin6_addr,
                                   net_sin6(saddr)->sin6_port,
                                   net_sin6(daddr)->sin6_port);
         }
         else if (IS_ENABLED(CONFIG_NET_IPV4) &&
-                 saddr->sa_family == NET_AF_INET) {
+                 (saddr->sa_family == NET_AF_INET)) {
             return tcpv4_init_isn(&net_sin(saddr)->sin_addr,
                                   &net_sin(daddr)->sin_addr,
                                   net_sin(saddr)->sin_port,
@@ -3161,72 +3162,73 @@ next_state :
                     verdict = NET_OK;
                 }
 
-            next = TCP_ESTABLISHED;
-            net_context_set_state(conn->context,
-                                  NET_CONTEXT_CONNECTED);
-            tcp_ca_init(conn);
-            tcp_out(conn, ACK);
-            keep_alive_timer_restart(conn);
-
-            /* The connection semaphore is released *after*
-             * we have changed the connection state. This way
-             * the application can send data and it is queued
-             * properly even if this thread is running in lower
-             * priority.
-             */
-            connection_ok = true;
-
-            /* ACK for SYN has been received. This signilizes that
-             * the connection makes a "forward progress".
-             */
-            tcp_nbr_reachability_hint(conn);
-        }
-        else if (pkt) {
-            net_tcp_reply_rst(pkt);
-        }
-        break;
-
-    case TCP_ESTABLISHED:
-        /* full-close */
-        if (th && FL(&fl, &, FIN, th_seq(th) == conn->ack)) {
-            bool acked = false;
-
-            if (len) {
-                verdict = tcp_data_get(conn, pkt, &len);
-                if (verdict == NET_OK) {
-                    /* net_pkt owned by the recv fifo now */
-                    pkt = NULL;
-                }
-            }
-            else {
-                verdict = NET_OK;
-            }
-
-            conn_ack(conn, + len + 1);
-            keep_alive_timer_stop(conn);
-
-            if (FL(&fl, &, ACK)) {
-                acked = true;
-
-                if (net_tcp_seq_cmp(th_ack(th), conn->seq) > 0) {
-                    uint32_t len_acked = th_ack(th) - conn->seq;
-
-                    conn_seq(conn, + len_acked);
-                }
-            }
-
-            if (acked) {
-                tcp_out(conn, FIN | ACK);
-                conn_seq(conn, + 1);
-                tcp_setup_last_ack_timer(conn);
-                next = TCP_LAST_ACK;
-            } else {
+                next = TCP_ESTABLISHED;
+                net_context_set_state(conn->context,
+                                      NET_CONTEXT_CONNECTED);
+                tcp_ca_init(conn);
                 tcp_out(conn, ACK);
-                next = TCP_CLOSE_WAIT;
-            }
+                keep_alive_timer_restart(conn);
 
+                /* The connection semaphore is released *after*
+                 * we have changed the connection state. This way
+                 * the application can send data and it is queued
+                 * properly even if this thread is running in lower
+                 * priority.
+                 */
+                connection_ok = true;
+
+                /* ACK for SYN has been received. This signilizes that
+                 * the connection makes a "forward progress".
+                 */
+                tcp_nbr_reachability_hint(conn);
+            }
+            else if (pkt) {
+                net_tcp_reply_rst(pkt);
+            }
             break;
-        }
+
+        case TCP_ESTABLISHED :
+            /* full-close */
+            if (th && FL(&fl, &, FIN, th_seq(th) == conn->ack)) {
+                bool acked = false;
+
+                if (len) {
+                    verdict = tcp_data_get(conn, pkt, &len);
+                    if (verdict == NET_OK) {
+                        /* net_pkt owned by the recv fifo now */
+                        pkt = NULL;
+                    }
+                }
+                else {
+                    verdict = NET_OK;
+                }
+
+                conn_ack(conn, + len + 1);
+                keep_alive_timer_stop(conn);
+
+                if (FL(&fl, &, ACK)) {
+                    acked = true;
+
+                    if (net_tcp_seq_cmp(th_ack(th), conn->seq) > 0) {
+                        uint32_t len_acked = th_ack(th) - conn->seq;
+
+                        conn_seq(conn, +len_acked);
+                    }
+                }
+
+                if (acked) {
+                    tcp_out(conn, FIN | ACK);
+                    conn_seq(conn, +1);
+                    tcp_setup_last_ack_timer(conn);
+                    next = TCP_LAST_ACK;
+                }
+                else {
+                    tcp_out(conn, ACK);
+                    next = TCP_CLOSE_WAIT;
+                }
+
+                break;
+            }
 
             /* Whatever we've received, we know that peer is alive, so reset
              * the keepalive timer.
@@ -4138,7 +4140,6 @@ int net_tcp_accept(struct net_context* context, net_tcp_accept_cb_t cb,
                     net_sin((struct net_sockaddr*)&context->local)->sin_port;
             local_port   = net_ntohs(in->sin_port);
             remote_port  = net_ntohs(net_sin(&context->remote)->sin_port);
-
             break;
 
         case NET_AF_INET6 :
@@ -4157,7 +4158,6 @@ int net_tcp_accept(struct net_context* context, net_tcp_accept_cb_t cb,
                     net_sin6((struct net_sockaddr*)&context->local)->sin6_port;
             local_port     = net_ntohs(in6->sin6_port);
             remote_port    = net_ntohs(net_sin6(&context->remote)->sin6_port);
-
             break;
 
         default :
