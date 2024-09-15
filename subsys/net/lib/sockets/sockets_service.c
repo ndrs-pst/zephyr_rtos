@@ -222,8 +222,6 @@ static void socket_service_thread(void)
 	ctx.events[0].events = ZSOCK_POLLIN;
 
 restart:
-	i = 1;
-
 	k_mutex_lock(&lock, K_FOREVER);
 
 	/* Copy individual events to the big array */
