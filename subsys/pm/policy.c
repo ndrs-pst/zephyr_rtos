@@ -152,7 +152,9 @@ static void update_max_latency(void)
 	int32_t new_max_latency_us = SYS_FOREVER_US;
 	struct pm_policy_latency_request *req;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&latency_reqs, req, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_WITH_TYPE(&latency_reqs,
+					       struct pm_policy_latency_request,
+					       req, node) {
 		if ((new_max_latency_us == SYS_FOREVER_US) ||
 		    ((int32_t)req->value_us < new_max_latency_us)) {
 			new_max_latency_us = (int32_t)req->value_us;
@@ -163,7 +165,9 @@ static void update_max_latency(void)
 		struct pm_policy_latency_subscription *sreq;
 		int32_t new_max_latency_cyc = -1;
 
-		SYS_SLIST_FOR_EACH_CONTAINER(&latency_subs, sreq, node) {
+		SYS_SLIST_FOR_EACH_CONTAINER_WITH_TYPE(&latency_subs,
+						       struct pm_policy_latency_subscription,
+						       sreq, node) {
 			sreq->cb(new_max_latency_us);
 		}
 
@@ -185,7 +189,9 @@ static void update_next_event(uint32_t cyc)
 	/* unset the next event pointer */
 	next_event = NULL;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&events_list, evt, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_WITH_TYPE(&events_list,
+					       struct pm_policy_event,
+					       evt, node) {
 		uint64_t cyc_evt = evt->value_cyc;
 
 		/*
@@ -266,7 +272,8 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 
 	for (int16_t i = (int16_t)num_cpu_states - 1; i >= 0; i--) {
 		const struct pm_state_info *state = &cpu_states[i];
-		uint32_t min_residency_cyc, exit_latency_cyc;
+		uint32_t min_residency_cyc;
+		uint32_t exit_latency_cyc;
 
 		/* check if there is a lock on state + substate */
 		if (pm_policy_state_lock_is_active(state->state, state->substate_id)) {
@@ -278,7 +285,7 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 
 		/* skip state if it brings too much latency */
 		if ((max_latency_cyc >= 0) &&
-		    (exit_latency_cyc >= max_latency_cyc)) {
+		    (exit_latency_cyc >= (uint32_t)max_latency_cyc)) {
 			continue;
 		}
 
