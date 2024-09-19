@@ -12,7 +12,7 @@
  *################################################################################
  *|Confirmation code	|		Definition |
  *################################################################################
- *|0x00			|commad execution complete |
+ *|0x00			|command execution complete |
  *--------------------------------------------------------------------------------
  *|0x01			|error when receiving data package |
  *--------------------------------------------------------------------------------
@@ -60,7 +60,7 @@
  *--------------------------------------------------------------------------------
  */
 
-#define R502A_OK 0x00 /*commad execution complete*/
+#define R502A_OK 0x00 /* command execution complete */
 
 /*Package Identifier's definition*/
 #define R502A_COMMAND_PACKET 0x1 /*Command packet*/

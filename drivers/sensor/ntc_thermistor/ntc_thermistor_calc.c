@@ -31,7 +31,7 @@ static int ntc_fixp_linear_interpolate(int x0, int y0, int x1, int y1, int x)
 }
 
 /**
- * ntc_lookup_comp() - Finds indicies where ohm falls between
+ * ntc_lookup_comp() - Finds indices where ohm falls between
  *
  * @ohm: key value search is looking for
  * @i_low: return Lower interval index value

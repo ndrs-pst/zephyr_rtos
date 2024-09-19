@@ -186,14 +186,14 @@ static void zcan_received_cb(struct net_context *ctx, struct net_pkt *pkt,
 	}
 }
 
-static int zcan_bind_ctx(struct net_context *ctx, const struct sockaddr *addr,
+static int zcan_bind_ctx(struct net_context *ctx, const struct net_sockaddr *addr,
 			 socklen_t addrlen)
 {
-	struct sockaddr_can *can_addr = (struct sockaddr_can *)addr;
+	struct net_sockaddr_can *can_addr = (struct net_sockaddr_can *)addr;
 	struct net_if *iface;
 	int ret;
 
-	if (addrlen != sizeof(struct sockaddr_can)) {
+	if (addrlen != sizeof(struct net_sockaddr_can)) {
 		return -EINVAL;
 	}
 
@@ -223,10 +223,10 @@ static int zcan_bind_ctx(struct net_context *ctx, const struct sockaddr *addr,
 }
 
 ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
-			int flags, const struct sockaddr *dest_addr,
+			int flags, const struct net_sockaddr *dest_addr,
 			socklen_t addrlen)
 {
-	struct sockaddr_can can_addr;
+	struct net_sockaddr_can can_addr;
 	struct can_frame zframe;
 	k_timeout_t timeout = K_FOREVER;
 	int ret;
@@ -245,7 +245,7 @@ ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 	}
 
 	if (addrlen == 0) {
-		addrlen = sizeof(struct sockaddr_can);
+		addrlen = sizeof(struct net_sockaddr_can);
 	}
 
 	if (dest_addr == NULL) {
@@ -254,7 +254,7 @@ ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 		can_addr.can_ifindex = -1;
 		can_addr.can_family = AF_CAN;
 
-		dest_addr = (struct sockaddr *)&can_addr;
+		dest_addr = (struct net_sockaddr *)&can_addr;
 	}
 
 	NET_ASSERT(len == sizeof(struct socketcan_frame));
@@ -274,7 +274,7 @@ ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 
 static ssize_t zcan_recvfrom_ctx(struct net_context *ctx, void *buf,
 				 size_t max_len, int flags,
-				 struct sockaddr *src_addr,
+				 struct net_sockaddr *src_addr,
 				 socklen_t *addrlen)
 {
 	struct can_frame zframe;
@@ -466,14 +466,14 @@ static int can_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 /*
  * TODO: A CAN socket can be bound to a network device using SO_BINDTODEVICE.
  */
-static int can_sock_bind_vmeth(void *obj, const struct sockaddr *addr,
+static int can_sock_bind_vmeth(void *obj, const struct net_sockaddr *addr,
 			       socklen_t addrlen)
 {
 	return zcan_bind_ctx(obj, addr, addrlen);
 }
 
 /* The connect() function is no longer necessary. */
-static int can_sock_connect_vmeth(void *obj, const struct sockaddr *addr,
+static int can_sock_connect_vmeth(void *obj, const struct net_sockaddr *addr,
 				  socklen_t addrlen)
 {
 	return 0;
@@ -489,7 +489,7 @@ static int can_sock_listen_vmeth(void *obj, int backlog)
 	return 0;
 }
 
-static int can_sock_accept_vmeth(void *obj, struct sockaddr *addr,
+static int can_sock_accept_vmeth(void *obj, struct net_sockaddr *addr,
 				 socklen_t *addrlen)
 {
 	return 0;
@@ -497,14 +497,14 @@ static int can_sock_accept_vmeth(void *obj, struct sockaddr *addr,
 
 static ssize_t can_sock_sendto_vmeth(void *obj, const void *buf, size_t len,
 				     int flags,
-				     const struct sockaddr *dest_addr,
+				     const struct net_sockaddr *dest_addr,
 				     socklen_t addrlen)
 {
 	return zcan_sendto_ctx(obj, buf, len, flags, dest_addr, addrlen);
 }
 
 static ssize_t can_sock_recvfrom_vmeth(void *obj, void *buf, size_t max_len,
-				       int flags, struct sockaddr *src_addr,
+				       int flags, struct net_sockaddr *src_addr,
 				       socklen_t *addrlen)
 {
 	return zcan_recvfrom_ctx(obj, buf, max_len, flags,
@@ -727,7 +727,7 @@ static const struct socket_op_vtable can_sock_fd_op_vtable = {
 
 static bool can_is_supported(int family, int type, int proto)
 {
-	if (type != SOCK_RAW || proto != CAN_RAW) {
+	if (type != NET_SOCK_RAW || proto != CAN_RAW) {
 		return false;
 	}
 

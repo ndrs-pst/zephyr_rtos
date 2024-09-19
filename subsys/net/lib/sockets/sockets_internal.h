@@ -56,24 +56,24 @@ static inline bool net_socket_is_tls(void *obj)
 struct socket_op_vtable {
 	struct fd_op_vtable fd_vtable;
 	int (*shutdown)(void *obj, int how);
-	int (*bind)(void *obj, const struct sockaddr *addr, socklen_t addrlen);
-	int (*connect)(void *obj, const struct sockaddr *addr,
+	int (*bind)(void *obj, const struct net_sockaddr *addr, socklen_t addrlen);
+	int (*connect)(void *obj, const struct net_sockaddr *addr,
 		       socklen_t addrlen);
 	int (*listen)(void *obj, int backlog);
-	int (*accept)(void *obj, struct sockaddr *addr, socklen_t *addrlen);
+	int (*accept)(void *obj, struct net_sockaddr *addr, socklen_t *addrlen);
 	ssize_t (*sendto)(void *obj, const void *buf, size_t len, int flags,
-			  const struct sockaddr *dest_addr, socklen_t addrlen);
+			  const struct net_sockaddr *dest_addr, socklen_t addrlen);
 	ssize_t (*recvfrom)(void *obj, void *buf, size_t max_len, int flags,
-			    struct sockaddr *src_addr, socklen_t *addrlen);
+			    struct net_sockaddr *src_addr, socklen_t *addrlen);
 	int (*getsockopt)(void *obj, int level, int optname,
 			  void *optval, socklen_t *optlen);
 	int (*setsockopt)(void *obj, int level, int optname,
 			  const void *optval, socklen_t optlen);
 	ssize_t (*sendmsg)(void *obj, const struct msghdr *msg, int flags);
 	ssize_t (*recvmsg)(void *obj, struct msghdr *msg, int flags);
-	int (*getpeername)(void *obj, struct sockaddr *addr,
+	int (*getpeername)(void *obj, struct net_sockaddr *addr,
 			   socklen_t *addrlen);
-	int (*getsockname)(void *obj, struct sockaddr *addr,
+	int (*getsockname)(void *obj, struct net_sockaddr *addr,
 			   socklen_t *addrlen);
 };
 

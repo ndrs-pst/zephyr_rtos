@@ -11,7 +11,7 @@
 #if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)
 /* Per CPU architecture specifics */
 struct _cpu_arch {
-	int8_t exc_depth;
+    int8_t exc_depth;
 };
 
 #else
@@ -20,12 +20,12 @@ struct _cpu_arch {
 
 /* Per CPU architecture specifics (empty) */
 struct _cpu_arch {
-#ifdef __cplusplus
-	/* This struct will have a size 0 in C which is not allowed in C++ (it'll have a size 1). To
-	 * prevent this, we add a 1 byte dummy variable.
-	 */
-	uint8_t dummy;
-#endif
+    #if (defined(__cplusplus) || defined(_MSC_VER)) /* #CUSTOM@NDRS */
+    /* This struct will have a size 0 in C which is not allowed in C++ (it'll have a size 1). To
+     * prevent this, we add a 1 byte dummy variable.
+     */
+    uint8_t dummy;
+    #endif
 };
 
 #endif

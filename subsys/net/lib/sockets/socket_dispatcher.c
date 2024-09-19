@@ -29,8 +29,8 @@ static int sock_dispatch_create(int family, int type, int proto);
 
 static bool is_tls(int proto)
 {
-	if ((proto >= IPPROTO_TLS_1_0 && proto <= IPPROTO_TLS_1_2) ||
-	    (proto >= IPPROTO_DTLS_1_0 && proto <= IPPROTO_DTLS_1_2)) {
+	if ((proto >= NET_IPPROTO_TLS_1_0 && proto <= NET_IPPROTO_TLS_1_2) ||
+	    (proto >= NET_IPPROTO_DTLS_1_0 && proto <= NET_IPPROTO_DTLS_1_2)) {
 		return true;
 	}
 
@@ -93,7 +93,7 @@ static struct net_socket_register *sock_dispatch_find(int family, int type,
 		}
 
 		if (sock_family->family != family &&
-		    sock_family->family != AF_UNSPEC) {
+		    sock_family->family != NET_AF_UNSPEC) {
 			continue;
 		}
 
@@ -212,7 +212,7 @@ static int sock_dispatch_shutdown_vmeth(void *obj, int how)
 	return zsock_shutdown(fd, how);
 }
 
-static int sock_dispatch_bind_vmeth(void *obj, const struct sockaddr *addr,
+static int sock_dispatch_bind_vmeth(void *obj, const struct net_sockaddr *addr,
 				    socklen_t addrlen)
 {
 	int fd = sock_dispatch_default(obj);
@@ -224,7 +224,7 @@ static int sock_dispatch_bind_vmeth(void *obj, const struct sockaddr *addr,
 	return zsock_bind(fd, addr, addrlen);
 }
 
-static int sock_dispatch_connect_vmeth(void *obj, const struct sockaddr *addr,
+static int sock_dispatch_connect_vmeth(void *obj, const struct net_sockaddr *addr,
 				       socklen_t addrlen)
 {
 	int fd = sock_dispatch_default(obj);
@@ -247,7 +247,7 @@ static int sock_dispatch_listen_vmeth(void *obj, int backlog)
 	return zsock_listen(fd, backlog);
 }
 
-static int sock_dispatch_accept_vmeth(void *obj, struct sockaddr *addr,
+static int sock_dispatch_accept_vmeth(void *obj, struct net_sockaddr *addr,
 				      socklen_t *addrlen)
 {
 	int fd = sock_dispatch_default(obj);
@@ -261,7 +261,7 @@ static int sock_dispatch_accept_vmeth(void *obj, struct sockaddr *addr,
 
 static ssize_t sock_dispatch_sendto_vmeth(void *obj, const void *buf,
 					  size_t len, int flags,
-					  const struct sockaddr *addr,
+					  const struct net_sockaddr *addr,
 					  socklen_t addrlen)
 {
 	int fd = sock_dispatch_default(obj);
@@ -287,7 +287,7 @@ static ssize_t sock_dispatch_sendmsg_vmeth(void *obj, const struct msghdr *msg,
 
 static ssize_t sock_dispatch_recvfrom_vmeth(void *obj, void *buf,
 					    size_t max_len, int flags,
-					    struct sockaddr *addr,
+					    struct net_sockaddr *addr,
 					    socklen_t *addrlen)
 {
 	int fd = sock_dispatch_default(obj);
@@ -400,7 +400,7 @@ static int sock_dispatch_close_vmeth(void *obj)
 	return 0;
 }
 
-static int sock_dispatch_getpeername_vmeth(void *obj, struct sockaddr *addr,
+static int sock_dispatch_getpeername_vmeth(void *obj, struct net_sockaddr *addr,
 					   socklen_t *addrlen)
 {
 	int fd = sock_dispatch_default(obj);
@@ -412,7 +412,7 @@ static int sock_dispatch_getpeername_vmeth(void *obj, struct sockaddr *addr,
 	return zsock_getpeername(fd, addr, addrlen);
 }
 
-static int sock_dispatch_getsockname_vmeth(void *obj, struct sockaddr *addr,
+static int sock_dispatch_getsockname_vmeth(void *obj, struct net_sockaddr *addr,
 					   socklen_t *addrlen)
 {
 	int fd = sock_dispatch_default(obj);
@@ -495,5 +495,5 @@ static bool is_supported(int family, int type, int proto)
 	return true;
 }
 
-NET_SOCKET_REGISTER(sock_dispatch, 0, AF_UNSPEC, is_supported,
+NET_SOCKET_REGISTER(sock_dispatch, 0, NET_AF_UNSPEC, is_supported,
 		    sock_dispatch_create);

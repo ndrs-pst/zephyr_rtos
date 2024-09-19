@@ -149,7 +149,7 @@ void tc_attach_wait_src_run(void *obj)
 
 	/* Debounce the cc state */
 	if (new_cc_state != tc->cc_state) {
-		/* Start debouce timer */
+		/* Start debounce timer */
 		usbc_timer_start(&tc->tc_t_cc_debounce);
 		tc->cc_state = new_cc_state;
 	}
