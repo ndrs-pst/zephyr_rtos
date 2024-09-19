@@ -86,7 +86,7 @@ static int format_set(const struct log_backend *const backend, uint32_t log_type
 	return 0;
 }
 
-const struct log_backend_api log_backend_native_posix_api = {
+static const struct log_backend_api log_backend_native_posix_api = {
 	.process = process,
 	.panic = panic,
 	.dropped = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : dropped,

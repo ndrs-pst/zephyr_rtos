@@ -157,11 +157,11 @@ static struct net_pkt *setup_gptp_frame(struct net_if *iface,
 
 #if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
 	pkt = net_pkt_alloc_with_buffer_debug(iface, sizeof(struct gptp_hdr) +
-					      extra_header, AF_UNSPEC, 0,
+					      extra_header, NET_AF_UNSPEC, 0,
 					      NET_BUF_TIMEOUT, caller, line);
 #else
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct gptp_hdr) +
-					extra_header, AF_UNSPEC, 0,
+					extra_header, NET_AF_UNSPEC, 0,
 					NET_BUF_TIMEOUT);
 #endif
 	if (!pkt) {
@@ -483,7 +483,7 @@ struct net_pkt *gptp_prepare_announce(int port)
 	NET_ASSERT(iface);
 
 	pkt = setup_gptp_frame(iface, sizeof(struct gptp_announce) - 8 +
-			       ntohs(global_ds->path_trace.len));
+			       net_ntohs(global_ds->path_trace.len));
 	if (!pkt) {
 		NET_DBG("Cannot get gPTP frame");
 		return NULL;
@@ -548,7 +548,7 @@ struct net_pkt *gptp_prepare_announce(int port)
 
 	hdr->message_length = htons(sizeof(struct gptp_hdr) +
 				    sizeof(struct gptp_announce) - 8 +
-				    ntohs(global_ds->path_trace.len));
+				    net_ntohs(global_ds->path_trace.len));
 
 	ann->tlv.len = global_ds->path_trace.len;
 
@@ -562,7 +562,7 @@ struct net_pkt *gptp_prepare_announce(int port)
 	if (net_pkt_skip(pkt, sizeof(struct gptp_hdr) +
 			 sizeof(struct gptp_announce) - 8) ||
 	    net_pkt_write(pkt, &global_ds->path_trace.path_sequence[0][0],
-			  ntohs(global_ds->path_trace.len))) {
+			  net_ntohs(global_ds->path_trace.len))) {
 		goto fail;
 	}
 
@@ -607,9 +607,9 @@ int gptp_handle_follow_up(int port, struct net_pkt *pkt)
 
 	if (sync_hdr->sequence_id != hdr->sequence_id) {
 		NET_WARN("%s sequence id %d %s %s %d",
-			 "FOLLOWUP", ntohs(hdr->sequence_id),
+			 "FOLLOWUP", net_ntohs(hdr->sequence_id),
 			 "does not match",
-			 "SYNC", ntohs(sync_hdr->sequence_id));
+			 "SYNC", net_ntohs(sync_hdr->sequence_id));
 		return -EINVAL;
 	}
 
@@ -694,9 +694,9 @@ int gptp_handle_pdelay_resp(int port, struct net_pkt *pkt)
 	/* Check sequence id. */
 	if (hdr->sequence_id != req_hdr->sequence_id) {
 		NET_WARN("Sequence Id %d %s %d",
-			 ntohs(hdr->sequence_id),
+			 net_ntohs(hdr->sequence_id),
 			 "does not match",
-			 ntohs(req_hdr->sequence_id));
+			 net_ntohs(req_hdr->sequence_id));
 		goto reset;
 	}
 
@@ -754,9 +754,9 @@ int gptp_handle_pdelay_follow_up(int port, struct net_pkt *pkt)
 	/* Check sequence id. */
 	if (hdr->sequence_id != req_hdr->sequence_id) {
 		NET_WARN("Sequence Id %d %s %d",
-			 ntohs(hdr->sequence_id),
+			 net_ntohs(hdr->sequence_id),
 			 "does not match",
-			 ntohs(req_hdr->sequence_id));
+			 net_ntohs(req_hdr->sequence_id));
 		goto reset;
 	}
 

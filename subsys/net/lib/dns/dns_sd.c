@@ -647,64 +647,64 @@ int add_srv_record(const struct dns_sd_rec *inst, uint32_t ttl,
 
 #ifndef CONFIG_NET_TEST
 static bool port_in_use_sockaddr(uint16_t proto, uint16_t port,
-	const struct sockaddr *addr)
+                                 const struct net_sockaddr *addr)
 {
-	const struct sockaddr_in any = {
-		.sin_family = AF_INET,
-		.sin_addr.s_addr = INADDR_ANY,
-	};
-	const struct sockaddr_in6 any6 = {
-		.sin6_family = AF_INET6,
-		.sin6_addr = in6addr_any,
-	};
-	const struct sockaddr *anyp =
-		(addr->sa_family == AF_INET)
-		? (const struct sockaddr *) &any
-		: (const struct sockaddr *) &any6;
+    const struct net_sockaddr_in any = {
+        .sin_family = NET_AF_INET,
+        .sin_addr.s_addr_be = NET_INADDR_ANY,
+    };
+    const struct net_sockaddr_in6 any6 = {
+        .sin6_family = NET_AF_INET6,
+        .sin6_addr = in6addr_any,
+    };
+    const struct net_sockaddr *anyp =
+        (addr->sa_family == NET_AF_INET)
+        ? (const struct net_sockaddr *) &any
+        : (const struct net_sockaddr *) &any6;
 
-	return
-		net_context_port_in_use(proto, port, addr)
-		|| net_context_port_in_use(proto, port, anyp);
+    return
+        net_context_port_in_use(proto, port, addr)
+        || net_context_port_in_use(proto, port, anyp);
 }
 
 static bool port_in_use(uint16_t proto, uint16_t port,
-			const struct in_addr *addr4,
-			const struct in6_addr *addr6)
+                        const struct net_in_addr*  addr4,
+                        const struct net_in6_addr* addr6)
 {
-	bool ret = false;
+    bool ret = false;
 
-	if (addr4 != NULL) {
-		struct sockaddr_in sa = { 0 };
+    if (addr4 != NULL) {
+        struct net_sockaddr_in sa = { 0 };
 
-		sa.sin_family = AF_INET;
-		sa.sin_addr = *addr4;
+        sa.sin_family = NET_AF_INET;
+        sa.sin_addr   = *addr4;
 
-		ret = port_in_use_sockaddr(proto, port,
-					   (struct sockaddr *)&sa);
-		if (ret) {
-			goto out;
-		}
-	}
+        ret = port_in_use_sockaddr(proto, port,
+                                   (struct sockaddr*)&sa);
+        if (ret) {
+            goto out;
+        }
+    }
 
-	if (addr6 != NULL) {
-		struct sockaddr_in6 sa = { 0 };
+    if (addr6 != NULL) {
+        struct net_sockaddr_in6 sa = { 0 };
 
-		sa.sin6_family = AF_INET6;
-		sa.sin6_addr = *addr6;
+        sa.sin6_family = NET_AF_INET6;
+        sa.sin6_addr = *addr6;
 
-		ret = port_in_use_sockaddr(proto, port,
-					   (struct sockaddr *)&sa);
-		if (ret) {
-			goto out;
-		}
-	}
+        ret = port_in_use_sockaddr(proto, port,
+                                   (struct sockaddr*)&sa);
+        if (ret) {
+            goto out;
+        }
+    }
 
-out:
-	return ret;
+out :
+    return ret;
 }
 #else /* CONFIG_NET_TEST */
-static inline bool port_in_use(uint16_t proto, uint16_t port, const struct in_addr *addr4,
-	const struct in6_addr *addr6)
+static inline bool port_in_use(uint16_t proto, uint16_t port, const struct net_in_addr *addr4,
+	const struct net_in6_addr *addr6)
 {
 	ARG_UNUSED(port);
 	ARG_UNUSED(addr4);
@@ -714,8 +714,8 @@ static inline bool port_in_use(uint16_t proto, uint16_t port, const struct in_ad
 #endif /* CONFIG_NET_TEST */
 
 
-int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst, const struct in_addr *addr4,
-			    const struct in6_addr *addr6, uint8_t *buf, uint16_t buf_size)
+int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst, const struct net_in_addr *addr4,
+			    const struct net_in6_addr *addr6, uint8_t *buf, uint16_t buf_size)
 {
 	/*
 	 * RFC 6763 Section 12.1
@@ -755,15 +755,15 @@ int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst, const struct in_addr 
 	}
 
 	if (strncmp("_tcp", inst->proto, DNS_SD_PROTO_SIZE) == 0) {
-		proto = IPPROTO_TCP;
+		proto = NET_IPPROTO_TCP;
 	} else if (strncmp("_udp", inst->proto, DNS_SD_PROTO_SIZE) == 0) {
-		proto = IPPROTO_UDP;
+		proto = NET_IPPROTO_UDP;
 	} else {
 		NET_DBG("invalid protocol %s", inst->proto);
 		return -EINVAL;
 	}
 
-	if (!port_in_use(proto, ntohs(*(inst->port)), addr4, addr6)) {
+	if (!port_in_use(proto, net_ntohs(*(inst->port)), addr4, addr6)) {
 		/* Service is not yet bound, so do not advertise */
 		return -EHOSTDOWN;
 	}
@@ -828,7 +828,7 @@ int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst, const struct in_addr 
 }
 
 int dns_sd_handle_service_type_enum(const struct dns_sd_rec *inst,
-				    const struct in_addr *addr4, const struct in6_addr *addr6,
+				    const struct net_in_addr *addr4, const struct net_in6_addr *addr6,
 				    uint8_t *buf, uint16_t buf_size)
 {
 	static const char query[] = { "\x09_services\x07_dns-sd\x04_udp\x05local" };
@@ -854,15 +854,15 @@ int dns_sd_handle_service_type_enum(const struct dns_sd_rec *inst,
 	}
 
 	if (strncmp("_tcp", inst->proto, DNS_SD_PROTO_SIZE) == 0) {
-		proto = IPPROTO_TCP;
+		proto = NET_IPPROTO_TCP;
 	} else if (strncmp("_udp", inst->proto, DNS_SD_PROTO_SIZE) == 0) {
-		proto = IPPROTO_UDP;
+		proto = NET_IPPROTO_UDP;
 	} else {
 		NET_DBG("invalid protocol %s", inst->proto);
 		return -EINVAL;
 	}
 
-	if (!port_in_use(proto, ntohs(*(inst->port)), addr4, addr6)) {
+	if (!port_in_use(proto, net_ntohs(*(inst->port)), addr4, addr6)) {
 		/* Service is not yet bound, so do not advertise */
 		NET_DBG("service not bound");
 		return -EHOSTDOWN;

@@ -6,6 +6,10 @@
 
  #include <atmel/samc2x.dtsi>
 
+/* @see Table 10-3. Interrupt Line Mapping, SAM C21 */
+/* @see Table 16-9. PCHCTRLm Mapping for gclk_periph_ch */
+/* @see 17.7 Register Summary for mclk_offset_bit */
+
 / {
 	aliases {
 		sercom-4 = &sercom4;
@@ -19,7 +23,7 @@
 			reg = <0x42004800 0x30>;
 			interrupts = <26 0>;
 			interrupt-names = "resrdy";
-			clocks = <&gclk 34>, <&mclk 0x1c 18>;
+			clocks = <&gclk 34>, <&mclk 0x1C 18>;
 			clock-names = "GCLK", "MCLK";
 			gclk = <0>;
 			prescaler = <4>;
@@ -30,7 +34,7 @@
 			compatible = "atmel,sam0-sercom";
 			reg = <0x42001400 0x40>;
 			interrupts = <13 0>;
-			clocks = <&gclk 23>, <&mclk 0x1c 5>;
+			clocks = <&gclk 23>, <&mclk 0x1C 5>;
 			clock-names = "GCLK", "MCLK";
 			status = "disabled";
 		};
@@ -39,14 +43,14 @@
 			compatible = "atmel,sam0-sercom";
 			reg = <0x42001800 0x40>;
 			interrupts = <14 0>;
-			clocks = <&gclk 25>, <&mclk 0x1c 6>;
+			clocks = <&gclk 25>, <&mclk 0x1C 6>;
 			clock-names = "GCLK", "MCLK";
 			status = "disabled";
 		};
 
 		can0: can@42001c00 {
 			compatible = "atmel,sam0-can";
-			reg = <0x42001c00 0x100>;
+			reg = <0x42001C00 0x100>;
 			interrupts = <15 0>;
 			interrupt-names = "int0";
 			clocks = <&gclk 26>, <&mclk 0x10 8>;
@@ -67,5 +71,62 @@
 			divider = <12>;
 			status = "disabled";
 		};
+
+		dmac: dmac@41006000 {
+			compatible = "atmel,sam0-dmac";
+			reg = <0x41006000 0x50>;
+			interrupts = <7 0>;
+			#dma-cells = <2>;
+		};
+
+		tc0: tc@42003000 {
+			compatible = "atmel,sam0-tc32";
+			reg = <0x42003000 0x40>;
+			interrupts = <20 0>;
+			clocks = <&gclk 30>, <&mclk 0x1C 12>;
+			clock-names = "GCLK", "MCLK";
+		};
+
+		tc1: tc@42003400 {
+			compatible = "atmel,sam0-tc";
+			reg = <0x42003400 0x40>;
+			interrupts = <21 0>;
+			clocks = <&gclk 30>, <&mclk 0x1C 13>;
+			clock-names = "GCLK", "MCLK";
+
+			channels = <2>;
+			counter-size = <8>;
+		};
+
+		tc2: tc@42003800 {
+			compatible = "atmel,sam0-tc";
+			reg = <0x42003800 0x40>;
+			interrupts = <22 0>;
+			clocks = <&gclk 31>, <&mclk 0x1C 14>;
+			clock-names = "GCLK", "MCLK";
+
+			channels = <2>;
+			counter-size = <8>;
+		};
 	};
+};
+
+&dac0 {
+	interrupts = <28 0>;
+	clocks = <&gclk 36>, <&mclk 0x1C 21>;
+	clock-names = "GCLK", "MCLK";
+};
+
+&tc4 {
+	interrupts = <24 0>;
+	clocks = <&gclk 32>, <&mclk 0x1C 16>;
+	clock-names = "GCLK", "MCLK";
+    status = "disabled";
+};
+
+&adc0 {
+	interrupts = <25 0>;
+	interrupt-names = "resrdy";
+	clocks = <&gclk 33>, <&mclk 0x1C 17>;
+	clock-names = "GCLK", "MCLK";
 };

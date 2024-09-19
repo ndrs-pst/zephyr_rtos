@@ -18,20 +18,21 @@ extern "C" {
 #endif
 
 struct smp_hdr {
-#ifdef CONFIG_LITTLE_ENDIAN
-	uint8_t  nh_op:3;		/* MGMT_OP_[...] */
-	uint8_t  nh_version:2;
-	uint8_t  _res1:3;
-#else
-	uint8_t  _res1:3;
-	uint8_t  nh_version:2;
-	uint8_t  nh_op:3;		/* MGMT_OP_[...] */
-#endif
-	uint8_t  nh_flags;		/* Reserved for future flags */
-	uint16_t nh_len;		/* Length of the payload */
-	uint16_t nh_group;		/* MGMT_GROUP_ID_[...] */
-	uint8_t  nh_seq;		/* Sequence number */
-	uint8_t  nh_id;			/* Message ID within group */
+    #ifdef CONFIG_LITTLE_ENDIAN
+    uint8_t nh_op      : 3; /* MGMT_OP_[...] */
+    uint8_t nh_version : 2;
+    uint8_t _res1      : 3;
+    #else
+    uint8_t _res1      : 3;
+    uint8_t nh_version : 2;
+    uint8_t nh_op      : 3; /* MGMT_OP_[...] */
+    #endif
+
+    uint8_t  nh_flags; /* Reserved for future flags */
+    uint16_t nh_len;   /* Length of the payload */
+    uint16_t nh_group; /* MGMT_GROUP_ID_[...] */
+    uint8_t  nh_seq;   /* Sequence number */
+    uint8_t  nh_id;    /* Message ID within group */
 } __packed;
 
 struct smp_transport;
@@ -42,19 +43,19 @@ struct zephyr_smp_transport;
  *
  * This function always consumes the supplied net_buf.
  *
- * @param smtp                  The transport to use to send the corresponding
- *                                  response(s).
- * @param nb                    The request packet to process.
+ * @param smtp The transport to use to send the corresponding
+ *             response(s).
+ * @param nb   The request packet to process.
  */
-void smp_rx_req(struct smp_transport *smtp, struct net_buf *nb);
+void smp_rx_req(struct smp_transport* smtp, struct net_buf* nb);
 
 #ifdef CONFIG_SMP_CLIENT
 /**
  * @brief Trig SMP client request packet for transmission.
  *
- * @param work	The transport to use to send the corresponding response(s).
+ * @param work The transport to use to send the corresponding response(s).
  */
-void smp_tx_req(struct k_work *work);
+void smp_tx_req(struct k_work* work);
 #endif
 
 /**
@@ -62,22 +63,22 @@ void smp_tx_req(struct k_work *work);
  *
  * If a source buf is provided, its user data is copied into the new buffer.
  *
- * @param req		An optional source buffer to copy user data from.
- * @param arg		The streamer providing the callback.
+ * @param req An optional source buffer to copy user data from.
+ * @param arg The streamer providing the callback.
  *
- * @return	Newly-allocated buffer on success
- *		NULL on failure.
+ * @return Newly-allocated buffer on success
+ *  NULL on failure.
  */
-void *smp_alloc_rsp(const void *req, void *arg);
+void* smp_alloc_rsp(void const* req, void* arg);
 
 
 /**
  * @brief Frees an allocated buffer.
  *
- * @param buf		The buffer to free.
- * @param arg		The streamer providing the callback.
+ * @param buf The buffer to free.
+ * @param arg The streamer providing the callback.
  */
-void smp_free_buf(void *buf, void *arg);
+void smp_free_buf(void* buf, void* arg);
 
 #ifdef __cplusplus
 }
