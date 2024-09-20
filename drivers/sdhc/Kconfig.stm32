@@ -1,0 +1,18 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SDHC_STM32
+	bool "STM32 SDHC Driver"
+	default y
+	select SDHC_SUPPORTS_NATIVE_MODE
+	select PINCTRL
+	help
+	  Enables the STM32 SD Host controller driver
+
+if SDHC_STM32
+
+# STM32 DMA needs 32 bit aligned buffers
+config SDHC_BUFFER_ALIGNMENT
+	default 4
+
+endif
