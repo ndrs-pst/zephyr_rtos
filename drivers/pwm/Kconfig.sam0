@@ -9,3 +9,9 @@ config PWM_SAM0_TCC
 	depends on DT_HAS_ATMEL_SAM0_TCC_PWM_ENABLED
 	help
 	  Enable PWM driver for Atmel SAM0 MCUs using the TCC timer/counter.
+
+config PWM_SAM0_TC
+	bool "Atmel SAM0 MCU Family TC PWM Driver"
+	depends on DT_HAS_ATMEL_SAM0_TC_PWM_ENABLED
+	help
+	  Enable PWM driver for Atmel SAM0 MCUs using the TC timer/counter.

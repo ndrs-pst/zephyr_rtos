@@ -513,8 +513,8 @@ ZTEST(test_log_core_additional, test_log_msg_create)
 					  sizeof(msg_data), NULL);
 		/* try z_log_msg_static_create() */
 		Z_LOG_MSG_STACK_CREATE(0, domain, __log_current_const_data,
-					level, &msg_data,
-					sizeof(msg_data), NULL);
+		                        level, &msg_data,
+		                        sizeof(msg_data), NULL);
 
 		Z_LOG_MSG_CREATE(!IS_ENABLED(CONFIG_USERSPACE), mode,
 			  Z_LOG_LOCAL_DOMAIN_ID, NULL,

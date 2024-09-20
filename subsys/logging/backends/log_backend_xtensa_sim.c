@@ -65,7 +65,7 @@ static void dropped(const struct log_backend *const backend, uint32_t cnt)
 	log_backend_std_dropped(&log_output_xsim, cnt);
 }
 
-const struct log_backend_api log_backend_xtensa_sim_api = {
+static const struct log_backend_api log_backend_xtensa_sim_api = {
 	.process = process,
 	.panic = panic,
 	.dropped = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : dropped,

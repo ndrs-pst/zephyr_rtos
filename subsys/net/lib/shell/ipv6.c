@@ -105,7 +105,7 @@ static void address_lifetime_cb(struct net_if *iface, void *user_data)
 		uint8_t prefix_len;
 
 		if (!ipv6->unicast[i].is_used ||
-		    ipv6->unicast[i].address.family != AF_INET6) {
+		    ipv6->unicast[i].address.family != NET_AF_INET6) {
 			continue;
 		}
 
@@ -220,7 +220,7 @@ static int cmd_net_ip6_add(const struct shell *sh, size_t argc, char *argv[])
 #if defined(CONFIG_NET_NATIVE_IPV6)
 	struct net_if *iface = NULL;
 	int idx;
-	struct in6_addr addr;
+	struct net_in6_addr addr;
 
 	if (argc != 3) {
 		PR_ERROR("Correct usage: net ipv6 add <index> <address>\n");
@@ -238,7 +238,7 @@ static int cmd_net_ip6_add(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOENT;
 	}
 
-	if (net_addr_pton(AF_INET6, argv[2], &addr)) {
+	if (net_addr_pton(NET_AF_INET6, argv[2], &addr)) {
 		PR_ERROR("Invalid address: %s\n", argv[2]);
 		return -EINVAL;
 	}
@@ -274,7 +274,7 @@ static int cmd_net_ip6_del(const struct shell *sh, size_t argc, char *argv[])
 #if defined(CONFIG_NET_NATIVE_IPV6)
 	struct net_if *iface = NULL;
 	int idx;
-	struct in6_addr addr;
+	struct net_in6_addr addr;
 
 	if (argc != 3) {
 		PR_ERROR("Correct usage: net ipv6 del <index> <address>\n");
@@ -292,7 +292,7 @@ static int cmd_net_ip6_del(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOENT;
 	}
 
-	if (net_addr_pton(AF_INET6, argv[2], &addr)) {
+	if (net_addr_pton(NET_AF_INET6, argv[2], &addr)) {
 		PR_ERROR("Invalid address: %s\n", argv[2]);
 		return -EINVAL;
 	}
@@ -329,7 +329,7 @@ static int cmd_net_ip6_pe(const struct shell *sh, size_t argc, char *argv[])
 #if defined(CONFIG_NET_NATIVE_IPV6)
 #if CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT > 0
 	bool do_allowlisting = true;
-	struct in6_addr prefix;
+	struct net_in6_addr prefix;
 	bool do_add;
 	int arg = 1;
 	int ret;

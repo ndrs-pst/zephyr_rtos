@@ -49,9 +49,11 @@ def printfile(s):
     print(s, file=kconfig_file)
 
 def str2ident(s):
-    # Converts 's' to a form suitable for (part of) an identifier
+    # First replace '+' with 'P' #CUSTOM@NDRS
+    s = s.replace('+', 'P')
 
-    return re.sub('[-,.@/+]', '_', s.upper())
+    # Converts 's' to a form suitable for (part of) an identifier
+    return re.sub('[-,.@/]', '_', s.upper())
 
 def compat2kconfig(compat):
     compat_ident = str2ident(compat)

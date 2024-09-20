@@ -37,7 +37,7 @@ extern "C" {
  * @{
  */
 
-#define FCB_MAX_LEN	(0x3fffu) /**< Max length of element (16,383) */
+#define FCB_MAX_LEN         (0x3FFFU)       /**< Max length of element (16,383) */
 
 /**
  * @brief FCB entry info structure. This data structure describes the element

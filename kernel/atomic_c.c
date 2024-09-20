@@ -18,6 +18,7 @@
  * (originally from x86's atomic.c)
  */
 
+#include <zephyr/kernel.h>                  /* #CUSTOM@NDRS */
 #include <zephyr/toolchain.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/spinlock.h>
@@ -90,7 +91,7 @@ bool z_impl_atomic_cas(atomic_t *target, atomic_val_t old_value,
 	 * massive stack overflow. Consider CONFIG_ATOMIC_OPERATIONS_ARCH
 	 * or CONFIG_ATOMIC_OPERATIONS_BUILTIN instead.
 	 */
-	BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP));
+	BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP), "CONFIG_SMP shall not set");
 
 	key = k_spin_lock(&lock);
 
@@ -217,14 +218,12 @@ ATOMIC_SYSCALL_HANDLER_TARGET_VALUE(atomic_sub);
  *
  * @return The value read from <target>
  */
-atomic_val_t atomic_get(const atomic_t *target)
-{
-	return *target;
+atomic_val_t atomic_get(const atomic_t* target) {
+    return (*target);
 }
 
-atomic_ptr_val_t atomic_ptr_get(const atomic_ptr_t *target)
-{
-	return *target;
+atomic_ptr_val_t atomic_ptr_get(const atomic_ptr_t* target) {
+    return (*target);
 }
 
 /**

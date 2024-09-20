@@ -192,8 +192,7 @@ struct jesd216_bfp {
 static inline uint8_t jesd216_bfp_addrbytes(const struct jesd216_bfp *hp)
 {
 	uint32_t dw1 = sys_le32_to_cpu(hp->dw1);
-	uint8_t addr_support = (dw1 & JESD216_SFDP_BFP_DW1_ADDRBYTES_MASK)
-		>> JESD216_SFDP_BFP_DW1_ADDRBYTES_SHFT;
+	uint8_t addr_support = (uint8_t)((dw1 & JESD216_SFDP_BFP_DW1_ADDRBYTES_MASK) >> JESD216_SFDP_BFP_DW1_ADDRBYTES_SHFT);
 
 	return addr_support;
 }
