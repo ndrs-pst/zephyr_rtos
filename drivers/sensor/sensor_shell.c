@@ -232,7 +232,7 @@ static enum dynamic_command_context current_cmd_ctx = NONE;
 /* Mutex for accessing shared RTIO/IODEV data structures */
 K_MUTEX_DEFINE(cmd_get_mutex);
 
-/* Crate a single common config for one-shot reading */
+/* Create a single common config for one-shot reading */
 static struct sensor_chan_spec iodev_sensor_shell_channels[SENSOR_CHAN_ALL];
 static struct sensor_read_config iodev_sensor_shell_read_config = {
 	.sensor = NULL,

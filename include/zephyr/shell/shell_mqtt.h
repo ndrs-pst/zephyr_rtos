@@ -67,7 +67,7 @@ struct shell_mqtt {
 	struct k_mutex lock;
 
 	/** MQTT Broker details. */
-	struct sockaddr_storage broker;
+	struct net_sockaddr_storage broker;
 
 	struct zsock_addrinfo *haddr;
 	struct zsock_pollfd fds[1];

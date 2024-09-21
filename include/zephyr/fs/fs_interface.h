@@ -13,17 +13,17 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_FILE_SYSTEM_MAX_FILE_NAME) && (CONFIG_FILE_SYSTEM_MAX_FILE_NAME - 0) > 0
+#if defined(CONFIG_FILE_SYSTEM_MAX_FILE_NAME) && ((CONFIG_FILE_SYSTEM_MAX_FILE_NAME - 0) > 0)
 
 /* No in-tree file system supports name longer than 255 characters */
-#if (CONFIG_FILE_SYSTEM_LITTLEFS || CONFIG_FAT_FILESYSTEM_ELM ||	\
-	CONFIG_FILE_SYSTEM_EXT2) && (CONFIG_FILE_SYSTEM_MAX_FILE_NAME > 255)
+#if (CONFIG_FILE_SYSTEM_LITTLEFS || CONFIG_FAT_FILESYSTEM_ELM ||    \
+     CONFIG_FILE_SYSTEM_EXT2) && (CONFIG_FILE_SYSTEM_MAX_FILE_NAME > 255)
 #error "Max allowed CONFIG_FILE_SYSTEM_MAX_FILE_NAME is 255 characters, when any in-tree FS enabled"
 #endif
 
 /* Enabled FAT driver, without LFN, restricts name length to 12 characters */
 #if defined(CONFIG_FAT_FILESYSTEM_ELM) && !(CONFIG_FS_FATFS_LFN) && \
-	(CONFIG_FILE_SYSTEM_MAX_FILE_NAME > 12)
+    (CONFIG_FILE_SYSTEM_MAX_FILE_NAME > 12)
 #error "CONFIG_FILE_SYSTEM_MAX_FILE_NAME can not be > 12 if FAT is enabled without LFN"
 #endif
 
@@ -56,7 +56,6 @@ extern "C" {
 #endif /* filesystem selection */
 
 #endif /* CONFIG_FILE_SYSTEM_MAX_FILE_NAME */
-
 
 /* Type for fs_open flags */
 typedef uint8_t fs_mode_t;

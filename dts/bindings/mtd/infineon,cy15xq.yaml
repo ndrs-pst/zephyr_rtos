@@ -1,0 +1,9 @@
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# Copyright (c) 2023 NDR Solution (Thailand) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon (CY15BxxxQ) SPI FRAM
+
+compatible: "infineon,cy15xq"
+
+include: ["infineon,cy15x-base.yaml", spi-device.yaml]

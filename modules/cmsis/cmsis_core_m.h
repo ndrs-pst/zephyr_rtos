@@ -23,8 +23,12 @@
 
 #include <soc.h>
 
+#if defined(_MSC_VER)
+ // pass
+#else
 #if __NVIC_PRIO_BITS != NUM_IRQ_PRIO_BITS
 #error "NUM_IRQ_PRIO_BITS and __NVIC_PRIO_BITS are not set to the same value"
+#endif
 #endif
 
 #if __MPU_PRESENT != CONFIG_CPU_HAS_ARM_MPU
@@ -40,7 +44,7 @@
  * left undefined on platform where it is not optional.
  */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) && \
-	(__VTOR_PRESENT != CONFIG_CPU_CORTEX_M_HAS_VTOR)
+            (__VTOR_PRESENT != CONFIG_CPU_CORTEX_M_HAS_VTOR)
 #error "__VTOR_PRESENT and CONFIG_CPU_CORTEX_M_HAS_VTOR are not set to the same value."
 #endif
 

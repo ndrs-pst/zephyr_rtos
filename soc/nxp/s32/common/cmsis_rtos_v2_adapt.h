@@ -14,6 +14,9 @@
 #undef TRUE
 #undef FALSE
 
-enum { FALSE, TRUE};
+enum {
+    FALSE,
+    TRUE
+};
 
 #endif /* ZEPHYR_SOC_ARM_NXP_S32_COMMON_CMSIS_RTOS_V2_ADAPT_H_ */

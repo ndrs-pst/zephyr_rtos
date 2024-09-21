@@ -17,6 +17,8 @@ LOG_MODULE_REGISTER(mdio_shell, CONFIG_LOG_DEFAULT_LEVEL);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(atmel_sam_mdio)
 #define DT_DRV_COMPAT atmel_sam_mdio
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_mdio)
+#define DT_DRV_COMPAT st_stm32_mdio
 #elif DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_mdio)
 #define DT_DRV_COMPAT espressif_esp32_mdio
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_s32_netc_emdio)

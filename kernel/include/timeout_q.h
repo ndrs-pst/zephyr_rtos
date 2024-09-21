@@ -42,7 +42,7 @@ static inline void z_init_thread_timeout(struct _thread_base *thread_base)
 	z_init_timeout(&thread_base->timeout);
 }
 
-extern void z_thread_timeout(struct _timeout *timeout);
+extern void z_thread_timeout(struct _timeout const* timeout);
 
 static inline void z_add_thread_timeout(struct k_thread *thread, k_timeout_t ticks)
 {

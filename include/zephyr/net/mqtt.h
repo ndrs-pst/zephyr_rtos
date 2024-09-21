@@ -163,8 +163,12 @@ struct mqtt_utf8 {
  *
  * @param[in] literal Literal string from which to generate mqtt_utf8 object.
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define MQTT_UTF8_LITERAL(literal)	{literal, sizeof(literal) - 1}
+#else
 #define MQTT_UTF8_LITERAL(literal)				\
 	((struct mqtt_utf8) {literal, sizeof(literal) - 1})
+#endif
 
 /** @brief Abstracts binary strings. */
 struct mqtt_binstr {
@@ -187,7 +191,7 @@ struct mqtt_topic {
 
 /** @brief Parameters for a publish message. */
 struct mqtt_publish_message {
-	struct mqtt_topic topic;     /**< Topic on which data was published. */
+	struct mqtt_topic topic;    /**< Topic on which data was published. */
 	struct mqtt_binstr payload; /**< Payload on the topic published. */
 };
 
@@ -461,7 +465,7 @@ struct mqtt_transport {
 
 #if defined(CONFIG_SOCKS)
 	struct {
-		struct sockaddr addr;
+		struct net_sockaddr addr;
 		socklen_t addrlen;
 	} proxy;
 #endif
@@ -504,26 +508,26 @@ struct mqtt_client {
 	/** Broker details, for example, address, port. Address type should
 	 *  be compatible with transport used.
 	 */
-	const void *broker;
+	void const* broker;
 
 	/** User name (if any) to be used for the connection. NULL indicates
 	 *  no user name.
 	 */
-	struct mqtt_utf8 *user_name;
+	struct mqtt_utf8 const* user_name;
 
 	/** Password (if any) to be used for the connection. Note that if
 	 *  password is provided, user name shall also be provided. NULL
 	 *  indicates no password.
 	 */
-	struct mqtt_utf8 *password;
+	struct mqtt_utf8 const* password;
 
 	/** Will topic and QoS. Can be NULL. */
-	struct mqtt_topic *will_topic;
+	struct mqtt_topic const* will_topic;
 
 	/** Will message. Can be NULL. Non NULL value valid only if will topic
 	 *  is not NULL.
 	 */
-	struct mqtt_utf8 *will_message;
+	struct mqtt_utf8 const* will_message;
 
 	/** Application callback registered with the module to get MQTT events.
 	 */
@@ -590,7 +594,7 @@ void mqtt_client_init(struct mqtt_client *client);
  * @note Must be called before calling mqtt_connect().
  */
 int mqtt_client_set_proxy(struct mqtt_client *client,
-			  struct sockaddr *proxy_addr,
+			  struct net_sockaddr *proxy_addr,
 			  socklen_t addrlen);
 #endif
 

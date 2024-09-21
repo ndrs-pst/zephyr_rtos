@@ -1208,7 +1208,7 @@ static void gptp_mi_clk_master_sync_rcv_state_machine(void)
 
 static void copy_path_trace(struct gptp_announce *announce)
 {
-	int len = ntohs(announce->tlv.len);
+	int len = net_ntohs(announce->tlv.len);
 	struct gptp_path_trace *sys_path_trace;
 
 	if (len > GPTP_MAX_PATHTRACE_SIZE) {
@@ -1244,7 +1244,7 @@ static bool gptp_mi_qualify_announce(int port, struct net_pkt *announce_msg)
 		return false;
 	}
 
-	len = ntohs(announce->steps_removed);
+	len = net_ntohs(announce->steps_removed);
 	if (len >= 255U) {
 		return false;
 	}
@@ -1339,7 +1339,7 @@ static enum gptp_received_info compare_priority_vectors(
 	spi_cmp = memcmp(&hdr->port_id, &vector->src_port_id,
 			 sizeof(struct gptp_port_identity));
 
-	port_cmp = (int)port - ntohs(vector->port_number);
+	port_cmp = (int)port - net_ntohs(vector->port_number);
 
 	if (spi_cmp == 0) {
 		if (rsi_cmp == 0) {
@@ -1400,7 +1400,7 @@ static void record_other_announce_info(int port)
 	 */
 	bmca_data->ann_flags.octets[1] = hdr->flags.octets[1];
 
-	bmca_data->ann_current_utc_offset = ntohs(announce->cur_utc_offset);
+	bmca_data->ann_current_utc_offset = net_ntohs(announce->cur_utc_offset);
 	bmca_data->ann_time_source = announce->time_source;
 }
 
@@ -1548,7 +1548,7 @@ static void gptp_mi_port_announce_information_state_machine(int port)
 				     bmca_data->rcvd_announce_ptr, port);
 
 		announce = GPTP_ANNOUNCE(bmca_data->rcvd_announce_ptr);
-		bmca_data->port_steps_removed = ntohs(announce->steps_removed);
+		bmca_data->port_steps_removed = net_ntohs(announce->steps_removed);
 		record_other_announce_info(port);
 		hdr = GPTP_HDR(bmca_data->rcvd_announce_ptr);
 		gptp_set_time_itv(&bmca_data->ann_rcpt_timeout_time_interval,
@@ -1688,8 +1688,8 @@ static int compute_best_vector(void)
 				continue;
 			}
 
-			if (ntohs(challenger->port_number) <
-			    ntohs(best_vector->port_number)) {
+			if (net_ntohs(challenger->port_number) <
+			    net_ntohs(best_vector->port_number)) {
 				best_vector = challenger;
 				best_port = port;
 			}
