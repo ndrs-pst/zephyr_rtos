@@ -183,7 +183,7 @@ struct http_parser {
 	/* Remote socket address of http connection, where parser can initiate
 	 * replies if necessary.
 	 */
-	const struct sockaddr *addr;
+	const struct net_sockaddr *addr;
 };
 
 

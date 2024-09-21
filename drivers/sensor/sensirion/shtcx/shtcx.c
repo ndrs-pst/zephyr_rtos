@@ -80,11 +80,11 @@ static int shtcx_read_words(const struct device *dev, uint16_t cmd, uint16_t *da
 		     uint16_t num_words, uint16_t max_duration_us)
 {
 	const struct shtcx_config *cfg = dev->config;
-	int status = 0;
+	int status;
 	uint32_t raw_len = num_words * (SHTCX_WORD_LEN + SHTCX_CRC8_LEN);
 	uint16_t temp16;
 	uint8_t rx_buf[SHTCX_MAX_READ_LEN];
-	int dst = 0;
+	int dst;
 
 	status = shtcx_write_command(dev, cmd);
 	if (status != 0) {
@@ -102,7 +102,8 @@ static int shtcx_read_words(const struct device *dev, uint16_t cmd, uint16_t *da
 		return -EIO;
 	}
 
-	for (int i = 0; i < raw_len; i += (SHTCX_WORD_LEN + SHTCX_CRC8_LEN)) {
+	dst = 0;
+	for (uint32_t i = 0; i < raw_len; i += (SHTCX_WORD_LEN + SHTCX_CRC8_LEN)) {
 		temp16 = sys_get_be16(&rx_buf[i]);
 		if (shtcx_compute_crc(temp16) != rx_buf[i+2]) {
 			LOG_DBG("invalid received invalid crc");

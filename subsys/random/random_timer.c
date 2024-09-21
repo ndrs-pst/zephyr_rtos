@@ -20,7 +20,7 @@
 #include <zephyr/spinlock.h>
 #include <string.h>
 
-#if defined(__GNUC__)
+#if (defined(__GNUC__) || defined(_MSC_VER)) /* #CUSTOM@NDRS */
 
 static struct k_spinlock rand32_lock;
 

@@ -10,13 +10,13 @@
 
 #include "tracking.h"
 
-#if defined CONFIG_SEGGER_SYSTEMVIEW
+#if (defined(CONFIG_SEGGER_SYSTEMVIEW) && !defined(_MSC_VER)) /* #CUSTOM@NDRS */
 #include "tracing_sysview.h"
-#elif defined CONFIG_TRACING_CTF
+#elif defined(CONFIG_TRACING_CTF)
 #include "tracing_ctf.h"
-#elif defined CONFIG_TRACING_TEST
+#elif defined(CONFIG_TRACING_TEST)
 #include "tracing_test.h"
-#elif defined CONFIG_TRACING_USER
+#elif defined(CONFIG_TRACING_USER)
 #include "tracing_user.h"
 #else
 /**

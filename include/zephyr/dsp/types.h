@@ -44,7 +44,7 @@ typedef int64_t q63_t;
  * @typedef float16_t
  * @brief 16-bit floating point type definition.
  */
-#if defined(CONFIG_FP16)
+#if (defined(CONFIG_FP16) && !defined(_MSC_VER)) /* #CUSTOM@NDRS */
 typedef __fp16 float16_t;
 #endif /* CONFIG_FP16 */
 
