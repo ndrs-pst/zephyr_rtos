@@ -16,8 +16,14 @@ LOG_MODULE_REGISTER(modem_chat, CONFIG_MODEM_MODULES_LOG_LEVEL);
 #include <zephyr/modem/chat.h>
 
 const struct modem_chat_match modem_chat_any_match = MODEM_CHAT_MATCH("", "", NULL);
+
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 const struct modem_chat_match modem_chat_empty_matches[0];
 const struct modem_chat_script_chat modem_chat_empty_script_chats[0];
+#else
+const struct modem_chat_match modem_chat_empty_matches[1];
+const struct modem_chat_script_chat modem_chat_empty_script_chats[1];
+#endif
 
 #define MODEM_CHAT_MATCHES_INDEX_RESPONSE (0)
 #define MODEM_CHAT_MATCHES_INDEX_ABORT	  (1)
@@ -734,7 +740,7 @@ static void modem_chat_process_handler(struct k_work *item)
 	}
 
 	/* Save received data length */
-	chat->work_buf_len = (size_t)ret;
+	chat->work_buf_len = (uint16_t)ret;
 
 #if CONFIG_MODEM_STATS
 	advertise_work_buf_stats(chat);
@@ -745,7 +751,7 @@ static void modem_chat_process_handler(struct k_work *item)
 	k_work_submit(&chat->receive_work);
 }
 
-static void modem_chat_pipe_callback(struct modem_pipe *pipe, enum modem_pipe_event event,
+static void modem_chat_pipe_callback(struct modem_pipe const* pipe, enum modem_pipe_event event,
 				     void *user_data)
 {
 	struct modem_chat *chat = (struct modem_chat *)user_data;

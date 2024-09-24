@@ -470,7 +470,7 @@ static void arm_mmu_remap_l1_section_to_l2_table(uint32_t va,
 			    ARM_MMU_PTE_L1_INDEX_MASK;
 	uint32_t rem_size = MB(1);
 	uint32_t reg_val;
-	int lock_key;
+	unsigned int lock_key;
 
 	/*
 	 * Extract the permissions and attributes from the current 1 MB section entry.
@@ -878,7 +878,7 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 	uint32_t rem_size = (uint32_t)size;
 	uint32_t conv_flags = MPERM_R;
 	struct arm_mmu_perms_attrs perms_attrs;
-	int key;
+	unsigned int key;
 
 	if (size == 0) {
 		LOG_ERR("Cannot map physical memory at 0x%08X: invalid "
@@ -973,7 +973,7 @@ static int __arch_mem_unmap(void *addr, size_t size)
 {
 	uint32_t va = (uint32_t)addr;
 	uint32_t rem_size = (uint32_t)size;
-	int key;
+	unsigned int key;
 
 	if (addr == NULL) {
 		LOG_ERR("Cannot unmap virtual memory: invalid NULL pointer");
@@ -1044,7 +1044,7 @@ int arch_page_phys_get(void *virt, uintptr_t *phys)
 	uint32_t l2_pt_resolved;
 
 	int rc = 0;
-	int key;
+	unsigned int key;
 
 	key = arch_irq_lock();
 

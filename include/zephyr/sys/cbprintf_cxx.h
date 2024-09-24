@@ -77,16 +77,26 @@ static inline int z_cbprintf_cxx_is_pchar(const volatile wchar_t *, bool const_a
 	return 1;
 }
 
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
 template < typename T >
 static inline int z_cbprintf_cxx_is_pchar(T arg, bool const_as_fixed)
 {
-	ARG_UNUSED(arg);
-	_Pragma("GCC diagnostic push")
-	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"")
-	ARG_UNUSED(const_as_fixed);
-	return 0;
-	_Pragma("GCC diagnostic pop")
+    ARG_UNUSED(arg);
+    ARG_UNUSED(const_as_fixed);
+    return 0;
 }
+#else
+template < typename T >
+static inline int z_cbprintf_cxx_is_pchar(T arg, bool const_as_fixed)
+{
+    ARG_UNUSED(arg);
+    _Pragma("GCC diagnostic push")
+    _Pragma("GCC diagnostic ignored \"-Wpointer-arith\"")
+    ARG_UNUSED(const_as_fixed);
+    return 0;
+    _Pragma("GCC diagnostic pop")
+}
+#endif
 
 /* C++ version for determining if variable type is numeric and fits in 32 bit word. */
 static inline int z_cbprintf_cxx_is_word_num(char)
@@ -373,11 +383,19 @@ static inline size_t z_cbprintf_cxx_alignment(unsigned long long arg)
 	return VA_STACK_ALIGN(long long);
 }
 
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+template < typename T >
+static inline size_t z_cbprintf_cxx_alignment(T arg)
+{
+    return MAX(alignof(T), VA_STACK_MIN_ALIGN);
+}
+#else
 template < typename T >
 static inline size_t z_cbprintf_cxx_alignment(T arg)
 {
 	return MAX(__alignof__(arg), VA_STACK_MIN_ALIGN);
 }
+#endif
 
 /* C++ version for checking if two arguments are same type */
 template < typename T1, typename T2 >

@@ -61,8 +61,13 @@ extern "C" {
 #define NET_LLDP_CHASSIS_ID_VALUE_LEN (sizeof(CONFIG_NET_LLDP_CHASSIS_ID) - 1)
 #endif
 #else
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define NET_LLDP_CHASSIS_ID_VALUE 1
+#define NET_LLDP_CHASSIS_ID_VALUE_LEN 1
+#else
 #define NET_LLDP_CHASSIS_ID_VALUE 0
 #define NET_LLDP_CHASSIS_ID_VALUE_LEN 0
+#endif
 #endif
 
 /*
@@ -90,8 +95,13 @@ extern "C" {
 #define NET_LLDP_PORT_ID_VALUE_LEN (sizeof(CONFIG_NET_LLDP_PORT_ID) - 1)
 #endif
 #else
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define NET_LLDP_PORT_ID_VALUE 1
+#define NET_LLDP_PORT_ID_VALUE_LEN 1
+#else
 #define NET_LLDP_PORT_ID_VALUE 0
 #define NET_LLDP_PORT_ID_VALUE_LEN 0
+#endif
 #endif
 
 /*

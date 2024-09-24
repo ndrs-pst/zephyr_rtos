@@ -65,7 +65,12 @@ struct rng_pool {
 	uint8_t last;
 	uint8_t mask;
 	uint8_t threshold;
+
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	uint8_t buffer[0];
+	#else
 	FLEXIBLE_ARRAY_DECLARE(uint8_t, buffer);
+	#endif
 };
 
 #define RNG_POOL_DEFINE(name, len) uint8_t name[sizeof(struct rng_pool) + (len)]
@@ -180,14 +185,15 @@ static void configure_rng(void)
 	 * The RNG clock must be 48MHz else the clock DIV is not adpated.
 	 * The RNG_CR_CONDRST is set to 1 at the same time the RNG_CR is written
 	 */
-	cur_nist_cfg = READ_BIT(rng->CR,
-				(RNG_CR_NISTC | RNG_CR_CLKDIV | RNG_CR_RNG_CONFIG1 |
-				RNG_CR_RNG_CONFIG2 | RNG_CR_RNG_CONFIG3
-#if defined(RNG_CR_ARDIS)
-				| RNG_CR_ARDIS
+	#if defined(RNG_CR_ARDIS)
 	/* For STM32U5 series, the ARDIS bit7 is considered in the nist-config */
-#endif /* RNG_CR_ARDIS */
-			));
+	#else
+	#define RNG_CR_ARDIS    0
+	#endif
+
+	cur_nist_cfg = READ_BIT(rng->CR,
+							(RNG_CR_NISTC       | RNG_CR_CLKDIV      | RNG_CR_RNG_CONFIG1 |
+							 RNG_CR_RNG_CONFIG2 | RNG_CR_RNG_CONFIG3 | RNG_CR_ARDIS));
 #endif /* nist_config */
 
 #if DT_INST_NODE_HAS_PROP(0, health_test_config)
@@ -319,7 +325,7 @@ static int random_byte_get(void)
 			goto out;
 		}
 
-		retval = LL_RNG_ReadRandData32(rng);
+		retval = (int)LL_RNG_ReadRandData32(rng);
 		if (retval == 0) {
 			/* A seed error could have occurred between RNG_SR
 			 * polling and RND_DR output reading.

@@ -41,8 +41,8 @@ static void loopback_init(struct net_if *iface)
 			     NET_LINK_DUMMY);
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		struct in_addr ipv4_loopback = INADDR_LOOPBACK_INIT;
-		struct in_addr netmask = { { { 255, 0, 0, 0 } } };
+		struct net_in_addr ipv4_loopback = INADDR_LOOPBACK_INIT;
+		struct net_in_addr netmask = { { { 255, 0, 0, 0 } } };
 
 		ifaddr = net_if_ipv4_addr_add(iface, &ipv4_loopback,
 					      NET_ADDR_AUTOCONF, 0);
@@ -54,7 +54,7 @@ static void loopback_init(struct net_if *iface)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		struct in6_addr ipv6_loopback = IN6ADDR_LOOPBACK_INIT;
+		struct net_in6_addr ipv6_loopback = IN6ADDR_LOOPBACK_INIT;
 
 		ifaddr = net_if_ipv6_addr_add(iface, &ipv6_loopback,
 					      NET_ADDR_AUTOCONF, 0);
@@ -124,7 +124,7 @@ static int loopback_send(const struct device *dev, struct net_pkt *pkt)
 	/* We need to swap the IP addresses because otherwise
 	 * the packet will be dropped.
 	 */
-	if (net_pkt_family(pkt) == AF_INET6) {
+	if (net_pkt_family(pkt) == NET_AF_INET6) {
 		net_ipv6_addr_copy_raw(NET_IPV6_HDR(cloned)->src,
 				       NET_IPV6_HDR(pkt)->dst);
 		net_ipv6_addr_copy_raw(NET_IPV6_HDR(cloned)->dst,
