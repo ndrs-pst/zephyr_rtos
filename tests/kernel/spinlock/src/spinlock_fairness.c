@@ -41,7 +41,7 @@ static void test_thread(void *arg1, void *arg2, void *arg3)
 	int core_id = (uintptr_t)arg1;
 
 	/* Synchronize all the cores as much as possible */
-	int key = arch_irq_lock();
+	unsigned int key = arch_irq_lock();
 
 	atomic_dec(&start_sync);
 	while (atomic_get(&start_sync) != 0)

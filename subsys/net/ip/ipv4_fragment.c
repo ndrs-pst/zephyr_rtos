@@ -31,8 +31,8 @@ static void reassembly_timeout(struct k_work *work);
 
 static struct net_ipv4_reassembly reassembly[CONFIG_NET_IPV4_FRAGMENT_MAX_COUNT];
 
-static struct net_ipv4_reassembly *reassembly_get(uint16_t id, struct in_addr *src,
-						  struct in_addr *dst, uint8_t protocol)
+static struct net_ipv4_reassembly *reassembly_get(uint16_t id, struct net_in_addr *src,
+						  struct net_in_addr *dst, uint8_t protocol)
 {
 	int i, avail = -1;
 
@@ -69,7 +69,7 @@ static struct net_ipv4_reassembly *reassembly_get(uint16_t id, struct in_addr *s
 	return &reassembly[avail];
 }
 
-static bool reassembly_cancel(uint32_t id, struct in_addr *src, struct in_addr *dst)
+static bool reassembly_cancel(uint32_t id, struct net_in_addr *src, struct net_in_addr *dst)
 {
 	int i, j;
 
@@ -327,11 +327,11 @@ enum net_verdict net_ipv4_handle_fragment_hdr(struct net_pkt *pkt, struct net_ip
 	int ret;
 	int i;
 
-	flag = ntohs(*((uint16_t *)&hdr->offset));
-	id = ntohs(*((uint16_t *)&hdr->id));
+	flag = net_ntohs(*((uint16_t *)&hdr->offset));
+	id = net_ntohs(*((uint16_t *)&hdr->id));
 
-	reass = reassembly_get(id, (struct in_addr *)hdr->src,
-			       (struct in_addr *)hdr->dst, hdr->proto);
+	reass = reassembly_get(id, (struct net_in_addr *)hdr->src,
+			       (struct net_in_addr *)hdr->dst, hdr->proto);
 	if (!reass) {
 		LOG_ERR("Cannot get reassembly slot, dropping pkt %p", pkt);
 		goto drop;
@@ -530,7 +530,7 @@ int net_ipv4_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	}
 
 	/* Check if the DF (Don't Fragment) flag is set, if so, we cannot fragment the packet */
-	flag = ntohs(*((uint16_t *)&frag_hdr->offset));
+	flag = net_ntohs(*((uint16_t *)&frag_hdr->offset));
 
 	if (flag & NET_IPV4_DO_NOT_FRAG_MASK) {
 		/* This packet cannot be fragmented */
@@ -567,13 +567,13 @@ int net_ipv4_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 		net_pkt_acknowledge_data(pkt, &frag_access);
 
 		switch (frag_hdr->proto) {
-		case IPPROTO_ICMP:
+		case NET_IPPROTO_ICMP:
 			ret = net_icmpv4_finalize(pkt, true);
 			break;
-		case IPPROTO_TCP:
+		case NET_IPPROTO_TCP:
 			ret = net_tcp_finalize(pkt, true);
 			break;
-		case IPPROTO_UDP:
+		case NET_IPPROTO_UDP:
 			ret = net_udp_finalize(pkt, true);
 			break;
 		default:

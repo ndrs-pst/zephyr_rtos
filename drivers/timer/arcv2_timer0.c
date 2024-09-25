@@ -239,7 +239,7 @@ static void timer_int_handler(const void *unused)
 	/* irq with higher priority may call sys_clock_set_timeout
 	 * so need a lock here
 	 */
-	uint32_t key;
+	unsigned int key;
 
 	key = arch_irq_lock();
 
@@ -277,7 +277,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 #if defined(CONFIG_TICKLESS_KERNEL)
 	uint32_t delay;
-	uint32_t key;
+	unsigned int key;
 
 	ticks = MIN(MAX_TICKS, ticks);
 

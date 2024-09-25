@@ -278,7 +278,7 @@ static int get_iface_count(struct supplicant_context *ctx)
 static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 {
 	struct wpa_supplicant *wpa_s;
-	char ifname[IFNAMSIZ + 1] = { 0 };
+	char ifname[IFNAMSIZ + 1];
 	int ret, retry = 0, count = IFACE_NOTIFY_TIMEOUT_MS / IFACE_NOTIFY_RETRY_MS;
 
 	ret = net_if_get_name(iface, ifname, sizeof(ifname) - 1);
@@ -609,7 +609,7 @@ static int register_supplicant_event_socket(struct supplicant_context *ctx)
 {
 	int ret;
 
-	ret = socketpair(AF_UNIX, SOCK_STREAM, 0, ctx->event_socketpair);
+	ret = socketpair(NET_AF_UNIX, NET_SOCK_STREAM, 0, ctx->event_socketpair);
 	if (ret < 0) {
 		ret = -errno;
 		LOG_ERR("Failed to initialize socket (%d)", ret);

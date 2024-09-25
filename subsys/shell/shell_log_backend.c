@@ -55,8 +55,7 @@ void z_shell_log_backend_disable(const struct shell_log_backend *backend)
 
 bool z_shell_log_backend_process(const struct shell_log_backend *backend)
 {
-	const struct shell *sh =
-			(const struct shell *)backend->backend->cb->ctx;
+	const struct shell *sh = backend->backend->cb->ctx;
 	uint32_t dropped;
 	bool colors = IS_ENABLED(CONFIG_SHELL_VT100_COLORS) &&
 			z_flag_use_colors_get(sh);
@@ -82,7 +81,7 @@ bool z_shell_log_backend_process(const struct shell_log_backend *backend)
 
 static void panic(const struct log_backend *const backend)
 {
-	const struct shell *sh = (const struct shell *)backend->cb->ctx;
+	const struct shell *sh = backend->cb->ctx;
 	int err;
 
 	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
@@ -114,7 +113,7 @@ static void panic(const struct log_backend *const backend)
 
 static void dropped(const struct log_backend *const backend, uint32_t cnt)
 {
-	const struct shell *sh = (const struct shell *)backend->cb->ctx;
+	const struct shell *sh = backend->cb->ctx;
 	const struct shell_log_backend *log_backend = sh->log_backend;
 
 	if (IS_ENABLED(CONFIG_SHELL_STATS)) {
@@ -139,8 +138,8 @@ static bool copy_to_pbuffer(struct mpsc_pbuf_buffer *mpsc_buffer,
 	/* First word contains internal mpsc packet flags and when copying
 	 * those flags must be omitted.
 	 */
-	uint8_t *dst_data = (uint8_t *)dst + sizeof(struct mpsc_pbuf_hdr);
-	uint8_t *src_data = (uint8_t *)msg + sizeof(struct mpsc_pbuf_hdr);
+	uint8_t *dst_data = (uint8_t*)dst + sizeof(struct mpsc_pbuf_hdr);
+	uint8_t *src_data = (uint8_t*)msg + sizeof(struct mpsc_pbuf_hdr);
 	size_t hdr_wlen = DIV_ROUND_UP(sizeof(struct mpsc_pbuf_hdr),
 					   sizeof(uint32_t));
 	if (wlen <= hdr_wlen) {
@@ -225,7 +224,7 @@ static bool process_msg_from_buffer(const struct shell *sh)
 static void process(const struct log_backend *const backend,
 		    union log_msg_generic *msg)
 {
-	const struct shell *sh = (const struct shell *)backend->cb->ctx;
+	const struct shell *sh = backend->cb->ctx;
 	const struct shell_log_backend *log_backend = sh->log_backend;
 	struct mpsc_pbuf_buffer *mpsc_buffer = log_backend->mpsc_buffer;
 	const struct log_output *log_output = log_backend->log_output;
