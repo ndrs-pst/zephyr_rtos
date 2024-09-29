@@ -184,7 +184,7 @@ static int tcp_endpoint_set(union tcp_endpoint* ep, struct net_pkt* pkt,
         case NET_AF_INET :
             if (IS_ENABLED(CONFIG_NET_IPV4)) {
                 struct net_ipv4_hdr* ip = NET_IPV4_HDR(pkt);
-                struct tcphdr*       th;
+                struct tcphdr* th;
 
                 th = th_get(pkt);
                 if (!th) {
@@ -209,7 +209,7 @@ static int tcp_endpoint_set(union tcp_endpoint* ep, struct net_pkt* pkt,
         case NET_AF_INET6 :
             if (IS_ENABLED(CONFIG_NET_IPV6)) {
                 struct net_ipv6_hdr* ip = NET_IPV6_HDR(pkt);
-                struct tcphdr*       th;
+                struct tcphdr* th;
 
                 th = th_get(pkt);
                 if (!th) {
@@ -261,7 +261,7 @@ int net_tcp_endpoint_copy(struct net_context* ctx,
                 net_sin(local)->sin_port = net_sin_ptr(&ctx->local)->sin_port;
                 net_sin(local)->sin_family = NET_AF_INET;
             }
-            else if (IS_ENABLED(CONFIG_NET_IPV4) && (ctx->local.family == NET_AF_INET6)) {
+            else if (IS_ENABLED(CONFIG_NET_IPV6) && (ctx->local.family == NET_AF_INET6)) {
                 memcpy(&net_sin6(local)->sin6_addr,
                        net_sin6_ptr(&ctx->local)->sin6_addr,
                        sizeof(struct net_in6_addr));
@@ -849,17 +849,6 @@ static int tcp_conn_unref(struct tcp* conn) {
 
     NET_DBG("conn: %p, ref_count=%d", conn, ref_count);
 
-    k_mutex_lock(&conn->lock, K_FOREVER);
-
-    #if !defined(CONFIG_NET_TEST_PROTOCOL)
-    if (conn->in_connect) {
-        conn->in_connect = false;
-        k_sem_reset(&conn->connect_sem);
-    }
-    #endif /* CONFIG_NET_TEST_PROTOCOL */
-
-    k_mutex_unlock(&conn->lock);
-
     ref_count = atomic_dec(&conn->ref_count) - 1;
     if (ref_count != 0) {
         tp_out(net_context_get_family(conn->context), conn->iface,
@@ -901,6 +890,9 @@ static int tcp_conn_close(struct tcp* conn, int status)
             /* Make sure the connect_cb is only called once. */
             conn->connect_cb = NULL;
         }
+
+        conn->in_connect = false;
+        k_sem_reset(&conn->connect_sem);
     }
     else if (conn->context->recv_cb) {
         conn->context->recv_cb(conn->context, NULL, NULL, NULL,
@@ -964,7 +956,8 @@ static bool tcp_send_process_no_lock(struct tcp* conn) {
         pkt = forget ? pkt : tcp_pkt_clone(pkt);
         #else
         pkt = forget ? tcp_slist(conn, &conn->send_queue, get,
-                                 struct net_pkt, next) : tcp_pkt_clone(pkt);
+                                 struct net_pkt, next) :
+                                 tcp_pkt_clone(pkt);
         #endif
         if (!pkt) {
             NET_WARN("net_pkt alloc failure");
@@ -3795,6 +3788,7 @@ int net_tcp_put(struct net_context* context) {
     }
     else if (conn->in_connect) {
         conn->in_connect = false;
+        k_sem_reset(&conn->connect_sem);
     }
 
     k_mutex_unlock(&conn->lock);
@@ -4066,16 +4060,22 @@ int net_tcp_connect(struct net_context* context,
      * a TCP connection to be established
      */
     conn->in_connect = !IS_ENABLED(CONFIG_NET_TEST_PROTOCOL);
+
+    /* The ref will make sure that if the connection is closed in tcp_in(),
+     * we do not access already freed connection.
+     */
+    tcp_conn_ref(conn);
     (void)tcp_in(conn, NULL);
 
     if (!IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)) {
         if ((conn->state == TCP_UNUSED) || (conn->state == TCP_CLOSED)) {
-            ret = -errno;
-            goto out;
+            ret = -ENOTCONN;
+            goto out_unref;
         }
         else if ((K_TIMEOUT_EQ(timeout, K_NO_WAIT)) &&
                  (conn->state != TCP_ESTABLISHED)) {
-            goto out;
+            ret = -EINPROGRESS;
+            goto out_unref;
         }
         else if ((k_sem_take(&conn->connect_sem, timeout) != 0) &&
                  (conn->state != TCP_ESTABLISHED)) {
@@ -4085,10 +4085,13 @@ int net_tcp_connect(struct net_context* context,
             }
 
             ret = -ETIMEDOUT;
-            goto out;
+            goto out_unref;
         }
         conn->in_connect = false;
     }
+
+out_unref :
+    tcp_conn_unref(conn);
 
 out :
     NET_DBG("conn: %p, ret=%d", conn, ret);

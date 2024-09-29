@@ -4,6 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&wdt31 {
-	status = "okay";
-};
+#include "nrf5340dk_nrf5340_cpuapp.overlay"

@@ -638,11 +638,14 @@ static int cmd_i3c_ccc_setaasa(const struct shell *sh, size_t argc, char **argv)
 	return ret;
 }
 
-/* i3c ccc setdasa <device> <target> */
+/* i3c ccc setdasa <device> <target> <dynamic address> */
 static int cmd_i3c_ccc_setdasa(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev, *tdev;
 	struct i3c_device_desc *desc;
+	struct i3c_driver_data *data;
+	struct i3c_ccc_address da;
+	uint8_t dynamic_addr;
 	int ret;
 
 	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
@@ -650,14 +653,22 @@ static int cmd_i3c_ccc_setdasa(const struct shell *sh, size_t argc, char **argv)
 		return ret;
 	}
 
-	ret = i3c_ccc_do_setdasa(desc);
+	data = (struct i3c_driver_data *)dev->data;
+	dynamic_addr = strtol(argv[3], NULL, 16);
+	da.addr = dynamic_addr << 1;
+	/* check if the addressed is free */
+	if (!i3c_addr_slots_is_free(&data->attached_dev.addr_slots, dynamic_addr)) {
+		shell_error(sh, "I3C: Address 0x%02x is already in use.", dynamic_addr);
+		return -EINVAL;
+	}
+	ret = i3c_ccc_do_setdasa(desc, da);
 	if (ret < 0) {
 		shell_error(sh, "I3C: unable to send CCC SETDASA.");
 		return ret;
 	}
 
 	/* update the target's dynamic address */
-	desc->dynamic_addr = desc->init_dynamic_addr ? desc->init_dynamic_addr : desc->static_addr;
+	desc->dynamic_addr = dynamic_addr;
 	if (desc->dynamic_addr != desc->static_addr) {
 		ret = i3c_reattach_i3c_device(desc, desc->static_addr);
 		if (ret < 0) {
@@ -669,13 +680,14 @@ static int cmd_i3c_ccc_setdasa(const struct shell *sh, size_t argc, char **argv)
 	return ret;
 }
 
-/* i3c ccc setnewda <device> <target> <dynamic address>*/
+/* i3c ccc setnewda <device> <target> <dynamic address> */
 static int cmd_i3c_ccc_setnewda(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev, *tdev;
 	struct i3c_device_desc *desc;
 	struct i3c_driver_data *data;
 	struct i3c_ccc_address new_da;
+	uint8_t dynamic_addr;
 	uint8_t old_da;
 	int ret;
 
@@ -685,10 +697,11 @@ static int cmd_i3c_ccc_setnewda(const struct shell *sh, size_t argc, char **argv
 	}
 
 	data = (struct i3c_driver_data *)dev->data;
-	new_da.addr = strtol(argv[3], NULL, 16);
+	dynamic_addr = strtol(argv[3], NULL, 16);
+	new_da.addr = dynamic_addr << 1;
 	/* check if the addressed is free */
-	if (!i3c_addr_slots_is_free(&data->attached_dev.addr_slots, new_da.addr)) {
-		shell_error(sh, "I3C: Address 0x%02x is already in use.", new_da.addr);
+	if (!i3c_addr_slots_is_free(&data->attached_dev.addr_slots, dynamic_addr)) {
+		shell_error(sh, "I3C: Address 0x%02x is already in use.", dynamic_addr);
 		return -EINVAL;
 	}
 
@@ -700,7 +713,7 @@ static int cmd_i3c_ccc_setnewda(const struct shell *sh, size_t argc, char **argv
 
 	/* reattach device address */
 	old_da = desc->dynamic_addr;
-	desc->dynamic_addr = new_da.addr;
+	desc->dynamic_addr = dynamic_addr;
 	ret = i3c_reattach_i3c_device(desc, old_da);
 	if (ret < 0) {
 		shell_error(sh, "I3C: unable to reattach device");
@@ -1978,6 +1991,48 @@ static void cmd_i3c_ibi_tir(const struct shell *sh, size_t argc, char **argv)
 
 	shell_print(sh, "I3C: Issued IBI TIR");
 }
+
+/* i3c ibi enable <device> <target> */
+static void cmd_i3c_ibi_enable(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	int ret;
+
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = i3c_ibi_enable(desc);
+	if (ret != 0) {
+		shell_error(sh, "I3C: Unable to enable IBI");
+		return ret;
+	}
+
+	shell_print(sh, "I3C: Enabled IBI");
+}
+
+/* i3c ibi disable <device> <target> */
+static void cmd_i3c_ibi_disable(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	int ret;
+
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = i3c_ibi_disable(desc);
+	if (ret != 0) {
+		shell_error(sh, "I3C: Unable to disable IBI");
+		return ret;
+	}
+
+	shell_print(sh, "I3C: Disabled IBI");
+}
 #endif
 
 static void i3c_device_list_target_name_get(size_t idx, struct shell_static_entry *entry)
@@ -2038,6 +2093,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Send IBI CR\n"
 		      "Usage: ibi cr <device>",
 		      cmd_i3c_ibi_cr, 2, 0),
+	SHELL_CMD_ARG(enable, &dsub_i3c_device_attached_name,
+		      "Enable receiving IBI from target\n"
+		      "Usage: ibi enable <device> <target>",
+		      cmd_i3c_ibi_enable, 3, 0),
+	SHELL_CMD_ARG(disable, &dsub_i3c_device_attached_name,
+		      "Disable receiving IBI from target\n"
+		      "Usage: ibi disable <device> <target>",
+		      cmd_i3c_ibi_disable, 3, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 #endif
@@ -2083,8 +2146,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_i3c_ccc_setaasa, 2, 0),
 	SHELL_CMD_ARG(setdasa, &dsub_i3c_device_attached_name,
 		      "Send CCC SETDASA\n"
-		      "Usage: ccc setdasa <device> <target>",
-		      cmd_i3c_ccc_setdasa, 3, 0),
+		      "Usage: ccc setdasa <device> <target> <dynamic address>",
+		      cmd_i3c_ccc_setdasa, 4, 0),
 	SHELL_CMD_ARG(setnewda, &dsub_i3c_device_attached_name,
 		      "Send CCC SETNEWDA\n"
 		      "Usage: ccc setnewda <device> <target> <dynamic address>",

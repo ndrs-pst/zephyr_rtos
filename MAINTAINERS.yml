@@ -489,7 +489,6 @@ Bluetooth Classic:
     - lylezhu2012
   collaborators:
     - jhedberg
-    - sjanc
   files:
     - subsys/bluetooth/common/
     - subsys/bluetooth/host/classic/
@@ -3946,7 +3945,7 @@ Espressif Platforms:
     - dts/riscv/espressif/
     - dts/bindings/*/*esp32*
     - samples/boards/espressif/
-    - tests/boards/espressif_esp32/
+    - tests/boards/espressif/
     - drivers/*/*esp32*/
   labels:
     - "platform: ESP32"
@@ -4823,6 +4822,14 @@ West:
     - modules/Kconfig.intel
   labels:
     - "platform: Intel"
+
+"West project: zephyr-lang-rust":
+  status: maintained
+  maintainers:
+    - d3zd3z
+  files: []
+  labels:
+    - "area: Rust"
 
 "West project: libmetal":
   status: odd fixes

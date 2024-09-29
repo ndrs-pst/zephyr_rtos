@@ -412,9 +412,9 @@ static inline int pinctrl_apply_state(const struct pinctrl_dev_config* config, u
  */
 #define PINCTRL_DT_STATE_INIT(prop, state)				       \
 	{								       \
-		.id = state,						       \
 		.pins = prop ## _pins,					       \
-		.pin_cnt = ARRAY_SIZE(prop ## _pins)			       \
+		.pin_cnt = ARRAY_SIZE(prop ## _pins),			       \
+		.id = state						       \
 	}
 
 /**
