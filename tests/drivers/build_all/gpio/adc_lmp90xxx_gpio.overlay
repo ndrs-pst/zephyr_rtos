@@ -27,20 +27,17 @@
 
 			cs-gpios = <&test_gpio 0 0>;
 
-			test_spi_ads114s08: ads114s08@0 {
-				compatible = "ti,ads114s08";
+			test_spi_lmp90100: lmp90100@0 {
+				compatible = "ti,lmp90100";
 				status = "okay";
 				spi-max-frequency = <10000000>;
 				reg = <0x00>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				#io-channel-cells = <1>;
-				reset-gpios = <&test_gpio 0 0>;
-				drdy-gpios = <&test_gpio 0 0>;
-				start-sync-gpios = <&test_gpio 0 0>;
 
-				test_spi_ads114s08_gpio: ads114s0x_gpio {
-					compatible = "ti,ads114s0x-gpio";
+				test_spi_lmp90xxx_gpio_gpio: lmp90xxx_gpio {
+					compatible = "ti,lmp90xxx-gpio";
 					gpio-controller;
 					ngpios = <4>;
 					#gpio-cells = <2>;
