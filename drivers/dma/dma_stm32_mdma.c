@@ -587,6 +587,11 @@ int mdma_stm32_stop(const struct device* dev, uint32_t id) {
         return (-EINVAL);
     }
 
+    if (channel->hal_override) {
+        channel->busy = false;
+        return (0);
+    }
+
     /* Repeated stop : return now if channel is already stopped */
     if (!stm32_mdma_is_enabled_channel(mdma, id)) {
         return (0);

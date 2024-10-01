@@ -686,12 +686,20 @@ static void set_up_fixed_clock_sources(void)
 	}
 
 	if (IS_ENABLED(STM32_HSI_ENABLED)) {
-		/* Enable HSI oscillator */
-		LL_RCC_HSI_Enable();
-		while (LL_RCC_HSI_IsReady() != 1) {
-			/* Wait for HSI ready */
-			if (IS_ENABLED(__GTEST)) {
-				break;
+		if (IS_ENABLED(STM32_PLL_SRC_HSI) || IS_ENABLED(STM32_PLL2_SRC_HSI) ||
++		    IS_ENABLED(STM32_PLL3_SRC_HSI)) {
+			/* HSI calibration */
+			LL_RCC_HSI_SetCalibTrimming(RCC_HSICALIBRATION_DEFAULT);
+		}
+		/* Enable HSI if not enabled */
+		if (LL_RCC_HSI_IsReady() != 1) {
+			/* Enable HSI oscillator */
+			LL_RCC_HSI_Enable();
+			while (LL_RCC_HSI_IsReady() != 1) {
+				/* Wait for HSI ready */
+				if (IS_ENABLED(__GTEST)) {
+					break;
+				}
 			}
 		}
 		/* HSI divider configuration */

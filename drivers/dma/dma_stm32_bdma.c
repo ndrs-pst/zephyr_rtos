@@ -547,7 +547,7 @@ BDMA_STM32_EXPORT_API int bdma_stm32_configure(const struct device *dev,
 	}
 
 	channel->busy		= true;
-	channel->bdma_callback = config->dma_callback;
+	channel->bdma_callback	= config->dma_callback;
 	channel->direction	= config->channel_direction;
 	channel->user_data	= config->user_data;
 	channel->src_size	= config->source_data_size;
