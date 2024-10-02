@@ -213,9 +213,16 @@ static inline int qspi_prepare_quad_program(struct device const* dev,
                     dev_data->qspi_write_cmd == SPI_NOR_CMD_PP_1_4_4);
 
     cmd->Instruction = dev_data->qspi_write_cmd;
+    #if defined(CONFIG_USE_MICROCHIP_QSPI_FLASH_WITH_STM32)
+    /* Microchip qspi-NOR flash, does not follow the standard rules */
+    if (cmd->Instruction == SPI_NOR_CMD_PP_1_1_4) {
+        cmd->AddressMode = QSPI_ADDRESS_4_LINES;
+    }
+    #else
     cmd->AddressMode = ((cmd->Instruction == SPI_NOR_CMD_PP_1_1_4)
-                            ? QSPI_ADDRESS_1_LINE
-                            : QSPI_ADDRESS_4_LINES);
+                        ? QSPI_ADDRESS_1_LINE
+                        : QSPI_ADDRESS_4_LINES);
+    #endif /* CONFIG_USE_MICROCHIP_QSPI_FLASH_WITH_STM32 */
     cmd->DataMode    = QSPI_DATA_4_LINES;
     cmd->DummyCycles = 0;
 
@@ -372,6 +379,25 @@ static int qspi_read_jedec_id(struct device const* dev, uint8_t* id) {
     return (0);
 }
 #endif /* CONFIG_FLASH_JESD216_API */
+
+static int qspi_write_unprotect(const struct device* dev) {
+    int ret = 0;
+    QSPI_CommandTypeDef cmd_unprotect = {
+        .Instruction = SPI_NOR_CMD_ULBPR,
+        .InstructionMode = QSPI_INSTRUCTION_1_LINE,
+    };
+
+    if (IS_ENABLED(DT_INST_PROP(0, requires_ulbpr))) {
+        ret = qspi_send_cmd(dev, &qspi_cmd_wren);
+        if (ret != 0) {
+            return (ret);
+        }
+
+        ret = qspi_send_cmd(dev, &cmd_unprotect);
+    }
+
+    return (ret);
+}
 
 /*
  * Read Serial Flash Discovery Parameter
@@ -1472,6 +1498,13 @@ static int flash_stm32_qspi_init(struct device const* dev) {
         return (-ENODEV);
     }
     #endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
+    ret = qspi_write_unprotect(dev);
+    if (ret != 0) {
+        LOG_ERR("write unprotect failed: %d", ret);
+        return (-ENODEV);
+    }
+    LOG_DBG("Write Un-protected");
 
     #ifdef CONFIG_STM32_MEMMAP
     #if DT_PROP(DT_NODELABEL(quadspi), dual_flash) && defined(QUADSPI_CR_DFM)

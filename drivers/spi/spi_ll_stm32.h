@@ -210,22 +210,6 @@ static inline void ll_func_set_fifo_threshold_16bit(SPI_TypeDef* spi) {
 
 static inline void ll_func_disable_spi(SPI_TypeDef* spi) {
     #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-    if (LL_SPI_IsActiveMasterTransfer(spi)) {
-        LL_SPI_SuspendMasterTransfer(spi);
-        while (LL_SPI_IsActiveMasterTransfer(spi)) {
-            if (IS_ENABLED(__GTEST)) {
-                break;
-            }
-        }
-    }
-
-    LL_SPI_Disable(spi);
-    while (LL_SPI_IsEnabled(spi)) {
-        if (IS_ENABLED(__GTEST)) {
-            break;
-        }
-    }
-
     /* Flush RX buffer */
     while (LL_SPI_IsActiveFlag_RXP(spi)) {
         (void) LL_SPI_ReceiveData8(spi);
@@ -233,10 +217,14 @@ static inline void ll_func_disable_spi(SPI_TypeDef* spi) {
             break;
         }
     }
-    LL_SPI_ClearFlag_SUSP(spi);
-    #else
-    LL_SPI_Disable(spi);
     #endif /* st_stm32h7_spi */
+    LL_SPI_Disable(spi);
+
+    while (LL_SPI_IsEnabled(spi)) {
+        if (IS_ENABLED(__GTEST)) {
+            break;
+        }
+    }
 }
 
 #endif /* ZEPHYR_DRIVERS_SPI_SPI_LL_STM32_H_ */

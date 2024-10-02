@@ -285,7 +285,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 5f04333724868645b9f01fa6e4fa08c26d64be94
+      revision: d7e7f6c6eb7e5c5c533d4b80f4420122b793cf93
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -306,7 +306,7 @@ manifest:
       revision: 76d2168bcdfcd23a9a7dce8c21f2083b90a1e60a
       path: modules/lib/open-amp
     - name: openthread
-      revision: e10a92570f94ff1e0bc5e0da9ecf0ee135d955a6
+      revision: 2aeb8b833ba760ec29d5f340dd1ce7bcb61c5d56
       path: modules/lib/openthread
     - name: percepio
       path: modules/debug/percepio
@@ -315,7 +315,7 @@ manifest:
         - debug
     - name: picolibc
       path: modules/lib/picolibc
-      revision: 06bde1fd7531b1f788f6e42b6f7b358c0fe4f814
+      revision: e15656f7682500fc8953e1a2008f7b1ae4f65ce8
     - name: segger
       revision: b011c45b585e097d95d9cf93edf4f2e01588d3cd
       path: modules/debug/segger

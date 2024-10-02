@@ -85,6 +85,13 @@ struct bt_l2cap_br {
 	/* The channel this context is associated with */
 	struct bt_l2cap_br_chan	chan;
 	uint8_t			info_ident;
+	/*
+	 * 2.1 CHANNEL IDENTIFIERS in
+	 * BLUETOOTH CORE SPECIFICATION Version 5.4 | Vol 3, Part A.
+	 * The range of fixed L2CAP CID is 0x0001 ~ 0x0007 both for LE and BR.
+	 * So use one octet buffer to keep the `Fixed channels supported`
+	 * of peer device.
+	 */
 	uint8_t			info_fixed_chan;
 	uint32_t			info_feat_mask;
 };
@@ -117,6 +124,21 @@ struct bt_l2cap_chan *bt_l2cap_br_lookup_tx_cid(struct bt_conn *conn,
 	}
 
 	return NULL;
+}
+
+uint8_t bt_l2cap_br_get_remote_fixed_chan(struct bt_conn *conn)
+{
+	struct bt_l2cap_chan *chan_sig;
+	struct bt_l2cap_br *br_chan_sig;
+
+	chan_sig = bt_l2cap_br_lookup_rx_cid(conn, BT_L2CAP_CID_BR_SIG);
+	if (!chan_sig) {
+		return (uint8_t)0U;
+	}
+
+	br_chan_sig = CONTAINER_OF(chan_sig, struct bt_l2cap_br, chan.chan);
+
+	return br_chan_sig->info_fixed_chan;
 }
 
 static struct bt_l2cap_br_chan*
@@ -526,6 +548,14 @@ static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 			err = -EINVAL;
 			break;
 		}
+		/*
+		 * 2.1 CHANNEL IDENTIFIERS in
+		 * BLUETOOTH CORE SPECIFICATION Version 5.4 | Vol 3, Part A.
+		 * The info length of `Fixed channels supported` is 8 octets.
+		 * Then the range of fixed L2CAP CID is 0x0001 ~ 0x0007 both for LE and BR.
+		 * So use one octet buffer to keep the `Fixed channels supported`
+		 * of peer device.
+		 */
 		l2cap->info_fixed_chan = net_buf_pull_u8(buf);
 		LOG_DBG("remote fixed channel mask 0x%02x", l2cap->info_fixed_chan);
 
@@ -786,6 +816,13 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 	 * since service/profile requires that.
 	 */
 	if (check == 0) {
+		/*
+		 * General Bonding refers to the process of performing bonding
+		 * during connection setup or channel establishment procedures
+		 * as a precursor to accessing a service.
+		 * For current case, it is dedicated bonding.
+		 */
+		atomic_set_bit(chan->conn->flags, BT_CONN_BR_GENERAL_BONDING);
 		return L2CAP_CONN_SECURITY_PENDING;
 	}
 

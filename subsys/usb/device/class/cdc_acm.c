@@ -526,19 +526,14 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 	LOG_DBG("dev_data %p len %d tx_ringbuf space %u",
 		dev_data, len, ring_buf_space_get(dev_data->tx_ringbuf));
 
-	if (!dev_data->configured || dev_data->suspended) {
-		LOG_INF("Device suspended or not configured");
-		return 0;
-	}
-
-	dev_data->tx_ready = false;
-
 	lock = irq_lock();
 	wrote = ring_buf_put(dev_data->tx_ringbuf, tx_data, len);
 	irq_unlock(lock);
 	LOG_DBG("Wrote %zu of %d bytes to TX ringbuffer", wrote, len);
 
-	k_work_schedule_for_queue(&USB_WORK_Q, &dev_data->tx_work, K_NO_WAIT);
+	if (wrote) {
+		k_work_schedule_for_queue(&USB_WORK_Q, &dev_data->tx_work, K_NO_WAIT);
+	}
 
 	/* Return written to ringbuf data len */
 	return wrote;
@@ -563,10 +558,6 @@ static int cdc_acm_fifo_read(const struct device *dev, uint8_t *rx_data,
 		dev, size, ring_buf_space_get(dev_data->rx_ringbuf));
 
 	len = ring_buf_get(dev_data->rx_ringbuf, rx_data, size);
-
-	if (ring_buf_is_empty(dev_data->rx_ringbuf)) {
-		dev_data->rx_ready = false;
-	}
 
 	if (dev_data->rx_paused == true) {
 		if (ring_buf_space_get(dev_data->rx_ringbuf) >= CDC_ACM_BUFFER_SIZE) {
@@ -622,7 +613,7 @@ static int cdc_acm_irq_tx_ready(const struct device *dev)
 	struct cdc_acm_dev_data_t * const dev_data = dev->data;
 
 	if (dev_data->tx_irq_ena && dev_data->tx_ready) {
-		return 1;
+		return ring_buf_space_get(dev_data->tx_ringbuf);
 	}
 
 	return 0;
@@ -667,7 +658,7 @@ static int cdc_acm_irq_rx_ready(const struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = dev->data;
 
-	if (dev_data->rx_ready) {
+	if (dev_data->rx_ready && dev_data->rx_irq_ena) {
 		return 1;
 	}
 
@@ -683,15 +674,11 @@ static int cdc_acm_irq_rx_ready(const struct device *dev)
  */
 static int cdc_acm_irq_is_pending(const struct device *dev)
 {
-	struct cdc_acm_dev_data_t * const dev_data = dev->data;
-
-	if (dev_data->tx_ready && dev_data->tx_irq_ena) {
+	if (cdc_acm_irq_rx_ready(dev) || cdc_acm_irq_tx_ready(dev)) {
 		return 1;
-	} else if (dev_data->rx_ready && dev_data->rx_irq_ena) {
-		return 1;
-	} else {
-		return 0;
 	}
+
+	return 0;
 }
 
 /**
@@ -703,7 +690,15 @@ static int cdc_acm_irq_is_pending(const struct device *dev)
  */
 static int cdc_acm_irq_update(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	struct cdc_acm_dev_data_t * const dev_data = dev->data;
+
+	if (!ring_buf_space_get(dev_data->tx_ringbuf)) {
+		dev_data->tx_ready = false;
+	}
+
+	if (ring_buf_is_empty(dev_data->rx_ringbuf)) {
+		dev_data->rx_ready = false;
+	}
 
 	return 1;
 }

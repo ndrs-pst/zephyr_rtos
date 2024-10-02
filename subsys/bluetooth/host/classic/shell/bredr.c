@@ -60,13 +60,13 @@ static int cmd_auth_pincode(const struct shell *sh,
 
 	if (!conn) {
 		shell_print(sh, "Not connected");
-		return 0;
+		return -ENOEXEC;
 	}
 
 	if (strlen(argv[1]) > max) {
 		shell_print(sh, "PIN code value invalid - enter max %u "
 			    "digits", max);
-		return 0;
+		return -ENOEXEC;
 	}
 
 	shell_print(sh, "PIN code \"%s\" applied", argv[1]);
@@ -91,13 +91,13 @@ static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 	conn = bt_conn_create_br(&addr, BT_BR_CONN_PARAM_DEFAULT);
 	if (!conn) {
 		shell_print(sh, "Connection failed");
-	} else {
-
-		shell_print(sh, "Connection pending");
-
-		/* unref connection obj in advance as app user */
-		bt_conn_unref(conn);
+		return -ENOEXEC;
 	}
+
+	shell_print(sh, "Connection pending");
+
+	/* unref connection obj in advance as app user */
+	bt_conn_unref(conn);
 
 	return 0;
 }
@@ -151,7 +151,7 @@ static void br_device_found(const bt_addr_t *addr, int8_t rssi,
 
 static struct bt_br_discovery_result br_discovery_results[5];
 
-static void br_discovery_complete(struct bt_br_discovery_result *results,
+static void br_discovery_complete(const struct bt_br_discovery_result *results,
 				  size_t count)
 {
 	size_t i;
@@ -164,12 +164,18 @@ static void br_discovery_complete(struct bt_br_discovery_result *results,
 	}
 }
 
+static struct bt_br_discovery_cb discovery_cb = {
+	.recv = NULL,
+	.timeout = br_discovery_complete,
+};
+
 static int cmd_discovery(const struct shell *sh, size_t argc, char *argv[])
 {
 	const char *action;
 
 	action = argv[1];
 	if (!strcmp(action, "on")) {
+		static bool reg_cb = true;
 		struct bt_br_discovery_param param;
 
 		param.limited = false;
@@ -183,23 +189,28 @@ static int cmd_discovery(const struct shell *sh, size_t argc, char *argv[])
 			param.limited = true;
 		}
 
+		if (reg_cb) {
+			reg_cb = false;
+			bt_br_discovery_cb_register(&discovery_cb);
+		}
+
 		if (bt_br_discovery_start(&param, br_discovery_results,
-					  ARRAY_SIZE(br_discovery_results),
-					  br_discovery_complete) < 0) {
+					  ARRAY_SIZE(br_discovery_results)) < 0) {
 			shell_print(sh, "Failed to start discovery");
-			return 0;
+			return -ENOEXEC;
 		}
 
 		shell_print(sh, "Discovery started");
 	} else if (!strcmp(action, "off")) {
 		if (bt_br_discovery_stop()) {
 			shell_print(sh, "Failed to stop discovery");
-			return 0;
+			return -ENOEXEC;
 		}
 
 		shell_print(sh, "Discovery stopped");
 	} else {
 		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
 	}
 
 	return 0;
@@ -267,7 +278,7 @@ static int cmd_l2cap_register(const struct shell *sh,
 {
 	if (br_server.psm) {
 		shell_print(sh, "Already registered");
-		return 0;
+		return -ENOEXEC;
 	}
 
 	br_server.psm = strtoul(argv[1], NULL, 16);
@@ -276,9 +287,9 @@ static int cmd_l2cap_register(const struct shell *sh,
 		shell_error(sh, "Unable to register psm");
 		br_server.psm = 0U;
 		return -ENOEXEC;
-	} else {
-		shell_print(sh, "L2CAP psm %u registered", br_server.psm);
 	}
+
+	shell_print(sh, "L2CAP psm %u registered", br_server.psm);
 
 	return 0;
 }
@@ -297,16 +308,16 @@ static int cmd_discoverable(const struct shell *sh,
 		err = bt_br_set_discoverable(false);
 	} else {
 		shell_help(sh);
-		return 0;
+		return SHELL_CMD_HELP_PRINTED;
 	}
 
 	if (err) {
 		shell_print(sh, "BR/EDR set/reset discoverable failed "
 			    "(err %d)", err);
 		return -ENOEXEC;
-	} else {
-		shell_print(sh, "BR/EDR set/reset discoverable done");
 	}
+
+	shell_print(sh, "BR/EDR set/reset discoverable done");
 
 	return 0;
 }
@@ -325,16 +336,16 @@ static int cmd_connectable(const struct shell *sh,
 		err = bt_br_set_connectable(false);
 	} else {
 		shell_help(sh);
-		return 0;
+		return SHELL_CMD_HELP_PRINTED;
 	}
 
 	if (err) {
 		shell_print(sh, "BR/EDR set/rest connectable failed "
 			    "(err %d)", err);
 		return -ENOEXEC;
-	} else {
-		shell_print(sh, "BR/EDR set/reset connectable done");
 	}
+
+	shell_print(sh, "BR/EDR set/reset connectable done");
 
 	return 0;
 }
@@ -364,7 +375,7 @@ static uint8_t sdp_hfp_ag_user(struct bt_conn *conn,
 	char addr[BT_ADDR_STR_LEN];
 	uint16_t param, version;
 	uint16_t features;
-	int res;
+	int err;
 
 	conn_addr_str(conn, addr, sizeof(addr));
 
@@ -378,21 +389,21 @@ static uint8_t sdp_hfp_ag_user(struct bt_conn *conn,
 		 * Focus to get BT_SDP_ATTR_PROTO_DESC_LIST attribute item to
 		 * get HFPAG Server Channel Number operating on RFCOMM protocol.
 		 */
-		res = bt_sdp_get_proto_param(result->resp_buf,
+		err = bt_sdp_get_proto_param(result->resp_buf,
 					     BT_SDP_PROTO_RFCOMM, &param);
-		if (res < 0) {
+		if (err < 0) {
 			shell_error(ctx_shell, "Error getting Server CN, "
-				    "err %d", res);
+				    "err %d", err);
 			goto done;
 		}
 		shell_print(ctx_shell, "HFPAG Server CN param 0x%04x", param);
 
-		res = bt_sdp_get_profile_version(result->resp_buf,
+		err = bt_sdp_get_profile_version(result->resp_buf,
 						 BT_SDP_HANDSFREE_SVCLASS,
 						 &version);
-		if (res < 0) {
+		if (err < 0) {
 			shell_error(ctx_shell, "Error getting profile version, "
-				    "err %d", res);
+				    "err %d", err);
 			goto done;
 		}
 		shell_print(ctx_shell, "HFP version param 0x%04x", version);
@@ -401,10 +412,10 @@ static uint8_t sdp_hfp_ag_user(struct bt_conn *conn,
 		 * Focus to get BT_SDP_ATTR_SUPPORTED_FEATURES attribute item to
 		 * get profile Supported Features mask.
 		 */
-		res = bt_sdp_get_features(result->resp_buf, &features);
-		if (res < 0) {
+		err = bt_sdp_get_features(result->resp_buf, &features);
+		if (err < 0) {
 			shell_error(ctx_shell, "Error getting HFPAG Features, "
-				    "err %d", res);
+				    "err %d", err);
 			goto done;
 		}
 		shell_print(ctx_shell, "HFPAG Supported Features param 0x%04x",
@@ -423,7 +434,7 @@ static uint8_t sdp_a2src_user(struct bt_conn *conn,
 	char addr[BT_ADDR_STR_LEN];
 	uint16_t param, version;
 	uint16_t features;
-	int res;
+	int err;
 
 	conn_addr_str(conn, addr, sizeof(addr));
 
@@ -437,11 +448,11 @@ static uint8_t sdp_a2src_user(struct bt_conn *conn,
 		 * Focus to get BT_SDP_ATTR_PROTO_DESC_LIST attribute item to
 		 * get A2SRC Server PSM Number.
 		 */
-		res = bt_sdp_get_proto_param(result->resp_buf,
+		err = bt_sdp_get_proto_param(result->resp_buf,
 					     BT_SDP_PROTO_L2CAP, &param);
-		if (res < 0) {
+		if (err < 0) {
 			shell_error(ctx_shell, "A2SRC PSM Number not found, "
-				    "err %d", res);
+				    "err %d", err);
 			goto done;
 		}
 
@@ -452,12 +463,12 @@ static uint8_t sdp_a2src_user(struct bt_conn *conn,
 		 * Focus to get BT_SDP_ATTR_PROFILE_DESC_LIST attribute item to
 		 * get profile version number.
 		 */
-		res = bt_sdp_get_profile_version(result->resp_buf,
+		err = bt_sdp_get_profile_version(result->resp_buf,
 						 BT_SDP_ADVANCED_AUDIO_SVCLASS,
 						 &version);
-		if (res < 0) {
+		if (err < 0) {
 			shell_error(ctx_shell, "A2SRC version not found, "
-				    "err %d", res);
+				    "err %d", err);
 			goto done;
 		}
 		shell_print(ctx_shell, "A2SRC version param 0x%04x", version);
@@ -466,10 +477,10 @@ static uint8_t sdp_a2src_user(struct bt_conn *conn,
 		 * Focus to get BT_SDP_ATTR_SUPPORTED_FEATURES attribute item to
 		 * get profile supported features mask.
 		 */
-		res = bt_sdp_get_features(result->resp_buf, &features);
-		if (res < 0) {
+		err = bt_sdp_get_features(result->resp_buf, &features);
+		if (err < 0) {
 			shell_error(ctx_shell, "A2SRC Features not found, "
-				    "err %d", res);
+				    "err %d", err);
 			goto done;
 		}
 		shell_print(ctx_shell, "A2SRC Supported Features param 0x%04x",
@@ -499,12 +510,12 @@ static struct bt_sdp_discover_params discov;
 static int cmd_sdp_find_record(const struct shell *sh,
 			       size_t argc, char *argv[])
 {
-	int res;
+	int err;
 	const char *action;
 
 	if (!default_conn) {
 		shell_print(sh, "Not connected");
-		return 0;
+		return -ENOEXEC;
 	}
 
 	action = argv[1];
@@ -515,18 +526,18 @@ static int cmd_sdp_find_record(const struct shell *sh,
 		discov = discov_a2src;
 	} else {
 		shell_help(sh);
-		return 0;
+		return SHELL_CMD_HELP_PRINTED;
 	}
 
 	shell_print(sh, "SDP UUID \'%s\' gets applied", action);
 
-	res = bt_sdp_discover(default_conn, &discov);
-	if (res) {
-		shell_error(sh, "SDP discovery failed: result %d", res);
+	err = bt_sdp_discover(default_conn, &discov);
+	if (err) {
+		shell_error(sh, "SDP discovery failed: err %d", err);
 		return -ENOEXEC;
-	} else {
-		shell_print(sh, "SDP discovery started");
 	}
+
+	shell_print(sh, "SDP discovery started");
 
 	return 0;
 }
@@ -552,8 +563,7 @@ static int cmd_br(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc == 1) {
 		shell_help(sh);
-		/* shell returns 1 when help is printed */
-		return 1;
+		return SHELL_CMD_HELP_PRINTED;
 	}
 
 	shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
