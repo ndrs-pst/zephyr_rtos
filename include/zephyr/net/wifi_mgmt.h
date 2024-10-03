@@ -1077,7 +1077,7 @@ enum wifi_dpp_bootstrap_type {
 struct wifi_dpp_params {
     /** Operation enum */
     int action;
-    union {
+    union wifi_dpp_union {
         /** Params to add DPP configurator */
         struct wifi_dpp_configurator_add_params {
             /** ECP curves for private key */
@@ -1155,7 +1155,7 @@ struct wifi_dpp_params {
          * fulfilled by response
          */
         char resp[WIFI_DPP_QRCODE_MAX_LEN + 1];
-    };
+    } u;
 };
 
 #include <zephyr/net/net_if.h>

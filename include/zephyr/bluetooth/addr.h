@@ -42,7 +42,7 @@ extern "C" {
 
 /** Bluetooth Device Address */
 typedef struct {
-	uint8_t  val[BT_ADDR_SIZE];
+	uint8_t val[BT_ADDR_SIZE];
 } bt_addr_t;
 /**/
 
@@ -51,7 +51,7 @@ typedef struct {
 
 /** Bluetooth LE Device Address */
 typedef struct {
-	uint8_t      type;
+	uint8_t type;
 	bt_addr_t a;
 } bt_addr_le_t;
 

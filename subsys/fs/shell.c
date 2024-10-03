@@ -227,7 +227,7 @@ static int cmd_trunc(const struct shell *sh, size_t argc, char **argv)
 	err = fs_open(&file, path, FS_O_WRITE);
 	if (err) {
 		shell_error(sh, "Failed to open %s (%d)", path, err);
-		return -ENOEXEC;;
+		return -ENOEXEC;
 	}
 
 	err = fs_truncate(&file, length);

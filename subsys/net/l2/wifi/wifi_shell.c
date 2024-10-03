@@ -2120,19 +2120,19 @@ static int parse_dpp_args_auth_init(const struct shell *sh, size_t argc, char *a
 		state = z_getopt_state_get();
 		switch (opt) {
 		case 'p':
-			params->auth_init.peer = shell_strtol(state->optarg, 10, &ret);
+			params->u.auth_init.peer = shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 'r':
-			params->auth_init.role = shell_strtol(state->optarg, 10, &ret);
+			params->u.auth_init.role = shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 'c':
-			params->auth_init.configurator = shell_strtol(state->optarg, 10, &ret);
+			params->u.auth_init.configurator = shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 'm':
-			params->auth_init.conf = shell_strtol(state->optarg, 10, &ret);
+			params->u.auth_init.conf = shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 's':
-			strncpy(params->auth_init.ssid, state->optarg, WIFI_SSID_MAX_LEN);
+			strncpy(params->u.auth_init.ssid, state->optarg, WIFI_SSID_MAX_LEN);
 			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
@@ -2165,10 +2165,10 @@ static int parse_dpp_args_chirp(const struct shell *sh, size_t argc, char *argv[
 		state = z_getopt_state_get();
 		switch (opt) {
 		case 'i':
-			params->chirp.id = shell_strtol(state->optarg, 10, &ret);
+			params->u.chirp.id = shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 'f':
-			params->chirp.freq = shell_strtol(state->optarg, 10, &ret);
+			params->u.chirp.freq = shell_strtol(state->optarg, 10, &ret);
 			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
@@ -2201,10 +2201,10 @@ static int parse_dpp_args_listen(const struct shell *sh, size_t argc, char *argv
 		state = z_getopt_state_get();
 		switch (opt) {
 		case 'r':
-			params->listen.role = shell_strtol(state->optarg, 10, &ret);
+			params->u.listen.role = shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 'f':
-			params->listen.freq = shell_strtol(state->optarg, 10, &ret);
+			params->u.listen.freq = shell_strtol(state->optarg, 10, &ret);
 			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
@@ -2239,16 +2239,16 @@ static int parse_dpp_args_btstrap_gen(const struct shell *sh, size_t argc, char 
 		state = z_getopt_state_get();
 		switch (opt) {
 		case 't':
-			params->bootstrap_gen.type = shell_strtol(state->optarg, 10, &ret);
+			params->u.bootstrap_gen.type = shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 'o':
-			params->bootstrap_gen.op_class = shell_strtol(state->optarg, 10, &ret);
+			params->u.bootstrap_gen.op_class = shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 'h':
-			params->bootstrap_gen.chan = shell_strtol(state->optarg, 10, &ret);
+			params->u.bootstrap_gen.chan = shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 'a':
-			ret = net_bytes_from_str(params->bootstrap_gen.mac,
+			ret = net_bytes_from_str(params->u.bootstrap_gen.mac,
 						 WIFI_MAC_ADDR_LEN, state->optarg);
 			break;
 		default:
@@ -2263,18 +2263,18 @@ static int parse_dpp_args_btstrap_gen(const struct shell *sh, size_t argc, char 
 	}
 
 	/* DPP bootstrap type currently only support qr_code */
-	if (params->bootstrap_gen.type == 0) {
-		params->bootstrap_gen.type = WIFI_DPP_BOOTSTRAP_TYPE_QRCODE;
+	if (params->u.bootstrap_gen.type == 0) {
+		params->u.bootstrap_gen.type = WIFI_DPP_BOOTSTRAP_TYPE_QRCODE;
 	}
 
-	if (params->bootstrap_gen.type != WIFI_DPP_BOOTSTRAP_TYPE_QRCODE) {
+	if (params->u.bootstrap_gen.type != WIFI_DPP_BOOTSTRAP_TYPE_QRCODE) {
 		PR_ERROR("DPP bootstrap type currently only support qr_code\n");
 		return -ENOTSUP;
 	}
 
 	/* operating class should be set alongside with channel */
-	if ((params->bootstrap_gen.op_class && !params->bootstrap_gen.chan) ||
-	    (!params->bootstrap_gen.op_class && params->bootstrap_gen.chan)) {
+	if ((params->u.bootstrap_gen.op_class && !params->u.bootstrap_gen.chan) ||
+	    (!params->u.bootstrap_gen.op_class && params->u.bootstrap_gen.chan)) {
 		PR_ERROR("Operating class should be set alongside with channel\n");
 		return -EINVAL;
 	}
@@ -2300,14 +2300,14 @@ static int parse_dpp_args_set_config_param(const struct shell *sh, size_t argc, 
 		state = z_getopt_state_get();
 		switch (opt) {
 		case 'c':
-			params->configurator_set.configurator =
+			params->u.configurator_set.configurator =
 				shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 'm':
-			params->configurator_set.conf = shell_strtol(state->optarg, 10, &ret);
+			params->u.configurator_set.conf = shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 's':
-			strncpy(params->configurator_set.ssid, state->optarg, WIFI_SSID_MAX_LEN);
+			strncpy(params->u.configurator_set.ssid, state->optarg, WIFI_SSID_MAX_LEN);
 			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
@@ -2366,7 +2366,7 @@ static int cmd_wifi_dpp_qr_code(const struct shell *sh, size_t argc, char *argv[
 	params.action = WIFI_DPP_QR_CODE;
 
 	if (argc >= 2) {
-		strncpy(params.dpp_qr_code, argv[1], WIFI_DPP_QRCODE_MAX_LEN);
+		strncpy(params.u.dpp_qr_code, argv[1], WIFI_DPP_QRCODE_MAX_LEN);
 	}
 
 	if (net_mgmt(NET_REQUEST_WIFI_DPP, iface, &params, sizeof(params))) {
@@ -2448,7 +2448,7 @@ static int cmd_wifi_dpp_btstrap_get_uri(const struct shell *sh, size_t argc, cha
 	params.action = WIFI_DPP_BOOTSTRAP_GET_URI;
 
 	if (argc >= 2) {
-		params.id = shell_strtol(argv[1], 10, &ret);
+		params.u.id = shell_strtol(argv[1], 10, &ret);
 	}
 
 	if (ret) {
@@ -2493,7 +2493,7 @@ static int cmd_wifi_dpp_resp_timeout_set(const struct shell *sh, size_t argc, ch
 	params.action = WIFI_DPP_SET_WAIT_RESP_TIME;
 
 	if (argc >= 2) {
-		params.dpp_resp_wait_time = shell_strtol(argv[1], 10, &ret);
+		params.u.dpp_resp_wait_time = shell_strtol(argv[1], 10, &ret);
 	}
 
 	if (ret) {
@@ -2538,7 +2538,7 @@ static int cmd_wifi_dpp_ap_btstrap_get_uri(const struct shell *sh, size_t argc, 
 	params.action = WIFI_DPP_BOOTSTRAP_GET_URI;
 
 	if (argc >= 2) {
-		params.id = shell_strtol(argv[1], 10, &ret);
+		params.u.id = shell_strtol(argv[1], 10, &ret);
 	}
 
 	if (ret) {
@@ -2561,7 +2561,7 @@ static int cmd_wifi_dpp_ap_qr_code(const struct shell *sh, size_t argc, char *ar
 	params.action = WIFI_DPP_QR_CODE;
 
 	if (argc >= 2) {
-		strncpy(params.dpp_qr_code, argv[1], WIFI_DPP_QRCODE_MAX_LEN);
+		strncpy(params.u.dpp_qr_code, argv[1], WIFI_DPP_QRCODE_MAX_LEN);
 	}
 
 	if (net_mgmt(NET_REQUEST_WIFI_DPP, iface, &params, sizeof(params))) {
@@ -2590,7 +2590,7 @@ static int cmd_wifi_dpp_ap_auth_init(const struct shell *sh, size_t argc, char *
 		state = z_getopt_state_get();
 		switch (opt) {
 		case 'p':
-			params.auth_init.peer = shell_strtol(state->optarg, 10, &ret);
+			params.u.auth_init.peer = shell_strtol(state->optarg, 10, &ret);
 			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
@@ -2604,7 +2604,7 @@ static int cmd_wifi_dpp_ap_auth_init(const struct shell *sh, size_t argc, char *
 	}
 
 	/* AP DPP auth only act as enrollee */
-	params.auth_init.role = WIFI_DPP_ROLE_ENROLLEE;
+	params.u.auth_init.role = WIFI_DPP_ROLE_ENROLLEE;
 
 	if (net_mgmt(NET_REQUEST_WIFI_DPP, iface, &params, sizeof(params))) {
 		PR_WARNING("Failed to request DPP action\n");
@@ -2622,7 +2622,7 @@ static int cmd_wifi_dpp_reconfig(const struct shell *sh, size_t argc, char *argv
 	params.action = WIFI_DPP_RECONFIG;
 
 	if (argc >= 2) {
-		params.network_id = shell_strtol(argv[1], 10, &ret);
+		params.u.network_id = shell_strtol(argv[1], 10, &ret);
 	}
 
 	if (ret) {
