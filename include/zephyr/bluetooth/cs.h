@@ -517,6 +517,29 @@ struct bt_le_cs_create_config_params {
 	uint8_t channel_map[10];
 };
 
+/** Callbacks for CS Test */
+struct bt_le_cs_test_cb {
+	/**@brief CS Test Subevent data.
+	 *
+	 * @param[in] Subevent results.
+	 */
+	void (*le_cs_test_subevent_data_available)(struct bt_conn_le_cs_subevent_result *data);
+	/**@brief CS Test End Complete. */
+	void (*le_cs_test_end_complete)(void);
+};
+
+/** Subevent result step */
+struct bt_le_cs_subevent_step {
+	/** CS step mode. */
+	uint8_t mode;
+	/** CS step channel index. */
+	uint8_t channel;
+	/** Length of role- and mode-specific information being reported. */
+	uint8_t data_len;
+	/** Pointer to role- and mode-specific information. */
+	const uint8_t *data;
+};
+
 /** @brief Set all valid channel map bits
  *
  * This command is used to enable all valid channels in a
@@ -567,6 +590,19 @@ int bt_le_cs_set_default_settings(struct bt_conn *conn,
  */
 int bt_le_cs_read_remote_fae_table(struct bt_conn *conn);
 
+/** @brief Register callbacks for the CS Test mode.
+ *
+ * Existing callbacks can be unregistered by providing NULL function
+ * pointers.
+ *
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING_TEST} must be set.
+ *
+ * @param cs_test_cb Set of callbacks to be used with CS Test
+ *
+ * @return Zero on success or (negative) error code on failure.
+ */
+int bt_le_cs_test_cb_register(struct bt_le_cs_test_cb cs_test_cb);
+
 /** @brief Start a CS test
  *
  * This command is used to start a CS test where the IUT is placed in the role
@@ -581,7 +617,7 @@ int bt_le_cs_read_remote_fae_table(struct bt_conn *conn);
  * parameters of this command describe the required transmit and receive behavior
  * for the CS test.
  *
- * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING_TEST} must be set.
  *
  * @param params CS Test parameters
  *
@@ -619,6 +655,37 @@ int bt_le_cs_create_config(struct bt_conn *conn, struct bt_le_cs_create_config_p
  * @return Zero on success or (negative) error code on failure.
  */
 int bt_le_cs_remove_config(struct bt_conn *conn, uint8_t config_id);
+
+/** @brief Stop ongoing CS Test
+ *
+ * This command is used to stop any CS test that is in progress.
+ *
+ * The controller is expected to finish reporting any subevent results
+ * before completing this termination.
+ *
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING_TEST} must be set.
+ *
+ * @return Zero on success or (negative) error code on failure.
+ */
+int bt_le_cs_stop_test(void);
+
+/** @brief Parse CS Test Subevent Results
+ *
+ * A helper for parsing HCI-formatted step data found in channel sounding subevent results.
+ *
+ * A typical use-case is filtering out data which does not meet certain packet quality or NADM
+ * requirements.
+ *
+ * @warning This function will consume the data when parsing.
+ *
+ * @param step_data_buf Pointer to a buffer containing the step data.
+ * @param func Callback function which will be called for each step data found.
+ *             The callback should return true to continue parsing, or false to stop.
+ * @param user_data User data to be passed to the callback.
+ */
+void bt_le_cs_step_data_parse(struct net_buf_simple *step_data_buf,
+			      bool (*func)(struct bt_le_cs_subevent_step *step, void *user_data),
+			      void *user_data);
 
 #ifdef __cplusplus
 }
