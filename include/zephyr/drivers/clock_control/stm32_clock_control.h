@@ -247,7 +247,7 @@
 #endif
 
 /** PLL/PLL1 clock source */
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(pll), okay) && \
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pll)) && \
     DT_NODE_HAS_PROP(DT_NODELABEL(pll), clocks)
 #define DT_PLL_CLOCKS_CTRL      DT_CLOCKS_CTLR(DT_NODELABEL(pll))
 #if DT_SAME_NODE(DT_PLL_CLOCKS_CTRL, DT_NODELABEL(clk_msi))
@@ -272,7 +272,7 @@
 #endif
 
 /** PLL2 clock source */
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(pll2), okay) && \
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pll2)) && \
     DT_NODE_HAS_PROP(DT_NODELABEL(pll2), clocks)
 #define DT_PLL2_CLOCKS_CTRL     DT_CLOCKS_CTLR(DT_NODELABEL(pll2))
 #if DT_SAME_NODE(DT_PLL2_CLOCKS_CTRL, DT_NODELABEL(clk_msis))
@@ -288,7 +288,7 @@
 #endif
 
 /** PLL3 clock source */
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(pll3), okay) && \
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pll3)) && \
     DT_NODE_HAS_PROP(DT_NODELABEL(pll3), clocks)
 #define DT_PLL3_CLOCKS_CTRL     DT_CLOCKS_CTLR(DT_NODELABEL(pll3))
 #if DT_SAME_NODE(DT_PLL3_CLOCKS_CTRL, DT_NODELABEL(clk_msis))

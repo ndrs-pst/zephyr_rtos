@@ -93,12 +93,12 @@ static inline size_t nvs_al_size(struct nvs_fs const* fs, size_t len) {
 
     return ((len + (write_block_size - 1U)) & ~(write_block_size - 1U));
 }
-
 /* end basic routines */
 
 /* flash routines */
 /* basic aligned flash write to nvs address */
-static int nvs_flash_al_wrt(struct nvs_fs const* fs, uint32_t addr, void const* data, size_t len) {
+static int nvs_flash_al_wrt(struct nvs_fs const* fs, uint32_t addr, void const* data,
+                            size_t len) {
     uint8_t const* data8 = (uint8_t const*)data;
     int rc;
     off_t ofs;
@@ -450,7 +450,8 @@ static int nvs_close_ate_valid(struct nvs_fs* fs, const struct nvs_ate* entry) {
 }
 
 /* store an entry in flash */
-static int nvs_flash_wrt_entry(struct nvs_fs* fs, uint16_t id, void const* data, size_t len) {
+static int nvs_flash_wrt_entry(struct nvs_fs* fs, uint16_t id, void const* data,
+                               size_t len) {
     int rc;
     struct nvs_ate entry;
 
@@ -1344,14 +1345,13 @@ ssize_t nvs_calc_free_space(struct nvs_fs* fs) {
 
     ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
 
-    free_space = 0U;
-    for (uint_fast16_t i = 1U; i < fs->sector_count; i++) {
-        /*
-         * There is always a closing ATE and a reserved ATE for
-         * deletion in each sector
-         */
-        free_space += (fs->sector_size - (2 * ate_size));
-    }
+    /*
+     * There is always a closing ATE and a reserved ATE for
+     * deletion in each sector.
+     * Take into account one less sector because it is reserved for the
+     * garbage collection.
+     */
+    free_space = (fs->sector_count - 1) * (fs->sector_size - (2 * ate_size));
 
     step_addr = fs->ate_wra;
 
@@ -1397,39 +1397,38 @@ ssize_t nvs_calc_free_space(struct nvs_fs* fs) {
     return ((ssize_t)free_space);
 }
 
-size_t nvs_sector_max_data_size(struct nvs_fs *fs)
-{
-	size_t ate_size;
+size_t nvs_sector_max_data_size(struct nvs_fs* fs) {
+    size_t ate_size;
 
-	if (!fs->ready) {
-		LOG_ERR("NVS not initialized");
-		return -EACCES;
-	}
+    if (!fs->ready) {
+        LOG_ERR("NVS not initialized");
+        return (-EACCES);
+    }
 
-	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
+    ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
 
-	return fs->ate_wra - fs->data_wra - ate_size - NVS_DATA_CRC_SIZE;
+    return (fs->ate_wra - fs->data_wra - ate_size - NVS_DATA_CRC_SIZE);
 }
 
-int nvs_sector_use_next(struct nvs_fs *fs)
-{
-	int ret;
+int nvs_sector_use_next(struct nvs_fs* fs) {
+    int ret;
 
-	if (!fs->ready) {
-		LOG_ERR("NVS not initialized");
-		return -EACCES;
-	}
+    if (!fs->ready) {
+        LOG_ERR("NVS not initialized");
+        return (-EACCES);
+    }
 
-	k_mutex_lock(&fs->nvs_lock, K_FOREVER);
+    k_mutex_lock(&fs->nvs_lock, K_FOREVER);
 
-	ret = nvs_sector_close(fs);
-	if (ret != 0) {
-		goto end;
-	}
+    ret = nvs_sector_close(fs);
+    if (ret != 0) {
+        goto end;
+    }
 
-	ret = nvs_gc(fs);
+    ret = nvs_gc(fs);
 
-end:
-	k_mutex_unlock(&fs->nvs_lock);
-	return ret;
+end :
+    k_mutex_unlock(&fs->nvs_lock);
+
+    return (ret);
 }

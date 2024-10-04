@@ -287,7 +287,7 @@ static int gpio_sam0_init(const struct device* dev) {
 }
 
 /* Port A */
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(porta), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(porta))
 
 static struct gpio_sam0_config DT_CONST gpio_sam0_config_0 = {
     .common = {
@@ -310,7 +310,7 @@ DEVICE_DT_DEFINE(DT_NODELABEL(porta),
 #endif
 
 /* Port B */
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(portb), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(portb))
 
 static struct gpio_sam0_config DT_CONST gpio_sam0_config_1 = {
     .common = {
@@ -333,7 +333,7 @@ DEVICE_DT_DEFINE(DT_NODELABEL(portb),
 #endif
 
 /* Port C */
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(portc), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(portc))
 
 static struct gpio_sam0_config DT_CONST gpio_sam0_config_2 = {
     .common = {
@@ -356,7 +356,7 @@ DEVICE_DT_DEFINE(DT_NODELABEL(portc),
 #endif
 
 /* Port D */
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(portd), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(portd))
 
 static struct gpio_sam0_config DT_CONST gpio_sam0_config_3 = {
     .common = {

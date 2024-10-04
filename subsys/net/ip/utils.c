@@ -652,7 +652,7 @@ static inline uint16_t pkt_calc_chksum(struct net_pkt* pkt, uint16_t sum) {
     return (sum);
 }
 
-#if defined(CONFIG_NET_IP)
+#if defined(CONFIG_NET_NATIVE_IP)
 uint16_t net_calc_chksum(struct net_pkt* pkt, uint8_t proto) {
     size_t len = 0U;
     uint16_t sum = 0U;
@@ -703,7 +703,7 @@ uint16_t net_calc_chksum(struct net_pkt* pkt, uint8_t proto) {
 }
 #endif
 
-#if defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_NET_NATIVE_IPV4)
 uint16_t net_calc_chksum_ipv4(struct net_pkt* pkt) {
     uint16_t sum;
 
@@ -715,7 +715,7 @@ uint16_t net_calc_chksum_ipv4(struct net_pkt* pkt) {
 
     return ~sum;
 }
-#endif /* CONFIG_NET_IPV4 */
+#endif /* CONFIG_NET_NATIVE_IPV4 */
 
 #if defined(CONFIG_NET_IPV4_IGMP)
 uint16_t net_calc_chksum_igmp(struct net_pkt* pkt) {

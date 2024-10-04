@@ -92,32 +92,12 @@ extern bool net_context_is_v6only_set(struct net_context* context);
 extern bool net_context_is_recv_pktinfo_set(struct net_context* context);
 extern bool net_context_is_timestamping_set(struct net_context* context);
 extern void net_pkt_init(void);
-extern void net_tc_tx_init(void);
-extern void net_tc_rx_init(void);
 int net_context_get_local_addr(struct net_context* context,
                                struct net_sockaddr* addr,
                                socklen_t* addrlen);
 #else
-static inline void net_context_init(void) {
-    /* pass */
-}
-
-static inline void net_pkt_init(void) {
-    /* pass */
-}
-
-static inline void net_tc_tx_init(void) {
-    /* pass */
-}
-
-static inline void net_tc_rx_init(void) {
-    /* pass */
-}
-
-static inline bool net_context_is_timestamping_set(struct net_context* context) {
-    ARG_UNUSED(context);
-    return (false);
-}
+static inline void net_context_init(void) { }
+static inline void net_pkt_init(void) { }
 
 static inline char const* net_context_state(struct net_context* context) {
     ARG_UNUSED(context);
@@ -135,6 +115,11 @@ static inline bool net_context_is_reuseport_set(struct net_context* context) {
 }
 
 static inline bool net_context_is_recv_pktinfo_set(struct net_context* context) {
+    ARG_UNUSED(context);
+    return (false);
+}
+
+static inline bool net_context_is_timestamping_set(struct net_context* context) {
     ARG_UNUSED(context);
     return (false);
 }
@@ -165,6 +150,8 @@ static inline void mdns_init_responder(void) { }
 #if defined(CONFIG_NET_NATIVE)
 enum net_verdict net_ipv4_input(struct net_pkt* pkt, bool is_loopback);
 enum net_verdict net_ipv6_input(struct net_pkt* pkt, bool is_loopback);
+extern void net_tc_tx_init(void);
+extern void net_tc_rx_init(void);
 #else
 static inline enum net_verdict net_ipv4_input(struct net_pkt* pkt,
                                               bool is_loopback) {
@@ -181,6 +168,9 @@ static inline enum net_verdict net_ipv6_input(struct net_pkt* pkt,
 
     return (NET_CONTINUE);
 }
+
+static inline void net_tc_tx_init(void) { }
+static inline void net_tc_rx_init(void) { }
 #endif
 extern bool net_tc_submit_to_tx_queue(uint8_t tc, struct net_pkt* pkt);
 extern void net_tc_submit_to_rx_queue(uint8_t tc, struct net_pkt* pkt);
