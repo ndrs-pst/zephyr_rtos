@@ -467,7 +467,7 @@ static int wifi_ap_sta_disconnect(uint32_t mgmt_request, struct net_if* iface,
         return (-ENODEV);
     }
 
-    if (wifi_mgmt_api == NULL || wifi_mgmt_api->ap_sta_disconnect == NULL) {
+    if ((wifi_mgmt_api == NULL) || (wifi_mgmt_api->ap_sta_disconnect == NULL)) {
         return (-ENOTSUP);
     }
 
@@ -495,7 +495,7 @@ static int wifi_ap_config_params(uint32_t mgmt_request, struct net_if* iface,
         return (-ENOTSUP);
     }
 
-    if (!data || len != sizeof(*params)) {
+    if (!data || (len != sizeof(*params))) {
         return (-EINVAL);
     }
 
@@ -523,7 +523,7 @@ static int wifi_iface_status(uint32_t mgmt_request, struct net_if* iface,
         return (-ENOTSUP);
     }
 
-    if (!data || len != sizeof(*status)) {
+    if (!data || (len != sizeof(*status))) {
         return (-EINVAL);
     }
 
@@ -550,7 +550,7 @@ static int wifi_iface_stats(uint32_t mgmt_request, struct net_if* iface,
         return (-ENOTSUP);
     }
 
-    if (!data || len != sizeof(*stats)) {
+    if (!data || (len != sizeof(*stats))) {
         return (-EINVAL);
     }
 
@@ -838,6 +838,20 @@ static int wifi_get_connection_params(uint32_t mgmt_request, struct net_if* ifac
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CONN_PARAMS, wifi_get_connection_params);
 
+static int wifi_wps_config(uint32_t mgmt_request, struct net_if* iface, void* data, size_t len) {
+    const struct device* dev = net_if_get_device(iface);
+    const struct wifi_mgmt_ops* const wifi_mgmt_api = get_wifi_api(iface);
+    struct wifi_wps_config_params* params = data;
+
+    if ((wifi_mgmt_api == NULL) || (wifi_mgmt_api->wps_config == NULL)) {
+        return (-ENOTSUP);
+    }
+
+    return wifi_mgmt_api->wps_config(dev, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_WPS_CONFIG, wifi_wps_config);
+
 static int wifi_set_rts_threshold(uint32_t mgmt_request, struct net_if* iface,
                                   void* data, size_t len) {
     const struct device* dev = net_if_get_device(iface);
@@ -886,22 +900,21 @@ static int wifi_pmksa_flush(uint32_t mgmt_request, struct net_if* iface,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_FLUSH, wifi_pmksa_flush);
 
-static int wifi_get_rts_threshold(uint32_t mgmt_request, struct net_if *iface,
-				  void *data, size_t len)
-{
-	const struct device *dev = net_if_get_device(iface);
-	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
-	unsigned int *rts_threshold = data;
+static int wifi_get_rts_threshold(uint32_t mgmt_request, struct net_if* iface,
+                                  void* data, size_t len) {
+    const struct device* dev = net_if_get_device(iface);
+    const struct wifi_mgmt_ops* const wifi_mgmt_api = get_wifi_api(iface);
+    unsigned int *rts_threshold = data;
 
-	if (wifi_mgmt_api == NULL || wifi_mgmt_api->get_rts_threshold == NULL) {
-		return -ENOTSUP;
-	}
+    if ((wifi_mgmt_api == NULL) || (wifi_mgmt_api->get_rts_threshold == NULL)) {
+        return (-ENOTSUP);
+    }
 
-	if (!data || len != sizeof(*rts_threshold)) {
-		return -EINVAL;
-	}
+    if (!data || (len != sizeof(*rts_threshold))) {
+        return (-EINVAL);
+    }
 
-	return wifi_mgmt_api->get_rts_threshold(dev, rts_threshold);
+    return wifi_mgmt_api->get_rts_threshold(dev, rts_threshold);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD_CONFIG, wifi_get_rts_threshold);
