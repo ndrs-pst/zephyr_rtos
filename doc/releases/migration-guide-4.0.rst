@@ -18,6 +18,12 @@ the :ref:`release notes<zephyr_4.0>`.
 Build System
 ************
 
+* Removed the ``CONFIG_MCUBOOT_CMAKE_WEST_SIGN_PARAMS`` Kconfig option as ``west sign`` is no
+  longer called by the build system when signing images for MCUboot.
+
+* The imgtool part of ``west sign`` has been deprecated, options to be supplied to imgtool when
+  signing should be set in :kconfig:option:`CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS` instead.
+
 Kernel
 ******
 
@@ -336,6 +342,78 @@ Bluetooth Classic
 Bluetooth Host
 ==============
 
+Automatic advertiser resumption is deprecated
+---------------------------------------------
+
+.. note::
+
+   This deprecation is compiler-checked. If you get no warnings,
+   you should not be affected.
+
+Deprecated symbols:
+   * :c:enumerator:`BT_LE_ADV_OPT_CONNECTABLE`
+   * :c:enumerator:`BT_LE_ADV_OPT_ONE_TIME`
+   * :c:macro:`BT_LE_ADV_CONN`
+
+New symbols:
+   * :c:enumerator:`BT_LE_ADV_OPT_CONN`
+   * :c:macro:`BT_LE_ADV_CONN_FAST_1`
+   * :c:macro:`BT_LE_ADV_CONN_FAST_2`
+
+:c:enumerator:`BT_LE_ADV_OPT_CONNECTABLE` is a combined
+instruction to make the advertiser connectable and to enable
+automatic resumption. To disable the automatic resumption, use
+:c:enumerator:`BT_LE_ADV_OPT_CONN`.
+
+Extended Advertising API with shorthands
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Extended Advertising API ``bt_le_ext_adv_*`` implicitly assumes
+:c:enumerator:`BT_LE_ADV_OPT_ONE_TIME` and never automatically
+resume advertising. Therefore, the following search/replace can
+be applied without thinking:
+
+Replace all
+
+.. code-block:: diff
+
+   -bt_le_ext_adv_create(BT_LE_ADV_CONN, ...)
+   +bt_le_ext_adv_create(BT_LE_ADV_FAST_2, ...)
+
+.. code-block:: diff
+
+   -bt_le_ext_adv_update_param(..., BT_LE_ADV_CONN)
+   +bt_le_ext_adv_update_param(..., BT_LE_ADV_FAST_2)
+
+Extended Advertising API with custom parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You may have uses of :c:enumerator:`BT_LE_ADV_OPT_CONNECTABLE`
+in assignments to a :c:struct:`bt_le_adv_param`. If your struct
+is never passed to :c:func:`bt_le_adv_start`, you should:
+
+* replace :c:enumerator:`BT_LE_ADV_OPT_CONNECTABLE` with
+  :c:enumerator:`BT_LE_ADV_OPT_CONN`.
+* remove :c:enumerator:`BT_LE_ADV_OPT_ONE_TIME`.
+
+Legacy Advertising API not using automatic resumption
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Any calls to :c:func:`bt_le_adv_start` that use the combination
+:c:enumerator:`BT_LE_ADV_OPT_CONNECTABLE` and
+:c:enumerator:`BT_LE_ADV_OPT_ONE_TIME` should have that
+combination replaced with :c:enumerator:`BT_LE_ADV_OPT_CONN`.
+
+Legacy Advertising API using automatic resumption
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For this case, the application has to take over the
+responsibility of restarting the advertiser.
+
+Refer to the extended advertising sample for an example
+implementation of advertiser restarting. The same technique can
+be used for legacy advertising.
+
 Bluetooth Crypto
 ================
 
@@ -347,6 +425,9 @@ Networking
   type has changed from ``uint8_t *`` to ``uint32_t *``. Additionally,
   :c:func:`coap_get_block2_option` now accepts an additional ``bool *has_more``
   parameter, to store the value of the more flag. (:github:`76052`)
+
+* The struct :c:struct:`coap_transmission_parameters` has a new field ``ack_random_percent`` if
+  :kconfig:option:`CONFIG_COAP_RANDOMIZE_ACK_TIMEOUT` is enabled. (:github:`79058`)
 
 * The Ethernet bridge shell is moved under network shell. This is done so that
   all the network shell activities can be found under ``net`` shell command.

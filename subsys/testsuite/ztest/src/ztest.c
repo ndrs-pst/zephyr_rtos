@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdlib.h>
 #include <zephyr/ztest.h>
 
 #include <zephyr/app_memory/app_memdomain.h>

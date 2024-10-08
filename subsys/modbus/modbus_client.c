@@ -62,14 +62,14 @@ static int mbc_validate_fc03fp_response(struct modbus_context const* ctx, float*
     resp_byte_cnt = ctx->rx_adu.data[0];
     resp_data     = &ctx->rx_adu.data[1];
     req_qty       = sys_get_be16(&ctx->tx_adu.data[2]);
-    req_byte_cnt  = (req_qty * sizeof(float));
+    req_byte_cnt  = (req_qty * sizeof(uint16_t));
 
     if (req_byte_cnt != resp_byte_cnt) {
         LOG_ERR("Mismatch in the number of registers");
         return (-EINVAL);
     }
 
-    for (uint16_t i = 0U; i < req_qty; i++) {
+    for (uint16_t i = 0U; i < (req_qty / 2U); i++) {
         uint32_t reg_val = sys_get_be32(resp_data);
 
         memcpy(&ptbl[i], &reg_val, sizeof(float));
@@ -388,7 +388,8 @@ int modbus_read_holding_regs_fp(int const iface,
 
     ctx->tx_adu.length = 4U;
     sys_put_be16(start_addr, &ctx->tx_adu.data[0]);
-    sys_put_be16(num_regs, &ctx->tx_adu.data[2]);
+    /* A 32-bit float is mapped to two 16-bit registers */
+    sys_put_be16(num_regs * 2, &ctx->tx_adu.data[2]);
 
     err = mbc_send_cmd(ctx, unit_id, MODBUS_FC03_HOLDING_REG_RD, reg_buf);
     k_mutex_unlock(&ctx->iface_lock);
@@ -608,7 +609,8 @@ int modbus_write_holding_regs_fp(int const iface,
 
     sys_put_be16(start_addr, &ctx->tx_adu.data[0]);
     length += sizeof(start_addr);
-    sys_put_be16(num_regs, &ctx->tx_adu.data[2]);
+    /* A 32-bit float is mapped to two 16-bit registers */
+    sys_put_be16(num_regs * 2, &ctx->tx_adu.data[2]);
     length += sizeof(num_regs);
 
     num_bytes = (num_regs * sizeof(float));

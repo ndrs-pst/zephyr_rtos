@@ -994,7 +994,6 @@ end:
 int nvs_clear(struct nvs_fs* fs) {
     int rc;
     uint32_t addr;
-
     if (fs->ready == false) {
         LOG_ERR("NVS not initialized");
         return (-EACCES);
@@ -1337,7 +1336,6 @@ ssize_t nvs_calc_free_space(struct nvs_fs* fs) {
     uint32_t wlk_addr;
     size_t ate_size;
     size_t free_space;
-
     if (!fs->ready) {
         LOG_ERR("NVS not initialized");
         return (-EACCES);
