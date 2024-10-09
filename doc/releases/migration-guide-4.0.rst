@@ -315,6 +315,10 @@ Bluetooth Audio
   is enabled and that all members are bonded, to comply with the requirements from the CSIP spec.
   (:github:`78877`)
 
+* The callback structure provided to :c:func:`bt_bap_unicast_client_register_cb` is no longer
+  :code:`const`, and now multiple callback structures can be registered.
+  (:github:`78999`)
+
 * The Broadcast Audio Scan Service (BASS) shall now be registered and unregistered dynamically
   at runtime within the scan delegator. Two new APIs, :c:func:`bt_bap_scan_delegator_register()`
   and :c:func:`bt_bap_scan_delegator_unregister()`, have been introduced to manage both BASS and
@@ -478,6 +482,15 @@ Shell
 
 * ``kernel threads`` and ``kernel stacks`` shell command have been renamed to
   ``kernel thread list`` & ``kernel thread stacks``
+
+JWT (JSON Web Token)
+====================
+
+* By default, the signature is now computed through PSA Crypto API for both RSA and ECDSA.
+  The newly-added :kconfig:option:`CONFIG_JWT_USE_LEGACY` can be used to switch
+  back to previous libraries (TinyCrypt for ECDSA and Mbed TLS for RSA).
+  The conversion to the PSA Crypto API is being done in preparation for the
+  deprecation of TinyCrypt. (:github:`78243` and :github:`43712`)
 
 Architectures
 *************

@@ -828,7 +828,8 @@ static void modem_cmux_process_received_byte(struct modem_cmux* cmux, uint8_t by
             }
 
             /* Compute FCS */
-            fcs = crc8_rohc(MODEM_CMUX_FCS_INIT_VALUE, cmux->frame_header, cmux->frame_header_len);
+            fcs = crc8_rohc(MODEM_CMUX_FCS_INIT_VALUE, cmux->frame_header,
+                            cmux->frame_header_len);
             if (cmux->frame.type == MODEM_CMUX_FRAME_TYPE_UIH) {
                 fcs = 0xFF - fcs;
             }
