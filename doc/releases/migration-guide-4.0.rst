@@ -453,6 +453,9 @@ Networking
   from :zephyr_file:`include/zephyr/net/buf.h` to :zephyr_file:`include/zephyr/net_buf.h` and the
   implementation moved to :zephyr_file:`lib/net_buf/`. (:github:`78009`)
 
+* The ``work_q`` parameter to ``NET_SOCKET_SERVICE_SYNC_DEFINE`` and
+  ``NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC`` has been removed as it was always ignored. (:github:`79446`)
+
 Other Subsystems
 ****************
 
@@ -466,6 +469,14 @@ Flash map
 
 hawkBit
 =======
+
+* :c:func:`hawkbit_autohandler` now takes one argument. This argument has to be set to
+  ``true`` for the same behavior as before the change. (:github:`71037`)
+
+* ``<zephyr/mgmt/hawkbit.h>`` is deprecated in favor of ``<zephyr/mgmt/hawkbit/hawkbit.h>``.
+  The old header will be removed in future releases and its usage should be avoided.
+  The hawkbit autohandler has been separated into ``<zephyr/mgmt/hawkbit/autohandler.h>``.
+  The configuration part of hawkbit is now in ``<zephyr/mgmt/hawkbit/config.h>``. (:github:`71037`)
 
 MCUmgr
 ======
