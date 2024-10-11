@@ -42,6 +42,18 @@ extern "C" {
 #endif
 
 /**
+ * @brief Check if a BAP BASS BIS_Sync bitfield is valid
+ *
+ * Valid options are eiter a bitmask of valid BIS indices, including none (0x00000000)
+ * or @ref BT_BAP_BIS_SYNC_NO_PREF (0xFFFFFFFF).
+ *
+ * @param _bis_bitfield BIS_Sync bitfield (uint32)
+ */
+#define BT_BAP_BASS_VALID_BIT_BITFIELD(_bis_bitfield)                                              \
+	((_bis_bitfield) == 0U || (_bis_bitfield) == BT_BAP_BIS_SYNC_NO_PREF ||                    \
+	 BT_ISO_VALID_BIS_BITFIELD(_bis_bitfield))
+
+/**
  * @brief Helper to declare elements of bt_bap_qos_cfg
  *
  * @param _interval SDU interval (usec)
@@ -658,6 +670,16 @@ struct bt_bap_scan_delegator_cb {
 	int (*bis_sync_req)(struct bt_conn *conn,
 			    const struct bt_bap_scan_delegator_recv_state *recv_state,
 			    const uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS]);
+	/**
+	 * @brief Broadcast Assistant scanning state callback
+	 *
+	 * Callback triggered when a Broadcast Assistant notifies the Scan Delegator about the
+	 * assistants scanning state.
+	 *
+	 * @param conn Pointer to the connection that initiated the scan.
+	 * @param is_scanning true if scanning started, false if scanning stopped.
+	 */
+	void (*scanning_state)(struct bt_conn *conn, bool is_scanning);
 };
 
 /** Structure holding information of audio stream endpoint */

@@ -213,6 +213,19 @@ Interrupt Controller
 LED Strip
 =========
 
+PWM
+===
+
+* The Raspberry Pi Pico PWM driver now configures frequency adaptively.
+  This has resulted in a change in how device tree parameters are handled.
+  If the :dtcompatible:`raspberry,pico-pwm`'s ``divider-int-0`` or variations
+  for each channel are specified, or if these are set to 0,
+  the driver dynamically configures the division ratio by specified cycles.
+  The driver will operate at the specified division ratio if a non-zero value is
+  specified for ``divider-int-0``.
+  This is unchanged from previous behavior.
+  Please specify ``divider-int-0`` explicitly to make the same behavior as before.
+
 SDHC
 ====
 
@@ -227,6 +240,11 @@ Sensors
 * The existing driver for the Microchip MCP9808 temperature sensor transformed and renamed
   to support all JEDEC JC 42.4 compatible temperature sensors. It now uses the
   :dtcompatible:`jedec,jc-42.4-temp` compatible string instead to the ``microchip,mcp9808`` string.
+
+* The ``nxp,`` prefixed properties in :dtcompatible:`nxp,kinetis-acmp` have been deprecated in favor
+  of properties without the prefix. The sensor based driver for the :dtcompatible:`nxp,kinetis-acmp`
+  has been updated to support both the new and deprecated property names. Uses of the deprecated
+  property names should be updated to the new property names.
 
 Serial
 ======

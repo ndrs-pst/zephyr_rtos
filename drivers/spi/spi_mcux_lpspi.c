@@ -33,9 +33,8 @@ LOG_MODULE_REGISTER(spi_mcux_lpspi, CONFIG_SPI_LOG_LEVEL);
 #define MAX_DATA_WIDTH      4096
 
 /* Required by DEVICE_MMIO_NAMED_* macros */
-#define DEV_CFG(_dev)   \
-    ((const struct spi_mcux_config*)(_dev)->config)
-#define DEV_DATA(_dev)      ((struct spi_mcux_data*)(_dev)->data)
+#define DEV_CFG(_dev)  ((const struct spi_mcux_config *)(_dev)->config)
+#define DEV_DATA(_dev) ((struct spi_mcux_data *)(_dev)->data)
 
 struct spi_mcux_config {
     DEVICE_MMIO_NAMED_ROM(reg_base);
@@ -487,7 +486,6 @@ static inline int spi_mcux_dma_rxtx_load(const struct device* dev,
     if (ret != 0) {
         return (ret);
     }
-
     ret = dma_start(lpspi_data->dma_rx.dma_dev,
                     lpspi_data->dma_rx.channel);
 
@@ -755,7 +753,6 @@ static inline void spi_mcux_iodev_prepare_start(const struct device* dev) {
 
     spi_context_cs_control(&data->ctx, true);
 }
-
 
 static void spi_mcux_iodev_start(const struct device* dev) {
     struct spi_mcux_data* data = dev->data;
