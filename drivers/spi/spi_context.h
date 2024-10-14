@@ -307,6 +307,10 @@ void spi_context_buffers_setup(struct spi_context* ctx,
             (void*)ctx->rx_buf, ctx->rx_len);
 }
 
+/*
+ * Note: dfs is the number of bytes needed to store a data frame,
+ * while len is the number of data frames sent.
+ */
 static ALWAYS_INLINE
 void spi_context_update_tx(struct spi_context* ctx, uint8_t dfs, uint32_t len) {
     if (ctx->tx_len > 0U) {
@@ -343,6 +347,10 @@ bool spi_context_tx_buf_on(struct spi_context* ctx) {
     return !!(ctx->tx_buf && ctx->tx_len);
 }
 
+/*
+ * Note: dfs is the number of bytes needed to store a data frame,
+ * while len is the number of data frames received.
+ */
 static ALWAYS_INLINE
 void spi_context_update_rx(struct spi_context* ctx, uint8_t dfs, uint32_t len) {
 #ifdef CONFIG_SPI_SLAVE

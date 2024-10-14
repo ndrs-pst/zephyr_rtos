@@ -630,7 +630,10 @@ static inline int zsock_ioctl_wrapper(int sock, unsigned long request, ...)
  * @endrst
  * @see z_impl_zsock_poll() in `subsys/net/lib/sockets/sockets.c`
  */
-__syscall int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout);
+static inline int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
+{
+	return zvfs_poll(fds, nfds, timeout);
+}
 
 /**
  * @brief Get various socket options

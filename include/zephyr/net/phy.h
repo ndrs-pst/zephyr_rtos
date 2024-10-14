@@ -50,6 +50,12 @@ enum phy_link_speed {
 
     /** 1000Base-T Full-Duplex */
     LINK_FULL_1000BASE_T = BIT(5),
+
+    /** 2.5GBase-T Full-Duplex */
+    LINK_FULL_2500BASE_T = BIT(6),
+
+    /** 5GBase-T Full-Duplex */
+    LINK_FULL_5000BASE_T = BIT(7),
 };
 
 /**
@@ -59,7 +65,7 @@ enum phy_link_speed {
  *
  * @return True if link is full duplex, false if not.
  */
-#define PHY_LINK_IS_FULL_DUPLEX(x) (x & (BIT(1) | BIT(3) | BIT(5)))
+#define PHY_LINK_IS_FULL_DUPLEX(x)  (x & (BIT(1) | BIT(3) | BIT(5) | BIT(6) | BIT(7)))
 
 /**
  * @brief Check if phy link speed is 1 Gbit/sec.
