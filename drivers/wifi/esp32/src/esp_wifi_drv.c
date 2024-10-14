@@ -896,7 +896,6 @@ static int esp32_wifi_status(const struct device* dev, struct wifi_iface_status*
 }
 
 int esp32_wifi_reg_domain(const struct device* dev, struct wifi_reg_domain* reg_domain) {
-    wifi_mode_t wifi_mode;
     esp_err_t err;
 
     ARG_UNUSED(dev);
@@ -1028,6 +1027,7 @@ int esp32_wifi_ap_config_params(const struct device* dev, struct wifi_ap_config_
 #define ESP32_WIFI_DPP_CMD_BUF_SIZE 384
 #define STR_CUR_TO_END(cur) (cur) = (&(cur)[0] + strlen((cur)))
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 int esp32_wifi_dpp_dispatch(const struct device* dev, struct wifi_dpp_params* params) {
     char* pos;
     static char dpp_cmd_buf[ESP32_WIFI_DPP_CMD_BUF_SIZE] = {0};
@@ -1083,6 +1083,7 @@ int esp32_wifi_dpp_dispatch(const struct device* dev, struct wifi_dpp_params* pa
 
     return (0);
 }
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
 static void esp32_wifi_init(struct net_if* iface) {
     const struct device* dev = net_if_get_device(iface);
@@ -1186,7 +1187,9 @@ static const struct wifi_mgmt_ops esp32_wifi_mgmt = {
 
     .ap_config_params = esp32_wifi_ap_config_params,
 
+    #if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP)
     .dpp_dispatch = esp32_wifi_dpp_dispatch
+    #endif
 };
 
 static const struct net_wifi_mgmt_offload esp32_api = {
