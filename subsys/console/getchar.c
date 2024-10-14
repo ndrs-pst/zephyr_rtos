@@ -33,41 +33,41 @@ int console_putchar(char c) {
 
 int console_getchar(void) {
     uint8_t c;
-    int     res;
+    int res;
 
     res = tty_read(&console_serial, &c, 1);
     if (res < 0) {
-        return res;
+        return (res);
     }
 
-    return c;
+    return (c);
 }
 
 int console_init(void) {
     const struct device* uart_dev;
-    int                  ret;
+    int ret;
 
     uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
     if (!device_is_ready(uart_dev)) {
-        return -ENODEV;
+        return (-ENODEV);
     }
 
     ret = tty_init(&console_serial, uart_dev);
 
     if (ret) {
-        return ret;
+        return (ret);
     }
 
     /* Checks device driver supports for interrupt driven data transfers. */
     if (CONFIG_CONSOLE_GETCHAR_BUFSIZE + CONFIG_CONSOLE_PUTCHAR_BUFSIZE) {
         const struct uart_driver_api* api = (const struct uart_driver_api*)uart_dev->api;
         if (!api->irq_callback_set) {
-            return -ENOTSUP;
+            return (-ENOTSUP);
         }
     }
 
     tty_set_tx_buf(&console_serial, console_txbuf, sizeof(console_txbuf));
     tty_set_rx_buf(&console_serial, console_rxbuf, sizeof(console_rxbuf));
 
-    return 0;
+    return (0);
 }
