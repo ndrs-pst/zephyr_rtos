@@ -19,10 +19,12 @@
  * @param[in] fmt   Format string.
  * @param[in] ...   List of parameters to print.
  */
-void __printf_like(1, 2) bt_shell_fprintf_info(const char *fmt, ...);
-void __printf_like(1, 2) bt_shell_fprintf_normal(const char *fmt, ...);
-void __printf_like(1, 2) bt_shell_fprintf_warn(const char *fmt, ...);
-void __printf_like(1, 2) bt_shell_fprintf_error(const char *fmt, ...);
+void __printf_like(2, 3) bt_shell_fprintf_impl(enum shell_vt100_color color,
+                                               char const *fmt, ...);
+void __printf_like(1, 2) bt_shell_info_impl(const char *fmt, ...);
+void __printf_like(1, 2) bt_shell_print_impl(const char *fmt, ...);
+void __printf_like(1, 2) bt_shell_warn_impl(const char *fmt, ...);
+void __printf_like(1, 2) bt_shell_error_impl(const char *fmt, ...);
 
 /**
  * @brief Print info message to the shell.
@@ -32,7 +34,7 @@ void __printf_like(1, 2) bt_shell_fprintf_error(const char *fmt, ...);
  * @param[in] ... List of parameters to print.
  */
 #define bt_shell_info(_ft, ...) \
-    bt_shell_fprintf_info(_ft "\n", ##__VA_ARGS__)
+	bt_shell_info_impl(_ft "\n", ##__VA_ARGS__)
 
 /**
  * @brief Print normal message to the shell.
@@ -42,7 +44,7 @@ void __printf_like(1, 2) bt_shell_fprintf_error(const char *fmt, ...);
  * @param[in] ... List of parameters to print.
  */
 #define bt_shell_print(_ft, ...) \
-    bt_shell_fprintf_normal(_ft "\n", ##__VA_ARGS__)
+	bt_shell_print_impl(_ft "\n", ##__VA_ARGS__)
 
 /**
  * @brief Print warning message to the shell.
@@ -52,7 +54,7 @@ void __printf_like(1, 2) bt_shell_fprintf_error(const char *fmt, ...);
  * @param[in] ... List of parameters to print.
  */
 #define bt_shell_warn(_ft, ...) \
-    bt_shell_fprintf_warn(_ft "\n", ##__VA_ARGS__)
+	bt_shell_warn_impl(_ft "\n", ##__VA_ARGS__)
 
 /**
  * @brief Print error message to the shell.
@@ -62,11 +64,18 @@ void __printf_like(1, 2) bt_shell_fprintf_error(const char *fmt, ...);
  * @param[in] ... List of parameters to print.
  */
 #define bt_shell_error(_ft, ...) \
-    bt_shell_fprintf_error(_ft "\n", ##__VA_ARGS__)
+    bt_shell_error_impl(_ft "\n", ##__VA_ARGS__)
 
+#define bt_shell_fprintf(color, _ft, ...) \
+    bt_shell_fprintf_impl(color, _ft, ##__VA_ARGS__)
 
-#define bt_shell_fprintf_info(_ft, ...)     bt_shell_fprintf_info(_ft, ##__VA_ARGS__)
-#define bt_shell_fprintf_print(_ft, ...)    bt_shell_fprintf_normal(_ft, ##__VA_ARGS__)
-#define bt_shell_fprintf_warn(_ft, ...)     bt_shell_fprintf_warn(_ft, ##__VA_ARGS__)
+#define bt_shell_fprintf_info(_ft, ...) \
+	bt_shell_info_impl(_ft, ##__VA_ARGS__)
+
+#define bt_shell_fprintf_print(_ft, ...) \
+	bt_shell_print_impl(_ft, ##__VA_ARGS__)
+
+#define bt_shell_fprintf_warn(_ft, ...) \
+	bt_shell_warn_impl(_ft, ##__VA_ARGS__)
 
 #endif /* __BT_SHELL_PRIVATE_H */

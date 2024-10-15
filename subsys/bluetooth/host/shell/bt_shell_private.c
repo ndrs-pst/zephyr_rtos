@@ -15,39 +15,49 @@
 
 extern const struct shell *ctx_shell;
 
-void bt_shell_fprintf_info(const char *fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
+void bt_shell_fprintf_impl(enum shell_vt100_color color,
+			   char const *fmt, ...)
+{
+	va_list args;
 
-    shell_vfprintf(ctx_shell, SHELL_INFO, fmt, args);
-
-    va_end(args);
+	va_start(args, fmt);
+	shell_vfprintf(ctx_shell, color, fmt, args);
+	va_end(args);
 }
 
-void bt_shell_fprintf_normal(const char *fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
+void bt_shell_info_impl(const char *fmt, ...)
+{
+	va_list args;
 
-    shell_vfprintf(ctx_shell, SHELL_NORMAL, fmt, args);
+	va_start(args, fmt);
+	shell_vfprintf(ctx_shell, SHELL_INFO, fmt, args);
+	va_end(args);
+}
 
-    va_end(args);
+void bt_shell_print_impl(const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	shell_vfprintf(ctx_shell, SHELL_NORMAL, fmt, args);
+	va_end(args);
 }
 
 
-void bt_shell_fprintf_warn(const char *fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
+void bt_shell_warn_impl(const char *fmt, ...)
+{
+	va_list args;
 
-    shell_vfprintf(ctx_shell, SHELL_WARNING, fmt, args);
-
-    va_end(args);
+	va_start(args, fmt);
+	shell_vfprintf(ctx_shell, SHELL_WARNING, fmt, args);
+	va_end(args);
 }
 
-void bt_shell_fprintf_error(const char *fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
+void bt_shell_error_impl(const char *fmt, ...)
+{
+	va_list args;
 
-    shell_vfprintf(ctx_shell, SHELL_ERROR, fmt, args);
-
-    va_end(args);
+	va_start(args, fmt);
+	shell_vfprintf(ctx_shell, SHELL_ERROR, fmt, args);
+	va_end(args);
 }
