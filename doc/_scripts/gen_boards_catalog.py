@@ -5,7 +5,7 @@ import logging
 from collections import namedtuple
 from pathlib import Path
 
-import list_boards
+import list_boards, list_hardware
 import pykwalify
 import yaml
 import zephyr_module
@@ -14,6 +14,7 @@ from gen_devicetree_rest import VndLookup
 ZEPHYR_BASE = Path(__file__).parents[2]
 
 logger = logging.getLogger(__name__)
+
 
 def guess_file_from_patterns(directory, patterns, name, extensions):
     for pattern in patterns:
@@ -77,6 +78,7 @@ def get_catalog():
     )
 
     boards = list_boards.find_v2_boards(args_find_boards)
+    systems = list_hardware.find_v2_systems(args_find_boards)
     board_catalog = {}
 
     for board in boards:
@@ -99,29 +101,23 @@ def get_catalog():
             except Exception as e:
                 logger.error(f"Error parsing twister file {twister_file}: {e}")
 
-        full_name = board.full_name
+        socs = {soc.name for soc in board.socs}
+        full_name = board.full_name or board.name
         doc_page = guess_doc_page(board)
-
-        if not full_name:
-            # If full commercial name of the board is not available through board.full_name, we look
-            # for the title in the board's documentation page.
-            # /!\ This is a temporary solution until #79571 sets all the full names in the boards
-            if doc_page:
-                with open(doc_page, "r") as f:
-                    lines = f.readlines()
-                    for i, line in enumerate(lines):
-                        if line.startswith("#"):
-                            full_name = lines[i - 1].strip()
-                            break
-            else:
-                full_name = board.name
 
         board_catalog[board.name] = {
             "full_name": full_name,
             "doc_page": doc_page.relative_to(ZEPHYR_BASE).as_posix() if doc_page else None,
             "vendor": vendor,
             "archs": list(archs),
+            "socs": list(socs),
             "image": guess_image(board),
         }
 
-    return {"boards": board_catalog, "vendors": vnd_lookup.vnd2vendor}
+    socs_hierarchy = {}
+    for soc in systems.get_socs():
+        family = soc.family or "<no family>"
+        series = soc.series or "<no series>"
+        socs_hierarchy.setdefault(family, {}).setdefault(series, []).append(soc.name)
+
+    return {"boards": board_catalog, "vendors": vnd_lookup.vnd2vendor, "socs": socs_hierarchy}

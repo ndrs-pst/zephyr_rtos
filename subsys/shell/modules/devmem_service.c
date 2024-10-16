@@ -18,6 +18,7 @@
 #include <zephyr/device.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #ifndef CONFIG_NATIVE_LIBC
 extern void z_getopt_init(void);
@@ -42,10 +43,6 @@ static struct devmem_service_context devmem_context;
 
 #define CHAR_CAN 0x18
 #define CHAR_DC1 0x11
-
-#ifndef BITS_PER_BYTE
-#define BITS_PER_BYTE 8
-#endif
 
 static int memory_dump(const struct shell* sh, mem_addr_t phys_addr, size_t size, uint8_t width) {
     uint32_t value;

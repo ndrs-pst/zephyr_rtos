@@ -1160,8 +1160,6 @@ Release Notes:
     - dts/bindings/comparator/
     - include/zephyr/drivers/comparator.h
     - include/zephyr/drivers/comparator/
-    - include/zephyr/drivers/comparator/
-    - include/zephyr/dt-bindings/clock/
     - tests/drivers/build_all/comparator/
     - tests/drivers/comparator/
     - doc/hardware/peripherals/comparator.rst
@@ -1382,6 +1380,8 @@ Release Notes:
     - dts/bindings/ethernet/
     - tests/drivers/ethernet/
     - include/zephyr/drivers/ethernet/
+    - include/zephyr/net/phy.h
+    - include/zephyr/net/ethernet.h
   labels:
     - "area: Ethernet"
   tests:
@@ -1633,6 +1633,7 @@ Release Notes:
     - doc/hardware/peripherals/mdio.rst
     - drivers/mdio/
     - include/zephyr/drivers/mdio.h
+    - include/zephyr/net/mdio.h
     - tests/drivers/build_all/mdio/
     - dts/bindings/mdio/
   labels:
@@ -2380,9 +2381,9 @@ IPC:
   status: maintained
   maintainers:
     - doki-nordic
-    - arnopo
   collaborators:
     - carlocaione
+    - arnopo
   files:
     - include/zephyr/ipc/
     - samples/subsys/ipc/

@@ -377,12 +377,6 @@ static void ready_thread(struct k_thread* thread) {
     }
 }
 
-void z_ready_thread_locked(struct k_thread* thread) {
-    if (thread_active_elsewhere(thread) == NULL) {
-        ready_thread(thread);
-    }
-}
-
 void z_ready_thread(struct k_thread* thread) {
     K_SPINLOCK(&_sched_spinlock) {
         if (thread_active_elsewhere(thread) == NULL) {
@@ -687,7 +681,7 @@ struct k_thread* z_unpend_first_thread(_wait_q_t* wait_q) {
     K_SPINLOCK(&_sched_spinlock) {
         thread = _priq_wait_best(&wait_q->waitq);
 
-        if (thread != NULL) {
+        if (unlikely(thread != NULL)) {
             unpend_thread_no_timeout(thread);
             (void)z_abort_thread_timeout(thread);
         }

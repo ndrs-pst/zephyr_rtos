@@ -93,13 +93,13 @@ static inline bool handle_poll_events(struct k_sem* sem) {
 void z_impl_k_sem_give(struct k_sem* sem) {
     k_spinlock_key_t key = k_spin_lock(&lock);
     struct k_thread* thread;
-    bool             resched = true;
+    bool resched = true;
 
     SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_sem, give, sem);
 
     thread = z_unpend_first_thread(&sem->wait_q);
 
-    if (thread != NULL) {
+    if (unlikely(thread != NULL)) {
         arch_thread_return_value_set(thread, 0);
         z_ready_thread(thread);
     }
@@ -108,7 +108,7 @@ void z_impl_k_sem_give(struct k_sem* sem) {
         resched = handle_poll_events(sem);
     }
 
-    if (resched) {
+    if (unlikely(resched)) {
         z_reschedule(&lock, key);
     }
     else {
