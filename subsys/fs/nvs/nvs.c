@@ -343,7 +343,7 @@ static int nvs_flash_block_move(struct nvs_fs* fs, uint32_t addr, size_t len) {
 /* erase a sector and verify erase was OK.
  * return 0 if OK, errorcode on error.
  */
-static int nvs_flash_erase_sector(struct nvs_fs const* fs, uint32_t addr) {
+static int nvs_flash_erase_sector(struct nvs_fs* fs, uint32_t addr) {
     int rc;
     off_t offset;
 
@@ -1086,7 +1086,7 @@ ssize_t nvs_write(struct nvs_fs* fs, uint16_t id, void const* data, size_t len) 
     uint32_t wlk_addr;
     uint32_t rd_addr;
     uint16_t required_space = 0U; /* no space, appropriate for delete ate */
-    bool prev_found;
+    bool prev_found = false;
 
     if (!fs->ready) {
         LOG_ERR("NVS not initialized");
@@ -1110,7 +1110,7 @@ ssize_t nvs_write(struct nvs_fs* fs, uint16_t id, void const* data, size_t len) 
     /* find latest entry with same id */
     #ifdef CONFIG_NVS_LOOKUP_CACHE
     wlk_addr = fs->lookup_cache[nvs_lookup_cache_pos(id)];
-
+    rd_addr  = wlk_addr;
     if (wlk_addr == NVS_LOOKUP_CACHE_NO_ADDR) {
         goto no_cached_entry;
     }
@@ -1118,8 +1118,7 @@ ssize_t nvs_write(struct nvs_fs* fs, uint16_t id, void const* data, size_t len) 
     wlk_addr = fs->ate_wra;
     #endif
 
-    prev_found = false;
-    while (1) {
+    while (true) {
         rd_addr = wlk_addr;
         rc = nvs_prev_ate(fs, &wlk_addr, &wlk_ate);
         if (rc) {
@@ -1179,7 +1178,7 @@ no_cached_entry :
     k_mutex_lock(&fs->nvs_lock, K_FOREVER);
 
     gc_count = 0;
-    while (1) {
+    while (true) {
         if (gc_count == fs->sector_count) {
             /* gc'ed all sectors, no extra space will be created
              * by extra gc.
@@ -1353,7 +1352,7 @@ ssize_t nvs_calc_free_space(struct nvs_fs* fs) {
 
     step_addr = fs->ate_wra;
 
-    while (1) {
+    while (true) {
         rc = nvs_prev_ate(fs, &step_addr, &step_ate);
         if (rc) {
             return (rc);
@@ -1361,7 +1360,7 @@ ssize_t nvs_calc_free_space(struct nvs_fs* fs) {
 
         wlk_addr = fs->ate_wra;
 
-        while (1) {
+        while (true) {
             rc = nvs_prev_ate(fs, &wlk_addr, &wlk_ate);
             if (rc) {
                 return (rc);
