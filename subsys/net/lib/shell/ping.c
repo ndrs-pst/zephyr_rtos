@@ -197,9 +197,10 @@ static int handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
 
 static int parse_arg(size_t *i, size_t argc, char *argv[])
 {
-	int res = -1;
+	int res;
+	int err;
+	int base;
 	const char *str = argv[*i] + 2;
-	char *endptr;
 
 	if (*str == 0) {
 		if (*i + 1 >= argc) {
@@ -210,14 +211,15 @@ static int parse_arg(size_t *i, size_t argc, char *argv[])
 		str = argv[*i];
 	}
 
-	errno = 0;
 	if (strncmp(str, "0x", 2) == 0) {
-		res = strtol(str, &endptr, 16);
+		base = 16;
 	} else {
-		res = strtol(str, &endptr, 10);
+		base = 10;
 	}
 
-	if (errno || (endptr == str)) {
+	err = 0;
+	res = shell_strtol(str, base, &err);
+	if (err != 0) {
 		return -1;
 	}
 
@@ -367,7 +369,6 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 	int ret;
 
 	for (size_t i = 1; i < argc; ++i) {
-
 		if (*argv[i] != '-') {
 			host = argv[i];
 			continue;
@@ -380,16 +381,14 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 				PR_WARNING("Parse error: %s\n", argv[i]);
 				return -ENOEXEC;
 			}
-
-
 			break;
+
 		case 'i':
 			interval = parse_arg(&i, argc, argv);
 			if (interval < 0) {
 				PR_WARNING("Parse error: %s\n", argv[i]);
 				return -ENOEXEC;
 			}
-
 			break;
 
 		case 'I':
@@ -414,7 +413,6 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 				PR_WARNING("Parse error: %s\n", argv[i]);
 				return -ENOEXEC;
 			}
-
 			break;
 
 		case 's':
@@ -423,7 +421,6 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 				PR_WARNING("Parse error: %s\n", argv[i]);
 				return -ENOEXEC;
 			}
-
 			break;
 
 		default:
@@ -495,4 +492,4 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ping,
 
 SHELL_SUBCMD_ADD((net), ping, &net_cmd_ping,
 		 "Ping a network host.",
-		 cmd_net_ping, 1, 13);
+		 cmd_net_ping, 2, 12);

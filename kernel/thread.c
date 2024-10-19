@@ -215,7 +215,7 @@ int z_impl_k_thread_name_copy(k_tid_t thread, char *buf, size_t size)
 
 static size_t copy_bytes(char *dest, size_t dest_size, const char *src, size_t src_size)
 {
-	size_t  bytes_to_copy;
+	size_t bytes_to_copy;
 
 	bytes_to_copy = MIN(dest_size, src_size);
 	memcpy(dest, src, bytes_to_copy);
@@ -225,12 +225,12 @@ static size_t copy_bytes(char *dest, size_t dest_size, const char *src, size_t s
 
 const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size)
 {
-	size_t      off = 0;
-	uint8_t     bit;
-	uint8_t     thread_state = thread_id->base.thread_state;
+	size_t off = 0;
+	uint8_t bit;
+	uint8_t thread_state = thread_id->base.thread_state;
 	static const struct {
 		const char *str;
-		size_t      len;
+		size_t len;
 	} state_string[] = {
 		{ Z_STATE_STR_DUMMY, sizeof(Z_STATE_STR_DUMMY) - 1},
 		{ Z_STATE_STR_PENDING, sizeof(Z_STATE_STR_PENDING) - 1},
