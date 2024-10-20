@@ -81,10 +81,8 @@ bool __weak shell_mqtt_get_devid(char *id, int id_max_len)
 	return length > 0;
 }
 
-static void prepare_fds(void)
+static void prepare_fds(struct shell_mqtt *sh)
 {
-	struct shell_mqtt *sh = sh_mqtt;
-
 	if (sh->mqtt_cli.transport.type == MQTT_TRANSPORT_NON_SECURE) {
 	    sh->fds[0].fd = sh->mqtt_cli.transport.tcp.sock;
 	}
@@ -105,9 +103,8 @@ static void clear_fds(void)
  * descriptors have been selected. Upon failure, poll() shall return -1 and set errno to indicate
  * the error.
  */
-static int wait(int timeout)
+static int wait(struct shell_mqtt *sh, int timeout)
 {
-	struct shell_mqtt *sh = sh_mqtt;
 	int rc = 0;
 
 	if (sh->nfds > 0) {
@@ -121,9 +118,8 @@ static int wait(int timeout)
 }
 
 /* Query IP address for the broker URL */
-static int get_mqtt_broker_addrinfo(void)
+static int get_mqtt_broker_addrinfo(struct shell_mqtt *sh)
 {
-	struct shell_mqtt *sh = sh_mqtt;
 	int rc;
 	struct zsock_addrinfo hints = {
 		.ai_family = NET_AF_INET,
@@ -151,9 +147,8 @@ static int get_mqtt_broker_addrinfo(void)
 }
 
 /* Close MQTT connection properly and cleanup socket */
-static void sh_mqtt_close_and_cleanup(void)
+static void sh_mqtt_close_and_cleanup(struct shell_mqtt *sh)
 {
-	struct shell_mqtt *sh = sh_mqtt;
 	/* Initialize to negative value so that the mqtt_abort case can run */
 	int rc = -1;
 
@@ -179,9 +174,8 @@ static void sh_mqtt_close_and_cleanup(void)
 	clear_fds();
 }
 
-static void broker_init(void)
+static void broker_init(struct shell_mqtt *sh)
 {
-	struct shell_mqtt *sh = sh_mqtt;
 	struct net_sockaddr_in *broker4 = (struct net_sockaddr_in *)&sh->broker;
 
 	broker4->sin_family = NET_AF_INET;
@@ -190,9 +184,8 @@ static void broker_init(void)
 	net_ipaddr_copy(&broker4->sin_addr, &net_sin(sh->haddr->ai_addr)->sin_addr);
 }
 
-static void client_init(void)
+static void client_init(struct shell_mqtt *sh)
 {
-	struct shell_mqtt *sh = sh_mqtt;
 	static struct mqtt_utf8 password;
 	static struct mqtt_utf8 username;
 
@@ -259,7 +252,7 @@ static void sh_mqtt_process_handler(struct k_work *work)
 	       (sh->transport_state == SHELL_MQTT_TRANSPORT_CONNECTED) &&
 	       (sh->subscribe_state == SHELL_MQTT_SUBSCRIBED)) {
 		LOG_DBG("Listening to socket");
-		rc = wait(remaining);
+		rc = wait(sh, remaining);
 		if (rc > 0) {
 			LOG_DBG("Process socket for MQTT packet");
 			rc = mqtt_input(&sh->mqtt_cli);
@@ -289,7 +282,7 @@ static void sh_mqtt_process_handler(struct k_work *work)
 
 process_error:
 	LOG_DBG("%s: close MQTT, cleanup socket & reconnect", "connect");
-	sh_mqtt_close_and_cleanup();
+	sh_mqtt_close_and_cleanup(sh);
 	(void)sh_mqtt_work_reschedule(&sh->connect_dwork, K_SECONDS(1));
 	sh_mqtt_context_unlock();
 }
@@ -334,7 +327,7 @@ static void sh_mqtt_subscribe_handler(struct k_work *work)
 	if (rc == 0) {
 		/* Wait for mqtt's connack */
 		LOG_DBG("Listening to socket");
-		rc = wait(CONNECT_TIMEOUT_MS);
+		rc = wait(sh, CONNECT_TIMEOUT_MS);
 		if (rc > 0) {
 			LOG_DBG("Process socket for MQTT packet");
 			rc = mqtt_input(&sh->mqtt_cli);
@@ -363,7 +356,7 @@ static void sh_mqtt_subscribe_handler(struct k_work *work)
 
 subscribe_error:
 	LOG_DBG("%s: close MQTT, cleanup socket & reconnect", "subscribe");
-	sh_mqtt_close_and_cleanup();
+	sh_mqtt_close_and_cleanup(sh);
 	(void)sh_mqtt_work_reschedule(&sh->connect_dwork, K_SECONDS(2));
 	sh_mqtt_context_unlock();
 }
@@ -395,7 +388,7 @@ static void sh_mqtt_connect_handler(struct k_work *work)
 
 	/* Resolve the broker URL */
 	LOG_DBG("Resolving DNS");
-	rc = get_mqtt_broker_addrinfo();
+	rc = get_mqtt_broker_addrinfo(sh);
 	if (rc != 0) {
 		(void)sh_mqtt_work_reschedule(&sh->connect_dwork, K_SECONDS(1));
 		sh_mqtt_context_unlock();
@@ -403,8 +396,8 @@ static void sh_mqtt_connect_handler(struct k_work *work)
 	}
 
 	LOG_DBG("Initializing MQTT client");
-	broker_init();
-	client_init();
+	broker_init(sh);
+	client_init(sh);
 
 	/* Try to connect to mqtt */
 	LOG_DBG("Connecting to MQTT broker");
@@ -416,11 +409,11 @@ static void sh_mqtt_connect_handler(struct k_work *work)
 
 	/* Prepare port config */
 	LOG_DBG("Preparing socket");
-	prepare_fds();
+	prepare_fds(sh);
 
 	/* Wait for mqtt's connack */
 	LOG_DBG("Listening to socket");
-	rc = wait(CONNECT_TIMEOUT_MS);
+	rc = wait(sh, CONNECT_TIMEOUT_MS);
 	if (rc > 0) {
 		LOG_DBG("Process socket for MQTT packet");
 		rc = mqtt_input(&sh->mqtt_cli);
@@ -444,15 +437,13 @@ static void sh_mqtt_connect_handler(struct k_work *work)
 
 connect_error:
 	LOG_DBG("%s: close MQTT, cleanup socket & reconnect", "connect");
-	sh_mqtt_close_and_cleanup();
+	sh_mqtt_close_and_cleanup(sh);
 	(void)sh_mqtt_work_reschedule(&sh->connect_dwork, K_SECONDS(2));
 	sh_mqtt_context_unlock();
 }
 
-static int sh_mqtt_publish(uint8_t *data, uint32_t len)
+static int sh_mqtt_publish(struct shell_mqtt *sh, uint8_t *data, uint32_t len)
 {
-	struct shell_mqtt *sh = sh_mqtt;
-
 	sh->pub_data.message.payload.data = data;
 	sh->pub_data.message.payload.len = len;
 	sh->pub_data.message_id++;
@@ -460,12 +451,11 @@ static int sh_mqtt_publish(uint8_t *data, uint32_t len)
 	return mqtt_publish(&sh->mqtt_cli, &sh->pub_data);
 }
 
-static int sh_mqtt_publish_tx_buf(bool is_work)
+static int sh_mqtt_publish_tx_buf(struct shell_mqtt *sh, bool is_work)
 {
-	struct shell_mqtt *sh = sh_mqtt;
 	int rc;
 
-	rc = sh_mqtt_publish(&sh->tx_buf.buf[0], sh->tx_buf.len);
+	rc = sh_mqtt_publish(sh, &sh->tx_buf.buf[0], sh->tx_buf.len);
 	memset(&sh->tx_buf, 0, sizeof(sh->tx_buf));
 	if (rc != 0) {
 		LOG_ERR("MQTT publish error: %d", rc);
@@ -488,25 +478,23 @@ static void sh_mqtt_publish_handler(struct k_work *work)
 
 	(void)sh_mqtt_context_lock(K_FOREVER);
 
-	rc = sh_mqtt_publish_tx_buf(true);
+	rc = sh_mqtt_publish_tx_buf(sh, true);
 	if (rc != 0) {
 		LOG_DBG("%s: close MQTT, cleanup socket & reconnect", "publish");
-		sh_mqtt_close_and_cleanup();
+		sh_mqtt_close_and_cleanup(sh);
 		(void)sh_mqtt_work_reschedule(&sh->connect_dwork, K_SECONDS(2));
 	}
 
 	sh_mqtt_context_unlock();
 }
 
-static void cancel_dworks_and_cleanup(void)
+static void cancel_dworks_and_cleanup(struct shell_mqtt *sh)
 {
-	struct shell_mqtt *sh = sh_mqtt;
-
 	(void)k_work_cancel_delayable(&sh->connect_dwork);
 	(void)k_work_cancel_delayable(&sh->subscribe_dwork);
 	(void)k_work_cancel_delayable(&sh->process_dwork);
 	(void)k_work_cancel_delayable(&sh->publish_dwork);
-	sh_mqtt_close_and_cleanup();
+	sh_mqtt_close_and_cleanup(sh);
 }
 
 static void net_disconnect_handler(struct k_work *work)
@@ -519,7 +507,7 @@ static void net_disconnect_handler(struct k_work *work)
 
 	/* Stop all possible work */
 	(void)sh_mqtt_context_lock(K_FOREVER);
-	cancel_dworks_and_cleanup();
+	cancel_dworks_and_cleanup(sh);
 	sh_mqtt_context_unlock();
 	/* If the transport was requested, the connect work will be rescheduled
 	 * when internet is connected again
@@ -673,7 +661,7 @@ static int shell_mqtt_init(const struct shell_transport *transport, const void *
 
 	if (!shell_mqtt_get_devid(sh->device_id, DEVICE_ID_HEX_MAX_SIZE)) {
 		LOG_ERR("Unable to get device identity, using dummy value");
-		(void)snprintf(sh->device_id, sizeof("dummy"), "dummy");
+		(void) snprintf(sh->device_id, sizeof("dummy"), "dummy");
 	}
 
 	LOG_DBG("Client ID is %s", sh->device_id);
@@ -768,7 +756,7 @@ static int shell_mqtt_write(const struct shell_transport *transport, const void 
 		goto out;
 	}
 
-	(void)k_work_cancel_delayable_sync(&sh->publish_dwork, &ws);
+	(void) k_work_cancel_delayable_sync(&sh->publish_dwork, &ws);
 
 	do {
 		if ((sh->tx_buf.len + length - *cnt) > TX_BUF_SIZE) {
@@ -782,11 +770,11 @@ static int shell_mqtt_write(const struct shell_transport *transport, const void 
 
 		/* Send the data immediately if the buffer is full */
 		if (sh->tx_buf.len == TX_BUF_SIZE) {
-			rc = sh_mqtt_publish_tx_buf(false);
+			rc = sh_mqtt_publish_tx_buf(sh, false);
 			if (rc != 0) {
-				sh_mqtt_close_and_cleanup();
-				(void)sh_mqtt_work_reschedule(&sh->connect_dwork,
-							      K_SECONDS(2));
+				sh_mqtt_close_and_cleanup(sh);
+				(void) sh_mqtt_work_reschedule(&sh->connect_dwork,
+							       K_SECONDS(2));
 				*cnt = length;
 				return rc;
 			}
@@ -796,7 +784,7 @@ static int shell_mqtt_write(const struct shell_transport *transport, const void 
 	} while (*cnt < length);
 
 	if (sh->tx_buf.len > 0) {
-		(void)sh_mqtt_work_reschedule(&sh->publish_dwork, MQTT_SEND_DELAY_MS);
+		(void) sh_mqtt_work_reschedule(&sh->publish_dwork, MQTT_SEND_DELAY_MS);
 	}
 
 	/* Inform shell that it is ready for next TX */
