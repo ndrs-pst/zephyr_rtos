@@ -14,7 +14,7 @@ uint32_t ring_buf_put_claim(struct ring_buf* buf, uint8_t** data, uint32_t size)
     uint32_t wrap_size;
     int32_t  base;
 
-    base      = buf->put_base;
+    base = buf->put_base;
     wrap_size = (uint32_t)(buf->put_head - base);
     if (unlikely(wrap_size >= buf->size)) {
         /* put_base is not yet adjusted */
