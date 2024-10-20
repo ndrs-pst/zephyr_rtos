@@ -67,11 +67,11 @@ static inline void sh_mqtt_context_unlock(void)
 
 static void sh_mqtt_rx_rb_flush(void)
 {
-	uint8_t c;
+	uint8_t data[16];
 	uint32_t size = ring_buf_size_get(&sh_mqtt->rx_rb);
 
 	while (size > 0) {
-		size = ring_buf_get(&sh_mqtt->rx_rb, &c, 1U);
+		size = ring_buf_get(&sh_mqtt->rx_rb, data, sizeof(data));
 	}
 }
 

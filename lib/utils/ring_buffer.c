@@ -80,7 +80,7 @@ uint32_t ring_buf_get_claim(struct ring_buf* buf, uint8_t** data, uint32_t size)
     uint32_t wrap_size;
     int32_t  base;
 
-    base      = buf->get_base;
+    base = buf->get_base;
     wrap_size = (uint32_t)(buf->get_head - base);
     if (unlikely(wrap_size >= buf->size)) {
         /* get_base is not yet adjusted */

@@ -383,7 +383,7 @@ int ring_buf_get_finish(struct ring_buf* buf, uint32_t size);
  * being preempted or by using a mutex to govern reads to the ring buffer.
  *
  * @warning
- * Ring buffer instance should not mix byte access and  item mode
+ * Ring buffer instance should not mix byte access and item mode
  * (calls prefixed with ring_buf_item_).
  *
  * @param buf  Address of ring buffer.
