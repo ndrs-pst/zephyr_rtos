@@ -84,7 +84,7 @@ bool __weak shell_mqtt_get_devid(char *id, int id_max_len)
 static void prepare_fds(struct shell_mqtt *sh)
 {
 	if (sh->mqtt_cli.transport.type == MQTT_TRANSPORT_NON_SECURE) {
-	    sh->fds[0].fd = sh->mqtt_cli.transport.tcp.sock;
+		sh->fds[0].fd = sh->mqtt_cli.transport.tcp.sock;
 	}
 
 	sh->fds[0].events = ZSOCK_POLLIN;
@@ -610,7 +610,7 @@ static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt
 			sh->shell_handler(SHELL_TRANSPORT_EVT_RX_RDY, sh->shell_context);
 
 			/* Arbitrary sleep for the shell to do its thing */
-			(void) k_msleep(100);
+			(void)k_msleep(100);
 		}
 
 		/* Shell won't execute the cmds without \r\n */
@@ -623,7 +623,7 @@ static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt
 			}
 
 			/* Arbitrary sleep for the shell to do its thing */
-			(void) k_msleep(100);
+			(void)k_msleep(100);
 		}
 
 		sh->shell_handler(SHELL_TRANSPORT_EVT_RX_RDY, sh->shell_context);
@@ -650,24 +650,24 @@ static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt
 }
 
 static int shell_mqtt_init(const struct shell_transport *transport, const void *config,
-		shell_transport_handler_t evt_handler, void *context)
+			   shell_transport_handler_t evt_handler, void *context)
 {
 	struct shell_mqtt *sh = (struct shell_mqtt *)transport->ctx;
 	sh_mqtt = sh;
 
-	(void) memset(sh, 0, sizeof(struct shell_mqtt));
+	(void)memset(sh, 0, sizeof(struct shell_mqtt));
 
-	(void) k_mutex_init(&sh->lock);
+	(void)k_mutex_init(&sh->lock);
 
 	if (!shell_mqtt_get_devid(sh->device_id, DEVICE_ID_HEX_MAX_SIZE)) {
 		LOG_ERR("Unable to get device identity, using dummy value");
-		(void) snprintf(sh->device_id, sizeof("dummy"), "dummy");
+		(void)snprintf(sh->device_id, sizeof("dummy"), "dummy");
 	}
 
 	LOG_DBG("Client ID is %s", sh->device_id);
 
-	(void) snprintf(sh->pub_topic, SH_MQTT_TOPIC_MAX_SIZE, "%s_tx", sh->device_id);
-	(void) snprintf(sh->sub_topic, SH_MQTT_TOPIC_MAX_SIZE, "%s_rx", sh->device_id);
+	(void)snprintf(sh->pub_topic, SH_MQTT_TOPIC_MAX_SIZE, "%s_tx", sh->device_id);
+	(void)snprintf(sh->sub_topic, SH_MQTT_TOPIC_MAX_SIZE, "%s_rx", sh->device_id);
 
 	ring_buf_init(&sh->rx_rb, RX_RB_SIZE, sh->rx_rb_buf);
 
@@ -687,7 +687,7 @@ static int shell_mqtt_init(const struct shell_transport *transport, const void *
 	k_work_queue_init(&sh->workq);
 	k_work_queue_start(&sh->workq, sh_mqtt_workq_stack,
 			   K_KERNEL_STACK_SIZEOF(sh_mqtt_workq_stack), K_PRIO_COOP(7), NULL);
-	(void) k_thread_name_set(&sh->workq.thread, "sh_mqtt_workq");
+	(void)k_thread_name_set(&sh->workq.thread, "sh_mqtt_workq");
 	k_work_init(&sh->net_disconnected_work, net_disconnect_handler);
 	k_work_init_delayable(&sh->connect_dwork, sh_mqtt_connect_handler);
 	k_work_init_delayable(&sh->subscribe_dwork, sh_mqtt_subscribe_handler);
@@ -735,8 +735,8 @@ static int shell_mqtt_enable(const struct shell_transport *transport, bool block
 	return 0;
 }
 
-static int shell_mqtt_write(const struct shell_transport *transport, const void *data, size_t length,
-		      size_t *cnt)
+static int shell_mqtt_write(const struct shell_transport *transport, const void *data,
+			    size_t length, size_t *cnt)
 {
 	ARG_UNUSED(transport);
 	struct shell_mqtt *sh = sh_mqtt;
@@ -756,7 +756,7 @@ static int shell_mqtt_write(const struct shell_transport *transport, const void 
 		goto out;
 	}
 
-	(void) k_work_cancel_delayable_sync(&sh->publish_dwork, &ws);
+	(void)k_work_cancel_delayable_sync(&sh->publish_dwork, &ws);
 
 	do {
 		if ((sh->tx_buf.len + length - *cnt) > TX_BUF_SIZE) {
@@ -773,8 +773,8 @@ static int shell_mqtt_write(const struct shell_transport *transport, const void 
 			rc = sh_mqtt_publish_tx_buf(sh, false);
 			if (rc != 0) {
 				sh_mqtt_close_and_cleanup(sh);
-				(void) sh_mqtt_work_reschedule(&sh->connect_dwork,
-							       K_SECONDS(2));
+				(void)sh_mqtt_work_reschedule(&sh->connect_dwork,
+							      K_SECONDS(2));
 				*cnt = length;
 				return rc;
 			}
@@ -784,7 +784,7 @@ static int shell_mqtt_write(const struct shell_transport *transport, const void 
 	} while (*cnt < length);
 
 	if (sh->tx_buf.len > 0) {
-		(void) sh_mqtt_work_reschedule(&sh->publish_dwork, MQTT_SEND_DELAY_MS);
+		(void)sh_mqtt_work_reschedule(&sh->publish_dwork, MQTT_SEND_DELAY_MS);
 	}
 
 	/* Inform shell that it is ready for next TX */
@@ -797,7 +797,7 @@ out:
 }
 
 static int shell_mqtt_read(const struct shell_transport *transport, void *data, size_t length,
-		     size_t *cnt)
+			   size_t *cnt)
 {
 	ARG_UNUSED(transport);
 	struct shell_mqtt *sh = sh_mqtt;
@@ -834,9 +834,9 @@ const struct shell_transport_api shell_mqtt_transport_api = {
 static int enable_shell_mqtt(void)
 {
 	bool log_backend = CONFIG_SHELL_MQTT_INIT_LOG_LEVEL > 0;
-	uint32_t level = (CONFIG_SHELL_MQTT_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?
-				       CONFIG_LOG_MAX_LEVEL :
-				       CONFIG_SHELL_MQTT_INIT_LOG_LEVEL;
+	uint32_t level = (CONFIG_SHELL_MQTT_INIT_LOG_LEVEL > LOG_LEVEL_DBG)
+				 ? CONFIG_LOG_MAX_LEVEL
+				 : CONFIG_SHELL_MQTT_INIT_LOG_LEVEL;
 	int rc;
 
 	static const struct shell_backend_config_flags cfg_flags = {
