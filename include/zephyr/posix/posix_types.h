@@ -11,6 +11,18 @@
 #include <sys/types.h>
 #endif
 
+#if !defined(_CLOCK_T_DECLARED) && !defined(__clock_t_defined)
+typedef unsigned long clock_t;
+#define _CLOCK_T_DECLARED
+#define __clock_t_defined
+#endif
+
+#if !defined(_CLOCKID_T_DECLARED) && !defined(__clockid_t_defined)
+typedef unsigned long clockid_t;
+#define _CLOCKID_T_DECLARED
+#define __clockid_t_defined
+#endif
+
 #if defined(_MSC_VER) /* #CUSTOM@NDRS */
 #define _DEV_T_DECLARED
 #define _INO_T_DECLARED
@@ -75,10 +87,6 @@ typedef int pid_t;
 
 #ifndef __useconds_t_defined
 typedef unsigned long useconds_t;
-#endif
-
-#if defined(_MSC_VER) /* #CUSTOM@NDRS */
-typedef uint32_t clockid_t;
 #endif
 
 /* time related attributes */
