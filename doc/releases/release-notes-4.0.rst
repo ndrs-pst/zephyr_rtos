@@ -151,6 +151,7 @@ Boards & SoC Support
   * Support for Google Kukui EC board (``google_kukui``) has been dropped.
   * STM32: Deprecated MCO configuration via Kconfig in favour of setting it through devicetree.
     See ``samples/boards/stm32/mco`` sample.
+  * Removed the ``nrf54l15pdk`` board, use :ref:`nrf54l15dk_nrf54l15` instead.
 
 * Added support for the following shields:
 
@@ -419,8 +420,11 @@ Libraries / Subsystems
 
 * Crypto
 
-  * Mbed TLS was updated to version 3.6.1. The release notes can be found at:
-    https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.1
+  * Mbed TLS was updated to version 3.6.2 (from 3.6.0). The release notes can be found at:
+
+    * https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.1
+    * https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.2
+
   * The Kconfig symbol :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG`
     was added to allow ``psa_get_random()`` to make use of non-cryptographically
     secure random sources when :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG`
