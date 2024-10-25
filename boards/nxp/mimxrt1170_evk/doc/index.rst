@@ -1,7 +1,4 @@
-﻿.. _mimxrt1170_evk:
-
-NXP MIMXRT1170-EVK/EVKB
-#######################
+﻿.. zephyr:board:: mimxrt1170_evk
 
 Overview
 ********
@@ -10,10 +7,6 @@ The dual core i.MX RT1170 runs on the Cortex-M7 core at 1 GHz and on the Cortex-
 at 400 MHz. The i.MX RT1170 MCU offers support over a wide temperature range
 and is qualified for consumer, industrial and automotive markets. Zephyr
 supports the initial revision of this EVK, as well as rev EVKB.
-
-.. image:: mimxrt1170_evk.jpg
-   :align: center
-   :alt: MIMXRT1170-EVK
 
 Hardware
 ********
@@ -361,11 +354,6 @@ EVK. See `Using J-Link with MIMXRT1170-EVKB`_ or
 
 Using LinkServer
 ----------------
-
-Known limitations with LinkServer and these boards include:
-- ``west flash`` will not write images to non-flash locations. The flash
-command only works when all data in the image is written to flash memory
-regions.
 
 Install the :ref:`linkserver-debug-host-tools` and make sure they are in your
 search path.  LinkServer works with the default CMSIS-DAP firmware included in

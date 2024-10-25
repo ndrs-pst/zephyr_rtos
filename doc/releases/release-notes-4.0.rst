@@ -113,6 +113,14 @@ Bluetooth
     * :c:func:`bt_audio_codec_cap_meta_get_assisted_listening_stream`
     * :c:func:`bt_audio_codec_cap_meta_set_assisted_listening_stream`
 
+  * Added APIs for getting and setting the broadcast name in codec capabilities
+    and codec configuration:
+
+    * :c:func:`bt_audio_codec_cfg_meta_get_broadcast_name`
+    * :c:func:`bt_audio_codec_cfg_meta_set_broadcast_name`
+    * :c:func:`bt_audio_codec_cap_meta_get_broadcast_name`
+    * :c:func:`bt_audio_codec_cap_meta_set_broadcast_name`
+
 * Host
 
   * Added API :c:func:`bt_gatt_get_uatt_mtu` to get current Unenhanced ATT MTU of a given
@@ -152,6 +160,10 @@ Boards & SoC Support
   * STM32: Deprecated MCO configuration via Kconfig in favour of setting it through devicetree.
     See ``samples/boards/stm32/mco`` sample.
   * Removed the ``nrf54l15pdk`` board, use :ref:`nrf54l15dk_nrf54l15` instead.
+  * PHYTEC: ``mimx8mp_phyboard_pollux`` has been renamed to :ref:`phyboard_pollux<phyboard_pollux>`,
+    with the old name marked as deprecated.
+  * PHYTEC: ``mimx8mm_phyboard_polis`` has been renamed to :ref:`phyboard_polis<phyboard_polis>`,
+    with the old name marked as deprecated.
 
 * Added support for the following shields:
 
@@ -299,6 +311,17 @@ Drivers and Sensors
     index) which had no use after pinctrl driver was introduced.
 
 * SPI
+
+* Steppers
+
+  * Introduced stepper controller device driver subsystem selected with
+    :kconfig:option:`CONFIG_STEPPER`
+  * Introduced stepper shell commands for controlling and configuring
+    stepper motors with :kconfig:option:`CONFIG_STEPPER_SHELL`
+  * Added support for ADI TMC5041 (:dtcompatible:`adi,tmc5041`)
+  * Added support for gpio-stepper-controller (:dtcompatible:`gpio-stepper-controller`)
+  * Added stepper api test-suite
+  * Added stepper shell test-suite
 
 * USB
 
@@ -455,6 +478,12 @@ Libraries / Subsystems
 * Random
 
 * SD
+
+* Settings
+
+  * Settings has been extended to allow prioritizing the commit handlers using
+    ``SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(...)`` for static_handlers and
+    ``settings_register_with_cprio(...)`` for dynamic_handlers.
 
 * Shell:
 

@@ -450,7 +450,7 @@ struct wifi_scan_params {
  */
 struct wifi_scan_result {
     /** SSID */
-    uint8_t ssid[WIFI_SSID_MAX_LEN];
+    uint8_t ssid[WIFI_SSID_MAX_LEN + 1];
 
     /** SSID length */
     uint8_t ssid_length;
@@ -657,7 +657,7 @@ struct wifi_iface_status {
     unsigned int ssid_len;
 
     /** SSID */
-    char ssid[WIFI_SSID_MAX_LEN];
+    char ssid[WIFI_SSID_MAX_LEN + 1];
 
     /** BSSID */
     char bssid[WIFI_MAC_ADDR_LEN];
