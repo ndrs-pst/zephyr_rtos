@@ -1154,7 +1154,6 @@ static int esp32_wifi_dev_init(const struct device* dev) {
     adc2_init_code_calibration();
     #endif /* CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3 */
 
-    esp_timer_init();
     wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
     esp_err_t ret = esp_wifi_init(&config);
 
