@@ -80,7 +80,8 @@ int stream_flash_erase_page(struct stream_flash_ctx *ctx, off_t off)
 	int rc;
 	struct flash_pages_info page;
 
-	if (off < ctx->offset || (off - ctx->offset) >= ctx->available) {
+	if (((size_t)off < ctx->offset) ||
+	    (((size_t)off - ctx->offset) >= ctx->available)) {
 		LOG_ERR("Offset out of designated range");
 		return -ERANGE;
 	}

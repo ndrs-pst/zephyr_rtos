@@ -458,13 +458,13 @@ static int eeprom_at25_read(const struct device* dev, off_t offset, void* buf,
     paddr = &cmd[1];
     switch (config->addr_width) {
         case 24 :
-            *paddr++ = offset >> 16;
+            *paddr++ = (uint8_t)(offset >> 16);
             __fallthrough;
         case 16 :
-            *paddr++ = offset >> 8;
+            *paddr++ = (uint8_t)(offset >> 8);
             __fallthrough;
         case 8 :
-            *paddr++ = offset;
+            *paddr++ = (uint8_t)offset;
             break;
         default :
             __ASSERT(0, "invalid address width");
@@ -525,13 +525,13 @@ static int eeprom_at25_write(const struct device* dev, off_t offset,
     paddr = &cmd[1];
     switch (config->addr_width) {
         case 24 :
-            *paddr++ = offset >> 16;
+            *paddr++ = (uint8_t)(offset >> 16);
             __fallthrough;
         case 16 :
-            *paddr++ = offset >> 8;
+            *paddr++ = (uint8_t)(offset >> 8);
             __fallthrough;
         case 8 :
-            *paddr++ = offset;
+            *paddr++ = (uint8_t)offset;
             break;
         default :
             __ASSERT(0, "invalid address width");
