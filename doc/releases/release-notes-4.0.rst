@@ -47,6 +47,8 @@ Removed APIs in this release
 * Macro ``K_THREAD_STACK_MEMBER``, deprecated since v3.5.0, has been removed.
   Use :c:macro:`K_KERNEL_STACK_MEMBER` instead.
 * ``CBPRINTF_PACKAGE_COPY_*`` macros, deprecated since Zephyr 3.5.0, have been removed.
+* ``_ENUM_TOKEN`` and ``_ENUM_UPPER_TOKEN`` macros, deprecated since Zephyr 2.7.0,
+  are no longer generated.
 
 Deprecated in this release
 ==========================
@@ -242,6 +244,9 @@ Drivers and Sensors
   * LiteX: Renamed the ``compatible`` from ``litex,eth0`` to :dtcompatible:`litex,liteeth`.
 
 * Flash
+
+  * Fixed SPI NOR driver issue where wp, hold and reset pins were incorrectly initialized from
+    device tee when SFDP at run-time has been enabled (:github:`80383`)
 
 * GNSS
 
