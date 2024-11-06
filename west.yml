@@ -157,7 +157,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 0f1874284f5dee0d49cb23f44f756e7be404e7b7
+      revision: 23c17a8735d3047da95e3a81adafa36425636c55
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -198,7 +198,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 4a4741fa2be33f6b638a49e357c5e33bb7ad0544
+      revision: ca9c81a06fbd3db10faf708194443511f1eadacb
       path: modules/hal/nxp
       groups:
         - hal
@@ -214,7 +214,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 3dafd030046f8d6f8a26080e9b9c1bcc92d45999
+      revision: 10326518701e25bf336a2eaeb8b5820110e4e6a3
       groups:
         - hal
     - name: hal_rpi_pico
@@ -327,7 +327,7 @@ manifest:
       groups:
         - crypto
     - name: trusted-firmware-m
-      revision: a11cd27905aecc4416cfc85552bfc3b997375056
+      revision: 8134106ef9cb3df60e8bd22b172532558e936bd2
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

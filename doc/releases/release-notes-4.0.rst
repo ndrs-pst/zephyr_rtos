@@ -148,6 +148,11 @@ Bluetooth
 
 * HCI Drivers
 
+* Mesh
+
+  * Introduced a mesh-specific workqueue to increase reliability of the mesh messages
+    transmission. To get the old behavior enable :kconfig:option:`CONFIG_BT_MESH_WORKQ_SYS`.
+
 Boards & SoC Support
 ********************
 
@@ -608,12 +613,14 @@ Libraries / Subsystems
 
 * JWT (JSON Web Token)
 
-  * The following new Kconfigs were added to specify which library to use for the
-    signature:
+  * The following new symbols were added to allow specifying both the signature
+    algorithm and crypto library:
 
-    * :kconfig:option:`CONFIG_JWT_USE_PSA` (default) use the PSA Crypto API;
-    * :kconfig:option:`CONFIG_JWT_USE_LEGACY` use legacy libraries, i.e. TinyCrypt
-      for ECDSA and Mbed TLS for RSA.
+    * :kconfig:option:`CONFIG_JWT_SIGN_RSA_PSA` (default) RSA signature using the PSA Crypto API;
+    * :kconfig:option:`CONFIG_JWT_SIGN_RSA_LEGACY` RSA signature using Mbed TLS;
+    * :kconfig:option:`CONFIG_JWT_SIGN_ECDSA_PSA` ECDSA signature using the PSA Crypto API.
+
+    (:github:`79653`)
 
 HALs
 ****
@@ -682,8 +689,11 @@ MCUboot
 OSDP
 ****
 
-Trusted Firmware-M
-******************
+Trusted Firmware-M (TF-M)
+*************************
+
+* TF-M was updated to version 2.1.1 (from 2.1.0).
+  The release notes can be found at: https://trustedfirmware-m.readthedocs.io/en/tf-mv2.1.1/releases/2.1.1.html
 
 LVGL
 ****

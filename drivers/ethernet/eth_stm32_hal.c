@@ -124,10 +124,12 @@ struct eth_stm32_tx_buffer_header {
 struct eth_stm32_tx_context {
     struct net_pkt* pkt;
     uint16_t first_tx_buffer_index;
+    bool used;
 };
 
 static struct eth_stm32_rx_buffer_header dma_rx_buffer_header[ETH_RX_DESC_CNT];
 static struct eth_stm32_tx_buffer_header dma_tx_buffer_header[ETH_TX_DESC_CNT];
+static struct eth_stm32_tx_context dma_tx_context[ETH_TX_DESC_CNT];
 
 void HAL_ETH_RxAllocateCallback(uint8_t** buf) {
     for (size_t i = 0; i < ETH_RX_DESC_CNT; ++i) {
@@ -176,7 +178,7 @@ void HAL_ETH_TxFreeCallback(uint32_t* buff) {
     __ASSERT_NO_MSG(buff != NULL);
 
     /* buff is the user context in tx_config.pData */
-    struct eth_stm32_tx_context const* ctx = (struct eth_stm32_tx_context*)buff;
+    struct eth_stm32_tx_context* ctx = (struct eth_stm32_tx_context*)buff;
     struct eth_stm32_tx_buffer_header* buffer_header =
             &dma_tx_buffer_header[ctx->first_tx_buffer_index];
 
@@ -190,6 +192,8 @@ void HAL_ETH_TxFreeCallback(uint32_t* buff) {
             buffer_header = NULL;
         }
     }
+
+    ctx->used = false;
 }
 
 /* allocate a tx buffer and mark it as used */
@@ -199,6 +203,21 @@ static inline uint16_t allocate_tx_buffer(void) {
             if (!dma_tx_buffer_header[index].used) {
                 dma_tx_buffer_header[index].used = true;
                 return index;
+            }
+        }
+        k_yield();
+    }
+}
+
+/* allocate a tx context and mark it as used, the first tx buffer is also allocated */
+static inline struct eth_stm32_tx_context* allocate_tx_context(struct net_pkt* pkt) {
+    while (true) {
+        for (uint16_t index = 0; index < ETH_TX_DESC_CNT; index++) {
+            if (!dma_tx_context[index].used) {
+                dma_tx_context[index].used = true;
+                dma_tx_context[index].pkt  = pkt;
+                dma_tx_context[index].first_tx_buffer_index = allocate_tx_buffer();
+                return (&dma_tx_context[index]);
             }
         }
         k_yield();
@@ -377,10 +396,7 @@ static int /**/eth_stm32_tx(const struct device* dev, struct net_pkt* pkt) {
     size_t total_len;
     #if defined(CONFIG_ETH_STM32_HAL_API_V2)
     size_t remaining_read;
-    struct eth_stm32_tx_context tx_ctx = {
-        .pkt = pkt,
-        .first_tx_buffer_index = 0
-    };
+    struct eth_stm32_tx_context* tx_ctx = NULL;
     struct eth_stm32_tx_buffer_header* buf_header = NULL;
     #else
     uint8_t* dma_buffer;
@@ -407,8 +423,8 @@ static int /**/eth_stm32_tx(const struct device* dev, struct net_pkt* pkt) {
     k_mutex_lock(&ctx->tx_mutex, K_FOREVER);
 
     #if defined(CONFIG_ETH_STM32_HAL_API_V2)
-    tx_ctx.first_tx_buffer_index = allocate_tx_buffer();
-    buf_header = &dma_tx_buffer_header[tx_ctx.first_tx_buffer_index];
+    tx_ctx = allocate_tx_context(pkt);
+    buf_header = &dma_tx_buffer_header[tx_ctx->first_tx_buffer_index];
     #else
     dma_tx_desc = heth->TxDesc;
 
@@ -466,8 +482,8 @@ static int /**/eth_stm32_tx(const struct device* dev, struct net_pkt* pkt) {
 
     #if defined(CONFIG_ETH_STM32_HAL_API_V2)
     tx_config.Length = total_len;
-    tx_config.pData    = &tx_ctx;
-    tx_config.TxBuffer = &dma_tx_buffer_header[tx_ctx.first_tx_buffer_index].tx_buff;
+    tx_config.pData    = tx_ctx;
+    tx_config.TxBuffer = &dma_tx_buffer_header[tx_ctx->first_tx_buffer_index].tx_buff;
 
     /* Reset TX complete interrupt semaphore before TX request*/
     k_sem_reset(&ctx->tx_int_sem);
@@ -481,6 +497,9 @@ static int /**/eth_stm32_tx(const struct device* dev, struct net_pkt* pkt) {
         res = -EIO;
         goto error;
     }
+
+    /* the tx context is now owned by the HAL */
+    tx_ctx = NULL;
 
     /* Wait for end of TX buffer transmission */
     /* If the semaphore timeout breaks, it means */
@@ -579,15 +598,15 @@ static int /**/eth_stm32_tx(const struct device* dev, struct net_pkt* pkt) {
 error :
 
     #if defined(CONFIG_ETH_STM32_HAL_API_V2)
-    /* free package tx buffer */
-    if (res != 0) {
-        HAL_ETH_TxFreeCallback((uint32_t*)&tx_ctx);
+    if (!tx_ctx) {
+        /* The HAL owns the tx context */
+        HAL_ETH_ReleaseTxPacket(heth);
     }
-    else if (HAL_ETH_ReleaseTxPacket(heth) != HAL_OK) {
-        LOG_ERR("HAL_ETH_ReleaseTxPacket failed");
-        res = -EIO;
+    else {
+        /* We need to release the tx context and its buffers */
+        HAL_ETH_TxFreeCallback((uint32_t*)tx_ctx);
     }
-    #endif
+    #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
     k_mutex_unlock(&ctx->tx_mutex);
 
