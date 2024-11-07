@@ -79,6 +79,8 @@ Architectures
 
   * Added initial support for :c:func:`arch_stack_walk` that supports unwinding via esf only
 
+  * Added support for demand paging.
+
 * RISC-V
 
   * The stack traces upon fatal exception now prints the address of stack pointer (sp) or frame
@@ -158,10 +160,13 @@ Boards & SoC Support
 
 * Added support for these SoC series:
 
+  * Added ESP32-C2 and ESP8684 SoC support.
+
 * Made these changes in other SoC series:
 
   * NXP S32Z270: Added support for the new silicon cut version 2.0. Note that the previous
     versions (1.0 and 1.1) are no longer supported.
+  * Added ESP32 WROVER-E-N16R4 variant.
 
 * Added support for these boards:
 
@@ -209,6 +214,7 @@ Boards & SoC Support
    * :ref:`Renesas RA6E2 Fast Prototyping Board <fpb_ra6e2>` (``fpb_ra6e2``)
    * :ref:`Renesas RA8T1 Evaluation Kit <mcb_ra8t1>` (``mck_ra8t1``)
    * :zephyr:board:`Renode Cortex-R8 Virtual <cortex_r8_virtual>` (``cortex_r8_virtual``)
+   * :zephyr:board:`Seeed XIAO ESP32-S3 Sense Variant <xiao_esp32s3>`: ``xiao_esp32s3``.
    * :ref:`sensry.io Ganymed Break-Out-Board (BOB) <ganymed_bob>` (``ganymed_bob``)
    * :zephyr:board:`SiLabs SiM3U1xx 32-bit MCU USB Development Kit <sim3u1xx_dk>` (``sim3u1xx_dk``)
    * :ref:`SparkFun Thing Plus Matter <sparkfun_thing_plus_mgm240p>` (``sparkfun_thing_plus_matter_mgm240p``)
@@ -285,18 +291,41 @@ Build system and Infrastructure
 Documentation
 *************
 
- * Added two new build commands, ``make html-live`` and ``make html-live-fast``, that automatically locally
-   host the generated documentation. They also automatically rebuild and rehost the documentation when changes
-   to the input ``.rst`` files are detected on the filesystem.
+* Added a new :ref:`interactive board catalog <boards>` enabling users to search boards by criteria
+  such as name, architecture, vendor, or SoC.
+* Added a new :zephyr:code-sample-category:`interactive code sample catalog <samples>` for quickly
+  finding code samples based on name and description.
+* Added :rst:dir:`zephyr:board` directive and :rst:role:`zephyr:board` role to mark Sphinx pages as
+  board documentation and reference them from other pages. Most existing board documentation pages
+  have been updated to use this directive, with full migration planned for the next release.
+* Added :rst:dir:`zephyr:code-sample-category` directive to describe and group code samples in the
+  documentation.
+* Added a link to the source code of the driver matching a binding's compatible string (when one can
+  be found in the Zephyr tree) to the :ref:`dt-bindings` documentation.
+* Added a button to all code sample README pages allowing to directly browse the sample's source
+  code on GitHub.
+* Moved Zephyr C API documentation out of main documentation. API references now feature a rich
+  tooltip and link to the dedicated Doxygen site.
+* Added two new build commands, ``make html-live`` and ``make html-live-fast``, that automatically
+  locally host the generated documentation. They also automatically rebuild and rehost the
+  documentation when changes to the input ``.rst`` files are detected on the filesystem.
 
 Drivers and Sensors
 *******************
 
 * ADC
 
+  * Added proper ADC2 calibration entries in ESP32.
+  * Fixed calibration scheme in ESP32-S3.
+
 * Battery
 
 * CAN
+
+  * Added initial support for Renesas RA CANFD (:dtcompatible:`renesas,ra-canfd-global`,
+    :dtcompatible:`renesas,ra-canfd`)
+  * Added Flexcan support for S32Z27x (:dtcompatible:`nxp,flexcan`, :dtcompatible:`nxp,flexcan-fd`)
+  * Improved NXP S32 CANXL error reporting (:dtcompatible:`nxp,s32-canxl`)
 
 * Charger
 
@@ -318,6 +347,11 @@ Drivers and Sensors
 
 * Display
 
+* EEPROM
+
+  * Added support for using the EEPROM simulator with embedded C standard libraries
+    (:dtcompatible:`zephyr,sim-eeprom`).
+
 * Ethernet
 
   * LiteX: Renamed the ``compatible`` from ``litex,eth0`` to :dtcompatible:`litex,liteeth`.
@@ -326,6 +360,21 @@ Drivers and Sensors
 
   * Fixed SPI NOR driver issue where wp, hold and reset pins were incorrectly initialized from
     device tee when SFDP at run-time has been enabled (:github:`80383`)
+  * Updated all Espressif's SoC driver initialization to allow new chipsets and octal flash support.
+
+  * Added :kconfig:option:`CONFIG_SPI_NOR_ACTIVE_DWELL_MS`, to the SPI NOR driver configuration,
+    which allows setting the time during which the driver will wait before triggering Deep Power Down (DPD).
+    This option replaces ``CONFIG_SPI_NOR_IDLE_IN_DPD``, aiming at reducing unnecessary power
+    state changes and SPI transfers between other operations, specifically when burst type
+    access to an SPI NOR device occurs.
+
+  * Added :kconfig:option:`CONFIG_SPI_NOR_INIT_PRIORITY` to allow selecting the SPI NOR driver initialization priority.
+
+  * The flash API has been extended with the :c:func:`flash_copy` utility function which allows performing
+    direct data copies between two Flash API devices.
+
+  * Fixed a Flash Simulator issue where offsets were assumed to be absolute instead of relative
+    to the device base address (:github:`79082`).
 
 * GNSS
 
@@ -340,9 +389,29 @@ Drivers and Sensors
 
 * I2S
 
+  * Added ESP32-S3 and ESP32-C3 driver support.
+
 * I3C
 
 * Input
+
+  * New feature: :dtcompatible:`zephyr,input-double-tap`.
+
+  * New driver: :dtcompatible:`ilitek,ili2132a`.
+
+  * Added power management support to all keyboard matrix drivers, added a
+    ``no-disconnect`` property to :dtcompatible:`gpio-keys` so it can be used
+    with power management on GPIO drivers that do not support pin
+    disconnection.
+
+  * Added a new framework for touchscreen common properties and features
+    (screen size, inversion, xy swap).
+
+  * Fixed broken ESP32 input touch sensor driver.
+
+* Interrupt
+
+  * Updated ESP32 family interrupt allocator with proper IRQ flags and priorities.
 
 * LED
 
@@ -361,6 +430,8 @@ Drivers and Sensors
 * LoRa
 
 * Mailbox
+
+  * Added driver support for ESP32 and ESP32-S3 SoCs.
 
 * MDIO
 
@@ -391,6 +462,8 @@ Drivers and Sensors
 
 * SDHC
 
+  * Added ESP32-S3 driver support.
+
 * Sensors
 
   * The existing driver for the Microchip MCP9808 temperature sensor transformed and renamed
@@ -408,6 +481,9 @@ Drivers and Sensors
   * LiteX: Renamed the ``compatible`` from ``litex,uart0`` to :dtcompatible:`litex,uart`.
   * Nordic: Removed ``CONFIG_UART_n_GPIO_MANAGEMENT`` Kconfig options (where n is an instance
     index) which had no use after pinctrl driver was introduced.
+  * NS16550: Added support for Synopsys Designware 8250 UART.
+  * Renesas: Added support for SCI UART.
+  * Sensry: Added UART support for Ganymed SY1XX.
 
 * SPI
 
@@ -426,9 +502,25 @@ Drivers and Sensors
 
 * Video
 
+  * Introduced API to control frame rate
+  * Introduced API for partial frames transfer with the video buffer field ``line_offset``
+  * Introduced API for :ref:`multi-heap<memory_management_shared_multi_heap>` video buffer allocation with
+    :kconfig:option:`CONFIG_VIDEO_BUFFER_USE_SHARED_MULTI_HEAP`
+  * Introduced bindings for common video link properties in ``video-interfaces.yaml``
+  * Introduced missing :kconfig:option:`CONFIG_VIDEO_LOG_LEVEL`
+  * Added support for GalaxyCore GC2145 image sensor (:dtcompatible:`gc,gc2145`)
+  * Added support for ESP32-S3 LCD-CAM interface (:dtcompatible:`espressif,esp32-lcd-cam`)
+  * Added support for NXP MCUX SMARTDMA interface (:dtcompatible:`nxp,smartdma`)
+  * Added support for more OmniVision OV2640 controls (:dtcompatible:`ovti,ov2640`)
+  * Added support for more OmniVision OV5640 controls (:dtcompatible:`ovti,ov5640`)
+
 * Watchdog
 
 * Wi-Fi
+
+  * Added ESP32-C2 Wi-Fi support.
+  * Added ESP32 driver APSTA support.
+  * Updated ESP32 Wi-Fi driver to reflect actual negotiated PHY mode.
 
 Networking
 **********
@@ -502,6 +594,12 @@ Libraries / Subsystems
 
 * Demand Paging
 
+  * Added LRU (Least Recently Used) eviction algorithm.
+
+  * Added on-demand memory mapping support (:kconfig:option:`CONFIG_DEMAND_MAPPING`).
+
+  * Made demand paging SMP compatible.
+
 * Formatted output
 
 * Management
@@ -546,6 +644,8 @@ Libraries / Subsystems
 * Modem modules
 
 * Power management
+
+  * Added initial ESP32-C6 power management interface to allow light and deep-sleep features.
 
 * Crypto
 
@@ -603,6 +703,40 @@ Libraries / Subsystems
     from version 2.8.1, the last module update, up to and including
     the released version 2.9.3.
 
+  * LittleFS: Fixed an issue where the DTS option for configuring block cycles for LittleFS instances
+    was ignored (:github:`79072`).
+
+  * LittleFS: Fixed issue with lookahead buffer size mismatch to actual allocated buffer size
+    (:github:`77917`).
+
+  * FAT FS: Added :kconfig:option:`CONFIG_FILE_SYSTEM_LIB_LINK` to allow linking file system
+    support libraries without enabling the File System subsystem. This option can be used
+    when a user wants to directly use file system libraries, bypassing the File System
+    subsystem.
+
+  * FAT FS: Added :kconfig:option:`CONFIG_FS_FATFS_LBA64` to enable support for the 64-bit LBA
+    and GPT in FAT file system driver.
+
+  * FAT FS: Added :kconfig:option:`CONFIG_FS_FATFS_MULTI_PARTITION` that enables support for
+    devices partitioned with GPT or MBR.
+
+  * FAT FS: Added :kconfig:option:`CONFIG_FS_FATFS_HAS_RTC` that enables RTC usage for time-stamping
+    files on FAT file systems.
+
+  * FAT FS: Added :kconfig:option:`CONFIG_FS_FATFS_EXTRA_NATIVE_API` that enables additional FAT
+    file system driver functions, which are not exposed via Zephyr File System subsystem,
+    for users that intend to directly call them in their code.
+
+  * Stream Flash: Fixed an issue where :c:func:`stream_flash_erase_page` did not properly check
+    the requested erase range and possibly allowed erasing any page on a device (:github:`79800`).
+
+  * Shell: Fixed an issue were a failed file system mount attempt using the shell would make it
+    impossible to ever succeed in mounting that file system again until the device was reset (:github:`80024`).
+
+  * :ref:`ZMS<zms_api>`: Introduction of a new storage system that is designed to work with all types of
+    non-volatile storage technologies. It supports classical on-chip NOR flash as well as
+    new technologies like RRAM and MRAM that do not require a separate erase operation at all.
+
 * Task Watchdog
 
 * POSIX API
@@ -632,6 +766,9 @@ HALs
 * ADI
 
 * Espressif
+
+  * Synced HAL to version v5.1.4 to update SoCs low level files, RF libraries and
+    overall driver support.
 
 MCUboot
 *******
@@ -724,3 +861,6 @@ Issue Related Items
 
 Known Issues
 ============
+
+- :github:`71042` stream_flash: stream_flash_init() size parameter allows to ignore partition layout
+- :github:`67407` stream_flash: stream_flash_erase_page allows to accidentally erase stream

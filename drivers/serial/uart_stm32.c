@@ -797,12 +797,12 @@ static inline void __uart_stm32_get_clock(const struct device* dev) {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
 typedef void (*fifo_fill_fn)(USART_TypeDef* usart, void const* tx_data,
-                             const uint8_t offset);
+                             const int offset);
 
 static int uart_stm32_fifo_fill_visitor(const struct device* dev, void const* tx_data, int size,
                                         fifo_fill_fn fill_fn) {
     USART_TypeDef* usart = DEVICE_STM32_GET_USART(dev);
-    uint_fast8_t num_tx = 0U;
+    int num_tx = 0;
     unsigned int key;
 
     if (!LL_USART_IsActiveFlag_TXE(usart)) {
@@ -826,7 +826,7 @@ static int uart_stm32_fifo_fill_visitor(const struct device* dev, void const* tx
 }
 
 static void fifo_fill_with_u8(USART_TypeDef* usart,
-                              void const* tx_data, const uint8_t offset) {
+                              void const* tx_data, const int offset) {
     uint8_t const* data = (uint8_t const*)tx_data;
     /* Send a character (8bit) */
     LL_USART_TransmitData8(usart, data[offset]);
@@ -843,12 +843,12 @@ static int uart_stm32_fifo_fill(const struct device* dev, uint8_t const* tx_data
 }
 
 typedef void (*fifo_read_fn)(USART_TypeDef const* usart, void* rx_data,
-                             const uint8_t offset);
+                             const int offset);
 
 static int uart_stm32_fifo_read_visitor(const struct device* dev, void* rx_data, int const size,
                                         fifo_read_fn read_fn) {
     USART_TypeDef* usart = DEVICE_STM32_GET_USART(dev);
-    uint_fast8_t num_rx = 0U;
+    int num_rx = 0;
 
     while ((size - num_rx > 0) && LL_USART_IsActiveFlag_RXNE(usart)) {
         /* RXNE flag will be cleared upon read from DR|RDR register */
@@ -870,7 +870,7 @@ static int uart_stm32_fifo_read_visitor(const struct device* dev, void* rx_data,
 }
 
 static void fifo_read_with_u8(USART_TypeDef const* usart, void* rx_data,
-                              const uint8_t offset) {
+                              const int offset) {
     uint8_t* data = (uint8_t*)rx_data;
 
     data[offset] = LL_USART_ReceiveData8(usart);
@@ -889,7 +889,7 @@ static int uart_stm32_fifo_read(const struct device* dev, uint8_t* rx_data, int 
 #ifdef CONFIG_UART_WIDE_DATA
 
 static void fifo_fill_with_u16(USART_TypeDef* usart,
-                               void const* tx_data, const uint8_t offset) {
+                               void const* tx_data, const int offset) {
     uint16_t const* data = (uint16_t const*)tx_data;
 
     /* Send a character (9bit) */
@@ -907,7 +907,7 @@ static int uart_stm32_fifo_fill_u16(const struct device* dev, uint16_t const* tx
 }
 
 static void fifo_read_with_u16(USART_TypeDef const* usart, void* rx_data,
-                               const uint8_t offset) {
+                               const int offset) {
     uint16_t* data = (uint16_t*)rx_data;
 
     data[offset] = LL_USART_ReceiveData9(usart);

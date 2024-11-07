@@ -196,9 +196,6 @@ Clock control
            load-capacitance-femtofarad = <...>;
      };
 
-Controller Area Network (CAN)
-=============================
-
 Crypto
 ======
 
@@ -299,6 +296,8 @@ Serial
  * Users of :c:func:`uart_irq_tx_ready` now need to check for ``ret > 0`` to ensure that the FIFO
    can accept data bytes, instead of ``ret == 1``. The function now returns a lower bound on the
    number of bytes that can be provided to :c:func:`uart_fifo_fill` without truncation.
+
+ * LiteX: ``CONFIG_UART_LITEUART`` has been renamed to :kconfig:option:`CONFIG_UART_LITEX`.
 
 Regulator
 =========
