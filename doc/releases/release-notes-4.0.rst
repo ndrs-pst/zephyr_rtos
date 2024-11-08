@@ -81,6 +81,8 @@ Architectures
 
   * Added support for demand paging.
 
+  * Added support for Linkable Loadable Extensions (LLEXT).
+
 * RISC-V
 
   * The stack traces upon fatal exception now prints the address of stack pointer (sp) or frame
@@ -101,6 +103,8 @@ Architectures
 
 Kernel
 ******
+
+* Devicetree devices are now exported to :ref:`llext`.
 
 Bluetooth
 *********
@@ -448,11 +452,19 @@ Drivers and Sensors
 
 * Pin control
 
+  * Added support for Microchip MEC5
+  * Added SCMI-based driver for NXP i.MX
+  * Added support for i.MX93 M33 core
+  * Added support for ESP32C2
+
 * PWM
 
   * rpi_pico: The driver now configures the divide ratio adaptively.
 
 * Regulators
+
+  * Upgraded CP9314 driver to B1 silicon revision
+  * Added basic driver for MPS MPM54304
 
 * Reset
 
