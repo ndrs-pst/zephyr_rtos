@@ -645,9 +645,9 @@ static int uart_stm32_poll_in_visitor(const struct device* dev, void* in, poll_i
     return (0);
 }
 
-typedef void (*poll_out_fn)(USART_TypeDef* usart, void* out);
+typedef void (*poll_out_fn)(USART_TypeDef* usart, uint16_t out);
 
-static void uart_stm32_poll_out_visitor(const struct device* dev, void* out, poll_out_fn set_fn) {
+static void uart_stm32_poll_out_visitor(const struct device* dev, uint16_t out, poll_out_fn set_fn) {
     USART_TypeDef* usart = DEVICE_STM32_GET_USART(dev);
     #ifdef CONFIG_PM
     struct uart_stm32_data* data = dev->data;
@@ -659,7 +659,7 @@ static void uart_stm32_poll_out_visitor(const struct device* dev, void* out, pol
      * or thread switch. Then, we can safely send our character. The character sent will be
      * interlaced with the characters potentially send with interrupt transmission API
      */
-    while (1) {
+    while (true) {
         if (LL_USART_IsActiveFlag_TXE(usart)) {
             key = irq_lock();
             if (LL_USART_IsActiveFlag_TXE(usart)) {
@@ -696,8 +696,8 @@ static void poll_in_u8(USART_TypeDef const* usart, void* in) {
     *((unsigned char*)in) = (unsigned char)LL_USART_ReceiveData8(usart);
 }
 
-static void poll_out_u8(USART_TypeDef* usart, void* out) {
-    LL_USART_TransmitData8(usart, *((uint8_t*)out));
+static void poll_out_u8(USART_TypeDef* usart, uint16_t out) {
+    LL_USART_TransmitData8(usart, (uint8_t)out);
 }
 
 static int uart_stm32_poll_in(const struct device* dev, unsigned char* c) {
@@ -705,13 +705,13 @@ static int uart_stm32_poll_in(const struct device* dev, unsigned char* c) {
 }
 
 static void uart_stm32_poll_out(const struct device* dev, unsigned char c) {
-    uart_stm32_poll_out_visitor(dev, (void*)&c, poll_out_u8);
+    uart_stm32_poll_out_visitor(dev, c, poll_out_u8);
 }
 
 #ifdef CONFIG_UART_WIDE_DATA
 
-static void poll_out_u9(USART_TypeDef* usart, void* out) {
-    LL_USART_TransmitData9(usart, *((uint16_t*)out));
+static void poll_out_u9(USART_TypeDef* usart, uint16_t out) {
+    LL_USART_TransmitData9(usart, out);
 }
 
 static void poll_in_u9(USART_TypeDef const* usart, void* in) {
@@ -723,7 +723,7 @@ static int uart_stm32_poll_in_u16(const struct device* dev, uint16_t* in_u16) {
 }
 
 static void uart_stm32_poll_out_u16(const struct device* dev, uint16_t out_u16) {
-    uart_stm32_poll_out_visitor(dev, (void*)&out_u16, poll_out_u9);
+    uart_stm32_poll_out_visitor(dev, out_u16, poll_out_u9);
 }
 
 #endif
