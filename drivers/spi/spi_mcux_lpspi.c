@@ -514,8 +514,9 @@ static int transceive_dma(const struct device* dev,
             spi_context_release(&data->ctx, ret);
         }
 
-        return (ret);
-    }
+    #ifdef CONFIG_SOC_SERIES_MCXN
+    base->TCR |= LPSPI_TCR_CONT_MASK;
+    #endif
 
     base->TCR |= LPSPI_TCR_CONT_MASK;
 
@@ -534,9 +535,11 @@ static int transceive_dma(const struct device* dev,
                 goto out;
             }
 
+            #ifdef CONFIG_SOC_SERIES_MCXN
             while (!(LPSPI_GetStatusFlags(base) & kLPSPI_TxDataRequestFlag)) {
                 /* wait until previous tx finished */
             }
+            #endif
 
             /* Enable DMA Requests */
             LPSPI_EnableDMA(base, kLPSPI_TxDmaEnable | kLPSPI_RxDmaEnable);
@@ -546,6 +549,12 @@ static int transceive_dma(const struct device* dev,
             if (ret != 0) {
                 goto out;
             }
+
+            #ifndef CONFIG_SOC_SERIES_MCXN
+            while ((LPSPI_GetStatusFlags(base) & kLPSPI_ModuleBusyFlag)) {
+                /* wait until module is idle */
+            }
+            #endif
 
             /* Disable DMA */
             LPSPI_DisableDMA(base, kLPSPI_TxDmaEnable | kLPSPI_RxDmaEnable);
