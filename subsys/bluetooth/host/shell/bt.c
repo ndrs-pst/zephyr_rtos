@@ -23,7 +23,6 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/kernel.h>
-#include <zephyr/init.h>
 
 #include <zephyr/settings/settings.h>
 
@@ -36,7 +35,6 @@
 #include <zephyr/bluetooth/ead.h>
 
 #include <zephyr/shell/shell.h>
-#include <zephyr/shell/shell_backend.h>
 #include "bt_shell_private.h"
 
 #include "audio/shell/audio.h"
@@ -104,8 +102,7 @@ static ATOMIC_DEFINE(adv_set_opt, SHELL_ADV_OPT_NUM)[CONFIG_BT_EXT_ADV_MAX_ADV_S
 static const char *phy2str(uint8_t phy)
 {
 	switch (phy) {
-	case 0:
-		return "No packets";
+	case 0: return "No packets";
 	case BT_GAP_LE_PHY_1M:
 		return "LE 1M";
 	case BT_GAP_LE_PHY_2M:
@@ -242,7 +239,7 @@ static void active_scan_timeout(struct k_work *work)
 	if (auto_connect.connect_name) {
 		auto_connect.connect_name = false;
 		/* "name" is what would be in argv[0] normally */
-		cmd_scan_filter_clear_name(ctx_shell, 1, (char *[]){ "name" });
+		cmd_scan_filter_clear_name(NULL, 1, (char *[]){ "name" });
 	}
 #endif /* CONFIG_BT_CENTRAL */
 }
@@ -600,13 +597,13 @@ static void scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_si
 			if (auto_connect.connect_name) {
 				auto_connect.connect_name = false;
 
-				cmd_scan_off(ctx_shell);
+				cmd_scan_off(NULL);
 
 				/* "name" is what would be in argv[0] normally */
-				cmd_scan_filter_clear_name(ctx_shell, 1, (char *[]){"name"});
+				cmd_scan_filter_clear_name(NULL, 1, (char *[]){"name"});
 
 				/* "connect" is what would be in argv[0] normally */
-				cmd_connect_le(ctx_shell, 1, (char *[]){"connect"});
+				cmd_connect_le(NULL, 1, (char *[]){"connect"});
 			}
 		} else {
 			bt_conn_unref(conn);
@@ -1067,7 +1064,7 @@ void print_remote_cs_capabilities(struct bt_conn *conn, struct bt_conn_le_cs_cap
 void print_remote_cs_fae_table(struct bt_conn *conn, struct bt_conn_le_cs_fae_table *params)
 {
 	bt_shell_print("Received FAE Table: ");
-	shell_hexdump(ctx_shell, params->remote_fae_table, 72);
+	bt_shell_hexdump(params->remote_fae_table, 72);
 }
 
 static void le_cs_config_created(struct bt_conn *conn, struct bt_conn_le_cs_config *config)
@@ -1326,6 +1323,8 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 	bool sync = false;
+
+	ctx_shell = sh;
 
 	for (size_t argn = 1; argn < argc; argn++) {
 		const char *arg = argv[argn];
@@ -1672,10 +1671,18 @@ static int cmd_scan_off(const struct shell *sh)
 
 	err = bt_le_scan_stop();
 	if (err) {
-		shell_error(sh, "Stopping scanning failed (err %d)", err);
+		if (sh) {
+			shell_error(sh, "Stopping scanning failed (err %d)", err);
+		} else {
+			bt_shell_error("Stopping scanning failed (err %d)", err);
+		}
 		return err;
 	} else {
-		shell_print(sh, "Scan successfully stopped");
+		if (sh) {
+			shell_print(sh, "Scan successfully stopped");
+		} else {
+			bt_shell_print("Scan successfully stopped");
+		}
 	}
 
 	return 0;
@@ -1752,8 +1759,8 @@ static int cmd_scan_filter_set_name(const struct shell *sh, size_t argc,
 	const char *name_arg = argv[1];
 
 	if (strlen(name_arg) >= sizeof(scan_filter.name)) {
-		bt_shell_error("Name is too long (max %zu): %s\n",
-			       sizeof(scan_filter.name), name_arg);
+		shell_error(sh, "Name is too long (max %zu): %s\n",
+			    sizeof(scan_filter.name), name_arg);
 		return -ENOEXEC;
 	}
 
@@ -1771,8 +1778,8 @@ static int cmd_scan_filter_set_addr(const struct shell *sh, size_t argc,
 
 	/* Validate length including null terminator. */
 	if (strlen(addr_arg) > max_cpy_len) {
-		bt_shell_error("Invalid address string: %s\n",
-			       addr_arg);
+		shell_error(sh, "Invalid address string: %s\n",
+			    addr_arg);
 		return -ENOEXEC;
 	}
 
@@ -1782,8 +1789,9 @@ static int cmd_scan_filter_set_addr(const struct shell *sh, size_t argc,
 		uint8_t tmp;
 
 		if (c != ':' && char2hex(c, &tmp) < 0) {
-			bt_shell_error("Invalid address string: %s\n",
-				       addr_arg);
+			shell_error(sh,
+				    "Invalid address string: %s\n",
+				    addr_arg);
 			return -ENOEXEC;
 		}
 	}
@@ -1865,6 +1873,10 @@ static int cmd_scan_filter_clear_all(const struct shell *sh, size_t argc,
 static int cmd_scan_filter_clear_name(const struct shell *sh, size_t argc,
 				      char *argv[])
 {
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	(void)memset(scan_filter.name, 0, sizeof(scan_filter.name));
 	scan_filter.name_set = false;
 
@@ -1874,6 +1886,10 @@ static int cmd_scan_filter_clear_name(const struct shell *sh, size_t argc,
 static int cmd_scan_filter_clear_addr(const struct shell *sh, size_t argc,
 				      char *argv[])
 {
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	(void)memset(scan_filter.addr, 0, sizeof(scan_filter.addr));
 	scan_filter.addr_set = false;
 
@@ -2304,7 +2320,7 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 			if (*data_len == ARRAY_SIZE(ad)) {
 				/* Maximum entries limit reached. */
 				shell_print(sh, "Failed to set advertising data: "
-						"Maximum entries limit reached");
+					    "Maximum entries limit reached");
 
 				return -ENOEXEC;
 			}
@@ -2324,7 +2340,7 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 		if (strcmp(arg, "scan-response") && *data_len == ARRAY_SIZE(ad)) {
 			/* Maximum entries limit reached. */
 			shell_print(sh, "Failed to set advertising data: "
-					"Maximum entries limit reached");
+				    "Maximum entries limit reached");
 
 			return -ENOEXEC;
 		}
@@ -2338,7 +2354,7 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 		} else if (!strcmp(arg, "scan-response")) {
 			if (data == sd) {
 				shell_print(sh, "Failed to set advertising data: "
-						"duplicate scan-response option");
+					    "duplicate scan-response option");
 				return -ENOEXEC;
 			}
 
@@ -2355,7 +2371,7 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 
 			if (!len || (len - 1) != (hex_data[hex_data_len])) {
 				shell_print(sh, "Failed to set advertising data: "
-						"malformed hex data");
+					    "malformed hex data");
 				return -ENOEXEC;
 			}
 
@@ -2376,7 +2392,7 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 		if (*data_len == ARRAY_SIZE(ad)) {
 			/* Maximum entries limit reached. */
 			shell_print(sh, "Failed to set advertising data: "
-					"Maximum entries limit reached");
+				    "Maximum entries limit reached");
 
 			return -ENOEXEC;
 		}
@@ -3269,15 +3285,27 @@ static int cmd_connect_le(const struct shell *sh, size_t argc, char *argv[])
 		if (auto_connect.addr_set) {
 			bt_addr_le_copy(&addr, &auto_connect.addr);
 		} else {
-			shell_error(sh, "No connectable adv stored, please trigger a scan first.");
-			shell_help(sh);
+			if (sh) {
+				shell_error(
+					sh,
+					"No connectable adv stored, please trigger a scan first.");
+				shell_help(sh);
+			} else {
+				bt_shell_error(
+					"No connectable adv stored, please trigger a scan first.");
+				bt_shell_help();
+			}
 
 			return SHELL_CMD_HELP_PRINTED;
 		}
 	} else {
 		err = bt_addr_le_from_str(argv[1], argv[2], &addr);
 		if (err) {
-			shell_error(sh, "Invalid peer address (err %d)", err);
+			if (sh) {
+				shell_error(sh, "Invalid peer address (err %d)", err);
+			} else {
+				bt_shell_error("Invalid peer address (err %d)", err);
+			}
 			return err;
 		}
 	}
@@ -3305,11 +3333,18 @@ static int cmd_connect_le(const struct shell *sh, size_t argc, char *argv[])
 	err = bt_conn_le_create(&addr, create_params, BT_LE_CONN_PARAM_DEFAULT,
 				&conn);
 	if (err) {
-		shell_error(sh, "Connection failed (%d)", err);
+		if (sh) {
+			shell_error(sh, "Connection failed (%d)", err);
+		} else {
+			bt_shell_error("Connection failed (%d)", err);
+		}
 		return -ENOEXEC;
 	} else {
-
-		shell_print(sh, "Connection pending");
+		if (sh) {
+			shell_print(sh, "Connection pending");
+		} else {
+			bt_shell_print("Connection pending");
+		}
 
 		/* unref connection obj in advance as app user */
 		bt_conn_unref(conn);
@@ -3518,14 +3553,14 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_conn_get_info(conn, &info);
 	if (err) {
-		bt_shell_print("Failed to get info");
+		shell_print(sh, "Failed to get info");
 		goto done;
 	}
 
-	bt_shell_print("Type: %s, Role: %s, Id: %u",
-		       get_conn_type_str(info.type),
-		       get_conn_role_str(info.role),
-		       info.id);
+	shell_print(sh, "Type: %s, Role: %s, Id: %u",
+		    get_conn_type_str(info.type),
+		    get_conn_role_str(info.role),
+		    info.id);
 
 	if (info.type == BT_CONN_TYPE_LE) {
 		print_le_addr("Remote", info.le.dst);
@@ -3533,31 +3568,31 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
 		print_le_addr("Remote on-air", info.le.remote);
 		print_le_addr("Local on-air", info.le.local);
 
-		bt_shell_print("Interval: 0x%04x (%u us)",
-			       info.le.interval,
-			       BT_CONN_INTERVAL_TO_US(info.le.interval));
-		bt_shell_print("Latency: 0x%04x",
-			       info.le.latency);
-		bt_shell_print("Supervision timeout: 0x%04x (%d ms)",
-			       info.le.timeout, info.le.timeout * 10);
+		shell_print(sh, "Interval: 0x%04x (%u us)",
+			    info.le.interval,
+			    BT_CONN_INTERVAL_TO_US(info.le.interval));
+		shell_print(sh, "Latency: 0x%04x",
+			    info.le.latency);
+		shell_print(sh, "Supervision timeout: 0x%04x (%d ms)",
+			    info.le.timeout, info.le.timeout * 10);
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
-		bt_shell_print("LE PHY: TX PHY %s, RX PHY %s",
-			       phy2str(info.le.phy->tx_phy),
-			       phy2str(info.le.phy->rx_phy));
+		shell_print(sh, "LE PHY: TX PHY %s, RX PHY %s",
+			    phy2str(info.le.phy->tx_phy),
+			    phy2str(info.le.phy->rx_phy));
 #endif
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
-		bt_shell_print("LE data len: TX (len: %d time: %d)"
-			       " RX (len: %d time: %d)",
-			       info.le.data_len->tx_max_len,
-			       info.le.data_len->tx_max_time,
-			       info.le.data_len->rx_max_len,
-			       info.le.data_len->rx_max_time);
+		shell_print(sh, "LE data len: TX (len: %d time: %d)"
+			    " RX (len: %d time: %d)",
+			    info.le.data_len->tx_max_len,
+			    info.le.data_len->tx_max_time,
+			    info.le.data_len->rx_max_len,
+			    info.le.data_len->rx_max_time);
 #endif
 #if defined(CONFIG_BT_SUBRATING)
-		bt_shell_print("LE Subrating: Subrate Factor: %d"
-			       " Continuation Number: %d",
-			       info.le.subrate->factor,
-			       info.le.subrate->continuation_number);
+		shell_print(sh, "LE Subrating: Subrate Factor: %d"
+			    " Continuation Number: %d",
+			    info.le.subrate->factor,
+			    info.le.subrate->continuation_number);
 #endif
 	}
 
@@ -3566,7 +3601,7 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
 		char addr_str[BT_ADDR_STR_LEN];
 
 		bt_addr_to_str(info.br.dst, addr_str, sizeof(addr_str));
-		bt_shell_print("Peer address %s", addr_str);
+		shell_print(sh, "Peer address %s", addr_str);
 	}
 #endif /* defined(CONFIG_BT_CLASSIC) */
 
@@ -3632,8 +3667,8 @@ static int cmd_conn_data_len_update(const struct shell *sh, size_t argc,
 
 	if (default_conn == NULL) {
 		shell_error(sh,
-				"%s: at least, one connection is required",
-				sh->ctx->active_cmd.syntax);
+			    "%s: at least, one connection is required",
+			    sh->ctx->active_cmd.syntax);
 		return -ENOEXEC;
 	}
 
@@ -3794,7 +3829,7 @@ static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 		err = bt_unpair(selected_id, NULL);
 		if (err) {
 			shell_error(sh, "Failed to clear pairings (err %d)",
-			      err);
+				    err);
 			return err;
 		} else {
 			shell_print(sh, "Pairings successfully cleared");
@@ -5172,20 +5207,3 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 );
 
 SHELL_CMD_REGISTER(bt, &bt_cmds, "Bluetooth shell commands", cmd_default_handler);
-
-static int bt_shell_backend_init(void)
-{
-	const struct shell *backend;
-	int rc = 0;
-
-	backend = shell_backend_get_by_name(CONFIG_BT_SHELL_BACKEND);
-	if (backend) {
-		ctx_shell = backend;
-	} else {
-		rc = -1;
-	}
-
-	return rc;
-}
-
-SYS_INIT(bt_shell_backend_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
