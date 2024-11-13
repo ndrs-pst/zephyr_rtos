@@ -26,6 +26,7 @@ More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 
 * :cve:`2024-8798`: Under embargo until 2024-11-22
+* :cve:`2024-10395`: Under embargo until 2025-01-23
 
 API Changes
 ***********
@@ -165,6 +166,10 @@ Boards & SoC Support
     versions (1.0 and 1.1) are no longer supported.
   * Added ESP32 WROVER-E-N16R4 variant.
   * STM32H5: Added support for OpenOCD through STMicroelectronics OpenOCD fork.
+  * MAX32: Enabled Segger RTT and SystemView support.
+  * Silabs Series 2: Use oscillator, clock and DCDC configuration from device tree during init.
+  * Silabs Series 2: Added initialization for SMU (Security Management Unit).
+  * Silabs Series 2: Use sleeptimer as the default OS timer instead of systick.
 
 * Added support for these boards:
 
@@ -317,6 +322,8 @@ Drivers and Sensors
   * Added proper ADC2 calibration entries in ESP32.
   * Fixed calibration scheme in ESP32-S3.
   * STM32H7: Added support for higher sampling frequencies thanks to boost mode implementation.
+  * Added initial support for Renesas RA8 ADC driver (:dtcompatible:`renesas,ra-adc`)
+  * Added driver for Analog Devices MAX32 SoC series (:dtcompatible:`adi,max32-adc`).
 
 * Battery
 
@@ -336,6 +343,11 @@ Drivers and Sensors
   * STM32: :kconfig:option:`CONFIG_CLOCK_CONTROL` is now enabled by default at family level and doesn't need
     to be enabled at board level anymore.
   * STM32H7: PLL FRACN can now be configured (see :dtcompatible:`st,stm32h7-pll-clock`)
+  * Added initial support for Renesas RA clock control driver (:dtcompatible:`renesas,ra-cgc-pclk`,
+    :dtcompatible:`renesas,ra-cgc-pclk-block`, :dtcompatible:`renesas,ra-cgc-pll`,
+    :dtcompatible:`renesas,ra-cgc-external-clock`, :dtcompatible:`renesas,ra-cgc-subclk`,
+    :dtcompatible:`renesas,ra-cgc-pll-out`)
+  * Silabs: Added support for Series 2+ Clock Management Unit (see :dtcompatible:`silabs,series-clock`)
 
 * Comparator
 
@@ -347,9 +359,13 @@ Drivers and Sensors
 
 * Counter
 
+  * Added initial support for Renesas RA8 AGT counter driver (:dtcompatible:`renesas,ra-agt`)
+  * Added driver for Analog Devices MAX32 SoC series (:dtcompatible:`adi,max32-counter`).
+
 * Crypto
 
   * Added support for STM32L4 AES.
+  * Deprecated the TinyCrypt shim driver ``CONFIG_CRYPTO_TINYCRYPT_SHIM``.
 
 * DAC
 
@@ -359,19 +375,98 @@ Drivers and Sensors
 
   * STM32F7 SDMMC driver now supports usage of DMA.
   * STM32 mem controller driver now supports FMC for STM32H5.
+  * SDMMC subsystem driver will now power down the SD card when the disk is
+    deinitialized
 
 * Display
+
+  * NXP ELCDIF driver now supports flipping the image along the horizontal
+    or vertical axis using the PXP. Use
+    :kconfig:option:`CONFIG_MCUX_ELCDIF_PXP_FLIP_DIRECTION` to set the desired
+    flip.
+  * ST7789V driver now supports BGR565, enabled with
+    :kconfig:option:`CONFIG_ST7789V_BGR565`.
+  * Added driver for SSD1327 OLED display controller (:dtcompatible:`solomon,ssd1327fb`).
+  * Added driver for SSD1322 OLED display controller (:dtcompatible:`solomon,ssd1322`).
+  * Added driver for IST3931 monochrome display controller (:dtcompatible:`istech,ist3931`).
+
+* DMA
+
+  * Added driver for Analog Devices MAX32 SoC series (:dtcompatible:`adi,max32-dma`).
 
 * EEPROM
 
   * Added support for using the EEPROM simulator with embedded C standard libraries
     (:dtcompatible:`zephyr,sim-eeprom`).
 
+* Entropy
+
+  * Added initial support for Renesas RA8 Entropy driver (:dtcompatible:`renesas,ra-rsip-e51a-trng`)
+  * Added driver for Analog Devices MAX32 SoC series (:dtcompatible:`adi,max32-trng`).
+
 * Ethernet
 
-  * LiteX: Renamed the ``compatible`` from ``litex,eth0`` to :dtcompatible:`litex,liteeth`.
-  * STM32: Driver can now be configured to use a preemptive RX thread priority, which could be useful
-    in case of high network traffic load (reduces jitter).
+  * Added a :c:func:`get_phy` function to the ethernet driver api, which returns the phy device
+    associated to a network interface.
+  * Added 2.5G and 5G link speeds to the ethernet hardware capabilities api.
+  * Added check for null api pointer in :c:func:`net_eth_get_hw_capabilities`, fixing netusb crash.
+  * Added synopsis dwc_xgmac ethernet driver.
+  * Added NXP iMX NETC driver.
+  * Adin2111
+
+    * Fixed bug that resulted in double RX buffer read when generic spi protocol is used.
+    * Fixed essential thread termination on OA read failure.
+    * Skip checks for port 2 on the adin1110 since it doesn't apply, as there is no port 2.
+  * ENC28J60
+
+    * Added support for the ``zephyr,random-mac-address`` property.
+    * Fixed race condition between interrupt service and L2 init affecting carrier status in init.
+  * ENC424j600: Added ability to change mac address at runtime with net management api.
+  * ESP32: Added configuration of interrupts from DT.
+  * Lan865x
+
+    * Enable all multicast MAC address for IPv6. All multicast mac address can now be
+      received and allows for correct handling of the IPv6 neighbor discovery protocol.
+    * Fixed transmission stopping when setting mac address or promiscuous mode.
+  * LiteX
+
+    * Renamed the ``compatible`` from ``litex,eth0`` to :dtcompatible:`litex,liteeth`.
+    * Added support for multiple instances of the liteX ethernet driver.
+    * Added support for VLAN to the liteX ethernet driver.
+    * Added phy support.
+  * Native_posix
+
+    * Implemented getting the interface name from the command line.
+    * Now prints error number in error message when creating an interface.
+  * NXP ENET_QOS: Fixed check for ``zephyr,random-mac-address`` property.
+  * NXP ENET:
+
+    * Fixed fused MAC address initialization code.
+    * Fixed code path for handling tx errors with timestamped frames.
+    * Fixed network carrier status race condition during init.
+  * NXP S32: Added configs to enable VLAN promiscuous and untagged, and enable SI message interrupt.
+  * STM32
+
+    * Driver can now be configured to use a preemptive RX thread priority, which could be useful
+      in case of high network traffic load (reduces jitter).
+    * Added support for DT-defined mdio.
+    * Fixed bus error after network disconnection that happened in some cases.
+  * TC6: Combine read chunks into continuous net buffer. This fixes IPv6 neighbor discovery protocol
+    because 64 bytes was not enough for all headers.
+  * PHY driver changes
+
+    * Added Qualcomm AR8031 phy driver.
+    * Added DP83825 phy driver.
+    * PHY_MII
+
+      * Fixed generic phy_mii driver not using the value of the ``no-reset`` property from devicetree.
+      * Removed excess newlines from log output of phy_mii driver.
+    * KSZ8081
+
+      * Fixed reset times during init that were unnecessarily long.
+      * Removed unnecessary reset on every link configuration that blocked system workqueue
+      * Fixed issue relating to strap-in override bits.
+
 
 * Flash
 
@@ -392,6 +487,8 @@ Drivers and Sensors
     for custom write and SFDP:BFP opcodes.
   * Added possibility to run STM32H7 flash driver from Cortex-M4 core.
   * Implemented readout protection handling (RDP levels) for STM32F7 SoCs.
+  * Added initial support for Renesas RA8 Flash controller driver (:dtcompatible:`renesas,ra-flash-hp-controller`)
+  * Added driver for Analog Devices MAX32 SoC series (:dtcompatible:`adi,max32-flash-controller`).
 
 * GNSS
 
@@ -404,11 +501,31 @@ Drivers and Sensors
 
 * I2C
 
+  * Added initial support for Renesas RA8 I2C driver (:dtcompatible:`renesas,ra-iic`)
+
 * I2S
 
   * Added ESP32-S3 and ESP32-C3 driver support.
 
 * I3C
+
+  * Added support for SETAASA optmization during initialization. Added a
+    ``supports-setaasa`` property to ``i3c-devices.yaml``.
+  * Added sending DEFTGTS if any devices that support functioning as a secondary
+    controller on the bus.
+  * Added retrieving GETMXDS within :c:func:`i3c_device_basic_info_get` if BCR mxds
+    bit is set.
+  * Added helper functions for sending CCCs for ENTTM, VENDOR, DEFTGTS, SETAASA,
+    GETMXDS, SETBUSCON, RSTACT DC, ENTAS0, ENTAS1, ENTAS2, and ENTAS3.
+  * Added shell commands for sending CCCs for ENTTM, VENDOR, DEFTGTS, SETAASA,
+    GETMXDS, SETBUSCON, RSTACT DC, ENTAS0, ENTAS1, ENTAS2, and ENTAS3.
+  * Added shell commands for setting the I3C speed, sending HDR-DDR, raising IBIs,
+    enabling IBIs, disabling IBIs, and scanning I2C addresses.
+  * :c:func:`i3c_ccc_do_setdasa` has been modified to now require specifying the assigned
+    dynamic address rather than having the dynamic address be determined within the function.
+  * :c:func:`i3c_determine_default_addr` has been removed
+  * ``attach_i3c_device`` now no longer requires the attached address as an argument. It is now
+    up to the driver to determine the attached address from the ``i3c_device_desc``.
 
 * Input
 
@@ -452,6 +569,12 @@ Drivers and Sensors
 
 * MDIO
 
+  * Added litex MDIO driver.
+  * Added support for mdio shell to stm32 mdio.
+  * Added mdio driver for dwc_xgmac synopsis ethernet.
+  * Added NXP IMX NETC mdio driver.
+  * NXP ENET MDIO: Fixed inconsistent behavior by keeping the mdio interrupt enabled all the time.
+
 * MFD
 
 * Modem
@@ -460,6 +583,11 @@ Drivers and Sensors
   * Added support for setting the modem's UART baudrate during init.
 
 * MIPI-DBI
+
+  * Added bitbang MIPI-DBI driver, supporting 8080 and 6800 mode
+    (:dtcompatible:`zephyr,mipi-dbi-bitbang`).
+  * Added support for STM32 FMC memory controller (:dtcompatible:`st,stm32-fmc-mipi-dbi`).
+  * Added support for 8080 mode to NXP LCDIC controller.
 
 * MSPI
 
@@ -475,6 +603,8 @@ Drivers and Sensors
 * PWM
 
   * rpi_pico: The driver now configures the divide ratio adaptively.
+  * Added initial support for Renesas RA8 PWM driver (:dtcompatible:`renesas,ra8-pwm`)
+  * Added driver for Analog Devices MAX32 SoC series (:dtcompatible:`adi,max32-pwm`).
 
 * Regulators
 
@@ -492,13 +622,59 @@ Drivers and Sensors
 * SDHC
 
   * Added ESP32-S3 driver support.
+  * SPI SDHC driver now handles SPI devices with runtime PM support correctly
 
 * Sensors
 
-  * The existing driver for the Microchip MCP9808 temperature sensor transformed and renamed
-    to support all JEDEC JC 42.4 compatible temperature sensors. It now uses the
-    :dtcompatible:`jedec,jc-42.4-temp` compatible string instead to the ``microchip,mcp9808``
-    string.
+  * General
+
+    * The existing driver for the Microchip MCP9808 temperature sensor transformed and renamed to
+      support all JEDEC JC 42.4 compatible temperature sensors. It now uses the
+      :dtcompatible:`jedec,jc-42.4-temp` compatible string instead to the ``microchip,mcp9808``
+      string.
+    * Added support for VDD based ADC reference to the NTC thermistor driver.
+    * Added Avago APDS9253 (:dtcompatible:`avago,apds9253`) and APDS9306
+      (:dtcompatible:`avago,apds9306`) ambient light sensor drivers.
+    * Added gain and resolution attributes (:c:enum:`SENSOR_ATTR_GAIN` and
+      :c:enum:`SENSOR_ATTR_RESOLUTION`).
+
+  * ADI
+
+    * Add RTIO streaming support to ADXL345, ADXL362, and ADXL372 accelerometer drivers.
+
+  * Bosch
+
+    * Merged BMP390 into BMP388.
+    * Added support for power domains to BMM150 and BME680 drivers.
+    * Added BMP180 pressure sensor driver (:dtcompatible:`bosch,bmp180`).
+
+  * Memsic
+
+    * Added MMC56X3 magnetometer and temperature sensor driver (:dtcompatible:`memsic,mmc56x3`).
+
+  * NXP
+
+    * Added P3T1755 digital temperature sensor driver (:dtcompatible:`nxp,p3t1755`).
+    * Added FXLS8974 accelerometer driver (:dtcompatible:`nxp,fxls8974`).
+
+  * ST
+
+    * Aligned drivers to stmemsc HAL i/f v2.6.
+    * Added LSM9DS1 accelerometer/gyroscope/magnetometer sensor driver (:dtcompatible:`st,lsm9ds1`).
+
+  * TDK
+
+    * Added I2C bus support to ICM42670.
+
+  * TI
+
+    * Added support for INA236 to the existing INA230 driver.
+    * Added support for TMAG3001 to the existing TMAG5273 driver.
+    * Added TMP1075 temperature sensor driver (:dtcompatible:`ti,tmp1075`).
+
+  * Vishay
+
+    * Added trigger capability to VCNL36825T driver.
 
   * WE
 
@@ -516,6 +692,10 @@ Drivers and Sensors
 
 * SPI
 
+  * Added initial support for Renesas RA8 SPI driver (:dtcompatible:`renesas,ra8-spi-b`)
+  * Added RTIO support to the Analog Devices MAX32 driver.
+  * Silabs: Added support for EUSART (:dtcompatible:`silabs,gecko-spi-eusart`)
+
 * Steppers
 
   * Introduced stepper controller device driver subsystem selected with
@@ -526,6 +706,10 @@ Drivers and Sensors
   * Added support for gpio-stepper-controller (:dtcompatible:`gpio-stepper-controller`)
   * Added stepper api test-suite
   * Added stepper shell test-suite
+
+* Timer
+
+  * Silabs: Added support for Sleeptimer (:dtcompatible:`silabs,gecko-stimer`)
 
 * USB
 
@@ -539,6 +723,8 @@ Drivers and Sensors
     :kconfig:option:`CONFIG_VIDEO_BUFFER_USE_SHARED_MULTI_HEAP`
   * Introduced bindings for common video link properties in ``video-interfaces.yaml``
   * Introduced missing :kconfig:option:`CONFIG_VIDEO_LOG_LEVEL`
+  * Added a sample for capturing video and displaying it with LVGL
+    (:zephyr:code-sample:`video-capture-to-lvgl`)
   * Added support for GalaxyCore GC2145 image sensor (:dtcompatible:`gc,gc2145`)
   * Added support for ESP32-S3 LCD-CAM interface (:dtcompatible:`espressif,esp32-lcd-cam`)
   * Added support for NXP MCUX SMARTDMA interface (:dtcompatible:`nxp,smartdma`)
@@ -552,11 +738,35 @@ Drivers and Sensors
 
 * Watchdog
 
+  * Added driver for Analog Devices MAX32 SoC series (:dtcompatible:`adi,max32-watchdog`).
+
 * Wi-Fi
 
-  * Added ESP32-C2 Wi-Fi support.
-  * Added ESP32 driver APSTA support.
+  * Add Wi-Fi Easy Connect (DPP) support.
+  * Add support for Wi-Fi credentials library.
+  * Add enterprise support for station.
+  * Add Wi-Fi snippet support for networking samples.
+  * Add build testing for various Wi-Fi config combinations.
+  * Add regulatory domain support to Wi-Fi shell.
+  * Add WPS support to Wi-Fi shell.
+  * Add 802.11r connect command usage in Wi-Fi shell.
+  * Add current PHY rate to hostap status message.
+  * Allow user to reset Wi-Fi statistics in Wi-Fi shell.
+  * Display RTS threshold in Wi-Fi shell.
+  * Fix SSID array length size in scanning results.
+  * Fix the "wifi ap config" command using the STA interface instead of SAP interface.
+  * Fix memory leak in hostap when doing a disconnect.
+  * Fix setting of frequency band both in AP and STA mode in Wi-Fi shell.
+  * Fix correct channel scan range in Wi-Fi 6GHz.
+  * Fix scan results printing in Wi-Fi shell.
+  * Increase main and shell stack sizes for Wi-Fi shell sample.
+  * Increase the maximum count of connected STA to 8 in Wi-Fi shell.
+  * Relocate AP and STA Wi-Fi sample to samples/net/wifi directory.
+  * Run Wi-Fi tests together with network tests.
   * Updated ESP32 Wi-Fi driver to reflect actual negotiated PHY mode.
+  * Add ESP32-C2 Wi-Fi support.
+  * Add ESP32 driver APSTA support.
+  * Add NXP RW612 driver support.
 
 Networking
 **********
@@ -905,6 +1115,8 @@ Libraries / Subsystems
 
 * SD
 
+  * No significant changes in this release
+
 * Settings
 
   * Settings has been extended to allow prioritizing the commit handlers using
@@ -1009,6 +1221,10 @@ HALs
   * Synced HAL to version v5.1.4 to update SoCs low level files, RF libraries and
     overall driver support.
 
+* Silabs
+
+  * Updated Series 2 to Simplicity SDK 2024.6, while Series 0/1 continue to use Gecko SDK 4.4.
+
 MCUboot
 *******
 
@@ -1080,6 +1296,9 @@ Nanopb
 LVGL
 ****
 
+* Added definition of ``LV_ATTRIBUTE_MEM_ALIGN`` so library internal data structures can be aligned
+  to a specific boundary.
+
 zcbor
 *****
 
@@ -1100,6 +1319,9 @@ Tests and Samples
 * Together with the deprecation of :ref:`native_posix<native_posix>`, many tests which were
   explicitly run in native_posix now run in :ref:`native_sim<native_sim>` instead.
   native_posix as a platform remains tested though.
+
+* Added :zephyr:code-sample:`smf_calculator` sample demonstrating the usage of the State Machine framework
+  in combination with LVGL to create a simple calculator application.
 
 Issue Related Items
 *******************
