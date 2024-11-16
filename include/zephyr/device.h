@@ -962,7 +962,7 @@ __syscall const struct device* device_get_by_dt_nodelabel(char const* nodelabel)
 static inline const struct device_dt_nodelabels*
 device_get_dt_nodelabels(const struct device* dev) {
     if (dev->dt_meta == NULL) {
-        (return NULL);
+        return (NULL);
     }
 
     return (dev->dt_meta->nl);

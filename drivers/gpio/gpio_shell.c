@@ -222,7 +222,7 @@ static int get_gpio_pin(const struct shell* sh, const struct gpio_ctrl* ctrl, ch
 
 static int get_sh_gpio(const struct shell* sh, char** argv, struct sh_gpio* gpio) {
     const struct gpio_ctrl* ctrl;
-    int ret = 0;
+    int ret;
     int pin;
 
     ctrl = get_gpio_ctrl(argv[ARGV_DEV]);
@@ -248,8 +248,8 @@ static int get_sh_gpio(const struct shell* sh, char** argv, struct sh_gpio* gpio
 }
 
 static int cmd_gpio_conf(const struct shell* sh, size_t argc, char** argv, void* data) {
-    gpio_flags_t   flags = 0;
-    gpio_flags_t   vendor_specific;
+    gpio_flags_t flags = 0;
+    gpio_flags_t vendor_specific;
     struct sh_gpio gpio;
     int ret;
 
@@ -259,7 +259,8 @@ static int cmd_gpio_conf(const struct shell* sh, size_t argc, char** argv, void*
         return (SHELL_CMD_HELP_PRINTED);
     }
 
-    for (int i = 0; i < strlen(argv[ARGV_CONF]); i++) {
+    size_t len = strlen(argv[ARGV_CONF]);
+    for (size_t i = 0; i < len; i++) {
         switch (argv[ARGV_CONF][i]) {
             case 'i' :
                 flags |= GPIO_INPUT;
@@ -323,7 +324,7 @@ static int cmd_gpio_conf(const struct shell* sh, size_t argc, char** argv, void*
         if ((flags & (GPIO_ACTIVE_LOW | GPIO_ACTIVE_HIGH)) == 0) {
             flags |= GPIO_ACTIVE_HIGH;
         }
-        /* Default to initialisation to logic 0 if not specified */
+        /* Default to initialization to logic 0 if not specified */
         if ((flags & GPIO_OUTPUT_INIT_LOGICAL) == 0) {
             flags |= GPIO_OUTPUT_INIT_LOGICAL | GPIO_OUTPUT_INIT_LOW;
         }
@@ -393,7 +394,7 @@ static int cmd_gpio_get(const struct shell* sh, size_t argc, char** argv) {
 static int cmd_gpio_set(const struct shell* sh, size_t argc, char** argv) {
     struct sh_gpio gpio;
     unsigned long  value;
-    int ret = 0;
+    int ret;
 
     ret = get_sh_gpio(sh, argv, &gpio);
     if (ret != 0) {
@@ -418,7 +419,7 @@ static int cmd_gpio_set(const struct shell* sh, size_t argc, char** argv) {
 
 static int cmd_gpio_toggle(const struct shell* sh, size_t argc, char** argv) {
     struct sh_gpio gpio;
-    int ret = 0;
+    int ret;
 
     ret = get_sh_gpio(sh, argv, &gpio);
     if (ret != 0) {
@@ -483,10 +484,11 @@ static int cmd_gpio_blink(const struct shell* sh, size_t argc, char** argv) {
     (void) sh->iface->api->read(sh->iface, &data, sizeof(data), &count);
 
     while (true) {
-        (void)sh->iface->api->read(sh->iface, &data, sizeof(data), &count);
+        (void) sh->iface->api->read(sh->iface, &data, sizeof(data), &count);
         if (count != 0) {
             break;
         }
+
         ret = gpio_pin_toggle(gpio.dev, gpio.pin);
         if (ret != 0) {
             shell_error(sh, "%d", ret);
@@ -525,8 +527,8 @@ struct pin_info {
 
 struct pin_order_user_data {
     const struct shell* sh;
-    struct pin_info     prev;
-    struct pin_info     next;
+    struct pin_info prev;
+    struct pin_info next;
 };
 
 typedef void (*pin_foreach_func_t)(const struct pin_info* info, void* user_data);
@@ -537,9 +539,7 @@ static void print_gpio_ctrl_info(const struct shell* sh, const struct gpio_ctrl*
     char const* line_name;
 
     shell_print(sh, " ngpios: %u", ctrl->ngpios);
-    shell_print(sh, " Reserved pin mask: 0x%08X", ctrl->reserved_mask);
-
-    shell_print(sh, "");
+    shell_print(sh, " Reserved pin mask: 0x%08X\n", ctrl->reserved_mask);
 
     shell_print(sh, " Reserved  Pin  Line Name");
     for (pin = 0; pin < ctrl->ngpios; pin++) {
