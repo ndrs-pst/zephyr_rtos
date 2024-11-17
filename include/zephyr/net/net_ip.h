@@ -469,6 +469,9 @@ extern const struct net_in6_addr in6addr_loopback;
 /** IPv4 any address */
 #define NET_INADDR_ANY 0
 
+/** IPv4 broadcast address */
+#define NET_INADDR_BROADCAST 0xffffffff
+
 /** IPv4 address initializer */
 #define NET_INADDR_ANY_INIT { { { NET_INADDR_ANY } } }
 
@@ -476,11 +479,11 @@ extern const struct net_in6_addr in6addr_loopback;
 #define NET_INADDR_LOOPBACK_INIT  { { { 127, 0, 0, 1 } } }
 
 /** Max length of the IPv4 address as a string. Defined by POSIX. */
-#define INET_ADDRSTRLEN 16
+#define NET_INET_ADDRSTRLEN 16
 /** Max length of the IPv6 address as a string. Takes into account possible
  * mapped IPv4 addresses.
  */
-#define INET6_ADDRSTRLEN 46
+#define NET_INET6_ADDRSTRLEN 46
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -1430,50 +1433,39 @@ static inline bool net_ipv6_addr_is_v4_mapped(const struct net_in6_addr* addr) {
 }
 
 /**
- *  @brief Create IPv6 address interface identifier
+ *  @brief Generate IPv6 address using a prefix and interface identifier.
+ *         Interface identifier is either generated from EUI-64 (MAC) defined
+ *         in RFC 4291 or from randomized value defined in RFC 7217.
+ *
+ *  @param iface Network interface
+ *  @param prefix IPv6 prefix, can be left out in which case fe80::/64 is used
+ *  @param network_id Network identifier (for example SSID in WLAN), this is
+ *         optional can be set to NULL
+ *  @param network_id_len Network identifier length, if set to 0 then the
+ *         network id is ignored.
+ *  @param dad_counter Duplicate Address Detection counter value, can be set to 0
+ *         if it is not known.
+ *  @param addr IPv6 address
+ *  @param lladdr Link local address
+ *
+ *  @return 0 if ok, < 0 if error
+ */
+int net_ipv6_addr_generate_iid(struct net_if* iface,
+                               const struct net_in6_addr* prefix,
+                               uint8_t*_network_id, size_t network_id_len,
+                               uint8_t dad_counter,
+                               struct net_in6_addr* addr,
+                               struct net_linkaddr* lladdr);
+
+/**
+ *  @brief Create IPv6 address interface identifier.
  *
  *  @param addr IPv6 address
  *  @param lladdr Link local address
  */
 static inline void net_ipv6_addr_create_iid(struct net_in6_addr* addr,
                                             struct net_linkaddr* lladdr) {
-    UNALIGNED_PUT(net_htonl(0xfe800000), &addr->s6_addr32[0]);
-    UNALIGNED_PUT(0, &addr->s6_addr32[1]);
-
-    switch (lladdr->len) {
-        case 2 :
-            /* The generated IPv6 shall not toggle the
-             * Universal/Local bit. RFC 6282 ch 3.2.2
-             */
-            if (lladdr->type == NET_LINK_IEEE802154) {
-                UNALIGNED_PUT(0, &addr->s6_addr32[2]);
-                addr->s6_addr[11] = 0xff;
-                addr->s6_addr[12] = 0xfe;
-                addr->s6_addr[13] = 0U;
-                addr->s6_addr[14] = lladdr->addr[0];
-                addr->s6_addr[15] = lladdr->addr[1];
-            }
-
-            break;
-        case 6 :
-            /* We do not toggle the Universal/Local bit
-             * in Bluetooth. See RFC 7668 ch 3.2.2
-             */
-            memcpy(&addr->s6_addr[8], lladdr->addr, 3);
-            addr->s6_addr[11] = 0xff;
-            addr->s6_addr[12] = 0xfe;
-            memcpy(&addr->s6_addr[13], lladdr->addr + 3, 3);
-
-            if (lladdr->type == NET_LINK_ETHERNET) {
-                addr->s6_addr[8] ^= 0x02;
-            }
-
-            break;
-        case 8 :
-            memcpy(&addr->s6_addr[8], lladdr->addr, lladdr->len);
-            addr->s6_addr[8] ^= 0x02;
-            break;
-    }
+    (void) net_ipv6_addr_generate_iid(NULL, NULL, NULL, 0, 0, addr, lladdr);
 }
 
 /**
@@ -1804,6 +1796,8 @@ char const* net_family2str(sa_family_t family);
 
 #define INADDR_ANY          NET_INADDR_ANY
 #define INADDR_ANY_INIT     NET_INADDR_ANY_INIT
+#define INET_ADDRSTRLEN     NET_INET_ADDRSTRLEN
+#define INET6_ADDRSTRLEN    NET_INET6_ADDRSTRLEN
 #define IPPROTO_IP          NET_IPPROTO_IP
 #define IPPROTO_IPIP        NET_IPPROTO_IPIP
 #define IPPROTO_TCP         NET_IPPROTO_TCP

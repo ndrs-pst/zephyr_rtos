@@ -13,8 +13,8 @@
  * API for accessing the current application's devicetree macros.
  */
 
-#ifndef DEVICETREE_H
-#define DEVICETREE_H
+#ifndef ZEPHYR_INCLUDE_DEVICETREE_H_
+#define ZEPHYR_INCLUDE_DEVICETREE_H_
 
 #include <zephyr/devicetree_generated.h>
 #include <zephyr/irq_multilevel.h>
@@ -234,6 +234,13 @@
  * @return node identifier for the node with that alias
  */
 #define DT_ALIAS(alias) DT_CAT(DT_N_ALIAS_, alias)
+
+/**
+ * @brief Test if the devicetree has a given alias
+ * @param alias_name lowercase-and-underscores devicetree alias name
+ * @return 1 if the alias exists and refers to a node, 0 otherwise
+ */
+#define DT_HAS_ALIAS(alias_name) DT_NODE_EXISTS(DT_ALIAS(alias_name))
 
 /**
  * @brief Get a node identifier for an instance of a compatible
@@ -5157,4 +5164,4 @@
 #include <zephyr/devicetree/reset.h>
 #include <zephyr/devicetree/mbox.h>
 
-#endif /* DEVICETREE_H */
+#endif /* ZEPHYR_INCLUDE_DEVICETREE_H_ */

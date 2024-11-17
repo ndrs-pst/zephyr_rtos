@@ -49,8 +49,8 @@
  */
 static void flash_waitstates_init(void) {
     if (SOC_ATMEL_SAM0_MCK_FREQ_HZ == 48000000UL) {
-        /* One wait state at 48 MHz. */
-        NVMCTRL->CTRLB.bit.RWS = 1U;
+        /* Two wait state at 48 MHz. */
+        NVMCTRL->CTRLB.bit.RWS = 2U;
     }
 
     if (SOC_ATMEL_SAM0_MCK_FREQ_HZ == 64000000UL) {

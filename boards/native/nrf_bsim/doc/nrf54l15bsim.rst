@@ -27,11 +27,13 @@ on the simulated nRF54L15 SOC.
 
 .. note::
 
+   Unlike real nRF54L15 devices, the nrf54l15bsim target has unlimited RAM, and code does not
+   occupy its RRAM. Therefore, as the nRF54L15, nRF54L10 and nRF54L05 SOCs only differ in the amount
+   of available RAM and RRAM either can be simulated using the nrf54l15bsim.
+
+.. note::
+
    This simulated target does **not** yet support targeting the cpuflpr core.
-
-.. warning::
-
-   This target is experimental.
 
 This boards include models of some of the nRF54L15 SOC peripherals:
 
@@ -42,6 +44,7 @@ This boards include models of some of the nRF54L15 SOC peripherals:
 * ECB (AES electronic codebook mode encryption)
 * EGU (Event Generator Unit)
 * FICR (Factory Information Configuration Registers)
+* GPIO & GPIOTE
 * GRTC (Global Real-time Counter)
 * PPIB (PPI Bridge)
 * RADIO
@@ -54,9 +57,6 @@ This boards include models of some of the nRF54L15 SOC peripherals:
 and will use the same drivers as the nrf54l15dk targets for these.
 For more information on what is modeled to which level of detail,
 check the `HW models implementation status`_.
-
-Note that unlike a real nrf54l15 device, the nrf54l15bsim boards have unlimited RAM, and code does
-not occupy their RRAM.
 
 .. _BabbleSim:
    https://BabbleSim.github.io

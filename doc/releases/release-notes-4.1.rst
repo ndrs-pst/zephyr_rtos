@@ -92,6 +92,12 @@ Drivers and Sensors
 
 * Display
 
+  * Added flag ``frame_incomplete`` to ``display_write`` that indicates whether a write is the last
+    write of the frame, allowing display drivers to implement double buffering / tearing enable
+    signal handling (:github:`81250`)
+  * Added ``frame_incomplete`` handling to SDL display driver (:dtcompatible:`zephyr,sdl-dc`)
+    (:github:`81250`)
+
 * Ethernet
 
 * Flash
@@ -111,6 +117,8 @@ Drivers and Sensors
 * Input
 
 * LED
+
+  * Added a new set of devicetree based LED APIs, see :c:struct:`led_dt_spec`.
 
 * LED Strip
 
@@ -277,6 +285,9 @@ Trusted Firmware-M
 
 LVGL
 ****
+
+* Added ``frame_incomplete`` support to indicate whether a write is the last
+  write of the frame (:github:`81250`)
 
 Tests and Samples
 *****************

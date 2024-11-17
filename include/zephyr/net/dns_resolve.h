@@ -176,7 +176,7 @@ struct mdns_responder_context;
  * @return 0 if ok, <0 if error
  */
 typedef int (*dns_socket_dispatcher_cb)(void *ctx, int sock,
-					struct sockaddr *addr, size_t addrlen,
+					struct net_sockaddr *addr, size_t addrlen,
 					struct net_buf *buf, size_t data_len);
 
 /** @brief DNS socket dispatcher context. */
@@ -347,6 +347,11 @@ struct dns_resolve_context {
 
 		/** Connection to the DNS server */
 		int sock;
+
+		/** Network interface index if the DNS resolving should be done
+		 * via this interface. Value 0 indicates any interface can be used.
+		 */
+		int if_index;
 
 		/** Is this server mDNS one */
 		uint8_t is_mdns : 1;

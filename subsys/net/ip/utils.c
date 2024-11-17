@@ -746,13 +746,13 @@ static bool parse_ipv6(char const* str, size_t str_len,
                        struct net_sockaddr const* addr, bool has_port) {
     char const* ptr = NULL;
     struct net_in6_addr* addr6;
-    char ipaddr[INET6_ADDRSTRLEN + 1];
+    char ipaddr[NET_INET6_ADDRSTRLEN + 1];
     int end;
     int len;
     int ret;
     uint16_t port;
 
-    len = MIN(INET6_ADDRSTRLEN, str_len);
+    len = MIN(NET_INET6_ADDRSTRLEN, str_len);
 
     for (int i = 0; i < len; i++) {
         if (!str[i]) {
@@ -884,8 +884,8 @@ static bool parse_ipv4(char const* str, size_t str_len,
         return (true);
     }
 
-    memcpy(ipaddr, ptr + 1, str_len - end);
-    ipaddr[str_len - end] = '\0';
+    memcpy(ipaddr, ptr + 1, str_len - end - 1);
+    ipaddr[str_len - end - 1] = '\0';
 
     ret = convert_port(ipaddr, &port);
     if (!ret) {

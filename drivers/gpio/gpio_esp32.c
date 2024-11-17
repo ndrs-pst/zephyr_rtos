@@ -274,14 +274,18 @@ static int gpio_esp32_config(const struct device* dev,
         }
     }
     else {
-        gpio_ll_output_disable(&GPIO, io_pin);
+        if (!(flags & ESP32_GPIO_PIN_OUT_EN)) {
+            gpio_ll_output_disable(&GPIO, io_pin);
+        }
     }
 
     if (flags & GPIO_INPUT) {
         gpio_ll_input_enable(&GPIO, io_pin);
     }
     else {
-        gpio_ll_input_disable(&GPIO, io_pin);
+        if (!(flags & ESP32_GPIO_PIN_IN_EN)) {
+            gpio_ll_input_disable(&GPIO, io_pin);
+        }
     }
 
 end :
