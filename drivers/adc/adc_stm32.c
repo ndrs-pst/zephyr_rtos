@@ -903,8 +903,8 @@ static int set_sequencer(const struct device* dev) {
     struct adc_stm32_data* data = dev->data;
     ADC_TypeDef* adc = config->base;
 
-    uint8_t  channel_id;
-    uint8_t  channel_index = 0;
+    uint_fast8_t channel_id;
+    uint_fast8_t channel_index = 0;
     uint32_t channels_mask = 0;
 
     /* Iterate over selected channels in bitmask keeping track of:
@@ -1726,7 +1726,7 @@ static int adc_stm32_pm_action(const struct device* dev,
 
 static const struct adc_driver_api api_stm32_driver_api = {
     .channel_setup = adc_stm32_channel_setup,
-    .read          = adc_stm32_read,
+    .read = adc_stm32_read,
     #ifdef CONFIG_ADC_ASYNC
     .read_async = adc_stm32_read_async,
     #endif

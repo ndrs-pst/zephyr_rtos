@@ -700,7 +700,7 @@ typedef int (*adc_api_read_async)(const struct device* dev,
  */
 __subsystem struct adc_driver_api {
     adc_api_channel_setup channel_setup;
-    adc_api_read          read;
+    adc_api_read read;
     #ifdef CONFIG_ADC_ASYNC
     adc_api_read_async read_async;
     #endif
