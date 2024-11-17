@@ -209,13 +209,13 @@ out:
 	return rc;
 }
 
-static bool slab_ptr_is_good(struct k_mem_slab *slab, const void *ptr)
+static bool slab_ptr_is_good(struct k_mem_slab const *slab, const void *ptr)
 {
 	const char *p = ptr;
-	ptrdiff_t offset = p - slab->buffer;
+	ptrdiff_t offset = (p - slab->buffer);
 
 	return (offset >= 0) &&
-	       (offset < (slab->info.block_size * slab->info.num_blocks)) &&
+	       (offset < (ptrdiff_t)(slab->info.block_size * slab->info.num_blocks)) &&
 	       ((offset % slab->info.block_size) == 0);
 }
 
