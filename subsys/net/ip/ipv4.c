@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include "tcp_internal.h"
 #include "dhcpv4/dhcpv4_internal.h"
 #include "ipv4.h"
+#include "pmtu.h"
 
 BUILD_ASSERT(sizeof(struct net_in_addr) == NET_IPV4_ADDR_SIZE, "sizeof error !!!");
 
@@ -91,10 +92,15 @@ int net_ipv4_create(struct net_pkt* pkt,
                     const struct net_in_addr* src,
                     const struct net_in_addr* dst) {
     uint8_t tos = 0;
+    uint8_t flags = 0U;
 
     if (IS_ENABLED(CONFIG_NET_IP_DSCP_ECN)) {
         net_ipv4_set_dscp(&tos, net_pkt_ip_dscp(pkt));
         net_ipv4_set_ecn(&tos, net_pkt_ip_ecn(pkt));
+    }
+
+    if (IS_ENABLED(CONFIG_NET_IPV4_PMTU) && net_pkt_ipv4_pmtu(pkt)) {
+        flags = NET_IPV4_DF;
     }
 
     return net_ipv4_create_full(pkt, src, dst, tos, 0U, 0U, 0U);
@@ -445,6 +451,35 @@ enum net_verdict net_ipv4_input(struct net_pkt* pkt, bool is_loopback) {
 drop :
     net_stats_update_ipv4_drop(net_pkt_iface(pkt));
     return (NET_DROP);
+}
+
+enum net_verdict net_ipv4_prepare_for_send(struct net_pkt* pkt) {
+    if (IS_ENABLED(CONFIG_NET_IPV4_PMTU)) {
+        struct net_pmtu_entry* entry;
+        struct net_sockaddr_in dst = {
+            .sin_family = NET_AF_INET,
+        };
+        int ret;
+
+        net_ipv4_addr_copy_raw((uint8_t*)&dst.sin_addr,
+                               NET_IPV4_HDR(pkt)->dst);
+        entry = net_pmtu_get_entry((struct net_sockaddr*)&dst);
+        if (entry == NULL) {
+            ret = net_pmtu_update_mtu((struct net_sockaddr*)&dst,
+                                      net_if_get_mtu(net_pkt_iface(pkt)));
+            if (ret < 0) {
+                NET_DBG("Cannot update PMTU for %s (%d)",
+                        net_sprint_ipv4_addr(&dst.sin_addr),
+                        ret);
+            }
+        }
+    }
+
+    #if defined(CONFIG_NET_IPV4_FRAGMENT)
+    return net_ipv4_prepare_for_send_fragment(pkt);
+    #else
+    return (NET_OK);
+    #endif
 }
 
 void net_ipv4_init(void) {

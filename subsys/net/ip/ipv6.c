@@ -588,6 +588,7 @@ enum net_verdict net_ipv6_input(struct net_pkt* pkt, bool is_loopback) {
 
     if (!net_pkt_filter_ip_recv_ok(pkt)) {
         /* drop the packet */
+        NET_DBG("DROP: pkt filter");
         return (NET_DROP);
     }
 
@@ -601,6 +602,7 @@ enum net_verdict net_ipv6_input(struct net_pkt* pkt, bool is_loopback) {
          * layer.
          */
         if (ipv6_forward_mcast_packet(pkt, hdr) == NET_DROP) {
+            NET_DBG("DROP: forward mcast");
             goto drop;
         }
     }
@@ -611,6 +613,9 @@ enum net_verdict net_ipv6_input(struct net_pkt* pkt, bool is_loopback) {
                 return (NET_OK);
             }
 
+            NET_DBG("DROP: no such address %s in iface %d",
+                    net_sprint_ipv6_addr((struct net_in6_addr*)hdr->dst),
+                    net_if_get_by_iface(pkt_iface));
             goto drop;
         }
 
@@ -625,6 +630,7 @@ enum net_verdict net_ipv6_input(struct net_pkt* pkt, bool is_loopback) {
                         pkt_iface, (struct net_in6_addr*)hdr->dst)) {
                 ipv6_no_route_info(pkt, (struct net_in6_addr*)hdr->src,
                                    (struct net_in6_addr*)hdr->dst);
+            NET_DBG("DROP: cross interface boundary");
             goto drop;
         }
     }
@@ -678,6 +684,7 @@ enum net_verdict net_ipv6_input(struct net_pkt* pkt, bool is_loopback) {
              * This is not an error case so do not update drop
              * statistics.
              */
+            NET_DBG("DROP: none nexthdr");
             return (NET_DROP);
         }
 
@@ -685,6 +692,7 @@ enum net_verdict net_ipv6_input(struct net_pkt* pkt, bool is_loopback) {
         prev_hdr_offset = (uint_fast8_t)net_pkt_get_current_offset(pkt);
 
         if (net_pkt_read_u8(pkt, &nexthdr)) {
+            NET_DBG("DROP: pkt invalid read");
             goto drop;
         }
 
@@ -745,6 +753,7 @@ enum net_verdict net_ipv6_input(struct net_pkt* pkt, bool is_loopback) {
 
         exthdr_len = ipv6_handle_ext_hdr_options(pkt, hdr, pkt_len);
         if (exthdr_len < 0) {
+            NET_DBG("DROP: extension hdr len (%d)", exthdr_len);
             goto drop;
         }
 
@@ -768,6 +777,8 @@ enum net_verdict net_ipv6_input(struct net_pkt* pkt, bool is_loopback) {
             if (proto_hdr.tcp) {
                 verdict = NET_OK;
             }
+
+            NET_DBG("%s verdict %s", "TCP", net_verdict2str(verdict));
             break;
 
         case NET_IPPROTO_UDP :
@@ -775,6 +786,8 @@ enum net_verdict net_ipv6_input(struct net_pkt* pkt, bool is_loopback) {
             if (proto_hdr.udp) {
                 verdict = NET_OK;
             }
+
+            NET_DBG("%s verdict %s", "UDP", net_verdict2str(verdict));
             break;
 
         #if defined(CONFIG_NET_L2_IPIP)
