@@ -1195,8 +1195,10 @@ struct in_pktinfo {
  *  integer. IP_MTU is valid only for getsockopt and can be employed only when
  *  the socket has been connected.
  */
-#define IP_MTU 14
+#define NET_IP_MTU 14
 
+/** Set IPv4 multicast datagram network interface. */
+#define NET_IP_MULTICAST_IF 32
 /** Set IPv4 multicast TTL value. */
 #define NET_IP_MULTICAST_TTL 33
 /** Join IPv4 multicast group. */
@@ -1204,13 +1206,29 @@ struct in_pktinfo {
 /** Leave IPv4 multicast group. */
 #define NET_IP_DROP_MEMBERSHIP 36
 
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define IP_MTU              NET_IP_MTU
+#define IP_MULTICAST_IF     NET_IP_MULTICAST_IF
+#define IP_MULTICAST_TTL    NET_IP_MULTICAST_TTL
+#define IP_ADD_MEMBERSHIP   NET_IP_ADD_MEMBERSHIP
+#define IP_DROP_MEMBERSHIP  NET_IP_DROP_MEMBERSHIP
+#endif
+
 /**
  * @brief Struct used when joining or leaving a IPv4 multicast group.
  */
-struct ip_mreqn {
+struct net_ip_mreqn {
 	struct net_in_addr imr_multiaddr; /**< IP multicast group address */
 	struct net_in_addr imr_address;   /**< IP address of local interface */
 	int imr_ifindex;                  /**< Network interface index */
+};
+
+/**
+ * @brief Struct used when setting a IPv4 multicast network interface.
+ */
+struct net_ip_mreq  {
+	struct net_in_addr imr_multiaddr; /**< IP multicast group address */
+	struct net_in_addr imr_interface; /**< IP address of local interface */
 };
 
 /** @} */
@@ -1222,6 +1240,9 @@ struct ip_mreqn {
 /* Socket options for NET_IPPROTO_IPV6 level */
 /** Set the unicast hop limit for the socket. */
 #define IPV6_UNICAST_HOPS	16
+
+/** Set multicast output network interface index for the socket. */
+#define IPV6_MULTICAST_IF       17
 
 /** Set the multicast hop limit for the socket. */
 #define IPV6_MULTICAST_HOPS 18
@@ -1241,7 +1262,7 @@ struct ip_mreqn {
 /**
  * @brief Struct used when joining or leaving a IPv6 multicast group.
  */
-struct ipv6_mreq {
+struct net_ipv6_mreq {
 	/** IPv6 multicast address of group */
 	struct net_in6_addr ipv6mr_multiaddr;
 
@@ -1292,7 +1313,7 @@ struct ipv6_mreq {
  * Used as ancillary data when calling recvmsg() and IPV6_RECVPKTINFO socket
  * option is set.
  */
-struct in6_pktinfo {
+struct net_in6_pktinfo {
 	struct net_in6_addr ipi6_addr;    /**< Destination IPv6 address */
 	unsigned int    ipi6_ifindex; /**< Receive interface index */
 };

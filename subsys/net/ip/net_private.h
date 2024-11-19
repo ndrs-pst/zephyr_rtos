@@ -68,6 +68,8 @@ extern void net_if_stats_reset_all(void);
 extern void net_process_rx_packet(struct net_pkt* pkt);
 extern void net_process_tx_packet(struct net_pkt* pkt);
 
+extern struct net_if_addr* net_if_ipv4_addr_get_first_by_index(int ifindex);
+
 extern int net_icmp_call_ipv4_handlers(struct net_pkt* pkt,
                                        struct net_ipv4_hdr* ipv4_hdr,
                                        struct net_icmp_hdr* icmp_hdr);
@@ -146,6 +148,10 @@ extern void mdns_init_responder(void);
 #else
 static inline void mdns_init_responder(void) { }
 #endif /* CONFIG_MDNS_RESPONDER */
+
+#if defined(CONFIG_NET_TEST)
+extern void loopback_enable_address_swap(bool swap_addresses);
+#endif /* CONFIG_NET_TEST */
 
 #if defined(CONFIG_NET_NATIVE)
 enum net_verdict net_ipv4_input(struct net_pkt* pkt, bool is_loopback);

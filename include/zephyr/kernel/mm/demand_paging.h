@@ -229,6 +229,8 @@ __syscall void k_mem_paging_histogram_backing_store_page_out_get(
  * @{
  */
 
+#if defined(CONFIG_EVICTION_TRACKING) || defined(__DOXYGEN__)
+
 /**
  * Submit a page frame for eviction candidate tracking
  *
@@ -272,6 +274,25 @@ void k_mem_paging_eviction_remove(struct k_mem_page_frame *pf);
  * @param [in] phys The physical address being accessed
  */
 void k_mem_paging_eviction_accessed(uintptr_t phys);
+
+#else /* CONFIG_EVICTION_TRACKING || __DOXYGEN__ */
+
+static inline void k_mem_paging_eviction_add(struct k_mem_page_frame *pf)
+{
+	ARG_UNUSED(pf);
+}
+
+static inline void k_mem_paging_eviction_remove(struct k_mem_page_frame *pf)
+{
+	ARG_UNUSED(pf);
+}
+
+static inline void k_mem_paging_eviction_accessed(uintptr_t phys)
+{
+	ARG_UNUSED(phys);
+}
+
+#endif /* CONFIG_EVICTION_TRACKING || __DOXYGEN__ */
 
 /**
  * Select a page frame for eviction
