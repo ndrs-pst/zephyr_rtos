@@ -718,7 +718,6 @@ static void modem_cmux_process_received_byte(struct modem_cmux* cmux, uint8_t by
                 cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_RESYNC;
                 break;
             }
-
             break;
 
         case MODEM_CMUX_RECEIVE_STATE_RESYNC :
@@ -729,7 +728,6 @@ static void modem_cmux_process_received_byte(struct modem_cmux* cmux, uint8_t by
             if (byte == 0xF9) {
                 break;
             }
-
             __fallthrough;
 
         case MODEM_CMUX_RECEIVE_STATE_ADDRESS :
@@ -824,7 +822,6 @@ static void modem_cmux_process_received_byte(struct modem_cmux* cmux, uint8_t by
                 /* Await FCS */
                 cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_FCS;
             }
-
             break;
 
         case MODEM_CMUX_RECEIVE_STATE_FCS :
@@ -976,7 +973,7 @@ static void modem_cmux_connect_handler(struct k_work* item) {
 
     cmux->state = MODEM_CMUX_STATE_CONNECTING;
 
-    struct modem_cmux_frame const frame = {
+    static struct modem_cmux_frame const frame = {
         .dlci_address = 0,
         .cr           = true,
         .pf           = true,

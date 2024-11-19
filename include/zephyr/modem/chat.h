@@ -38,10 +38,10 @@ typedef void (*modem_chat_match_callback)(struct modem_chat* chat, char** argv, 
 struct modem_chat_match {
     /** Match array */
     uint8_t const* match;
-    /** Size of match */
-    uint8_t match_size;
     /** Separators array */
     uint8_t const* separators;
+    /** Size of match */
+    uint8_t match_size;
     /** Size of separators array */
     uint8_t separators_size;
     /** Set if modem chat instance shall use wildcards when matching */
@@ -54,8 +54,9 @@ struct modem_chat_match {
 
 #define MODEM_CHAT_MATCH(_match, _separators, _callback)        \
     {                                                           \
-        .match = (uint8_t*)(_match), .match_size = (uint8_t)(sizeof(_match) - 1),   \
+        .match = (uint8_t*)(_match),                            \
         .separators = (uint8_t*)(_separators),                  \
+        .match_size = (uint8_t)(sizeof(_match) - 1),            \
         .separators_size = (uint8_t)(sizeof(_separators) - 1),  \
         .wildcards = false,                                     \
         .callback  = _callback,                                 \
@@ -63,8 +64,9 @@ struct modem_chat_match {
 
 #define MODEM_CHAT_MATCH_WILDCARD(_match, _separators, _callback)   \
     {                                                           \
-        .match = (uint8_t*)(_match), .match_size = (uint8_t)(sizeof(_match) - 1),   \
+        .match = (uint8_t*)(_match),                            \
         .separators = (uint8_t*)(_separators),                  \
+        .match_size = (uint8_t)(sizeof(_match) - 1),            \
         .separators_size = (uint8_t)(sizeof(_separators) - 1),  \
         .wildcards = true,                                      \
         .callback = _callback,                                  \
@@ -73,8 +75,8 @@ struct modem_chat_match {
 #define MODEM_CHAT_MATCH_INITIALIZER(_match, _separators, _callback, _wildcards, _partial)  \
     {                                                           \
         .match = (uint8_t*)(_match),                            \
-        .match_size = (uint8_t)(sizeof(_match) - 1),            \
         .separators = (uint8_t*)(_separators),                  \
+        .match_size = (uint8_t)(sizeof(_match) - 1),            \
         .separators_size = (uint8_t)(sizeof(_separators) - 1),  \
         .wildcards = _wildcards,                                \
         .partial = _partial,                                    \
@@ -103,10 +105,10 @@ extern const struct modem_chat_match modem_chat_empty_matches[1];
 struct modem_chat_script_chat {
     /** Request to send to modem */
     uint8_t const* request;
-    /** Size of request */
-    uint16_t request_size;
     /** Expected responses to request */
     const struct modem_chat_match* response_matches;
+    /** Size of request */
+    uint16_t request_size;
     /** Number of elements in expected responses */
     uint16_t response_matches_size;
     /** Timeout before chat script may continue to next step in milliseconds */
@@ -116,8 +118,8 @@ struct modem_chat_script_chat {
 #define MODEM_CHAT_SCRIPT_CMD_RESP(_request, _response_match)           \
     {                                                                   \
         .request = (uint8_t*)(_request),                                \
-        .request_size = (uint16_t)(sizeof(_request) - 1),               \
         .response_matches = &_response_match,                           \
+        .request_size = (uint16_t)(sizeof(_request) - 1),               \
         .response_matches_size = 1,                                     \
         .timeout = 0                                                    \
     }
@@ -125,8 +127,8 @@ struct modem_chat_script_chat {
 #define MODEM_CHAT_SCRIPT_CMD_RESP_MULT(_request, _response_matches)    \
     {                                                                   \
         .request = (uint8_t*)(_request),                                \
-        .request_size = (uint16_t)(sizeof(_request) - 1),               \
         .response_matches = _response_matches,                          \
+        .request_size = (uint16_t)(sizeof(_request) - 1),               \
         .response_matches_size = ARRAY_SIZE(_response_matches),         \
         .timeout = 0                                                    \
     }
@@ -134,8 +136,8 @@ struct modem_chat_script_chat {
 #define MODEM_CHAT_SCRIPT_CMD_RESP_NONE(_request, _timeout_ms)          \
     {                                                                   \
         .request = (uint8_t*)(_request),                                \
-        .request_size = (uint16_t)(sizeof(_request) - 1),               \
         .response_matches = NULL,                                       \
+        .request_size = (uint16_t)(sizeof(_request) - 1),               \
         .response_matches_size = 0,                                     \
         .timeout = (_timeout_ms)                                        \
     }
@@ -174,14 +176,14 @@ struct modem_chat_script {
     char const* name;
     /** Array of script chats */
     const struct modem_chat_script_chat* script_chats;
-    /** Elements in array of script chats */
-    uint16_t script_chats_size;
     /** Array of abort matches */
     const struct modem_chat_match* abort_matches;
-    /** Number of elements in array of abort matches */
-    uint16_t abort_matches_size;
     /** Callback called when script execution terminates */
     modem_chat_script_callback callback;
+    /** Elements in array of script chats */
+    uint16_t script_chats_size;
+    /** Number of elements in array of abort matches */
+    uint16_t abort_matches_size;
     /** Timeout in seconds within which the script execution must terminate */
     uint32_t timeout;
 };
@@ -190,10 +192,10 @@ struct modem_chat_script {
     const static struct modem_chat_script _sym = {              \
         .name               = #_sym,                            \
         .script_chats       = _script_chats,                    \
-        .script_chats_size  = ARRAY_SIZE(_script_chats),        \
         .abort_matches      = _abort_matches,                   \
-        .abort_matches_size = ARRAY_SIZE(_abort_matches),       \
         .callback           = _callback,                        \
+        .script_chats_size  = ARRAY_SIZE(_script_chats),        \
+        .abort_matches_size = ARRAY_SIZE(_abort_matches),       \
         .timeout            = _timeout_s,                       \
     }
 
