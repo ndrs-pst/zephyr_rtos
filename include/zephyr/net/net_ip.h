@@ -65,6 +65,7 @@ enum net_ip_protocol {
     NET_IPPROTO_IP     = 0,                 /**< IP protocol (pseudo-val for setsockopt() */
     NET_IPPROTO_ICMP   = 1,                 /**< ICMP protocol   */
     NET_IPPROTO_IGMP   = 2,                 /**< IGMP protocol   */
+    NET_IPPROTO_ETH_P_ALL = 3,              /**< Every packet. from linux if_ether.h   */
     NET_IPPROTO_IPIP   = 4,                 /**< IPIP tunnels    */
     NET_IPPROTO_TCP    = 6,                 /**< TCP protocol    */
     NET_IPPROTO_UDP    = 17,                /**< UDP protocol    */
@@ -245,6 +246,12 @@ struct net_sockaddr_ll_ptr {
 #define sockaddr_ll_ptr     net_sockaddr_ll_ptr
 #endif
 
+/** Socket address struct for unix socket where address is a pointer */
+struct net_sockaddr_un_ptr {
+    sa_family_t sun_family;    /**< Always AF_UNIX */
+    char        *sun_path;     /**< pathname */
+};
+
 struct net_sockaddr_can_ptr {
     sa_family_t can_family;
     int         can_ifindex;
@@ -397,11 +404,24 @@ struct cmsghdr {
 #endif
 #endif
 
+#if defined(CONFIG_NET_NATIVE_OFFLOADED_SOCKETS)
+#define UNIX_PATH_MAX 108
+#undef NET_SOCKADDR_MAX_SIZE
+/* Define NET_SOCKADDR_MAX_SIZE to be struct of sa_family_t + char[UNIX_PATH_MAX] */
+#define NET_SOCKADDR_MAX_SIZE (UNIX_PATH_MAX+sizeof(sa_family_t))
+#if !defined(CONFIG_NET_SOCKETS_PACKET)
+#undef NET_SOCKADDR_PTR_MAX_SIZE
+#define NET_SOCKADDR_PTR_MAX_SIZE (sizeof(struct sockaddr_un_ptr))
+#endif
+#endif
+
 #if !defined(CONFIG_NET_IPV4)
 #if !defined(CONFIG_NET_IPV6)
 #if !defined(CONFIG_NET_SOCKETS_PACKET)
+#if !defined(CONFIG_NET_NATIVE_OFFLOADED_SOCKETS)
 #define NET_SOCKADDR_MAX_SIZE     (sizeof(struct net_sockaddr_in6))
 #define NET_SOCKADDR_PTR_MAX_SIZE (sizeof(struct net_sockaddr_in6_ptr))
+#endif
 #endif
 #endif
 #endif
