@@ -93,9 +93,10 @@ static void modbus_rx_handler(struct k_work* item) {
         k_sem_give(&ctx->client_wait_sem);
     }
     else if (IS_ENABLED(CONFIG_MODBUS_SERVER)) {
-        bool respond = modbus_server_handler(ctx);
+        bool respond;
 
-        if (respond) {
+        respond = modbus_server_handler(ctx);
+        if (respond == true) {
             modbus_tx_adu(ctx);
         }
         else {
