@@ -64,6 +64,21 @@ static struct modbus_context mb_ctx_tbl[] = {
     #endif
 };
 
+/* #CUSTOM@NDRS */
+#if (MODBUS_USE_SUBSYS_WORKQUEUE == 1)
+#define MODBUS_WORKQUEUE_STACK_SIZE 2048
+#define MODBUS_WORKQUEUE_PRIORITY 5
+
+static K_THREAD_STACK_DEFINE(mb_work_q_stack, MODBUS_WORKQUEUE_STACK_SIZE);
+static struct k_work_q mb_work_q;
+static const struct k_work_queue_config mb_work_q_cfg = {
+    .name      = "mb_work_q",
+    .no_yield  = false,
+    .essential = true,
+};
+#endif
+
+
 static void modbus_rx_handler(struct k_work* item) {
     struct modbus_context* ctx;
 
@@ -209,6 +224,16 @@ static struct modbus_context* modbus_init_iface(uint8_t const iface) {
 
     k_mutex_init(&ctx->iface_lock);
     k_sem_init(&ctx->client_wait_sem, 0, 1);
+    #if (MODBUS_USE_SUBSYS_WORKQUEUE == 1)  /* #CUSTOM@NDRS */
+    ctx->work_q = &mb_work_q;
+    if ((mb_work_q.flags & K_WORK_QUEUE_STARTED) == 0) {
+        /* Only execute when not yet initialize */
+        k_work_queue_init(&mb_work_q);
+        k_work_queue_start(&mb_work_q, mb_work_q_stack,
+                           K_THREAD_STACK_SIZEOF(mb_work_q_stack), MODBUS_WORKQUEUE_PRIORITY, &mb_work_q_cfg);
+    }
+    #endif
+
     k_work_init(&ctx->server_work, modbus_rx_handler);
 
     return (ctx);

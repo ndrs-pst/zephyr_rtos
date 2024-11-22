@@ -313,7 +313,11 @@ static void cb_handler_rx(struct modbus_context* ctx) {
         }
 
         if (c == MODBUS_ASCII_END_FRAME_CHAR2) {
+            #if (MODBUS_USE_SUBSYS_WORKQUEUE == 1)              /* #CUSTOM@NDRS */
+            k_work_submit_to_queue(ctx->work_q, &ctx->server_work);
+            #else
             k_work_submit(&ctx->server_work);
+            #endif
         }
     }
     else {
@@ -388,7 +392,11 @@ static void rtu_tmr_handler(struct k_timer* timer) {
         return;
     }
 
+    #if (MODBUS_USE_SUBSYS_WORKQUEUE == 1)                      /* #CUSTOM@NDRS */
+    k_work_submit_to_queue(ctx->work_q, &ctx->server_work);
+    #else
     k_work_submit(&ctx->server_work);
+    #endif
 }
 
 static int configure_gpio(struct modbus_context const* ctx) {
@@ -518,6 +526,8 @@ int modbus_serial_tx_adu(struct modbus_context* ctx) {
                 modbus_ascii_tx_adu(ctx);
                 return (0);
             }
+            break;
+
         default :
             break;
     }

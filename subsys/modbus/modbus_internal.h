@@ -70,7 +70,10 @@
 #define MODBUS_ASCII_END_FRAME_CHAR2        '\n'
 
 /* Modbus ADU constants */
-#define MODBUS_ADU_PROTO_ID 0x0000
+#define MODBUS_ADU_PROTO_ID                 0x0000
+
+/* #CUSTOM@NDRS Use internal work_q instead of k_sys_work_q */
+#define MODBUS_USE_SUBSYS_WORKQUEUE         1
 
 struct modbus_serial_config {
     /* UART device */
@@ -134,6 +137,9 @@ struct modbus_context {
     struct k_sem client_wait_sem;
 
     /* Server work item */
+    #if (MODBUS_USE_SUBSYS_WORKQUEUE == 1)  /* #CUSTOM@NDRS */
+    struct k_work_q* work_q;
+    #endif
     struct k_work server_work;
 
     /* Received frame */
