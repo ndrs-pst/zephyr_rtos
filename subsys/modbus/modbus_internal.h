@@ -73,7 +73,7 @@
 #define MODBUS_ADU_PROTO_ID                 0x0000
 
 /* #CUSTOM@NDRS Use internal work_q instead of k_sys_work_q */
-#define MODBUS_USE_SUBSYS_WORKQUEUE         1
+#define MODBUS_USE_SUBSYS_WORKQUEUE         0
 
 struct modbus_serial_config {
     /* UART device */
