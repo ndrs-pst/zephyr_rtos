@@ -256,13 +256,13 @@ static int phy_mc_lan8742a_reset(struct device const* dev) {
     struct mc_lan8742a_config const* cfg = dev->config;
     if (cfg->reset_gpio.port != NULL) {
         /* Start reset */
-        ret = gpio_pin_set_dt(&cfg->reset_gpio, 0);
+        ret = gpio_pin_set_dt(&cfg->reset_gpio, 1);
         if (ret == 0) {
-            /* Wait for 500 ms as specified by datasheet */
-            k_busy_wait(USEC_PER_MSEC * 500);
+            /* Wait for 1 ms */
+            k_busy_wait(1 * USEC_PER_MSEC);
 
             /* Reset over */
-            ret = gpio_pin_set_dt(&cfg->reset_gpio, 1);
+            ret = gpio_pin_set_dt(&cfg->reset_gpio, 0);
         }
 
         k_mutex_unlock(&ctx->mutex);
@@ -272,8 +272,8 @@ static int phy_mc_lan8742a_reset(struct device const* dev) {
 
     ret = phy_mc_lan8742a_write(dev, MII_BMCR, MII_BMCR_RESET);
     if (ret == 0) {
-        /* Wait for 500 ms as specified by datasheet */
-        k_busy_wait(USEC_PER_MSEC * 500);
+        /* Wait for 1 ms  */
+        k_busy_wait(1 * USEC_PER_MSEC);
     }
 
     k_mutex_unlock(&ctx->mutex);
