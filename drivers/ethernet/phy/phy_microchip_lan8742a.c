@@ -146,7 +146,6 @@ static int phy_mc_lan8742a_get_link(const struct device* dev,
     uint32_t anlpar;                        /* Auto-Negotiation Link Partner Ability Register */
     struct phy_link_state old_state = ctx->state;
 
-    /* Lock mutex */
     ret = k_mutex_lock(&ctx->mutex, K_FOREVER);
     if (ret != 0) {
         LOG_ERR("PHY mutex lock error");
@@ -157,14 +156,12 @@ static int phy_mc_lan8742a_get_link(const struct device* dev,
     ret = phy_mc_lan8742a_read(dev, MII_BMSR, &bmsr);
     if (ret != 0) {
         LOG_ERR("Error reading phy (%d) basic status register", cfg->addr);
-        k_mutex_unlock(&ctx->mutex);
-        return (ret);
+        goto unlock;
     }
+
     state->is_up = (bmsr & MII_BMSR_LINK_STATUS) ? true : false;
     state->speed = LINK_UNDEFINED;
-
     if (state->is_up == false) {
-        k_mutex_unlock(&ctx->mutex);
         goto result;
     }
 
@@ -172,20 +169,15 @@ static int phy_mc_lan8742a_get_link(const struct device* dev,
     ret = phy_mc_lan8742a_read(dev, MII_ANAR, &anar);
     if (ret != 0) {
         LOG_ERR("Error reading phy (%d) advertising register", cfg->addr);
-        k_mutex_unlock(&ctx->mutex);
-        return (ret);
+        goto unlock;
     }
 
     /* Read link partner capability */
     ret = phy_mc_lan8742a_read(dev, MII_ANLPAR, &anlpar);
     if (ret != 0) {
         LOG_ERR("Error reading phy (%d) link partner register", cfg->addr);
-        k_mutex_unlock(&ctx->mutex);
-        return (ret);
+        goto unlock;
     }
-
-    /* Unlock mutex */
-    k_mutex_unlock(&ctx->mutex);
 
     uint32_t mutual_capabilities = (anar & anlpar);
 
@@ -214,6 +206,9 @@ result :
                 PHY_LINK_IS_FULL_DUPLEX(state->speed) ? "full" : "half");
         }
     }
+
+unlock :
+    k_mutex_unlock(&ctx->mutex);
 
     return (ret);
 }
@@ -294,7 +289,6 @@ static int phy_mc_lan8742a_cfg_link(const struct device* dev,
     int ret;
     uint32_t anar;
 
-    /* Lock mutex */
     ret = k_mutex_lock(&ctx->mutex, K_FOREVER);
     if (ret != 0) {
         LOG_ERR("PHY mutex lock error");
@@ -385,7 +379,6 @@ static int phy_mc_lan8742a_cfg_link(const struct device* dev,
     }
 
 done :
-    /* Unlock mutex */
     k_mutex_unlock(&ctx->mutex);
 
     /* Start monitoring */
