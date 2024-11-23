@@ -33,7 +33,7 @@ static void modbus_serial_tx_on(struct modbus_context const* ctx) {
     struct modbus_serial_config const* cfg = ctx->cfg;
 
     if (cfg->de != NULL) {
-        gpio_pin_set(cfg->de->port, cfg->de->pin, 1);
+        gpio_pin_set_dt(cfg->de, 1);
     }
 
     uart_irq_tx_enable(cfg->dev);
@@ -44,7 +44,7 @@ static void modbus_serial_tx_off(struct modbus_context const* ctx) {
 
     uart_irq_tx_disable(cfg->dev);
     if (cfg->de != NULL) {
-        gpio_pin_set(cfg->de->port, cfg->de->pin, 0);
+        gpio_pin_set_dt(cfg->de, 0);
     }
 }
 
@@ -52,7 +52,7 @@ static void modbus_serial_rx_on(struct modbus_context const* ctx) {
     struct modbus_serial_config const* cfg = ctx->cfg;
 
     if (cfg->re != NULL) {
-        gpio_pin_set(cfg->re->port, cfg->re->pin, 1);
+        gpio_pin_set_dt(cfg->re, 1);
     }
 
     uart_irq_rx_enable(cfg->dev);
@@ -63,7 +63,7 @@ static void modbus_serial_rx_off(struct modbus_context const* ctx) {
 
     uart_irq_rx_disable(cfg->dev);
     if (cfg->re != NULL) {
-        gpio_pin_set(cfg->re->port, cfg->re->pin, 0);
+        gpio_pin_set_dt(cfg->re, 0);
     }
 }
 
