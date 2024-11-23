@@ -30,19 +30,19 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 struct mc_lan8742a_config {
     uint8_t addr;
-    const struct device* mdio_dev;
+    struct device const* mdio_dev;
 
     #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_reset_gpio)
-    const struct gpio_dt_spec reset_gpio;
+    struct gpio_dt_spec reset_gpio;
     #endif
 
     #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_interrupt_gpio)
-    const struct gpio_dt_spec interrupt_gpio;
+    struct gpio_dt_spec interrupt_gpio;
     #endif
 };
 
 struct mc_lan8742a_data {
-    const struct device* dev;
+    struct device const* dev;
     struct phy_link_state state;
     phy_callback_t cb;
     void* cb_data;
@@ -117,7 +117,10 @@ static int phy_mc_lan8742a_autonegotiate(const struct device* dev) {
     do {
         if (timeout-- == 0) {
             LOG_DBG("PHY (%d) autonegotiation timed out", cfg->addr);
-            return (-ETIMEDOUT);
+            /* The value -ETIMEDOUT can be returned by PHY read/write functions, so
+             * return -ENETDOWN instead to distinguish link timeout from PHY timeout.
+             */
+            return (-ENETDOWN);
         }
         k_msleep(100);
 
@@ -161,6 +164,7 @@ static int phy_mc_lan8742a_get_link(const struct device* dev,
     state->speed = LINK_UNDEFINED;
 
     if (state->is_up == false) {
+        k_mutex_unlock(&ctx->mutex);
         goto result;
     }
 
@@ -204,9 +208,11 @@ static int phy_mc_lan8742a_get_link(const struct device* dev,
 result :
     if (phy_link_state_cmp(&old_state, state) != 0) {
         LOG_DBG("PHY %d is %s", cfg->addr, state->is_up ? "up" : "down");
-        LOG_DBG("PHY (%d) Link speed %s Mb, %s duplex\n", cfg->addr,
+        if (state->is_up == true) {
+            LOG_DBG("PHY (%d) Link speed %s Mb, %s duplex\n", cfg->addr,
                 (PHY_LINK_IS_SPEED_100M(state->speed) ? "100" : "10"),
                 PHY_LINK_IS_FULL_DUPLEX(state->speed) ? "full" : "half");
+        }
     }
 
     return (ret);
@@ -241,10 +247,50 @@ static int phy_mc_lan8742a_static_cfg(const struct device* dev) {
     return (0);
 }
 
+static int phy_mc_lan8742a_reset(struct device const* dev) {
+    struct mc_lan8742a_data* ctx = dev->data;
+    int ret;
+
+    ret = k_mutex_lock(&ctx->mutex, K_FOREVER);
+    if (ret != 0) {
+        LOG_ERR("PHY mutex lock error");
+        return (ret);
+    }
+
+    #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_reset_gpio)
+    struct mc_lan8742a_config const* cfg = dev->config;
+    if (cfg->reset_gpio.port != NULL) {
+        /* Start reset */
+        ret = gpio_pin_set_dt(&cfg->reset_gpio, 0);
+        if (ret == 0) {
+            /* Wait for 500 ms as specified by datasheet */
+            k_busy_wait(USEC_PER_MSEC * 500);
+
+            /* Reset over */
+            ret = gpio_pin_set_dt(&cfg->reset_gpio, 1);
+        }
+
+        k_mutex_unlock(&ctx->mutex);
+        return (ret);
+    }
+    #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_reset_gpio) */
+
+    ret = phy_mc_lan8742a_write(dev, MII_BMCR, MII_BMCR_RESET);
+    if (ret == 0) {
+        /* Wait for 500 ms as specified by datasheet */
+        k_busy_wait(USEC_PER_MSEC * 500);
+    }
+
+    k_mutex_unlock(&ctx->mutex);
+
+    return (ret);
+}
+
 static int phy_mc_lan8742a_cfg_link(const struct device* dev,
                                     enum phy_link_speed speeds) {
     struct mc_lan8742a_config const* cfg = dev->config;
     struct mc_lan8742a_data* ctx = dev->data;
+    struct phy_link_state state;
     int ret;
     uint32_t anar;
 
@@ -257,6 +303,12 @@ static int phy_mc_lan8742a_cfg_link(const struct device* dev,
 
     /* We are going to reconfigure the phy, don't need to monitor until done */
     k_work_cancel_delayable(&ctx->phy_monitor_work);
+
+    /* Reset PHY */
+    ret = phy_mc_lan8742a_reset(dev);
+    if (ret != 0) {
+        goto done;
+    }
 
     /* DT configurations */
     ret = phy_mc_lan8742a_static_cfg(dev);
@@ -309,19 +361,28 @@ static int phy_mc_lan8742a_cfg_link(const struct device* dev,
 
     /* (re)do autonegotiation */
     ret = phy_mc_lan8742a_autonegotiate(dev);
-    if (ret != 0) {
+    if ((ret != 0) && (ret != -ENETDOWN)) {
         LOG_ERR("Error in autonegotiation");
         goto done;
     }
 
     /* Get link status */
-    ret = phy_mc_lan8742a_get_link(dev, &ctx->state);
+    ret = phy_mc_lan8742a_get_link(dev, &state);
+    if ((ret == 0) &&
+        (phy_link_state_cmp(&state, &ctx->state) != 0)) {
+        ctx->state = state;
+        if (ctx->cb) {
+            ctx->cb(dev, &ctx->state, ctx->cb_data);
+        }
+    }
 
     /* Log the results of the configuration */
     LOG_INF("PHY %d is %s", cfg->addr, ctx->state.is_up ? "up" : "down");
-    LOG_INF("PHY (%d) Link speed %s Mb, %s duplex\n", cfg->addr,
-            (PHY_LINK_IS_SPEED_100M(ctx->state.speed) ? "100" : "10"),
-            PHY_LINK_IS_FULL_DUPLEX(ctx->state.speed) ? "full" : "half");
+    if (ctx->state.is_up == true) {
+        LOG_INF("PHY (%d) Link speed %s Mb, %s duplex\n", cfg->addr,
+                (PHY_LINK_IS_SPEED_100M(ctx->state.speed) ? "100" : "10"),
+                PHY_LINK_IS_FULL_DUPLEX(ctx->state.speed) ? "full" : "half");
+    }
 
 done :
     /* Unlock mutex */
@@ -357,7 +418,6 @@ static void phy_mc_lan8742a_monitor_work_handler(struct k_work* work) {
     int rc;
 
     rc = phy_mc_lan8742a_get_link(dev, &state);
-
     if ((rc == 0) &&
         (phy_link_state_cmp(&state, &ctx->state) != 0)) {
         ctx->state = state;
@@ -399,27 +459,19 @@ skip_int_gpio :
     #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_interrupt_gpio) */
 
     #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_reset_gpio)
-    if (cfg->reset_gpio.port == NULL) {
-        goto skip_reset_gpio;
+    if (cfg->reset_gpio.port != NULL) {
+        ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
+        if (ret) {
+            return ret;
+        }
     }
+    #endif
 
-    /* Start reset */
-    ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
-    if (ret != 0) {
+    /* Reset PHY */
+    ret = phy_mc_lan8742a_reset(dev);
+    if (ret) {
         return (ret);
     }
-
-    /* Wait for 500 ms as specified by datasheet */
-    k_busy_wait(USEC_PER_MSEC * 500);
-
-    /* Reset over */
-    ret = gpio_pin_set_dt(&cfg->reset_gpio, 0);
-    if (ret != 0) {
-        return (ret);
-    }
-
-skip_reset_gpio :
-    #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_reset_gpio) */
 
     k_work_init_delayable(&ctx->phy_monitor_work,
                           phy_mc_lan8742a_monitor_work_handler);
