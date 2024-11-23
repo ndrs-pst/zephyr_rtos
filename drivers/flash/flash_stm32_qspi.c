@@ -777,6 +777,14 @@ flash_stm32_qspi_get_parameters(struct device const* dev) {
     return (&flash_stm32_qspi_parameters);
 }
 
+static int flash_stm32_qspi_get_size(const struct device* dev, uint64_t* size) {
+    const struct flash_stm32_qspi_config *dev_cfg = dev->config;
+
+    *size = (uint64_t)dev_cfg->flash_size;
+
+    return (0);
+}
+
 static void flash_stm32_qspi_isr(struct device const* dev) {
     struct flash_stm32_qspi_data* dev_data = dev->data;
 
@@ -906,6 +914,7 @@ static const struct flash_driver_api flash_stm32_qspi_driver_api = {
     .write          = flash_stm32_qspi_write,
     .erase          = flash_stm32_qspi_erase,
     .get_parameters = flash_stm32_qspi_get_parameters,
+    .get_size       = flash_stm32_qspi_get_size,
     #if defined(CONFIG_FLASH_PAGE_LAYOUT)
     .page_layout = flash_stm32_qspi_pages_layout,
     #endif
