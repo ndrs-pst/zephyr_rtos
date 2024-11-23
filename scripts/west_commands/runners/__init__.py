@@ -5,7 +5,7 @@
 import importlib
 import logging
 
-from runners.core import ZephyrBinaryRunner, MissingProgram
+from runners.core import ZephyrBinaryRunner
 
 _logger = logging.getLogger('runners')
 
@@ -73,6 +73,6 @@ def get_runner_cls(runner):
     for cls in ZephyrBinaryRunner.get_runners():
         if cls.name() == runner:
             return cls
-    raise ValueError('unknown runner "{}"'.format(runner))
+    raise ValueError(f'unknown runner "{runner}"')
 
 __all__ = ['ZephyrBinaryRunner', 'get_runner_cls']

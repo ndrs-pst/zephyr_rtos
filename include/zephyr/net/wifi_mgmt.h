@@ -51,6 +51,12 @@ extern "C" {
 #define WIFI_MGMT_SCAN_CHAN_MAX_MANUAL  32
 #endif /* CONFIG_WIFI_MGMT_SCAN_CHAN_MAX_MANUAL */
 
+#ifdef CONFIG_WIFI_ENT_IDENTITY_MAX_USERS
+#define WIFI_ENT_IDENTITY_MAX_USERS CONFIG_WIFI_ENT_IDENTITY_MAX_USERS
+#else
+#define WIFI_ENT_IDENTITY_MAX_USERS 1
+#endif /* CONFIG_WIFI_ENT_IDENTITY_MAX_USERS */
+
 #define WIFI_MGMT_BAND_STR_SIZE_MAX 8
 #define WIFI_MGMT_SCAN_MAX_BSS_CNT  65535
 
@@ -123,6 +129,8 @@ enum net_request_wifi_cmd {
     NET_REQUEST_WIFI_CMD_NEIGHBOR_REP_COMPLETE,
     /** Specific scan */
     NET_REQUEST_WIFI_CMD_CANDIDATE_SCAN,
+    /** AP WPS config */
+    NET_REQUEST_WIFI_CMD_AP_WPS_CONFIG,
     /** @cond INTERNAL_HIDDEN */
     NET_REQUEST_WIFI_CMD_MAX
     /** @endcond */
@@ -584,7 +592,7 @@ struct wifi_connect_req_params {
     uint8_t suiteb_type;
 
     /** eap version */
-    uint8_t eap_ver;
+    int eap_ver;
 
     /** Identity for EAP */
     const uint8_t *eap_identity;
@@ -600,6 +608,18 @@ struct wifi_connect_req_params {
 
     /** Fast BSS Transition used */
     bool ft_used;
+
+    /** Number of EAP users */
+    int nusers;
+
+    /** Number of EAP passwds */
+    uint8_t passwds;
+
+    /** User Identities */
+    const uint8_t *identities[WIFI_ENT_IDENTITY_MAX_USERS];
+
+    /** User Passwords */
+    const uint8_t *passwords[WIFI_ENT_IDENTITY_MAX_USERS];
 };
 
 /** @brief Wi-Fi connect result codes. To be overlaid on top of \ref wifi_status
@@ -924,6 +944,24 @@ struct wifi_enterprise_creds_params {
 
     /** Phase2 Client key length */
     uint32_t client_key2_len;
+
+    /** Server certification */
+    uint8_t* server_cert;
+
+    /** Server certification length */
+    uint32_t server_cert_len;
+
+    /** Server key */
+    uint8_t* server_key;
+
+    /** Server key length */
+    uint32_t server_key_len;
+
+    /** Diffie–Hellman parameter */
+    uint8_t* dh_param;
+
+    /** Diffie–Hellman parameter length */
+    uint32_t dh_param_len;
 };
 
 /** @brief Wi-Fi power save configuration */
