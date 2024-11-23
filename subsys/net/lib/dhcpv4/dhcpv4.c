@@ -44,7 +44,7 @@ LOG_MODULE_REGISTER(net_dhcpv4, CONFIG_NET_DHCPV4_LOG_LEVEL);
 static K_MUTEX_DEFINE(lock);
 
 static sys_slist_t dhcpv4_ifaces;
-static struct k_work_delayable timeout_work;
+static struct k_work_delayable dhcpv4_timeout_work;
 
 static struct net_mgmt_event_callback mgmt4_if_cb;
 #if defined(CONFIG_NET_IPV4_ACD)
@@ -379,7 +379,7 @@ static void dhcpv4_immediate_timeout(struct net_if_dhcpv4 *dhcpv4)
 	NET_DBG("force timeout dhcpv4=%p", dhcpv4);
 	dhcpv4->timer_start = k_uptime_get() - 1;
 	dhcpv4->request_time = 0U;
-	k_work_reschedule(&timeout_work, K_NO_WAIT);
+	k_work_reschedule(&dhcpv4_timeout_work, K_NO_WAIT);
 }
 
 /* Must be invoked with lock held. */
@@ -394,7 +394,7 @@ static void dhcpv4_set_timeout(struct net_if_dhcpv4 *dhcpv4,
 	 * event; also this timeout may replace the current timeout
 	 * event.  Delegate scheduling to the timeout manager.
 	 */
-	k_work_reschedule(&timeout_work, K_NO_WAIT);
+	k_work_reschedule(&dhcpv4_timeout_work, K_NO_WAIT);
 }
 
 /* Set a new timeout w/o updating base time. Used for RENEWING and REBINDING to
@@ -850,7 +850,7 @@ static uint32_t dhcpv4_manage_timers(struct net_if *iface, int64_t now)
 	return UINT32_MAX;
 }
 
-static void dhcpv4_timeout(struct k_work *work)
+static void dhcpv4_timeout_handler(struct k_work *work)
 {
 	uint32_t timeout_update = UINT32_MAX;
 	int64_t now = k_uptime_get();
@@ -877,7 +877,7 @@ static void dhcpv4_timeout(struct k_work *work)
 	if (timeout_update != UINT32_MAX) {
 		NET_DBG("Waiting for %us", timeout_update);
 
-		k_work_reschedule(&timeout_work,
+		k_work_reschedule(&dhcpv4_timeout_work,
 				  K_SECONDS(timeout_update));
 	}
 }
@@ -1848,7 +1848,7 @@ void net_dhcpv4_stop(struct net_if *iface)
 			/* Best effort cancel.  Handler is safe to invoke if
 			 * cancellation is unsuccessful.
 			 */
-			(void)k_work_cancel_delayable(&timeout_work);
+			(void)k_work_cancel_delayable(&dhcpv4_timeout_work);
 			net_mgmt_del_event_callback(&mgmt4_if_cb);
 #if defined(CONFIG_NET_IPV4_ACD)
 			net_mgmt_del_event_callback(&mgmt4_acd_cb);
@@ -1893,7 +1893,7 @@ int net_dhcpv4_init(void)
 		return ret;
 	}
 
-	k_work_init_delayable(&timeout_work, dhcpv4_timeout);
+	k_work_init_delayable(&dhcpv4_timeout_work, dhcpv4_timeout_handler);
 
 	/* Catch network interface UP or DOWN events and renew the address
 	 * if interface is coming back up again.
