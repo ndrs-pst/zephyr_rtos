@@ -36,6 +36,14 @@ Deprecated in this release
 Architectures
 *************
 
+* Common
+
+  * Introduced :kconfig:option:`CONFIG_ARCH_HAS_CUSTOM_CURRENT_IMPL`, which can be selected when
+    an architecture implemented and enabled its own :c:func:`arch_current_thread` and
+    :c:func:`arch_current_thread_set` functions for faster retrieval of the current CPU's thread
+    pointer. When enabled, ``_current`` variable will be routed to the
+    :c:func:`arch_current_thread` (:github:`80716`).
+
 * ARC
 
 * ARM
@@ -43,6 +51,9 @@ Architectures
 * ARM64
 
 * RISC-V
+
+  * Implements :c:func:`arch_current_thread_set` & :c:func:`arch_current_thread`, which can be enabled
+    by :kconfig:option:`CONFIG_RISCV_CURRENT_VIA_GP` (:github:`80716`).
 
 * Xtensa
 
