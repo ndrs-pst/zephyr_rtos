@@ -140,6 +140,9 @@ Drivers and Sensors
 * LED
 
   * Added a new set of devicetree based LED APIs, see :c:struct:`led_dt_spec`.
+  * lp5569: added use of auto-increment functionality.
+  * lp5569: implemented ``write_channels`` api.
+  * lp5569: demonstrate ``led_write_channels`` in the sample.
 
 * LED Strip
 
@@ -263,6 +266,18 @@ Libraries / Subsystems
 * Power management
 
 * Crypto
+
+  * The Kconfig symbol :kconfig:option:`CONFIG_MBEDTLS_PSA_STATIC_KEY_SLOTS` was
+    added to allow Mbed TLS to use statically allocated buffers to store key material
+    in its PSA Crypto core instead of heap-allocated ones. This can help reduce
+    (or remove, if no other component makes use of it) heap memory requirements
+    from the final application.
+
+  * The Kconfig symbol :kconfig:option:`CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT` was
+    added to allow selecting the number of key slots available in the Mbed TLS
+    implementation of the PSA Crypto core. It defaults to 16. Since each
+    slot consumes RAM memory even if unused, this value can be tweaked in order
+    to minimize RAM usage.
 
 * CMSIS-NN
 

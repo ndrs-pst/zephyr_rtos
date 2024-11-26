@@ -2203,7 +2203,7 @@ Release Notes:
   collaborators:
     - sachinthegreen
   files:
-    - drivers/wifi/nrfwifi/
+    - drivers/wifi/nrf_wifi/
     - dts/bindings/wifi/nordic,nrf70.yaml
     - dts/bindings/wifi/nordic,nrf70-qspi.yaml
     - dts/bindings/wifi/nordic,nrf70-spi.yaml
@@ -2998,7 +2998,7 @@ Networking:
     - subsys/net/lib/ptp/
     - samples/net/ptp/
   labels:
-    - "area: Networking"
+    - "area: PTP"
   tests:
     - sample.net.ptp
 
@@ -5056,6 +5056,16 @@ West:
   files: []
   labels:
     - "area: native port"
+
+"West project: nrf_wifi":
+  status: maintained
+  maintainers:
+    - krish2718
+    - sachinthegreen
+  files:
+    - modules/nrf_wifi/
+  labels:
+    - "area: Wi-Fi"
 
 "West project: open-amp":
   status: odd fixes

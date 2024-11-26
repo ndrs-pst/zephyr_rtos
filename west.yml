@@ -121,7 +121,7 @@ manifest:
       groups:
         - hal
     - name: cmsis-dsp
-      revision: 6489e771e9c405f1763b52d64a3f17a1ec488ace
+      revision: d80a49b2bb186317dc1db4ac88da49c0ab77e6e7
       path: modules/lib/cmsis-dsp
     - name: cmsis-nn
       revision: ea987c1ca661be723de83bd159aed815d6cbd430
@@ -157,7 +157,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 8d7054f34e6d05e2917410ff0630ee88f553521d
+      revision: 6605f649d151f255011c7dfdd35cd568caa871a4
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -188,7 +188,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 54bde38c6f6ffb3780b26ae728cf79426184384e
+      revision: ce87268bb5610b7e90acce3efa5c511e95aeeeae
       path: modules/hal/nordic
       groups:
         - hal
@@ -233,7 +233,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: beeb42f7bba0e4784b39b2738ea9a15f6bc122a1
+      revision: b2777c0d1eab2a362e201abd7dbfc11a06bdc1c2
       path: modules/hal/stm32
       groups:
         - hal
@@ -280,7 +280,7 @@ manifest:
       revision: 2b498e6f36d6b82ae1da12c8b7742e318624ecf5
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: a78176c6ff0733ba08018cba4447bd3f20de7978
+      revision: 4952e1328529ee549d412b498ea71c54f30aa3b1
       path: modules/crypto/mbedtls
       groups:
         - crypto
@@ -302,6 +302,9 @@ manifest:
     - name: nrf_hw_models
       revision: 3cfca0192ff84da919e9bc7978bcc2239cd6a395
       path: modules/bsim_hw_models/nrf_hw_models
+    - name: nrf_wifi
+      revision: f9e2abdb70761003912b1b929a37b536f68a91da
+      path: modules/lib/nrf_wifi
     - name: open-amp
       revision: b735edbc739ad59156eb55bb8ce2583d74537719
       path: modules/lib/open-amp

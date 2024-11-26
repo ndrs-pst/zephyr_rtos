@@ -484,6 +484,19 @@ static void z_thread_halt(struct k_thread* thread, k_spinlock_key_t key,
 void z_impl_k_thread_suspend(k_tid_t thread) {
     SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, suspend, thread);
 
+    /* Special case "suspend the current thread" as it doesn't
+     * need the async complexity below.
+     */
+    if ((thread == arch_current_thread()) && !arch_is_in_isr() && !IS_ENABLED(CONFIG_SMP)) {
+        k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+
+        z_mark_thread_as_suspended(thread);
+        dequeue_thread(thread);
+        update_cache(1);
+        z_swap(&_sched_spinlock, key);
+        return;
+    }
+
     (void) z_abort_thread_timeout(thread);
 
     k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
@@ -491,7 +504,6 @@ void z_impl_k_thread_suspend(k_tid_t thread) {
     if ((thread->base.thread_state & _THREAD_SUSPENDED) != 0U) {
 
         /* The target thread is already suspended. Nothing to do. */
-
         k_spin_unlock(&_sched_spinlock, key);
         return;
     }
