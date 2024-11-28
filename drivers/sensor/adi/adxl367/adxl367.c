@@ -890,7 +890,7 @@ static void adxl367_accel_convert(struct sensor_value *val, int16_t value,
 				enum adxl367_range range)
 #endif /*CONFIG_SENSOR_ASYNC_API*/
 {
-	int64_t micro_ms2 = value * (SENSOR_G * 250 / 10000 *
+	int64_t micro_ms2 = value * (SENSOR_G * 250 / 1000 *
 			  adxl367_scale_mul[range] / 1000);
 
 	val->val1 = micro_ms2 / 1000000;
@@ -903,10 +903,10 @@ void adxl367_temp_convert(struct sensor_value *val, int16_t value)
 static void adxl367_temp_convert(struct sensor_value *val, int16_t value)
 #endif /*CONFIG_SENSOR_ASYNC_API*/
 {
-	int64_t temp_data = (value + ADXL367_TEMP_OFFSET) * ADXL367_TEMP_SCALE;
+	int64_t temp_data = (value - ADXL367_TEMP_25C);
 
-	val->val1 = temp_data / ADXL367_TEMP_SCALE_DIV;
-	val->val2 = temp_data % ADXL367_TEMP_SCALE_DIV;
+	val->val1 = temp_data / 54 /*temp sensitivity LSB/C*/ + 25/*bias test conditions*/;
+	val->val2 = temp_data % 54 * 10000;
 }
 
 static int adxl367_channel_get(const struct device *dev,
@@ -932,6 +932,7 @@ static int adxl367_channel_get(const struct device *dev,
 		break;
 	case SENSOR_CHAN_DIE_TEMP:
 		adxl367_temp_convert(val, data->temp_val);
+		break;
 	default:
 		return -ENOTSUP;
 	}
