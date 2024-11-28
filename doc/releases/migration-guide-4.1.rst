@@ -89,6 +89,15 @@ Display
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
 
+Entropy
+=======
+
+* BT HCI based entropy driver now directly sends the HCI command to parse random
+  data instead of waiting for BT connection to be ready. This is helpful on
+  platforms where the BT controller owns the HW random generator and the application
+  processor needs to get random data before BT is fully enabled.
+  (:github:`79931`)
+
 GNSS
 ====
 
@@ -106,6 +115,30 @@ Pin Control
 
   * Renamed the ``compatible`` from ``nxp,kinetis-pinctrl`` to :dtcompatible:`nxp,port-pinctrl`.
   * Renamed the ``compatible`` from ``nxp,kinetis-pinmux`` to :dtcompatible:`nxp,port-pinmux`.
+  * Silabs Series 2 devices now use a new pinctrl driver selected by
+    :dtcompatible:`silabs,dbus-pinctrl`. This driver allows the configuration of GPIO properties
+    through device tree, rather than having them hard-coded for each supported signal. It also
+    supports all possible digital bus signals by including a binding header such as
+    :zephyr_file:`include/zephyr/dt-bindings/pinctrl/silabs/xg24-pinctrl.h`.
+
+    Pinctrl should now be configured like this:
+
+    .. code-block:: devicetree
+
+      #include <dt-bindings/pinctrl/silabs/xg24-pinctrl.h>
+
+      &pinctrl {
+        i2c0_default: i2c0_default {
+          group0 {
+            /* Pin selection(s) using bindings included above */
+            pins = <I2C0_SDA_PD2>, <I2C0_SCL_PD3>;
+            /* Shared properties for the group of pins */
+            drive-open-drain;
+            bias-pull-up;
+          };
+        };
+      };
+
 
 Sensors
 =======
@@ -117,9 +150,20 @@ Stepper
 =======
 
   * Renamed the ``compatible`` from ``zephyr,gpio-steppers`` to :dtcompatible:`zephyr,gpio-stepper`.
+  * Renamed the ``stepper_set_actual_position`` function to :c:func:`stepper_set_reference_position`.
 
 Regulator
 =========
+
+Video
+=====
+
+* The :file:`include/zephyr/drivers/video-controls.h` got updated to have video controls IDs (CIDs)
+  matching the definitions in the Linux kernel file ``include/uapi/linux/v4l2-controls.h``.
+  In most cases, removing the category prefix is enough: ``VIDEO_CID_CAMERA_GAIN`` becomes
+  ``VIDEO_CID_GAIN``.
+  The new ``video-controls.h`` source now contains description of each control ID to help
+  disambiguating.
 
 Bluetooth
 *********
@@ -129,6 +173,11 @@ Bluetooth HCI
 
 Bluetooth Mesh
 ==============
+
+* Following the beginnig of the deprecation process for the TinyCrypt crypto
+  library, Kconfig symbol :kconfig:option:`CONFIG_BT_MESH_USES_TINYCRYPT` was
+  set as deprecated. Default option for platforms that do not support TF-M
+  is :kconfig:option:`CONFIG_BT_MESH_USES_MBEDTLS_PSA`.
 
 Bluetooth Audio
 ===============
@@ -151,6 +200,19 @@ Bluetooth Classic
 
 Bluetooth Host
 ==============
+
+* :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT` has been deprecated. The number of ACL RX buffers is
+  now computed internally and is equal to :kconfig:option:`CONFIG_BT_MAX_CONN` + 1. If an application
+  needs more buffers, it can use the new :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT_EXTRA` to add
+  additional ones.
+
+  e.g. if :kconfig:option:`CONFIG_BT_MAX_CONN` was ``3`` and
+  :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT` was ``7`` then
+  :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT_EXTRA` should be set to ``7 - (3 + 1) = 3``.
+
+  .. warning::
+
+   The default value of :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT` has been set to 0.
 
 Bluetooth Crypto
 ================

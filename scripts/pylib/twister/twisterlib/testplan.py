@@ -168,7 +168,7 @@ class TestPlan:
         sub_tests = self.options.sub_test
         if sub_tests:
             for subtest in sub_tests:
-                _subtests = self.get_testsuite(subtest)
+                _subtests = self.get_testcase(subtest)
                 for _subtest in _subtests:
                     self.run_individual_testsuite.append(_subtest.name)
 
@@ -188,6 +188,8 @@ class TestPlan:
         num = self.add_testsuites(testsuite_filter=self.run_individual_testsuite)
         if num == 0:
             raise TwisterRuntimeError("No test cases found at the specified location...")
+        if self.load_errors:
+            raise TwisterRuntimeError(f"Found {self.load_errors} errors loading {num} test configurations.")
 
         self.find_subtests()
         # get list of scenarios we have parsed into one list
@@ -196,9 +198,6 @@ class TestPlan:
 
         self.report_duplicates()
         self.parse_configuration(config_file=self.env.test_config)
-
-        if self.load_errors:
-            raise TwisterRuntimeError("Errors while loading configurations")
 
         # handle quarantine
         ql = self.options.quarantine_list
@@ -605,10 +604,18 @@ class TestPlan:
                             suite.add_subcases(suite_dict, subcases, ztest_suite_names)
                         else:
                             suite.add_subcases(suite_dict)
+
                         if testsuite_filter:
                             scenario = os.path.basename(suite.name)
                             if suite.name and (suite.name in testsuite_filter or scenario in testsuite_filter):
                                 self.testsuites[suite.name] = suite
+                        elif suite.name in self.testsuites:
+                            msg = f"test suite '{suite.name}' in '{suite.yamlfile}' is already added"
+                            if suite.yamlfile == self.testsuites[suite.name].yamlfile:
+                                logger.debug(f"Skip - {msg}")
+                            else:
+                                msg = f"Duplicate {msg} from '{self.testsuites[suite.name].yamlfile}'"
+                                raise TwisterRuntimeError(msg)
                         else:
                             self.testsuites[suite.name] = suite
 
@@ -897,6 +904,12 @@ class TestPlan:
                     if ts.arch_exclude and plat.arch in ts.arch_exclude:
                         instance.add_filter("In test case arch exclude", Filters.TESTSUITE)
 
+                    if ts.vendor_allow and plat.vendor not in ts.vendor_allow:
+                        instance.add_filter("Not in test suite vendor allow list", Filters.TESTSUITE)
+
+                    if ts.vendor_exclude and plat.vendor in ts.vendor_exclude:
+                        instance.add_filter("In test suite vendor exclude", Filters.TESTSUITE)
+
                     if ts.platform_exclude and plat.name in ts.platform_exclude:
                         # works only when we have all platforms parsed, -p limits parsing...
                         if not platform_filter:
@@ -1088,6 +1101,13 @@ class TestPlan:
 
 
     def get_testsuite(self, identifier):
+        results = []
+        for _, ts in self.testsuites.items():
+            if ts.id == identifier:
+                results.append(ts)
+        return results
+
+    def get_testcase(self, identifier):
         results = []
         for _, ts in self.testsuites.items():
             for case in ts.testcases:
