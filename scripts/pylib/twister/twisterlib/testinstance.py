@@ -6,33 +6,34 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
-from enum import Enum
-import os
-import hashlib
-import random
-import logging
-import glob
-import csv
 
-from twisterlib.environment import TwisterEnv
-from twisterlib.testsuite import TestCase, TestSuite
-from twisterlib.platform import Platform
-from twisterlib.error import BuildError, StatusAttributeError
-from twisterlib.size_calc import SizeCalculator
-from twisterlib.statuses import TwisterStatus
-from twisterlib.handlers import (
-    Handler,
-    SimulationHandler,
-    BinaryHandler,
-    QEMUHandler,
-    QEMUWinHandler,
-    DeviceHandler,
-)
+import csv
+import glob
+import hashlib
+import logging
+import os
+import random
+from enum import Enum
+
 from twisterlib.constants import (
     SUPPORTED_SIMS,
     SUPPORTED_SIMS_IN_PYTEST,
     SUPPORTED_SIMS_WITH_EXEC,
 )
+from twisterlib.environment import TwisterEnv
+from twisterlib.error import BuildError, StatusAttributeError
+from twisterlib.handlers import (
+    BinaryHandler,
+    DeviceHandler,
+    Handler,
+    QEMUHandler,
+    QEMUWinHandler,
+    SimulationHandler,
+)
+from twisterlib.platform import Platform
+from twisterlib.size_calc import SizeCalculator
+from twisterlib.statuses import TwisterStatus
+from twisterlib.testsuite import TestCase, TestSuite
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -69,9 +70,15 @@ class TestInstance:
         if testsuite.detailed_test_id:
             self.build_dir = os.path.join(outdir, platform.normalized_name, testsuite.name)
         else:
-            # if suite is not in zephyr, keep only the part after ".." in reconstructed dir structure
+            # if suite is not in zephyr,
+            # keep only the part after ".." in reconstructed dir structure
             source_dir_rel = testsuite.source_dir_rel.rsplit(os.pardir+os.path.sep, 1)[-1]
-            self.build_dir = os.path.join(outdir, platform.normalized_name, source_dir_rel, testsuite.name)
+            self.build_dir = os.path.join(
+                outdir,
+                platform.normalized_name,
+                source_dir_rel,
+                testsuite.name
+            )
         self.run_id = self._get_run_id()
         self.domains = None
         # Instance need to use sysbuild if a given suite or a platform requires it
@@ -91,7 +98,7 @@ class TestInstance:
                 self.recording.extend(recording)
 
             filename = os.path.join(self.build_dir, fname_csv)
-            with open(filename, "wt") as csvfile:
+            with open(filename, 'w') as csvfile:
                 cw = csv.DictWriter(csvfile,
                                     fieldnames = self.recording[0].keys(),
                                     lineterminator = os.linesep,
@@ -109,8 +116,8 @@ class TestInstance:
         try:
             key = value.name if isinstance(value, Enum) else value
             self._status = TwisterStatus[key]
-        except KeyError:
-            raise StatusAttributeError(self.__class__, value)
+        except KeyError as err:
+            raise StatusAttributeError(self.__class__, value) from err
 
     def add_filter(self, reason, filter_type):
         self.filters.append({'type': filter_type, 'reason': reason })
@@ -130,7 +137,7 @@ class TestInstance:
         run_id = ""
         run_id_file = os.path.join(self.build_dir, "run_id.txt")
         if os.path.exists(run_id_file):
-            with open(run_id_file, "r") as fp:
+            with open(run_id_file) as fp:
                 run_id = fp.read()
         else:
             hash_object = hashlib.md5(self.name.encode())
@@ -280,7 +287,9 @@ class TestInstance:
 
         # check if test is runnable in pytest
         if self.testsuite.harness == 'pytest':
-            target_ready = bool(filter == 'runnable' or simulator and simulator.name in SUPPORTED_SIMS_IN_PYTEST)
+            target_ready = bool(
+                filter == 'runnable' or simulator and simulator.name in SUPPORTED_SIMS_IN_PYTEST
+            )
 
         if filter != 'runnable' and \
                 simulator and \
@@ -299,7 +308,16 @@ class TestInstance:
 
         return testsuite_runnable and target_ready
 
-    def create_overlay(self, platform, enable_asan=False, enable_ubsan=False, enable_coverage=False, coverage_platform=[]):
+    def create_overlay(
+        self,
+        platform,
+        enable_asan=False,
+        enable_ubsan=False,
+        enable_coverage=False,
+        coverage_platform=None
+    ):
+        if coverage_platform is None:
+            coverage_platform = []
         # Create this in a "twister/" subdirectory otherwise this
         # will pass this overlay to kconfig.py *twice* and kconfig.cmake
         # will silently give that second time precedence over any
@@ -332,12 +350,10 @@ class TestInstance:
                     content = content + "\nCONFIG_COVERAGE=y"
                     content = content + "\nCONFIG_COVERAGE_DUMP=y"
 
-        if enable_asan:
-            if platform.type == "native":
+        if platform.type == "native":
+            if enable_asan:
                 content = content + "\nCONFIG_ASAN=y"
-
-        if enable_ubsan:
-            if platform.type == "native":
+            if enable_ubsan:
                 content = content + "\nCONFIG_UBSAN=y"
 
         if content:
@@ -348,7 +364,11 @@ class TestInstance:
 
         return content
 
-    def calculate_sizes(self, from_buildlog: bool = False, generate_warning: bool = True) -> SizeCalculator:
+    def calculate_sizes(
+        self,
+        from_buildlog: bool = False,
+        generate_warning: bool = True
+    ) -> SizeCalculator:
         """Get the RAM/ROM sizes of a test case.
 
         This can only be run after the instance has been executed by
@@ -396,4 +416,4 @@ class TestInstance:
         return buildlog_paths[0]
 
     def __repr__(self):
-        return "<TestSuite %s on %s>" % (self.testsuite.name, self.platform.name)
+        return f"<TestSuite {self.testsuite.name} on {self.platform.name}>"

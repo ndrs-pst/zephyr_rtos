@@ -762,8 +762,8 @@ struct wifi_iface_status {
     /** is TWT capable? */
     bool twt_capable;
 
-    /** The current 802.11 PHY data rate */
-    int current_phy_rate;
+    /** The current 802.11 PHY TX data rate (in Kbps) */
+    int current_phy_tx_rate;
 };
 
 /** @brief Wi-Fi power save parameters */

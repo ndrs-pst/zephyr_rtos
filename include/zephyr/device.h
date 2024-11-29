@@ -1221,7 +1221,7 @@ device_get_dt_nodelabels(const struct device* dev) {
 DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_DEVICE_DECLARE_INTERNAL)
 
 /** @brief Expands to the full type. */
-#define Z_DEVICE_API_TYPE(_class) _CONCAT(_class, _driver_api)
+#define Z_DEVICE_API_TYPE(_class) Z_CONCAT(_class, _driver_api)
 
 /** @endcond */
 

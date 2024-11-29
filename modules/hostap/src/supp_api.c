@@ -1538,8 +1538,10 @@ int supplicant_status(const struct device *dev, struct wifi_iface_status *status
 			ret = z_wpa_ctrl_signal_poll(&signal_poll);
 			if (!ret) {
 				status->rssi = signal_poll.rssi;
+				status->current_phy_tx_rate = signal_poll.current_txrate;
 			} else {
-				wpa_printf(MSG_WARNING, "%s:Failed to read RSSI", __func__);
+				wpa_printf(MSG_WARNING, "%s: Failed to read signal poll info",
+						   __func__);
 			}
 		}
 
@@ -1567,15 +1569,6 @@ int supplicant_status(const struct device *dev, struct wifi_iface_status *status
 		}
 
 		os_free(conn_info);
-
-		ret = wpa_drv_signal_poll(wpa_s, si);
-		if (!ret) {
-			status->current_phy_rate = si->current_txrate;
-		} else {
-			wpa_printf(MSG_WARNING, "%s: Failed to get signal info\n", __func__);
-			status->current_phy_rate = 0;
-			ret = 0;
-		}
 	} else {
 		ret = 0;
 	}

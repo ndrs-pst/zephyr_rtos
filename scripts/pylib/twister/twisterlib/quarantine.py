@@ -7,10 +7,10 @@ from __future__ import annotations
 
 import logging
 import re
-import yaml
-
-from pathlib import Path
 from dataclasses import dataclass, field
+from pathlib import Path
+
+import yaml
 
 try:
     from yaml import CSafeLoader as SafeLoader
@@ -28,7 +28,9 @@ class QuarantineException(Exception):
 class Quarantine:
     """Handle tests under quarantine."""
 
-    def __init__(self, quarantine_list=[]) -> None:
+    def __init__(self, quarantine_list=None) -> None:
+        if quarantine_list is None:
+            quarantine_list = []
         self.quarantine = QuarantineData()
         for quarantine_file in quarantine_list:
             self.quarantine.extend(QuarantineData.load_data_from_yaml(quarantine_file))
@@ -36,7 +38,7 @@ class Quarantine:
     def get_matched_quarantine(self, testname, platform, architecture, simulator):
         qelem = self.quarantine.get_matched_quarantine(testname, platform, architecture, simulator)
         if qelem:
-            logger.debug('%s quarantined with reason: %s' % (testname, qelem.comment))
+            logger.debug(f'{testname} quarantined with reason: {qelem.comment}')
             return qelem.comment
         return None
 
@@ -94,7 +96,7 @@ class QuarantineData:
     @classmethod
     def load_data_from_yaml(cls, filename: str | Path) -> QuarantineData:
         """Load quarantine from yaml file."""
-        with open(filename, 'r', encoding='UTF-8') as yaml_fd:
+        with open(filename, encoding='UTF-8') as yaml_fd:
             qlist_raw_data: list[dict] = yaml.load(yaml_fd, Loader=SafeLoader)
         try:
             if not qlist_raw_data:
@@ -123,11 +125,15 @@ class QuarantineData:
             if (qelem.platforms
                     and (matched := _is_element_matched(platform, qelem.re_platforms)) is False):
                 continue
-            if (qelem.architectures
-                    and (matched := _is_element_matched(architecture, qelem.re_architectures)) is False):
+            if (
+                qelem.architectures
+                and (matched := _is_element_matched(architecture, qelem.re_architectures)) is False
+            ):
                 continue
-            if (qelem.simulations
-                    and (matched := _is_element_matched(simulator_name, qelem.re_simulations)) is False):
+            if (
+                qelem.simulations
+                and (matched := _is_element_matched(simulator_name, qelem.re_simulations)) is False
+            ):
                 continue
 
             if matched:
@@ -137,7 +143,4 @@ class QuarantineData:
 
 def _is_element_matched(element: str, list_of_elements: list[re.Pattern]) -> bool:
     """Return True if given element is matching to any of elements from the list"""
-    for pattern in list_of_elements:
-        if pattern.fullmatch(element):
-            return True
-    return False
+    return any(pattern.fullmatch(element) for pattern in list_of_elements)
