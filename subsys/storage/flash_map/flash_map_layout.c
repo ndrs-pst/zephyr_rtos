@@ -76,36 +76,39 @@ static bool get_sectors_cb(const struct flash_pages_info* info, void* datav) {
     return (true);
 }
 
-int flash_area_get_sectors(int fa_id, uint32_t* count, struct flash_sector* sectors) {
-    struct layout_data data;
+int flash_area_get_sectors(int idx, uint32_t* cnt, struct flash_sector* ret) {
+    const struct flash_area* fa;
     int rc;
-    const struct device* flash_dev;
-    const struct flash_area *fa;
 
-    rc = flash_area_open(fa_id, &fa);
+    rc = flash_area_open(idx, &fa);
     if ((rc < 0) || (fa == NULL)) {
         return (-EINVAL);
     }
 
-    data.area_idx = fa_id;
+    rc = flash_area_sectors(fa, cnt, ret);
+    flash_area_close(fa);
+
+    return (rc);
+}
+
+int flash_area_sectors(const struct flash_area* fa, uint32_t* cnt, struct flash_sector* ret) {
+    struct layout_data data;
+    const struct device* flash_dev;
+
     data.area_off = fa->fa_off;
     data.area_len = fa->fa_size;
 
-    data.ret     = sectors;
+    data.ret     = ret;
     data.ret_idx = 0U;
-    data.ret_len = *count;
+    data.ret_len = *cnt;
     data.status  = 0;
 
     flash_dev = fa->fa_dev;
-    flash_area_close(fa);
-    if (flash_dev == NULL) {
-        return (-ENODEV);
-    }
 
     flash_page_foreach(flash_dev, get_sectors_cb, &data);
 
     if (data.status == 0) {
-        *count = data.ret_idx;
+        *cnt = data.ret_idx;
     }
 
     return (data.status);
