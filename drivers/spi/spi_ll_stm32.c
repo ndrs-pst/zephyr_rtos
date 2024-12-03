@@ -1537,7 +1537,7 @@ static int spi_stm32_transceive_async(const struct device* dev,
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static struct spi_driver_api DT_CONST api_funcs = {
+static DEVICE_API(spi, api_funcs) = {
     .transceive = spi_stm32_transceive,
     #ifdef CONFIG_SPI_ASYNC
     .transceive_async = spi_stm32_transceive_async,

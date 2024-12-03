@@ -1395,7 +1395,7 @@ static int sdhc_esp32_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sdhc_driver_api sdhc_api = {
+static DEVICE_API(sdhc, sdhc_api) = {
 	.reset = sdhc_esp32_reset,
 	.request = sdhc_esp32_request,
 	.set_io = sdhc_esp32_set_io,

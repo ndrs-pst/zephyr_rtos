@@ -909,7 +909,7 @@ static void flash_stm32_qspi_pages_layout(struct device const* dev,
 }
 #endif
 
-static const struct flash_driver_api flash_stm32_qspi_driver_api = {
+static DEVICE_API(flash, flash_stm32_qspi_driver_api) = {
     .read           = flash_stm32_qspi_read,
     .write          = flash_stm32_qspi_write,
     .erase          = flash_stm32_qspi_erase,

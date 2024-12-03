@@ -1231,7 +1231,7 @@ DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_DEVICE_DECLARE_INTERNAL)
  * @param _class The device API class.
  * @param _name The API instance name.
  */
-#define DEVICE_API(_class, _name) const STRUCT_SECTION_ITERABLE(Z_DEVICE_API_TYPE(_class), _name)
+#define DEVICE_API(_class, _name) DT_CONST STRUCT_SECTION_ITERABLE(Z_DEVICE_API_TYPE(_class), _name)
 
 /**
  * @brief Expands to the pointer of a device's API for a given class.

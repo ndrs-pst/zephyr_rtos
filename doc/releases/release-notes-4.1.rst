@@ -93,6 +93,9 @@ Boards & SoC Support
 
 * Made these board changes:
 
+  * All HWMv1 board name aliases which were added as deprecated in v3.7 are now removed
+    (:github:`82247`).
+
 * Added support for the following shields:
 
 Build system and Infrastructure
@@ -262,6 +265,8 @@ USB
 
 Devicetree
 **********
+
+* Added :c:macro:`DT_ANY_INST_HAS_BOOL_STATUS_OKAY`.
 
 Kconfig
 *******

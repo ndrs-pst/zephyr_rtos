@@ -174,7 +174,7 @@ static int mdio_stm32_init(const struct device* dev) {
     return (0);
 }
 
-static struct mdio_driver_api const mdio_stm32_driver_api = {
+static DEVICE_API(mdio, mdio_stm32_driver_api) = {
     .read        = mdio_stm32_read,
     .write       = mdio_stm32_write,
     .read_c45    = mdio_stm32_read_c45,
