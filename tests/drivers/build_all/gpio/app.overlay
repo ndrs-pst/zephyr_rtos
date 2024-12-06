@@ -338,9 +338,9 @@
 				};
 			};
 
-			it8801_mfd: it8801@38 {
+			it8801_mfd: it8801@14 {
 				compatible = "ite,it8801-mfd";
-				reg = <0x38>;
+				reg = <0x14>;
 				irq-gpios = <&test_gpio 1 0>;
 				#address-cells = <1>;
 				#size-cells = <1>;
@@ -385,6 +385,31 @@
 				};
 			};
 
+			test_i2c_npm2100: pmic@15 {
+				compatible = "nordic,npm2100";
+				reg = <0x15>;
+
+				npm2100_gpio: gpio-controller {
+					compatible = "nordic,npm2100-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <2>;
+				};
+			};
+
+			test_i2c_aw9523b: aw9523b@16 {
+				status = "okay";
+				reg = <0x16>;
+				compatible = "awinic,aw9523b";
+
+				aw9523_gpio: gpio {
+					compatible = "awinic,aw9523b-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					int-gpios = <&test_gpio 0 0>;
+					reset-gpios = <&test_gpio 0 0>;
+				};
+			};
 		};
 
 		nct3807_alert_1 {

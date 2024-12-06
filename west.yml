@@ -189,7 +189,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 5fbccc3fa8341d0cd5a128bc94f23ee03b763239
+      revision: e0e48c4ec75595767a286389e2fcda72b21363b0
       path: modules/hal/nordic
       groups:
         - hal
@@ -215,7 +215,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 10326518701e25bf336a2eaeb8b5820110e4e6a3
+      revision: f77a8501c2adeec8eb98f51ee5c5c5aa095575a1
       groups:
         - hal
     - name: hal_rpi_pico
@@ -309,7 +309,7 @@ manifest:
       revision: fbc6e614686b69dfa56f9694350b9488cf83d3f7
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: f9e2abdb70761003912b1b929a37b536f68a91da
+      revision: 71261e2b719b98500b7741c3398a74a5fb631596
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: b735edbc739ad59156eb55bb8ce2583d74537719
@@ -341,7 +341,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: bceac6cdfccb41ef4e289b9dca17daad48cda270
+      revision: fa020a8b001843bb5a115bc4692eaf6787e3d1de
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
