@@ -26,7 +26,7 @@ static const struct args_index args_indx = {
 	.channel = 2,
 	.period  = 3,
 	.pulse   = 4,
-    .flags   = 5
+	.flags   = 5
 };
 
 static int cmd_cycles(const struct shell* sh, size_t argc, char** argv) {
@@ -40,7 +40,7 @@ static int cmd_cycles(const struct shell* sh, size_t argc, char** argv) {
 	dev = device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "PWM device not found");
-        return (-EINVAL);
+		return (-EINVAL);
 	}
 
 	channel = strtoul(argv[args_indx.channel], NULL, 0);
@@ -57,7 +57,7 @@ static int cmd_cycles(const struct shell* sh, size_t argc, char** argv) {
 		return err;
 	}
 
-    return (0);
+	return (0);
 }
 
 static int cmd_usec(const struct shell* sh, size_t argc, char** argv) {
@@ -85,15 +85,15 @@ static int cmd_usec(const struct shell* sh, size_t argc, char** argv) {
 	err = pwm_set(dev, channel, PWM_USEC(period), PWM_USEC(pulse), flags);
 	if (err) {
 		shell_error(sh, "failed to setup PWM (err %d)", err);
-        return (err);
+		return (err);
 	}
 
-    return (0);
+	return (0);
 }
 
 static int cmd_nsec(const struct shell* sh, size_t argc, char** argv) {
 	pwm_flags_t flags = 0;
-    const struct device* dev;
+	const struct device* dev;
 	uint32_t period;
 	uint32_t pulse;
 	uint32_t channel;
@@ -102,7 +102,7 @@ static int cmd_nsec(const struct shell* sh, size_t argc, char** argv) {
 	dev = device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "PWM device not found");
-        return (-EINVAL);
+		return (-EINVAL);
 	}
 
 	channel = strtoul(argv[args_indx.channel], NULL, 0);
@@ -116,18 +116,35 @@ static int cmd_nsec(const struct shell* sh, size_t argc, char** argv) {
 	err = pwm_set(dev, channel, period, pulse, flags);
 	if (err) {
 		shell_error(sh, "failed to setup PWM (err %d)", err);
-        return (err);
+		return (err);
 	}
 
-    return (0);
+	return (0);
 }
 
+static bool device_is_pwm_and_ready(const struct device *dev)
+{
+	return device_is_ready(dev) && DEVICE_API_IS(pwm, dev);
+}
+
+static void device_name_get(size_t idx, struct shell_static_entry *entry)
+{
+	const struct device *dev = shell_device_filter(idx, device_is_pwm_and_ready);
+
+	entry->syntax = (dev != NULL) ? dev->name : NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+}
+
+SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(pwm_cmds,
-	SHELL_CMD_ARG(cycles, NULL, "<device> <channel> <period in cycles> "
+	SHELL_CMD_ARG(cycles, &dsub_device_name, "<device> <channel> <period in cycles> "
 	              "<pulse width in cycles> [flags]", cmd_cycles, 5, 1),
-	SHELL_CMD_ARG(usec, NULL, "<device> <channel> <period in usec> "
+	SHELL_CMD_ARG(usec, &dsub_device_name, "<device> <channel> <period in usec> "
 	              "<pulse width in usec> [flags]", cmd_usec, 5, 1),
-	SHELL_CMD_ARG(nsec, NULL, "<device> <channel> <period in nsec> "
+	SHELL_CMD_ARG(nsec, &dsub_device_name, "<device> <channel> <period in nsec> "
 	              "<pulse width in nsec> [flags]", cmd_nsec, 5, 1),
 	SHELL_SUBCMD_SET_END
 );

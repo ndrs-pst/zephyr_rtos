@@ -48,15 +48,6 @@ __printf_like(1, 2) void bt_shell_fprintf_error(const char *fmt, ...);
 void bt_shell_hexdump(const uint8_t *data, size_t len);
 
 /**
- * @brief Prints the current command help.
- * (Bluetooth context specific)
- *
- * Function will print a help string with: the currently entered command
- * and subcommands (if they exist).
- */
-void bt_shell_help(void);
-
-/**
  * @brief Print info message to the shell.
  * (Bluetooth context specific)
  *

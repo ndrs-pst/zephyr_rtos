@@ -199,7 +199,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: c42d70dba969de09c0e43d3b26a3ffcb015f6f33
+      revision: 0ea9c65e8e14fe01c055e571ad2e6fe5337dc58d
       path: modules/hal/nxp
       groups:
         - hal
@@ -265,7 +265,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 14f350c2ad022529720cbf04432a825c28b469ec
+      revision: 4e4f601dae390263a91744db174fda4640d652cf
     - name: liblc3
       revision: 1a5938ebaca4f13fe79ce074f5dee079783aa29f
       path: modules/lib/liblc3
@@ -291,7 +291,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: ec3c32a5154cd0aa9776c3303548a0e85f158a02
+      revision: 0115c1c49d60939902cafad77e28a671f76da567
       path: bootloader/mcuboot
       groups:
         - bootloader
