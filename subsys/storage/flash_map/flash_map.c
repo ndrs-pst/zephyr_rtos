@@ -51,7 +51,10 @@ void flash_area_close(const struct flash_area* fa) {
 }
 
 int flash_area_read(const struct flash_area* fa, off_t off, void* dst, size_t len) {
-    if (!is_in_flash_area_bounds(fa, off, len)) {
+    bool is_in_bound;
+
+    is_in_bound = is_in_flash_area_bounds(fa, off, len);
+    if (is_in_bound == false) {
         return (-EINVAL);
     }
 
@@ -59,7 +62,10 @@ int flash_area_read(const struct flash_area* fa, off_t off, void* dst, size_t le
 }
 
 int flash_area_write(const struct flash_area* fa, off_t off, void const* src, size_t len) {
-    if (!is_in_flash_area_bounds(fa, off, len)) {
+    bool is_in_bound;
+
+    is_in_bound = is_in_flash_area_bounds(fa, off, len);
+    if (is_in_bound == false) {
         return (-EINVAL);
     }
 
@@ -67,7 +73,10 @@ int flash_area_write(const struct flash_area* fa, off_t off, void const* src, si
 }
 
 int flash_area_erase(const struct flash_area* fa, off_t off, size_t len) {
-    if (!is_in_flash_area_bounds(fa, off, len)) {
+    bool is_in_bound;
+
+    is_in_bound = is_in_flash_area_bounds(fa, off, len);
+    if (is_in_bound == false) {
         return (-EINVAL);
     }
 
@@ -75,7 +84,10 @@ int flash_area_erase(const struct flash_area* fa, off_t off, size_t len) {
 }
 
 int flash_area_flatten(const struct flash_area* fa, off_t off, size_t len) {
-    if (!is_in_flash_area_bounds(fa, off, len)) {
+    bool is_in_bound;
+
+    is_in_bound = is_in_flash_area_bounds(fa, off, len);
+    if (is_in_bound == false) {
         return (-EINVAL);
     }
 
@@ -87,7 +99,10 @@ uint32_t flash_area_align(const struct flash_area* fa) {
 }
 
 int flash_area_has_driver(const struct flash_area* fa) {
-    if (!device_is_ready(fa->fa_dev)) {
+    bool is_ready;
+
+    is_ready = device_is_ready(fa->fa_dev);
+    if (is_ready == false) {
         return (-ENODEV);
     }
 
