@@ -788,11 +788,11 @@ static struct spi_sam0_config DT_CONST spi_sam0_config_##n = {  \
         SPI_CONTEXT_INIT_SYNC(spi_sam0_dev_data_##n, ctx),  \
         SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)\
     };                                          \
-    DEVICE_DT_INST_DEFINE(n, spi_sam0_init, NULL,   \
-                          &spi_sam0_dev_data_##n,   \
-                          &spi_sam0_config_##n, POST_KERNEL, \
-                          CONFIG_SPI_INIT_PRIORITY, \
-                          &spi_sam0_driver_api);
+    SPI_DEVICE_DT_INST_DEFINE(n, spi_sam0_init, NULL,   \
+                              &spi_sam0_dev_data_##n,   \
+                              &spi_sam0_config_##n, POST_KERNEL, \
+                              CONFIG_SPI_INIT_PRIORITY, \
+                              &spi_sam0_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_SAM0_DEVICE_INIT)
 

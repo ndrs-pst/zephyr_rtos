@@ -23,7 +23,7 @@ DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_enable, const struct device *, bool);
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_is_moving, const struct device *, bool *);
 
-DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_move, const struct device *, int32_t);
+DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_move_by, const struct device *, int32_t);
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_set_max_velocity, const struct device *, uint32_t);
 
@@ -37,7 +37,7 @@ DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_set_reference_position, const struct de
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_get_actual_position, const struct device *, int32_t *);
 
-DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_set_target_position, const struct device *, int32_t);
+DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_move_to, const struct device *, int32_t);
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_run, const struct device *, enum stepper_direction,
 		       uint32_t);
@@ -90,14 +90,14 @@ static void fake_stepper_reset_rule_before(const struct ztest_unit_test *test, v
 	ARG_UNUSED(fixture);
 
 	RESET_FAKE(fake_stepper_enable);
-	RESET_FAKE(fake_stepper_move);
+	RESET_FAKE(fake_stepper_move_by);
 	RESET_FAKE(fake_stepper_is_moving);
 	RESET_FAKE(fake_stepper_set_max_velocity);
 	RESET_FAKE(fake_stepper_set_micro_step_res);
 	RESET_FAKE(fake_stepper_get_micro_step_res);
 	RESET_FAKE(fake_stepper_set_reference_position);
 	RESET_FAKE(fake_stepper_get_actual_position);
-	RESET_FAKE(fake_stepper_set_target_position);
+	RESET_FAKE(fake_stepper_move_to);
 	RESET_FAKE(fake_stepper_run);
 
 	/* Install custom fakes for the setter and getter functions */
@@ -126,14 +126,14 @@ static int fake_stepper_init(const struct device *dev)
 
 static DEVICE_API(stepper, fake_stepper_driver_api) = {
 	.enable = fake_stepper_enable,
-	.move = fake_stepper_move,
+	.move_by = fake_stepper_move_by,
 	.is_moving = fake_stepper_is_moving,
 	.set_max_velocity = fake_stepper_set_max_velocity,
 	.set_micro_step_res = fake_stepper_set_micro_step_res,
 	.get_micro_step_res = fake_stepper_get_micro_step_res,
 	.set_reference_position = fake_stepper_set_reference_position,
 	.get_actual_position = fake_stepper_get_actual_position,
-	.set_target_position = fake_stepper_set_target_position,
+	.move_to = fake_stepper_move_to,
 	.run = fake_stepper_run,
 	.set_event_callback = fake_stepper_set_event_callback,
 };

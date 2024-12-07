@@ -1822,10 +1822,10 @@ static int spi_stm32_pm_action(const struct device* dev,
                                                                 \
     PM_DEVICE_DT_INST_DEFINE(id, spi_stm32_pm_action);          \
                                                                 \
-    DEVICE_DT_INST_DEFINE(id, spi_stm32_init, PM_DEVICE_DT_INST_GET(id),    \
-                          &spi_stm32_dev_data_##id, &spi_stm32_cfg_##id,    \
-                          POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,\
-                          &api_funcs);                          \
+    SPI_DEVICE_DT_INST_DEFINE(id, spi_stm32_init, PM_DEVICE_DT_INST_GET(id), \
+                              &spi_stm32_dev_data_##id, &spi_stm32_cfg_##id, \
+                              POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, \
+                              &api_funcs);                      \
                                                                 \
     STM32_SPI_IRQ_HANDLER(id)
 

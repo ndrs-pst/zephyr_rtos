@@ -106,11 +106,11 @@ enum stepper_event {
 typedef int (*stepper_enable_t)(const struct device *dev, const bool enable);
 
 /**
- * @brief Move the stepper motor by a given number of micro_steps.
+ * @brief Move the stepper motor relatively by a given number of micro_steps.
  *
- * @see stepper_move() for details.
+ * @see stepper_move_by() for details.
  */
-typedef int (*stepper_move_t)(const struct device *dev, const int32_t micro_steps);
+typedef int (*stepper_move_by_t)(const struct device *dev, const int32_t micro_steps);
 
 /**
  * @brief Set the max velocity in micro_steps per seconds.
@@ -150,11 +150,11 @@ typedef int (*stepper_set_reference_position_t)(const struct device *dev, const 
 typedef int (*stepper_get_actual_position_t)(const struct device *dev, int32_t *value);
 
 /**
- * @brief Set the absolute target position of the stepper
+ * @brief Move the stepper motor absolutely by a given number of micro_steps.
  *
- * @see stepper_set_target_position() for details.
+ * @see stepper_move_to() for details.
  */
-typedef int (*stepper_set_target_position_t)(const struct device *dev, const int32_t value);
+typedef int (*stepper_move_to_t)(const struct device *dev, const int32_t micro_steps);
 
 /**
  * @brief Is the target position fo the stepper reached
@@ -190,13 +190,13 @@ typedef int (*stepper_set_event_callback_t)(const struct device *dev,
  */
 __subsystem struct stepper_driver_api {
 	stepper_enable_t enable;
-	stepper_move_t move;
+	stepper_move_by_t move_by;
 	stepper_set_max_velocity_t set_max_velocity;
 	stepper_set_micro_step_res_t set_micro_step_res;
 	stepper_get_micro_step_res_t get_micro_step_res;
 	stepper_set_reference_position_t set_reference_position;
 	stepper_get_actual_position_t get_actual_position;
-	stepper_set_target_position_t set_target_position;
+	stepper_move_to_t move_to;
 	stepper_is_moving_t is_moving;
 	stepper_run_t run;
 	stepper_set_event_callback_t set_event_callback;
@@ -227,19 +227,22 @@ static inline int z_impl_stepper_enable(const struct device *dev, const bool ena
 /**
  * @brief Set the micro_steps to be moved from the current position i.e. relative movement
  *
+ * @details The motor will move by the given number of micro_steps from the current position.
+ * This function is non-blocking.
+ *
  * @param dev pointer to the stepper motor controller instance
  * @param micro_steps target micro_steps to be moved from the current position
  *
  * @retval -EIO General input / output error
  * @retval	0 Success
  */
-__syscall int stepper_move(const struct device *dev, int32_t micro_steps);
+__syscall int stepper_move_by(const struct device *dev, int32_t micro_steps);
 
-static inline int z_impl_stepper_move(const struct device *dev, const int32_t micro_steps)
+static inline int z_impl_stepper_move_by(const struct device *dev, const int32_t micro_steps)
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
-	return api->move(dev, micro_steps);
+	return api->move_by(dev, micro_steps);
 }
 
 /**
@@ -365,23 +368,26 @@ static inline int z_impl_stepper_get_actual_position(const struct device *dev, i
 /**
  * @brief Set the absolute target position of the stepper
  *
+ * @details The motor will move to the given micro_steps position from the reference position.
+ * This function is non-blocking.
+ *
  * @param dev pointer to the stepper motor controller instance
- * @param value target position to set in micro_steps
+ * @param micro_steps target position to set in micro_steps
  *
  * @retval -EIO General input / output error
  * @retval -ENOSYS If not implemented by device driver
  * @retval 0 Success
  */
-__syscall int stepper_set_target_position(const struct device *dev, int32_t value);
+__syscall int stepper_move_to(const struct device *dev, int32_t micro_steps);
 
-static inline int z_impl_stepper_set_target_position(const struct device *dev, const int32_t value)
+static inline int z_impl_stepper_move_to(const struct device *dev, const int32_t micro_steps)
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
-	if (api->set_target_position == NULL) {
+	if (api->move_to == NULL) {
 		return -ENOSYS;
 	}
-	return api->set_target_position(dev, value);
+	return api->move_to(dev, micro_steps);
 }
 
 /**
@@ -411,6 +417,7 @@ static inline int z_impl_stepper_is_moving(const struct device *dev, bool *is_mo
  *
  * @details If velocity > 0, motor shall be set into motion and run incessantly until and unless
  * stalled or stopped using some other command, for instance, motor_enable(false).
+ * This function is non-blocking.
  *
  * @param dev pointer to the stepper motor controller instance
  * @param direction The direction to set

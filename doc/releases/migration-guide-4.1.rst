@@ -138,6 +138,13 @@ Interrupt Controller
 LED Strip
 =========
 
+MMU/MPU
+=======
+
+* Renamed the ``compatible`` from ``nxp,kinetis-mpu`` to :dtcompatible:`nxp,sysmpu` and added
+  its corresponding binding.
+* Renamed the Kconfig option ``CPU_HAS_NXP_MPU`` to :kconfig:option:`CPU_HAS_NXP_SYSMPU`.
+
 Pin Control
 ===========
 
@@ -180,11 +187,14 @@ Stepper
   * Renamed the ``compatible`` from ``zephyr,gpio-steppers`` to :dtcompatible:`zephyr,gpio-stepper`.
   * Renamed the ``stepper_set_actual_position`` function to :c:func:`stepper_set_reference_position`.
   * Renamed the ``stepper_enable_constant_velocity_mode`` function to :c:func:`stepper_run`.
+  * Renamed the ``stepper_move`` function to :c:func:`stepper_move_by`.
+  * Renamed the ``stepper_set_target_position`` function to :c:func:`stepper_move_to`.
 
 SPI
 ===
 
 * Renamed the ``compatible`` from ``nxp,imx-lpspi`` to :dtcompatible:`nxp,lpspi`.
+* Renamed the ``compatible`` from ``nxp,kinetis-dspi`` to :dtcompatible:`nxp,dspi`.
 
 Regulator
 =========
