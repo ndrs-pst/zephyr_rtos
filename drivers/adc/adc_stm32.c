@@ -1618,10 +1618,7 @@ static int adc_stm32_init(const struct device* dev) {
     #elif defined(CONFIG_SOC_SERIES_STM32H7X) || \
     defined(CONFIG_SOC_SERIES_STM32U5X) || \
     defined(CONFIG_SOC_SERIES_STM32WBAX)
-    /* Don't use LL_ADC_IsActiveFlag_LDORDY since not present in U5 LL (1.5.0)
-     * (internal issue 185106)
-     */
-    while ((READ_BIT(adc->ISR, LL_ADC_FLAG_LDORDY) != (LL_ADC_FLAG_LDORDY))) {
+    while (LL_ADC_IsActiveFlag_LDORDY(adc) == 0) {
         /* pass */
     }
     #else
