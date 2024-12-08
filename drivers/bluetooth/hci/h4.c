@@ -35,17 +35,17 @@ LOG_MODULE_REGISTER(bt_driver);
 struct h4_data {
 	struct {
 		struct net_buf *buf;
-		struct k_fifo   fifo;
+		struct k_fifo fifo;
 
-		uint16_t        remaining;
-		uint16_t        discard;
+		uint16_t remaining;
+		uint16_t discard;
 
-		bool            have_hdr;
-		bool            discardable;
+		bool have_hdr;
+		bool discardable;
 
-		uint8_t         hdr_len;
+		uint8_t hdr_len;
 
-		uint8_t         type;
+		uint8_t type;
 		union {
 			struct bt_hci_evt_hdr evt;
 			struct bt_hci_acl_hdr acl;
@@ -55,9 +55,9 @@ struct h4_data {
 	} rx;
 
 	struct {
-		uint8_t         type;
+		uint8_t type;
 		struct net_buf *buf;
-		struct k_fifo   fifo;
+		struct k_fifo fifo;
 	} tx;
 
 	bt_hci_recv_t recv;
@@ -218,7 +218,7 @@ static struct net_buf *get_rx(struct h4_data *h4, k_timeout_t timeout)
 	return NULL;
 }
 
-static void rx_thread(void *p1, void *p2, void *p3)
+static void h4_rx_thread(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
 	const struct h4_config *cfg = dev->config;
@@ -230,7 +230,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 	LOG_DBG("started");
 
-	while (1) {
+	while (true) {
 		LOG_DBG("rx.buf %p", h4->rx.buf);
 
 		/* We can only do the allocation if we know the initial
@@ -537,7 +537,7 @@ static int h4_open(const struct device *dev, bt_hci_recv_t recv)
 
 	tid = k_thread_create(cfg->rx_thread, cfg->rx_thread_stack,
 			      cfg->rx_thread_stack_size,
-			      rx_thread, (void *)dev, NULL, NULL,
+			      h4_rx_thread, (void *)dev, NULL, NULL,
 			      K_PRIO_COOP(CONFIG_BT_RX_PRIO),
 			      0, K_NO_WAIT);
 	k_thread_name_set(tid, "bt_rx_thread");
@@ -564,7 +564,7 @@ static int h4_setup(const struct device *dev, const struct bt_hci_setup_params *
 }
 #endif
 
-static DEVICE_API(bt_hci, h4_driver_api) = {
+static DEVICE_API(bt_hci, h4_driver_api) = { /* @see bt_hci_driver_api */
 	.open = h4_open,
 	.send = h4_send,
 #if defined(CONFIG_BT_HCI_SETUP)
