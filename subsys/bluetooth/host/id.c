@@ -283,7 +283,7 @@ static void le_rpa_invalidate(void)
 		if (bt_dev.id_count == 0) {
 			return;
 		}
-		bool rpa_expired_data[bt_dev.id_count];
+		bool rpa_expired_data[CONFIG_BT_ID_MAX];
 
 		bt_le_ext_adv_foreach(adv_rpa_invalidate, &rpa_expired_data);
 #if defined(CONFIG_BT_RPA_SHARING)

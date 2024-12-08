@@ -180,7 +180,6 @@ struct net_buf* bt_buf_get_evt(uint8_t evt, bool discardable, k_timeout_t timeou
 int bt_hci_recv(const struct device* dev, struct net_buf* buf) {
     ARG_UNUSED(dev);
 
-
     LOG_DBG("buf %p len %u", buf, buf->len);
 
     bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
@@ -343,7 +342,6 @@ void bt_hci_raw_cmd_ext_register(struct bt_hci_raw_cmd_ext* cmds, size_t size) {
 }
 
 int bt_enable_raw(struct k_fifo* rx_queue) {
-    struct bt_hci_driver const* drv = bt_dev.drv;
     int err;
 
     LOG_DBG("");
