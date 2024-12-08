@@ -85,16 +85,16 @@ static inline void h4_get_type(const struct device *dev)
 	switch (h4->rx.type) {
 	case BT_HCI_H4_EVT:
 		h4->rx.remaining = sizeof(h4->rx.evt);
-		h4->rx.hdr_len = h4->rx.remaining;
+		h4->rx.hdr_len = (uint8_t)h4->rx.remaining;
 		break;
 	case BT_HCI_H4_ACL:
 		h4->rx.remaining = sizeof(h4->rx.acl);
-		h4->rx.hdr_len = h4->rx.remaining;
+		h4->rx.hdr_len = (uint8_t)h4->rx.remaining;
 		break;
 	case BT_HCI_H4_ISO:
 		if (IS_ENABLED(CONFIG_BT_ISO)) {
 			h4->rx.remaining = sizeof(h4->rx.iso);
-			h4->rx.hdr_len = h4->rx.remaining;
+			h4->rx.hdr_len = (uint8_t)h4->rx.remaining;
 			break;
 		}
 		__fallthrough;
@@ -463,7 +463,7 @@ static inline void process_rx(const struct device *dev)
 		h4->rx.buf ? h4->rx.buf->len : 0);
 
 	if (h4->rx.discard) {
-		h4->rx.discard -= h4_discard(cfg->uart, h4->rx.discard);
+		h4->rx.discard -= (uint16_t)h4_discard(cfg->uart, h4->rx.discard);
 		return;
 	}
 
@@ -476,7 +476,7 @@ static inline void process_rx(const struct device *dev)
 
 static void bt_uart_isr(const struct device *uart, void *user_data)
 {
-	struct device *dev = user_data;
+	struct device const *dev = user_data;
 
 	while (uart_irq_update(uart) && uart_irq_is_pending(uart)) {
 		if (uart_irq_tx_ready(uart)) {
