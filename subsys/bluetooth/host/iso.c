@@ -194,12 +194,13 @@ static int hci_le_setup_iso_data_path(const struct bt_conn *iso, uint8_t dir,
 		return -EINVAL;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SETUP_ISO_PATH, sizeof(*cp) + path->cc_len);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SETUP_ISO_PATH,
+				BT_HCI_CP_LE_SETUP_ISO_PATH_SZ + path->cc_len);
 	if (!buf) {
 		return -ENOBUFS;
 	}
 
-	cp = net_buf_add(buf, sizeof(*cp));
+	cp = net_buf_add(buf, BT_HCI_CP_LE_SETUP_ISO_PATH_SZ);
 	cp->handle = sys_cpu_to_le16(iso->handle);
 	cp->path_dir = dir;
 	cp->path_id = path->pid;
@@ -1583,14 +1584,14 @@ static struct net_buf *hci_le_set_cig_params(const struct bt_iso_cig *cig,
 	int i, err;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_CIG_PARAMS,
-				sizeof(*req) + sizeof(*cis_param) * param->num_cis);
+				BT_HCI_CP_LE_SET_CIG_PARAMS_SZ + sizeof(*cis_param) * param->num_cis);
 	if (!buf) {
 		return NULL;
 	}
 
-	req = net_buf_add(buf, sizeof(*req));
+	req = net_buf_add(buf, BT_HCI_CP_LE_SET_CIG_PARAMS_SZ);
 
-	memset(req, 0, sizeof(*req));
+	memset(req, 0, BT_HCI_CP_LE_SET_CIG_PARAMS_SZ);
 
 	req->cig_id = cig->id;
 	req->c_latency = sys_cpu_to_le16(param->c_to_p_latency);
@@ -1672,14 +1673,15 @@ static struct net_buf *hci_le_set_cig_test_params(const struct bt_iso_cig *cig,
 	int err;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_CIG_PARAMS_TEST,
-				sizeof(*req) + sizeof(*cis_param) * param->num_cis);
+				BT_HCI_CP_LE_SET_CIG_PARAMS_TEST_SZ +
+				sizeof(*cis_param) * param->num_cis);
 	if (!buf) {
 		return NULL;
 	}
 
-	req = net_buf_add(buf, sizeof(*req));
+	req = net_buf_add(buf, BT_HCI_CP_LE_SET_CIG_PARAMS_TEST_SZ);
 
-	memset(req, 0, sizeof(*req));
+	memset(req, 0, BT_HCI_CP_LE_SET_CIG_PARAMS_TEST_SZ);
 
 	req->cig_id = cig->id;
 	sys_put_le24(param->c_to_p_interval, req->c_interval);
@@ -2168,9 +2170,9 @@ int bt_iso_cig_reconfigure(struct bt_iso_cig *cig, const struct bt_iso_cig_param
 
 	cig_rsp = (void *)rsp->data;
 
-	if (rsp->len < sizeof(*cig_rsp)) {
+	if (rsp->len < BT_HCI_RP_LE_SET_CIG_PARAMS_SZ) {
 		LOG_WRN("Unexpected response len to hci_le_set_cig_params %u != %zu", rsp->len,
-			sizeof(*cig_rsp));
+			BT_HCI_RP_LE_SET_CIG_PARAMS_SZ);
 		err = -EIO;
 		net_buf_unref(rsp);
 		restore_cig(cig, existing_num_cis);
@@ -2320,14 +2322,15 @@ static int hci_le_create_cis(const struct bt_iso_connect_param *param, size_t co
 	struct bt_hci_cp_le_create_cis *req;
 	struct net_buf *buf;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CREATE_CIS, sizeof(*req) + sizeof(*cis) * count);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CREATE_CIS,
+				BT_HCI_CP_LE_CREATE_CIS_SZ + sizeof(*cis) * count);
 	if (!buf) {
 		return -ENOBUFS;
 	}
 
-	req = net_buf_add(buf, sizeof(*req));
+	req = net_buf_add(buf, BT_HCI_CP_LE_CREATE_CIS_SZ);
 
-	memset(req, 0, sizeof(*req));
+	memset(req, 0, BT_HCI_CP_LE_CREATE_CIS_SZ);
 
 	/* Program the cis parameters */
 	for (size_t i = 0; i < count; i++) {
@@ -3266,12 +3269,13 @@ static int hci_le_big_create_sync(const struct bt_le_per_adv_sync *sync, struct 
 	int err;
 	uint8_t bit_idx = 0;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_BIG_CREATE_SYNC, sizeof(*req) + big->num_bis);
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_BIG_CREATE_SYNC,
+				BT_HCI_CP_LE_BIG_CREATE_SYNC_SZ + big->num_bis);
 	if (!buf) {
 		return -ENOBUFS;
 	}
 
-	req = net_buf_add(buf, sizeof(*req) + big->num_bis);
+	req = net_buf_add(buf, BT_HCI_CP_LE_BIG_CREATE_SYNC_SZ + big->num_bis);
 	req->big_handle = big->handle;
 	req->sync_handle = sys_cpu_to_le16(sync->handle);
 	req->encryption = param->encryption;

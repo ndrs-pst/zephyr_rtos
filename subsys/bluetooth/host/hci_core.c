@@ -244,10 +244,10 @@ void bt_send_one_host_num_completed_packets(uint16_t handle)
 	LOG_DBG("Reporting completed packet for handle %u", handle);
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS,
-				sizeof(*cp) + sizeof(*hc));
+				BT_HCI_CP_HOST_NUM_COMPLETED_PACKETS_SZ + sizeof(*hc));
 	BT_ASSERT_MSG(buf, "Unable to alloc for Host NCP");
 
-	cp = net_buf_add(buf, sizeof(*cp));
+	cp = net_buf_add(buf, BT_HCI_CP_HOST_NUM_COMPLETED_PACKETS_SZ);
 	cp->num_handles = sys_cpu_to_le16(1);
 
 	hc = net_buf_add(buf, sizeof(*hc));
@@ -562,10 +562,11 @@ static void hci_num_completed_packets(struct net_buf *buf)
 	struct bt_hci_evt_num_completed_packets *evt = (void *)buf->data;
 	int i;
 
-	if (sizeof(*evt) + sizeof(evt->h[0]) * evt->num_handles > buf->len) {
+	if (BT_HCI_EVT_NUM_COMPLETED_PACKETS_SZ + sizeof(evt->h[0]) * evt->num_handles >
+	    buf->len) {
 		LOG_ERR("evt num_handles (=%u) too large (%u > %u)",
 			evt->num_handles,
-			sizeof(*evt) + sizeof(evt->h[0]) * evt->num_handles,
+			BT_HCI_EVT_NUM_COMPLETED_PACKETS_SZ + sizeof(evt->h[0]) * evt->num_handles,
 			buf->len);
 		return;
 	}
@@ -707,14 +708,14 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 		   ((bt_dev.create_param.options &
 		      BT_CONN_LE_OPT_CODED) ? 1 : 0);
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_EXT_CREATE_CONN, sizeof(*cp) +
-				num_phys * sizeof(*phy));
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_EXT_CREATE_CONN,
+				BT_HCI_CP_LE_EXT_CREATE_CONN_SZ + num_phys * sizeof(*phy));
 	if (!buf) {
 		return -ENOBUFS;
 	}
 
-	cp = net_buf_add(buf, sizeof(*cp));
-	(void)memset(cp, 0, sizeof(*cp));
+	cp = net_buf_add(buf, BT_HCI_CP_LE_EXT_CREATE_CONN_SZ);
+	(void)memset(cp, 0, BT_HCI_CP_LE_EXT_CREATE_CONN_SZ);
 
 	if (use_filter) {
 		/* User Initiated procedure use fast scan parameters. */
@@ -778,13 +779,13 @@ int bt_le_create_conn_synced(const struct bt_conn *conn, const struct bt_le_ext_
 	}
 
 	/* There shall only be one Initiating_PHYs */
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_EXT_CREATE_CONN_V2, sizeof(*cp) + sizeof(*phy));
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_EXT_CREATE_CONN_V2, BT_HCI_CP_LE_EXT_CREATE_CONN_V2_SZ + sizeof(*phy));
 	if (!buf) {
 		return -ENOBUFS;
 	}
 
-	cp = net_buf_add(buf, sizeof(*cp));
-	(void)memset(cp, 0, sizeof(*cp));
+	cp = net_buf_add(buf, BT_HCI_CP_LE_EXT_CREATE_CONN_V2_SZ);
+	(void)memset(cp, 0, BT_HCI_CP_LE_EXT_CREATE_CONN_V2_SZ);
 
 	cp->subevent = subevent;
 	cp->adv_handle = adv->handle;
@@ -2727,7 +2728,7 @@ static void hci_vendor_event(struct net_buf *buf)
 static const struct event_handler meta_events[] = {
 #if defined(CONFIG_BT_OBSERVER)
 	EVENT_HANDLER(BT_HCI_EVT_LE_ADVERTISING_REPORT, bt_hci_le_adv_report,
-		      sizeof(struct bt_hci_evt_le_advertising_report)),
+		      BT_HCI_EVT_LE_ADVERTISING_REPORT_SZ),
 #endif /* CONFIG_BT_OBSERVER */
 #if defined(CONFIG_BT_CONN)
 	EVENT_HANDLER(BT_HCI_EVT_LE_CONN_COMPLETE, le_legacy_conn_complete,
@@ -2775,14 +2776,14 @@ static const struct event_handler meta_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_LE_SCAN_TIMEOUT, bt_hci_le_scan_timeout,
 		      0),
 	EVENT_HANDLER(BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT, bt_hci_le_adv_ext_report,
-		      sizeof(struct bt_hci_evt_le_ext_advertising_report)),
+		      BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT_SZ),
 #endif /* defined(CONFIG_BT_OBSERVER) */
 #if defined(CONFIG_BT_PER_ADV_SYNC)
 	EVENT_HANDLER(BT_HCI_EVT_LE_PER_ADV_SYNC_ESTABLISHED,
 		      bt_hci_le_per_adv_sync_established,
 		      sizeof(struct bt_hci_evt_le_per_adv_sync_established)),
 	EVENT_HANDLER(BT_HCI_EVT_LE_PER_ADVERTISING_REPORT, bt_hci_le_per_adv_report,
-		      sizeof(struct bt_hci_evt_le_per_advertising_report)),
+		      BT_HCI_EVT_LE_PER_ADVERTISING_REPORT_SZ),
 	EVENT_HANDLER(BT_HCI_EVT_LE_PER_ADV_SYNC_LOST, bt_hci_le_per_adv_sync_lost,
 		      sizeof(struct bt_hci_evt_le_per_adv_sync_lost)),
 #if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)
@@ -2810,7 +2811,7 @@ static const struct event_handler meta_events[] = {
 #if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
 	EVENT_HANDLER(BT_HCI_EVT_LE_BIG_SYNC_ESTABLISHED,
 		      hci_le_big_sync_established,
-		      sizeof(struct bt_hci_evt_le_big_sync_established)),
+		      BT_HCI_EVT_LE_BIG_SYNC_ESTABLISHED_SZ),
 	EVENT_HANDLER(BT_HCI_EVT_LE_BIG_SYNC_LOST,
 		      hci_le_big_sync_lost,
 		      sizeof(struct bt_hci_evt_le_big_sync_lost)),
@@ -2820,11 +2821,11 @@ static const struct event_handler meta_events[] = {
 #endif /* CONFIG_BT_ISO_SYNC_RECEIVER */
 #if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX)
 	EVENT_HANDLER(BT_HCI_EVT_LE_CONNECTIONLESS_IQ_REPORT, bt_hci_le_df_connectionless_iq_report,
-		      sizeof(struct bt_hci_evt_le_connectionless_iq_report)),
+		      BT_HCI_EVT_LE_CONNECTIONLESS_IQ_REPORT_SZ),
 #endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX */
 #if defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
 	EVENT_HANDLER(BT_HCI_EVT_LE_CONNECTION_IQ_REPORT, bt_hci_le_df_connection_iq_report,
-		      sizeof(struct bt_hci_evt_le_connection_iq_report)),
+		      BT_HCI_EVT_LE_CONNECTION_IQ_REPORT_SZ),
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
 #if defined(CONFIG_BT_DF_CONNECTION_CTE_REQ)
 	EVENT_HANDLER(BT_HCI_EVT_LE_CTE_REQUEST_FAILED, bt_hci_le_df_cte_req_failed,
@@ -2844,7 +2845,7 @@ static const struct event_handler meta_events[] = {
 #endif /* CONFIG_BT_PATH_LOSS_MONITORING */
 #if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
 	EVENT_HANDLER(BT_HCI_EVT_LE_PER_ADVERTISING_REPORT_V2, bt_hci_le_per_adv_report_v2,
-		      sizeof(struct bt_hci_evt_le_per_advertising_report_v2)),
+		      BT_HCI_EVT_LE_PER_ADVERTISING_REPORT_V2_SZ),
 #if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)
 	EVENT_HANDLER(BT_HCI_EVT_LE_PAST_RECEIVED_V2, bt_hci_le_past_received_v2,
 		      sizeof(struct bt_hci_evt_le_past_received_v2)),
@@ -4077,7 +4078,7 @@ static const struct event_handler prio_events[] = {
 #if defined(CONFIG_BT_CONN_TX)
 	EVENT_HANDLER(BT_HCI_EVT_NUM_COMPLETED_PACKETS,
 		      hci_num_completed_packets,
-		      sizeof(struct bt_hci_evt_num_completed_packets)),
+		      BT_HCI_EVT_NUM_COMPLETED_PACKETS_SZ),
 #endif /* CONFIG_BT_CONN_TX */
 };
 
@@ -4670,13 +4671,13 @@ int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
 	struct net_buf *buf;
 	int err;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_CONFIGURE_DATA_PATH, sizeof(*cp) +
-				vs_config_len);
+	buf = bt_hci_cmd_create(BT_HCI_OP_CONFIGURE_DATA_PATH,
+				BT_HCI_CP_CONFIGURE_DATA_PATH_SZ + vs_config_len);
 	if (!buf) {
 		return -ENOBUFS;
 	}
 
-	cp = net_buf_add(buf, sizeof(*cp));
+	cp = net_buf_add(buf, BT_HCI_CP_CONFIGURE_DATA_PATH_SZ);
 	cp->data_path_dir = dir;
 	cp->data_path_id  = id;
 	cp->vs_config_len = vs_config_len;

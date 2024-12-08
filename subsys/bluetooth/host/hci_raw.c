@@ -230,9 +230,8 @@ static void bt_cmd_complete_ext(uint16_t op, uint8_t status) {
 }
 
 static uint8_t bt_send_ext(struct net_buf* buf) {
-    struct bt_hci_cmd_hdr* hdr;
+    struct bt_hci_cmd_hdr const* hdr;
     struct net_buf_simple_state state;
-    int i;
     uint16_t op;
     uint8_t status;
 
@@ -257,8 +256,8 @@ static uint8_t bt_send_ext(struct net_buf* buf) {
 
     op = sys_le16_to_cpu(hdr->opcode);
 
-    for (i = 0; i < cmd_ext_size; i++) {
-        struct bt_hci_raw_cmd_ext* cmd = &cmd_ext[i];
+    for (size_t i = 0U; i < cmd_ext_size; i++) {
+        struct bt_hci_raw_cmd_ext const* cmd = &cmd_ext[i];
 
         if (cmd->op == op) {
             if (buf->len < cmd->min_len) {
