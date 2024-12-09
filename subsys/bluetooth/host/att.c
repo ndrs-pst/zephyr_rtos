@@ -921,7 +921,7 @@ static uint8_t att_handle_rsp(struct bt_att_chan *chan, void *pdu, uint16_t len,
 			      int err)
 {
 	bt_att_func_t func = NULL;
-	void *params;
+	void *params = NULL;
 
 	LOG_DBG("chan %p err %d len %u: %s", chan, err, len, bt_hex(pdu, len));
 
@@ -1299,7 +1299,7 @@ static uint8_t att_find_type_req(struct bt_att_chan *chan, struct net_buf *buf)
 	}
 
 	return att_find_type_rsp(chan, start_handle, end_handle, value,
-				 buf->len);
+				 (uint8_t)buf->len);
 }
 
 static uint8_t err_to_att(int err)
@@ -1393,7 +1393,7 @@ static ssize_t att_chan_read(struct bt_att_chan *chan,
 				  net_buf_tailroom(frag));
 		}
 
-		read = attr->read(conn, attr, frag->data + frag->len, len,
+		read = attr->read(conn, attr, frag->data + frag->len, (uint16_t)len,
 				  offset);
 		if (read < 0) {
 			if (total) {

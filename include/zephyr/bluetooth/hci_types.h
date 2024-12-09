@@ -50,6 +50,7 @@ extern "C" {
 #define BT_HCI_PAWR_SUBEVENT_MAX        128
 
 #if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define ESHUTDOWN                       110         /* Can't send after socket shutdown */
 #define BT_ZERO_LEN_ARRAY               1
 #else
 #define BT_ZERO_LEN_ARRAY               0

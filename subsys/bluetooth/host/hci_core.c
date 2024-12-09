@@ -925,7 +925,7 @@ static void conn_handle_disconnected(uint16_t handle, uint8_t disconnect_reason)
 			/* Use invalid connection handle bits so that connection
 			 * handle 0 can be used as a valid non-zero handle.
 			 */
-			disconnected_handles[i] = ~BT_ACL_HANDLE_MASK | handle;
+			disconnected_handles[i] = (uint16_t)(~BT_ACL_HANDLE_MASK) | handle;
 			disconnected_handles_reason[i] = disconnect_reason;
 
 			return;
@@ -2696,6 +2696,14 @@ static const struct event_handler vs_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_VS_LE_CONNECTION_IQ_REPORT, bt_hci_le_vs_df_connection_iq_report,
 		      sizeof(struct bt_hci_evt_vs_le_connection_iq_report)),
 #endif /* CONFIG_BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES */
+
+#if !defined(CONFIG_BT_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES) && \
+    !defined(CONFIG_BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES)
+	/* #CUSTOM@NDRS Add dummy event handler */
+	EVENT_HANDLER(BT_HCI_EVT_VS_LE_CONNECTIONLESS_IQ_REPORT,
+		      bt_hci_le_vs_df_connectionless_iq_report,
+		      sizeof(struct bt_hci_evt_vs_le_connectionless_iq_report)),
+#endif
 };
 
 static void hci_vendor_event(struct net_buf *buf)
@@ -2715,7 +2723,7 @@ static void hci_vendor_event(struct net_buf *buf)
 #endif /* CONFIG_BT_HCI_VS_EVT_USER */
 
 	if (IS_ENABLED(CONFIG_BT_HCI_VS) && !handled) {
-		struct bt_hci_evt_vs *evt;
+		struct bt_hci_evt_vs const *evt;
 
 		evt = net_buf_pull_mem(buf, sizeof(*evt));
 
@@ -4456,9 +4464,9 @@ bool bt_is_ready(void)
 
 #define DEVICE_NAME_LEN (sizeof(CONFIG_BT_DEVICE_NAME) - 1)
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
-BUILD_ASSERT(DEVICE_NAME_LEN < CONFIG_BT_DEVICE_NAME_MAX);
+BUILD_ASSERT((DEVICE_NAME_LEN < CONFIG_BT_DEVICE_NAME_MAX), "build assert");
 #else
-BUILD_ASSERT(DEVICE_NAME_LEN < 248);
+BUILD_ASSERT((DEVICE_NAME_LEN < 248), "build assert");
 #endif
 
 int bt_set_name(const char *name)

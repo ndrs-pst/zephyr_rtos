@@ -66,7 +66,11 @@ struct gatt_sub {
 #if defined(CONFIG_BT_GATT_CLIENT)
 #define SUB_MAX (CONFIG_BT_MAX_PAIRED + CONFIG_BT_MAX_CONN)
 #else
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define SUB_MAX 1
+#else
 #define SUB_MAX 0
+#endif
 #endif /* CONFIG_BT_GATT_CLIENT */
 
 /**
@@ -96,7 +100,7 @@ static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	const char *name = bt_get_name();
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, name,
-				 strlen(name));
+				 (uint16_t)strlen(name));
 }
 
 #if defined(CONFIG_BT_DEVICE_NAME_GATT_WRITABLE)
@@ -184,17 +188,17 @@ static ssize_t write_appearance(struct bt_conn *conn, const struct bt_gatt_attr 
 #if defined (CONFIG_BT_GAP_PERIPHERAL_PREF_PARAMS)
 /* This checks if the range entered is valid */
 BUILD_ASSERT(!(CONFIG_BT_PERIPHERAL_PREF_MIN_INT > 3200 &&
-	     CONFIG_BT_PERIPHERAL_PREF_MIN_INT < 0xffff));
+	     CONFIG_BT_PERIPHERAL_PREF_MIN_INT < 0xffff), "build assert");
 BUILD_ASSERT(!(CONFIG_BT_PERIPHERAL_PREF_MAX_INT > 3200 &&
-	     CONFIG_BT_PERIPHERAL_PREF_MAX_INT < 0xffff));
+	     CONFIG_BT_PERIPHERAL_PREF_MAX_INT < 0xffff), "build assert");
 BUILD_ASSERT(!(CONFIG_BT_PERIPHERAL_PREF_TIMEOUT > 3200 &&
-	     CONFIG_BT_PERIPHERAL_PREF_TIMEOUT < 0xffff));
+	     CONFIG_BT_PERIPHERAL_PREF_TIMEOUT < 0xffff), "build assert");
 BUILD_ASSERT((CONFIG_BT_PERIPHERAL_PREF_MIN_INT == 0xffff) ||
 	     (CONFIG_BT_PERIPHERAL_PREF_MIN_INT <=
-	     CONFIG_BT_PERIPHERAL_PREF_MAX_INT));
+	     CONFIG_BT_PERIPHERAL_PREF_MAX_INT), "build assert");
 BUILD_ASSERT((CONFIG_BT_PERIPHERAL_PREF_TIMEOUT * 4U) >
 	     ((1U + CONFIG_BT_PERIPHERAL_PREF_LATENCY) *
-	      CONFIG_BT_PERIPHERAL_PREF_MAX_INT));
+	      CONFIG_BT_PERIPHERAL_PREF_MAX_INT), "build assert");
 
 static ssize_t read_ppcp(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
@@ -228,6 +232,18 @@ static ssize_t read_central_addr_res(struct bt_conn *conn,
 }
 #endif /* CONFIG_BT_CENTRAL && CONFIG_BT_PRIVACY */
 
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+BT_GATT_SERVICE_DEFINE(_2_gap_svc,
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_GAP),
+	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME, BT_GATT_CHRC_READ,
+		BT_GATT_PERM_READ, read_name, NULL, NULL),
+	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_APPEARANCE, GAP_APPEARANCE_PROPS,
+		GAP_APPEARANCE_PERMS, read_appearance,
+		GAP_APPEARANCE_WRITE_HANDLER, NULL),
+	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_PPCP, BT_GATT_CHRC_READ,
+		BT_GATT_PERM_READ, read_ppcp, NULL, NULL),
+	);
+#else
 BT_GATT_SERVICE_DEFINE(_2_gap_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_GAP),
 #if defined(CONFIG_BT_DEVICE_NAME_GATT_WRITABLE)
@@ -260,6 +276,7 @@ BT_GATT_SERVICE_DEFINE(_2_gap_svc,
 			       BT_GATT_PERM_READ, read_ppcp, NULL, NULL),
 #endif
 );
+#endif
 
 struct sc_data {
 	uint16_t start;
@@ -281,7 +298,7 @@ struct gatt_sc_cfg {
 #define SC_CFG_MAX 0
 #endif
 static struct gatt_sc_cfg sc_cfg[SC_CFG_MAX];
-BUILD_ASSERT(sizeof(struct sc_data) == sizeof(sc_cfg[0].data));
+BUILD_ASSERT(sizeof(struct sc_data) == sizeof(sc_cfg[0].data), "build assert");
 
 enum {
 	SC_RANGE_CHANGED,    /* SC range changed */
@@ -1168,6 +1185,26 @@ static void bt_gatt_pairing_complete(struct bt_conn *conn, bool bonded)
 }
 #endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
 
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+BT_GATT_SERVICE_DEFINE(_1_gatt_svc,
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_GATT),
+	/* Bluetooth 5.0, Vol3 Part G:
+	 * The Service Changed characteristic Attribute Handle on the server
+	 * shall not change if the server has a trusted relationship with any
+	 * client.
+	 */
+	BT_GATT_CHARACTERISTIC(BT_UUID_GATT_SC, BT_GATT_CHRC_INDICATE,
+		BT_GATT_PERM_NONE, NULL, NULL, NULL),
+	BT_GATT_CCC_MANAGED(&sc_ccc, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+	BT_GATT_CHARACTERISTIC(BT_UUID_GATT_CLIENT_FEATURES,
+		BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+		BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+		cf_read, cf_write, NULL),
+	BT_GATT_CHARACTERISTIC(BT_UUID_GATT_DB_HASH,
+		BT_GATT_CHRC_READ, BT_GATT_PERM_READ,
+		db_hash_read, NULL, NULL),
+);
+#else
 BT_GATT_SERVICE_DEFINE(_1_gatt_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_GATT),
 #if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
@@ -1195,6 +1232,7 @@ BT_GATT_SERVICE_DEFINE(_1_gatt_svc,
 #endif /* CONFIG_BT_GATT_CACHING */
 #endif /* CONFIG_BT_GATT_SERVICE_CHANGED */
 );
+#endif
 
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
 static uint8_t found_attr(const struct bt_gatt_attr *attr, uint16_t handle,
@@ -1499,7 +1537,7 @@ static void bt_gatt_service_init(void)
 	}
 
 	STRUCT_SECTION_FOREACH(bt_gatt_service_static, svc) {
-		last_static_handle += svc->attr_count;
+		last_static_handle += (uint16_t)svc->attr_count;
 	}
 }
 
@@ -1873,7 +1911,7 @@ uint16_t bt_gatt_attr_get_handle(const struct bt_gatt_attr *attr)
 		/* Skip ahead if start is not within service attributes array */
 		if ((attr < &static_svc->attrs[0]) ||
 		    (attr > &static_svc->attrs[static_svc->attr_count - 1])) {
-			handle += static_svc->attr_count;
+			handle += (uint16_t)static_svc->attr_count;
 			continue;
 		}
 
@@ -2056,8 +2094,6 @@ void bt_gatt_foreach_attr_type(uint16_t start_handle, uint16_t end_handle,
 			       const void *attr_data, uint16_t num_matches,
 			       bt_gatt_attr_func_t func, void *user_data)
 {
-	size_t i;
-
 	if (!num_matches) {
 		num_matches = UINT16_MAX;
 	}
@@ -2068,11 +2104,11 @@ void bt_gatt_foreach_attr_type(uint16_t start_handle, uint16_t end_handle,
 		STRUCT_SECTION_FOREACH(bt_gatt_service_static, static_svc) {
 			/* Skip ahead if start is not within service handles */
 			if (handle + static_svc->attr_count < start_handle) {
-				handle += static_svc->attr_count;
+				handle += (uint16_t)static_svc->attr_count;
 				continue;
 			}
 
-			for (i = 0; i < static_svc->attr_count; i++, handle++) {
+			for (size_t i = 0; i < static_svc->attr_count; i++, handle++) {
 				if (gatt_foreach_iter(&static_svc->attrs[i],
 						      handle, start_handle,
 						      end_handle, uuid,
@@ -2280,7 +2316,7 @@ ssize_t bt_gatt_attr_read_cud(struct bt_conn *conn,
 	const char *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
-				 strlen(value));
+				 (uint16_t)strlen(value));
 }
 
 struct gatt_cpf {
@@ -5696,7 +5732,11 @@ static struct bt_gatt_exchange_params gatt_exchange_params = {
 #if defined(CONFIG_BT_SETTINGS_CCC_STORE_MAX)
 #define CCC_STORE_MAX CONFIG_BT_SETTINGS_CCC_STORE_MAX
 #else /* defined(CONFIG_BT_SETTINGS_CCC_STORE_MAX) */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define CCC_STORE_MAX 1
+#else
 #define CCC_STORE_MAX 0
+#endif
 #endif /* defined(CONFIG_BT_SETTINGS_CCC_STORE_MAX) */
 
 static struct bt_gatt_ccc_cfg *ccc_find_cfg(struct _bt_gatt_ccc *ccc,
