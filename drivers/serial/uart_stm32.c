@@ -2359,7 +2359,7 @@ static struct uart_config uart_cfg_##index = {  \
                                     : UART_CFG_FLOW_CTRL_NONE,      \
 };                                          \
                                             \
-static const struct uart_stm32_config uart_stm32_cfg_##index = {    \
+static struct uart_stm32_config DT_CONST uart_stm32_cfg_##index = { \
     .usart            = (USART_TypeDef*)DT_INST_REG_ADDR(index),    \
     .reset            = RESET_DT_SPEC_GET(DT_DRV_INST(index)),      \
     .pclken           = pclken_##index,                             \
@@ -2401,3 +2401,71 @@ STM32_UART_CHECK_DT_STOP_BITS_0_5(index)    \
 STM32_UART_CHECK_DT_STOP_BITS_1_5(index)
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_UART_INIT)
+
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+#define STM32_UART_CFG_REG_INIT(id)       \
+    zephyr_gtest_spi_stm32_reg_init(&uart_stm32_cfg_##id);
+
+static void zephyr_gtest_spi_stm32_reg_init(struct uart_stm32_config* cfg) {
+    uintptr_t base_addr = (uintptr_t)cfg->usart;
+
+    switch (base_addr) {
+        case USART1_BASE : {
+            cfg->usart = (USART_TypeDef*)ut_mcu_usart1_ptr;
+            break;
+        }
+
+        case USART2_BASE : {
+            cfg->usart = (USART_TypeDef*)ut_mcu_usart2_ptr;
+            break;
+        }
+
+        case USART3_BASE : {
+            cfg->usart = (USART_TypeDef*)ut_mcu_usart3_ptr;
+            break;
+        }
+
+        case UART4_BASE : {
+            cfg->usart = (USART_TypeDef*)ut_mcu_usart4_ptr;
+            break;
+        }
+
+        case UART5_BASE : {
+            cfg->usart = (USART_TypeDef*)ut_mcu_usart5_ptr;
+            break;
+        }
+
+        case USART6_BASE : {
+            cfg->usart = (USART_TypeDef*)ut_mcu_usart6_ptr;
+            break;
+        }
+
+        case UART7_BASE : {
+            cfg->usart = (USART_TypeDef*)ut_mcu_usart7_ptr;
+            break;
+        }
+
+        case UART8_BASE : {
+            cfg->usart = (USART_TypeDef*)ut_mcu_usart8_ptr;
+            break;
+        }
+
+        case LPUART1_BASE : {
+            cfg->usart = (USART_TypeDef*)ut_mcu_lpuart1_ptr;
+            break;
+        }
+
+        default: {
+            break;
+        }
+    }
+}
+
+void zephyr_gtest_uart_stm32(void) {
+    DT_INST_FOREACH_STATUS_OKAY(STM32_UART_CFG_REG_INIT)
+}
+
+#endif
+

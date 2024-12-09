@@ -380,8 +380,10 @@ static size_t random_offset(size_t stack_size)
 static char *setup_thread_stack(struct k_thread *new_thread,
 				k_thread_stack_t *stack, size_t stack_size)
 {
-	size_t stack_obj_size, stack_buf_size;
-	char *stack_ptr, *stack_buf_start;
+	size_t stack_obj_size;
+	size_t stack_buf_size;
+	char *stack_ptr;
+	char *stack_buf_start;
 	size_t delta = 0;
 
 #ifdef CONFIG_USERSPACE
@@ -464,7 +466,7 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 	 */
 	*((uint32_t *)stack_buf_start) = STACK_SENTINEL;
 #endif /* CONFIG_STACK_SENTINEL */
-#ifdef CONFIG_THREAD_LOCAL_STORAGE
+#if defined(CONFIG_THREAD_LOCAL_STORAGE) && !defined(_MSC_VER) /* #CUSTOM@NDRS */
 	/* TLS is always last within the stack buffer */
 	delta += arch_tls_stack_setup(new_thread, stack_ptr);
 #endif /* CONFIG_THREAD_LOCAL_STORAGE */
