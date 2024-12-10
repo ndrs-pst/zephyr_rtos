@@ -2892,10 +2892,10 @@ static const struct event_handler meta_events[] = {
 			  sizeof(struct bt_hci_evt_le_cs_procedure_enable_complete)),
 	EVENT_HANDLER(BT_HCI_EVT_LE_CS_SUBEVENT_RESULT,
 		      bt_hci_le_cs_subevent_result,
-		      sizeof(struct bt_hci_evt_le_cs_subevent_result)),
+		      BT_HCI_EVT_LE_CS_SUBEVENT_RESULT_SZ),
 	EVENT_HANDLER(BT_HCI_EVT_LE_CS_SUBEVENT_RESULT_CONTINUE,
 		      bt_hci_le_cs_subevent_result_continue,
-		      sizeof(struct bt_hci_evt_le_cs_subevent_result_continue)),
+		      BT_HCI_EVT_LE_CS_SUBEVENT_RESULT_CONTINUE_SZ),
 #if defined(CONFIG_BT_CHANNEL_SOUNDING_TEST)
 	EVENT_HANDLER(BT_HCI_EVT_LE_CS_TEST_END_COMPLETE,
 		      bt_hci_le_cs_test_end_complete,

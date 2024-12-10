@@ -56,6 +56,10 @@ extern "C" {
 #define BT_ZERO_LEN_ARRAY               0
 #endif
 
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#pragma pack(push, 1)
+#endif
+
 /* Bluetooth spec v5.4 Vol 4, Part E - 5.4.3 HCI Synchronous Data Packets */
 struct bt_hci_sco_hdr {
 	uint16_t handle; /* 12 bit handle, 2 bit Packet Status Flag, 1 bit RFU */
@@ -2199,7 +2203,7 @@ struct bt_hci_cp_le_set_cig_params_test {
 	struct bt_hci_cis_params_test cis[BT_ZERO_LEN_ARRAY];
 } __packed;
 
-#define BT_HCI_RP_LE_SET_CIG_PARAMS_TEST_SZ     4
+#define BT_HCI_RP_LE_SET_CIG_PARAMS_TEST_SZ     3
 struct bt_hci_rp_le_set_cig_params_test {
 	uint8_t  status;
 	uint8_t  cig_id;
@@ -2721,7 +2725,7 @@ struct bt_hci_op_le_cs_test {
 	uint8_t channel_map_repetition;
 	uint16_t override_config;
 	uint8_t override_parameters_length;
-	uint8_t override_parameters_data[];
+	uint8_t override_parameters_data[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 #define BT_HCI_OP_LE_CS_CREATE_CONFIG BT_OP(BT_OGF_LE, 0x0090) /* 0x2090 */
@@ -3786,7 +3790,7 @@ struct bt_hci_le_cs_step_data_tone_info {
 /** Subevent result step data format: Mode 2 */
 struct bt_hci_le_cs_step_data_mode_2 {
 	uint8_t antenna_permutation_index;
-	struct bt_hci_le_cs_step_data_tone_info tone_info[];
+	struct bt_hci_le_cs_step_data_tone_info tone_info[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 /** Subevent result step data format: Mode 3 */
@@ -3806,7 +3810,7 @@ struct bt_hci_le_cs_step_data_mode_3 {
 	};
 	uint8_t packet_antenna;
 	uint8_t antenna_permutation_index;
-	struct bt_hci_le_cs_step_data_tone_info tone_info[];
+	struct bt_hci_le_cs_step_data_tone_info tone_info[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 /** Subevent result step data format: Mode 3 with sounding sequence RTT support */
@@ -3828,16 +3832,17 @@ struct bt_hci_le_cs_step_data_mode_3_ss_rtt {
 	uint8_t packet_pct1[4];
 	uint8_t packet_pct2[4];
 	uint8_t antenna_permutation_index;
-	struct bt_hci_le_cs_step_data_tone_info tone_info[];
+	struct bt_hci_le_cs_step_data_tone_info tone_info[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 struct bt_hci_evt_le_cs_subevent_result_step {
 	uint8_t step_mode;
 	uint8_t step_channel;
 	uint8_t step_data_length;
-	uint8_t step_data[];
+	uint8_t step_data[BT_ZERO_LEN_ARRAY];
 } __packed;
 
+#define BT_HCI_EVT_LE_CS_SUBEVENT_RESULT_SZ 15
 struct bt_hci_evt_le_cs_subevent_result {
 	uint16_t conn_handle;
 	uint8_t config_id;
@@ -3856,11 +3861,11 @@ struct bt_hci_evt_le_cs_subevent_result {
 #endif /* CONFIG_LITTLE_ENDIAN */
 	uint8_t num_antenna_paths;
 	uint8_t num_steps_reported;
-	uint8_t steps[];
+	uint8_t steps[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 #define BT_HCI_EVT_LE_CS_SUBEVENT_RESULT_CONTINUE 0x32
-
+#define BT_HCI_EVT_LE_CS_SUBEVENT_RESULT_CONTINUE_SZ 8
 struct bt_hci_evt_le_cs_subevent_result_continue {
 	uint16_t conn_handle;
 	uint8_t config_id;
@@ -3875,7 +3880,7 @@ struct bt_hci_evt_le_cs_subevent_result_continue {
 #endif /* CONFIG_LITTLE_ENDIAN */
 	uint8_t num_antenna_paths;
 	uint8_t num_steps_reported;
-	uint8_t steps[];
+	uint8_t steps[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 #define BT_HCI_EVT_LE_CS_TEST_END_COMPLETE 0x33
@@ -3899,6 +3904,10 @@ struct bt_hci_evt_le_cs_procedure_enable_complete {
 	uint16_t procedure_count;
 	uint16_t max_procedure_len;
 } __packed;
+
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#pragma pack(pop)
+#endif
 
 /* Event mask bits */
 
