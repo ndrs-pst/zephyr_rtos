@@ -248,7 +248,7 @@ void bt_send_one_host_num_completed_packets(uint16_t handle)
 	BT_ASSERT_MSG(buf, "Unable to alloc for Host NCP");
 
 	cp = net_buf_add(buf, BT_HCI_CP_HOST_NUM_COMPLETED_PACKETS_SZ);
-	cp->num_handles = sys_cpu_to_le16(1);
+	cp->num_handles = 1;
 
 	hc = net_buf_add(buf, sizeof(*hc));
 	hc->handle = sys_cpu_to_le16(handle);
