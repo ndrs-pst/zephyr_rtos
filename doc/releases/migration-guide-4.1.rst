@@ -75,6 +75,9 @@ Device Drivers and Devicetree
 
     * :c:struct:`adc_driver_api`
 
+* The :c:func:`video_buffer_alloc` and :c:func:`video_buffer_aligned_alloc` functions in the
+  video API now take an additional timeout parameter.
+
 ADC
 ===
 
@@ -184,6 +187,8 @@ Sensors
 
 Serial
 ======
+
+* Renamed the ``compatible`` from ``nxp,kinetis-lpuart`` to :dtcompatible:`nxp,lpuart`.
 
 Stepper
 =======

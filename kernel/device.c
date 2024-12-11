@@ -181,11 +181,12 @@ extern const struct init_entry __init_POST_KERNEL_start[];
 extern const struct init_entry __init_APPLICATION_start[];
 
 int /**/device_user_init(const struct device* dev) {
-    const struct init_entry* entry;
     int rc;
 
     rc = -1;
-    for (entry = __init_POST_KERNEL_start; entry < __init_APPLICATION_start; entry++) {
+    for (const struct init_entry* entry = __init_POST_KERNEL_start;
+         entry < __init_APPLICATION_start;
+         entry++) {
         if (entry->dev == dev) {
             rc = entry->init_fn.dev(dev);
 
@@ -200,7 +201,7 @@ int /**/device_user_init(const struct device* dev) {
                 if (rc > UINT8_MAX) {
                     rc = UINT8_MAX;
                 }
-                dev->state->init_res = rc;
+                dev->state->init_res = (uint8_t)rc;
             }
             dev->state->initialized = true;
         }
