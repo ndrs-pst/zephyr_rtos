@@ -21,40 +21,40 @@
 LOG_MODULE_REGISTER(sdhc, CONFIG_SDHC_LOG_LEVEL);
 
 static const uint32_t sdhc_stm32_dma_tbl_pri[] = {
-    DMA_PRIORITY_LOW,
-    DMA_PRIORITY_MEDIUM,
-    DMA_PRIORITY_HIGH,
-    DMA_PRIORITY_VERY_HIGH
+	DMA_PRIORITY_LOW,
+	DMA_PRIORITY_MEDIUM,
+	DMA_PRIORITY_HIGH,
+	DMA_PRIORITY_VERY_HIGH
 };
 
 struct sdmmc_dma_stream {
-    const struct device *dev;
-    uint32_t channel;
-    uint32_t channel_nb;
-    DMA_TypeDef *reg;
-    struct dma_config cfg;
+	const struct device *dev;
+	uint32_t channel;
+	uint32_t channel_nb;
+	DMA_TypeDef *reg;
+	struct dma_config cfg;
 };
 
 struct sdhc_stm32_config {
-    SDMMC_TypeDef* sdmmc;
-	void (*irq_config)(const struct device* port);
-    struct k_sem thread_lock;
-    struct k_sem sync;
-    int status;
-    struct k_work work;
-    struct gpio_callback cd_cb;
-    struct gpio_dt_spec cd;
-    struct gpio_dt_spec pe;
-    struct gpio_dt_spec pwr_gpio;
-    struct stm32_pclken *pclken;
-    const struct pinctrl_dev_config *pcfg;
-    const struct reset_dt_spec reset;
+	SDIO_TypeDef *sdio;
+	void (*irq_config)(const struct device *port);
+	struct k_sem thread_lock;
+	struct k_sem sync;
+	int status;
+	struct k_work work;
+	struct gpio_callback cd_cb;
+	struct gpio_dt_spec cd;
+	struct gpio_dt_spec pe;
+	struct gpio_dt_spec pwr_gpio;
+	struct stm32_pclken *pclken;
+	const struct pinctrl_dev_config *pcfg;
+	const struct reset_dt_spec reset;
 
 	struct sdhc_host_props props;
 };
 
 struct sdhc_stm32_data {
-	uint8_t  bus_width;
+	uint8_t bus_width;
 	uint32_t bus_clock;
 
 	enum sdhc_power power_mode;
@@ -62,10 +62,10 @@ struct sdhc_stm32_data {
 
 	struct k_mutex s_request_mutex;
 
-    #if STM32_SDMMC_USE_DMA
-    struct sdmmc_dma_stream dma_rx;
-    struct sdmmc_dma_stream dma_tx;
-    #endif
+#if STM32_SDMMC_USE_DMA
+	struct sdmmc_dma_stream dma_rx;
+	struct sdmmc_dma_stream dma_tx;
+#endif
 };
 
 static int sdhc_stm32_reset(const struct device *dev)
@@ -93,7 +93,7 @@ static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
 		ios->signal_voltage == SD_VOL_1_8_V ? "1.8V" : "3.3V");
 
 	if (ios->clock > 0) {
-
+		/* pass */
 	}
 
 	if (ios->bus_width > 0) {
@@ -169,7 +169,7 @@ static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
  */
 static int sdhc_stm32_card_busy(const struct device *dev)
 {
-    return 0;
+	return 0;
 }
 
 /*
@@ -233,7 +233,7 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 	}
 
 	while (retries > 0) {
-	    // do_transaction
+		/* do_transaction */
 	}
 
 	/* Interpret response */
@@ -247,20 +247,20 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
  */
 static int sdhc_stm32_get_card_present(const struct device *dev)
 {
-    const struct sdhc_stm32_config *cfg = dev->config;
-    int ret;
+	const struct sdhc_stm32_config *cfg = dev->config;
+	int ret;
 
-    if (!cfg->cd.port) {
-        return 1;
-    }
+	if (!cfg->cd.port) {
+		return 1;
+	}
 
-    ret = gpio_pin_get_dt(&cfg->cd);
-    if (ret < 0) {
-        LOG_WRN("reading card detect failed %d", ret);
-        return -EIO;
-    }
+	ret = gpio_pin_get_dt(&cfg->cd);
+	if (ret < 0) {
+		LOG_WRN("reading card detect failed %d", ret);
+		return -EIO;
+	}
 
-    return ret;
+	return ret;
 }
 
 /*
