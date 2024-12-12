@@ -368,7 +368,7 @@ char const* wifi_ps_wakeup_mode_txt(enum wifi_ps_wakeup_mode ps_wakeup_mode) {
     }
 }
 
-const char* const wifi_ps_exit_strategy_txt(enum wifi_ps_exit_strategy ps_exit_strategy) {
+const char* wifi_ps_exit_strategy_txt(enum wifi_ps_exit_strategy ps_exit_strategy) {
     switch (ps_exit_strategy) {
         case WIFI_PS_EXIT_EVERY_TIM :
             return "Every TIM";
@@ -676,7 +676,7 @@ static int wifi_ap_disable(uint32_t mgmt_request, struct net_if* iface,
     const struct wifi_mgmt_ops* const wifi_mgmt_api = get_wifi_api(iface);
 
     if ((wifi_mgmt_api == NULL) ||
-        (wifi_mgmt_api->ap_enable == NULL)) {
+        (wifi_mgmt_api->ap_disable == NULL)) {
         return (-ENOTSUP);
     }
 

@@ -322,7 +322,7 @@ static void att_sent(void *user_data)
  * In case bt_l2cap_send_cb fails the buffer state and ownership are retained
  * so the buffer can be safely pushed back to the queue to be processed later.
  */
-static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
+static int /**/chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 {
 	struct bt_att_hdr *hdr;
 	struct net_buf_simple_state state;
@@ -746,7 +746,7 @@ static int bt_att_chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 	return chan_send(chan, buf);
 }
 
-static void att_send_process(struct bt_att *att)
+static void /**/att_send_process(struct bt_att *att)
 {
 	struct bt_att_chan *chan, *tmp, *prev = NULL;
 	int err = 0;
