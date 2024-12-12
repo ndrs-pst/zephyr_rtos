@@ -2453,11 +2453,9 @@ static void gatt_add_nfy_to_buf(struct net_buf *buf,
 {
 	struct bt_att_notify_mult *nfy;
 
-	nfy = net_buf_add(buf, BT_ATT_NOTIFY_MULT_SZ);
+	nfy = net_buf_add(buf, (BT_ATT_NOTIFY_MULT_SZ + params->len));
 	nfy->handle = sys_cpu_to_le16(handle);
 	nfy->len = sys_cpu_to_le16(params->len);
-
-	net_buf_add(buf, params->len);
 	(void)memcpy(nfy->value, params->data, params->len);
 }
 
@@ -2568,10 +2566,8 @@ static int gatt_notify(struct bt_conn *conn, uint16_t handle,
 
 	LOG_DBG("conn %p handle 0x%04x", conn, handle);
 
-	nfy = net_buf_add(buf, BT_ATT_NOTIFY_SZ);
+	nfy = net_buf_add(buf, (BT_ATT_NOTIFY_SZ + params->len));
 	nfy->handle = sys_cpu_to_le16(handle);
-
-	net_buf_add(buf, params->len);
 	memcpy(nfy->value, params->data, params->len);
 
 	bt_att_set_tx_meta_data(buf, params->func, params->user_data, BT_ATT_CHAN_OPT(params));
@@ -2736,10 +2732,8 @@ static int gatt_indicate(struct bt_conn *conn, uint16_t handle,
 
 	bt_att_set_tx_meta_data(buf, NULL, NULL, BT_ATT_CHAN_OPT(params));
 
-	ind = net_buf_add(buf, BT_ATT_INDICATE_SZ);
+	ind = net_buf_add(buf, (BT_ATT_INDICATE_SZ + params->len));
 	ind->handle = sys_cpu_to_le16(handle);
-
-	net_buf_add(buf, params->len);
 	memcpy(ind->value, params->data, params->len);
 
 	LOG_DBG("conn %p handle 0x%04x", conn, handle);
