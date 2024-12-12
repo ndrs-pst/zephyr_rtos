@@ -43,6 +43,12 @@ Deprecated in this release
   the same functionality in their application code by reconnecting to the peer when the
   :c:member:`bt_conn_cb.disconnected` callback is invoked.
 
+* Deprecated TinyCrypt library. The reasons for this are (:github:`43712`):
+
+  * The upstream version of this library is no longer maintained.
+  * Reducing the number of cryptographic libraries in Zephyr to reduce maintenance overhead.
+  * The PSA Crypto API is the recommended cryptographic library for Zephyr.
+
 Architectures
 *************
 
@@ -101,7 +107,6 @@ Boards & SoC Support
 
   * All HWMv1 board name aliases which were added as deprecated in v3.7 are now removed
     (:github:`82247`).
-  * Enabled USB, RTC on NXP ``frdm_mcxn236``
 
 * Added support for the following shields:
 

@@ -591,6 +591,9 @@ struct wifi_connect_req_params {
     /** suiteb or suiteb-192 */
     uint8_t suiteb_type;
 
+    /** TLS cipher */
+    uint8_t TLS_cipher;
+
     /** eap version */
     int eap_ver;
 

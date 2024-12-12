@@ -12,7 +12,6 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/logging/log.h>
-#include <soc.h>
 #include <zephyr/drivers/pinctrl.h>
 
 /* STM32 includes */
@@ -297,7 +296,7 @@ static int sdhc_stm32_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sdhc_driver_api stm32_sdhc_api = {
+static DEVICE_API(sdhc, sdhc_stm32_api) = {
 	.reset = sdhc_stm32_reset,
 	.request = sdhc_stm32_request,
 	.set_io = sdhc_stm32_set_io,
