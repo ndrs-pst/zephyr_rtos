@@ -23,7 +23,8 @@
 
 LOG_MODULE_REGISTER(stm32_sdhc, CONFIG_SDHC_LOG_LEVEL);
 
-#define STM32_SDHC_USE_DMA DT_NODE_HAS_PROP(DT_DRV_INST(0), dmas)
+// #define STM32_SDHC_USE_DMA DT_NODE_HAS_PROP(DT_DRV_INST(0), dmas)
+#define STM32_SDHC_USE_DMA 		1
 
 #if STM32_SDHC_USE_DMA
 #include <zephyr/drivers/dma.h>
@@ -63,6 +64,7 @@ struct sdhc_stm32_config {
 };
 
 struct sdhc_stm32_data {
+	SDIO_TypeDef* sdio;
 	SDIO_HandleTypeDef hsdio;
 	struct k_sem thread_lock;
 	struct k_sem sync;
@@ -71,6 +73,10 @@ struct sdhc_stm32_data {
 
 	enum sdhc_power power_mode;
 	enum sdhc_timing_mode timing;
+
+	uint32_t ercd;                      /*!< SDIO Card Error codes */
+	HAL_SDIO_StateTypeDef state;
+	uint32_t xfer_ctx;
 
 #if STM32_SDHC_USE_DMA
 	struct sdhc_dma_stream dma_rx;
@@ -145,6 +151,112 @@ static int sdhc_stm32_clock_enable(struct sdhc_stm32_data *data)
 	/* Enable the APB clock for stm32_sdhc */
 	return clock_control_on(clock, (clock_control_subsys_t)&data->pclken[0]);
 }
+
+static int sdhc_stm32_clock_disable(struct sdhc_stm32_data *data)
+{
+	const struct device *clock;
+
+	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+
+	return clock_control_off(clock,
+				 (clock_control_subsys_t)&data->pclken);
+}
+
+#if STM32_SDHC_USE_DMA
+
+static void sdhc_stm32_dma_cb(const struct device *dev, void *arg,
+			 uint32_t channel, int status)
+{
+	DMA_HandleTypeDef *hdma = arg;
+
+	if (status != 0) {
+		LOG_ERR("DMA callback error with channel %d.", channel);
+
+	}
+
+	HAL_DMA_IRQHandler(hdma);
+}
+
+static int sdhc_stm32_configure_dma(DMA_HandleTypeDef *handle, struct sdhc_dma_stream *dma)
+{
+	int ret;
+
+	if (!device_is_ready(dma->dev)) {
+		LOG_ERR("Failed to get dma dev");
+		return -ENODEV;
+	}
+
+	dma->cfg.user_data = handle;
+
+	ret = dma_config(dma->dev, dma->channel, &dma->cfg);
+	if (ret != 0) {
+		LOG_ERR("Failed to conig");
+		return ret;
+	}
+
+	handle->Instance                 = __LL_DMA_GET_STREAM_INSTANCE(dma->reg, dma->channel_nb);
+	handle->Init.Channel             = dma->cfg.dma_slot * DMA_CHANNEL_1;
+	handle->Init.PeriphInc           = DMA_PINC_DISABLE;
+	handle->Init.MemInc              = DMA_MINC_ENABLE;
+	handle->Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
+	handle->Init.MemDataAlignment    = DMA_MDATAALIGN_WORD;
+	handle->Init.Mode                = DMA_PFCTRL;
+	handle->Init.Priority            = table_priority[dma->cfg.channel_priority],
+	handle->Init.FIFOMode            = DMA_FIFOMODE_ENABLE;
+	handle->Init.FIFOThreshold       = DMA_FIFO_THRESHOLD_FULL;
+	handle->Init.MemBurst            = DMA_MBURST_INC4;
+	handle->Init.PeriphBurst         = DMA_PBURST_INC4;
+
+	return ret;
+}
+
+static int sdhc_stm32_dma_init(struct sdhc_stm32_data *data)
+{
+	int err;
+
+	LOG_DBG("using dma");
+
+	err = sdhc_stm32_configure_dma(&data->dma_tx_handle, &data->dma_tx);
+	if (err) {
+		LOG_ERR("failed to init tx dma");
+		return err;
+	}
+	__HAL_LINKDMA(&data->hsd, hdmatx, data->dma_tx_handle);
+	HAL_DMA_Init(&data->dma_tx_handle);
+
+	err = sdhc_stm32_configure_dma(&data->dma_rx_handle, &data->dma_rx);
+	if (err) {
+		LOG_ERR("failed to init rx dma");
+		return err;
+	}
+	__HAL_LINKDMA(&data->hsd, hdmarx, data->dma_rx_handle);
+	HAL_DMA_Init(&data->dma_rx_handle);
+
+	return err;
+}
+
+static int sdhc_stm32_dma_deinit(struct sdhc_stm32_data *data)
+{
+	int ret;
+	struct sdmmc_dma_stream *dma_tx = &data->dma_tx;
+	struct sdmmc_dma_stream *dma_rx = &data->dma_rx;
+
+	ret = dma_stop(dma_tx->dev, dma_tx->channel);
+	HAL_DMA_DeInit(&data->dma_tx_handle);
+	if (ret != 0) {
+		LOG_ERR("Failed to stop tx DMA transmission");
+		return ret;
+	}
+	ret = dma_stop(dma_rx->dev, dma_rx->channel);
+	HAL_DMA_DeInit(&data->dma_rx_handle);
+	if (ret != 0) {
+		LOG_ERR("Failed to stop rx DMA transmission");
+		return ret;
+	}
+	return ret;
+}
+
+#endif
 
 static int sdhc_stm32_reset(const struct device *dev)
 {
@@ -259,6 +371,7 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 	const struct sdhc_stm32_config *cfg = dev->config;
 	struct sdhc_stm32_data *ctx = dev->data;
 	unsigned int retries = (cmd->retries + 1);
+	uint32_t err_state;
 	int ret;
 
 	switch (cmd->opcode) {
@@ -276,10 +389,32 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 	case SD_APP_SEND_OP_COND:
 		break;
 
-	case SDIO_RW_DIRECT:
+	case SDIO_RW_DIRECT: /* @see HAL_SDIO_ReadDirect */
+		err_state = SDMMC_SDIO_CmdReadWriteDirect(ctx->sdio, cmd->arg, cmd->response);
+		if (err_state != HAL_SD_ERROR_NONE) {
+			ctx->ercd |= err_state;
+			if (err_state != (SDMMC_ERROR_ADDR_OUT_OF_RANGE | SDMMC_ERROR_ILLEGAL_CMD | SDMMC_ERROR_COM_CRC_FAILED |
+							  SDMMC_ERROR_GENERAL_UNKNOWN_ERR)) {
+				/* Clear all the static flags */
+				__SDMMC_CLEAR_FLAG(ctx->sdio, SDMMC_STATIC_DATA_FLAGS);
+				ctx->state = HAL_SDIO_STATE_READY;
+				ctx->xfer_ctx = SDIO_CONTEXT_NONE;
+				return -EIO;
+			}
+			return -EIO;
+		}
+
+		__SDMMC_CMDTRANS_DISABLE(ctx->sdio);
+
+		/* Clear all the static flags */
+		__SDMMC_CLEAR_FLAG(ctx->sdio, SDMMC_STATIC_DATA_FLAGS);
 		break;
 
 	case SDIO_SEND_OP_COND:
+		err_state = SDMMC_CmdSendOperationcondition(ctx->sdio, cmd->arg, cmd->response);
+		if (err_state != HAL_SD_ERROR_NONE) {
+			return -EIO;
+		}
 		break;
 
 	case SD_ALL_SEND_CID:
@@ -367,6 +502,50 @@ static int sdhc_stm32_init(const struct device *dev)
 		LOG_ERR("Failed to configure SDHC pins");
 		return -EINVAL;
 	}
+
+	err = sdhc_stm32_clock_enable(ctx);
+	if (err) {
+		LOG_ERR("failed to init clocks");
+		return err;
+	}
+
+	/* init carrier detect (if set) */
+	if (cfg->cd.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->cd)) {
+			LOG_ERR("GPIO port for cd pin is not ready");
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&cfg->cd, GPIO_INPUT);
+		if (ret < 0) {
+			LOG_ERR("Couldn't configure cd pin: (%d)", ret);
+			return ret;
+		}
+	}
+
+#if STM32_SDHC_USE_DMA
+	err = sdhc_stm32_dma_init(ctx);
+	if (err) {
+		LOG_ERR("DMA init failed");
+		return err;
+	}
+#endif
+
+	err = reset_line_toggle_dt(&ctx->reset);
+	if (err) {
+		LOG_ERR("failed to reset peripheral");
+		return err;
+	}
+
+	err = HAL_SDIO_Init(&ctx->hsdio);
+	if (err != HAL_OK) {
+		LOG_ERR("failed to init sdhc_stm32 (ErrorCode 0x%X)", ctx->hsdio.ErrorCode);
+		return -EIO;
+	}
+
+#ifdef CONFIG_SDHC_STM32_HWFC
+	sdhc_stm32_fc_enable(ctx);
+#endif
 
 	/* Reset controller */
 	sdhc_stm32_reset(dev);
