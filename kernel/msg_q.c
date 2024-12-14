@@ -181,7 +181,7 @@ int z_impl_k_msgq_put(struct k_msgq* msgq, void const* data, k_timeout_t timeout
 
     SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put, msgq, timeout, result);
 
-    k_spin_unlock(&msgq->lock, key);
+    z_reschedule(&msgq->lock, key);
 
     return (result);
 }

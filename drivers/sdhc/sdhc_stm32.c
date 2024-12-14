@@ -739,10 +739,10 @@ static int sdhc_stm32_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	err = sdhc_stm32_clock_enable(ctx);
-	if (err) {
+	ret = sdhc_stm32_clock_enable(ctx);
+	if (ret) {
 		LOG_ERR("failed to init clocks");
-		return err;
+		return ret;
 	}
 
 	/* init carrier detect (if set) */
