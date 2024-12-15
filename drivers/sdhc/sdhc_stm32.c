@@ -53,13 +53,10 @@ struct sdhc_dma_stream {
 struct sdhc_stm32_config {
 	void (*irq_config)(const struct device *dev);
 	struct gpio_callback cd_cb;
-	struct gpio_dt_spec cd;
-	struct gpio_dt_spec pe;
+	struct gpio_dt_spec cd_gpio;
 	struct gpio_dt_spec pwr_gpio;
-	/* clock subsystem driving this peripheral */
-	const struct stm32_pclken *pclken;
-	/* number of clock subsystems */
-	size_t pclk_len;
+	const struct stm32_pclken *pclken; /* clock subsystem driving this peripheral */
+	size_t pclk_len;                   /* number of clock subsystems */
 	const struct pinctrl_dev_config *pcfg;
 	const struct reset_dt_spec reset;
 
@@ -68,21 +65,20 @@ struct sdhc_stm32_config {
 
 struct sdhc_stm32_data {
 	SDIO_TypeDef *sdio;
-	SDIO_HandleTypeDef hsdio;
+	struct sdhc_io host_io;
 	struct k_sem thread_lock;
 	struct k_sem sync;
 	int status;
 	struct k_work work;
 
-	uint8_t bus_width;
-
-	enum sdhc_power power_mode;
-	enum sdhc_timing_mode timing;
-
 	uint32_t ercd; /*!< SDIO Card Error codes */
 	HAL_SDIO_StateTypeDef state;
 	uint32_t xfer_ctx;
 	bool use_dma;
+	uint8_t IOInterruptNbr;
+	uint8_t IOFunctionMask;
+	void (*SDIO_IOFunction_Callback[SDIO_MAX_IO_NUMBER])(struct sdhc_stm32_data *data,
+							     uint32_t func);
 
 #if STM32_SDHC_USE_DMA
 	struct sdhc_dma_stream dma_rx;
@@ -100,27 +96,6 @@ static void stm32_sdmmc_fc_enable(struct stm32_sdmmc_priv *priv)
 	sdmmcx->CLKCR |= SDMMC_CLKCR_HWFC_EN;
 }
 #endif
-
-static void stm32_sdmmc_isr(const struct device *dev)
-{
-	struct sdhc_stm32_data *data = dev->data;
-
-	HAL_SDIO_IRQHandler(&data->hsdio);
-}
-
-#define DEFINE_HAL_CALLBACK(name)                                                                  \
-	void name(SDIO_HandleTypeDef *hsdio)                                                       \
-	{                                                                                          \
-		struct sdhc_stm32_data *data = CONTAINER_OF(hsdio, struct sdhc_stm32_data, hsdio); \
-                                                                                                   \
-		data->status = hsdio->ErrorCode;                                                   \
-                                                                                                   \
-		k_sem_give(&data->sync);                                                           \
-	}
-
-DEFINE_HAL_CALLBACK(HAL_SDIO_TxCpltCallback);
-DEFINE_HAL_CALLBACK(HAL_SDIO_RxCpltCallback);
-DEFINE_HAL_CALLBACK(HAL_SDIO_ErrorCallback);
 
 static int sdhc_stm32_clock_enable(const struct sdhc_stm32_config *config)
 {
@@ -261,10 +236,8 @@ static int sdhc_stm32_dma_deinit(struct sdhc_stm32_data *data)
 }
 #endif
 
-static int sdhc_stm32_get_resp(SDIO_TypeDef *sdio, struct sdhc_command *cmd)
+static int sdhc_stm32_get_resp_ll(SDIO_TypeDef *sdio, int timeout_ms, uint32_t opcode)
 {
-	int timeout_ms = cmd->timeout_ms;
-
 	while (true) {
 		uint32_t sta_reg = sdio->STA;
 
@@ -294,8 +267,20 @@ static int sdhc_stm32_get_resp(SDIO_TypeDef *sdio, struct sdhc_command *cmd)
 	__SDMMC_CLEAR_FLAG(sdio, SDMMC_STATIC_CMD_FLAGS);
 
 	/* Check response received is of desired command */
-	if (SDMMC_GetCommandResponse(sdio) != (uint8_t)cmd->opcode) {
+	if (SDMMC_GetCommandResponse(sdio) != (uint8_t)opcode) {
 		return -EIO;
+	}
+
+	return 0;
+}
+
+static int sdhc_stm32_get_resp(SDIO_TypeDef *sdio, struct sdhc_command *cmd)
+{
+	int ret;
+
+	ret = sdhc_stm32_get_resp_ll(sdio, cmd->timeout_ms, cmd->opcode);
+	if (ret) {
+		return ret;
 	}
 
 	/* We have received response, retrieve it for analysis  */
@@ -326,11 +311,57 @@ static int sdhc_stm32_snd_cmd(SDIO_TypeDef *sdio, struct sdhc_command *cmd, uint
 	return ret;
 }
 
+static int sdhc_stm32_rd_direct(SDIO_TypeDef *sdio, uint32_t func_num, uint32_t reg_addr,
+				uint8_t *data_out)
+{
+	SDMMC_CmdInitTypeDef cmd_init;
+	int ret;
+	uint32_t arg;
+
+	arg = ((func_num << 28U) | ((reg_addr & 0x1FFFFU) << 9U));
+
+	cmd_init.Argument = arg;
+	cmd_init.CmdIndex = SDMMC_CMD_SDMMC_RW_DIRECT;
+	cmd_init.Response = SDMMC_RESPONSE_SHORT;
+	cmd_init.WaitForInterrupt = SDMMC_WAIT_NO;
+	cmd_init.CPSM = SDMMC_CPSM_ENABLE;
+	(void)SDMMC_SendCommand(sdio, &cmd_init);
+
+	ret = sdhc_stm32_get_resp_ll(sdio, 1, SDMMC_CMD_SDMMC_RW_DIRECT);
+	if (ret == 0) {
+		*data_out = (uint8_t)SDMMC_GetResponse(sdio, SDMMC_RESP1);
+	}
+
+	return ret;
+}
+
+static int sdhc_stm32_wr_direct(SDIO_TypeDef *sdio, uint32_t func_num, uint32_t raw,
+				uint32_t reg_addr, uint8_t data_in)
+{
+	SDMMC_CmdInitTypeDef cmd_init;
+	int ret;
+	uint32_t arg;
+
+	arg = (BIT(31) | (func_num << 28U) | (raw << 27U) | ((reg_addr & 0x1FFFFU) << 9U) |
+	       ((uint32_t)data_in & 0x000000FFU));
+
+	cmd_init.Argument = arg;
+	cmd_init.CmdIndex = SDMMC_CMD_SDMMC_RW_DIRECT;
+	cmd_init.Response = SDMMC_RESPONSE_SHORT;
+	cmd_init.WaitForInterrupt = SDMMC_WAIT_NO;
+	cmd_init.CPSM = SDMMC_CPSM_ENABLE;
+	(void)SDMMC_SendCommand(sdio, &cmd_init);
+
+	ret = sdhc_stm32_get_resp_ll(sdio, 1, SDMMC_CMD_SDMMC_RW_DIRECT);
+
+	return ret;
+}
+
 static uint8_t sdhc_stm32_cnv_blk_sz(uint32_t blk_sz)
 {
 	uint8_t most_bit = (uint8_t)__CLZ(__RBIT(blk_sz));
 
-	/*(1 << most_bit) - 1) is the mask used for blocksize*/
+	/* (1 << most_bit) - 1) is the mask used for blocksize */
 	if (((uint8_t)blk_sz & ((1U << most_bit) - 1U)) != 0U) {
 		return (uint8_t)SDMMC_DATABLOCK_SIZE_4B;
 	}
@@ -363,6 +394,46 @@ static int sdhc_stm32_reset(const struct device *dev)
 	return 0;
 }
 
+static void sdhc_stm32_isr(const struct device *dev)
+{
+	struct sdhc_stm32_data *ctx = dev->data;
+	SDIO_TypeDef *sdio = ctx->sdio;
+	uint32_t flags;
+	uint8_t pendingInt;
+
+	/* @see HAL_SDIO_IRQHandler */
+	flags = sdio->STA;
+	if ((flags & SDMMC_FLAG_SDIOIT) != 0U) {
+		/* FIXME it's better to use sys_work_q !!! */
+		if (ctx->IOInterruptNbr == 1U) { /* HAL_SDIO_RegisterIOFunctionCallback */
+			if ((ctx->SDIO_IOFunction_Callback[ctx->IOFunctionMask - 1U]) != NULL) {
+				(ctx->SDIO_IOFunction_Callback[ctx->IOFunctionMask - 1U])(
+					ctx, ctx->IOFunctionMask - 1U);
+			}
+		} else if ((ctx->IOInterruptNbr > 1U) && (ctx->IOFunctionMask != 0U)) {
+			/* Get pending int firstly */
+			int ret;
+
+			ret = sdhc_stm32_rd_direct(sdio, SDIO_FUNC_NUM_0, SDIO_CCCR_INT_P,
+						   &pendingInt);
+			if ((pendingInt != 0U) && (ctx->IOFunctionMask != 0U)) {
+				for (size_t count = 1; count <= SDIO_MAX_IO_NUMBER; count++) {
+					if (((pendingInt & (1U << count)) != 0U) &&
+					    (((1U << count) & ctx->IOFunctionMask) != 0U)) {
+						if ((ctx->SDIO_IOFunction_Callback[count - 1U]) !=
+						    NULL) {
+							(ctx->SDIO_IOFunction_Callback[count - 1U])(
+								ctx, count);
+						}
+					}
+				}
+			}
+		} else {
+			/* Nothing to do */
+		}
+	}
+}
+
 /*
  * Set SDHC io properties
  */
@@ -370,84 +441,103 @@ static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
 {
 	const struct sdhc_stm32_config *cfg = dev->config;
 	struct sdhc_stm32_data *ctx = dev->data;
-	uint8_t bus_width;
-	int ret = 0;
+	SDIO_TypeDef *sdio = ctx->sdio;
+	struct sdhc_io *host_io = &ctx->host_io;
 
 	LOG_INF("SDHC I/O: slot: %d, bus width %d, clock %dHz, card power %s, voltage %s",
 		cfg->slot, ios->bus_width, ios->clock,
 		ios->power_mode == SDHC_POWER_ON ? "ON" : "OFF",
 		ios->signal_voltage == SD_VOL_1_8_V ? "1.8V" : "3.3V");
 
-	if (ios->clock > 0) {
-		/* pass */
+	if (host_io->clock != ios->clock) {
+		uint32_t sdmmc_ker_ck;
+		uint32_t clk_div;
+		const struct device *clock;
+
+		clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+		if (clock_control_get_rate(clock, (clock_control_subsys_t)&cfg->pclken[1],
+					   &sdmmc_ker_ck) != 0) {
+			LOG_ERR("Failed to get SDMMC domain clock rate");
+			return -EIO;
+		}
+
+		/* clk_div is equal to [sdmmc_ker_ck / (2 * SDMMC_CK)] */
+		clk_div = sdmmc_ker_ck / (2U * (uint32_t)ios->clock);
+		if (clk_div > 0) {
+			MODIFY_REG(sdio->CLKCR, SDMMC_CLKCR_CLKDIV, clk_div);
+		} else {
+			return -EINVAL;
+		}
+
+		host_io->clock = ios->clock;
 	}
 
-	if (ios->bus_width > 0) {
-		/* Set bus width */
+	if (host_io->bus_width != ios->bus_width) {
+		uint32_t bus_wide;
+
 		switch (ios->bus_width) {
 		case SDHC_BUS_WIDTH1BIT:
-			bus_width = 1;
+			bus_wide = SDMMC_BUS_WIDE_1B;
 			break;
+
 		case SDHC_BUS_WIDTH4BIT:
-			bus_width = 4;
+			bus_wide = SDMMC_BUS_WIDE_4B;
 			break;
-		default:
-			return -ENOTSUP;
+
+		default: /* SDHC_BUS_WIDTH8BIT */
+			bus_wide = SDMMC_BUS_WIDE_8B;
+			break;
 		}
 
-		if (ctx->bus_width != bus_width) {
-			ctx->bus_width = bus_width;
-		}
+		MODIFY_REG(sdio->CLKCR, SDMMC_CLKCR_WIDBUS, bus_wide);
+		host_io->bus_width = ios->bus_width;
 	}
 
 	/* Toggle card power supply */
-	if ((ctx->power_mode != ios->power_mode) && (cfg->pwr_gpio.port)) {
+	if ((host_io->power_mode != ios->power_mode) && cfg->pwr_gpio.port) {
 		if (ios->power_mode == SDHC_POWER_OFF) {
 			gpio_pin_set_dt(&cfg->pwr_gpio, 0);
-		} else if (ios->power_mode == SDHC_POWER_ON) {
+		} else { /* SDHC_POWER_ON */
 			gpio_pin_set_dt(&cfg->pwr_gpio, 1);
 		}
 
-		ctx->power_mode = ios->power_mode;
+		host_io->power_mode = ios->power_mode;
 	}
 
-	if (ios->timing > 0) {
-		/* Set I/O timing */
-		if (ctx->timing != ios->timing) {
-			switch (ios->timing) {
-			case SDHC_TIMING_LEGACY:
-			case SDHC_TIMING_HS:
+	/* Set I/O timing */
+	if (host_io->timing != ios->timing) {
+		switch (ios->timing) { /* HAL_SDIO_SetSpeedMode */
+		case SDHC_TIMING_LEGACY:
+		case SDHC_TIMING_HS:
+		case SDHC_TIMING_SDR12:
+		case SDHC_TIMING_SDR25:
+			MODIFY_REG(sdio->CLKCR, (SDMMC_CLKCR_DDR | SDMMC_CLKCR_BUSSPEED), 0U);
+			break;
 
-				break;
+		case SDHC_TIMING_SDR50:
+		case SDHC_TIMING_SDR104:
+		case SDHC_TIMING_HS200:
+			MODIFY_REG(sdio->CLKCR, (SDMMC_CLKCR_DDR | SDMMC_CLKCR_BUSSPEED),
+				   SDMMC_CLKCR_BUSSPEED);
+			break;
 
-			case SDHC_TIMING_DDR50:
-			case SDHC_TIMING_DDR52:
-				/* Enable DDR mode */
+		case SDHC_TIMING_DDR50:
+			MODIFY_REG(sdio->CLKCR, (SDMMC_CLKCR_DDR | SDMMC_CLKCR_BUSSPEED),
+				   (SDMMC_CLKCR_DDR | SDMMC_CLKCR_BUSSPEED));
+			/* Enable DDR mode */
+			LOG_INF("DDR mode enabled");
+			break;
 
-				LOG_INF("DDR mode enabled");
-				break;
-
-			case SDHC_TIMING_SDR12:
-			case SDHC_TIMING_SDR25:
-
-				break;
-
-			case SDHC_TIMING_SDR50:
-			case SDHC_TIMING_HS400:
-			case SDHC_TIMING_SDR104:
-			case SDHC_TIMING_HS200:
-			default:
-				LOG_ERR("Timing mode not supported for this device");
-				ret = -ENOTSUP;
-				break;
-			}
-
-			LOG_INF("Bus timing successfully changed to %s", timingStr[ios->timing]);
-			ctx->timing = ios->timing;
+		default:
+			LOG_ERR("Timing mode not supported for this device");
+			return -ENOTSUP;
 		}
+
+		LOG_INF("Bus timing successfully changed to %s", timingStr[ios->timing]);
+		host_io->timing = ios->timing;
 	}
 
-	return ret;
+	return 0;
 }
 
 /*
@@ -600,8 +690,14 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 	}
 
 	case SD_APP_SEND_SCR: /* sdmmc_read_scr */
-	case SD_SWITCH:       /* sdmmc_switch */
-		// TBA
+		break;
+
+	case SD_APP_SET_BUS_WIDTH: /* sdmmc_switch, SD_APP_SET_BUS_WIDTH */
+		if (cmd->response_type == SD_RSP_TYPE_R1) {
+			ret = sdhc_stm32_snd_cmd(ctx->sdio, cmd, SDMMC_RESPONSE_SHORT);
+		} else { /* SD_SWITCH, SD_RSP_TYPE_R1b */
+			/* TBA */
+		}
 		break;
 
 	case SD_APP_SEND_NUM_WRITTEN_BLK: {
@@ -701,11 +797,11 @@ static int sdhc_stm32_get_card_present(const struct device *dev)
 	const struct sdhc_stm32_config *cfg = dev->config;
 	int ret;
 
-	if (!cfg->cd.port) {
+	if (!cfg->cd_gpio.port) {
 		return 1;
 	}
 
-	ret = gpio_pin_get_dt(&cfg->cd);
+	ret = gpio_pin_get_dt(&cfg->cd_gpio);
 	if (ret < 0) {
 		LOG_WRN("reading card detect failed %d", ret);
 		return -EIO;
@@ -748,13 +844,13 @@ static int sdhc_stm32_init(const struct device *dev)
 	}
 
 	/* init carrier detect (if set) */
-	if (cfg->cd.port != NULL) {
-		if (!gpio_is_ready_dt(&cfg->cd)) {
+	if (cfg->cd_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->cd_gpio)) {
 			LOG_ERR("GPIO port for cd pin is not ready");
 			return -ENODEV;
 		}
 
-		ret = gpio_pin_configure_dt(&cfg->cd, GPIO_INPUT);
+		ret = gpio_pin_configure_dt(&cfg->cd_gpio, GPIO_INPUT);
 		if (ret < 0) {
 			LOG_ERR("Couldn't configure cd pin: (%d)", ret);
 			return ret;
@@ -775,12 +871,6 @@ static int sdhc_stm32_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = HAL_SDIO_Init(&ctx->hsdio);
-	if (ret != HAL_OK) {
-		LOG_ERR("failed to init sdhc_stm32 (ErrorCode 0x%X)", ctx->hsdio.ErrorCode);
-		return -EIO;
-	}
-
 #ifdef CONFIG_SDHC_STM32_HWFC
 	sdhc_stm32_fc_enable(ctx);
 #endif
@@ -790,18 +880,6 @@ static int sdhc_stm32_init(const struct device *dev)
 
 	return 0;
 }
-
-#define STM32_SDHC_IRQ_CONNECT(id)                  \
-	COND_CODE_1(DT_INST_PROP(id, stpm3x_isr),   \
-		(IRQ_CONNECT(DT_INST_IRQN(id),      \
-				DT_INST_IRQ(id, priority),     \
-                     spi_stpm3x_isr,                \
-                     DEVICE_DT_INST_GET(id), 0)),   \
-        (IRQ_CONNECT(DT_INST_IRQN(id),              \
-                     DT_INST_IRQ(id, priority),     \
-                     spi_stm32_isr,                 \
-                     DEVICE_DT_INST_GET(id), 0))    \
-    )
 
 #define STM32_SDHC_IRQ_HANDLER(n)                                                                  \
 	static void sdhc_stm32_irq_config_func_##n(const struct device *dev)                       \
@@ -870,11 +948,7 @@ static DEVICE_API(sdhc, sdhc_stm32_api) = {
 					.hs400_support = false}}};                                 \
                                                                                                    \
 	static struct sdhc_stm32_data sdhc_stm32_##n##_data = {                                    \
-		.hsdio = {                                                                         \
-			.Instance = (SDIO_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(n)),                \
-			.Init.BusWide = SDMMC_BUS_WIDTH,                                           \
-			.Init.ClockDiv = DT_INST_PROP_OR(n, clk_div, 1),                           \
-		},                                                                                 \
+		.sdio = (SDIO_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(n)),                            \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.reset = RESET_DT_SPEC_INST_GET(n),                                                \
 		SDMMC_DMA_CHANNEL(rx, RX)                                                          \
