@@ -24,7 +24,7 @@
 LOG_MODULE_REGISTER(stm32_sdhc, CONFIG_SDHC_LOG_LEVEL);
 
 // #define STM32_SDHC_USE_DMA DT_NODE_HAS_PROP(DT_DRV_INST(0), dmas)
-#define STM32_SDHC_USE_DMA      1
+#define STM32_SDHC_USE_DMA      0
 
 #if STM32_SDHC_USE_DMA
 #include <zephyr/drivers/dma.h>
@@ -56,7 +56,10 @@ struct sdhc_stm32_config {
 	struct gpio_dt_spec cd;
 	struct gpio_dt_spec pe;
 	struct gpio_dt_spec pwr_gpio;
-	struct stm32_pclken *pclken;
+	/* clock subsystem driving this peripheral */
+	const struct stm32_pclken *pclken;
+	/* number of clock subsystems */
+	size_t pclk_len;
 	const struct pinctrl_dev_config *pcfg;
 	const struct reset_dt_spec reset;
 
@@ -70,6 +73,8 @@ struct sdhc_stm32_data {
 	struct k_sem sync;
 	int status;
 	struct k_work work;
+
+	uint8_t bus_width;
 
 	enum sdhc_power power_mode;
 	enum sdhc_timing_mode timing;
@@ -117,16 +122,16 @@ DEFINE_HAL_CALLBACK(HAL_SDIO_TxCpltCallback);
 DEFINE_HAL_CALLBACK(HAL_SDIO_RxCpltCallback);
 DEFINE_HAL_CALLBACK(HAL_SDIO_ErrorCallback);
 
-static int sdhc_stm32_clock_enable(struct sdhc_stm32_data *data)
+static int sdhc_stm32_clock_enable(const struct sdhc_stm32_config *config)
 {
 	const struct device *clock;
 
 	/* HSI48 Clock is enabled through using the device tree */
 	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	if (DT_INST_NUM_CLOCKS(0) > 1) {
+	if (config->pclk_len > 1) {
 		if (clock_control_configure(clock,
-					    (clock_control_subsys_t)&data->pclken[1],
+					    (clock_control_subsys_t)&config->pclken[1],
 					    NULL) != 0) {
 			LOG_ERR("Failed to enable SDHC domain clock");
 			return -EIO;
@@ -137,7 +142,7 @@ static int sdhc_stm32_clock_enable(struct sdhc_stm32_data *data)
 		uint32_t sdhc_clock_rate;
 
 		if (clock_control_get_rate(clock,
-					   (clock_control_subsys_t)&data->pclken[1],
+					   (clock_control_subsys_t)&config->pclken[1],
 					   &sdhc_clock_rate) != 0) {
 			LOG_ERR("Failed to get SDHC domain clock rate");
 			return -EIO;
@@ -150,23 +155,22 @@ static int sdhc_stm32_clock_enable(struct sdhc_stm32_data *data)
 	}
 
 	/* Enable the APB clock for stm32_sdhc */
-	return clock_control_on(clock, (clock_control_subsys_t)&data->pclken[0]);
+	return clock_control_on(clock, (clock_control_subsys_t)&config->pclken[0]);
 }
 
-static int sdhc_stm32_clock_disable(struct sdhc_stm32_data *data)
+static int sdhc_stm32_clock_disable(const struct sdhc_stm32_config *config)
 {
 	const struct device *clock;
 
 	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	return clock_control_off(clock,
-				 (clock_control_subsys_t)&data->pclken);
+				 (clock_control_subsys_t)&config->pclken);
 }
 
 #if STM32_SDHC_USE_DMA
 
-static void sdhc_stm32_dma_cb(const struct device *dev, void *arg,
-			      uint32_t channel, int status)
+static void sdhc_stm32_dma_cb(const struct device *dev, void *arg, uint32_t channel, int status)
 {
 	DMA_HandleTypeDef *hdma = arg;
 
@@ -194,18 +198,18 @@ static int sdhc_stm32_configure_dma(DMA_HandleTypeDef *handle, struct sdhc_dma_s
 		return ret;
 	}
 
-	handle->Instance                 = __LL_DMA_GET_STREAM_INSTANCE(dma->reg, dma->channel_nb);
-	handle->Init.Channel             = dma->cfg.dma_slot * DMA_CHANNEL_1;
-	handle->Init.PeriphInc           = DMA_PINC_DISABLE;
-	handle->Init.MemInc              = DMA_MINC_ENABLE;
+	handle->Instance = __LL_DMA_GET_STREAM_INSTANCE(dma->reg, dma->channel_nb);
+	// FIXME handle->Init.Channel             = dma->cfg.dma_slot * DMA_CHANNEL_1;
+	handle->Init.PeriphInc = DMA_PINC_DISABLE;
+	handle->Init.MemInc = DMA_MINC_ENABLE;
 	handle->Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
-	handle->Init.MemDataAlignment    = DMA_MDATAALIGN_WORD;
-	handle->Init.Mode                = DMA_PFCTRL;
-	handle->Init.Priority            = table_priority[dma->cfg.channel_priority],
-	handle->Init.FIFOMode            = DMA_FIFOMODE_ENABLE;
-	handle->Init.FIFOThreshold       = DMA_FIFO_THRESHOLD_FULL;
-	handle->Init.MemBurst            = DMA_MBURST_INC4;
-	handle->Init.PeriphBurst         = DMA_PBURST_INC4;
+	handle->Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
+	handle->Init.Mode = DMA_PFCTRL;
+	// FIXME handle->Init.Priority            = table_priority[dma->cfg.channel_priority],
+	handle->Init.FIFOMode = DMA_FIFOMODE_ENABLE;
+	handle->Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+	handle->Init.MemBurst = DMA_MBURST_INC4;
+	handle->Init.PeriphBurst = DMA_PBURST_INC4;
 
 	return ret;
 }
@@ -257,48 +261,6 @@ static int sdhc_stm32_dma_deinit(struct sdhc_stm32_data *data)
 }
 #endif
 
-static int sdhc_stm32_snd_cmd(SDIO_TypeDef *sdio, struct sdhc_command *cmd, uint32_t response)
-{
-	SDMMC_CmdInitTypeDef cmd_init int ret;
-
-	cmd_init.Argument = cmd->arg;
-	cmd_init.CmdIndex = cmd->opcode;
-	cmd_init.Response = response;
-	cmd_init.WaitForInterrupt = SDMMC_WAIT_NO;
-	cmd_init.CPSM = SDMMC_CPSM_ENABLE;
-	(void)SDMMC_SendCommand(sdio, &cmd_init);
-
-	ret = sdhc_stm32_get_resp(sdio, cmd);
-}
-
-static uint8_t sdhc_stm32_cnv_blk_sz(uint32_t blk_sz)
-{
-	uint8_t most_bit = (uint8_t)__CLZ(__RBIT(blk_sz));
-
-	/*(1 << most_bit) - 1) is the mask used for blocksize*/
-	if (((uint8_t)blk_sz & ((1U << most_bit) - 1U)) != 0U) {
-		return (uint8_t)SDMMC_DATABLOCK_SIZE_4B;
-	}
-
-	return most_bit << SDMMC_DCTRL_DBLOCKSIZE_Pos;
-}
-
-static void sdhc_stm32_cfg_data(SDIO_TypeDef *sdio, uint32_t dat_len, uint32_t blk_sz, uint32_t dir)
-{
-	SDMMC_DataInitTypeDef config;
-
-	/* Configure the SD DPSM (Data Path State Machine) */
-	config.DataTimeOut   = SDMMC_DATATIMEOUT;
-	config.DataLength    = dat_len;
-	config.DataBlockSize = blk_sz;
-	config.TransferDir   = dir;
-	config.TransferMode  = SDMMC_TRANSFER_MODE_BLOCK;
-	config.DPSM          = SDMMC_DPSM_DISABLE;
-	(void)SDMMC_ConfigData(sdio, &config);
-
-	__SDMMC_CMDTRANS_ENABLE(sdio);
-}
-
 static int sdhc_stm32_get_resp(SDIO_TypeDef *sdio, struct sdhc_command *cmd)
 {
 	int timeout_ms = cmd->timeout_ms;
@@ -345,6 +307,51 @@ static int sdhc_stm32_get_resp(SDIO_TypeDef *sdio, struct sdhc_command *cmd)
 	}
 
 	return 0;
+}
+
+static int sdhc_stm32_snd_cmd(SDIO_TypeDef *sdio, struct sdhc_command *cmd, uint32_t response)
+{
+	SDMMC_CmdInitTypeDef cmd_init;
+	int ret;
+
+	cmd_init.Argument = cmd->arg;
+	cmd_init.CmdIndex = cmd->opcode;
+	cmd_init.Response = response;
+	cmd_init.WaitForInterrupt = SDMMC_WAIT_NO;
+	cmd_init.CPSM = SDMMC_CPSM_ENABLE;
+	(void)SDMMC_SendCommand(sdio, &cmd_init);
+
+	ret = sdhc_stm32_get_resp(sdio, cmd);
+
+	return ret;
+}
+
+static uint8_t sdhc_stm32_cnv_blk_sz(uint32_t blk_sz)
+{
+	uint8_t most_bit = (uint8_t)__CLZ(__RBIT(blk_sz));
+
+	/*(1 << most_bit) - 1) is the mask used for blocksize*/
+	if (((uint8_t)blk_sz & ((1U << most_bit) - 1U)) != 0U) {
+		return (uint8_t)SDMMC_DATABLOCK_SIZE_4B;
+	}
+
+	return most_bit << SDMMC_DCTRL_DBLOCKSIZE_Pos;
+}
+
+static void sdhc_stm32_cfg_data(SDIO_TypeDef *sdio, uint32_t dat_len, uint32_t blk_sz, uint32_t dir)
+{
+	SDMMC_DataInitTypeDef config;
+
+	/* Configure the SD DPSM (Data Path State Machine) */
+	config.DataTimeOut = SDMMC_DATATIMEOUT;
+	config.DataLength = dat_len;
+	config.DataBlockSize = blk_sz;
+	config.TransferDir = dir;
+	config.TransferMode = SDMMC_TRANSFER_MODE_BLOCK;
+	config.DPSM = SDMMC_DPSM_DISABLE;
+	(void)SDMMC_ConfigData(sdio, &config);
+
+	__SDMMC_CMDTRANS_ENABLE(sdio);
 }
 
 static int sdhc_stm32_reset(const struct device *dev)
@@ -455,7 +462,6 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 			     struct sdhc_data *data)
 {
 	struct sdhc_stm32_data *ctx = dev->data;
-	SDMMC_CmdInitTypeDef cmd_init;
 	uint32_t err_state;
 	int ret;
 
@@ -488,11 +494,6 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 	case SD_APP_SEND_OP_COND:   /* SDMMC_CmdAppOperCommand */
 	case SD_APP_CMD:            /* SDMMC_CmdAppCommand */
 		ret = sdhc_stm32_snd_cmd(ctx->sdio, cmd, SDMMC_RESPONSE_SHORT);
-		break;
-
-	case SD_APP_SEND_NUM_WRITTEN_BLK:
-		ret = sdhc_stm32_snd_cmd(ctx->sdio, cmd, SDMMC_RESPONSE_SHORT);
-		// TBA
 		break;
 
 	case SDIO_RW_DIRECT: { /* HAL_SDIO_ReadDirect */
@@ -664,9 +665,8 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 			      struct sdhc_data *data)
 {
 	const struct sdhc_stm32_config *cfg = dev->config;
-	struct sdhc_stm32_data *ctx = dev->data;
+	unsigned int retries = cmd->retries + 1;
 	int busy_timeout = 5000;
-	uint32_t err_state;
 	int ret;
 
 	do {
@@ -686,7 +686,9 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 				ret = -ETIMEDOUT;
 			}
 		}
-	} while ((ret != 0) && (cmd->retries-- > 0));
+
+		retries--;
+	} while ((ret != 0) && (retries > 0));
 
 	return ret;
 }
@@ -739,7 +741,7 @@ static int sdhc_stm32_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	ret = sdhc_stm32_clock_enable(ctx);
+	ret = sdhc_stm32_clock_enable(cfg);
 	if (ret) {
 		LOG_ERR("failed to init clocks");
 		return ret;
@@ -767,14 +769,14 @@ static int sdhc_stm32_init(const struct device *dev)
 	}
 #endif
 
-	err = reset_line_toggle_dt(&ctx->reset);
-	if (err) {
+	ret = reset_line_toggle_dt(&cfg->reset);
+	if (ret) {
 		LOG_ERR("failed to reset peripheral");
-		return err;
+		return ret;
 	}
 
-	err = HAL_SDIO_Init(&ctx->hsdio);
-	if (err != HAL_OK) {
+	ret = HAL_SDIO_Init(&ctx->hsdio);
+	if (ret != HAL_OK) {
 		LOG_ERR("failed to init sdhc_stm32 (ErrorCode 0x%X)", ctx->hsdio.ErrorCode);
 		return -EIO;
 	}
@@ -801,31 +803,13 @@ static int sdhc_stm32_init(const struct device *dev)
                      DEVICE_DT_INST_GET(id), 0))    \
     )
 
-#define STM32_SDHC_IRQ_HANDLER_DECL(id)      \
-	static void spi_stm32_irq_config_func_##id(const struct device *dev)
-
-#define STM32_SDHC_IRQ_HANDLER_FUNC(id)      \
-	.irq_config = spi_stm32_irq_config_func_##id,
-
-#define STM32_SDHC_IRQ_HANDLER(id)           \
-	static void spi_stm32_irq_config_func_##id(const struct device *dev) {  \
-		IRQ_CONNECT(DT_INST_IRQN(id),              \
-			    DT_INST_IRQ(id, priority),     \
-			    spi_stpm3x_isr,                \
-			    DEVICE_DT_INST_GET(id), 0));
-		irq_enable(DT_INST_IRQN(id));       \
+#define STM32_SDHC_IRQ_HANDLER(n)                                                                  \
+	static void sdhc_stm32_irq_config_func_##n(const struct device *dev)                       \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), sdhc_stm32_isr,             \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
-
-#define STM32_SDHC_IRQ_NUM(id)   .irq = DT_INST_IRQN(id),
-
-static void sdhc_stm32_irq_config_func_##n(const struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQN(n),
-		DT_INST_IRQ(n, priority),
-		sdhc_stm32_isr, DEVICE_DT_INST_GET(n),
-		0);
-	irq_enable(DT_INST_IRQN(n));
-}
 
 #if DT_INST_PROP(n, bus_width) == 1
 #define SDMMC_BUS_WIDTH SDMMC_BUS_WIDE_1B
@@ -846,6 +830,8 @@ static DEVICE_API(sdhc, sdhc_stm32_api) = {
 
 #define SDHC_STM32_INIT(n)                                                                         \
                                                                                                    \
+	STM32_SDHC_IRQ_HANDLER(n);                                                                 \
+	static const struct stm32_pclken pclken_##n[] = STM32_DT_INST_CLOCKS(n);                   \
 	PINCTRL_DT_DEFINE(DT_DRV_INST(n));                                                         \
 	K_MSGQ_DEFINE(sdhc##n##_queue, sizeof(struct sdmmc_event), SDMMC_EVENT_QUEUE_LENGTH, 1);   \
                                                                                                    \
@@ -853,8 +839,11 @@ static DEVICE_API(sdhc, sdhc_stm32_api) = {
 		.irq_config = sdhc_stm32_irq_config_func_##n,                                      \
 		.irq_source = DT_IRQN(DT_INST_PARENT(n)),                                          \
 		.slot = DT_REG_ADDR(DT_DRV_INST(n)),                                               \
+		.cd = GPIO_DT_SPEC_INST_GET_OR(n, cd_gpios, {0}),                                  \
 		.bus_width_cfg = DT_INST_PROP(n, bus_width),                                       \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(n)),                                 \
+		.pclken = pclken_##n,                                                              \
+		.pclk_len = DT_INST_NUM_CLOCKS(n),                                                 \
 		.pwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, pwr_gpios, {0}),                           \
 		.props = {.is_spi = false,                                                         \
 			  .f_max = DT_INST_PROP(n, max_bus_freq),                                  \
@@ -884,17 +873,8 @@ static DEVICE_API(sdhc, sdhc_stm32_api) = {
 		.hsdio = {                                                                         \
 			.Instance = (SDIO_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(n)),                \
 			.Init.BusWide = SDMMC_BUS_WIDTH,                                           \
-#if DT_INST_NODE_HAS_PROP(n, clk_div)                                                              \
-			.Init.ClockDiv = DT_INST_PROP(n, clk_div),                                 \
-#endif                                                                                             \
+			.Init.ClockDiv = DT_INST_PROP_OR(n, clk_div, 1),                           \
 		},                                                                                 \
-#if DT_INST_NODE_HAS_PROP(n, cd_gpios)                                                             \
-		.cd = GPIO_DT_SPEC_INST_GET(n, cd_gpios),                                          \
-#endif                                                                                             \
-#if DT_INST_NODE_HAS_PROP(n, pwr_gpios)                                                            \
-		.pe = GPIO_DT_SPEC_INST_GET(n, pwr_gpios),                                         \
-#endif                                                                                             \
-		.pclken = pclken_sdmmc,                                                            \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.reset = RESET_DT_SPEC_INST_GET(n),                                                \
 		SDMMC_DMA_CHANNEL(rx, RX)                                                          \

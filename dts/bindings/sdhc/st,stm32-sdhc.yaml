@@ -9,6 +9,9 @@ compatible: "st,stm32-sdhc"
 include: [sdhc.yaml, pinctrl-device.yaml]
 
 properties:
+  clocks:
+    required: true
+
   reg:
     required: true
 

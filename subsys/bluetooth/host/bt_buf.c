@@ -214,8 +214,8 @@ struct net_buf *bt_buf_make_view(struct net_buf *view,
 	LOG_DBG("make-view %p viewsize %zu meta %p", view, len, meta);
 
 	net_buf_simple_clone(&parent->b, &view->b);
-	view->size = net_buf_headroom(parent) + len;
-	view->len = len;
+	view->size = (uint16_t)(net_buf_headroom(parent) + len);
+	view->len = (uint16_t)len;
 	view->flags = NET_BUF_EXTERNAL_DATA;
 
 	/* we have a view, eat `len`'s worth of data from the parent */
