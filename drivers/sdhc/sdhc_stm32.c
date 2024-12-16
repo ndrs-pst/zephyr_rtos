@@ -75,10 +75,9 @@ struct sdhc_stm32_data {
 	HAL_SDIO_StateTypeDef state;
 	uint32_t xfer_ctx;
 	bool use_dma;
-	uint8_t IOInterruptNbr;
-	uint8_t IOFunctionMask;
-	void (*SDIO_IOFunction_Callback[SDIO_MAX_IO_NUMBER])(struct sdhc_stm32_data *data,
-							     uint32_t func);
+	uint8_t io_int_num;
+	uint8_t io_func_msk;
+	void (*io_func_cb[SDIO_MAX_IO_NUMBER])(struct sdhc_stm32_data *data, uint32_t func);
 
 #if STM32_SDHC_USE_DMA
 	struct sdhc_dma_stream dma_rx;
@@ -263,13 +262,13 @@ static int sdhc_stm32_get_resp_ll(SDIO_TypeDef *sdio, int timeout_ms, uint32_t o
 		/* Nothing to do */
 	}
 
-	/* Clear all the static flags */
-	__SDMMC_CLEAR_FLAG(sdio, SDMMC_STATIC_CMD_FLAGS);
-
 	/* Check response received is of desired command */
 	if (SDMMC_GetCommandResponse(sdio) != (uint8_t)opcode) {
 		return -EIO;
 	}
+
+	/* Clear all the static flags */
+	__SDMMC_CLEAR_FLAG(sdio, SDMMC_STATIC_CMD_FLAGS);
 
 	return 0;
 }
@@ -399,38 +398,11 @@ static void sdhc_stm32_isr(const struct device *dev)
 	struct sdhc_stm32_data *ctx = dev->data;
 	SDIO_TypeDef *sdio = ctx->sdio;
 	uint32_t flags;
-	uint8_t pendingInt;
 
 	/* @see HAL_SDIO_IRQHandler */
 	flags = sdio->STA;
 	if ((flags & SDMMC_FLAG_SDIOIT) != 0U) {
-		/* FIXME it's better to use sys_work_q !!! */
-		if (ctx->IOInterruptNbr == 1U) { /* HAL_SDIO_RegisterIOFunctionCallback */
-			if ((ctx->SDIO_IOFunction_Callback[ctx->IOFunctionMask - 1U]) != NULL) {
-				(ctx->SDIO_IOFunction_Callback[ctx->IOFunctionMask - 1U])(
-					ctx, ctx->IOFunctionMask - 1U);
-			}
-		} else if ((ctx->IOInterruptNbr > 1U) && (ctx->IOFunctionMask != 0U)) {
-			/* Get pending int firstly */
-			int ret;
-
-			ret = sdhc_stm32_rd_direct(sdio, SDIO_FUNC_NUM_0, SDIO_CCCR_INT_P,
-						   &pendingInt);
-			if ((pendingInt != 0U) && (ctx->IOFunctionMask != 0U)) {
-				for (size_t count = 1; count <= SDIO_MAX_IO_NUMBER; count++) {
-					if (((pendingInt & (1U << count)) != 0U) &&
-					    (((1U << count) & ctx->IOFunctionMask) != 0U)) {
-						if ((ctx->SDIO_IOFunction_Callback[count - 1U]) !=
-						    NULL) {
-							(ctx->SDIO_IOFunction_Callback[count - 1U])(
-								ctx, count);
-						}
-					}
-				}
-			}
-		} else {
-			/* Nothing to do */
-		}
+		(void)k_work_submit(&ctx->work);
 	}
 }
 
@@ -696,7 +668,7 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 		if (cmd->response_type == SD_RSP_TYPE_R1) {
 			ret = sdhc_stm32_snd_cmd(ctx->sdio, cmd, SDMMC_RESPONSE_SHORT);
 		} else { /* SD_SWITCH, SD_RSP_TYPE_R1b */
-			/* TBA */
+			 /* TBA */
 		}
 		break;
 
@@ -822,6 +794,41 @@ static int sdhc_stm32_get_host_props(const struct device *dev, struct sdhc_host_
 	return 0;
 }
 
+static void sdhc_stm32_work_handler(struct k_work *work)
+{
+	struct sdhc_stm32_data *ctx = CONTAINER_OF(work, struct sdhc_stm32_data, work);
+	SDIO_TypeDef *sdio = ctx->sdio;
+	uint8_t int_pending;
+
+	if (ctx->io_int_num == 1U) { /* HAL_SDIO_RegisterIOFunctionCallback */
+		if ((ctx->io_func_cb[ctx->io_func_msk - 1U]) != NULL) {
+			(ctx->io_func_cb[ctx->io_func_msk - 1U])(
+				ctx, ctx->io_func_msk - 1U);
+		}
+	} else if ((ctx->io_int_num > 1U) && (ctx->io_func_msk != 0U)) {
+		/* Get pending int firstly */
+		int ret;
+
+		ret = sdhc_stm32_rd_direct(sdio, SDIO_FUNC_NUM_0, SDIO_CCCR_INT_P, &int_pending);
+		if (ret) {
+			return;
+		}
+
+		if ((int_pending != 0U) && (ctx->io_func_msk != 0U)) {
+			for (size_t count = 1; count <= SDIO_MAX_IO_NUMBER; count++) {
+				if (((int_pending & (1U << count)) != 0U) &&
+				    (((1U << count) & ctx->io_func_msk) != 0U)) {
+					if ((ctx->io_func_cb[count - 1U]) != NULL) {
+						(ctx->io_func_cb[count - 1U])(ctx, count);
+					}
+				}
+			}
+		}
+	} else {
+		/* Nothing to do */
+	}
+}
+
 /*
  * Perform early system init for SDHC
  */
@@ -877,6 +884,8 @@ static int sdhc_stm32_init(const struct device *dev)
 
 	/* Reset controller */
 	sdhc_stm32_reset(dev);
+
+	k_work_init(&ctx->work, sdhc_stm32_work_handler);
 
 	return 0;
 }
