@@ -78,13 +78,6 @@ struct sdhc_stm32_data {
 	uint8_t io_int_num;
 	uint8_t io_func_msk;
 	void (*io_func_cb[SDIO_MAX_IO_NUMBER])(struct sdhc_stm32_data *data, uint32_t func);
-
-#if STM32_SDHC_USE_DMA
-	struct sdhc_dma_stream dma_rx;
-	struct sdhc_dma_stream dma_tx;
-	DMA_HandleTypeDef dma_tx_handle;
-	DMA_HandleTypeDef dma_rx_handle;
-#endif
 };
 
 #ifdef CONFIG_SDHC_STM32_HWFC
@@ -416,8 +409,8 @@ static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
 	SDIO_TypeDef *sdio = ctx->sdio;
 	struct sdhc_io *host_io = &ctx->host_io;
 
-	LOG_INF("SDHC I/O: slot: %d, bus width %d, clock %dHz, card power %s, voltage %s",
-		cfg->slot, ios->bus_width, ios->clock,
+	LOG_INF("SDHC I/O: bus width %d, clock %dHz, card power %s, voltage %s",
+		ios->bus_width, ios->clock,
 		ios->power_mode == SDHC_POWER_ON ? "ON" : "OFF",
 		ios->signal_voltage == SD_VOL_1_8_V ? "1.8V" : "3.3V");
 
@@ -505,7 +498,6 @@ static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
 			return -ENOTSUP;
 		}
 
-		LOG_INF("Bus timing successfully changed to %s", timingStr[ios->timing]);
 		host_io->timing = ios->timing;
 	}
 
@@ -898,14 +890,6 @@ static int sdhc_stm32_init(const struct device *dev)
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
-#if DT_INST_PROP(n, bus_width) == 1
-#define SDMMC_BUS_WIDTH SDMMC_BUS_WIDE_1B
-#elif DT_INST_PROP(n, bus_width) == 4
-#define SDMMC_BUS_WIDTH SDMMC_BUS_WIDE_4B
-#elif DT_INST_PROP(n, bus_width) == 8
-#define SDMMC_BUS_WIDTH SDMMC_BUS_WIDE_8B
-#endif /* DT_INST_PROP(n, bus_width) */
-
 static DEVICE_API(sdhc, sdhc_stm32_api) = {
 	.reset = sdhc_stm32_reset,
 	.request = sdhc_stm32_request,
@@ -920,18 +904,15 @@ static DEVICE_API(sdhc, sdhc_stm32_api) = {
 	STM32_SDHC_IRQ_HANDLER(n);                                                                 \
 	static const struct stm32_pclken pclken_##n[] = STM32_DT_INST_CLOCKS(n);                   \
 	PINCTRL_DT_DEFINE(DT_DRV_INST(n));                                                         \
-	K_MSGQ_DEFINE(sdhc##n##_queue, sizeof(struct sdmmc_event), SDMMC_EVENT_QUEUE_LENGTH, 1);   \
                                                                                                    \
 	static const struct sdhc_stm32_config sdhc_stm32_##n##_config = {                          \
 		.irq_config = sdhc_stm32_irq_config_func_##n,                                      \
-		.irq_source = DT_IRQN(DT_INST_PARENT(n)),                                          \
-		.slot = DT_REG_ADDR(DT_DRV_INST(n)),                                               \
-		.cd = GPIO_DT_SPEC_INST_GET_OR(n, cd_gpios, {0}),                                  \
-		.bus_width_cfg = DT_INST_PROP(n, bus_width),                                       \
-		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(n)),                                 \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.pclken = pclken_##n,                                                              \
 		.pclk_len = DT_INST_NUM_CLOCKS(n),                                                 \
+		.cd_gpio = GPIO_DT_SPEC_INST_GET_OR(n, cd_gpios, {0}),                                  \
 		.pwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, pwr_gpios, {0}),                           \
+		.reset = RESET_DT_SPEC_INST_GET(n),                                                \
 		.props = {.is_spi = false,                                                         \
 			  .f_max = DT_INST_PROP(n, max_bus_freq),                                  \
 			  .f_min = DT_INST_PROP(n, min_bus_freq),                                  \
@@ -954,18 +935,17 @@ static DEVICE_API(sdhc, sdhc_stm32_api) = {
 					.bus_4_bit_support =                                       \
 						(DT_INST_PROP(n, bus_width) == 4) ? true : false,  \
 					.hs200_support = false,                                    \
-					.hs400_support = false}}};                                 \
+					.hs400_support = false                                     \
+			  }                                                                        \
+		}                                                                                  \
+	};                                                                                         \
                                                                                                    \
 	static struct sdhc_stm32_data sdhc_stm32_##n##_data = {                                    \
-		.sdio = (SDIO_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(n)),                            \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.reset = RESET_DT_SPEC_INST_GET(n),                                                \
-		SDMMC_DMA_CHANNEL(rx, RX)                                                          \
-		SDMMC_DMA_CHANNEL(tx, TX)                                                          \
+		.sdio = (SDIO_TypeDef *)DT_REG_ADDR(DT_DRV_INST(n)),                               \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, sdhc_stm32_init, NULL, &sdhc_stm32_##n##_data,                    \
 			      &sdhc_stm32_##n##_config, POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY,    \
-			      &sdhc_api);
+			      &sdhc_stm32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SDHC_STM32_INIT)

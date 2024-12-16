@@ -4,7 +4,9 @@
 config SDHC_STM32
 	bool "STM32 SDHC Driver"
 	default y
+	depends on DT_HAS_ST_STM32_SDHC_ENABLED
 	select SDHC_SUPPORTS_NATIVE_MODE
+	select USE_STM32_LL_SDMMC
 	select PINCTRL
 	help
 	  Enables the STM32 SD Host controller driver
