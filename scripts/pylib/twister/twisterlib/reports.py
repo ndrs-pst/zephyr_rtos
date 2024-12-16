@@ -11,7 +11,7 @@ import string
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from enum import Enum
-from pathlib import PosixPath
+from pathlib import Path, PosixPath
 
 from colorama import Fore
 from twisterlib.statuses import TwisterStatus
@@ -171,6 +171,7 @@ class Reporting:
             runnable = suite.get('runnable', 0)
             duration += float(handler_time)
             ts_status = TwisterStatus(suite.get('status'))
+            classname = Path(suite.get("name","")).name
             for tc in suite.get("testcases", []):
                 status = TwisterStatus(tc.get('status'))
                 reason = tc.get('reason', suite.get('reason', 'Unknown'))
@@ -178,7 +179,6 @@ class Reporting:
 
                 tc_duration = tc.get('execution_time', handler_time)
                 name = tc.get("identifier")
-                classname = ".".join(name.split(".")[:2])
                 fails, passes, errors, skips = self.xunit_testcase(eleTestsuite,
                     name, classname, status, ts_status, reason, tc_duration, runnable,
                     (fails, passes, errors, skips), log, True)
@@ -191,6 +191,7 @@ class Reporting:
             eleTestsuite.attrib['skipped'] = f"{skips}"
             eleTestsuite.attrib['tests'] = f"{total}"
 
+        ET.indent(eleTestsuites, space="\t", level=0)
         result = ET.tostring(eleTestsuites)
         with open(filename, 'wb') as report:
             report.write(result)
@@ -252,6 +253,7 @@ class Reporting:
                 ):
                     continue
                 if full_report:
+                    classname = Path(ts.get("name","")).name
                     for tc in ts.get("testcases", []):
                         status = TwisterStatus(tc.get('status'))
                         reason = tc.get('reason', ts.get('reason', 'Unknown'))
@@ -259,7 +261,6 @@ class Reporting:
 
                         tc_duration = tc.get('execution_time', handler_time)
                         name = tc.get("identifier")
-                        classname = ".".join(name.split(".")[:2])
                         fails, passes, errors, skips = self.xunit_testcase(eleTestsuite,
                             name, classname, status, ts_status, reason, tc_duration, runnable,
                             (fails, passes, errors, skips), log, True)
@@ -280,6 +281,7 @@ class Reporting:
             eleTestsuite.attrib['skipped'] = f"{skips}"
             eleTestsuite.attrib['tests'] = f"{total}"
 
+        ET.indent(eleTestsuites, space="\t", level=0)
         result = ET.tostring(eleTestsuites)
         with open(filename, 'wb') as report:
             report.write(result)

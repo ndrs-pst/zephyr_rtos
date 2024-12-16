@@ -371,7 +371,7 @@ static void esp_wifi_handle_ap_connect_event(void* event_data) {
     struct wifi_ap_sta_info sta_info;
 
     sta_info.link_mode   = WIFI_LINK_MODE_UNKNOWN;
-    sta_info.twt_capable = false;           /* Only support in 802.11ax */
+    sta_info.twt_capable = false; /* Only support in 802.11ax */
     sta_info.mac_length  = WIFI_MAC_ADDR_LEN;
     memcpy(sta_info.mac, event->mac, WIFI_MAC_ADDR_LEN);
 
@@ -418,7 +418,7 @@ static void esp_wifi_handle_ap_disconnect_event(void* event_data) {
     struct wifi_ap_sta_info sta_info;
 
     sta_info.link_mode   = WIFI_LINK_MODE_UNKNOWN;
-    sta_info.twt_capable = false;
+    sta_info.twt_capable = false; /* Only support in 802.11ax */
     sta_info.mac_length  = WIFI_MAC_ADDR_LEN;
     memcpy(sta_info.mac, event->mac, WIFI_MAC_ADDR_LEN);
     wifi_mgmt_raise_ap_sta_disconnected_event(iface, &sta_info);
