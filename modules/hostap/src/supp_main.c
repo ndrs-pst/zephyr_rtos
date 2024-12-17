@@ -77,6 +77,8 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.channel = supplicant_channel,
 	.set_rts_threshold = supplicant_set_rts_threshold,
 	.get_rts_threshold = supplicant_get_rts_threshold,
+	.bss_ext_capab = supplicant_bss_ext_capab,
+	.legacy_roam = supplicant_legacy_roam,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 	.btm_query = supplicant_btm_query,
 #endif
@@ -1088,12 +1090,6 @@ static void zephyr_hostapd_init(struct supplicant_context *ctx)
 		zephyr_hostapd_ctrl_init((void *)interfaces->iface[i]->bss[0]);
 	}
 
-	ret = wifi_nm_register_mgd_iface(wifi_nm_get_instance("hostapd"), iface);
-	if (ret) {
-		LOG_ERR("Failed to register mgd iface with native stack %s (%d)",
-			ifname, ret);
-		goto out;
-	}
 out:
 	return;
 }
