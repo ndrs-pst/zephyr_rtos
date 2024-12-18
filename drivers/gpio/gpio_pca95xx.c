@@ -289,6 +289,14 @@ static inline int update_direction_reg(const struct device* dev, uint8_t pin, ui
                           &drv_data->reg_cache.dir, value);
 }
 
+static inline int update_direction_regs(const struct device* dev, uint16_t value) {
+    struct gpio_pca95xx_drv_data* const drv_data =
+        (struct gpio_pca95xx_drv_data* const)dev->data;
+
+    return write_port_regs(dev, REG_CONF_PORT0,
+                           &drv_data->reg_cache.dir, value);
+}
+
 static inline int update_pul_sel_reg(const struct device* dev, uint8_t pin, uint16_t value) {
     struct gpio_pca95xx_drv_data* const drv_data = (struct gpio_pca95xx_drv_data* const)dev->data;
 
@@ -351,6 +359,17 @@ static int setup_pin_dir(const struct device* dev, uint32_t pin, int flags) {
     ret = update_direction_reg(dev, pin, reg_dir);
 
     return (ret);
+}
+
+/**
+ * @brief Initialize pins to default state
+ *
+ * @param dev Device struct of the PCA95XX
+ *
+ * @return 0 if successful, failed otherwise
+ */
+static int init_pins(const struct device* dev) {
+    return update_direction_regs(dev, 0xFFFF);
 }
 
 /**
@@ -751,6 +770,7 @@ static DEVICE_API(gpio, gpio_pca95xx_drv_api_funcs) = {
 static int gpio_pca95xx_init(const struct device* dev) {
     const struct gpio_pca95xx_config* const config = dev->config;
     struct gpio_pca95xx_drv_data* const drv_data = (struct gpio_pca95xx_drv_data* const )dev->data;
+    int ret;
 
     if (!device_is_ready(config->bus.bus)) {
         return (-ENODEV);
@@ -758,11 +778,14 @@ static int gpio_pca95xx_init(const struct device* dev) {
 
     k_sem_init(&drv_data->lock, 1, 1);
 
+    ret = init_pins(dev);
+    if (ret != 0) {
+        return (ret);
+    }
+
     #ifdef CONFIG_GPIO_PCA95XX_INTERRUPT
     /* Check if GPIO port supports interrupts */
     if ((config->capabilities & PCA_HAS_INTERRUPT) != 0) {
-        int ret;
-
         /* Store self-reference for interrupt handling */
         drv_data->instance = dev;
 
