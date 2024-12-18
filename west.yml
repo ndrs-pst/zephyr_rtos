@@ -162,7 +162,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: f73ee95251b75635ab899d73c3cabebe70f43c09
+      revision: 8d35aa7075253ad0a9edd972590f224f1ab919ac
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -240,6 +240,11 @@ manifest:
     - name: hal_stm32
       revision: 76f9d271244c963cd890d09e72c0b61bacf45472
       path: modules/hal/stm32
+      groups:
+        - hal
+    - name: hal_tdk
+      revision: 16eaeeb54138348fb3227323d7d7c4b94e96ac3d
+      path: modules/hal/tdk
       groups:
         - hal
     - name: hal_telink
@@ -330,7 +335,7 @@ manifest:
       path: modules/lib/picolibc
       revision: d492d5fa7c96918e37653f303028346bb0dd51a2
     - name: segger
-      revision: 1a607e8718171cfbc1ee6b2a5ec00f619d1cc7fc
+      revision: cf56b1d9c80f81a26e2ac5727c9cf177116a4692
       path: modules/debug/segger
       groups:
         - debug

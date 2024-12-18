@@ -2572,9 +2572,10 @@ static inline void k_fifo_put(struct k_fifo* fifo, void* data) {
 #else
 #define k_fifo_put(fifo, data)                                  \
     ({                                                          \
-        SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_fifo, put, fifo, data);   \
-        k_queue_append(&(fifo)->_queue, data);                  \
-        SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_fifo, put, fifo, data);    \
+        void *_data = data;                                     \
+        SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_fifo, put, fifo, _data); \
+        k_queue_append(&(fifo)->_queue, _data);                 \
+        SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_fifo, put, fifo, _data); \
     })
 #endif
 
@@ -2596,10 +2597,10 @@ static inline void k_fifo_put(struct k_fifo* fifo, void* data) {
  */
 #define k_fifo_alloc_put(fifo, data)                            \
     ({                                                          \
-        SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_fifo, alloc_put, fifo, data); \
-        int fap_ret = k_queue_alloc_append(&(fifo)->_queue, data);      \
-        SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_fifo, alloc_put, fifo, data, fap_ret); \
-        fap_ret;                                                \
+        void *_data = data;                                     \
+        SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_fifo, alloc_put, fifo, _data); \
+        int fap_ret = k_queue_alloc_append(&(fifo)->_queue, _data); \
+        SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_fifo, alloc_put, fifo, _data, fap_ret); \
     })
 
 /**
@@ -2827,9 +2828,10 @@ static inline void k_lifo_put(struct k_lifo* lifo, struct net_buf* data) {
 #else
 #define k_lifo_put(lifo, data)                                  \
     ({                                                          \
-        SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_lifo, put, lifo, data);   \
-        k_queue_prepend(&(lifo)->_queue, data);                 \
-        SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_lifo, put, lifo, data);\
+        void *_data = data;                                     \
+        SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_lifo, put, lifo, _data); \
+        k_queue_prepend(&(lifo)->_queue, _data);                \
+        SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_lifo, put, lifo, _data); \
     })
 #endif
 
@@ -2851,9 +2853,10 @@ static inline void k_lifo_put(struct k_lifo* lifo, struct net_buf* data) {
  */
 #define k_lifo_alloc_put(lifo, data)                            \
     ({                                                          \
-        SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_lifo, alloc_put, lifo, data); \
-        int lap_ret = k_queue_alloc_prepend(&(lifo)->_queue, data);     \
-        SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_lifo, alloc_put, lifo, data, lap_ret); \
+        void *_data = data;                                     \
+        SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_lifo, alloc_put, lifo, _data); \
+        int lap_ret = k_queue_alloc_prepend(&(lifo)->_queue, _data); \
+        SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_lifo, alloc_put, lifo, _data, lap_ret); \
         lap_ret;                                                \
     })
 

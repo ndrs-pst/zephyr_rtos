@@ -6,9 +6,9 @@ description: Atmel SAM0 TC in PWM mode
 compatible: "atmel,sam0-tc-pwm"
 
 include:
-    - name: base.yaml
-    - name: pwm-controller.yaml
-    - name: pinctrl-device.yaml
+  - name: base.yaml
+  - name: pwm-controller.yaml
+  - name: pinctrl-device.yaml
 
 properties:
   reg:
@@ -26,16 +26,17 @@ properties:
   channels:
     type: int
     required: true
-    description: Number of channels this TCC has
+    description: Number of channels this TC has
     enum:
       - 2
 
   counter-size:
     type: int
     required: true
-    description: Width of the TCC counter in bits
+    description: Width of the TC counter in bits
     enum:
       - 8
+      - 16
 
   prescaler:
     type: int
