@@ -40,7 +40,7 @@ static int cmd_read(const struct shell* sh, size_t argc, char** argv) {
     addr = strtoul(argv[args_indx.offset], NULL, 0);
     len  = strtoul(argv[args_indx.length], NULL, 0);
 
-    eeprom = device_get_binding(argv[args_indx.device]);
+    eeprom = shell_device_get_binding(argv[args_indx.device]);
     if (!eeprom) {
         shell_error(sh, "EEPROM device not found");
         return (-EINVAL);
@@ -93,7 +93,7 @@ static int cmd_write(const struct shell* sh, size_t argc, char** argv) {
         wr_buf[i] = (uint8_t)byte;
     }
 
-    eeprom = device_get_binding(argv[args_indx.device]);
+    eeprom = shell_device_get_binding(argv[args_indx.device]);
     if (!eeprom) {
         shell_error(sh, "EEPROM device not found");
         return (-EINVAL);
@@ -128,7 +128,7 @@ static int cmd_write(const struct shell* sh, size_t argc, char** argv) {
 static int cmd_size(const struct shell* sh, size_t argc, char** argv) {
     const struct device* eeprom;
 
-    eeprom = device_get_binding(argv[args_indx.device]);
+    eeprom = shell_device_get_binding(argv[args_indx.device]);
     if (!eeprom) {
         shell_error(sh, "EEPROM device not found");
         return (-EINVAL);
@@ -161,7 +161,7 @@ static int cmd_fill(const struct shell* sh, size_t argc, char** argv) {
     }
     memset(wr_buf, pattern, MIN(len, CONFIG_EEPROM_SHELL_BUFFER_SIZE));
 
-    eeprom = device_get_binding(argv[args_indx.device]);
+    eeprom = shell_device_get_binding(argv[args_indx.device]);
     if (!eeprom) {
         shell_error(sh, "EEPROM device not found");
         return (-EINVAL);

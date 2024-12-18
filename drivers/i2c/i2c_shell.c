@@ -54,7 +54,7 @@ static int cmd_i2c_scan(struct shell const* sh, size_t argc, char** argv) {
     uint8_t first = 0x04;
     uint8_t last  = 0x77;
 
-    dev = device_get_binding(argv[ARGV_DEV]);
+    dev = shell_device_get_binding(argv[ARGV_DEV]);
     if (!dev) {
         shell_error(sh, "I2C: Device driver %s not found.", argv[ARGV_DEV]);
         return -ENODEV;
@@ -99,7 +99,7 @@ static int cmd_i2c_recover(struct shell const* sh, size_t argc, char** argv) {
     const struct device* dev;
     int err;
 
-    dev = device_get_binding(argv[ARGV_DEV]);
+    dev = shell_device_get_binding(argv[ARGV_DEV]);
     if (!dev) {
         shell_error(sh, "I2C: Device driver %s not found.", argv[1]);
         return -ENODEV;
@@ -129,7 +129,7 @@ static int i2c_write_from_buffer(struct shell const* sh,
     int ret;
     int i;
 
-    dev = device_get_binding(s_dev_name);
+    dev = shell_device_get_binding(s_dev_name);
     if (!dev) {
         shell_error(sh, "I2C: Device driver %s not found.",
                     s_dev_name);
@@ -186,7 +186,7 @@ static int i2c_read_to_buffer(struct shell const* sh,
     int dev_addr;
     int ret;
 
-    dev = device_get_binding(s_dev_name);
+    dev = shell_device_get_binding(s_dev_name);
     if (!dev) {
         shell_error(sh, "I2C: Device driver %s not found.",
                     s_dev_name);
@@ -293,7 +293,7 @@ static int cmd_i2c_speed(struct shell const* sh, size_t argc, char** argv) {
     uint32_t speed;
     int ret;
 
-    dev = device_get_binding(s_dev_name);
+    dev = shell_device_get_binding(s_dev_name);
     if (!dev) {
         shell_error(sh, "I2C: Device driver %s not found.", s_dev_name);
         return (-ENODEV);

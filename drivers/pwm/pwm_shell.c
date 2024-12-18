@@ -37,7 +37,7 @@ static int cmd_cycles(const struct shell* sh, size_t argc, char** argv) {
 	uint32_t channel;
 	int err;
 
-	dev = device_get_binding(argv[args_indx.device]);
+	dev = shell_device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "PWM device not found");
 		return (-EINVAL);
@@ -68,7 +68,7 @@ static int cmd_usec(const struct shell* sh, size_t argc, char** argv) {
 	uint32_t channel;
 	int err;
 
-	dev = device_get_binding(argv[args_indx.device]);
+	dev = shell_device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "PWM device not found");
 		return -EINVAL;
@@ -99,7 +99,7 @@ static int cmd_nsec(const struct shell* sh, size_t argc, char** argv) {
 	uint32_t channel;
 	int err;
 
-	dev = device_get_binding(argv[args_indx.device]);
+	dev = shell_device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "PWM device not found");
 		return (-EINVAL);
