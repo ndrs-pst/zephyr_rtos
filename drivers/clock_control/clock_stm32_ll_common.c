@@ -602,7 +602,11 @@ static void set_up_plls(void) {
      * and disabling PLL, but before enabling PLL again,
      * since PLL source can be PLL2.
      */
+    /* Disable PLL */
     LL_RCC_PLL2_Disable();
+    while (LL_RCC_PLL_IsReady() != 0U) {
+        /* Wait for PLL to be disabled */
+    }
 
     config_pll2();
 
@@ -615,6 +619,9 @@ static void set_up_plls(void) {
         }
     }
     #endif /* STM32_PLL2_ENABLED */
+    while (LL_RCC_PLL2_IsReady() != 0U) {
+        /* Wait for PLL2 to be disabled */
+    }
 
     #if defined(STM32_PLL_ENABLED)
     #if defined(STM32_SRC_PLL_P) & STM32_PLL_P_ENABLED
