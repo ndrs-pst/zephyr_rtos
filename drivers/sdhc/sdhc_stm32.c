@@ -60,6 +60,9 @@ struct sdhc_stm32_config {
 	const struct pinctrl_dev_config *pcfg;
 	const struct reset_dt_spec reset;
 
+	bool detect_dat3;
+	bool detect_cd;
+
 	struct sdhc_host_props props;
 };
 
@@ -73,7 +76,10 @@ struct sdhc_stm32_data {
 	uint32_t ercd; /*!< SDIO Card Error codes */
 	HAL_SDIO_StateTypeDef state;
 	uint32_t xfer_ctx;
+
 	bool use_dma;
+	bool card_present;
+
 	uint8_t io_int_num;
 	uint8_t io_func_msk;
 	void (*io_func_cb[SDIO_MAX_IO_NUMBER])(struct sdhc_stm32_data *data, uint32_t func);
@@ -762,24 +768,34 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 }
 
 /*
- * Get card presence
+ * Get card presence @see imx_usdhc_get_card_present
  */
 static int sdhc_stm32_get_card_present(const struct device *dev)
 {
 	const struct sdhc_stm32_config *cfg = dev->config;
+	struct sdhc_stm32_data *ctx = dev->data;
 	int ret;
 
-	if (!cfg->cd_gpio.port) {
-		return 1;
+	if (cfg->detect_dat3) {
+		if (!ctx->card_present) {
+		/* Detect card presence with DAT3 line pull */
+
+		/* Delay to ensure host has time to detect card */
+		k_busy_wait(1000);
+
+		/* Clear card detection and pull */
+
+	} else if (cfg->detect_cd) {
+		/* TBA */
+	} else if (cfg->cd_gpio.port) {
+		ctx->card_present = gpio_pin_get_dt(&cfg->cd_gpio) > 0;
+	} else {
+		LOG_WRN("No card detection method configured, assuming card "
+			"is present");
+		ctx->card_present = true;
 	}
 
-	ret = gpio_pin_get_dt(&cfg->cd_gpio);
-	if (ret < 0) {
-		LOG_WRN("reading card detect failed %d", ret);
-		return -EIO;
-	}
-
-	return ret;
+	return ((int)ctx->card_present);
 }
 
 /*
