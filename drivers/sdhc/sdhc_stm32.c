@@ -414,7 +414,7 @@ static void sdhc_stm32_isr(const struct device *dev)
 }
 
 /*
- * Set SDHC io properties
+ * Set SDHC io properties @see sdhc_esp32_set_io, imx_usdhc_set_io
  */
 static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
 {
@@ -438,6 +438,10 @@ static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
 					   &sdmmc_ker_ck) != 0) {
 			LOG_ERR("Failed to get SDMMC domain clock rate");
 			return -EIO;
+		}
+
+		if ((ios->clock > data->props.f_max) || (ios->clock < data->props.f_min)) {
+			return -EINVAL;
 		}
 
 		/* clk_div is equal to [sdmmc_ker_ck / (2 * SDMMC_CK)] */
@@ -778,13 +782,13 @@ static int sdhc_stm32_get_card_present(const struct device *dev)
 
 	if (cfg->detect_dat3) {
 		if (!ctx->card_present) {
-		/* Detect card presence with DAT3 line pull */
+			/* Detect card presence with DAT3 line pull */
 
-		/* Delay to ensure host has time to detect card */
-		k_busy_wait(1000);
+			/* Delay to ensure host has time to detect card */
+			k_busy_wait(1000);
 
-		/* Clear card detection and pull */
-
+			/* Clear card detection and pull */
+		}
 	} else if (cfg->detect_cd) {
 		/* TBA */
 	} else if (cfg->cd_gpio.port) {
@@ -972,13 +976,13 @@ static DEVICE_API(sdhc, sdhc_stm32_api) = {
 						(DT_INST_PROP(n, bus_width) == 4) ? true : false,  \
 					.adma_2_support = false,                                   \
 					.max_blk_len = 0,                                          \
-					.ddr50_support = false,                                    \
-					.sdr104_support = false,                                   \
-					.sdr50_support = false,                                    \
+					.ddr50_support = true,                                     \
+					.sdr104_support = true,                                    \
+					.sdr50_support = true,                                     \
 					.bus_8_bit_support = false,                                \
 					.bus_4_bit_support =                                       \
 						(DT_INST_PROP(n, bus_width) == 4) ? true : false,  \
-					.hs200_support = false,                                    \
+					.hs200_support = true,                                     \
 					.hs400_support = false}}};                                 \
                                                                                                    \
 	static struct sdhc_stm32_data sdhc_stm32_##n##_data = {                                    \

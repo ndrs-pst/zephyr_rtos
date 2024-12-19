@@ -129,7 +129,6 @@ static int sd_init_io(struct sd_card *card)
 	bus_io->clock = 0;
 	/* SPI requires SDHC PUSH PULL, and open drain buses use more power */
 	bus_io->bus_mode = SDHC_BUSMODE_PUSHPULL;
-	bus_io->power_mode = SDHC_POWER_ON;
 	bus_io->bus_width = SDHC_BUS_WIDTH1BIT;
 	/* Cards start with legacy timing and Maximum voltage Host controller support */
 	bus_io->timing = SDHC_TIMING_LEGACY;
