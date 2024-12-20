@@ -440,7 +440,7 @@ static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
 			return -EIO;
 		}
 
-		if ((ios->clock > data->props.f_max) || (ios->clock < data->props.f_min)) {
+		if ((ios->clock > cfg->props.f_max) || (ios->clock < cfg->props.f_min)) {
 			return -EINVAL;
 		}
 
