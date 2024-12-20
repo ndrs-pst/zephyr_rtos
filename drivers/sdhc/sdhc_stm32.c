@@ -440,7 +440,8 @@ static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
 			return -EIO;
 		}
 
-		if ((ios->clock > cfg->props.f_max) || (ios->clock < cfg->props.f_min)) {
+		if (((unsigned int)ios->clock > cfg->props.f_max) ||
+		    ((unsigned int)ios->clock < cfg->props.f_min)) {
 			return -EINVAL;
 		}
 
@@ -474,6 +475,20 @@ static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
 
 		MODIFY_REG(sdmmc->CLKCR, SDMMC_CLKCR_WIDBUS, bus_wide);
 		host_io->bus_width = ios->bus_width;
+	}
+
+	if (ios->signal_voltage != host_io->signal_voltage) {
+		/* Switch to 1.8V */
+		if (ios->signal_voltage == SD_VOL_1_8_V) {
+			/* Enable 1.8V signal voltage */
+			/* @todo */
+		} else {
+			/* Switch to 3.3V */
+			/* Disable 1.8V signal voltage */
+			/* @todo */
+		}
+
+		host_io->signal_voltage = ios->signal_voltage;
 	}
 
 	/* Toggle card power supply */
@@ -778,7 +793,6 @@ static int sdhc_stm32_get_card_present(const struct device *dev)
 {
 	const struct sdhc_stm32_config *cfg = dev->config;
 	struct sdhc_stm32_data *ctx = dev->data;
-	int ret;
 
 	if (cfg->detect_dat3) {
 		if (!ctx->card_present) {
@@ -822,8 +836,7 @@ static void sdhc_stm32_work_handler(struct k_work *work)
 
 	if (ctx->io_int_num == 1U) { /* HAL_SDIO_RegisterIOFunctionCallback */
 		if ((ctx->io_func_cb[ctx->io_func_msk - 1U]) != NULL) {
-			(ctx->io_func_cb[ctx->io_func_msk - 1U])(
-				ctx, ctx->io_func_msk - 1U);
+			(ctx->io_func_cb[ctx->io_func_msk - 1U])(ctx, ctx->io_func_msk - 1U);
 		}
 	} else if ((ctx->io_int_num > 1U) && (ctx->io_func_msk != 0U)) {
 		/* Get pending int firstly */
@@ -853,12 +866,15 @@ static int sdhc_stm32_registers_configure(const struct device *dev)
 {
 	const struct sdhc_stm32_config *cfg = dev->config;
 	struct sdhc_stm32_data const *ctx = dev->data;
-	const SDMMC_TypeDef *sdmmc = ctx->sdmmc;
+	SDMMC_TypeDef *sdmmc = ctx->sdmmc;
+	const struct device *clock;
+	SDMMC_InitTypeDef init;
+	uint32_t sdmmc_ker_ck;
 	int ret;
 
 	if (!device_is_ready(cfg->reset.dev)) {
 		LOG_ERR("reset controller not ready");
-		return (-ENODEV);
+		return -ENODEV;
 	}
 
 	ret = reset_line_toggle_dt(&cfg->reset);
@@ -866,6 +882,22 @@ static int sdhc_stm32_registers_configure(const struct device *dev)
 		LOG_ERR("failed to reset peripheral");
 		return ret;
 	}
+
+	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	if (clock_control_get_rate(clock, (clock_control_subsys_t)&cfg->pclken[1],
+	    &sdmmc_ker_ck) != 0) {
+		LOG_ERR("Failed to get SDMMC domain clock rate");
+		return -EIO;
+	}
+
+	init.ClockEdge           = SDMMC_CLOCK_EDGE_RISING;
+	init.ClockPowerSave      = SDMMC_CLOCK_POWER_SAVE_DISABLE;
+	init.BusWide             = SDMMC_BUS_WIDE_1B;
+	init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
+	init.ClockDiv            = sdmmc_ker_ck / (2U * SDMMC_CLOCK_400KHZ);
+	(void)SDMMC_Init(sdmmc, init);
+
+	(void)SDMMC_PowerState_ON(sdmmc);
 
 	return ret;
 }
