@@ -162,7 +162,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 9fbf519573e713bd92bb8222bcfef77e7219584b
+      revision: e52371024732a47a67fa9c889fbccd0aa6355f3a
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -219,7 +219,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 677984b44e49e01f93caf957945bc712df6be148
+      revision: 3c68562411cfe2e4bfb8546854fe9a24cb83c71a
       groups:
         - hal
     - name: hal_rpi_pico
@@ -328,7 +328,7 @@ manifest:
       path: modules/lib/openthread
     - name: percepio
       path: modules/debug/percepio
-      revision: b68d17993109b9bee6b45dc8c9794e7b7bce236d
+      revision: 0d44033c744978ca2505a06640b4f6964c5411e6
       groups:
         - debug
     - name: picolibc

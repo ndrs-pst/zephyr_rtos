@@ -153,6 +153,11 @@ I2C
 Input
 =====
 
+PWM
+===
+
+* Renamed the ``compatible`` from ``renesas,ra8-pwm`` to :dtcompatible:`renesas,ra-pwm`.
+
 Interrupt Controller
 ====================
 
@@ -196,6 +201,11 @@ Pin Control
       };
 
 
+PWM
+===
+
+* Renamed the ``compatible`` from ``nxp,kinetis-ftm-pwm`` to :dtcompatible:`nxp,ftm-pwm`.
+
 Sensors
 =======
 
@@ -228,6 +238,12 @@ RTC
 ===
 
 * Renamed the ``compatible`` from ``nxp,kinetis-rtc`` to :dtcompatible:`nxp,rtc`.
+
+Timer
+=====
+
+* Renamed the ``compatible`` from ``nxp,kinetis-ftm`` to :dtcompatible:`nxp,ftm` and relocate it
+  under ``dts/bindings/timer``.
 
 Video
 =====
@@ -352,6 +368,13 @@ MCUmgr
 
 Modem
 =====
+
+LoRa
+====
+
+* The function :c:func:`lora_recv_async` and callback ``lora_recv_cb`` now include an
+  additional ``user_data`` parameter, which is a void pointer. This parameter can be used to reference
+  any user-defined data structure. To maintain the current behavior, set this parameter to ``NULL``.
 
 Architectures
 *************
