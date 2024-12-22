@@ -45,7 +45,7 @@ static int sd_send_interface_condition(struct sd_card *card)
 	uint32_t resp;
 
 	/* Reset card with CMD0 */
-	ret = sd_idle(card);
+	ret = sd_idle(card);                                    /* SD_INIT_SEQ09 */
 	if (ret) {
 		LOG_ERR("Card error on CMD0");
 		return ret;
@@ -57,7 +57,7 @@ static int sd_send_interface_condition(struct sd_card *card)
 	cmd.response_type = (SD_RSP_TYPE_R7 | SD_SPI_RSP_TYPE_R7);
 	cmd.retries = CONFIG_SD_CMD_RETRIES;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
-	ret = sdhc_request(card->sdhc, &cmd, NULL);
+	ret = sdhc_request(card->sdhc, &cmd, NULL);             /* SD_INIT_SEQ10 */
 	if (ret) {
 		LOG_DBG("SD CMD8 failed with error %d", ret);
 		/* Retry */
@@ -150,14 +150,14 @@ static int sd_init_io(struct sd_card *card)
 	/* Toggle power to card to reset it */
 	LOG_DBG("Resetting power to card");
 	bus_io->power_mode = SDHC_POWER_OFF;
-	ret = sdhc_set_io(card->sdhc, bus_io);
+	ret = sdhc_set_io(card->sdhc, bus_io);                  /* SD_INIT_SEQ04 */
 	if (ret) {
 		LOG_ERR("Could not disable card power via SDHC");
 		return ret;
 	}
 	sd_delay(card->host_props.power_delay);
 	bus_io->power_mode = SDHC_POWER_ON;
-	ret = sdhc_set_io(card->sdhc, bus_io);
+	ret = sdhc_set_io(card->sdhc, bus_io);                  /* SD_INIT_SEQ05 */
 	if (ret) {
 		LOG_ERR("Could not disable card power via SDHC");
 		return ret;
@@ -170,7 +170,7 @@ static int sd_init_io(struct sd_card *card)
 	sd_delay(card->host_props.power_delay);
 	/* Start bus clock */
 	bus_io->clock = SDMMC_CLOCK_400KHZ;
-	ret = sdhc_set_io(card->sdhc, bus_io);
+	ret = sdhc_set_io(card->sdhc, bus_io);                  /* SD_INIT_SEQ06 */
 	if (ret) {
 		LOG_ERR("Could not start bus clock");
 		return ret;
@@ -198,20 +198,20 @@ static int sd_command_init(struct sd_card *card)
 	 * Common to SDIO and SDMMC. Some eMMC chips break the
 	 * specification and expect something like this too.
 	 */
-	ret = sd_common_init(card);
+	ret = sd_common_init(card);                             /* SD_INIT_SEQ08 */
 	if (ret) {
 		return ret;
 	}
 
 #ifdef CONFIG_SDIO_STACK
 	/* Attempt to initialize SDIO card */
-	if (!sdio_card_init(card)) {
+	if (!sdio_card_init(card)) {                            /* SD_INIT_SEQ11 */
 		return 0;
 	}
 #endif /* CONFIG_SDIO_STACK */
 #ifdef CONFIG_SDMMC_STACK
 	/* Attempt to initialize SDMMC card */
-	if (!sdmmc_card_init(card)) {
+	if (!sdmmc_card_init(card)) {                           /* SD_INIT_SEQ29 */
 		return 0;
 	}
 #endif /* CONFIG_SDIO_STACK */
@@ -221,7 +221,7 @@ static int sd_command_init(struct sd_card *card)
 		LOG_ERR("Card error on CMD0");
 		return ret;
 	}
-	if (!mmc_card_init(card)) {
+	if (!mmc_card_init(card)) {                             /* SD_INIT_SEQ33 */
 		return 0;
 	}
 #endif /* CONFIG_MMC_STACK */
@@ -230,7 +230,7 @@ static int sd_command_init(struct sd_card *card)
 }
 
 /* Initializes SD/SDIO card */
-int sd_init(const struct device *sdhc_dev, struct sd_card *card)
+int sd_init(const struct device *sdhc_dev, struct sd_card *card)        /* SD_INIT_SEQ00 */
 {
 	int ret;
 
@@ -238,7 +238,7 @@ int sd_init(const struct device *sdhc_dev, struct sd_card *card)
 		return -ENODEV;
 	}
 	card->sdhc = sdhc_dev;
-	ret = sdhc_get_host_props(card->sdhc, &card->host_props);
+	ret = sdhc_get_host_props(card->sdhc, &card->host_props);       /* SD_INIT_SEQ01 */
 	if (ret) {
 		LOG_ERR("SD host controller returned invalid properties");
 		return ret;
@@ -257,7 +257,7 @@ int sd_init(const struct device *sdhc_dev, struct sd_card *card)
 	}
 
 	/* Initialize SDHC IO with defaults */
-	ret = sd_init_io(card);
+	ret = sd_init_io(card);                                 /* SD_INIT_SEQ03 */
 	if (ret) {
 		k_mutex_unlock(&card->lock);
 		return ret;
@@ -274,7 +274,7 @@ int sd_init(const struct device *sdhc_dev, struct sd_card *card)
 	 * If initialization then fails, the sd_init routine will assume the
 	 * card is inaccessible
 	 */
-	ret = sd_command_init(card);
+	ret = sd_command_init(card);                            /* SD_INIT_SEQ07 */
 	if (ret == SD_RESTART) {
 		/* Reset I/O, and retry sd initialization once more */
 		card->status = CARD_ERROR;

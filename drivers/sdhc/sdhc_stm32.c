@@ -572,7 +572,9 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 		ret = sdhc_stm32_snd_cmd(ctx->sdmmc, cmd, SDMMC_RESPONSE_LONG);
 		break;
 
-	case SD_SEND_RELATIVE_ADDR: /* SDMMC_CmdSetRelAdd */
+	case MMC_SEND_OP_COND:      /* SDMMC_CmdOpCondition */
+	case SDMMC_SEND_RELATIVE_ADDR: /* SDMMC_CmdSetRelAdd */
+	case SD_SWITCH:             /* SDMMC_CmdSwitch, share with SD_APP_SET_BUS_WIDTH */
 	case SD_SELECT_CARD:        /* SDMMC_CmdSelDesel */
 	case SD_SEND_IF_COND:       /* SDMMC_CmdSendEXTCSD */
 	case SD_VOL_SWITCH:         /* SDMMC_CmdVoltageSwitch */
@@ -689,14 +691,6 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 	case SD_APP_SEND_SCR: /* sdmmc_read_scr */
 		break;
 
-	case SD_APP_SET_BUS_WIDTH: /* sdmmc_switch, SD_APP_SET_BUS_WIDTH */
-		if (cmd->response_type == SD_RSP_TYPE_R1) {
-			ret = sdhc_stm32_snd_cmd(ctx->sdmmc, cmd, SDMMC_RESPONSE_SHORT);
-		} else { /* SD_SWITCH, SD_RSP_TYPE_R1b */
-			 /* TBA */
-		}
-		break;
-
 	case SD_APP_SEND_NUM_WRITTEN_BLK: {
 		sdhc_stm32_cfg_data(ctx->sdmmc, 4, SDMMC_DATABLOCK_SIZE_4B,
 				    SDMMC_TRANSFER_DIR_TO_SDMMC);
@@ -744,9 +738,6 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 		LOG_INF("SDHC driver: command %u not supported", cmd->opcode);
 		return -ENOTSUP;
 	}
-
-	/* Interpret response */
-	ret = 0;
 
 	return (ret);
 }
@@ -819,7 +810,7 @@ static int sdhc_stm32_get_card_present(const struct device *dev)
 /*
  * Get host properties
  */
-static int sdhc_stm32_get_host_props(const struct device *dev, struct sdhc_host_props *props)
+static int sdhc_stm32_get_host_props(const struct device *dev, struct sdhc_host_props *props)   /* SD_INIT_SEQ02 */
 {
 	const struct sdhc_stm32_config *cfg = dev->config;
 
@@ -954,8 +945,8 @@ static int sdhc_stm32_init(const struct device *dev)
 	sdhc_stm32_fc_enable(ctx->sdmmc);
 #endif
 
-	/* Reset controller */
-	sdhc_stm32_reset(dev);
+	/* Set all host IO values to zeroes */
+	memset(&ctx->host_io, 0, sizeof(struct sdhc_io));
 
 	k_work_init(&ctx->work, sdhc_stm32_work_handler);
 

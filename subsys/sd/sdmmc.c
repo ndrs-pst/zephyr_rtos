@@ -681,7 +681,7 @@ int sdmmc_card_init(struct sd_card* card) {
     }
     else if (IS_ENABLED(CONFIG_SDHC_SUPPORTS_NATIVE_MODE)) {
         /* Probe Native card with ACMD41 */
-        ret = sdmmc_send_ocr(card, ocr_arg);
+        ret = sdmmc_send_ocr(card, ocr_arg);                    /* SD_INIT_SEQ30 */
     }
     else {
         return (-ENOTSUP);
@@ -774,7 +774,7 @@ int sdmmc_card_init(struct sd_card* card) {
     }
 
     /* Read the card's CID (card identification register) */
-    ret = card_read_cid(card);
+    ret = card_read_cid(card);                                  /* SD_INIT_SEQ31 */
     if (ret) {
         return (ret);
     }
@@ -833,7 +833,7 @@ int sdmmc_card_init(struct sd_card* card) {
 
     /* Read switch capabilities to determine what speeds card supports */
     if (!card->host_props.is_spi && IS_ENABLED(CONFIG_SDHC_SUPPORTS_NATIVE_MODE)) {
-        ret = sdmmc_read_switch(card);
+        ret = sdmmc_read_switch(card);                          /* SD_INIT_SEQ32 */
         if (ret) {
             LOG_ERR("Failed to read card functions");
             return (ret);

@@ -223,7 +223,7 @@ static int sdio_read_cccr(struct sd_card *card)
 	uint32_t cccr_ver;
 
 	ret = sdio_io_rw_direct(card, SDIO_IO_READ, SDIO_FUNC_NUM_0,
-		SDIO_CCCR_CCCR, 0, &data);
+		SDIO_CCCR_CCCR, 0, &data);                      /* SD_INIT_SEQ19 */
 	if (ret) {
 		LOG_DBG("CCCR read failed: %d", ret);
 		return ret;
@@ -233,14 +233,14 @@ static int sdio_read_cccr(struct sd_card *card)
 	LOG_DBG("SDIO cccr revision %u", cccr_ver);
 	/* Read SD spec version */
 	ret = sdio_io_rw_direct(card, SDIO_IO_READ, SDIO_FUNC_NUM_0,
-		SDIO_CCCR_SD, 0, &data);
+		SDIO_CCCR_SD, 0, &data);                        /* SD_INIT_SEQ20 */
 	if (ret) {
 		return ret;
 	}
 	card->sd_version = (data & SDIO_CCCR_SD_SPEC_MASK) >> SDIO_CCCR_SD_SPEC_SHIFT;
 	/* Read CCCR capability flags */
 	ret = sdio_io_rw_direct(card, SDIO_IO_READ, SDIO_FUNC_NUM_0,
-		SDIO_CCCR_CAPS, 0, &data);
+		SDIO_CCCR_CAPS, 0, &data);                      /* SD_INIT_SEQ21 */
 	if (ret) {
 		return ret;
 	}
@@ -254,7 +254,7 @@ static int sdio_read_cccr(struct sd_card *card)
 	if (cccr_ver >= SDIO_CCCR_CCCR_REV_2_00) {
 		/* Read high speed properties */
 		ret = sdio_io_rw_direct(card, SDIO_IO_READ, SDIO_FUNC_NUM_0,
-			SDIO_CCCR_SPEED, 0, &data);
+			SDIO_CCCR_SPEED, 0, &data);             /* SD_INIT_SEQ22 */
 		if (ret) {
 			return ret;
 		}
@@ -266,7 +266,7 @@ static int sdio_read_cccr(struct sd_card *card)
 		(card->flags & SD_1800MV_FLAG)) {
 		/* Read UHS properties */
 		ret = sdio_io_rw_direct(card, SDIO_IO_READ, SDIO_FUNC_NUM_0,
-			SDIO_CCCR_UHS, 0, &data);
+			SDIO_CCCR_UHS, 0, &data);               /* SD_INIT_SEQ23 */
 		if (ret) {
 			return ret;
 		}
@@ -283,7 +283,7 @@ static int sdio_read_cccr(struct sd_card *card)
 		}
 
 		ret = sdio_io_rw_direct(card, SDIO_IO_READ, SDIO_FUNC_NUM_0,
-			SDIO_CCCR_DRIVE_STRENGTH, 0, &data);
+			SDIO_CCCR_DRIVE_STRENGTH, 0, &data);    /* SD_INIT_SEQ24 */
 		if (ret) {
 			return ret;
 		}
@@ -351,6 +351,7 @@ static int sdio_read_cis(struct sdio_func *func,
 		}
 		cis_ptr |= *data << (i * 8);
 	}
+
 	/* Read CIS tuples until we have read all requested CIS tuple codes */
 	do {
 		/* Read tuple code */
@@ -551,7 +552,7 @@ int sdio_card_init(struct sd_card *card)
 	uint32_t ocr_arg = 0U;
 
 	/* Probe card with SDIO OCR CM5 */
-	ret = sdio_send_ocr(card, ocr_arg);
+	ret = sdio_send_ocr(card, ocr_arg);                     /* SD_INIT_SEQ12 */
 	if (ret) {
 		return ret;
 	}
@@ -567,7 +568,7 @@ int sdio_card_init(struct sd_card *card)
 		/* See if the card also supports 1.8V */
 		ocr_arg |= SD_OCR_SWITCH_18_REQ_FLAG;
 	}
-	ret = sdio_send_ocr(card, ocr_arg);
+	ret = sdio_send_ocr(card, ocr_arg);                     /* SD_INIT_SEQ13 */
 	if (ret) {
 		return ret;
 	}
@@ -593,7 +594,7 @@ int sdio_card_init(struct sd_card *card)
 			(!card->host_props.is_spi) &&
 			(card->host_props.host_caps.vol_180_support) &&
 			IS_ENABLED(CONFIG_SD_UHS_PROTOCOL)) {
-			ret = sdmmc_switch_voltage(card);
+			ret = sdmmc_switch_voltage(card);       /* SD_INIT_SEQ14 */
 			if (ret) {
 				/* Disable host support for 1.8 V */
 				card->host_props.host_caps.vol_180_support = false;
@@ -609,26 +610,26 @@ int sdio_card_init(struct sd_card *card)
 		if ((card->flags & SD_MEM_PRESENT_FLAG) &&
 			((card->flags & SD_SDHC_FLAG) == 0)) {
 			/* We must send CMD2 to get card cid */
-			ret = card_read_cid(card);
+			ret = card_read_cid(card);              /* SD_INIT_SEQ15 */
 			if (ret) {
 				return ret;
 			}
 		}
 		/* Send CMD3 to get card relative address */
-		ret = sdmmc_request_rca(card);
+		ret = sdmmc_request_rca(card);                  /* SD_INIT_SEQ16 */
 		if (ret) {
 			return ret;
 		}
 		/* Move the card to transfer state (with CMD7) to run
 		 * remaining commands
 		 */
-		ret = sdmmc_select_card(card);
+		ret = sdmmc_select_card(card);                  /* SD_INIT_SEQ17 */
 		if (ret) {
 			return ret;
 		}
 	}
 	/* Read SDIO card common control register */
-	ret = sdio_read_cccr(card);
+	ret = sdio_read_cccr(card);                             /* SD_INIT_SEQ18 */
 	if (ret) {
 		return ret;
 	}
@@ -636,7 +637,7 @@ int sdio_card_init(struct sd_card *card)
 	card->func0.num = SDIO_FUNC_NUM_0;
 	card->func0.card = card;
 	ret = sdio_read_cis(&card->func0, cis_tuples,
-		ARRAY_SIZE(cis_tuples));
+		ARRAY_SIZE(cis_tuples));                        /* SD_INIT_SEQ25 */
 	if (ret) {
 		return ret;
 	}
@@ -646,7 +647,7 @@ int sdio_card_init(struct sd_card *card)
 		((card->cccr_flags & SDIO_SUPPORT_HS) ||
 		(card->cccr_flags & SDIO_SUPPORT_4BIT_LS_BUS))) {
 		/* Raise bus width to 4 bits */
-		ret = sdio_set_bus_width(card, SDHC_BUS_WIDTH4BIT);
+		ret = sdio_set_bus_width(card, SDHC_BUS_WIDTH4BIT);     /* SD_INIT_SEQ26 */
 		if (ret) {
 			return ret;
 		}
@@ -655,14 +656,14 @@ int sdio_card_init(struct sd_card *card)
 
 	/* Select and set bus speed */
 	sdio_select_bus_speed(card);
-	ret = sdio_set_bus_speed(card);
+	ret = sdio_set_bus_speed(card);                         /* SD_INIT_SEQ27 */
 	if (ret) {
 		return ret;
 	}
 	if (card->card_speed == SD_TIMING_SDR50 ||
 		card->card_speed == SD_TIMING_SDR104) {
 		/* SDR104, SDR50, and DDR50 mode need tuning */
-		ret = sdhc_execute_tuning(card->sdhc);
+		ret = sdhc_execute_tuning(card->sdhc);          /* SD_INIT_SEQ28 */
 		if (ret) {
 			LOG_ERR("SD tuning failed: %d", ret);
 		}
