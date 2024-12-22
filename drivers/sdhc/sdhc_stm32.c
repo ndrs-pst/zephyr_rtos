@@ -308,8 +308,8 @@ static int sdhc_stm32_snd_cmd(SDMMC_TypeDef *sdmmc, struct sdhc_command *cmd, ui
 	return ret;
 }
 
-static int sdhc_stm32_rd_direct(SDMMC_TypeDef *sdmmc, uint32_t func_num, uint32_t reg_addr,
-				uint8_t *data_out)
+static int sdhc_stm32_sdio_rd_direct(SDMMC_TypeDef *sdmmc, uint32_t func_num, uint32_t reg_addr,
+				     uint8_t *data_out)
 {
 	SDMMC_CmdInitTypeDef cmd_init;
 	int ret;
@@ -326,14 +326,17 @@ static int sdhc_stm32_rd_direct(SDMMC_TypeDef *sdmmc, uint32_t func_num, uint32_
 
 	ret = sdhc_stm32_get_resp_ll(sdmmc, 1, SDMMC_CMD_SDMMC_RW_DIRECT);
 	if (ret == 0) {
+		__SDMMC_CMDTRANS_DISABLE(sdmmc);
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
+
 		*data_out = (uint8_t)SDMMC_GetResponse(sdmmc, SDMMC_RESP1);
 	}
 
 	return ret;
 }
 
-static int sdhc_stm32_wr_direct(SDMMC_TypeDef *sdmmc, uint32_t func_num, uint32_t raw,
-				uint32_t reg_addr, uint8_t data_in)
+static int sdhc_stm32_sdio_wr_direct(SDMMC_TypeDef *sdmmc, uint32_t func_num, uint32_t raw,
+				     uint32_t reg_addr, uint8_t data_in)
 {
 	SDMMC_CmdInitTypeDef cmd_init;
 	int ret;
@@ -350,8 +353,96 @@ static int sdhc_stm32_wr_direct(SDMMC_TypeDef *sdmmc, uint32_t func_num, uint32_
 	(void)SDMMC_SendCommand(sdmmc, &cmd_init);
 
 	ret = sdhc_stm32_get_resp_ll(sdmmc, 1, SDMMC_CMD_SDMMC_RW_DIRECT);
+	if (ret == 0) {
+		__SDMMC_CMDTRANS_DISABLE(sdmmc);
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
+	}
 
 	return ret;
+}
+
+static int sdhc_stm32_sdio_rw_direct(SDMMC_TypeDef *sdmmc, struct sdhc_command *cmd)
+{
+	SDMMC_CmdInitTypeDef cmd_init;
+	int ret;
+
+	cmd_init.Argument = cmd->arg;
+	cmd_init.CmdIndex = SDMMC_CMD_SDMMC_RW_DIRECT;
+	cmd_init.Response = SDMMC_RESPONSE_SHORT;
+	cmd_init.WaitForInterrupt = SDMMC_WAIT_NO;
+	cmd_init.CPSM = SDMMC_CPSM_ENABLE;
+	(void)SDMMC_SendCommand(sdmmc, &cmd_init);
+
+	ret = sdhc_stm32_get_resp_ll(sdmmc, 1, SDMMC_CMD_SDMMC_RW_DIRECT);
+	if (ret == 0) {
+		__SDMMC_CMDTRANS_DISABLE(sdmmc);
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
+
+		cmd->response[0] = SDMMC_GetResponse(sdmmc, SDMMC_RESP1);
+	}
+
+	return ret;
+}
+
+static int sdhc_stm32_sdio_rw_extend(struct sdhc_stm32_context *ctx, const struct sdhc_cmd *cmd,
+				     const struct sdhc_data *data)
+{
+	SDMMC_DataInitTypeDef config;
+	uint32_t dir;
+	uint32_t arg;
+	uint32_t mode;
+	uint32_t dat_len;
+	uint32_t blk_sz;
+	int err_state;
+
+	arg = cmd->arg;
+
+	if (arg & BIT(SDIO_EXTEND_CMD_ARG_BLK_SHIFT)) {
+		dat_len = (uint32_t)(data->blocks * data->block_size);
+		blk_sz = sdhc_stm32_cnv_blk_sz(data->block_size);
+		mode = SDMMC_TRANSFER_MODE_BLOCK;
+	} else {
+		dat_len = data->block_size;
+		blk_sz = SDMMC_DATABLOCK_SIZE_1B;
+		mode = SDMMC_TRANSFER_MODE_SDIO;
+	}
+
+	if (arg & BIT(SDIO_CMD_ARG_RW_SHIFT)) {
+		dir = SDMMC_TRANSFER_DIR_TO_CARD;
+	} else {
+		dir = SDMMC_TRANSFER_DIR_TO_SDMMC;
+	}
+
+	/* Configure the SD DPSM (Data Path State Machine) */
+	config.DataTimeOut   = SDMMC_DATATIMEOUT;
+	config.DataLength    = dat_len;
+	config.DataBlockSize = blk_sz;
+	config.TransferDir   = dir;
+	config.TransferMode  = mode;
+	config.DPSM          = SDMMC_DPSM_DISABLE;
+	(void)SDMMC_ConfigData(ctx->sdmmc, &config);
+
+	__SDMMC_CMDTRANS_ENABLE(ctx->sdmmc);
+
+	err_state = SDMMC_SDIO_CmdReadWriteExtended(ctx->sdmmc, arg);
+	if (err_state != HAL_SD_ERROR_NONE) {
+		ctx->ercd |= err_state;
+		if (err_state != (SDMMC_ERROR_ADDR_OUT_OF_RANGE | SDMMC_ERROR_ILLEGAL_CMD |
+				  SDMMC_ERROR_COM_CRC_FAILED | SDMMC_ERROR_GENERAL_UNKNOWN_ERR)) {
+			/* Clear all the static flags */
+			__SDMMC_CLEAR_FLAG(ctx->sdmmc, SDMMC_STATIC_DATA_FLAGS);
+			ctx->state = HAL_SDIO_STATE_READY;
+			ctx->xfer_ctx = SDIO_CONTEXT_NONE;
+			return -EIO;
+		}
+		return -EIO;
+	}
+	__SDMMC_CMDTRANS_DISABLE(ctx->sdmmc);
+
+	/* Clear all the static flags */
+	__SDMMC_CLEAR_FLAG(ctx->sdmmc, SDMMC_STATIC_DATA_FLAGS);
+
+	return 0;
 }
 
 static uint8_t sdhc_stm32_cnv_blk_sz(uint32_t blk_sz)
@@ -550,7 +641,7 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 {
 	struct sdhc_stm32_data *ctx = dev->data;
 	uint32_t err_state;
-	int ret;
+	int ret = 0;
 
 	switch (cmd->opcode) {
 	case SD_GO_IDLE_STATE:
@@ -572,100 +663,26 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 		ret = sdhc_stm32_snd_cmd(ctx->sdmmc, cmd, SDMMC_RESPONSE_LONG);
 		break;
 
-	case MMC_SEND_OP_COND:      /* SDMMC_CmdOpCondition */
+	case MMC_SEND_OP_COND:         /* SDMMC_CmdOpCondition */
 	case SDMMC_SEND_RELATIVE_ADDR: /* SDMMC_CmdSetRelAdd */
-	case SD_SWITCH:             /* SDMMC_CmdSwitch, share with SD_APP_SET_BUS_WIDTH */
-	case SD_SELECT_CARD:        /* SDMMC_CmdSelDesel */
-	case SD_SEND_IF_COND:       /* SDMMC_CmdSendEXTCSD */
-	case SD_VOL_SWITCH:         /* SDMMC_CmdVoltageSwitch */
-	case SD_SEND_STATUS:        /* SDMMC_CmdSendStatus */
-	case SD_SET_BLOCK_SIZE:     /* SDMMC_CmdBlockLength */
-	case SD_APP_SEND_OP_COND:   /* SDMMC_CmdAppOperCommand */
-	case SD_APP_CMD:            /* SDMMC_CmdAppCommand */
+	case SD_SWITCH:                /* SDMMC_CmdSwitch, share with SD_APP_SET_BUS_WIDTH */
+	case SD_SELECT_CARD:           /* SDMMC_CmdSelDesel */
+	case SD_SEND_IF_COND:          /* SDMMC_CmdSendEXTCSD */
+	case SD_VOL_SWITCH:            /* SDMMC_CmdVoltageSwitch */
+	case SD_SEND_STATUS:           /* SDMMC_CmdSendStatus */
+	case SD_SET_BLOCK_SIZE:        /* SDMMC_CmdBlockLength */
+	case SD_APP_SEND_OP_COND:      /* SDMMC_CmdAppOperCommand */
+	case SD_APP_CMD:               /* SDMMC_CmdAppCommand */
 		ret = sdhc_stm32_snd_cmd(ctx->sdmmc, cmd, SDMMC_RESPONSE_SHORT);
 		break;
 
 	case SDIO_RW_DIRECT: { /* HAL_SDIO_ReadDirect */
-		uint8_t resp5;
-
-		err_state = SDMMC_SDIO_CmdReadWriteDirect(ctx->sdmmc, cmd->arg, &resp5);
-		if (err_state != HAL_SD_ERROR_NONE) {
-			ctx->ercd |= err_state;
-			if (err_state !=
-			    (SDMMC_ERROR_ADDR_OUT_OF_RANGE | SDMMC_ERROR_ILLEGAL_CMD |
-			     SDMMC_ERROR_COM_CRC_FAILED | SDMMC_ERROR_GENERAL_UNKNOWN_ERR)) {
-				/* Clear all the static flags */
-				__SDMMC_CLEAR_FLAG(ctx->sdmmc, SDMMC_STATIC_DATA_FLAGS);
-				ctx->state = HAL_SDIO_STATE_READY;
-				ctx->xfer_ctx = SDIO_CONTEXT_NONE;
-				return -EIO;
-			}
-			return -EIO;
-		}
-
-		cmd->response[0] = resp5;
-		__SDMMC_CMDTRANS_DISABLE(ctx->sdmmc);
-
-		/* Clear all the static flags */
-		__SDMMC_CLEAR_FLAG(ctx->sdmmc, SDMMC_STATIC_DATA_FLAGS);
+		ret = sdhc_stm32_sdio_rw_direct(ctx->sdmmc, cmd);
 		break;
 	}
 
 	case SDIO_RW_EXTENDED: {
-		SDMMC_DataInitTypeDef config;
-		uint32_t dir;
-		uint32_t arg;
-		uint32_t mode;
-		uint32_t dat_len;
-		uint32_t blk_sz;
-
-		arg = cmd->arg;
-
-		if (arg & BIT(SDIO_EXTEND_CMD_ARG_BLK_SHIFT)) {
-			dat_len = (uint32_t)(data->blocks * data->block_size);
-			blk_sz = sdhc_stm32_cnv_blk_sz(data->block_size);
-			mode = SDMMC_TRANSFER_MODE_BLOCK;
-		} else {
-			dat_len = data->block_size;
-			blk_sz = SDMMC_DATABLOCK_SIZE_1B;
-			mode = SDMMC_TRANSFER_MODE_SDIO;
-		}
-
-		if (arg & BIT(SDIO_CMD_ARG_RW_SHIFT)) {
-			dir = SDMMC_TRANSFER_DIR_TO_CARD;
-		} else {
-			dir = SDMMC_TRANSFER_DIR_TO_SDMMC;
-		}
-
-		/* Configure the SD DPSM (Data Path State Machine) */
-		config.DataTimeOut   = SDMMC_DATATIMEOUT;
-		config.DataLength    = dat_len;
-		config.DataBlockSize = blk_sz;
-		config.TransferDir   = dir;
-		config.TransferMode  = mode;
-		config.DPSM          = SDMMC_DPSM_DISABLE;
-		(void)SDMMC_ConfigData(ctx->sdmmc, &config);
-
-		__SDMMC_CMDTRANS_ENABLE(ctx->sdmmc);
-
-		err_state = SDMMC_SDIO_CmdReadWriteExtended(ctx->sdmmc, arg);
-		if (err_state != HAL_SD_ERROR_NONE) {
-			ctx->ercd |= err_state;
-			if (err_state !=
-			    (SDMMC_ERROR_ADDR_OUT_OF_RANGE | SDMMC_ERROR_ILLEGAL_CMD |
-			     SDMMC_ERROR_COM_CRC_FAILED | SDMMC_ERROR_GENERAL_UNKNOWN_ERR)) {
-				/* Clear all the static flags */
-				__SDMMC_CLEAR_FLAG(ctx->sdmmc, SDMMC_STATIC_DATA_FLAGS);
-				ctx->state = HAL_SDIO_STATE_READY;
-				ctx->xfer_ctx = SDIO_CONTEXT_NONE;
-				return -EIO;
-			}
-			return -EIO;
-		}
-		__SDMMC_CMDTRANS_DISABLE(ctx->sdmmc);
-
-		/* Clear all the static flags */
-		__SDMMC_CLEAR_FLAG(ctx->sdmmc, SDMMC_STATIC_DATA_FLAGS);
+		ret = sdhc_stm32_sdio_rw_extend(ctx, cmd, data);
 		break;
 	}
 
@@ -810,7 +827,8 @@ static int sdhc_stm32_get_card_present(const struct device *dev)
 /*
  * Get host properties
  */
-static int sdhc_stm32_get_host_props(const struct device *dev, struct sdhc_host_props *props)   /* SD_INIT_SEQ02 */
+static int sdhc_stm32_get_host_props(const struct device *dev,
+				     struct sdhc_host_props *props) /* SD_INIT_SEQ02 */
 {
 	const struct sdhc_stm32_config *cfg = dev->config;
 
@@ -833,7 +851,8 @@ static void sdhc_stm32_work_handler(struct k_work *work)
 		/* Get pending int firstly */
 		int ret;
 
-		ret = sdhc_stm32_rd_direct(sdmmc, SDIO_FUNC_NUM_0, SDIO_CCCR_INT_P, &int_pending);
+		ret = sdhc_stm32_sdio_rd_direct(sdmmc, SDIO_FUNC_NUM_0, SDIO_CCCR_INT_P,
+						&int_pending);
 		if (ret) {
 			return;
 		}
