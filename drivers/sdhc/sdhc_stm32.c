@@ -80,6 +80,12 @@ struct sdhc_stm32_data {
 	bool use_dma;
 	bool card_present;
 
+	uint8_t *tx_buffer;
+	size_t tx_xfer_sz;
+
+	uint8_t *rx_buffer;
+	size_t rx_xfer_sz;
+
 	uint8_t io_int_num;
 	uint8_t io_func_msk;
 	void (*io_func_cb[SDIO_MAX_IO_NUMBER])(struct sdhc_stm32_data *data, uint32_t func);
@@ -233,6 +239,18 @@ static int sdhc_stm32_dma_deinit(struct sdhc_stm32_data *data)
 }
 #endif
 
+static uint8_t sdhc_stm32_cnv_blk_sz(uint32_t blk_sz)
+{
+	uint8_t most_bit = (uint8_t)__CLZ(__RBIT(blk_sz));
+
+	/* (1 << most_bit) - 1) is the mask used for blocksize */
+	if (((uint8_t)blk_sz & ((1U << most_bit) - 1U)) != 0U) {
+		return (uint8_t)SDMMC_DATABLOCK_SIZE_4B;
+	}
+
+	return most_bit << SDMMC_DCTRL_DBLOCKSIZE_Pos;
+}
+
 static int sdhc_stm32_get_resp_ll(SDMMC_TypeDef *sdmmc, int timeout_ms, uint32_t opcode)
 {
 	while (true) {
@@ -384,16 +402,151 @@ static int sdhc_stm32_sdio_rw_direct(SDMMC_TypeDef *sdmmc, struct sdhc_command *
 	return ret;
 }
 
-static int sdhc_stm32_sdio_rw_extend(struct sdhc_stm32_context *ctx, const struct sdhc_cmd *cmd,
+static int sdhc_stm32_sdio_rd_fifo(SDMMC_TypeDef *sdmmc, void *data, uint32_t dat_len,
+				   int timeout_ms)
+{
+	uint32_t *rx_buf32 = (uint32_t *)data;
+	uint8_t *rx_buf8 = data;
+	uint32_t remain_len = dat_len;
+	uint32_t chk_flg = (SDMMC_FLAG_RXOVERR | SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT |
+			    SDMMC_FLAG_DATAEND);
+
+	/* Fast path for 32-bit aligned data */
+	if (((uintptr_t)data & 3) == 0) {
+		while (!__SDMMC_GET_FLAG(sdmmc, chk_flg)) {
+			if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_RXFIFOHF) && (remain_len >= 32U)) {
+				/* Direct 32-bit reads for aligned data */
+				for (int i = 0; i < 8; i++) {
+					*rx_buf32++ = sdmmc->FIFO;
+				}
+				remain_len -= 32U;
+			} else if ((remain_len < 32U) && (remain_len > 0U)) {
+				while (!__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_RXFIFOE) &&
+				       remain_len >= 4U) {
+					*rx_buf32++ = sdmmc->FIFO;
+					remain_len -= 4U;
+				}
+
+				/* Handle remaining bytes */
+				if (remain_len > 0U) {
+					uint32_t temp = sdmmc->FIFO;
+					uint8_t *last_bytes = (uint8_t *)&temp;
+					for (uint32_t i = 0; i < remain_len; i++) {
+						*rx_buf8++ = last_bytes[i];
+					}
+					remain_len = 0U;
+				}
+			} else {
+				/* Nothing to do */
+			}
+
+			k_msleep(1);
+			if (timeout_ms-- == 0) {
+				return -ETIMEDOUT;
+			}
+		}
+	} else {
+		while (!__SDMMC_GET_FLAG(sdmmc, chk_flg)) {
+			if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_RXFIFOHF) && (remain_len >= 32U)) {
+				for (size_t cnt = 0U; cnt < 8U; cnt++) {
+					uint32_t rd_fifo = sdmmc->FIFO;
+					*rx_buf8 = (uint8_t)(rd_fifo & 0xFFU);
+					rx_buf8++;
+					*rx_buf8 = (uint8_t)((rd_fifo >> 8U) & 0xFFU);
+					rx_buf8++;
+					*rx_buf8 = (uint8_t)((rd_fifo >> 16U) & 0xFFU);
+					rx_buf8++;
+					*rx_buf8 = (uint8_t)((rd_fifo >> 24U) & 0xFFU);
+					rx_buf8++;
+				}
+				remain_len -= 32U;
+			} else if (remain_len < 32U) {
+				while ((remain_len > 0U) &&
+				       !(__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_RXFIFOE))) {
+					uint32_t rd_fifo = sdmmc->FIFO;
+					for (size_t cnt = 0U; cnt < 4U; cnt++) {
+						if (remain_len > 0U) {
+							*rx_buf8 =
+								(uint8_t)((rd_fifo >> (cnt * 8U)) &
+									  0xFFU);
+							rx_buf8++;
+							remain_len--;
+						}
+					}
+				}
+			} else {
+				/* Nothing to do */
+			}
+
+			k_msleep(1);
+			if (timeout_ms-- == 0) {
+				return -ETIMEDOUT;
+			}
+		}
+	}
+
+	return 0;
+}
+
+static int sdhc_stm32_sdio_wr_fifo(SDMMC_TypeDef *sdmmc, void *data, uint32_t dat_len,
+				   int timeout_ms)
+{
+	uint32_t *tx_buf32 = (uint32_t *)data;
+	uint32_t remain_len = dat_len;
+	uint32_t chk_flg = (SDMMC_FLAG_TXUNDERR | SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT |
+			    SDMMC_FLAG_DATAEND);
+
+	/* Fast path for 32-bit aligned data */
+	if (((uintptr_t)data & 3) == 0) {
+		while (!__SDMMC_GET_FLAG(sdmmc, chk_flg)) {
+			if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_TXFIFOHE) && (remain_len >= 32U)) {
+				for (size_t cnt = 0; cnt < 8; cnt++) {
+					sdmmc->FIFO = *tx_buf32++;
+				}
+				remain_len -= 32U;
+			} else if ((remain_len < 32U) && (remain_len > 0U)) {
+				while (!__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_TXFIFOHE |
+							 SDMMC_FLAG_TXFIFOE) &&
+				       remain_len >= 4U) {
+					sdmmc->FIFO = *tx_buf32++;
+					remain_len -= 4U;
+				}
+
+				/* Handle remaining bytes */
+				if (remain_len > 0U) {
+					uint8_t *tx_buf8 = (uint8_t *)tx_buf32;
+					uint32_t dat32 = 0U;
+					for (size_t cnt = 0U; cnt < remain_len; cnt++) {
+						dat32 |= ((uint32_t)(*tx_buf8) << (cnt << 3U));
+						tx_buf8++;
+					}
+					sdmmc->FIFO = dat32;
+				}
+			}
+
+			k_msleep(1);
+			if (timeout_ms-- == 0) {
+				return -ETIMEDOUT;
+			}
+		}
+	} else {
+		/* FIXME not yet support */
+	}
+
+	return 0;
+}
+
+static int sdhc_stm32_sdio_rw_extend(struct sdhc_stm32_data *ctx, struct sdhc_command *cmd,
 				     const struct sdhc_data *data)
 {
+	SDMMC_TypeDef *sdmmc = ctx->sdmmc;
 	SDMMC_DataInitTypeDef config;
 	uint32_t dir;
 	uint32_t arg;
 	uint32_t mode;
 	uint32_t dat_len;
 	uint32_t blk_sz;
-	int err_state;
+	int ret;
 
 	arg = cmd->arg;
 
@@ -413,6 +566,12 @@ static int sdhc_stm32_sdio_rw_extend(struct sdhc_stm32_context *ctx, const struc
 		dir = SDMMC_TRANSFER_DIR_TO_SDMMC;
 	}
 
+	if ((sdmmc->DCTRL & SDMMC_DCTRL_SDIOEN) != 0U) {
+		sdmmc->DCTRL = SDMMC_DCTRL_SDIOEN;
+	} else {
+		sdmmc->DCTRL = 0U;
+	}
+
 	/* Configure the SD DPSM (Data Path State Machine) */
 	config.DataTimeOut   = SDMMC_DATATIMEOUT;
 	config.DataLength    = dat_len;
@@ -422,39 +581,29 @@ static int sdhc_stm32_sdio_rw_extend(struct sdhc_stm32_context *ctx, const struc
 	config.DPSM          = SDMMC_DPSM_DISABLE;
 	(void)SDMMC_ConfigData(ctx->sdmmc, &config);
 
-	__SDMMC_CMDTRANS_ENABLE(ctx->sdmmc);
+	__SDMMC_CMDTRANS_ENABLE(sdmmc);
 
-	err_state = SDMMC_SDIO_CmdReadWriteExtended(ctx->sdmmc, arg);
-	if (err_state != HAL_SD_ERROR_NONE) {
-		ctx->ercd |= err_state;
-		if (err_state != (SDMMC_ERROR_ADDR_OUT_OF_RANGE | SDMMC_ERROR_ILLEGAL_CMD |
-				  SDMMC_ERROR_COM_CRC_FAILED | SDMMC_ERROR_GENERAL_UNKNOWN_ERR)) {
-			/* Clear all the static flags */
-			__SDMMC_CLEAR_FLAG(ctx->sdmmc, SDMMC_STATIC_DATA_FLAGS);
-			ctx->state = HAL_SDIO_STATE_READY;
-			ctx->xfer_ctx = SDIO_CONTEXT_NONE;
-			return -EIO;
-		}
+	ret = sdhc_stm32_snd_cmd(sdmmc, cmd, SDMMC_RESPONSE_SHORT);
+	if (ret) {
 		return -EIO;
 	}
-	__SDMMC_CMDTRANS_DISABLE(ctx->sdmmc);
 
-	/* Clear all the static flags */
-	__SDMMC_CLEAR_FLAG(ctx->sdmmc, SDMMC_STATIC_DATA_FLAGS);
+	if (ctx->use_dma) {
+		/* @todo */
+	} else {
+		if (arg & BIT(SDIO_CMD_ARG_RW_SHIFT)) {
+			ret = sdhc_stm32_sdio_wr_fifo(sdmmc, data->data, dat_len, data->timeout_ms);
+		} else {
+			ret = sdhc_stm32_sdio_rd_fifo(sdmmc, data->data, dat_len, data->timeout_ms);
+		}
 
-	return 0;
-}
+		__SDMMC_CMDTRANS_DISABLE(sdmmc);
 
-static uint8_t sdhc_stm32_cnv_blk_sz(uint32_t blk_sz)
-{
-	uint8_t most_bit = (uint8_t)__CLZ(__RBIT(blk_sz));
-
-	/* (1 << most_bit) - 1) is the mask used for blocksize */
-	if (((uint8_t)blk_sz & ((1U << most_bit) - 1U)) != 0U) {
-		return (uint8_t)SDMMC_DATABLOCK_SIZE_4B;
+		/* Clear all the static flags */
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
 	}
 
-	return most_bit << SDMMC_DCTRL_DBLOCKSIZE_Pos;
+	return ret;
 }
 
 static void sdhc_stm32_cfg_data(SDMMC_TypeDef *sdmmc, uint32_t dat_len, uint32_t blk_sz,
