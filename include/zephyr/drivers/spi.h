@@ -1103,7 +1103,7 @@ static inline int spi_write_signal(const struct device* dev,
  *                  Must live as long as the request is in flight.
  */
 static inline void spi_iodev_submit(struct rtio_iodev_sqe* iodev_sqe) {
-    const struct spi_dt_spec* dt_spec = iodev_sqe->sqe.iodev->data;
+    const struct spi_dt_spec* dt_spec = (const struct spi_dt_spec*)iodev_sqe->sqe.iodev->data;
     const struct device* dev = dt_spec->bus;
     const struct spi_driver_api* api = (const struct spi_driver_api*)dev->api;
 
@@ -1137,7 +1137,7 @@ extern const struct rtio_iodev_api spi_iodev_api;
  * @retval false if the SPI bus (or the CS gpio defined) is not ready for use.
  */
 static inline bool spi_is_ready_iodev(const struct rtio_iodev* spi_iodev) {
-    struct spi_dt_spec* spec = spi_iodev->data;
+    struct spi_dt_spec* spec = (struct spi_dt_spec*)spi_iodev->data;
 
     return spi_is_ready_dt(spec);
 }
