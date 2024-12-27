@@ -179,7 +179,8 @@ static struct usb_dc_stm32_state usb_dc_stm32_state;
 
 /* Internal functions */
 
-static struct usb_dc_stm32_ep_state* usb_dc_stm32_get_ep_state(uint8_t ep) {
+static struct usb_dc_stm32_ep_state *usb_dc_stm32_get_ep_state(uint8_t ep)
+{
 	struct usb_dc_stm32_ep_state *ep_state_base;
 
 	if (USB_EP_GET_IDX(ep) >= USB_NUM_BIDIR_ENDPOINTS) {
@@ -588,10 +589,10 @@ static int usb_dc_stm32_init(void)
 	}
 #endif /* USB */
 
-    IRQ_CONNECT(USB_IRQ, USB_IRQ_PRI, usb_dc_stm32_isr, 0, 0);
-    irq_enable(USB_IRQ);
-
-    return (0);
+	IRQ_CONNECT(USB_IRQ, USB_IRQ_PRI,
+		    usb_dc_stm32_isr, 0, 0);
+	irq_enable(USB_IRQ);
+	return 0;
 }
 
 /* Zephyr USB device controller API implementation */
@@ -888,37 +889,35 @@ int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled)
 	return 0;
 }
 
-int usb_dc_ep_enable(const uint8_t ep) {
-    struct usb_dc_stm32_ep_state* ep_state;
-    HAL_StatusTypeDef status;
-    int rc;
+int usb_dc_ep_enable(const uint8_t ep)
+{
+	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
+	HAL_StatusTypeDef status;
 
-    LOG_DBG("ep 0x%02x", ep);
+	LOG_DBG("ep 0x%02x", ep);
 
-    rc = 0;
-    ep_state = usb_dc_stm32_get_ep_state(ep);
-    if (ep_state == NULL) {
-        rc = -EINVAL;
-    }
-    else {
-        LOG_DBG("HAL_PCD_EP_Open(0x%02x, %u, %u)", ep, ep_state->ep_mps,
-                ep_state->ep_type);
+	if (!ep_state) {
+		return -EINVAL;
+	}
 
-        status = HAL_PCD_EP_Open(&usb_dc_stm32_state.pcd, ep,
-                                 ep_state->ep_mps, ep_state->ep_type);
-    if (status != HAL_OK) {
-            LOG_ERR("HAL_PCD_EP_Open failed(0x%02x), %d", ep,
-                    (int )status);
-            rc = -EIO;
-    }
+	LOG_DBG("HAL_PCD_EP_Open(0x%02x, %u, %u)", ep, ep_state->ep_mps,
+		ep_state->ep_type);
 
-    if (USB_EP_DIR_IS_OUT(ep) && ep != EP0_OUT) {
-        return usb_dc_ep_start_read(ep,
-                                    usb_dc_stm32_state.ep_buf[USB_EP_GET_IDX(ep)],
-                                    ep_state->ep_mps);
-    }
+	status = HAL_PCD_EP_Open(&usb_dc_stm32_state.pcd, ep,
+				 ep_state->ep_mps, ep_state->ep_type);
+	if (status != HAL_OK) {
+		LOG_ERR("HAL_PCD_EP_Open failed(0x%02x), %d", ep,
+			(int)status);
+		return -EIO;
+	}
 
-    return (rc);
+	if (USB_EP_DIR_IS_OUT(ep) && ep != EP0_OUT) {
+		return usb_dc_ep_start_read(ep,
+					  usb_dc_stm32_state.ep_buf[USB_EP_GET_IDX(ep)],
+					  ep_state->ep_mps);
+	}
+
+	return 0;
 }
 
 int usb_dc_ep_disable(const uint8_t ep)
@@ -1229,7 +1228,7 @@ void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
 	memcpy(&usb_dc_stm32_state.ep_buf[EP0_IDX],
 	       usb_dc_stm32_state.pcd.Setup, ep_state->read_count);
 
-	if (ep_state->cb != NULL) {
+	if (ep_state->cb) {
 		ep_state->cb(EP0_OUT, USB_DC_EP_SETUP);
 
 		if (!(setup->wLength == 0U) &&
