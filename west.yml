@@ -243,7 +243,7 @@ manifest:
       groups:
         - hal
     - name: hal_tdk
-      revision: bbdb38b789363615784e221f909ce18b791c2451
+      revision: e0ade95b29841d915c38bc157bb5509270e8aa21
       path: modules/hal/tdk
       groups:
         - hal
@@ -276,7 +276,7 @@ manifest:
       path: modules/lib/hostap
       revision: e31fa6764a920623202b74e85e3848903351cdcb
     - name: liblc3
-      revision: 1a5938ebaca4f13fe79ce074f5dee079783aa29f
+      revision: bb85f7dde4195bfc0fca9e9c7c2eed0f8694203c
       path: modules/lib/liblc3
     - name: libmetal
       revision: 3e8781aae9d7285203118c05bc01d4eb0ca565a7
