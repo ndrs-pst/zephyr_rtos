@@ -804,7 +804,10 @@ void zephyr_gtest_gpio_stm32(void) {
     gpio_stm32_cfg_d.base = (uint32_t*)ut_mcu_gpio_d_ptr;
     gpio_stm32_cfg_e.base = (uint32_t*)ut_mcu_gpio_e_ptr;
     gpio_stm32_cfg_f.base = (uint32_t*)ut_mcu_gpio_f_ptr;
+
+    #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpiog))
     gpio_stm32_cfg_g.base = (uint32_t*)ut_mcu_gpio_g_ptr;
+    #endif
 }
 
 #endif

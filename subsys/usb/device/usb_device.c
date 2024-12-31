@@ -688,7 +688,7 @@ static bool usb_set_configuration(struct usb_setup_packet *setup)
 
 	if (setup->wValue == 0U) {
 		usb_reset_alt_setting();
-		usb_dev.configuration = setup->wValue;
+		usb_dev.configuration = (uint8_t)setup->wValue;
 		if (usb_dev.status_callback) {
 			usb_dev.status_callback(USB_DC_CONFIGURED,
 						&usb_dev.configuration);
@@ -734,7 +734,7 @@ static bool usb_set_configuration(struct usb_setup_packet *setup)
 
 	if (found) {
 		usb_reset_alt_setting();
-		usb_dev.configuration = setup->wValue;
+		usb_dev.configuration = (uint8_t)setup->wValue;
 		if (usb_dev.status_callback) {
 			usb_dev.status_callback(USB_DC_CONFIGURED,
 						&usb_dev.configuration);
@@ -773,8 +773,8 @@ static bool usb_set_interface(struct usb_setup_packet *setup)
 
 			if (cur_iface == setup->wIndex &&
 			    cur_alt_setting == setup->wValue) {
-				ret = usb_set_alt_setting(setup->wIndex,
-							  setup->wValue);
+				ret = usb_set_alt_setting((uint8_t)setup->wIndex,
+							  (uint8_t)setup->wValue);
 				if_desc = (void *)p;
 			}
 
@@ -785,7 +785,7 @@ static bool usb_set_interface(struct usb_setup_packet *setup)
 			if (cur_iface == setup->wIndex) {
 				ep = (struct usb_ep_descriptor *)p;
 				ret = usb_eps_reconfigure(ep, cur_alt_setting,
-							  setup->wValue);
+							  (uint8_t)setup->wValue);
 			}
 			break;
 		default:
@@ -874,7 +874,7 @@ static bool usb_handle_std_device_req(struct usb_setup_packet *setup,
 		switch (setup->bRequest) {
 		case USB_SREQ_SET_ADDRESS:
 			LOG_DBG("Set Address %u request", setup->wValue);
-			return !usb_dc_set_address(setup->wValue);
+			return !usb_dc_set_address((uint8_t)setup->wValue);
 
 		case USB_SREQ_SET_CONFIGURATION:
 			return usb_set_configuration(setup);
@@ -1025,7 +1025,7 @@ static bool is_ep_valid(uint8_t ep)
 static bool usb_get_status_endpoint(struct usb_setup_packet *setup,
 				    int32_t *len, uint8_t **data_buf)
 {
-	uint8_t ep = setup->wIndex;
+	uint8_t ep = (uint8_t)setup->wIndex;
 	uint8_t *data = *data_buf;
 
 	/* Check if request addresses valid Endpoint */
@@ -1054,7 +1054,7 @@ static bool usb_get_status_endpoint(struct usb_setup_packet *setup,
 
 static bool usb_halt_endpoint_req(struct usb_setup_packet *setup, bool halt)
 {
-	uint8_t ep = setup->wIndex;
+	uint8_t ep = (uint8_t)setup->wIndex;
 
 	/* Check if request addresses valid Endpoint */
 	if (!is_ep_valid(ep)) {

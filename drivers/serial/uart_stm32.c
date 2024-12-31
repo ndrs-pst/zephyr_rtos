@@ -2427,30 +2427,38 @@ static void zephyr_gtest_spi_stm32_reg_init(struct uart_stm32_config* cfg) {
             break;
         }
 
+        #if defined(UART4_BASE)
         case UART4_BASE : {
             cfg->usart = (USART_TypeDef*)ut_mcu_usart4_ptr;
             break;
         }
+        #endif
 
+        #if defined(UART5_BASE)
         case UART5_BASE : {
             cfg->usart = (USART_TypeDef*)ut_mcu_usart5_ptr;
             break;
         }
+        #endif
 
         case USART6_BASE : {
             cfg->usart = (USART_TypeDef*)ut_mcu_usart6_ptr;
             break;
         }
 
+        #if defined(UART7_BASE)
         case UART7_BASE : {
             cfg->usart = (USART_TypeDef*)ut_mcu_usart7_ptr;
             break;
         }
+        #endif
 
+        #if defined(UART8_BASE)
         case UART8_BASE : {
             cfg->usart = (USART_TypeDef*)ut_mcu_usart8_ptr;
             break;
         }
+        #endif
 
         case LPUART1_BASE : {
             cfg->usart = (USART_TypeDef*)ut_mcu_lpuart1_ptr;

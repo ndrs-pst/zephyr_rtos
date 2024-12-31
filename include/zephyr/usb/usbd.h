@@ -757,10 +757,15 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
  *
  *  @param _reqs Variable number of vendor requests
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define USBD_VENDOR_REQ(...) \
+	VENDOR_REQ_DEFINE(((uint8_t []) { __VA_ARGS__ }), \
+			  sizeof((uint8_t []) { __VA_ARGS__ }))
+#else
 #define USBD_VENDOR_REQ(_reqs...) \
 	VENDOR_REQ_DEFINE(((uint8_t []) { _reqs }), \
 			  sizeof((uint8_t []) { _reqs }))
-
+#endif
 
 /**
  * @brief Add common USB descriptor

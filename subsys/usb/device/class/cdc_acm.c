@@ -310,7 +310,7 @@ static void cdc_acm_read_cb(uint8_t ep, int size, void *priv)
 	}
 
 	wrote = ring_buf_put(dev_data->rx_ringbuf, dev_data->rx_buf, size);
-	if (wrote < size) {
+	if (wrote < (size_t)size) {
 		LOG_ERR("Ring buffer full, drop %zd bytes", size - wrote);
 	}
 
@@ -1039,7 +1039,9 @@ static void cdc_acm_poll_out(const struct device *dev, unsigned char c)
 			break;
 		}
 		if (k_is_in_isr() || !dev_data->flow_ctrl) {
+			#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 			LOG_WRN_ONCE("Ring buffer full, discard data");
+			#endif
 			break;
 		}
 

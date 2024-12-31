@@ -40,7 +40,11 @@ static void stm32g0_disable_dead_battery(void)
 
 	DT_INST_FOREACH_STATUS_OKAY(DEV_REG_ADDR_INIT);
 #else
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	uint32_t addr_inst[1];
+#else
 	uint32_t addr_inst[0];
+#endif
 #endif
 
 #if defined(SYSCFG_CFGR1_UCPD1_STROBE)
