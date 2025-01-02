@@ -323,7 +323,6 @@ int can_mcan_stop(const struct device* dev) {
     const struct can_mcan_callbacks* cbs = config->callbacks;
     struct can_mcan_data* data = dev->data;
     can_tx_callback_t tx_cb;
-    uint32_t tx_idx;
     int err;
 
     if (!data->common.started) {
@@ -349,7 +348,7 @@ int can_mcan_stop(const struct device* dev) {
 
     data->common.started = false;
 
-    for (tx_idx = 0U; tx_idx < cbs->num_tx; tx_idx++) {
+    for (uint32_t tx_idx = 0U; tx_idx < cbs->num_tx; tx_idx++) {
         tx_cb = cbs->tx[tx_idx].function;
 
         if (tx_cb != NULL) {
@@ -998,7 +997,7 @@ int can_mcan_send(const struct device* dev, const struct can_frame* frame, k_tim
         }
     }
 
-    tx_hdr.mm = put_idx;
+    tx_hdr.mm = (uint8_t)put_idx;
 
     if ((frame->flags & CAN_FRAME_IDE) != 0U) {
         tx_hdr.ext_id = frame->id;

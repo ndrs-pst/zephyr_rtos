@@ -576,7 +576,7 @@ static void config_can_##inst##_irq(void)                                      \
 	static const struct stm32_pclken can_stm32fd_pclken_##inst[] =	\
 					STM32_DT_INST_CLOCKS(inst);	\
 									\
-	static const struct can_stm32fd_config can_stm32fd_cfg_##inst = { \
+	static struct can_stm32fd_config DT_CONST can_stm32fd_cfg_##inst = { \
 		.base = CAN_MCAN_DT_INST_MCAN_ADDR(inst),		\
 		.mram = CAN_MCAN_DT_INST_MRAM_ADDR(inst),		\
 		.pclken = can_stm32fd_pclken_##inst,			\
@@ -609,3 +609,18 @@ CAN_STM32FD_DATA_INST(inst)             \
 CAN_STM32FD_DEVICE_INST(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_STM32FD_INST)
+
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+void zephyr_gtest_can_stm32(void) {
+	can_stm32fd_cfg_0.base = (mm_reg_t)ut_mcu_fdcan1_ptr;
+	can_stm32fd_cfg_0.mram = (mem_addr_t)ut_mcu_fdcan1_mram_ptr;
+
+	#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(fdcan2))
+	can_stm32fd_cfg_1.base = (mm_reg_t)ut_mcu_fdcan2_ptr;
+	can_stm32fd_cfg_1.mram = (mem_addr_t)ut_mcu_fdcan2_mram_ptr;
+	#endif
+}
+
+#endif
