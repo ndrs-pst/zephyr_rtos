@@ -240,7 +240,7 @@ static inline uint16_t can_stm32fd_remap_reg(uint16_t reg)
 		/* No register address remap needed */
 		remap = reg;
 		break;
-	};
+	}
 
 	return remap;
 }
@@ -304,7 +304,7 @@ static int can_stm32fd_read_reg(const struct device *dev, uint16_t reg, uint32_t
 		/* No field remap needed */
 		tmp = bits;
 		break;
-	};
+	}
 
 	*val = tmp;
 
@@ -363,7 +363,7 @@ static int can_stm32fd_write_reg(const struct device *dev, uint16_t reg, uint32_
 		/* No field remap needed */
 		bits = val;
 		break;
-	};
+	}
 
 	return can_mcan_sys_write_reg(stm32fd_config->base, remap, bits);
 }

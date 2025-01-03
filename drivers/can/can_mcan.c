@@ -284,7 +284,7 @@ int can_mcan_get_capabilities(const struct device* dev, can_mode_t* cap) {
 int can_mcan_start(const struct device* dev) {
     const struct can_mcan_config* config = dev->config;
     struct can_mcan_data* data = dev->data;
-    int err = 0;
+    int err;
 
     if (data->common.started) {
         return (-EALREADY);
@@ -1006,9 +1006,10 @@ int can_mcan_send(const struct device* dev, const struct can_frame* frame, k_tim
         tx_hdr.std_id = (frame->id & CAN_STD_ID_MASK);
     }
 
-    err = can_mcan_write_mram(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_TX_BUFFER] +
-                              (put_idx * sizeof(struct can_mcan_tx_buffer)) +
-                              offsetof(struct can_mcan_tx_buffer, hdr),
+    uint16_t base_addr = config->mram_offsets[CAN_MCAN_MRAM_CFG_TX_BUFFER] +
+                         (uint16_t)(put_idx * sizeof(struct can_mcan_tx_buffer));
+
+    err = can_mcan_write_mram(dev, base_addr + offsetof(struct can_mcan_tx_buffer, hdr),
                               &tx_hdr, sizeof(struct can_mcan_tx_buffer_hdr));
     if (err != 0) {
         LOG_ERR("failed to write Tx Buffer header (err %d)", err);
@@ -1016,9 +1017,7 @@ int can_mcan_send(const struct device* dev, const struct can_frame* frame, k_tim
     }
 
     if (((frame->flags & CAN_FRAME_RTR) == 0U) && (data_length != 0U)) {
-        err = can_mcan_write_mram(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_TX_BUFFER] +
-                                  (put_idx * sizeof(struct can_mcan_tx_buffer)) +
-                                  offsetof(struct can_mcan_tx_buffer, data_32),
+        err = can_mcan_write_mram(dev, base_addr + offsetof(struct can_mcan_tx_buffer, data_32),
                                   &frame->data_32, ROUND_UP(data_length, sizeof(uint32_t)));
         if (err != 0) {
             LOG_ERR("failed to write Tx Buffer data (err %d)", err);
