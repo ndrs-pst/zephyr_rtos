@@ -1196,7 +1196,7 @@ static DEVICE_API(uart, cdc_acm_driver_api) = {
 		.interface_config = cdc_interface_config,		\
 		.interface_descriptor = &cdc_acm_cfg_##x.if0,		\
 		.cb_usb_status = cdc_acm_dev_status_cb,			\
-		.interface = {						\
+		.iface = {						\
 			.class_handler = cdc_acm_class_handle_req,	\
 			.custom_handler = NULL,				\
 		},							\

@@ -1465,7 +1465,7 @@ static int class_handler(struct usb_setup_packet *pSetup,
 		pSetup->bRequest, pSetup->wIndex);
 
 	STRUCT_SECTION_FOREACH(usb_cfg_data, cfg_data) {
-		iface = &cfg_data->interface;
+		iface = &cfg_data->iface;
 		if_descr = cfg_data->interface_descriptor;
 		/*
 		 * Wind forward until it is within the range
@@ -1494,7 +1494,7 @@ static int custom_handler(struct usb_setup_packet *pSetup,
 		pSetup->bRequest, pSetup->wIndex);
 
 	STRUCT_SECTION_FOREACH(usb_cfg_data, cfg_data) {
-		iface = &cfg_data->interface;
+		iface = &cfg_data->iface;
 		if_descr = cfg_data->interface_descriptor;
 		/*
 		 * Wind forward until it is within the range
@@ -1542,7 +1542,7 @@ static int vendor_handler(struct usb_setup_packet *pSetup,
 	}
 
 	STRUCT_SECTION_FOREACH(usb_cfg_data, cfg_data) {
-		iface = &cfg_data->interface;
+		iface = &cfg_data->iface;
 		if (iface->vendor_handler) {
 			if (!iface->vendor_handler(pSetup, len, data)) {
 				return 0;
