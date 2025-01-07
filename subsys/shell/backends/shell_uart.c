@@ -74,11 +74,12 @@ static void uart_rx_handle(const struct device* dev, struct shell_uart_int_drive
     uint8_t* data;
     uint32_t len;
     uint32_t rd_len;
-    bool     new_data = false;
+    bool new_data;
     #ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
     struct smp_shell_data* const smp = &sh_uart->common.smp;
     #endif
 
+    new_data = false;
     do {
         len = ring_buf_put_claim(&sh_uart->rx_ringbuf, &data,
                                  sh_uart->rx_ringbuf.size);
@@ -140,17 +141,18 @@ static bool uart_dtr_check(const struct device* dev) {
                  "DTR check requires CONFIG_UART_LINE_CTRL");
 
     if (IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL_CHECK_DTR)) {
-        int dtr, err;
+        int dtr;
+        int err;
 
         err = uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
-        if (err == -ENOSYS || err == -ENOTSUP) {
-            return true;
+        if ((err == -ENOSYS) || (err == -ENOTSUP)) {
+            return (true);
         }
 
-        return dtr;
+        return (dtr);
     }
 
-    return true;
+    return (true);
 }
 
 static void dtr_timer_handler(struct k_timer* timer) {
@@ -258,9 +260,10 @@ static void async_init(struct shell_uart_async* sh_uart) {
 }
 
 static void polling_rx_timeout_handler(struct k_timer* timer) {
-    uint8_t                    c;
-    struct shell_uart_polling* sh_uart = k_timer_user_data_get(timer);
+    uint8_t c;
+    struct shell_uart_polling* sh_uart;
 
+    sh_uart = k_timer_user_data_get(timer);
     while (uart_poll_in(sh_uart->common.dev, &c) == 0) {
         if (ring_buf_put(&sh_uart->rx_ringbuf, &c, 1) == 0U) {
             /* ring buffer full. */
@@ -426,8 +429,9 @@ static int async_read(struct shell_uart_async* sh_uart,
                       void* data, size_t length, size_t* cnt) {
     uint8_t* buf;
     size_t blen;
-    struct uart_async_rx* async_rx = &sh_uart->async_rx;
+    struct uart_async_rx* async_rx;
 
+    async_rx = &sh_uart->async_rx;
     blen = uart_async_rx_data_claim(async_rx, &buf, length);
     #ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
     struct smp_shell_data* const smp = &sh_uart->common.smp;
@@ -447,7 +451,7 @@ static int async_read(struct shell_uart_async* sh_uart,
     *cnt = sh_cnt;
 
     if (sh_uart->pending_rx_req && buf_available) {
-        uint8_t *buf = uart_async_rx_buf_req(async_rx);
+        uint8_t* buf = uart_async_rx_buf_req(async_rx);
         size_t len = uart_async_rx_get_buf_len(async_rx);
         int err;
 
