@@ -88,9 +88,11 @@ static inline void spi_context_lock(struct spi_context *ctx,
                                     spi_callback_t callback,
                                     void* callback_data,
                                     const struct spi_config* spi_cfg) {
-    if (((spi_cfg->operation & SPI_LOCK_ON) != 0U) &&
-        (k_sem_count_get(&ctx->lock) == 0) &&
-        (ctx->owner == spi_cfg)) {
+    bool already_locked = (spi_cfg->operation & SPI_LOCK_ON) &&
+                          (k_sem_count_get(&ctx->lock) == 0) &&
+                          (ctx->owner == spi_cfg);
+
+    if (already_locked) {
         return;
     }
 
