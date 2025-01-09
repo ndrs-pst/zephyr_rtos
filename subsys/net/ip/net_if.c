@@ -630,6 +630,10 @@ struct net_if* net_if_get_default(void) {
     iface = net_if_get_first_by_type(&NET_L2_GET_NAME(PPP));
     #endif
 
+    #if defined(CONFIG_NET_DEFAULT_IF_OFFLOADED_NETDEV)
+    iface = net_if_get_first_by_type(&NET_L2_GET_NAME(OFFLOADED_NETDEV));
+    #endif
+
     #if defined(CONFIG_NET_DEFAULT_IF_UP)
     iface = net_if_get_first_up();
     #endif

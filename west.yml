@@ -157,7 +157,7 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: dcd4dad5e91c6a8f5e2744b04816bf0c30a90a13
+      revision: df8eb82d435f9cdd00cf0da34e5b62da4fcfad18
       path: modules/hal/atmel
       groups:
         - hal
@@ -219,7 +219,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 3a8466b2ceca87d05280a071b9b9aabda1915235
+      revision: 64fce2e5bd31fb7aaf16de8fbd0141a4ca23fdf8
       groups:
         - hal
     - name: hal_rpi_pico
@@ -318,7 +318,7 @@ manifest:
       revision: 71bcaa88c97977647d387217dab99f7d6f026815
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: 0f53c9ebab526661131d5d7e73c7a6cb3b2d2e11
+      revision: 68b018473527fa90237b1abad7ee2568a665bb44
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: 52bb1783521c62c019451cee9b05b8eda9d7425f

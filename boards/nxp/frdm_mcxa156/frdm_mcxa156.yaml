@@ -21,8 +21,10 @@ supported:
   - can
   - counter
   - dac
+  - dma
   - i2c
   - pwm
   - usb_device
   - usbd
+  - watchdog
 vendor: nxp
