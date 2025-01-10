@@ -100,6 +100,10 @@ uint32_t lpuartdiv_calc(const uint64_t clock_rate, const uint32_t baud_rate) {
 #endif /* USART_PRESC_PRESCALER */
 #endif /* HAS_LPUART */
 
+#ifdef CONFIG_UART_ASYNC_API
+#define STM32_ASYNC_STATUS_TIMEOUT (DMA_STATUS_BLOCK + 1)
+#endif
+
 #ifdef CONFIG_PM
 static void uart_stm32_pm_policy_state_lock_get(const struct device* dev) {
     struct uart_stm32_data* data = dev->data;
@@ -1078,11 +1082,17 @@ static inline void async_evt_rx_rdy(struct uart_stm32_data* data) {
         .data.rx.offset = data->dma_rx.offset
     };
 
-    /* update the current pos for new data */
-    data->dma_rx.offset = data->dma_rx.counter;
+    /* When cyclic DMA is used, buffer positions are not updated - call callback every time*/
+    if (data->dma_rx.dma_cfg.cyclic == 0) {
+        /* update the current pos for new data */
+        data->dma_rx.offset = data->dma_rx.counter;
 
-    /* send event only for new data */
-    if (event.data.rx.len > 0) {
+        /* send event only for new data */
+        if (event.data.rx.len > 0) {
+            async_user_callback(data, &event);
+        }
+    }
+    else {
         async_user_callback(data, &event);
     }
 }
@@ -1159,18 +1169,47 @@ static inline void async_timer_start(struct k_work_delayable* work,
     }
 }
 
-static void uart_stm32_dma_rx_flush(const struct device* dev) {
+static void uart_stm32_dma_rx_flush(const struct device *dev, int status) {
     struct dma_status stat;
     struct uart_stm32_data* data = dev->data;
 
-    if (dma_get_status(data->dma_rx.dma_dev,
-                       data->dma_rx.dma_channel, &stat) == 0) {
-        size_t rx_rcv_len = (data->dma_rx.buffer_length - stat.pending_length);
-        if (rx_rcv_len > data->dma_rx.offset) {
-            data->dma_rx.counter = rx_rcv_len;
+    size_t rx_rcv_len = 0;
 
-            async_evt_rx_rdy(data);
-        }
+    switch (status) {
+        case DMA_STATUS_COMPLETE :
+            /* fully complete */
+            data->dma_rx.counter = data->dma_rx.buffer_length;
+            break;
+
+        case DMA_STATUS_BLOCK :
+            /* half complete */
+            data->dma_rx.counter = data->dma_rx.buffer_length / 2;
+            break;
+
+        default : /* likely STM32_ASYNC_STATUS_TIMEOUT */
+            if (dma_get_status(data->dma_rx.dma_dev, data->dma_rx.dma_channel, &stat) == 0) {
+                rx_rcv_len = data->dma_rx.buffer_length - stat.pending_length;
+                data->dma_rx.counter = rx_rcv_len;
+            }
+            break;
+    }
+
+    async_evt_rx_rdy(data);
+
+    switch (status) { /* update offset*/
+        case DMA_STATUS_COMPLETE :
+            /* fully complete */
+            data->dma_rx.offset = 0;
+            break;
+
+        case DMA_STATUS_BLOCK :
+            /* half complete */
+            data->dma_rx.offset = data->dma_rx.buffer_length / 2;
+            break;
+
+        default : /* likely STM32_ASYNC_STATUS_TIMEOUT */
+            data->dma_rx.offset += rx_rcv_len - data->dma_rx.offset;
+            break;
     }
 }
 
@@ -1218,7 +1257,7 @@ static void uart_stm32_isr(const struct device* dev) {
         LOG_DBG("idle interrupt occurred");
 
         if (data->dma_rx.timeout == 0) {
-            uart_stm32_dma_rx_flush(dev);
+            uart_stm32_dma_rx_flush(dev, STM32_ASYNC_STATUS_TIMEOUT);
         }
         else {
             /* Start the RX timer not null */
@@ -1360,7 +1399,7 @@ static int uart_stm32_async_rx_disable(const struct device* dev) {
 
     LL_USART_DisableIT_IDLE(usart);
 
-    uart_stm32_dma_rx_flush(dev);
+    uart_stm32_dma_rx_flush(dev, STM32_ASYNC_STATUS_TIMEOUT);
 
     async_evt_rx_buf_release(data);
 
@@ -1455,28 +1494,34 @@ void uart_stm32_dma_rx_cb(const struct device* dma_dev, void* user_data,
 
     (void) k_work_cancel_delayable(&data->dma_rx.timeout_work);
 
-    /* true since this functions occurs when buffer if full */
-    data->dma_rx.counter = data->dma_rx.buffer_length;
+    /* If we are in NORMAL MODE */
+    if (data->dma_rx.dma_cfg.cyclic == 0) {
 
-    async_evt_rx_rdy(data);
+        /* true since this functions occurs when buffer is full */
+        data->dma_rx.counter = data->dma_rx.buffer_length;
+        async_evt_rx_rdy(data);
+        if (data->rx_next_buffer != NULL) {
+            async_evt_rx_buf_release(data);
 
-    if (data->rx_next_buffer != NULL) {
-        async_evt_rx_buf_release(data);
-
-        /* replace the buffer when the current
-         * is full and not the same as the next
-         * one.
-         */
-        uart_stm32_dma_replace_buffer(uart_dev);
+            /* replace the buffer when the current
+             * is full and not the same as the next
+             * one.
+             */
+            uart_stm32_dma_replace_buffer(uart_dev);
+        }
+        else {
+            /* Buffer full without valid next buffer,
+             * an UART_RX_DISABLED event must be generated,
+             * but uart_stm32_async_rx_disable() cannot be
+             * called in ISR context. So force the RX timeout
+             * to minimum value and let the RX timeout to do the job.
+             */
+            k_work_reschedule(&data->dma_rx.timeout_work, K_TICKS(1));
+        }
     }
     else {
-        /* Buffer full without valid next buffer,
-         * an UART_RX_DISABLED event must be generated,
-         * but uart_stm32_async_rx_disable() cannot be
-         * called in ISR context. So force the RX timeout
-         * to minimum value and let the RX timeout to do the job.
-         */
-        k_work_reschedule(&data->dma_rx.timeout_work, K_TICKS(1));
+        /* CIRCULAR MODE */
+        uart_stm32_dma_rx_flush(data->uart_dev, status);
     }
 }
 
@@ -1655,7 +1700,7 @@ static void uart_stm32_async_rx_timeout(struct k_work* work) {
         uart_stm32_async_rx_disable(dev);
     }
     else {
-        uart_stm32_dma_rx_flush(dev);
+        uart_stm32_dma_rx_flush(dev, STM32_ASYNC_STATUS_TIMEOUT);
     }
 }
 
@@ -1763,9 +1808,9 @@ static int uart_stm32_async_init(const struct device* dev) {
         data->dma_rx.blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
     }
 
-    /* RX disable circular buffer */
-    data->dma_rx.blk_cfg.source_reload_en  = 0;
-    data->dma_rx.blk_cfg.dest_reload_en    = 0;
+    /* Enable/disable RX circular buffer */
+    data->dma_rx.blk_cfg.source_reload_en  = data->dma_rx.dma_cfg.cyclic;
+    data->dma_rx.blk_cfg.dest_reload_en    = data->dma_rx.dma_cfg.cyclic;
     data->dma_rx.blk_cfg.fifo_mode_control = (uint16_t)data->dma_rx.fifo_threshold;
 
     data->dma_rx.dma_cfg.head_block = &data->dma_rx.blk_cfg;
@@ -1803,6 +1848,10 @@ static int uart_stm32_async_init(const struct device* dev) {
     else {
         data->dma_tx.blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
     }
+
+    /* Enable/disable TX circular buffer */
+    data->dma_tx.blk_cfg.source_reload_en = data->dma_tx.dma_cfg.cyclic;
+    data->dma_tx.blk_cfg.dest_reload_en   = data->dma_tx.dma_cfg.cyclic;
 
     data->dma_tx.blk_cfg.fifo_mode_control = data->dma_tx.fifo_threshold;
 
@@ -2163,6 +2212,8 @@ static int uart_stm32_pm_action(const struct device* dev,
     .dma_cfg     = {                                                    \
         .dma_slot            = STM32_DMA_SLOT(index, dir, slot),        \
         .channel_direction   = STM32_DMA_CONFIG_DIRECTION(              \
+                                  STM32_DMA_CHANNEL_CONFIG(index, dir)),\
+        .cyclic              = STM32_DMA_CONFIG_CYCLIC(                 \
                                   STM32_DMA_CHANNEL_CONFIG(index, dir)),\
         .channel_priority    = STM32_DMA_CONFIG_PRIORITY(               \
                                   STM32_DMA_CHANNEL_CONFIG(index, dir)),\
