@@ -80,7 +80,6 @@ static char const* reason_to_str(unsigned int reason) {
 FUNC_NORETURN void k_fatal_halt(unsigned int reason) {
     arch_system_halt(reason);
 }
-
 /* LCOV_EXCL_STOP */
 
 void z_fatal_error(unsigned int reason, const struct arch_esf* esf) {
@@ -90,7 +89,7 @@ void z_fatal_error(unsigned int reason, const struct arch_esf* esf) {
      */
     unsigned int key = arch_irq_lock();
     struct k_thread* thread = IS_ENABLED(CONFIG_MULTITHREADING) ?
-                              arch_current_thread() : NULL;
+                              _current : NULL;
 
     /* twister looks for the "ZEPHYR FATAL ERROR" string, don't
      * change it without also updating twister
