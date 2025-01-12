@@ -136,6 +136,7 @@ static int usbd_ctrl_feed_dout(const struct device *dev, const size_t length)
 		return -ENOMEM;
 	}
 
+	(void*) k_fifo_get(&cfg->fifo, K_NO_WAIT);		/* #CUSTOM@NDRS, workaround to flush fifo before feed dout !!! */
 	k_fifo_put(&cfg->fifo, buf);
 
 	HAL_PCD_EP_Receive(&priv->pcd, cfg->addr, buf->data, buf->size);
@@ -1029,7 +1030,7 @@ static int priv_clock_enable(void)
 		return -EIO;
 	}
 
-	if (IS_ENABLED(CONFIG_USB_DC_STM32_CLOCK_CHECK)) {
+	if (IS_ENABLED(CONFIG_UDC_STM32_CLOCK_CHECK)) {
 		uint32_t usb_clock_rate;
 
 		if (clock_control_get_rate(clk,
@@ -1209,7 +1210,7 @@ static int udc_stm32_driver_init0(const struct device *dev)
 	}
 #endif
 
-	/*cd
+	/*
 	 * Required for at least STM32L4 devices as they electrically
 	 * isolate USB features from VDDUSB. It must be enabled before
 	 * USB can function. Refer to section 5.1.3 in DM00083560 or
@@ -1224,7 +1225,7 @@ static int udc_stm32_driver_init0(const struct device *dev)
 		LL_PWR_EnableVddUSB();
 		LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_PWR);
 	}
-	#else
+#else
 	LL_PWR_EnableVddUSB();
 #endif /* defined(LL_APB1_GRP1_PERIPH_PWR) */
 #endif /* PWR_CR2_USV */

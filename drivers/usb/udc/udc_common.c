@@ -1008,7 +1008,7 @@ void udc_ctrl_update_stage(const struct device *dev,
 		 "0x%02x is not a control endpoint", bi->ep);
 
 	if (bi->setup && bi->ep == USB_CONTROL_EP_OUT) {
-		uint16_t length  = udc_data_stage_length(buf);
+		uint16_t length = udc_data_stage_length(buf);
 
 		data->setup = buf;
 
