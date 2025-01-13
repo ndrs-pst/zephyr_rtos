@@ -136,7 +136,6 @@ static int usbd_ctrl_feed_dout(const struct device *dev, const size_t length)
 		return -ENOMEM;
 	}
 
-	(void*) k_fifo_get(&cfg->fifo, K_NO_WAIT);		/* #CUSTOM@NDRS, workaround to flush fifo before feed dout !!! */
 	k_fifo_put(&cfg->fifo, buf);
 
 	HAL_PCD_EP_Receive(&priv->pcd, cfg->addr, buf->data, buf->size);
@@ -159,11 +158,11 @@ void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
 		return;
 	}
 
-	udc_ep_buf_set_setup(buf);
+	udc_ep_buf_set_setup(buf);                              /* USBD_PACKET_SEQ00 */
 	memcpy(buf->data, setup, 8);
 	net_buf_add(buf, 8);
 
-	udc_ctrl_update_stage(dev, buf);
+	udc_ctrl_update_stage(dev, buf);                        /* USBD_PACKET_SEQ01 */
 
 	if (!buf->len) {
 		return;
@@ -282,7 +281,7 @@ void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 
 	if (ep == USB_CONTROL_EP_OUT) {
 		if (udc_ctrl_stage_is_status_out(dev)) {
-			udc_ctrl_update_stage(dev, buf);
+			udc_ctrl_update_stage(dev, buf);        /* USBD_PACKET_SEQ04 */
 			udc_ctrl_submit_status(dev, buf);
 		} else {
 			udc_ctrl_update_stage(dev, buf);
