@@ -2084,7 +2084,7 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 
 #if defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_L2_IPIP)
 	net_pkt_set_remote_address(clone_pkt, net_pkt_remote_address(pkt),
-				   sizeof(struct sockaddr_storage));
+				   sizeof(struct net_sockaddr_storage));
 #endif
 
 	if (pkt->buffer && clone_pkt->buffer) {
