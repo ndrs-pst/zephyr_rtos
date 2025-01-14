@@ -193,7 +193,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: c563b0e56dfa7e3915637b12b3428e6de36012be
+      revision: ecea8cdbd1a7d557563b47ad304ee9ba7a8709e5
       path: modules/hal/nordic
       groups:
         - hal
@@ -228,7 +228,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 6371fa823663b11090b0b30561a8b9196d4ef981
+      revision: 220aac68ab8abaf5b0cf157ddb590a326f656e50
       path: modules/hal/silabs
       groups:
         - hal
@@ -324,7 +324,7 @@ manifest:
       revision: 52bb1783521c62c019451cee9b05b8eda9d7425f
       path: modules/lib/open-amp
     - name: openthread
-      revision: 2aeb8b833ba760ec29d5f340dd1ce7bcb61c5d56
+      revision: 3ae741f95e7dfb391dec35c48742862049eb62e8
       path: modules/lib/openthread
     - name: percepio
       path: modules/debug/percepio
