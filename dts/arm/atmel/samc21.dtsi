@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Kamil Serwus
+ * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,11 +27,12 @@
 			interrupt-names = "resrdy";
 			clocks = <&gclk 34>, <&mclk 0x1C 18>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
 			#io-channel-cells = <1>;
 
-			gclk = <0>;
 			prescaler = <4>;
 		};
 
@@ -40,6 +42,8 @@
 			interrupts = <13 0>;
 			clocks = <&gclk 23>, <&mclk 0x1C 5>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
 
@@ -49,6 +53,8 @@
 			interrupts = <14 0>;
 			clocks = <&gclk 25>, <&mclk 0x1C 6>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
 
@@ -59,6 +65,8 @@
 			interrupt-names = "int0";
 			clocks = <&gclk 26>, <&mclk 0x10 8>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
 			bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
@@ -72,6 +80,8 @@
 			interrupt-names = "int0";
 			clocks = <&gclk 27>, <&mclk 0x10 9>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
 			bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
@@ -91,6 +101,8 @@
 			interrupts = <20 0>;
 			clocks = <&gclk 30>, <&mclk 0x1C 12>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 		};
 
 		tc1: tc@42003400 {
@@ -99,7 +111,8 @@
 			interrupts = <21 0>;
 			clocks = <&gclk 30>, <&mclk 0x1C 13>;
 			clock-names = "GCLK", "MCLK";
-
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 			channels = <2>;
 			counter-size = <8>;
 		};
@@ -110,6 +123,8 @@
 			interrupts = <22 0>;
 			clocks = <&gclk 31>, <&mclk 0x1C 14>;
 			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
 
 			channels = <2>;
 			counter-size = <8>;

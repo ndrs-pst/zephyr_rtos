@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
+ * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,18 +31,16 @@ LOG_MODULE_REGISTER(i2c_sam0, CONFIG_I2C_LOG_LEVEL);
 #define I2C_TRANSFER_TIMEOUT_MSEC K_FOREVER
 #endif
 
+/* #CUSTOM@NDRS, mainly we switch to use SOC_ATMEL_SAM0_GCLK1_FREQ_HZ instead of GCLK0 */
+
 struct i2c_sam0_dev_config {
 	SercomI2cm *regs;
 	const struct pinctrl_dev_config *pcfg;
 	uint32_t bitrate;
-#ifdef MCLK
 	volatile uint32_t *mclk;
 	uint32_t mclk_mask;
-	uint16_t gclk_core_id;
-#else
-	uint32_t pm_apbcmask;
-	uint16_t gclk_clkctrl_id;
-#endif
+	uint32_t gclk_gen;
+	uint16_t gclk_id;
 	void (*irq_config_func)(const struct device *dev);
 
 #ifdef CONFIG_I2C_SAM0_DMA_DRIVEN
@@ -711,18 +710,17 @@ static int i2c_sam0_initialize(const struct device *dev)
 	SercomI2cm *i2c = cfg->regs;
 	int retval;
 
-#ifdef MCLK
-	/* Enable the GCLK */
-	GCLK->PCHCTRL[cfg->gclk_core_id].reg = GCLK_PCHCTRL_GEN_GCLK1 | GCLK_PCHCTRL_CHEN;
-	/* Enable SERCOM clock in MCLK */
 	*cfg->mclk |= cfg->mclk_mask;
-#else
-	/* Enable the GCLK */
-	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK1 | GCLK_CLKCTRL_CLKEN;
 
-	/* Enable SERCOM clock in PM */
-	PM->APBCMASK.reg |= cfg->pm_apbcmask;
+#ifdef MCLK
+	GCLK->PCHCTRL[cfg->gclk_id].reg = GCLK_PCHCTRL_CHEN
+					| GCLK_PCHCTRL_GEN(cfg->gclk_gen);
+#else
+	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN
+			  | GCLK_CLKCTRL_GEN(cfg->gclk_gen)
+			  | GCLK_CLKCTRL_ID(cfg->gclk_id);
 #endif
+
 	/* Disable all I2C interrupts */
 	i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
 
@@ -799,7 +797,7 @@ static DEVICE_API(i2c, i2c_sam0_driver_api) = {
 
 #if DT_INST_IRQ_HAS_IDX(0, 3)
 #define I2C_SAM0_IRQ_HANDLER(n)						\
-static void i2c_sam0_irq_config_##n(const struct device *dev)			\
+static void i2c_sam0_irq_config_##n(const struct device *dev)		\
 {									\
 	SAM0_I2C_IRQ_CONNECT(n, 0);					\
 	SAM0_I2C_IRQ_CONNECT(n, 1);					\
@@ -808,11 +806,14 @@ static void i2c_sam0_irq_config_##n(const struct device *dev)			\
 }
 #else
 #define I2C_SAM0_IRQ_HANDLER(n)						\
-static void i2c_sam0_irq_config_##n(const struct device *dev)			\
+static void i2c_sam0_irq_config_##n(const struct device *dev)		\
 {									\
 	SAM0_I2C_IRQ_CONNECT(n, 0);					\
 }
 #endif
+
+#define ASSIGNED_CLOCKS_CELL_BY_NAME					\
+	ATMEL_SAM0_DT_INST_ASSIGNED_CLOCKS_CELL_BY_NAME
 
 #ifdef MCLK
 #define I2C_SAM0_CONFIG(n)						\
@@ -820,9 +821,10 @@ static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {	\
 	.regs = (SercomI2cm *)DT_INST_REG_ADDR(n),			\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	.bitrate = DT_INST_PROP(n, clock_frequency),			\
-	.mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(n),	\
-	.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),	\
-	.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),\
+	.gclk_gen = ASSIGNED_CLOCKS_CELL_BY_NAME(n, gclk, gen),		\
+	.gclk_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, id),		\
+	.mclk = ATMEL_SAM0_DT_INST_MCLK_PM_REG_ADDR_OFFSET(n),		\
+	.mclk_mask = ATMEL_SAM0_DT_INST_MCLK_PM_PERIPH_MASK(n, bit),	\
 	.irq_config_func = &i2c_sam0_irq_config_##n,			\
 	I2C_SAM0_DMA_CHANNELS(n)					\
 }
@@ -832,8 +834,10 @@ static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {	\
 	.regs = (SercomI2cm *)DT_INST_REG_ADDR(n),			\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	.bitrate = DT_INST_PROP(n, clock_frequency),			\
-	.pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),	\
-	.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),\
+	.gclk_gen = ASSIGNED_CLOCKS_CELL_BY_NAME(n, gclk, gen),		\
+	.gclk_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, id),		\
+	.mclk = ATMEL_SAM0_DT_INST_MCLK_PM_REG_ADDR_OFFSET(n),		\
+	.mclk_mask = ATMEL_SAM0_DT_INST_MCLK_PM_PERIPH_MASK(n, bit),	\
 	.irq_config_func = &i2c_sam0_irq_config_##n,			\
 	I2C_SAM0_DMA_CHANNELS(n)					\
 }

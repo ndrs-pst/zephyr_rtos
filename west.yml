@@ -178,7 +178,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: a9b75e0d1827b6ef1f8ca82784b38ed2079bac5a
+      revision: 468e955eb49b8a731474ff194ca17b6e6a08c2d9
       path: modules/hal/infineon
       groups:
         - hal
@@ -203,7 +203,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: b5f6470ec7ccd7f1c9a2c929fa93eae9fb001d9e
+      revision: 7d1c7954df3c7fe758ae6f7482bffde0d910921f
       path: modules/hal/nxp
       groups:
         - hal
@@ -278,6 +278,9 @@ manifest:
     - name: liblc3
       revision: bb85f7dde4195bfc0fca9e9c7c2eed0f8694203c
       path: modules/lib/liblc3
+    - name: libmctp
+      revision: fa152665577a124cd957756f78fb81419c095c87
+      path: modules/lib/libmctp
     - name: libmetal
       revision: 3e8781aae9d7285203118c05bc01d4eb0ca565a7
       path: modules/hal/libmetal

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
+ * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,18 +47,12 @@ struct adc_sam0_data {
 struct adc_sam0_cfg {
     Adc* regs;
     const struct pinctrl_dev_config* pcfg;
-
-    #ifdef MCLK
+    volatile uint32_t* mclk;
     uint32_t mclk_mask;
-    uint32_t gclk_mask;
+    uint32_t gclk_gen;
     uint16_t gclk_id;
-    #else
-    uint32_t gclk;
-    #endif
-
     uint32_t freq;
     uint16_t prescaler;
-
     void (*config_func)(const struct device* dev);
 };
 
@@ -292,14 +287,16 @@ static void adc_sam0_start_conversion(const struct device* dev) {
 }
 
 static void adc_context_start_sampling(struct adc_context* ctx) {
-    struct adc_sam0_data* data = CONTAINER_OF(ctx, struct adc_sam0_data, ctx);
+    struct adc_sam0_data* data =
+        CONTAINER_OF(ctx, struct adc_sam0_data, ctx);
 
     adc_sam0_start_conversion(data->dev);
 }
 
 static void adc_context_update_buffer_pointer(struct adc_context* ctx,
                                               bool repeat_sampling) {
-    struct adc_sam0_data* data = CONTAINER_OF(ctx, struct adc_sam0_data, ctx);
+    struct adc_sam0_data* data =
+        CONTAINER_OF(ctx, struct adc_sam0_data, ctx);
 
     if (repeat_sampling) {
         data->buffer = data->repeat_buffer;
@@ -337,6 +334,13 @@ static int start_read(const struct device* dev,
     }
 
     adc->AVGCTRL.reg = ADC_AVGCTRL_SAMPLENUM(sequence->oversampling);
+    if (sequence->oversampling < 4) {
+        adc->AVGCTRL.reg |= ADC_AVGCTRL_ADJRES(sequence->oversampling);
+    }
+    else {
+        adc->AVGCTRL.reg |= ADC_AVGCTRL_ADJRES(4);
+    }
+
     /* AVGCTRL is not synchronized */
 
     #ifdef CONFIG_SOC_SERIES_SAMD20
@@ -460,14 +464,15 @@ static int adc_sam0_init(const struct device* dev) {
     Adc* const adc = cfg->regs;
     int retval;
 
+    *cfg->mclk |= cfg->mclk_mask;
+
     #if defined(MCLK)
-    GCLK->PCHCTRL[cfg->gclk_id].reg = cfg->gclk_mask | GCLK_PCHCTRL_CHEN;
-
-    MCLK_ADC |= cfg->mclk_mask;
+    GCLK->PCHCTRL[cfg->gclk_id].reg = GCLK_PCHCTRL_CHEN |
+                                      GCLK_PCHCTRL_GEN(cfg->gclk_gen);
     #else
-    PM->APBCMASK.bit.ADC_ = 1;
-
-    GCLK->CLKCTRL.reg = cfg->gclk | GCLK_CLKCTRL_CLKEN;
+    GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN |
+                        GCLK_CLKCTRL_GEN(cfg->gclk_gen) |
+                        GCLK_CLKCTRL_ID(cfg->gclk_id);
     #endif
 
     retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -516,21 +521,13 @@ static int adc_sam0_read_async(const struct device* dev,
 static DEVICE_API(adc, adc_sam0_api) = {
     .channel_setup = adc_sam0_channel_setup,
     .read          = adc_sam0_read,
-    .ref_internal = 1000U,                  /* Fixed 1.0 V reference */
+    .ref_internal  = 1000U,                         /* Fixed 1.0 V reference */
     #ifdef CONFIG_ADC_ASYNC
     .read_async    = adc_sam0_read_async
     #endif
 };
 
 #if defined(MCLK)
-
-#define ADC_SAM0_CLOCK_CONTROL(n)                               \
-    .mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),\
-    .gclk_mask = UTIL_CAT(GCLK_PCHCTRL_GEN_GCLK,                \
-                          DT_INST_PROP(n, gclk)),               \
-    .gclk_id   = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),   \
-    .prescaler = UTIL_CAT(ADC_CTRLx_PRESCALER_DIV,              \
-                          UTIL_CAT(DT_INST_PROP(n, prescaler), _Val)),
 
 #define ADC_SAM0_CONFIGURE(n)                                   \
     do {                                                        \
@@ -543,12 +540,6 @@ static DEVICE_API(adc, adc_sam0_api) = {
 
 #else
 
-#define ADC_SAM0_CLOCK_CONTROL(n)                               \
-    .gclk      = UTIL_CAT(GCLK_CLKCTRL_GEN_GCLK, DT_INST_PROP(n, gclk)) | \
-                          GCLK_CLKCTRL_ID_ADC,                  \
-    .prescaler = UTIL_CAT(ADC_CTRLx_PRESCALER_DIV,              \
-                          UTIL_CAT(DT_INST_PROP(n, prescaler), _Val)),
-
 #define ADC_SAM0_CONFIGURE(n)                                   \
     do {                                                        \
         const struct adc_sam0_cfg* const cfg = dev->config;     \
@@ -558,46 +549,59 @@ static DEVICE_API(adc, adc_sam0_api) = {
                         ADC_FUSES_LINEARITY_0_Msk) >>           \
                         ADC_FUSES_LINEARITY_0_Pos;              \
         lin |= (((*(uint32_t*)ADC_FUSES_LINEARITY_1_ADDR) &     \
-                 ADC_FUSES_LINEARITY_1_Msk) >>                  \
-                 ADC_FUSES_LINEARITY_1_Pos) << 4;               \
-        uint32_t bias = ((*(uint32_t*)ADC_FUSES_BIASCAL_ADDR) & \
-                         ADC_FUSES_BIASCAL_Msk) >> ADC_FUSES_BIASCAL_Pos; \
+                ADC_FUSES_LINEARITY_1_Msk) >>                   \
+                ADC_FUSES_LINEARITY_1_Pos) << 4;                \
+        uint32_t bias  = ((*(uint32_t*)ADC_FUSES_BIASCAL_ADDR) & \
+                          ADC_FUSES_BIASCAL_Msk) >> ADC_FUSES_BIASCAL_Pos; \
         adc->CALIB.reg = ADC_CALIB_BIAS_CAL(bias) |             \
                          ADC_CALIB_LINEARITY_CAL(lin);          \
     } while (false)
 
 #endif
 
+#define ASSIGNED_CLOCKS_CELL_BY_NAME                            \
+        ATMEL_SAM0_DT_INST_ASSIGNED_CLOCKS_CELL_BY_NAME
+
+#define ADC_SAM0_GCLK_FREQ(n)                                   \
+    UTIL_CAT(UTIL_CAT(SOC_ATMEL_SAM0_GCLK,                      \
+                      ASSIGNED_CLOCKS_CELL_BY_NAME(n, gclk, gen)), \
+             _FREQ_HZ)
+
+#define ADC_SAM0_FREQ(n)                                        \
+    .prescaler = UTIL_CAT(ADC_CTRLx_PRESCALER_DIV,              \
+                          UTIL_CAT(DT_INST_PROP(n, prescaler), _Val)), \
+    .freq = ADC_SAM0_GCLK_FREQ(n) / DT_INST_PROP(n, prescaler)
+
 #define ADC_SAM0_DEVICE(n)                                      \
-PINCTRL_DT_INST_DEFINE(n);                                      \
-static void adc_sam0_config_##n(const struct device* dev);      \
-static const struct adc_sam0_cfg adc_sam_cfg_##n = {            \
-    .regs = (Adc*)DT_INST_REG_ADDR(n),                          \
-    ADC_SAM0_CLOCK_CONTROL(n)                                   \
-    .freq = UTIL_CAT(UTIL_CAT(SOC_ATMEL_SAM0_GCLK,              \
-                              DT_INST_PROP(n, gclk)),           \
-                              _FREQ_HZ) /                       \
-                              DT_INST_PROP(n, prescaler),       \
-    .config_func = &adc_sam0_config_##n,                        \
-    .pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                  \
-};                                                              \
-static struct adc_sam0_data adc_sam_data_##n = {                \
-    ADC_CONTEXT_INIT_TIMER(adc_sam_data_##n, ctx),              \
-    ADC_CONTEXT_INIT_LOCK(adc_sam_data_##n, ctx),               \
-    ADC_CONTEXT_INIT_SYNC(adc_sam_data_##n, ctx),               \
-};                                                              \
-DEVICE_DT_INST_DEFINE(n, adc_sam0_init, NULL,                   \
-                        &adc_sam_data_##n,                      \
-                        &adc_sam_cfg_##n, POST_KERNEL,          \
-                        CONFIG_ADC_INIT_PRIORITY,               \
-                        &adc_sam0_api);                         \
-static void adc_sam0_config_##n(const struct device* dev) {     \
-    IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, resrdy, irq),            \
-                DT_INST_IRQ_BY_NAME(n, resrdy, priority),       \
-                adc_sam0_isr,                                   \
-                DEVICE_DT_INST_GET(n), 0);                      \
-    irq_enable(DT_INST_IRQ_BY_NAME(n, resrdy, irq));            \
-    ADC_SAM0_CONFIGURE(n);                                      \
-}
+    PINCTRL_DT_INST_DEFINE(n);                                  \
+    static void adc_sam0_config_##n(const struct device* dev);  \
+    static const struct adc_sam0_cfg adc_sam_cfg_##n = {        \
+        .regs      = (Adc*)DT_INST_REG_ADDR(n),                 \
+        .gclk_gen  = ASSIGNED_CLOCKS_CELL_BY_NAME(n, gclk, gen),\
+        .gclk_id   = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, id),  \
+        .mclk      = ATMEL_SAM0_DT_INST_MCLK_PM_REG_ADDR_OFFSET(n),  \
+        .mclk_mask = ATMEL_SAM0_DT_INST_MCLK_PM_PERIPH_MASK(n, bit), \
+        ADC_SAM0_FREQ(n),                                       \
+        .config_func = &adc_sam0_config_##n,                    \
+        .pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),              \
+    };                                                          \
+    static struct adc_sam0_data adc_sam_data_##n = {            \
+        ADC_CONTEXT_INIT_TIMER(adc_sam_data_##n, ctx),          \
+        ADC_CONTEXT_INIT_LOCK(adc_sam_data_##n, ctx),           \
+        ADC_CONTEXT_INIT_SYNC(adc_sam_data_##n, ctx),           \
+    };                                                          \
+    DEVICE_DT_INST_DEFINE(n, adc_sam0_init, NULL,               \
+                          &adc_sam_data_##n,                    \
+                          &adc_sam_cfg_##n, POST_KERNEL,        \
+                          CONFIG_ADC_INIT_PRIORITY,             \
+                          &adc_sam0_api);                       \
+    static void adc_sam0_config_##n(const struct device* dev) { \
+        IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, resrdy, irq),        \
+                    DT_INST_IRQ_BY_NAME(n, resrdy, priority),   \
+                    adc_sam0_isr,                               \
+                    DEVICE_DT_INST_GET(n), 0);                  \
+        irq_enable(DT_INST_IRQ_BY_NAME(n, resrdy, irq));        \
+        ADC_SAM0_CONFIGURE(n);                                  \
+    }
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_SAM0_DEVICE)

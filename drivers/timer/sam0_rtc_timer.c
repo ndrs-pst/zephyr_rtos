@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 omSquare s.r.o.
+ * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,10 +65,6 @@ BUILD_ASSERT(CYCLES_PER_TICK > 1,
              "CYCLES_PER_TICK must be greater than 1 for ticking mode");
 
 #endif /* CONFIG_TICKLESS_KERNEL */
-
-/* Helper macro to get the correct GCLK GEN based on configuration. */
-#define GCLK_GEN(n)     GCLK_EVAL(n)
-#define GCLK_EVAL(n)    GCLK_CLKCTRL_GEN_GCLK##n
 
 /* Tick/cycle count of the last announce call. */
 static volatile uint32_t rtc_last;
@@ -243,16 +240,21 @@ uint32_t sys_clock_cycle_get_32(void) {
     return (rtc_count());
 }
 
-static int sys_clock_driver_init(void) {
+#define ASSIGNED_CLOCKS_CELL_BY_NAME        \
+    ATMEL_SAM0_DT_INST_ASSIGNED_CLOCKS_CELL_BY_NAME
 
-    #ifdef MCLK
-    MCLK->APBAMASK.reg |= MCLK_APBAMASK_RTC;
+static int sys_clock_driver_init(void) {
+    volatile uint32_t *mclk = ATMEL_SAM0_DT_INST_MCLK_PM_REG_ADDR_OFFSET(0);
+    uint32_t mclk_mask = ATMEL_SAM0_DT_INST_MCLK_PM_PERIPH_MASK(0, bit);
+
+    *cfg->mclk |= cfg->mclk_mask;
+
+    #if defined(MCLK)
     OSC32KCTRL->RTCCTRL.reg = OSC32KCTRL_RTCCTRL_RTCSEL_ULP32K;
     #else
-    /* Set up bus clock and GCLK generator. */
-    PM->APBAMASK.reg |= PM_APBAMASK_RTC;
-    GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID(RTC_GCLK_ID) | GCLK_CLKCTRL_CLKEN |
-                        GCLK_GEN(DT_INST_PROP(0, clock_generator));
+    GCLK->CLKCTRL.reg = GCLK_CLKCTRL_CLKEN |
+                        GCLK_CLKCTRL_GEN(ASSIGNED_CLOCKS_CELL_BY_NAME(0, gclk, gen)) |
+                        GCLK_CLKCTRL_ID(DT_INST_CLOCKS_CELL_BY_NAME(0, gclk, id));
 
     /* Synchronize GCLK. */
     while (GCLK->STATUS.bit.SYNCBUSY) {
@@ -260,13 +262,10 @@ static int sys_clock_driver_init(void) {
     }
     #endif
 
-    #ifdef CONFIG_TICKLESS_KERNEL
-    /* pass */
-    #else
-    int retval;
+    #ifndef CONFIG_TICKLESS_KERNEL
+    int retval = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
 
-    retval = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
-    if (retval < 0) {
+    if ((retval < 0) && (retval != -ENOENT)) {
         return (retval);
     }
     #endif
@@ -326,10 +325,12 @@ static int sys_clock_driver_init(void) {
 
     /* Enable RTC interrupt. */
     NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
-    IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), rtc_isr, 0, 0);
+    IRQ_CONNECT(DT_INST_IRQN(0),
+                DT_INST_IRQ(0, priority), rtc_isr, 0, 0);
     irq_enable(DT_INST_IRQN(0));
 
     return (0);
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+         CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
