@@ -187,6 +187,11 @@ I2C
 
 * Renamed the ``compatible`` from ``nxp,imx-lpi2c`` to :dtcompatible:`nxp,lpi2c`.
 
+I2S
+===
+
+* Renamed the device tree property from ``fifo_depth`` to ``fifo-depth``.
+
 Input
 =====
 
@@ -294,6 +299,11 @@ Timer
 
 * Renamed the ``compatible`` from ``nxp,kinetis-ftm`` to :dtcompatible:`nxp,ftm` and relocate it
   under ``dts/bindings/timer``.
+
+USB
+===
+
+* Renamed the devicetree property names ``phy_handle`` to ``phy-handle``.
 
 Video
 =====

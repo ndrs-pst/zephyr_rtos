@@ -203,7 +203,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 7d1c7954df3c7fe758ae6f7482bffde0d910921f
+      revision: c15dd51d7af27593e38b65b1443a350e9d2de64f
       path: modules/hal/nxp
       groups:
         - hal
@@ -274,12 +274,12 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 516cf575760be783498eff901e994d1944bdb105
+      revision: b4c42d88afc5ee04751fe258db757c4ef70abb09
     - name: liblc3
       revision: bb85f7dde4195bfc0fca9e9c7c2eed0f8694203c
       path: modules/lib/liblc3
     - name: libmctp
-      revision: fa152665577a124cd957756f78fb81419c095c87
+      revision: b97860e78998551af99931ece149eeffc538bdb1
       path: modules/lib/libmctp
     - name: libmetal
       revision: 3e8781aae9d7285203118c05bc01d4eb0ca565a7
