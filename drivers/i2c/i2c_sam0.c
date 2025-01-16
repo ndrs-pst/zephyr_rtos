@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(i2c_sam0, CONFIG_I2C_LOG_LEVEL);
 #define I2C_TRANSFER_TIMEOUT_MSEC K_FOREVER
 #endif
 
-/* #CUSTOM@NDRS, mainly we switch to use SOC_ATMEL_SAM0_GCLK1_FREQ_HZ instead of GCLK0 */
+/* #CUSTOM@NDRS : Use GCLK1 as clock source instead of GCLK0 */
 
 struct i2c_sam0_dev_config {
 	SercomI2cm *regs;

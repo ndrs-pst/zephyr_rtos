@@ -10,7 +10,7 @@
 #include <soc.h>
 #include <zephyr/drivers/dma.h>
 #if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
-#include "samc21_reg_stub.h"
+#include "mcu_reg_stub.h"
 #endif
 
 #include <zephyr/logging/log.h>
@@ -495,7 +495,7 @@ DEVICE_DT_INST_DEFINE(0, &dma_sam0_init, NULL,
 
 
 #if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
-#include "samc21_reg_stub.h"
+#include "mcu_reg_stub.h"
 
 void zephyr_dma_sam0_init(const struct device* dev) {
     dma_sam0_init(dev);

@@ -1858,7 +1858,7 @@ DT_INST_FOREACH_STATUS_OKAY(SPI_NOR_INST)
 #endif
 
 #if defined(CONFIG_SOC_SERIES_SAMC21)
-#include "samc21_reg_stub.h"
+#include "mcu_reg_stub.h"
 
 extern void zephyr_gpio_sam0_set_regs(const struct gpio_dt_spec* spec, volatile void* reg_ptr);
 

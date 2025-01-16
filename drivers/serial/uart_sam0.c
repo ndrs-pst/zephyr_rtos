@@ -22,6 +22,8 @@
 #define SERCOM_USART_CTRLA_MODE_USART_INT_CLK SERCOM_USART_CTRLA_MODE(0x1)
 #endif
 
+/* #CUSTOM@NDRS : Use GCLK1 as clock source instead of GCLK0 */
+
 /*
  * Interrupt error flag is only supported in devices with
  * SERCOM revision 0x500
@@ -1261,7 +1263,7 @@ UART_SAM0_IRQ_HANDLER(n)
 DT_INST_FOREACH_STATUS_OKAY(UART_SAM0_DEVICE_INIT)
 
 #if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
-#include "samc21_reg_stub.h"
+#include "mcu_reg_stub.h"
 
 void zephyr_uart_sam0_init(const struct device* dev) {
     uart_sam0_init(dev);

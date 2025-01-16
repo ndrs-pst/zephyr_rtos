@@ -428,7 +428,7 @@ static const struct counter_driver_api counter_sam0_rtc_driver_api = {
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_SAM0_RTC_DEVICE)
 
 #if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
-#include "samc21_reg_stub.h"
+#include "mcu_reg_stub.h"
 
 void zephyr_gtest_rtc_sam0(void) {
     counter_sam0_rtc_dev_config_0.regs = (RtcMode0*)ut_mcu_rtc_ptr;

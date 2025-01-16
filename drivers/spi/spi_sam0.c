@@ -23,6 +23,8 @@ LOG_MODULE_REGISTER(spi_sam0);
 #define SERCOM_SPI_CTRLA_MODE_SPI_MASTER_Val (0x3)
 #endif
 
+/* #CUSTOM@NDRS : Use GCLK1 as clock source instead of GCLK0 */
+
 /* Device constant configuration parameters */
 struct spi_sam0_config {
     SercomSpi* regs;
@@ -800,7 +802,7 @@ static struct spi_sam0_config DT_CONST spi_sam0_config_##n = {  \
 DT_INST_FOREACH_STATUS_OKAY(SPI_SAM0_DEVICE_INIT)
 
 #if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
-#include "samc21_reg_stub.h"
+#include "mcu_reg_stub.h"
 
 void zephyr_gtest_spi_sam0(void) {
     if (spi_sam0_config_0.regs == (SercomSpi*)0x42001800) {

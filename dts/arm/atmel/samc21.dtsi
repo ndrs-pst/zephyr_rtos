@@ -42,7 +42,7 @@
 			interrupts = <13 0>;
 			clocks = <&gclk 23>, <&mclk 0x1C 5>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clocks = <&gclk 1>;      /* #CUSTOM@NDRS : Use GCLK1 instead of GCLK0 */
 			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
@@ -53,7 +53,7 @@
 			interrupts = <14 0>;
 			clocks = <&gclk 25>, <&mclk 0x1C 6>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clocks = <&gclk 1>;      /* #CUSTOM@NDRS : Use GCLK1 instead of GCLK0 */
 			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
@@ -101,7 +101,7 @@
 			interrupts = <20 0>;
 			clocks = <&gclk 30>, <&mclk 0x1C 12>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clocks = <&gclk 1>;      /* #CUSTOM@NDRS : Use GCLK1 instead of GCLK0 */
 			atmel,assigned-clock-names = "GCLK";
 		};
 

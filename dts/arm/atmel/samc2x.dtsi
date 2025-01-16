@@ -179,7 +179,7 @@
 			interrupts = <9 0>;
 			clocks = <&gclk 19>, <&mclk 0x1C 1>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clocks = <&gclk 1>;      /* #CUSTOM@NDRS : Use GCLK1 instead of GCLK0 */
 			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
@@ -190,7 +190,7 @@
 			interrupts = <10 0>;
 			clocks = <&gclk 20>, <&mclk 0x1C 2>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clocks = <&gclk 1>;      /* #CUSTOM@NDRS : Use GCLK1 instead of GCLK0 */
 			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
@@ -201,7 +201,7 @@
 			interrupts = <11 0>;
 			clocks = <&gclk 21>, <&mclk 0x1C 3>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clocks = <&gclk 1>;      /* #CUSTOM@NDRS : Use GCLK1 instead of GCLK0 */
 			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
@@ -212,7 +212,7 @@
 			interrupts = <12 0>;
 			clocks = <&gclk 22>, <&mclk 0x1C 4>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clocks = <&gclk 1>;      /* #CUSTOM@NDRS : Use GCLK1 instead of GCLK0 */
 			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 		};
@@ -223,7 +223,7 @@
 			interrupts = <17 0>;
 			clocks = <&gclk 28>, <&mclk 0x1C 9>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clocks = <&gclk 1>;      /* #CUSTOM@NDRS : Use GCLK1 instead of GCLK0 */
 			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
@@ -237,7 +237,7 @@
 			interrupts = <18 0>;
 			clocks = <&gclk 28>, <&mclk 0x1C 10>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clocks = <&gclk 1>;      /* #CUSTOM@NDRS : Use GCLK1 instead of GCLK0 */
 			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
@@ -251,7 +251,7 @@
 			interrupts = <19 0>;
 			clocks = <&gclk 29>, <&mclk 0x1C 11>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clocks = <&gclk 1>;      /* #CUSTOM@NDRS : Use GCLK1 instead of GCLK0 */
 			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 

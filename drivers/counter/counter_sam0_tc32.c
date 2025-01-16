@@ -391,6 +391,7 @@ static DEVICE_API(counter, counter_sam0_tc32_driver_api) = {
     COND_CODE_1(DT_INST_NODE_HAS_PROP(n, prescaler), \
                 (DT_INST_PROP(n, prescaler)), (1))
 
+/* #CUSTOM@NDRS : Use GCLK1 as clock source instead of GCLK0 */
 #define COUNTER_SAM0_TC32_DEVICE(n)                             \
     PINCTRL_DT_INST_DEFINE(n);                                  \
     static void counter_sam0_tc32_config_##n(const struct device* dev); \

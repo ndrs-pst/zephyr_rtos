@@ -47,7 +47,7 @@
 #elif defined(CONFIG_SOC_SAMC21N18A)
 #include <samc21n18a.h>
 #else
-#error Library does not support the specified device.
+#error "Library does not support the specified device."
 #endif
 
 #endif /* _ASMLANGUAGE */
@@ -81,7 +81,7 @@
 #elif defined(CONFIG_SOC_ATMEL_SAMC_XOSC_AS_MAIN)
 #define SOC_ATMEL_SAM0_FDPLL_IN_FREQ_HZ     1000000
 #else
-#error Unsupported GCLK3 clock source.
+#error "Unsupported GCLK3 clock source."
 #endif
 
 #define SOC_ATMEL_SAM0_GCLK1_FREQ_HZ        (SOC_ATMEL_SAM0_FDPLL_OUT_FREQ_HZ / 2U)

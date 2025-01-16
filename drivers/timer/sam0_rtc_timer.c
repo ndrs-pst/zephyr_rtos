@@ -29,9 +29,10 @@
 /* RTC registers. */
 #define RTC0 ((RtcMode0*)DT_INST_REG_ADDR(0))
 
-#ifdef MCLK
+#if defined(MCLK)
 #define RTC_CLOCK_HW_CYCLES_PER_SEC SOC_ATMEL_SAM0_OSC32K_FREQ_HZ
 #else
+/* #CUSTOM@NDRS : Use GCLK1 as clock source instead of GCLK0 */
 #define RTC_CLOCK_HW_CYCLES_PER_SEC SOC_ATMEL_SAM0_GCLK1_FREQ_HZ
 #endif
 

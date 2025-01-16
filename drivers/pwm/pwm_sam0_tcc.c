@@ -138,6 +138,7 @@ static DEVICE_API(pwm, pwm_sam0_driver_api) = {
 #define ASSIGNED_CLOCKS_CELL_BY_NAME        \
     ATMEL_SAM0_DT_INST_ASSIGNED_CLOCKS_CELL_BY_NAME
 
+/* #CUSTOM@NDRS : Use GCLK1 as clock source instead of GCLK0 */
 #define PWM_SAM0_INIT(inst)                                             \
     PINCTRL_DT_INST_DEFINE(inst);                                       \
     static const struct pwm_sam0_config pwm_sam0_config_##inst = {      \

@@ -614,7 +614,7 @@ static int rtc_sam0_init(const struct device* dev) {
 DT_INST_FOREACH_STATUS_OKAY(RTC_SAM0_DEVICE);
 
 #if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
-#include "samc21_reg_stub.h"
+#include "mcu_reg_stub.h"
 
 void zephyr_gtest_rtc_sam0(void) {
     rtc_sam0_config_0.regs = (RtcMode2*)ut_mcu_rtc_ptr;
