@@ -16,6 +16,7 @@ module-help = Sets log level for Ethernet PHY Device Drivers.
 source "subsys/net/Kconfig.template.log_config.net"
 source "drivers/ethernet/phy/Kconfig.tja1103"
 source "drivers/ethernet/phy/Kconfig.dm8806"
+source "drivers/ethernet/phy/Kconfig.microchip_t1s"
 
 config PHY_INIT_PRIORITY
 	int "Ethernet PHY driver init priority"
@@ -100,5 +101,10 @@ config PHY_MONITOR_PERIOD
 	  Monitor task execution period in milliseconds. The monitor task is
 	  periodically executed to detect and report any changes in the
 	  PHY link status to the operating system.
+
+config PHY_OA_TC14_PLCA_LIB
+	bool "Open Alliance TC14 PLCA generic lib"
+	help
+	  Enable Open Alliance TC14 PLCA generic lib.
 
 endif # "Ethernet PHY Drivers"
