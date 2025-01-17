@@ -1312,11 +1312,7 @@ void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
 }
 #endif /* __cplusplus */
 
-#if defined(CONFIG_SEGGER_SYSTEMVIEW)
-/* #CUSTOM@NDRS : cannot include arch_inlines.h when CONFIG_SEGGER_SYSTEMVIEW=y */
-#else
 #include <zephyr/arch/arch_inlines.h>
-#endif
 
 #endif /* _ASMLANGUAGE */
 
