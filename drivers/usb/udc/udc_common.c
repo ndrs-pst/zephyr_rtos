@@ -21,6 +21,9 @@
 #endif
 LOG_MODULE_REGISTER(udc, CONFIG_UDC_DRIVER_LOG_LEVEL);
 
+#include <zephyr/drivers/gpio.h>
+extern struct gpio_dt_spec const g_dbg_pin_gpio_dt[];
+
 static inline uint8_t *udc_pool_data_alloc(struct net_buf *const buf,
 					   size_t *const size, k_timeout_t timeout)
 {
@@ -118,13 +121,18 @@ int udc_register_ep(const struct device *dev, struct udc_ep_config *const cfg)
 struct net_buf *udc_buf_get(const struct device *dev, const uint8_t ep)
 {
 	struct udc_ep_config *ep_cfg;
+	struct net_buf *buf;
 
 	ep_cfg = udc_get_ep_cfg(dev, ep);
 	if (ep_cfg == NULL) {
 		return NULL;
 	}
 
-	return k_fifo_get(&ep_cfg->fifo, K_NO_WAIT);
+	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[4], 1);          /* DBG_PIN4_HIGH */
+	buf = k_fifo_get(&ep_cfg->fifo, K_NO_WAIT);
+	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[4], 0);          /* DBG_PIN4_LOW */
+
+	return buf;
 }
 
 struct net_buf *udc_buf_get_all(const struct device *dev, const uint8_t ep)
@@ -169,7 +177,9 @@ struct net_buf *udc_buf_peek(const struct device *dev, const uint8_t ep)
 void udc_buf_put(struct udc_ep_config *const ep_cfg,
 		 struct net_buf *const buf)
 {
+	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[3], 1);          /* DBG_PIN3_HIGH */
 	k_fifo_put(&ep_cfg->fifo, buf);
+	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[3], 0);          /* DBG_PIN3_LOW */
 }
 
 void udc_ep_buf_set_setup(struct net_buf *const buf)
@@ -658,7 +668,9 @@ struct net_buf *udc_ep_buf_alloc(const struct device *dev,
 
 	api->lock(dev);
 
+	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[5], 1);  /* DBG_PIN5_HIGH */
 	buf = net_buf_alloc_len(&udc_ep_pool, size, K_NO_WAIT);
+	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[5], 0);  /* DBG_PIN5_LOW */
 	if (!buf) {
 		LOG_ERR("Failed to allocate net_buf %zd", size);
 		goto ep_alloc_error;
@@ -686,7 +698,9 @@ static inline void udc_buf_destroy(struct net_buf *buf)
 {
 	/* Adjust level and use together with the log in udc_ep_buf_alloc() */
 	LOG_DBG("destroy %p", buf);
+	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[6], 1);  /* DBG_PIN6_HIGH */
 	net_buf_destroy(buf);
+	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[6], 0);  /* DBG_PIN6_LOW */
 }
 
 int udc_ep_buf_free(const struct device *dev, struct net_buf *const buf)

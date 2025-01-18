@@ -11,6 +11,7 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/drivers/usb/udc.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/usb/usbd.h>
 
 #include "usbd_device.h"
@@ -30,6 +31,8 @@ static struct k_thread usbd_thread_data;
 
 K_MSGQ_DEFINE(usbd_msgq, sizeof(struct udc_event),
 	      CONFIG_USBD_MAX_UDC_MSG, sizeof(uint32_t));
+
+extern struct gpio_dt_spec const g_dbg_pin_gpio_dt[];
 
 static int usbd_event_carrier(const struct device *dev,
 			      const struct udc_event *const event)
@@ -198,7 +201,9 @@ static void usbd_thread(void *p1, void *p2, void *p3)
 		uds_ctx = (void *)udc_get_event_ctx(event.dev);
 		__ASSERT(uds_ctx != NULL && usbd_is_initialized(uds_ctx),
 			 "USB device is not initialized");
+		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[8], 1);  /* DBG_PIN8_HIGH */
 		usbd_event_handler(uds_ctx, &event);
+		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[8], 0);  /* DBG_PIN8_LOW */
 	}
 }
 

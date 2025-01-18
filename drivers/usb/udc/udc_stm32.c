@@ -42,6 +42,8 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define UDC_STM32_IRQ		DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, irq)
 #define UDC_STM32_IRQ_PRI	DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, priority)
 
+extern struct gpio_dt_spec const g_dbg_pin_gpio_dt[];
+
 struct udc_stm32_data  {
 	PCD_HandleTypeDef pcd;
 	const struct device *dev;
@@ -131,12 +133,21 @@ static int usbd_ctrl_feed_dout(const struct device *dev, const size_t length)
 	struct udc_ep_config *cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
 	struct net_buf *buf;
 
+	buf = k_fifo_get(&cfg->fifo, K_NO_WAIT);
+	if (buf != NULL) {
+		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[4], 1);  /* DBG_PIN4_HIGH */
+		net_buf_destroy(buf);
+		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[4], 0);  /* DBG_PIN4_LOW */
+	}
+
 	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, length);
 	if (buf == NULL) {
 		return -ENOMEM;
 	}
 
+	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[3], 1);          /* DBG_PIN3_HIGH */
 	k_fifo_put(&cfg->fifo, buf);
+	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[3], 0);          /* DBG_PIN3_LOW */
 
 	HAL_PCD_EP_Receive(&priv->pcd, cfg->addr, buf->data, buf->size);
 
@@ -163,7 +174,6 @@ void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
 	net_buf_add(buf, 8);
 
 	udc_ctrl_update_stage(dev, buf);                        /* USBD_PACKET_SEQ01 */
-
 	if (!buf->len) {
 		return;
 	}
@@ -271,7 +281,9 @@ void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 
 	udc_ep_set_busy(dev, ep, false);
 
+	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[1], 1);          /* DBG_PIN1_HIGH */
 	buf = udc_buf_get(dev, ep);
+	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[1], 0);          /* DBG_PIN1_LOW */
 	if (unlikely(buf == NULL)) {
 		LOG_ERR("ep 0x%02x queue is empty", ep);
 		return;
@@ -311,7 +323,9 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 
 	udc_ep_set_busy(dev, ep, false);
 
+	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[2], 1);          /* DBG_PIN2_HIGH */
 	buf = udc_buf_peek(dev, ep);
+	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[2], 0);          /* DBG_PIN2_LOW */
 	if (unlikely(buf == NULL)) {
 		return;
 	}
