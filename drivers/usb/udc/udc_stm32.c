@@ -136,8 +136,10 @@ static int usbd_ctrl_feed_dout(const struct device *dev, const size_t length)
 	buf = k_fifo_get(&cfg->fifo, K_NO_WAIT);
 	if (buf != NULL) {
 		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[4], 1);  /* DBG_PIN4_HIGH */
+		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[6], 1);  /* DBG_PIN6_HIGH */
 		net_buf_destroy(buf);
 		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[4], 0);  /* DBG_PIN4_LOW */
+		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[6], 0);  /* DBG_PIN6_LOW */
 	}
 
 	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, length);
@@ -236,11 +238,13 @@ static int udc_stm32_tx(const struct device *dev, uint8_t ep,
 
 	udc_ep_set_busy(dev, ep, true);
 
-	if (ep == USB_CONTROL_EP_IN && len > 0) {
+	if ((ep == USB_CONTROL_EP_IN) && (len > 0)) {
 		/* Wait for an empty package from the host.
 		 * This also flushes the TX FIFO to the host.
 		 */
+		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[11], 1); /* DBG_PIN11_HIGH */
 		usbd_ctrl_feed_dout(dev, 0);
+		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[11], 0); /* DBG_PIN11_LOW */
 	}
 
 	return 0;
@@ -283,7 +287,6 @@ void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 
 	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[1], 1);          /* DBG_PIN1_HIGH */
 	buf = udc_buf_get(dev, ep);
-	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[1], 0);          /* DBG_PIN1_LOW */
 	if (unlikely(buf == NULL)) {
 		LOG_ERR("ep 0x%02x queue is empty", ep);
 		return;
@@ -310,6 +313,8 @@ void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 	if (buf) {
 		udc_stm32_rx(dev, ep, buf);
 	}
+
+	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[1], 0);          /* DBG_PIN1_LOW */
 }
 
 void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
@@ -325,12 +330,12 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 
 	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[2], 1);          /* DBG_PIN2_HIGH */
 	buf = udc_buf_peek(dev, ep);
-	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[2], 0);          /* DBG_PIN2_LOW */
 	if (unlikely(buf == NULL)) {
+		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[2], 0);  /* DBG_PIN2_LOW */
 		return;
 	}
 
-	if (ep == USB_CONTROL_EP_IN && buf->len) {
+	if ((ep == USB_CONTROL_EP_IN) && (buf->len > 0U)) {
 		const struct udc_stm32_config *cfg = dev->config;
 		uint32_t len = MIN(cfg->ep0_mps, buf->len);
 
@@ -338,14 +343,14 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 
 		buf->len -= len;
 		buf->data += len;
-
+		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[2], 0);  /* DBG_PIN2_LOW */
 		return;
 	}
 
-	if (udc_ep_buf_has_zlp(buf) && ep != USB_CONTROL_EP_IN) {
+	if (udc_ep_buf_has_zlp(buf) && (ep != USB_CONTROL_EP_IN)) {
 		udc_ep_buf_clear_zlp(buf);
 		HAL_PCD_EP_Transmit(&priv->pcd, ep, buf->data, 0);
-
+		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[2], 0);  /* DBG_PIN2_LOW */
 		return;
 	}
 
@@ -369,6 +374,7 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 			net_buf_unref(buf);
 		}
 
+		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[2], 0);  /* DBG_PIN2_LOW */
 		return;
 	}
 
@@ -378,6 +384,8 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 	if (buf) {
 		udc_stm32_tx(dev, ep, buf);
 	}
+
+	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[2], 0);          /* DBG_PIN2_LOW */
 }
 
 #if DT_INST_NODE_HAS_PROP(0, disconnect_gpios)

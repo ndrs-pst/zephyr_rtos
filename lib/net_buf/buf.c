@@ -19,6 +19,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/sys/byteorder.h>
 
 #include <zephyr/net_buf.h>
+#include <zephyr/drivers/gpio.h>
+extern struct gpio_dt_spec const g_dbg_pin_gpio_dt[];
 
 #if defined(CONFIG_NET_BUF_LOG)
 #define NET_BUF_DBG(fmt, ...) LOG_DBG("(%p) " fmt, k_current_get(), \
@@ -490,9 +492,13 @@ void net_buf_unref(struct net_buf *buf)
 #endif
 
 		if (pool->destroy) {
+			gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[6], 1);  /* DBG_PIN6_HIGH */
 			pool->destroy(buf);
+			gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[6], 0);  /* DBG_PIN6_LOW */
 		} else {
+			gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[6], 1);  /* DBG_PIN6_HIGH */
 			net_buf_destroy(buf);
+			gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[6], 0);  /* DBG_PIN6_LOW */
 		}
 
 		buf = frags;

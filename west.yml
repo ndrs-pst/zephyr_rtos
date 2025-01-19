@@ -290,7 +290,7 @@ manifest:
       path: modules/fs/littlefs
       groups:
         - fs
-      revision: b66e86150a6e10a7f8fdc1001d840d473028f458
+      revision: 8c89a3eeb27e1be1b6ea1b6fa3ea24782c61f69b
     - name: loramac-node
       revision: 88deb45109317473ac5706e97a6b8bbeb524aab1
       path: modules/lib/loramac-node

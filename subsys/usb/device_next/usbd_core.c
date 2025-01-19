@@ -37,7 +37,11 @@ extern struct gpio_dt_spec const g_dbg_pin_gpio_dt[];
 static int usbd_event_carrier(const struct device *dev,
 			      const struct udc_event *const event)
 {
-	return k_msgq_put(&usbd_msgq, event, K_NO_WAIT);
+	int ret;
+
+	ret = k_msgq_put(&usbd_msgq, event, K_NO_WAIT);
+
+	return ret;
 }
 
 static int event_handler_ep_request(struct usbd_context *const uds_ctx,

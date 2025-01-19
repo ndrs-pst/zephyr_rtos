@@ -103,6 +103,7 @@ int usbd_ep_ctrl_enqueue(struct usbd_context *const uds_ctx,
 			 struct net_buf *const buf)
 {
 	struct udc_buf_info *bi;
+	int ret;
 
 	bi = udc_get_buf_info(buf);
 	if (USB_EP_GET_IDX(bi->ep)) {
@@ -119,7 +120,9 @@ int usbd_ep_ctrl_enqueue(struct usbd_context *const uds_ctx,
 		usbd_ep_ctrl_set_zlp(uds_ctx, buf);
 	}
 
-	return udc_ep_enqueue(uds_ctx->dev, buf);
+	ret = udc_ep_enqueue(uds_ctx->dev, buf);
+
+	return ret;
 }
 
 struct net_buf *usbd_ep_buf_alloc(const struct usbd_class_data *const c_data,

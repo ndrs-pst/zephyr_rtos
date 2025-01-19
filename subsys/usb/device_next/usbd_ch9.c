@@ -11,6 +11,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/drivers/hwinfo.h>
+#include <zephyr/drivers/gpio.h>
 
 #include "usbd_device.h"
 #include "usbd_desc.h"
@@ -29,6 +30,8 @@ LOG_MODULE_REGISTER(usbd_ch9, CONFIG_USBD_LOG_LEVEL);
 
 #define SF_TEST_MODE_SELECTOR(wIndex)		((uint8_t)((wIndex) >> 8))
 #define SF_TEST_LOWER_BYTE(wIndex)		((uint8_t)(wIndex))
+
+extern struct gpio_dt_spec const g_dbg_pin_gpio_dt[];
 
 static int nonstd_request(struct usbd_context *const uds_ctx,
 			  struct net_buf *const dbuf);
@@ -1165,7 +1168,7 @@ int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 		}
 
 		ch9_set_ctrl_type(uds_ctx, CTRL_AWAIT_STATUS_STAGE);
-		if (reqtype_is_to_device(setup) && setup->wLength) {
+		if (reqtype_is_to_device(setup) && (setup->wLength > 0U)) {
 			/* Enqueue STATUS (IN) buffer */
 			next_buf = spool_data_out(next_buf);
 			if (next_buf == NULL) {
@@ -1173,10 +1176,14 @@ int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 				goto ctrl_xfer_stall;
 			}
 
+			gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[9], 1);          /* DBG_PIN9_HIGH */
 			ret = usbd_ep_ctrl_enqueue(uds_ctx, next_buf);
+			gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[9], 0);          /* DBG_PIN9_LOW */
 		} else {
 			/* Enqueue DATA (IN) or STATUS (OUT) buffer */
+			gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[10], 1);         /* DBG_PIN10_HIGH */
 			ret = usbd_ep_ctrl_enqueue(uds_ctx, next_buf);
+			gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[10], 0);         /* DBG_PIN10_LOW */
 		}
 
 		return ret;

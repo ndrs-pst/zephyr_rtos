@@ -177,9 +177,11 @@ struct net_buf *udc_buf_peek(const struct device *dev, const uint8_t ep)
 void udc_buf_put(struct udc_ep_config *const ep_cfg,
 		 struct net_buf *const buf)
 {
+	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[2], 1);          /* DBG_PIN2_HIGH */
 	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[3], 1);          /* DBG_PIN3_HIGH */
 	k_fifo_put(&ep_cfg->fifo, buf);
 	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[3], 0);          /* DBG_PIN3_LOW */
+	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[2], 0);          /* DBG_PIN2_LOW */
 }
 
 void udc_ep_buf_set_setup(struct net_buf *const buf)
@@ -237,7 +239,7 @@ int udc_submit_ep_event(const struct device *dev,
 
 	bi->err = err;
 
-	return data->event_cb(dev, &drv_evt);
+	return data->event_cb(dev, &drv_evt);                   /* @see usbd_event_carrier */
 }
 
 static uint8_t ep_attrib_get_transfer(uint8_t attributes)
@@ -611,7 +613,7 @@ int udc_ep_enqueue(const struct device *dev, struct net_buf *const buf)
 		USB_EP_DIR_IS_IN(cfg->addr) ? buf->len : buf->size);
 
 	bi->setup = 0;
-	ret = api->ep_enqueue(dev, cfg, buf);
+	ret = api->ep_enqueue(dev, cfg, buf);                   /* @see udc_stm32_ep_enqueue */
 
 ep_enqueue_error:
 	api->unlock(dev);
@@ -940,7 +942,8 @@ int udc_ctrl_submit_s_in_status(const struct device *dev)
 		ret = -ENOMEM;
 	}
 
-	return udc_submit_ep_event(dev, data->setup, ret);
+	ret = udc_submit_ep_event(dev, data->setup, ret);
+	return ret;
 }
 
 int udc_ctrl_submit_s_status(const struct device *dev)

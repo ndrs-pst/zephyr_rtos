@@ -2729,7 +2729,7 @@ static inline void* k_fifo_get(struct k_fifo* fifo, k_timeout_t timeout) {
  */
 #if defined(_MSC_VER) /* #CUSTOM@NDRS */
 static inline void* k_fifo_peek_head(struct k_fifo* fifo) {
-    void* fph_ret = k_queue_peek_head(&fifo->_queue); 
+    void* fph_ret = k_queue_peek_head(&fifo->_queue);
 
     return (fph_ret);
 }
