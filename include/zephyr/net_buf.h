@@ -1102,6 +1102,9 @@ struct net_buf_pool {
     /** Total size of the pool. */
     const uint16_t pool_size;
 
+    /** Maximum count of used buffers. */
+    uint16_t max_used;
+
     /** Name of the pool. Used when printing pool information. */
     char const* name;
     #endif /* CONFIG_NET_BUF_POOL_USAGE */
@@ -1119,6 +1122,7 @@ struct net_buf_pool {
 /** @cond INTERNAL_HIDDEN */
 #define NET_BUF_POOL_USAGE_INIT(_pool, _count) \
     IF_ENABLED(CONFIG_NET_BUF_POOL_USAGE, (.avail_count = ATOMIC_INIT(_count),)) \
+    IF_ENABLED(CONFIG_NET_BUF_POOL_USAGE, (.max_used = 0,)) \
     IF_ENABLED(CONFIG_NET_BUF_POOL_USAGE, (.name = STRINGIFY(_pool),))
 
 #if (__GTEST == 0U)
