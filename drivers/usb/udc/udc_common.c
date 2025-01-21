@@ -217,8 +217,11 @@ int udc_submit_event(const struct device *dev,
 		.status = status,
 		.dev = dev,
 	};
+	int ret;
 
-	return data->event_cb(dev, &drv_evt);
+	ret = data->event_cb(dev, &drv_evt);
+
+	return ret;
 }
 
 int udc_submit_ep_event(const struct device *dev,
@@ -232,6 +235,7 @@ int udc_submit_ep_event(const struct device *dev,
 		.buf = buf,
 		.dev = dev,
 	};
+	int ret;
 
 	if (!udc_is_initialized(dev)) {
 		return -EPERM;
@@ -239,7 +243,9 @@ int udc_submit_ep_event(const struct device *dev,
 
 	bi->err = err;
 
-	return data->event_cb(dev, &drv_evt);                   /* @see usbd_event_carrier */
+	ret = data->event_cb(dev, &drv_evt);                    /* @see usbd_event_carrier */
+
+	return ret;
 }
 
 static uint8_t ep_attrib_get_transfer(uint8_t attributes)
@@ -923,7 +929,9 @@ int udc_ctrl_submit_s_out_status(const struct device *dev,
 		ret = -ENOMEM;
 	}
 
-	return udc_submit_ep_event(dev, data->setup, ret);
+	ret = udc_submit_ep_event(dev, data->setup, ret);
+
+	return ret;
 }
 
 int udc_ctrl_submit_s_in_status(const struct device *dev)
@@ -942,7 +950,8 @@ int udc_ctrl_submit_s_in_status(const struct device *dev)
 		ret = -ENOMEM;
 	}
 
-	ret = udc_submit_ep_event(dev, data->setup, ret);
+	ret = udc_submit_ep_event(dev, data->setup, ret);       /* USBD_GET_DESC_SEQ01 */
+
 	return ret;
 }
 
@@ -958,7 +967,9 @@ int udc_ctrl_submit_s_status(const struct device *dev)
 		ret = -ENOMEM;
 	}
 
-	return udc_submit_ep_event(dev, data->setup, ret);
+	ret = udc_submit_ep_event(dev, data->setup, ret);
+
+	return ret;
 }
 
 int udc_ctrl_submit_status(const struct device *dev,
@@ -975,35 +986,35 @@ bool udc_ctrl_stage_is_data_out(const struct device *dev)
 {
 	struct udc_data *data = dev->data;
 
-	return data->stage == CTRL_PIPE_STAGE_DATA_OUT ? true : false;
+	return (data->stage == CTRL_PIPE_STAGE_DATA_OUT) ? true : false;
 }
 
 bool udc_ctrl_stage_is_data_in(const struct device *dev)
 {
 	struct udc_data *data = dev->data;
 
-	return data->stage == CTRL_PIPE_STAGE_DATA_IN ? true : false;
+	return (data->stage == CTRL_PIPE_STAGE_DATA_IN) ? true : false;
 }
 
 bool udc_ctrl_stage_is_status_out(const struct device *dev)
 {
 	struct udc_data *data = dev->data;
 
-	return data->stage == CTRL_PIPE_STAGE_STATUS_OUT ? true : false;
+	return (data->stage == CTRL_PIPE_STAGE_STATUS_OUT) ? true : false;
 }
 
 bool udc_ctrl_stage_is_status_in(const struct device *dev)
 {
 	struct udc_data *data = dev->data;
 
-	return data->stage == CTRL_PIPE_STAGE_STATUS_IN ? true : false;
+	return (data->stage == CTRL_PIPE_STAGE_STATUS_IN) ? true : false;
 }
 
 bool udc_ctrl_stage_is_no_data(const struct device *dev)
 {
 	struct udc_data *data = dev->data;
 
-	return data->stage == CTRL_PIPE_STAGE_NO_DATA ? true : false;
+	return (data->stage == CTRL_PIPE_STAGE_NO_DATA) ? true : false;
 }
 
 static bool udc_data_stage_to_host(const struct net_buf *const buf)

@@ -53,7 +53,7 @@ static int event_handler_ep_request(struct usbd_context *const uds_ctx,
 	bi = udc_get_buf_info(event->buf);
 
 	if (USB_EP_GET_IDX(bi->ep) == 0) {
-		ret = usbd_handle_ctrl_xfer(uds_ctx, event->buf, bi->err);
+		ret = usbd_handle_ctrl_xfer(uds_ctx, event->buf, bi->err);      /* USBD_GET_DESC_SEQ03 */
 	} else {
 		ret = usbd_class_handle_xfer(uds_ctx, event->buf, bi->err);
 	}
@@ -174,7 +174,7 @@ static ALWAYS_INLINE void usbd_event_handler(struct usbd_context *const uds_ctx,
 		err = event_handler_bus_reset(uds_ctx);
 		usbd_msg_pub_simple(uds_ctx, USBD_MSG_RESET, 0);
 		break;
-	case UDC_EVT_EP_REQUEST:
+	case UDC_EVT_EP_REQUEST:                                /* USBD_GET_DESC_SEQ02 */
 		err = event_handler_ep_request(uds_ctx, event);
 		break;
 	case UDC_EVT_ERROR:

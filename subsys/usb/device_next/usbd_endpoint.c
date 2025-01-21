@@ -83,7 +83,7 @@ static void usbd_ep_ctrl_set_zlp(struct usbd_context *const uds_ctx,
 	 * last chunk is wMaxPacketSize long, to indicate the last
 	 * packet.
 	 */
-	if (setup->wLength > min_len && !(min_len % mps0)) {
+	if ((setup->wLength > min_len) && !(min_len % mps0)) {
 		/*
 		 * Transfer length is less as requested by wLength and
 		 * is multiple of wMaxPacketSize.
@@ -91,7 +91,6 @@ static void usbd_ep_ctrl_set_zlp(struct usbd_context *const uds_ctx,
 		LOG_DBG("add ZLP, wLength %u buf length %zu",
 			setup->wLength, min_len);
 		udc_ep_buf_set_zlp(buf);
-
 	}
 }
 
@@ -106,7 +105,7 @@ int usbd_ep_ctrl_enqueue(struct usbd_context *const uds_ctx,
 	int ret;
 
 	bi = udc_get_buf_info(buf);
-	if (USB_EP_GET_IDX(bi->ep)) {
+	if (USB_EP_GET_IDX(bi->ep) != 0U) {
 		/* Not a control endpoint */
 		return -EINVAL;
 	}
@@ -120,7 +119,7 @@ int usbd_ep_ctrl_enqueue(struct usbd_context *const uds_ctx,
 		usbd_ep_ctrl_set_zlp(uds_ctx, buf);
 	}
 
-	ret = udc_ep_enqueue(uds_ctx->dev, buf);
+	ret = udc_ep_enqueue(uds_ctx->dev, buf);                /* USBD_GET_DESC_SEQ04 */
 
 	return ret;
 }

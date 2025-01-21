@@ -1111,12 +1111,12 @@ int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 	int ret = 0;
 
 	bi = udc_get_buf_info(buf);
-	if (USB_EP_GET_IDX(bi->ep)) {
+	if (USB_EP_GET_IDX(bi->ep) != 0U) {
 		LOG_ERR("Can only handle control requests");
 		return -EIO;
 	}
 
-	if (err && err != -ENOMEM && !bi->setup) {
+	if (err && (err != -ENOMEM) && !bi->setup) {
 		if (err == -ECONNABORTED) {
 			LOG_INF("Transfer 0x%02x aborted (bus reset?)", bi->ep);
 			net_buf_unref(buf);
@@ -1132,7 +1132,7 @@ int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 	LOG_INF("Handle control %p ep 0x%02x, len %u, s:%u d:%u s:%u",
 		buf, bi->ep, buf->len, bi->setup, bi->data, bi->status);
 
-	if (bi->setup && bi->ep == USB_CONTROL_EP_OUT) {
+	if (bi->setup && (bi->ep == USB_CONTROL_EP_OUT)) {
 		struct net_buf *next_buf;
 
 		if (ctrl_xfer_get_setup(uds_ctx, buf)) {
@@ -1189,7 +1189,7 @@ int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 		return ret;
 	}
 
-	if (bi->status && bi->ep == USB_CONTROL_EP_OUT) {
+	if (bi->status && (bi->ep == USB_CONTROL_EP_OUT)) {
 		if (ch9_get_ctrl_type(uds_ctx) == CTRL_AWAIT_STATUS_STAGE) {
 			LOG_INF("s-in-status finished");
 		} else {
@@ -1201,7 +1201,7 @@ int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 		return 0;
 	}
 
-	if (bi->status && bi->ep == USB_CONTROL_EP_IN) {
+	if (bi->status && (bi->ep == USB_CONTROL_EP_IN)) {
 		net_buf_unref(buf);
 
 		if (ch9_get_ctrl_type(uds_ctx) == CTRL_AWAIT_STATUS_STAGE) {
