@@ -236,7 +236,9 @@ static void dma_stm32_irq_handler(const struct device* dev, uint32_t id) {
     }
     else if (stm32_dma_is_tc_irq_active(dma, id)) {
         /* Assuming not cyclic transfer */
-        stream->busy = false;
+        if (stream->cyclic == false) {
+            stream->busy = false;
+        }
         /* Let HAL DMA handle flags on its own */
         if (!stream->hal_override) {
             dma_stm32_clear_tc(dma, id);
@@ -315,6 +317,13 @@ static int dma_stm32_configure(const struct device* dev,
     LL_DMA_InitTypeDef DMA_InitStruct;
     int ret;
 
+    /*  Linked list Node  and structure initialization */
+    static LL_DMA_LinkNodeTypeDef Node_GPDMA_Channel;
+    LL_DMA_InitLinkedListTypeDef DMA_InitLinkedListStruct;
+    LL_DMA_InitNodeTypeDef NodeConfig;
+
+    LL_DMA_ListStructInit(&DMA_InitLinkedListStruct);
+    LL_DMA_NodeStructInit(&NodeConfig);
     LL_DMA_StructInit(&DMA_InitStruct);
 
     /* Give channel from index 0 */
@@ -343,10 +352,10 @@ static int dma_stm32_configure(const struct device* dev,
          * Retain that the channel is busy and proceed to the minimal
          * configuration to properly route the IRQ
          */
-        stream->busy         = true;
+        stream->busy = true;
         stream->hal_override = true;
         stream->dma_callback = config->dma_callback;
-        stream->user_data    = config->user_data;
+        stream->user_data = config->user_data;
         return (0);
     }
 
@@ -370,16 +379,6 @@ static int dma_stm32_configure(const struct device* dev,
         return (-EINVAL);
     }
 
-    /* Continuous transfers are supported by hardware but not implemented
-     * by this driver
-     */
-    if (config->head_block->source_reload_en ||
-        config->head_block->dest_reload_en) {
-        LOG_ERR("source_reload_en and dest_reload_en not "
-                "implemented.");
-        return (-EINVAL);
-    }
-
     stream->busy         = true;
     stream->dma_callback = config->dma_callback;
     stream->direction    = config->channel_direction;
@@ -396,10 +395,11 @@ static int dma_stm32_configure(const struct device* dev,
         LOG_WRN("dest_buffer address is null.");
     }
 
-    DMA_InitStruct.SrcAddress    = config->head_block->source_address;
-    DMA_InitStruct.DestAddress   = config->head_block->dest_address;
-    DMA_InitStruct.BlkHWRequest  = LL_DMA_HWREQUEST_SINGLEBURST;
-    DMA_InitStruct.DataAlignment = LL_DMA_DATA_ALIGN_ZEROPADD;
+    DMA_InitStruct.SrcAddress  = config->head_block->source_address;
+    DMA_InitStruct.DestAddress = config->head_block->dest_address;
+    NodeConfig.SrcAddress      = config->head_block->source_address;
+    NodeConfig.DestAddress     = config->head_block->dest_address;
+    NodeConfig.BlkDataLength   = config->head_block->block_size;
 
     ret = dma_stm32_get_priority(config->channel_priority,
                                  &DMA_InitStruct.Priority);
@@ -472,17 +472,40 @@ static int dma_stm32_configure(const struct device* dev,
     /* The request ID is stored in the dma_slot */
     DMA_InitStruct.Request = config->dma_slot;
 
-    LL_DMA_Init(dma, dma_stm32_id_to_stream(id), &DMA_InitStruct);
+    if (config->head_block->source_reload_en == 0) {
+        /* Initialize the DMA structure in non-cyclic mode only */
+        LL_DMA_Init(dma, dma_stm32_id_to_stream(id), &DMA_InitStruct);
+    }
+    else { /* cyclic mode */
+        /* Setting GPDMA request */
+        NodeConfig.DestDataWidth = DMA_InitStruct.DestDataWidth;
+        NodeConfig.SrcDataWidth  = DMA_InitStruct.SrcDataWidth;
+        NodeConfig.DestIncMode   = DMA_InitStruct.DestIncMode;
+        NodeConfig.SrcIncMode    = DMA_InitStruct.SrcIncMode;
+        NodeConfig.Direction     = DMA_InitStruct.Direction;
+        NodeConfig.Request       = DMA_InitStruct.Request;
+
+        /* Continuous transfers with Linked List */
+        stream->cyclic = true;
+        LL_DMA_List_Init(dma, dma_stm32_id_to_stream(id), &DMA_InitLinkedListStruct);
+        LL_DMA_CreateLinkNode(&NodeConfig, &Node_GPDMA_Channel);
+        LL_DMA_ConnectLinkNode(&Node_GPDMA_Channel, LL_DMA_CLLR_OFFSET5,
+                               &Node_GPDMA_Channel, LL_DMA_CLLR_OFFSET5);
+        LL_DMA_SetLinkedListBaseAddr(dma, dma_stm32_id_to_stream(id),
+                                     (uint32_t)&Node_GPDMA_Channel);
+        LL_DMA_ConfigLinkUpdate(dma, dma_stm32_id_to_stream(id),
+                                (LL_DMA_UPDATE_CTR1 | LL_DMA_UPDATE_CTR2 |
+                                 LL_DMA_UPDATE_CBR1 | LL_DMA_UPDATE_CSAR |
+                                 LL_DMA_UPDATE_CDAR | LL_DMA_UPDATE_CLLR),
+                                (uint32_t)&Node_GPDMA_Channel);
+
+        LL_DMA_EnableIT_HT(dma, dma_stm32_id_to_stream(id));
+    }
 
     LL_DMA_EnableIT_TC (dma, dma_stm32_id_to_stream(id));
     LL_DMA_EnableIT_USE(dma, dma_stm32_id_to_stream(id));
     LL_DMA_EnableIT_ULE(dma, dma_stm32_id_to_stream(id));
     LL_DMA_EnableIT_DTE(dma, dma_stm32_id_to_stream(id));
-
-    /* Enable Half-Transfer irq if circular mode is enabled */
-    if (config->head_block->source_reload_en) {
-        LL_DMA_EnableIT_HT(dma, dma_stm32_id_to_stream(id));
-    }
 
     return (ret);
 }
@@ -699,11 +722,11 @@ static DEVICE_API(dma, dma_funcs) = {
  * Expecting as many irq as property <dma_channels>
  */
 #define DMA_STM32_IRQ_CONNECT(index)                            \
-    static void dma_stm32_config_irq_##index(const struct device* dev) {    \
+    static void dma_stm32_config_irq_##index(const struct device* dev) { \
         ARG_UNUSED(dev);                                        \
                                                                 \
         LISTIFY(DT_INST_PROP(index, dma_channels),              \
-                             DMA_STM32_IRQ_CONNECT_CHANNEL, (;), index);    \
+                             DMA_STM32_IRQ_CONNECT_CHANNEL, (;), index); \
     }
 
 /*
@@ -713,27 +736,31 @@ static DEVICE_API(dma, dma_funcs) = {
  * dma : dma instance (one GPDMA instance on stm32U5x)
  */
 #define DMA_STM32_DEFINE_IRQ_HANDLER(chan, dma)                 \
-    static void dma_stm32_irq_##dma##_##chan(const struct device* dev) {    \
+    static void dma_stm32_irq_##dma##_##chan(const struct device* dev) { \
         dma_stm32_irq_handler(dev, chan);                       \
     }
 
 #define DMA_STM32_INIT_DEV(index)                               \
-BUILD_ASSERT(DT_INST_PROP(index, dma_channels) == DT_NUM_IRQS(DT_DRV_INST(index)),      \
+BUILD_ASSERT(DT_INST_PROP(index, dma_channels)                  \
+             == DT_NUM_IRQS(DT_DRV_INST(index)),                \
              "Nb of Channels and IRQ mismatch");                \
                                                                 \
-LISTIFY(DT_INST_PROP(index, dma_channels), DMA_STM32_DEFINE_IRQ_HANDLER, (;), index);   \
+LISTIFY(DT_INST_PROP(index, dma_channels),                      \
+        DMA_STM32_DEFINE_IRQ_HANDLER, (;), index);              \
                                                                 \
 DMA_STM32_IRQ_CONNECT(index);                                   \
                                                                 \
 static struct dma_stm32_stream                                  \
-    dma_stm32_streams_##index[DT_INST_PROP_OR(index, dma_channels, DT_NUM_IRQS(DT_DRV_INST(index)))];   \
+    dma_stm32_streams_##index[DT_INST_PROP_OR(index, dma_channels, \
+        DT_NUM_IRQS(DT_DRV_INST(index)))];                      \
                                                                 \
 const struct dma_stm32_config dma_stm32_config_##index = {      \
     .pclken      = { .bus = DT_INST_CLOCKS_CELL(index, bus),    \
                      .enr = DT_INST_CLOCKS_CELL(index, bits)},  \
     .config_irq  = dma_stm32_config_irq_##index,                \
     .base        = (void*)DT_INST_REG_ADDR(index),              \
-    .max_streams = DT_INST_PROP_OR(index, dma_channels, DT_NUM_IRQS(DT_DRV_INST(index))),   \
+    .max_streams = DT_INST_PROP_OR(index, dma_channels,         \
+                                   DT_NUM_IRQS(DT_DRV_INST(index))), \
     .streams     = dma_stm32_streams_##index,                   \
 };                                                              \
                                                                 \

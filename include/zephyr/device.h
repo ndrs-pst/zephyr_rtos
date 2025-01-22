@@ -1255,13 +1255,19 @@ DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_DEVICE_DECLARE_INTERNAL)
  * @retval true If the device is of the given class
  * @retval false If the device is not of the given class
  */
-#define DEVICE_API_IS(_class, _dev)                                                                \
-	({                                                                                         \
-		STRUCT_SECTION_START_EXTERN(Z_DEVICE_API_TYPE(_class));                            \
-		STRUCT_SECTION_END_EXTERN(Z_DEVICE_API_TYPE(_class));                              \
-		(DEVICE_API_GET(_class, _dev) < STRUCT_SECTION_END(Z_DEVICE_API_TYPE(_class)) &&   \
-		 DEVICE_API_GET(_class, _dev) >= STRUCT_SECTION_START(Z_DEVICE_API_TYPE(_class))); \
-	})
+/**
+ * #CUSTOM@NDRS can't embedded STRUCT_SECTION_START_EXTERN, STRUCT_SECTION_END_EXTERN
+ * into DEVICE_API_IS() macro
+ */
+static inline bool device_api_is(const struct device* dev, const void* api_start, const void* api_end) {
+    const void* api = dev->api;
+    return ((api >= api_start) && (api < api_end));
+}
+
+#define DEVICE_API_IS(_class, _dev) \
+    device_api_is(_dev,             \
+                  (const void*)STRUCT_SECTION_START(Z_DEVICE_API_TYPE(_class)), \
+                  (const void*)STRUCT_SECTION_END(Z_DEVICE_API_TYPE(_class)))
 
 #ifdef __cplusplus
 }

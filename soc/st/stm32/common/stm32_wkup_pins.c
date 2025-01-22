@@ -107,7 +107,7 @@ static const struct gpio_dt_spec empty_gpio = {.port = NULL, .pin = 0, .dt_flags
 /* wkup_pin idx starts from 1 */
 #define WKUP_PIN_CFG_DT_BY_IDX(idx) WKUP_PIN_CFG_DT(WKUP_PIN_NODE_ID_BY_IDX(idx))
 
-#define PWR_STM32_WKUP_PIN_LOOKUP_MEMBER(i, _) CONCAT(LL_PWR_WAKEUP_PIN, UTIL_INC(i))
+#define PWR_STM32_WKUP_PIN_LOOKUP_MEMBER(i, _) Z_CONCAT(LL_PWR_WAKEUP_PIN, UTIL_INC(i))
 
 #define WKUP_PIN_CFG_DT_COMMA(wkup_pin_id) WKUP_PIN_CFG_DT(wkup_pin_id),
 

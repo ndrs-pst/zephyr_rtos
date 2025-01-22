@@ -68,7 +68,7 @@ struct _irq_parent_entry {
  * @return `CONFIG_2ND_LVL_ISR_TBL_OFFSET` if second level aggregator,
  * `CONFIG_3RD_LVL_ISR_TBL_OFFSET` if third level aggregator
  */
-#define Z_SW_ISR_TBL_KCONFIG_BY_ALVL(l) CONCAT(CONFIG_, CONCAT(Z_STR_L, l), _LVL_ISR_TBL_OFFSET)
+#define Z_SW_ISR_TBL_KCONFIG_BY_ALVL(l) Z_CONCAT(CONFIG_, Z_CONCAT(Z_STR_L, l), _LVL_ISR_TBL_OFFSET)
 
 /**
  * INTERNAL_HIDDEN @endcond

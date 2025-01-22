@@ -91,7 +91,7 @@ LOG_MODULE_REGISTER(rtc_stm32, CONFIG_RTC_LOG_LEVEL);
      RTC_ALARM_TIME_MASK_MONTHDAY)
 
 #if DT_INST_NODE_HAS_PROP(0, alrm_exti_line)
-#define RTC_STM32_EXTI_LINE CONCAT(LL_EXTI_LINE_, DT_INST_PROP(0, alrm_exti_line))
+#define RTC_STM32_EXTI_LINE Z_CONCAT(LL_EXTI_LINE_, DT_INST_PROP(0, alrm_exti_line))
 #else
 #define RTC_STM32_EXTI_LINE 0
 #endif /* DT_INST_NODE_HAS_PROP(0, alrm_exti_line) */

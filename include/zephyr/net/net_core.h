@@ -181,8 +181,6 @@ struct net_l3_register {
 
 #define NET_L3_GET_NAME(l3_name, ptype) __net_l3_register_##l3_name##_##ptype
 
-/* #CUSTOM@NDRS : remove following BUILD_ASSERT from NET_L3_REGISTER macro */
-/* BUILD_ASSERT((_handler) != NULL, "Handler is not defined") */
 #define NET_L3_REGISTER(_l2_type, _name, _ptype, _handler)		\
 	static const STRUCT_SECTION_ITERABLE(net_l3_register,		\
 				    NET_L3_GET_NAME(_name, _ptype)) = { \
@@ -190,7 +188,7 @@ struct net_l3_register {
 		.handler = _handler,					\
 		.name = STRINGIFY(_name),				\
 		.l2 = _l2_type,						\
-	};								\
+	};
 
 /* @endcond */
 

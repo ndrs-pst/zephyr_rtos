@@ -18,15 +18,15 @@ struct args_index {
     uint8_t channel;
     uint8_t value;
     uint8_t resolution;
-	uint8_t options;
+    uint8_t options;
 };
 
 static const struct args_index args_indx = {
     .device     = 1,
     .channel    = 2,
     .value      = 3,
-    .resolution = 3
-    .options = 4,
+    .resolution = 3,
+    .options    = 4,
 };
 
 static int cmd_setup(const struct shell* sh, size_t argc, char** argv) {
@@ -94,14 +94,29 @@ static int cmd_write_value(const struct shell* sh, size_t argc, char** argv) {
     return (0);
 }
 
+static bool device_is_dac(const struct device* dev) {
+    return DEVICE_API_IS(dac, dev);
+}
+
+static void device_name_get(size_t idx, struct shell_static_entry* entry) {
+    const struct device *dev = shell_device_filter(idx, device_is_dac);
+
+    entry->syntax  = (dev != NULL) ? dev->name : NULL;
+    entry->handler = NULL;
+    entry->help    = NULL;
+    entry->subcmd  = NULL;
+}
+
+SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(dac_cmds,
-    SHELL_CMD_ARG(setup, NULL,
+    SHELL_CMD_ARG(setup, &dsub_device_name,
                   "Setup DAC channel\n"
                   "Usage: setup <device> <channel> <resolution> [-b] [-i]\n"
                   "-b Enable output buffer\n"
                   "-i Connect internally",
                   cmd_setup, 4, 2),
-    SHELL_CMD_ARG(write_value, NULL,
+    SHELL_CMD_ARG(write_value, &dsub_device_name,
                   "Write DAC value\n"
                   "Usage: write <device> <channel> <value>",
                   cmd_write_value, 4, 0),

@@ -353,7 +353,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	net_buf_pull(pkt->frags, hdr_len);
 
 	STRUCT_SECTION_FOREACH(net_l3_register, l3) {
-		if (l3->ptype != type || l3->l2 != &NET_L2_GET_NAME(ETHERNET)) {
+		if (l3->ptype != type || l3->l2 != &NET_L2_GET_NAME(ETHERNET) ||
+		    l3->handler == NULL) {
 			continue;
 		}
 
@@ -711,7 +712,8 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 		goto send;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == NET_AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == NET_AF_INET &&
+	    net_pkt_ll_proto_type(pkt) == NET_ETH_PTYPE_IP) {
 		if (!net_pkt_ipv4_acd(pkt)) {
 			struct net_pkt *tmp;
 

@@ -251,7 +251,9 @@ static int cmd_i2c_read(struct shell const* sh, size_t argc, char** argv) {
         num_bytes = MAX_I2C_BYTES;
     }
 
-    ret = i2c_read_to_buffer(sh, argv[ARGV_DEV], argv[ARGV_ADDR], argv[ARGV_REG], buf, num_bytes);
+    ret = i2c_read_to_buffer(sh, argv[ARGV_DEV],
+                             argv[ARGV_ADDR], argv[ARGV_REG],
+                             buf, num_bytes);
     if (ret == 0) {
         shell_hexdump(sh, buf, num_bytes);
     }
@@ -319,8 +321,15 @@ static int cmd_i2c_speed(struct shell const* sh, size_t argc, char** argv) {
     return (0);
 }
 
+/* #CUSTOM@NDRS remove `|| DEVICE_API_IS(i3c, dev)` from return statement */
+STRUCT_SECTION_START_EXTERN(Z_DEVICE_API_TYPE(i2c));
+STRUCT_SECTION_END_EXTERN(Z_DEVICE_API_TYPE(i2c));
+static bool device_is_i2c(const struct device* dev) {
+    return DEVICE_API_IS(i2c, dev);
+}
+
 static void device_name_get(size_t idx, struct shell_static_entry* entry) {
-    const struct device* dev = shell_device_lookup(idx, NULL);
+    const struct device* dev = shell_device_filter(idx, device_is_i2c);
 
     entry->syntax  = (dev != NULL) ? dev->name : NULL;
     entry->handler = NULL;
