@@ -27,11 +27,14 @@
 #define CHOSEN_SHELL   DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_shell_uart), zephyr_cdc_acm_uart)
 #if (CHOSEN_CONSOLE && defined(CONFIG_LOG_BACKEND_UART)) || \
 	(CHOSEN_SHELL && defined(CONFIG_SHELL_LOG_BACKEND))
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 #warning "USBD_CDC_ACM_LOG_LEVEL forced to LOG_LEVEL_NONE"
+#endif
 #undef CONFIG_USBD_CDC_ACM_LOG_LEVEL
 #define CONFIG_USBD_CDC_ACM_LOG_LEVEL LOG_LEVEL_NONE
 #endif
 #endif
+
 LOG_MODULE_REGISTER(usbd_cdc_acm, CONFIG_USBD_CDC_ACM_LOG_LEVEL);
 
 UDC_BUF_POOL_DEFINE(cdc_acm_ep_pool,
@@ -634,7 +637,7 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 	}
 
 	/* Shrink the buffer size if operating on a full speed bus */
-	buf->size = MIN(cdc_acm_get_bulk_mps(c_data), buf->size);
+	buf->size = MIN((uint16_t)cdc_acm_get_bulk_mps(c_data), buf->size);
 
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
@@ -922,7 +925,9 @@ static void cdc_acm_poll_out(const struct device *dev, const unsigned char c)
 		}
 
 		if (k_is_in_isr() || !data->flow_ctrl) {
+			#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 			LOG_WRN_ONCE("Ring buffer full, discard data");
+			#endif
 			break;
 		}
 

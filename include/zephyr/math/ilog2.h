@@ -90,11 +90,18 @@
  * function will result in compiler complaining with
  * "initializer element is not constant".
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define ilog2(n)					\
+	(						\
+		ilog2_compile_time_const_u32(n) \
+	)
+#else
 #define ilog2(n)					\
 	(						\
 		__builtin_constant_p(n) ?		\
 		ilog2_compile_time_const_u32(n) :	\
 		find_msb_set(n) - 1			\
 	)
+#endif
 
 #endif /* ZEPHYR_INCLUDE_MATH_ILOG2_H_ */

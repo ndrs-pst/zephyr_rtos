@@ -229,8 +229,12 @@ extern "C" {
  * @param _length Length of data (in bytes).
  * @param _str    Persistent, raw string.
  */
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+#define LOG_HEXDUMP_INF(_data, _length, _str)
+#else
 #define LOG_HEXDUMP_INF(_data, _length, _str) \
 	Z_LOG_HEXDUMP(LOG_LEVEL_INF, _data, _length, (_str))
+#endif
 
 /**
  * @brief Writes a DEBUG level message to the log.
