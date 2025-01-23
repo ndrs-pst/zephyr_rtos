@@ -324,8 +324,16 @@ static int cmd_i2c_speed(struct shell const* sh, size_t argc, char** argv) {
 /* #CUSTOM@NDRS remove `|| DEVICE_API_IS(i3c, dev)` from return statement */
 STRUCT_SECTION_START_EXTERN(Z_DEVICE_API_TYPE(i2c));
 STRUCT_SECTION_END_EXTERN(Z_DEVICE_API_TYPE(i2c));
-static bool device_is_i2c(const struct device* dev) {
+#ifdef CONFIG_I3C
+STRUCT_SECTION_START_EXTERN(Z_DEVICE_API_TYPE(i3c));
+STRUCT_SECTION_END_EXTERN(Z_DEVICE_API_TYPE(i3c));
+#endif
+static bool device_is_i2c(const struct device *dev) {
+    #ifdef CONFIG_I3C
+    return DEVICE_API_IS(i2c, dev) || DEVICE_API_IS(i3c, dev);
+    #else
     return DEVICE_API_IS(i2c, dev);
+    #endif
 }
 
 static void device_name_get(size_t idx, struct shell_static_entry* entry) {

@@ -387,6 +387,11 @@ Bluetooth Mesh
   set as deprecated. Default option for platforms that do not support TF-M
   is :kconfig:option:`CONFIG_BT_MESH_USES_MBEDTLS_PSA`.
 
+* Mesh explicitly depends on the Secure Storage subsystem if storing into
+  non-volatile memory (:kconfig:option:`CONFIG_BT_SETTINGS`) is enabled and
+  Mbed TLS library (:kconfig:option:`CONFIG_BT_MESH_USES_MBEDTLS_PSA`) is used.
+  Applications should be built with :kconfig:option:`CONFIG_SECURE_STORAGE` enabled.
+
 Bluetooth Audio
 ===============
 
@@ -431,6 +436,9 @@ Bluetooth Host
 * LE legacy pairing is no longer enabled by default since it's not secure. Leaving it enabled
   makes a device vulnerable for downgrade attacks. If an application still needs to use LE legacy
   pairing, it should disable :kconfig:option:`CONFIG_BT_SMP_SC_PAIR_ONLY` manually.
+
+* The prompt for :kconfig:option:`CONFIG_BT_ECC` has been removed, since it only offers an internal
+  API, meaning internal users should explicitly select it in their respective Kconfig options.
 
 Bluetooth Crypto
 ================
