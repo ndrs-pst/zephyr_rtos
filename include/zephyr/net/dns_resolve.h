@@ -90,7 +90,11 @@ enum dns_query_type {
 #define MDNS_SERVER_COUNT 1
 #endif /* CONFIG_NET_IPV6 && CONFIG_NET_IPV4 */
 #else
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 #define MDNS_SERVER_COUNT 0
+#else
+#define MDNS_SERVER_COUNT 1
+#endif
 #endif /* CONFIG_MDNS_RESOLVER */
 
 /* If LLMNR is enabled, then add some extra well known multicast servers to the
@@ -103,7 +107,11 @@ enum dns_query_type {
 #define LLMNR_SERVER_COUNT 1
 #endif /* CONFIG_NET_IPV6 && CONFIG_NET_IPV4 */
 #else
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 #define LLMNR_SERVER_COUNT 0
+#else
+#define LLMNR_SERVER_COUNT 1
+#endif
 #endif /* CONFIG_MDNS_RESOLVER */
 
 #define DNS_MAX_MCAST_SERVERS (MDNS_SERVER_COUNT + LLMNR_SERVER_COUNT)

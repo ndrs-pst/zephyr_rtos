@@ -934,11 +934,11 @@ struct device_dt_nodelabels {
      */
     #if defined(_MSC_VER) /* #CUSTOM@NDRS */
     /* This is a workaround for MSVC which does not allow zero-sized
-     * arrays. The size of the array is 1.
+     * arrays. The size of the array is set to 2 (> 1).
      * This change will effect production code in C when using sizeof()
      * so it will be used only in MSVC.
      */
-    char const* nodelabels[1];
+    char const* nodelabels[2];
     #else
     char const* nodelabels[];
     #endif

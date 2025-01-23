@@ -930,7 +930,11 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 #elif defined(CONFIG_BT_CONN)
 	#define BT_GATT_CCC_MAX (CONFIG_BT_MAX_PAIRED + CONFIG_BT_MAX_CONN)
 #else
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 	#define BT_GATT_CCC_MAX 0
+#else
+	#define BT_GATT_CCC_MAX 1
+#endif
 #endif
 
 /** @brief GATT CCC configuration entry. */

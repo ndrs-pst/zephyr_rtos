@@ -801,6 +801,9 @@ static void set_up_fixed_clock_sources(void) {
         LL_RCC_LSE_Enable();
         while (!LL_RCC_LSE_IsReady()) {
             /* Wait for LSE ready */
+            if (IS_ENABLED(__GTEST)) {
+                break;
+            }
         }
 
         #ifdef RCC_BDCR_LSESYSEN
