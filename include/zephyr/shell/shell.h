@@ -958,9 +958,8 @@ extern void z_shell_print_stream(void const* user_ctx, char const* data,
     static const struct shell _name;                                    \
     static struct shell_ctx UTIL_CAT(_name, _ctx);                      \
     Z_SHELL_HISTORY_DEFINE(_name##_history, CONFIG_SHELL_HISTORY_BUFFER); \
-    Z_SHELL_FPRINTF_DEFINE(_name##_fprintf, &_name, _out_buf,           \
-                           CONFIG_SHELL_PRINTF_BUFF_SIZE,               \
-                   true, z_shell_print_stream);                         \
+    Z_SHELL_FPRINTF_DEFINE(_name##_fprintf, &_name, _out_buf, CONFIG_SHELL_PRINTF_BUFF_SIZE, \
+                           IS_ENABLED(CONFIG_SHELL_PRINTF_AUTOFLUSH), z_shell_print_stream); \
     LOG_INSTANCE_REGISTER(shell, _name, CONFIG_SHELL_LOG_LEVEL);        \
     Z_SHELL_STATS_DEFINE(_name);                                        \
     static K_KERNEL_STACK_DEFINE(_name##_stack, CONFIG_SHELL_STACK_SIZE); \

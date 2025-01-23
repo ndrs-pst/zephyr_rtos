@@ -26,11 +26,12 @@
 #error too small SHELL_PRINTF_BUFF_SIZE
 #endif
 
-#define SHELL_MSG_CMD_NOT_FOUND      ": command not found"
+#define SHELL_MSG_CMD_NOT_FOUND     ": command not found"
 #define SHELL_MSG_BACKEND_NOT_ACTIVE \
         "WARNING: A print request was detected on not active shell backend.\n"
-#define SHELL_MSG_TOO_MANY_ARGS      "Too many arguments in the command.\n"
-#define SHELL_INIT_OPTION_PRINTER    (NULL)
+#define SHELL_MSG_TOO_MANY_ARGS     "Too many arguments in the command.\n"
+#define SHELL_INIT_OPTION_PRINTER   (NULL)
+#define SHELL_TX_MTX_TIMEOUT_MS     50
 
 #define SHELL_THREAD_PRIORITY \
     COND_CODE_1(CONFIG_SHELL_THREAD_PRIORITY_OVERRIDE, \
@@ -1338,7 +1339,9 @@ void shell_thread(void* shell_handle, void* arg_log_backend,
                      K_FOREVER);
 
         if (err != 0) {
-            k_mutex_lock(&sh->ctx->wr_mtx, K_FOREVER);
+            if (k_mutex_lock(&sh->ctx->wr_mtx, K_MSEC(SHELL_TX_MTX_TIMEOUT_MS)) != 0) {
+                return;
+            }
             z_shell_fprintf(sh, SHELL_ERROR,
                             "Shell thread error: %d", err);
             k_mutex_unlock(&sh->ctx->wr_mtx);
@@ -1427,7 +1430,9 @@ int shell_start(const struct shell* sh) {
         z_shell_log_backend_enable(sh->log_backend, (void*)sh, sh->ctx->log_level);
     }
 
-    k_mutex_lock(&sh->ctx->wr_mtx, K_FOREVER);
+    if (k_mutex_lock(&sh->ctx->wr_mtx, K_MSEC(SHELL_TX_MTX_TIMEOUT_MS)) != 0) {
+        return (-EBUSY);
+    }
 
     if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS)) {
         z_shell_vt100_color_set(sh, SHELL_NORMAL);
@@ -1527,7 +1532,10 @@ void shell_vfprintf(const struct shell* sh, enum shell_vt100_color color,
         return;
     }
 
-    k_mutex_lock(&sh->ctx->wr_mtx, K_FOREVER);
+    if (k_mutex_lock(&sh->ctx->wr_mtx, K_MSEC(SHELL_TX_MTX_TIMEOUT_MS)) != 0) {
+        return;
+    }
+
     if (!z_flag_cmd_ctx_get(sh) && !sh->ctx->bypass && z_flag_use_vt100_get(sh)) {
         z_shell_cmd_line_erase(sh);
     }
@@ -1536,6 +1544,7 @@ void shell_vfprintf(const struct shell* sh, enum shell_vt100_color color,
         z_shell_print_prompt_and_cmd(sh);
     }
     z_transport_buffer_flush(sh);
+
     k_mutex_unlock(&sh->ctx->wr_mtx);
 }
 
@@ -1655,10 +1664,9 @@ int shell_prompt_change(const struct shell* sh, char const* prompt) {
         return (-EINVAL);
     }
 
-    static const size_t mtx_timeout_ms = 20;
     size_t prompt_length = z_shell_strlen(prompt);
 
-    if (k_mutex_lock(&sh->ctx->wr_mtx, K_MSEC(mtx_timeout_ms))) {
+    if (k_mutex_lock(&sh->ctx->wr_mtx, K_MSEC(SHELL_TX_MTX_TIMEOUT_MS)) != 0) {
         return (-EBUSY);
     }
 
@@ -1680,7 +1688,9 @@ int shell_prompt_change(const struct shell* sh, char const* prompt) {
 }
 
 void shell_help(const struct shell* sh) {
-    k_mutex_lock(&sh->ctx->wr_mtx, K_FOREVER);
+    if (k_mutex_lock(&sh->ctx->wr_mtx, K_MSEC(SHELL_TX_MTX_TIMEOUT_MS)) != 0) {
+        return;
+    }
     shell_internal_help_print(sh);
     k_mutex_unlock(&sh->ctx->wr_mtx);
 }
@@ -1712,7 +1722,9 @@ int shell_execute_cmd(const struct shell* sh, char const* cmd) {
     sh->ctx->cmd_buff_len = cmd_len;
     sh->ctx->cmd_buff_pos = cmd_len;
 
-    k_mutex_lock(&sh->ctx->wr_mtx, K_FOREVER);
+    if (k_mutex_lock(&sh->ctx->wr_mtx, K_MSEC(SHELL_TX_MTX_TIMEOUT_MS)) != 0) {
+        return (-ENOEXEC);
+    }
     ret_val = execute(sh);
     k_mutex_unlock(&sh->ctx->wr_mtx);
 
