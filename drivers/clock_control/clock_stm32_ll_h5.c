@@ -86,13 +86,25 @@ static uint32_t get_startup_frequency(void)
 
 __unused
 static uint32_t get_pllout_frequency(uint32_t pllsrc_freq,
-					    int pllm_div,
-					    int plln_mul,
-					    int pllout_div)
+				     int pllm_div,
+				     int plln_mul,
+				     int pllout_div)
 {
 	__ASSERT_NO_MSG(pllm_div && pllout_div);
+	int fracn;
+	uint64_t pllout_freq;
 
-	return (pllsrc_freq / pllm_div) * plln_mul / pllout_div;
+	if (IS_ENABLED(STM32_PLL_FRACN_ENABLED)) {
+		fracn = STM32_PLL_FRACN_VALUE;
+	} else {
+		fracn = 0;
+	}
+
+	/* Scale up the fractional part */
+	pllout_freq = (uint64_t)pllsrc_freq * ((plln_mul * STM32_PLL_FRACN_DIVISOR) + fracn) /
+		(pllm_div * STM32_PLL_FRACN_DIVISOR);
+
+	return (uint32_t)(pllout_freq / pllout_div);
 }
 
 static uint32_t get_sysclk_frequency(void)

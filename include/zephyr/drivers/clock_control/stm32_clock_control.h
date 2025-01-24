@@ -167,6 +167,7 @@
 #define STM32_PLL_S_DIVISOR     DT_PROP_OR(DT_NODELABEL(pll), div_s, 1)
 #define STM32_PLL_FRACN_ENABLED DT_NODE_HAS_PROP(DT_NODELABEL(pll), fracn)
 #define STM32_PLL_FRACN_VALUE   DT_PROP_OR(DT_NODELABEL(pll), fracn, 1)
+#define STM32_PLL_FRACN_DIVISOR DT_PROP_OR(DT_NODELABEL(pll), div_fracn, 8192)
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(plli2s), st_stm32f4_plli2s_clock, okay)
