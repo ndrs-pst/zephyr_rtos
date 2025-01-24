@@ -251,7 +251,8 @@ static uint8_t sdhc_stm32_cnv_blk_sz(uint32_t blk_sz)
 	return most_bit << SDMMC_DCTRL_DBLOCKSIZE_Pos;
 }
 
-static int sdhc_stm32_get_resp_ll(SDMMC_TypeDef *sdmmc, int timeout_ms, uint32_t opcode)
+static int sdhc_stm32_get_resp_ll(SDMMC_TypeDef *sdmmc, int timeout_ms, uint32_t opcode,
+				  enum sd_rsp_type rsp_type)
 {
 	while (true) {
 		uint32_t sta_reg = sdmmc->STA;
@@ -271,15 +272,17 @@ static int sdhc_stm32_get_resp_ll(SDMMC_TypeDef *sdmmc, int timeout_ms, uint32_t
 	if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_CTIMEOUT)) {
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_CTIMEOUT);
 		return -ETIMEDOUT;
-	} else if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_CCRCFAIL)) {
+	} else if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_CCRCFAIL) &&
+		   (rsp_type == SD_RSP_TYPE_R1)) {
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_CCRCFAIL);
 		return -EIO;
 	} else {
 		/* Nothing to do */
 	}
 
-	/* Check response received is of desired command */
-	if (SDMMC_GetCommandResponse(sdmmc) != (uint8_t)opcode) {
+	/* Check response received is of desired command (only when SD_RSP_TYPE_R1) */
+	if ((rsp_type == SD_RSP_TYPE_R1) &&
+	    (SDMMC_GetCommandResponse(sdmmc) != (uint8_t)opcode)) {
 		return -EIO;
 	}
 
@@ -292,15 +295,17 @@ static int sdhc_stm32_get_resp_ll(SDMMC_TypeDef *sdmmc, int timeout_ms, uint32_t
 static int sdhc_stm32_get_resp(SDMMC_TypeDef *sdmmc, struct sdhc_command *cmd)
 {
 	int ret;
+	enum sd_rsp_type rsp_type;
 
-	ret = sdhc_stm32_get_resp_ll(sdmmc, cmd->timeout_ms, cmd->opcode);
+	rsp_type = (cmd->response_type & SDHC_NATIVE_RESPONSE_MASK);
+	ret = sdhc_stm32_get_resp_ll(sdmmc, cmd->timeout_ms, cmd->opcode, rsp_type);
 	if (ret) {
 		return ret;
 	}
 
 	/* We have received response, retrieve it for analysis  */
 	cmd->response[0] = SDMMC_GetResponse(sdmmc, SDMMC_RESP1);
-	if (cmd->response_type == SD_SPI_RSP_TYPE_R2) {
+	if (rsp_type == SD_RSP_TYPE_R2) {
 		cmd->response[1] = SDMMC_GetResponse(sdmmc, SDMMC_RESP2);
 		cmd->response[2] = SDMMC_GetResponse(sdmmc, SDMMC_RESP3);
 		cmd->response[3] = SDMMC_GetResponse(sdmmc, SDMMC_RESP4);
@@ -342,7 +347,7 @@ static int sdhc_stm32_sdio_rd_direct(SDMMC_TypeDef *sdmmc, uint32_t func_num, ui
 	cmd_init.CPSM = SDMMC_CPSM_ENABLE;
 	(void)SDMMC_SendCommand(sdmmc, &cmd_init);
 
-	ret = sdhc_stm32_get_resp_ll(sdmmc, 1, SDMMC_CMD_SDMMC_RW_DIRECT);
+	ret = sdhc_stm32_get_resp_ll(sdmmc, 1, SDMMC_CMD_SDMMC_RW_DIRECT, SD_RSP_TYPE_R1);
 	if (ret == 0) {
 		__SDMMC_CMDTRANS_DISABLE(sdmmc);
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
@@ -370,7 +375,7 @@ static int sdhc_stm32_sdio_wr_direct(SDMMC_TypeDef *sdmmc, uint32_t func_num, ui
 	cmd_init.CPSM = SDMMC_CPSM_ENABLE;
 	(void)SDMMC_SendCommand(sdmmc, &cmd_init);
 
-	ret = sdhc_stm32_get_resp_ll(sdmmc, 1, SDMMC_CMD_SDMMC_RW_DIRECT);
+	ret = sdhc_stm32_get_resp_ll(sdmmc, 1, SDMMC_CMD_SDMMC_RW_DIRECT, SD_RSP_TYPE_R1);
 	if (ret == 0) {
 		__SDMMC_CMDTRANS_DISABLE(sdmmc);
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
@@ -391,7 +396,7 @@ static int sdhc_stm32_sdio_rw_direct(SDMMC_TypeDef *sdmmc, struct sdhc_command *
 	cmd_init.CPSM = SDMMC_CPSM_ENABLE;
 	(void)SDMMC_SendCommand(sdmmc, &cmd_init);
 
-	ret = sdhc_stm32_get_resp_ll(sdmmc, 1, SDMMC_CMD_SDMMC_RW_DIRECT);
+	ret = sdhc_stm32_get_resp_ll(sdmmc, 1, SDMMC_CMD_SDMMC_RW_DIRECT, SD_RSP_TYPE_R1);
 	if (ret == 0) {
 		__SDMMC_CMDTRANS_DISABLE(sdmmc);
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);

@@ -126,7 +126,7 @@ static int sd_init_io(struct sd_card *card)
 	int ret, voltage;
 
 	/* SD clock should start gated */
-	bus_io->clock = 0;
+	bus_io->clock = SDMMC_CLOCK_400KHZ;
 	/* SPI requires SDHC PUSH PULL, and open drain buses use more power */
 	bus_io->bus_mode = SDHC_BUSMODE_PUSHPULL;
 	bus_io->bus_width = SDHC_BUS_WIDTH1BIT;
@@ -205,13 +205,15 @@ static int sd_command_init(struct sd_card *card)
 
 #ifdef CONFIG_SDIO_STACK
 	/* Attempt to initialize SDIO card */
-	if (!sdio_card_init(card)) {                            /* SD_INIT_SEQ11 */
+	ret = sdio_card_init(card);
+	if (ret == 0) {                                         /* SD_INIT_SEQ11 */
 		return 0;
 	}
 #endif /* CONFIG_SDIO_STACK */
 #ifdef CONFIG_SDMMC_STACK
 	/* Attempt to initialize SDMMC card */
-	if (!sdmmc_card_init(card)) {                           /* SD_INIT_SEQ29 */
+	ret = sdmmc_card_init(card);                            /* SD_INIT_SEQ29 */
+	if (ret == 0) {
 		return 0;
 	}
 #endif /* CONFIG_SDIO_STACK */
