@@ -143,7 +143,6 @@ static bool smf_execute_ancestor_run_actions(struct smf_ctx* ctx) {
 
     /* The child state either transitioned or handled it. Either way, stop propagating. */
     if ((ctx->internal & (SMF_NEW_STATE | SMF_HANDLED)) != 0) {
-        ctx->internal &= ~(SMF_NEW_STATE | SMF_HANDLED);
         return (false);
     }
 
@@ -167,8 +166,6 @@ static bool smf_execute_ancestor_run_actions(struct smf_ctx* ctx) {
             }
         }
     }
-
-    ctx->internal &= ~(SMF_NEW_STATE | SMF_HANDLED);
 
     /* All done executing the run actions */
 
@@ -202,6 +199,16 @@ static bool smf_execute_all_exit_actions(struct smf_ctx* const ctx,
 }
 #endif /* CONFIG_SMF_ANCESTOR_SUPPORT */
 
+/**
+ * @brief Reset the internal state of the state machine back to default values.
+ * Should be called on entry to smf_set_initial() and smf_set_state().
+ *
+ * @param ctx State machine context.
+ */
+static void smf_clear_internal_state(struct smf_ctx* ctx) {
+    ctx->internal = 0UL;
+}
+
 void smf_set_initial(struct smf_ctx* ctx, const struct smf_state* init_state) {
     #ifdef CONFIG_SMF_INITIAL_TRANSITION
     /*
@@ -213,7 +220,7 @@ void smf_set_initial(struct smf_ctx* ctx, const struct smf_state* init_state) {
     }
     #endif
 
-    ctx->internal       = 0UL;
+    smf_clear_internal_state(ctx);
     ctx->current        = init_state;
     ctx->previous       = NULL;
     ctx->terminate_val  = 0;
@@ -365,6 +372,11 @@ int32_t smf_run_state(struct smf_ctx* const ctx) {
     if ((ctx->internal & SMF_TERMINATE) != 0) {
         return (ctx->terminate_val);
     }
+
+    /* Executing a states run function could cause a transition, so clear the
+     * internal state to ensure that the transition is handled correctly.
+     */
+    smf_clear_internal_state(ctx);
 
     #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
     ctx->executing = ctx->current;
