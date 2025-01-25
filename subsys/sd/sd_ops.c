@@ -251,8 +251,13 @@ static int sdmmc_read_cxd(struct sd_card *card, uint32_t opcode, uint32_t rca, u
 		LOG_DBG("CMD%d failed: %d", opcode, ret);
 		return ret;
 	}
-	/* CSD/CID is 16 bytes */
-	memcpy(cxd, cmd.response, 16);
+
+	/* CSD/CID is 16 bytes */ /* #CUSTOM@NDRS swap order of card status according to underlying MCU */
+	cxd[0] = cmd.response[3];
+	cxd[1] = cmd.response[2];
+	cxd[2] = cmd.response[1];
+	cxd[3] = cmd.response[0];
+
 	return 0;
 }
 
