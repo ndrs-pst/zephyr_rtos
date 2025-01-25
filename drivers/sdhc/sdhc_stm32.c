@@ -23,6 +23,9 @@
 
 LOG_MODULE_REGISTER(stm32_sdhc, CONFIG_SDHC_LOG_LEVEL);
 
+#include <zephyr/drivers/gpio.h>
+extern struct gpio_dt_spec const g_dbg_pin_gpio_dt[];
+
 // #define STM32_SDHC_USE_DMA DT_NODE_HAS_PROP(DT_DRV_INST(0), dmas)
 #define STM32_SDHC_USE_DMA      0
 
@@ -616,6 +619,9 @@ static void sdhc_stm32_cfg_data(SDMMC_TypeDef *sdmmc, uint32_t dat_len, uint32_t
 {
 	SDMMC_DataInitTypeDef config;
 
+	/* Initialize data control register */
+	sdmmc->DCTRL = 0U;
+
 	/* Configure the SD DPSM (Data Path State Machine) */
 	config.DataTimeOut = SDMMC_DATATIMEOUT;
 	config.DataLength = dat_len;
@@ -645,17 +651,101 @@ static sdhc_stm32_fc_enable(SDMMC_TypeDef *sdmmc)
 }
 #endif
 
+static void SD_Read_IT(struct sdhc_stm32_data *ctx, const SDMMC_TypeDef *sdmmc)
+{
+	uint32_t count;
+	uint32_t data;
+	uint8_t *tmp;
+
+	tmp = ctx->rx_buffer;
+
+	if (ctx->rx_xfer_sz >= SDMMC_FIFO_SIZE) {
+		/* Read data from SDMMC Rx FIFO */
+		for (count = 0U; count < (SDMMC_FIFO_SIZE / 4U); count++) {
+			data = SDMMC_ReadFIFO(sdmmc);
+			*tmp = (uint8_t)(data & 0xFFU);
+			tmp++;
+			*tmp = (uint8_t)((data >> 8U) & 0xFFU);
+			tmp++;
+			*tmp = (uint8_t)((data >> 16U) & 0xFFU);
+			tmp++;
+			*tmp = (uint8_t)((data >> 24U) & 0xFFU);
+			tmp++;
+		}
+
+    		ctx->rx_buffer = tmp;
+    		ctx->rx_xfer_sz -= SDMMC_FIFO_SIZE;
+  	}
+}
+
+static void SD_Write_IT(struct sdhc_stm32_data *ctx, SDMMC_TypeDef *sdmmc) {
+	uint32_t count;
+	uint32_t data;
+	uint8_t *tmp;
+
+	tmp = ctx->tx_buffer;
+
+	if (ctx->tx_xfer_sz >= SDMMC_FIFO_SIZE) {
+		/* Write data to SDMMC Tx FIFO */
+		for (count = 0U; count < (SDMMC_FIFO_SIZE / 4U); count++) {
+			data = (uint32_t)(*tmp);
+			tmp++;
+			data |= ((uint32_t)(*tmp) << 8U);
+			tmp++;
+			data |= ((uint32_t)(*tmp) << 16U);
+			tmp++;
+			data |= ((uint32_t)(*tmp) << 24U);
+			tmp++;
+			(void)SDMMC_WriteFIFO(sdmmc, &data);
+		}
+
+		ctx->tx_buffer = tmp;
+		ctx->tx_xfer_sz -= SDMMC_FIFO_SIZE;
+	}
+}
+
 static void sdhc_stm32_isr(const struct device *dev)
 {
 	struct sdhc_stm32_data *ctx = dev->data;
-	const SDMMC_TypeDef *sdmmc = ctx->sdmmc;
+	SDMMC_TypeDef *sdmmc = ctx->sdmmc;
 	uint32_t flags;
+
+	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[0], 1);          /* DBG_PIN0_HIGH */
 
 	/* @see HAL_SDIO_IRQHandler */
 	flags = sdmmc->STA;
 	if ((flags & SDMMC_FLAG_SDIOIT) != 0U) {
 		(void)k_work_submit(&ctx->work);
 	}
+
+	if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_RXFIFOHF)) {
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_RXFIFOHF);
+
+		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[1], 1);  /* DBG_PIN1_HIGH */
+		SD_Read_IT(ctx, sdmmc);
+		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[1], 0);  /* DBG_PIN1_LOW */
+	} else if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_DATAEND)) {
+		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[2], 1);  /* DBG_PIN2_HIGH */
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_DATAEND);
+
+		__SDMMC_DISABLE_IT(sdmmc, SDMMC_IT_DATAEND  | SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT | \
+				   SDMMC_IT_TXUNDERR | SDMMC_IT_RXOVERR  | SDMMC_IT_TXFIFOHE | \
+				   SDMMC_IT_RXFIFOHF);
+
+		__SDMMC_DISABLE_IT(sdmmc, SDMMC_IT_IDMABTC);
+		__SDMMC_CMDTRANS_DISABLE(sdmmc);
+
+		/* Clear all the static flags */
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
+		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[2], 0);  /* DBG_PIN2_LOW */
+	} else if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_TXFIFOHE)) {
+		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[3], 1);  /* DBG_PIN3_HIGH */
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_TXFIFOHE);
+		SD_Write_IT(ctx, sdmmc);
+		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[3], 0);  /* DBG_PIN3_LOW */
+	}
+
+	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[0], 0);          /* DBG_PIN0_LOW */
 }
 
 /*
@@ -848,12 +938,14 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 			ctx->xfer_ctx = SD_CONTEXT_READ_MULTIPLE_BLOCK;
 		}
 
-		sdhc_stm32_cfg_data(ctx->sdmmc, data->blocks * BLOCKSIZE, SDMMC_DATABLOCK_SIZE_512B,
+		ctx->rx_buffer  = data->data;
+		ctx->rx_xfer_sz = data->blocks * BLOCKSIZE;
+		sdhc_stm32_cfg_data(ctx->sdmmc, ctx->rx_xfer_sz, SDMMC_DATABLOCK_SIZE_512B,
 				    SDMMC_TRANSFER_DIR_TO_SDMMC);
 		ret = sdhc_stm32_snd_cmd(ctx->sdmmc, cmd, SDMMC_RESPONSE_SHORT);
 		if (ret == 0) {
 			__SDMMC_ENABLE_IT(ctx->sdmmc, (SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT |
-						       SDMMC_IT_RXOVERR | SDMMC_IT_DATAEND |
+						       SDMMC_IT_RXOVERR  | SDMMC_IT_DATAEND  |
 						       SDMMC_FLAG_RXFIFOHF));
 		}
 		break;
@@ -882,7 +974,9 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 			ctx->xfer_ctx = SD_CONTEXT_WRITE_MULTIPLE_BLOCK;
 		}
 
-		sdhc_stm32_cfg_data(ctx->sdmmc, data->blocks * BLOCKSIZE, SDMMC_DATABLOCK_SIZE_512B,
+		ctx->tx_buffer  = data->data;
+		ctx->tx_xfer_sz = data->blocks * BLOCKSIZE;
+		sdhc_stm32_cfg_data(ctx->sdmmc, ctx->tx_xfer_sz, SDMMC_DATABLOCK_SIZE_512B,
 				    SDMMC_TRANSFER_DIR_TO_CARD);
 		ret = sdhc_stm32_snd_cmd(ctx->sdmmc, cmd, SDMMC_RESPONSE_SHORT);
 		if (ret == 0) {
@@ -924,6 +1018,8 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 	int busy_timeout = 5000;
 	int ret;
 
+	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[4], 1);  /* DBG_PIN4_HIGH */
+
 	do {
 		ret = sdhc_stm32_req_ll(dev, cmd, data);
 		if (data && (ret || data->blocks > 1)) {
@@ -944,6 +1040,8 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 
 		retries--;
 	} while ((ret != 0) && (retries > 0));
+
+	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[4], 0);  /* DBG_PIN4_LOW */
 
 	return ret;
 }
@@ -1122,6 +1220,8 @@ static int sdhc_stm32_init(const struct device *dev)
 	memset(&ctx->host_io, 0, sizeof(struct sdhc_io));
 
 	k_work_init(&ctx->work, sdhc_stm32_work_handler);
+
+	cfg->irq_config(dev);
 
 	return 0;
 }
