@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(sd, CONFIG_SD_LOG_LEVEL);
 static inline int sd_idle(struct sd_card *card)
 {
 	struct sdhc_command cmd;
+	int ret;
 
 	/* Reset card with CMD0 */
 	cmd.opcode = SD_GO_IDLE_STATE;
@@ -29,7 +30,10 @@ static inline int sd_idle(struct sd_card *card)
 	cmd.response_type = (SD_RSP_TYPE_NONE | SD_SPI_RSP_TYPE_R1);
 	cmd.retries = CONFIG_SD_CMD_RETRIES;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
-	return sdhc_request(card->sdhc, &cmd, NULL);
+
+	ret = sdhc_request(card->sdhc, &cmd, NULL);
+
+	return ret;
 }
 
 /*
@@ -63,11 +67,13 @@ static int sd_send_interface_condition(struct sd_card *card)
 		/* Retry */
 		return SD_RETRY;
 	}
+
 	if (card->host_props.is_spi) {
 		resp = cmd.response[1];
 	} else {
 		resp = cmd.response[0];
 	}
+
 	if ((resp & 0xFF) != SD_IF_COND_CHECK) {
 		LOG_DBG("Legacy card detected, no CMD8 support");
 		/* Retry probe */
@@ -79,6 +85,7 @@ static int sd_send_interface_condition(struct sd_card *card)
 	}
 	LOG_DBG("Found SDHC with CMD8 support");
 	card->flags |= SD_SDHC_FLAG;
+
 	return 0;
 }
 
@@ -106,16 +113,19 @@ static int sd_common_init(struct sd_card *card)
 	ret = sd_retry(sd_send_interface_condition, card, CONFIG_SD_RETRY_COUNT);
 	if (ret == -ETIMEDOUT) {
 		LOG_INF("Card does not support CMD8, assuming legacy card");
-		return sd_idle(card);
+		ret = sd_idle(card);
+		return ret;
 	} else if (ret) {
 		LOG_ERR("Card error on CMD 8");
 		return ret;
 	}
+
 	if (card->host_props.is_spi &&
 		IS_ENABLED(CONFIG_SDHC_SUPPORTS_SPI_MODE)) {
 		/* Enable CRC for spi commands using CMD59 */
 		ret = sd_enable_crc(card);
 	}
+
 	return ret;
 }
 
@@ -126,7 +136,7 @@ static int sd_init_io(struct sd_card *card)
 	int ret, voltage;
 
 	/* SD clock should start gated */
-	bus_io->clock = SDMMC_CLOCK_400KHZ;
+	bus_io->clock = 0;
 	/* SPI requires SDHC PUSH PULL, and open drain buses use more power */
 	bus_io->bus_mode = SDHC_BUSMODE_PUSHPULL;
 	bus_io->bus_width = SDHC_BUS_WIDTH1BIT;
@@ -190,7 +200,6 @@ static int sd_command_init(struct sd_card *card)
 	 * on. At 400000KHz, this is a  185us delay. Wait 1ms to be safe.
 	 */
 	sd_delay(1);
-
 
 	/*
 	 * Start card initialization and identification

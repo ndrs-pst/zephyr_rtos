@@ -15,6 +15,7 @@
 #include <zephyr/drivers/reset.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/byteorder.h>
 #include <soc.h>
 
 /* STM32 includes */
@@ -81,6 +82,7 @@ struct sdhc_stm32_data {
 	uint32_t ercd; /*!< SDIO Card Error codes */
 	HAL_SDIO_StateTypeDef state;
 	uint32_t xfer_ctx;
+	uint32_t prev_opcode;
 
 	bool use_dma;
 	bool card_present;
@@ -262,16 +264,14 @@ static uint8_t sdhc_stm32_cnv_blk_sz(uint32_t blk_sz)
 static int sdhc_stm32_get_cmd_err(SDMMC_TypeDef *sdmmc, int timeout_ms) {
 
 	while (true) {
-		if (timeout_ms == 0) {
-			return -ETIMEDOUT;
-		}
-
 		if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_CMDSENT)) {
 			break;
 		}
 
-		timeout_ms--;
 		k_msleep(1);
+		if (timeout_ms-- <= 0) {
+			return -ETIMEDOUT;
+		}
 	}
 
 	/* Clear all the static flags */
@@ -280,11 +280,12 @@ static int sdhc_stm32_get_cmd_err(SDMMC_TypeDef *sdmmc, int timeout_ms) {
 	return 0;
 }
 
-static int sdhc_stm32_get_resp_ll(SDMMC_TypeDef *sdmmc, int timeout_ms, uint32_t opcode,
-				  enum sd_rsp_type rsp_type)
+static int sdhc_stm32_get_resp1_ll(SDMMC_TypeDef *sdmmc, int timeout_ms, uint32_t opcode)
 {
+	uint32_t sta_reg;
+
 	while (true) {
-		uint32_t sta_reg = sdmmc->STA;
+		sta_reg = sdmmc->STA;
 
 		if (((sta_reg & (SDMMC_FLAG_CCRCFAIL | SDMMC_FLAG_CMDREND | SDMMC_FLAG_CTIMEOUT |
 				 SDMMC_FLAG_BUSYD0END)) != 0U) &&
@@ -293,7 +294,7 @@ static int sdhc_stm32_get_resp_ll(SDMMC_TypeDef *sdmmc, int timeout_ms, uint32_t
 		}
 
 		k_msleep(1);
-		if (timeout_ms-- == 0) {
+		if (timeout_ms-- <= 0) {
 			return -ETIMEDOUT;
 		}
 	}
@@ -301,22 +302,158 @@ static int sdhc_stm32_get_resp_ll(SDMMC_TypeDef *sdmmc, int timeout_ms, uint32_t
 	if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_CTIMEOUT)) {
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_CTIMEOUT);
 		return -ETIMEDOUT;
-	} else if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_CCRCFAIL) &&
-		   (rsp_type == SD_RSP_TYPE_R1)) {
+	} else if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_CCRCFAIL)) {
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_CCRCFAIL);
 		return -EIO;
 	} else {
 		/* Nothing to do */
 	}
 
+	/* Clear all the static flags */
+	__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_CMD_FLAGS);
+
 	/* Check response received is of desired command (only when SD_RSP_TYPE_R1) */
-	if ((rsp_type == SD_RSP_TYPE_R1) &&
-	    (SDMMC_GetCommandResponse(sdmmc) != (uint8_t)opcode)) {
+	if (SDMMC_GetCommandResponse(sdmmc) != (uint8_t)opcode) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int sdhc_stm32_get_resp2_ll(SDMMC_TypeDef *sdmmc, int timeout_ms)
+{
+	uint32_t sta_reg;
+
+	while (true) {
+		sta_reg = sdmmc->STA;
+
+		if (((sta_reg & (SDMMC_FLAG_CCRCFAIL | SDMMC_FLAG_CMDREND | SDMMC_FLAG_CTIMEOUT)) != 0U) &&
+		    ((sta_reg & SDMMC_FLAG_CMDACT) == 0U)) {
+			break;
+		}
+
+		k_msleep(1);
+		if (timeout_ms-- <= 0) {
+			return -ETIMEDOUT;
+		}
+	}
+
+	if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_CTIMEOUT)) {
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_CTIMEOUT);
+		return -ETIMEDOUT;
+	} else if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_CCRCFAIL)) {
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_CCRCFAIL);
+		return -EIO;
+	} else {
+		/* Clear all the static flags */
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_CMD_FLAGS);
+	}
+
+	return 0;
+}
+
+static int sdhc_stm32_get_resp3_ll(SDMMC_TypeDef *sdmmc, int timeout_ms)
+{
+	uint32_t sta_reg;
+
+	while (true) {
+		sta_reg = sdmmc->STA;
+
+		if (((sta_reg & (SDMMC_FLAG_CCRCFAIL | SDMMC_FLAG_CMDREND | SDMMC_FLAG_CTIMEOUT)) != 0U) &&
+		    ((sta_reg & SDMMC_FLAG_CMDACT) == 0U)) {
+			break;
+		}
+
+		k_msleep(1);
+		if (timeout_ms-- <= 0) {
+			return -ETIMEDOUT;
+		}
+	}
+
+	if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_CTIMEOUT)) {
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_CTIMEOUT);
+		return -ETIMEDOUT;
+	}
+
+	/* Clear all the static flags */
+	__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_CMD_FLAGS);
+
+	return 0;
+}
+
+static int sdhc_stm32_get_resp6_ll(SDMMC_TypeDef *sdmmc, int timeout_ms, uint32_t opcode)
+{
+	uint32_t sta_reg;
+
+	while (true) {
+		sta_reg = sdmmc->STA;
+
+		if (((sta_reg & (SDMMC_FLAG_CCRCFAIL | SDMMC_FLAG_CMDREND | SDMMC_FLAG_CTIMEOUT)) != 0U) &&
+		    ((sta_reg & SDMMC_FLAG_CMDACT) == 0U)) {
+			break;
+		}
+
+		k_msleep(1);
+		if (timeout_ms-- <= 0) {
+			return -ETIMEDOUT;
+		}
+	}
+
+	if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_CTIMEOUT)) {
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_CTIMEOUT);
+		return -ETIMEDOUT;
+	} else if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_CCRCFAIL)) {
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_CCRCFAIL);
+		return -EIO;
+	} else {
+		/* pass */
+	}
+
+	/* Check response received is of desired command (only when SD_RSP_TYPE_R1) */
+	if (SDMMC_GetCommandResponse(sdmmc) != (uint8_t)opcode) {
 		return -EIO;
 	}
 
 	/* Clear all the static flags */
 	__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_CMD_FLAGS);
+
+	return 0;
+}
+
+static int sdhc_stm32_get_resp7_ll(SDMMC_TypeDef *sdmmc, int timeout_ms)
+{
+	uint32_t sta_reg;
+
+	while (true) {
+		sta_reg = sdmmc->STA;
+
+		if (((sta_reg & (SDMMC_FLAG_CCRCFAIL | SDMMC_FLAG_CMDREND | SDMMC_FLAG_CTIMEOUT)) != 0U) &&
+		    ((sta_reg & SDMMC_FLAG_CMDACT) == 0U)) {
+			break;
+		}
+
+		k_msleep(1);
+		if (timeout_ms-- <= 0) {
+			return -ETIMEDOUT;
+		}
+	}
+
+	if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_CTIMEOUT)) {
+		/* Card is not SD V2.0 compliant */
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_CTIMEOUT);
+		return -ETIMEDOUT;
+	} else if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_CCRCFAIL)) {
+		/* Card is not SD V2.0 compliant */
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_CCRCFAIL);
+		return -EIO;
+	} else {
+		/* pass */
+	}
+
+	if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_CMDREND)) {
+		/* Card is SD V2.0 compliant */
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_CMDREND);
+	}
 
 	return 0;
 }
@@ -334,10 +471,32 @@ static int sdhc_stm32_get_resp(SDMMC_TypeDef *sdmmc, struct sdhc_command *cmd)
 
 	case SD_RSP_TYPE_R1:
 	case SD_RSP_TYPE_R1b:
+		ret = sdhc_stm32_get_resp1_ll(sdmmc, cmd->timeout_ms, cmd->opcode);
+		if (ret == 0) {
+			cmd->response[0] = SDMMC_GetResponse(sdmmc, SDMMC_RESP1);
+		}
+		break;
+
+	case SD_RSP_TYPE_R2:
+		ret = sdhc_stm32_get_resp2_ll(sdmmc, cmd->timeout_ms);
+		if (ret == 0) {
+			cmd->response[0] = SDMMC_GetResponse(sdmmc, SDMMC_RESP1);
+			cmd->response[1] = SDMMC_GetResponse(sdmmc, SDMMC_RESP2);
+			cmd->response[2] = SDMMC_GetResponse(sdmmc, SDMMC_RESP3);
+			cmd->response[3] = SDMMC_GetResponse(sdmmc, SDMMC_RESP4);
+		}
+		break;
+
 	case SD_RSP_TYPE_R3:
+		ret = sdhc_stm32_get_resp3_ll(sdmmc, cmd->timeout_ms);
+		if (ret == 0) {
+			cmd->response[0] = SDMMC_GetResponse(sdmmc, SDMMC_RESP1);
+		}
+		break;
+
 	case SD_RSP_TYPE_R4:
 	case SD_RSP_TYPE_R5:
-		ret = sdhc_stm32_get_resp_ll(sdmmc, cmd->timeout_ms, cmd->opcode, rsp_type);
+		ret = sdhc_stm32_get_resp1_ll(sdmmc, cmd->timeout_ms, cmd->opcode);
 		if (ret == 0) {
 			/* We have received response, retrieve it for analysis  */
 			cmd->response[0] = SDMMC_GetResponse(sdmmc, SDMMC_RESP1);
@@ -349,12 +508,111 @@ static int sdhc_stm32_get_resp(SDMMC_TypeDef *sdmmc, struct sdhc_command *cmd)
 		}
 		break;
 
+	case SD_RSP_TYPE_R6:
+		ret = sdhc_stm32_get_resp6_ll(sdmmc, cmd->timeout_ms, cmd->opcode);
+		if (ret == 0) {
+			cmd->response[0] = SDMMC_GetResponse(sdmmc, SDMMC_RESP1);
+			if ((cmd->response[0] & (SDMMC_R6_GENERAL_UNKNOWN_ERROR | SDMMC_R6_ILLEGAL_CMD |
+						 SDMMC_R6_COM_CRC_FAILED)) != 0U) {
+				ret = -EIO;
+			}
+		}
+		break;
+
+	case SD_RSP_TYPE_R7:
+		ret = sdhc_stm32_get_resp7_ll(sdmmc, cmd->timeout_ms);
+		if (ret == 0) {
+			cmd->response[0] = SDMMC_GetResponse(sdmmc, SDMMC_RESP1);
+		}
+		break;
+
 	default:
 		ret = -EINVAL;
 		break;
 	}
 
 	return 0;
+}
+
+static int sdhc_stm32_get_scr(SDMMC_TypeDef *sdmmc, int timeout_ms, uint8_t* scr)
+{
+	uint32_t sta_reg;
+	uint32_t tempscr[2];
+	uint32_t index = 0U;
+	uint32_t tickstart = HAL_GetTick();
+
+	while (!__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_RXOVERR | SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT | SDMMC_FLAG_DBCKEND |
+					SDMMC_FLAG_DATAEND)) {
+		if ((!__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_RXFIFOE)) && (index == 0U)) {
+			tempscr[0] = SDMMC_ReadFIFO(sdmmc);
+			tempscr[1] = SDMMC_ReadFIFO(sdmmc);
+			index++;
+		}
+
+		if ((HAL_GetTick() - tickstart) >= SDMMC_SWDATATIMEOUT) {
+			return -ETIMEDOUT;
+		}
+	}
+
+	if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_DTIMEOUT)) {
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_DTIMEOUT);
+		return -ETIMEDOUT;
+	} else if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_DCRCFAIL)) {
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_DCRCFAIL);
+		return -EIO;
+	} else if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_RXOVERR)) {
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_RXOVERR);
+		return -EIO;
+	} else {
+		/* Clear all the static flags */
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
+
+		sys_put_be32(tempscr[1], scr);
+		sys_put_be32(tempscr[0], scr + 4);
+	}
+
+	return 0;
+}
+
+static int sdhc_stm32_get_speed(SDMMC_TypeDef *sdmmc, int timeout_ms, uint8_t* status)
+{
+	uint32_t loop  = 0;
+	uint32_t index = 0U;
+	uint32_t Timeout = HAL_GetTick();
+
+	while (!__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_RXOVERR | SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT |
+					SDMMC_FLAG_DBCKEND | SDMMC_FLAG_DATAEND)) {
+		if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_RXFIFOHF)) {
+			for (uint32_t count = 0U; count < 8U; count++) {
+				uint32_t data = SDMMC_ReadFIFO(sdmmc);
+
+				sys_put_le32(data, &status[(32U * loop) + (4 * count)]);
+			}
+			loop++;
+		}
+
+		if ((HAL_GetTick() - Timeout) >= SDMMC_SWDATATIMEOUT) {
+			return -ETIMEDOUT;
+		}
+	}
+
+	if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_DTIMEOUT)) {
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_DTIMEOUT);
+		return -ETIMEDOUT;
+	} else if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_DCRCFAIL)) {
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_DCRCFAIL);
+		return -EIO;
+	} else if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_RXOVERR)) {
+		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_RXOVERR);
+		return -EIO;
+	} else {
+		/* No error flag set */
+	}
+
+	/* Clear all the static flags */
+	__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
+
+	return (0);
 }
 
 static int sdhc_stm32_snd_cmd(SDMMC_TypeDef *sdmmc, struct sdhc_command *cmd, uint32_t response)
@@ -390,7 +648,7 @@ static int sdhc_stm32_sdio_rd_direct(SDMMC_TypeDef *sdmmc, uint32_t func_num, ui
 	cmd_init.CPSM = SDMMC_CPSM_ENABLE;
 	(void)SDMMC_SendCommand(sdmmc, &cmd_init);
 
-	ret = sdhc_stm32_get_resp_ll(sdmmc, 1, SDMMC_CMD_SDMMC_RW_DIRECT, SD_RSP_TYPE_R1);
+	ret = sdhc_stm32_get_resp1_ll(sdmmc, 1, SDMMC_CMD_SDMMC_RW_DIRECT);
 	if (ret == 0) {
 		__SDMMC_CMDTRANS_DISABLE(sdmmc);
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
@@ -418,7 +676,7 @@ static int sdhc_stm32_sdio_wr_direct(SDMMC_TypeDef *sdmmc, uint32_t func_num, ui
 	cmd_init.CPSM = SDMMC_CPSM_ENABLE;
 	(void)SDMMC_SendCommand(sdmmc, &cmd_init);
 
-	ret = sdhc_stm32_get_resp_ll(sdmmc, 1, SDMMC_CMD_SDMMC_RW_DIRECT, SD_RSP_TYPE_R1);
+	ret = sdhc_stm32_get_resp1_ll(sdmmc, 1, SDMMC_CMD_SDMMC_RW_DIRECT);
 	if (ret == 0) {
 		__SDMMC_CMDTRANS_DISABLE(sdmmc);
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
@@ -439,7 +697,7 @@ static int sdhc_stm32_sdio_rw_direct(SDMMC_TypeDef *sdmmc, struct sdhc_command *
 	cmd_init.CPSM = SDMMC_CPSM_ENABLE;
 	(void)SDMMC_SendCommand(sdmmc, &cmd_init);
 
-	ret = sdhc_stm32_get_resp_ll(sdmmc, 1, SDMMC_CMD_SDMMC_RW_DIRECT, SD_RSP_TYPE_R1);
+	ret = sdhc_stm32_get_resp1_ll(sdmmc, 1, SDMMC_CMD_SDMMC_RW_DIRECT);
 	if (ret == 0) {
 		__SDMMC_CMDTRANS_DISABLE(sdmmc);
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
@@ -655,7 +913,7 @@ static int sdhc_stm32_sdio_rw_extend(struct sdhc_stm32_data *ctx, struct sdhc_co
 }
 
 static void sdhc_stm32_cfg_data(SDMMC_TypeDef *sdmmc, uint32_t dat_len, uint32_t blk_sz,
-				uint32_t dir)
+				uint32_t dir, uint8_t dpsm)
 {
 	SDMMC_DataInitTypeDef config;
 
@@ -663,15 +921,17 @@ static void sdhc_stm32_cfg_data(SDMMC_TypeDef *sdmmc, uint32_t dat_len, uint32_t
 	sdmmc->DCTRL = 0U;
 
 	/* Configure the SD DPSM (Data Path State Machine) */
-	config.DataTimeOut   = (SDMMC_DATATIMEOUT / 1000U);
+	config.DataTimeOut   = SDMMC_DATATIMEOUT;
 	config.DataLength    = dat_len;
 	config.DataBlockSize = blk_sz;
 	config.TransferDir   = dir;
 	config.TransferMode  = SDMMC_TRANSFER_MODE_BLOCK;
-	config.DPSM          = SDMMC_DPSM_DISABLE;
+	config.DPSM          = dpsm;
 	(void)SDMMC_ConfigData(sdmmc, &config);
 
-	__SDMMC_CMDTRANS_ENABLE(sdmmc);
+	if (dpsm == SDMMC_DPSM_DISABLE) {
+		__SDMMC_CMDTRANS_ENABLE(sdmmc);
+	}
 }
 
 static int sdhc_stm32_reset(const struct device *dev)
@@ -932,7 +1192,7 @@ static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
 		ios->power_mode == SDHC_POWER_ON ? "ON" : "OFF",
 		ios->signal_voltage == SD_VOL_1_8_V ? "1.8V" : "3.3V");
 
-	if (host_io->clock != ios->clock) {
+	if ((host_io->clock != ios->clock) && (ios->clock != 0)) {
 		uint32_t sdmmc_ker_ck;
 		uint32_t clk_div;
 		const struct device *clock;
@@ -1082,7 +1342,6 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 
 	case MMC_SEND_OP_COND:              /* SDMMC_CmdOpCondition */
 	case SDMMC_SEND_RELATIVE_ADDR:      /* SDMMC_CmdSetRelAdd */
-	case SD_SWITCH:                     /* SDMMC_CmdSwitch, share with SD_APP_SET_BUS_WIDTH */
 	case SD_SELECT_CARD:                /* SDMMC_CmdSelDesel */
 	case SD_SEND_IF_COND:               /* SDMMC_CmdSendEXTCSD */
 	case SD_VOL_SWITCH:                 /* SDMMC_CmdVoltageSwitch */
@@ -1115,10 +1374,10 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 		ctx->rx_buffer  = data->data;
 		ctx->rx_xfer_sz = data->blocks * BLOCKSIZE;
 		sdhc_stm32_cfg_data(sdmmc, ctx->rx_xfer_sz, SDMMC_DATABLOCK_SIZE_512B,
-				    SDMMC_TRANSFER_DIR_TO_SDMMC);
+				    SDMMC_TRANSFER_DIR_TO_SDMMC, SDMMC_DPSM_DISABLE);
 		ret = sdhc_stm32_snd_cmd(sdmmc, cmd, SDMMC_RESPONSE_SHORT);
 		if (ret == 0) {
-			#if (0)
+			#if (1)
 			SD_Read_Poll(ctx, sdmmc);
 			#else
 			__SDMMC_ENABLE_IT(sdmmc, (SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT |
@@ -1129,12 +1388,38 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 		break;
 	}
 
-	case SD_APP_SEND_SCR: /* sdmmc_read_scr */
+	case SD_SWITCH:                     /* SDMMC_CmdSwitch, share with SD_APP_SET_BUS_WIDTH */
+		if (ctx->prev_opcode == SD_APP_CMD) {
+			/* SD_APP_SET_BUS_WIDTH */
+			ret = sdhc_stm32_snd_cmd(sdmmc, cmd, SDMMC_RESPONSE_SHORT);
+		} else {
+			ctx->num_blocks = data->blocks;
+			ctx->rx_buffer  = data->data;
+			ctx->rx_xfer_sz = data->blocks * data->block_size;
+			sdhc_stm32_cfg_data(sdmmc, ctx->rx_xfer_sz, SDMMC_DATABLOCK_SIZE_64B,
+					SDMMC_TRANSFER_DIR_TO_SDMMC, SDMMC_DPSM_ENABLE);
+			ret = sdhc_stm32_snd_cmd(sdmmc, cmd, SDMMC_RESPONSE_SHORT);
+			if (ret == 0) {
+				ret = sdhc_stm32_get_speed(sdmmc, cmd->timeout_ms, ctx->rx_buffer);
+			}
+		}
+		break;
+
+	case SD_APP_SEND_SCR:               /* SDMMC_CmdSendSCR */
+		ctx->num_blocks = data->blocks;
+		ctx->rx_buffer  = data->data;
+		ctx->rx_xfer_sz = data->blocks * data->block_size;
+		sdhc_stm32_cfg_data(sdmmc, ctx->rx_xfer_sz, SDMMC_DATABLOCK_SIZE_8B,
+				    SDMMC_TRANSFER_DIR_TO_SDMMC, SDMMC_DPSM_ENABLE);
+		ret = sdhc_stm32_snd_cmd(sdmmc, cmd, SDMMC_RESPONSE_SHORT);
+		if (ret == 0) {
+			ret = sdhc_stm32_get_scr(sdmmc, cmd->timeout_ms, ctx->rx_buffer);
+		}
 		break;
 
 	case SD_APP_SEND_NUM_WRITTEN_BLK: {
 		sdhc_stm32_cfg_data(sdmmc, 4, SDMMC_DATABLOCK_SIZE_4B,
-				    SDMMC_TRANSFER_DIR_TO_SDMMC);
+				    SDMMC_TRANSFER_DIR_TO_SDMMC, SDMMC_DPSM_DISABLE);
 		ret = sdhc_stm32_snd_cmd(sdmmc, cmd, SDMMC_RESPONSE_SHORT);
 		if (ret == 0) {
 			__SDMMC_ENABLE_IT(sdmmc, (SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT |
@@ -1144,8 +1429,8 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 		break;
 	}
 
-	case SD_WRITE_SINGLE_BLOCK:   /* SDMMC_CmdWriteSingleBlock */
-	case SD_WRITE_MULTIPLE_BLOCK: /* SDMMC_CMD_WRITE_MULT_BLOCK */
+	case SD_WRITE_SINGLE_BLOCK:         /* SDMMC_CmdWriteSingleBlock */
+	case SD_WRITE_MULTIPLE_BLOCK:       /* SDMMC_CMD_WRITE_MULT_BLOCK */
 		if (cmd->opcode == SD_WRITE_SINGLE_BLOCK) {
 			ctx->xfer_ctx = SD_CONTEXT_WRITE_SINGLE_BLOCK;
 		} else {
@@ -1156,7 +1441,7 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 		ctx->tx_buffer  = data->data;
 		ctx->tx_xfer_sz = data->blocks * BLOCKSIZE;
 		sdhc_stm32_cfg_data(sdmmc, ctx->tx_xfer_sz, SDMMC_DATABLOCK_SIZE_512B,
-				    SDMMC_TRANSFER_DIR_TO_CARD);
+				    SDMMC_TRANSFER_DIR_TO_CARD, SDMMC_DPSM_DISABLE);
 		ret = sdhc_stm32_snd_cmd(sdmmc, cmd, SDMMC_RESPONSE_SHORT);
 		if (ret == 0) {
 			#if (1)
@@ -1186,6 +1471,8 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 		LOG_INF("SDHC driver: command %u not supported", cmd->opcode);
 		return -ENOTSUP;
 	}
+
+	ctx->prev_opcode = cmd->opcode;
 
 	return (ret);
 }
@@ -1520,6 +1807,8 @@ static int sdhc_stm32_init(const struct device *dev)
 	/* Set all host IO values to zeroes */
 	memset(&ctx->host_io, 0, sizeof(struct sdhc_io));
 	k_work_init(&ctx->sdio_work, sdhc_stm32_sdio_work_handler);
+
+	return 0;
 
 err_pwr:
 	sdhc_stm32_card_detect_uninit(dev);
