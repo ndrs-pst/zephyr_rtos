@@ -259,6 +259,27 @@ static uint8_t sdhc_stm32_cnv_blk_sz(uint32_t blk_sz)
 	return most_bit << SDMMC_DCTRL_DBLOCKSIZE_Pos;
 }
 
+static int sdhc_stm32_get_cmd_err(SDMMC_TypeDef *sdmmc, int timeout_ms) {
+
+	while (true) {
+		if (timeout_ms == 0) {
+			return -ETIMEDOUT;
+		}
+
+		if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_CMDSENT)) {
+			break;
+		}
+
+		timeout_ms--;
+		k_msleep(1);
+	}
+
+	/* Clear all the static flags */
+	__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_CMD_FLAGS);
+
+	return 0;
+}
+
 static int sdhc_stm32_get_resp_ll(SDMMC_TypeDef *sdmmc, int timeout_ms, uint32_t opcode,
 				  enum sd_rsp_type rsp_type)
 {
@@ -306,17 +327,31 @@ static int sdhc_stm32_get_resp(SDMMC_TypeDef *sdmmc, struct sdhc_command *cmd)
 	enum sd_rsp_type rsp_type;
 
 	rsp_type = (cmd->response_type & SDHC_NATIVE_RESPONSE_MASK);
-	ret = sdhc_stm32_get_resp_ll(sdmmc, cmd->timeout_ms, cmd->opcode, rsp_type);
-	if (ret) {
-		return ret;
-	}
+	switch (rsp_type) {
+	case SD_RSP_TYPE_NONE:
+		ret = sdhc_stm32_get_cmd_err(sdmmc, cmd->timeout_ms);
+		break;
 
-	/* We have received response, retrieve it for analysis  */
-	cmd->response[0] = SDMMC_GetResponse(sdmmc, SDMMC_RESP1);
-	if (rsp_type == SD_RSP_TYPE_R2) {
-		cmd->response[1] = SDMMC_GetResponse(sdmmc, SDMMC_RESP2);
-		cmd->response[2] = SDMMC_GetResponse(sdmmc, SDMMC_RESP3);
-		cmd->response[3] = SDMMC_GetResponse(sdmmc, SDMMC_RESP4);
+	case SD_RSP_TYPE_R1:
+	case SD_RSP_TYPE_R1b:
+	case SD_RSP_TYPE_R3:
+	case SD_RSP_TYPE_R4:
+	case SD_RSP_TYPE_R5:
+		ret = sdhc_stm32_get_resp_ll(sdmmc, cmd->timeout_ms, cmd->opcode, rsp_type);
+		if (ret == 0) {
+			/* We have received response, retrieve it for analysis  */
+			cmd->response[0] = SDMMC_GetResponse(sdmmc, SDMMC_RESP1);
+			if (rsp_type == SD_RSP_TYPE_R2) {
+				cmd->response[1] = SDMMC_GetResponse(sdmmc, SDMMC_RESP2);
+				cmd->response[2] = SDMMC_GetResponse(sdmmc, SDMMC_RESP3);
+				cmd->response[3] = SDMMC_GetResponse(sdmmc, SDMMC_RESP4);
+			}
+		}
+		break;
+
+	default:
+		ret = -EINVAL;
+		break;
 	}
 
 	return 0;
