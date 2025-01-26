@@ -55,7 +55,6 @@ struct sdhc_dma_stream {
 
 struct sdhc_stm32_config {
 	void (*irq_config)(const struct device *dev);
-	struct gpio_callback cd_cb;
 	struct gpio_dt_spec cd_gpio;
 	struct gpio_dt_spec pwr_gpio;
 	const struct stm32_pclken *pclken; /* clock subsystem driving this peripheral */
@@ -73,8 +72,10 @@ struct sdhc_stm32_data {
 	SDMMC_TypeDef *sdmmc;
 	struct sdhc_io host_io;
 	struct k_sem sync;
+	struct k_work cd_work;
+	struct k_work sdio_work;
+	struct gpio_callback cd_cb;
 	int status;
-	struct k_work work;
 
 	uint32_t ercd; /*!< SDIO Card Error codes */
 	HAL_SDIO_StateTypeDef state;
@@ -832,7 +833,7 @@ static void sdhc_stm32_isr(const struct device *dev)
 	/* @see HAL_SDIO_IRQHandler */
 	flags = sdmmc->STA;
 	if ((flags & SDMMC_FLAG_SDIOIT) != 0U) {
-		(void)k_work_submit(&ctx->work);
+		(void)k_work_submit(&ctx->sdio_work);
 	}
 
 	if ((flags & SDMMC_FLAG_RXFIFOHF) != 0U) {
@@ -1222,6 +1223,124 @@ static int sdhc_stm32_get_card_present(const struct device *dev)
 	return ((int)ctx->card_present);
 }
 
+static void sdhc_stm32_card_detect_handler(struct k_work *item)
+{
+	struct sdhc_stm32_data *ctx = CONTAINER_OF(item,
+						   struct sdhc_stm32_data,
+						   cd_work);
+	const struct device *dev = CONTAINER_OF(ctx, struct device, data);
+
+	if (sdhc_stm32_get_card_present(dev)) {
+		LOG_DBG("card inserted");
+		// FIXME ctx->status = DISK_STATUS_UNINIT;
+	} else {
+		LOG_DBG("card removed");
+		// FIXME stm32_sdmmc_access_deinit(priv);
+		// FIXME ctx->status = DISK_STATUS_NOMEDIA;
+	}
+}
+
+static void sdhc_stm32_card_detect_callback(const struct device *gpiodev,
+					    struct gpio_callback *cb,
+					    uint32_t pin)
+{
+	struct sdhc_stm32_data *ctx = CONTAINER_OF(cb,
+						    struct sdhc_stm32_data,
+						    cd_cb);
+
+	k_work_submit(&ctx->cd_work);
+}
+
+static int sdhc_stm32_card_detect_init(const struct device *dev)
+{
+	const struct sdhc_stm32_config *cfg = dev->config;
+	struct sdhc_stm32_data *ctx = dev->data;
+	int err;
+
+	if (!cfg->cd_gpio.port) {
+		return 0;
+	}
+
+	if (!gpio_is_ready_dt(&cfg->cd_gpio)) {
+		return -ENODEV;
+	}
+
+	gpio_init_callback(&ctx->cd_cb, sdhc_stm32_card_detect_callback,
+			   (1 << cfg->cd_gpio.pin));
+
+	err = gpio_add_callback(cfg->cd_gpio.port, &ctx->cd_cb);
+	if (err) {
+		return err;
+	}
+
+	err = gpio_pin_configure_dt(&cfg->cd_gpio, GPIO_INPUT);
+	if (err) {
+		goto remove_callback;
+	}
+
+	err = gpio_pin_interrupt_configure_dt(&cfg->cd_gpio, GPIO_INT_EDGE_BOTH);
+	if (err) {
+		goto unconfigure_pin;
+	}
+	return 0;
+
+unconfigure_pin:
+	gpio_pin_configure_dt(&cfg->cd_gpio, GPIO_DISCONNECTED);
+
+remove_callback:
+	gpio_remove_callback(cfg->cd_gpio.port, &ctx->cd_cb);
+
+	return err;
+}
+
+static int sdhc_stm32_card_detect_uninit(const struct device *dev)
+{
+	const struct sdhc_stm32_config *cfg = dev->config;
+	struct sdhc_stm32_data *ctx = dev->data;
+
+	if (!cfg->cd_gpio.port) {
+		return 0;
+	}
+
+	gpio_pin_interrupt_configure_dt(&cfg->cd_gpio, GPIO_INT_MODE_DISABLED);
+	gpio_pin_configure_dt(&cfg->cd_gpio, GPIO_DISCONNECTED);
+	gpio_remove_callback(cfg->cd_gpio.port, &ctx->cd_cb);
+
+	return 0;
+}
+
+static int sdhc_stm32_pwr_init(const struct sdhc_stm32_config *cfg)
+{
+	int err;
+
+	if (!cfg->pwr_gpio.port) {
+		return 0;
+	}
+
+	if (!gpio_is_ready_dt(&cfg->pwr_gpio)) {
+		return -ENODEV;
+	}
+
+	err = gpio_pin_configure_dt(&cfg->pwr_gpio, GPIO_OUTPUT_ACTIVE);
+	if (err) {
+		return err;
+	}
+
+	k_sleep(K_MSEC(50));
+
+	return 0;
+}
+
+static int sdhc_stm32_pwr_uninit(const struct sdhc_stm32_config *cfg)
+{
+	if (!cfg->pwr_gpio.port) {
+		return 0;
+	}
+
+	gpio_pin_configure_dt(&cfg->pwr_gpio, GPIO_DISCONNECTED);
+	return 0;
+}
+
 /*
  * Get host properties
  */
@@ -1235,9 +1354,9 @@ static int sdhc_stm32_get_host_props(const struct device *dev,
 	return 0;
 }
 
-static void sdhc_stm32_work_handler(struct k_work *work)
+static void sdhc_stm32_sdio_work_handler(struct k_work *work)
 {
-	struct sdhc_stm32_data *ctx = CONTAINER_OF(work, struct sdhc_stm32_data, work);
+	struct sdhc_stm32_data *ctx = CONTAINER_OF(work, struct sdhc_stm32_data, sdio_work);
 	SDMMC_TypeDef *sdmmc = ctx->sdmmc;
 	uint8_t int_pending;
 
@@ -1276,7 +1395,7 @@ static int sdhc_stm32_registers_configure(const struct device *dev)
 	struct sdhc_stm32_data const *ctx = dev->data;
 	SDMMC_TypeDef *sdmmc = ctx->sdmmc;
 	const struct device *clock;
-	SDMMC_InitTypeDef init;
+	SDMMC_InitTypeDef Init;
 	uint32_t sdmmc_ker_ck;
 	int ret;
 
@@ -1293,17 +1412,17 @@ static int sdhc_stm32_registers_configure(const struct device *dev)
 
 	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	if (clock_control_get_rate(clock, (clock_control_subsys_t)&cfg->pclken[1],
-	    &sdmmc_ker_ck) != 0) {
+				   &sdmmc_ker_ck) != 0) {
 		LOG_ERR("Failed to get SDMMC domain clock rate");
 		return -EIO;
 	}
 
-	init.ClockEdge           = SDMMC_CLOCK_EDGE_RISING;
-	init.ClockPowerSave      = SDMMC_CLOCK_POWER_SAVE_DISABLE;
-	init.BusWide             = SDMMC_BUS_WIDE_1B;
-	init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
-	init.ClockDiv            = sdmmc_ker_ck / (2U * SDMMC_CLOCK_400KHZ);
-	(void)SDMMC_Init(sdmmc, init);
+	Init.ClockEdge           = SDMMC_CLOCK_EDGE_RISING;
+	Init.ClockPowerSave      = SDMMC_CLOCK_POWER_SAVE_DISABLE;
+	Init.BusWide             = SDMMC_BUS_WIDE_1B;
+	Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
+	Init.ClockDiv            = sdmmc_ker_ck / (2U * SDMMC_CLOCK_400KHZ);
+	(void)SDMMC_Init(sdmmc, Init);
 
 	(void)SDMMC_PowerState_ON(sdmmc);
 
@@ -1312,6 +1431,7 @@ static int sdhc_stm32_registers_configure(const struct device *dev)
 
 /*
  * Perform early system init for SDHC
+ * @see disk_stm32_sdmmc_init
  */
 static int sdhc_stm32_init(const struct device *dev)
 {
@@ -1331,23 +1451,25 @@ static int sdhc_stm32_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	ret = sdhc_stm32_registers_configure(dev);
-	if (ret < 0) {
+	cfg->irq_config(dev);
+
+	/* Initialize semaphores */
+	k_sem_init(&ctx->sync, 0, 1);
+
+	k_work_init(&ctx->cd_work, sdhc_stm32_card_detect_handler);
+	ret = sdhc_stm32_card_detect_init(dev);
+	if (ret) {
 		return ret;
 	}
 
-	/* init carrier detect (if set) */
-	if (cfg->cd_gpio.port != NULL) {
-		if (!gpio_is_ready_dt(&cfg->cd_gpio)) {
-			LOG_ERR("GPIO port for cd pin is not ready");
-			return -ENODEV;
-		}
+	ret = sdhc_stm32_pwr_init(cfg);
+	if (ret) {
+		goto err_pwr;
+	}
 
-		ret = gpio_pin_configure_dt(&cfg->cd_gpio, GPIO_INPUT);
-		if (ret < 0) {
-			LOG_ERR("Couldn't configure cd pin: (%d)", ret);
-			return ret;
-		}
+	ret = sdhc_stm32_registers_configure(dev);
+	if (ret < 0) {
+		return ret;
 	}
 
 #if STM32_SDHC_USE_DMA
@@ -1364,12 +1486,12 @@ static int sdhc_stm32_init(const struct device *dev)
 
 	/* Set all host IO values to zeroes */
 	memset(&ctx->host_io, 0, sizeof(struct sdhc_io));
+	k_work_init(&ctx->sdio_work, sdhc_stm32_sdio_work_handler);
 
-	k_work_init(&ctx->work, sdhc_stm32_work_handler);
+err_pwr:
+	sdhc_stm32_card_detect_uninit(dev);
 
-	cfg->irq_config(dev);
-
-	return 0;
+	return ret;
 }
 
 #define STM32_SDHC_IRQ_HANDLER(n)                                                                  \
