@@ -69,6 +69,7 @@ struct sdhc_stm32_config {
 };
 
 struct sdhc_stm32_data {
+	const struct device *dev;
 	SDMMC_TypeDef *sdmmc;
 	struct sdhc_io host_io;
 	struct k_sem sync;
@@ -1023,44 +1024,42 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 			     struct sdhc_data *data)
 {
 	struct sdhc_stm32_data *ctx = dev->data;
+	SDMMC_TypeDef *sdmmc = ctx->sdmmc;
 	uint32_t err_state;
 	int ret = 0;
 
 	switch (cmd->opcode) {
-	case SD_GO_IDLE_STATE:
-		err_state = SDMMC_CmdGoIdleState(ctx->sdmmc);
-		if (err_state != HAL_SD_ERROR_NONE) {
-			return -EIO;
-		}
+	case SD_GO_IDLE_STATE:              /* SDMMC_CmdGoIdleState */
+		ret = sdhc_stm32_snd_cmd(sdmmc, cmd, SDMMC_RESPONSE_NO);
 		break;
 
 	case SDIO_SEND_OP_COND:
-		err_state = SDMMC_CmdSendOperationcondition(ctx->sdmmc, cmd->arg, cmd->response);
+		err_state = SDMMC_CmdSendOperationcondition(sdmmc, cmd->arg, cmd->response);
 		if (err_state != HAL_SD_ERROR_NONE) {
 			return -EIO;
 		}
 		break;
 
-	case SD_ALL_SEND_CID: /* SDMMC_CmdSendCID */
-	case SD_SEND_CSD:     /* SDMMC_CmdSendCSD */
-		ret = sdhc_stm32_snd_cmd(ctx->sdmmc, cmd, SDMMC_RESPONSE_LONG);
+	case SD_ALL_SEND_CID:               /* SDMMC_CmdSendCID */
+	case SD_SEND_CSD:                   /* SDMMC_CmdSendCSD */
+		ret = sdhc_stm32_snd_cmd(sdmmc, cmd, SDMMC_RESPONSE_LONG);
 		break;
 
-	case MMC_SEND_OP_COND:         /* SDMMC_CmdOpCondition */
-	case SDMMC_SEND_RELATIVE_ADDR: /* SDMMC_CmdSetRelAdd */
-	case SD_SWITCH:                /* SDMMC_CmdSwitch, share with SD_APP_SET_BUS_WIDTH */
-	case SD_SELECT_CARD:           /* SDMMC_CmdSelDesel */
-	case SD_SEND_IF_COND:          /* SDMMC_CmdSendEXTCSD */
-	case SD_VOL_SWITCH:            /* SDMMC_CmdVoltageSwitch */
-	case SD_SEND_STATUS:           /* SDMMC_CmdSendStatus */
-	case SD_SET_BLOCK_SIZE:        /* SDMMC_CmdBlockLength */
-	case SD_APP_SEND_OP_COND:      /* SDMMC_CmdAppOperCommand */
-	case SD_APP_CMD:               /* SDMMC_CmdAppCommand */
-		ret = sdhc_stm32_snd_cmd(ctx->sdmmc, cmd, SDMMC_RESPONSE_SHORT);
+	case MMC_SEND_OP_COND:              /* SDMMC_CmdOpCondition */
+	case SDMMC_SEND_RELATIVE_ADDR:      /* SDMMC_CmdSetRelAdd */
+	case SD_SWITCH:                     /* SDMMC_CmdSwitch, share with SD_APP_SET_BUS_WIDTH */
+	case SD_SELECT_CARD:                /* SDMMC_CmdSelDesel */
+	case SD_SEND_IF_COND:               /* SDMMC_CmdSendEXTCSD */
+	case SD_VOL_SWITCH:                 /* SDMMC_CmdVoltageSwitch */
+	case SD_SEND_STATUS:                /* SDMMC_CmdSendStatus */
+	case SD_SET_BLOCK_SIZE:             /* SDMMC_CmdBlockLength */
+	case SD_APP_SEND_OP_COND:           /* SDMMC_CmdAppOperCommand */
+	case SD_APP_CMD:                    /* SDMMC_CmdAppCommand */
+		ret = sdhc_stm32_snd_cmd(sdmmc, cmd, SDMMC_RESPONSE_SHORT);
 		break;
 
-	case SDIO_RW_DIRECT: { /* HAL_SDIO_ReadDirect */
-		ret = sdhc_stm32_sdio_rw_direct(ctx->sdmmc, cmd);
+	case SDIO_RW_DIRECT: {              /* HAL_SDIO_ReadDirect */
+		ret = sdhc_stm32_sdio_rw_direct(sdmmc, cmd);
 		break;
 	}
 
@@ -1080,16 +1079,16 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 		ctx->num_blocks = data->blocks;
 		ctx->rx_buffer  = data->data;
 		ctx->rx_xfer_sz = data->blocks * BLOCKSIZE;
-		sdhc_stm32_cfg_data(ctx->sdmmc, ctx->rx_xfer_sz, SDMMC_DATABLOCK_SIZE_512B,
+		sdhc_stm32_cfg_data(sdmmc, ctx->rx_xfer_sz, SDMMC_DATABLOCK_SIZE_512B,
 				    SDMMC_TRANSFER_DIR_TO_SDMMC);
-		ret = sdhc_stm32_snd_cmd(ctx->sdmmc, cmd, SDMMC_RESPONSE_SHORT);
+		ret = sdhc_stm32_snd_cmd(sdmmc, cmd, SDMMC_RESPONSE_SHORT);
 		if (ret == 0) {
 			#if (0)
-			SD_Read_Poll(ctx, ctx->sdmmc);
+			SD_Read_Poll(ctx, sdmmc);
 			#else
-			__SDMMC_ENABLE_IT(ctx->sdmmc, (SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT |
-						       SDMMC_IT_RXOVERR  | SDMMC_IT_DATAEND  |
-						       SDMMC_FLAG_RXFIFOHF));
+			__SDMMC_ENABLE_IT(sdmmc, (SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT |
+						  SDMMC_IT_RXOVERR  | SDMMC_IT_DATAEND  |
+						  SDMMC_FLAG_RXFIFOHF));
 			#endif
 		}
 		break;
@@ -1099,13 +1098,13 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 		break;
 
 	case SD_APP_SEND_NUM_WRITTEN_BLK: {
-		sdhc_stm32_cfg_data(ctx->sdmmc, 4, SDMMC_DATABLOCK_SIZE_4B,
+		sdhc_stm32_cfg_data(sdmmc, 4, SDMMC_DATABLOCK_SIZE_4B,
 				    SDMMC_TRANSFER_DIR_TO_SDMMC);
-		ret = sdhc_stm32_snd_cmd(ctx->sdmmc, cmd, SDMMC_RESPONSE_SHORT);
+		ret = sdhc_stm32_snd_cmd(sdmmc, cmd, SDMMC_RESPONSE_SHORT);
 		if (ret == 0) {
-			__SDMMC_ENABLE_IT(ctx->sdmmc, (SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT |
-						       SDMMC_IT_RXOVERR  | SDMMC_IT_DATAEND |
-						       SDMMC_FLAG_RXFIFOHF));
+			__SDMMC_ENABLE_IT(sdmmc, (SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT |
+						  SDMMC_IT_RXOVERR  | SDMMC_IT_DATAEND |
+						  SDMMC_FLAG_RXFIFOHF));
 		}
 		break;
 	}
@@ -1121,21 +1120,21 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 		ctx->num_blocks = data->blocks;
 		ctx->tx_buffer  = data->data;
 		ctx->tx_xfer_sz = data->blocks * BLOCKSIZE;
-		sdhc_stm32_cfg_data(ctx->sdmmc, ctx->tx_xfer_sz, SDMMC_DATABLOCK_SIZE_512B,
+		sdhc_stm32_cfg_data(sdmmc, ctx->tx_xfer_sz, SDMMC_DATABLOCK_SIZE_512B,
 				    SDMMC_TRANSFER_DIR_TO_CARD);
-		ret = sdhc_stm32_snd_cmd(ctx->sdmmc, cmd, SDMMC_RESPONSE_SHORT);
+		ret = sdhc_stm32_snd_cmd(sdmmc, cmd, SDMMC_RESPONSE_SHORT);
 		if (ret == 0) {
 			#if (1)
-			SD_Write_Poll(ctx, ctx->sdmmc);
+			SD_Write_Poll(ctx, sdmmc);
 			#else
 			if (ctx->use_dma) {
 				ctx->xfer_ctx |= SD_CONTEXT_DMA;
-				__SDMMC_ENABLE_IT(ctx->sdmmc,
+				__SDMMC_ENABLE_IT(sdmmc,
 						  (SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT |
 						   SDMMC_IT_TXUNDERR | SDMMC_IT_DATAEND));
 			} else {
 				ctx->xfer_ctx |= SD_CONTEXT_IT;
-				__SDMMC_ENABLE_IT(ctx->sdmmc,
+				__SDMMC_ENABLE_IT(sdmmc,
 						  (SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT |
 						   SDMMC_IT_TXUNDERR | SDMMC_IT_DATAEND |
 						   SDMMC_FLAG_TXFIFOHE));
@@ -1162,7 +1161,6 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd,
 			      struct sdhc_data *data)
 {
-	const struct sdhc_stm32_config *cfg = dev->config;
 	unsigned int retries = cmd->retries + 1;
 	int busy_timeout = 5000;
 	int ret;
@@ -1228,9 +1226,8 @@ static void sdhc_stm32_card_detect_handler(struct k_work *item)
 	struct sdhc_stm32_data *ctx = CONTAINER_OF(item,
 						   struct sdhc_stm32_data,
 						   cd_work);
-	const struct device *dev = CONTAINER_OF(ctx, struct device, data);
 
-	if (sdhc_stm32_get_card_present(dev)) {
+	if (sdhc_stm32_get_card_present(ctx->dev)) {
 		LOG_DBG("card inserted");
 		// FIXME ctx->status = DISK_STATUS_UNINIT;
 	} else {
@@ -1451,6 +1448,7 @@ static int sdhc_stm32_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	ctx->dev = dev;
 	cfg->irq_config(dev);
 
 	/* Initialize semaphores */
