@@ -934,6 +934,38 @@ static void sdhc_stm32_cfg_data(SDMMC_TypeDef *sdmmc, uint32_t dat_len, uint32_t
 	}
 }
 
+static int sdhc_stm32_sdmmc_read_blocks(struct sdhc_stm32_data *ctx,
+					struct sdhc_command *cmd, struct sdhc_data *data)
+{
+	SDMMC_TypeDef *sdmmc = ctx->sdmmc;
+	int ret;
+
+	if (cmd->opcode == SD_READ_SINGLE_BLOCK) {
+		ctx->xfer_ctx = (SD_CONTEXT_READ_SINGLE_BLOCK | SD_CONTEXT_DMA);
+	} else {
+		ctx->xfer_ctx = (SD_CONTEXT_READ_MULTIPLE_BLOCK | SD_CONTEXT_DMA);
+	}
+
+	ctx->num_blocks = data->blocks;
+	ctx->rx_buffer  = data->data;
+	ctx->rx_xfer_sz = data->blocks * BLOCKSIZE;
+	sdhc_stm32_cfg_data(sdmmc, ctx->rx_xfer_sz, SDMMC_DATABLOCK_SIZE_512B,
+			    SDMMC_TRANSFER_DIR_TO_SDMMC, SDMMC_DPSM_DISABLE);
+	sdmmc->IDMABASER = (uint32_t)data->data;
+	sdmmc->IDMACTRL  = SDMMC_ENABLE_IDMA_SINGLE_BUFF;
+
+	ret = sdhc_stm32_snd_cmd(sdmmc, cmd, SDMMC_RESPONSE_SHORT);
+	if (ret == 0) {
+		/* Enable transfer interrupts */
+		__SDMMC_ENABLE_IT(sdmmc, (SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT |
+					  SDMMC_IT_RXOVERR  | SDMMC_IT_DATAEND));
+
+		ret = k_sem_take(&ctx->sync, K_MSEC(cmd->timeout_ms));
+	}
+
+	return ret;
+}
+
 static int sdhc_stm32_reset(const struct device *dev)
 {
 	const struct sdhc_stm32_config *cfg = dev->config;
@@ -1006,60 +1038,6 @@ static void SD_Write_Poll(struct sdhc_stm32_data *ctx, SDMMC_TypeDef *sdmmc) {
 #endif
 }
 
-static void SD_Read_Poll(struct sdhc_stm32_data *ctx, SDMMC_TypeDef *sdmmc) {
-	uint32_t dataremaining = ctx->rx_xfer_sz;
-	uint8_t *tempbuff = ctx->rx_buffer;
-
-	/* Poll on SDMMC flags */
-	while (!__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_RXOVERR | SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT | SDMMC_FLAG_DATAEND)) {
-		if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_RXFIFOHF) && (dataremaining >= SDMMC_FIFO_SIZE)) {
-			/* Read data from SDMMC Rx FIFO */
-			for (uint32_t count = 0U; count < (SDMMC_FIFO_SIZE / 4U); count++) {
-				uint32_t data = SDMMC_ReadFIFO(sdmmc);
-				*tempbuff = (uint8_t)(data & 0xFFU);
-				tempbuff++;
-				*tempbuff = (uint8_t)((data >> 8U) & 0xFFU);
-				tempbuff++;
-				*tempbuff = (uint8_t)((data >> 16U) & 0xFFU);
-				tempbuff++;
-				*tempbuff = (uint8_t)((data >> 24U) & 0xFFU);
-				tempbuff++;
-			}
-			dataremaining -= SDMMC_FIFO_SIZE;
-		}
-	}
-
-	ctx->rx_xfer_sz = dataremaining;
-	__SDMMC_CMDTRANS_DISABLE(sdmmc);
-
-	if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_DATAEND) && (ctx->num_blocks > 1U)) {
-		/* Send stop transmission command */
-		SDMMC_CmdStopTransfer(sdmmc);
-	}
-
-	/* Get error state */
-	if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_DTIMEOUT)) {
-		/* Clear all the static flags */
-		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_FLAGS);
-	} else if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_DCRCFAIL)) {
-		/* Clear all the static flags */
-		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_FLAGS);
-	} else if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_RXOVERR)) {
-		/* Clear all the static flags */
-		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_FLAGS);
-	} else {
-		/* Nothing to do */
-	}
-
-	/* Clear all the static flags */
-	__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
-
-#if (0)
-	while (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_DPSMACT)) {
-		k_busy_wait(125);
-	}
-#endif
-}
 
 static void SD_Read_IT(struct sdhc_stm32_data *ctx, const SDMMC_TypeDef *sdmmc)
 {
@@ -1122,6 +1100,8 @@ static void sdhc_stm32_isr(const struct device *dev)
 {
 	struct sdhc_stm32_data *ctx = dev->data;
 	SDMMC_TypeDef *sdmmc = ctx->sdmmc;
+	uint32_t xfer_ctx = ctx->xfer_ctx;
+	uint32_t errorstate;
 	uint32_t flags;
 
 	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[0], 1);          /* DBG_PIN0_HIGH */
@@ -1132,7 +1112,7 @@ static void sdhc_stm32_isr(const struct device *dev)
 		(void)k_work_submit(&ctx->sdio_work);
 	}
 
-	if ((flags & SDMMC_FLAG_RXFIFOHF) != 0U) {
+	if (((flags & SDMMC_FLAG_RXFIFOHF) != 0U) && ((xfer_ctx & SD_CONTEXT_IT) != 0U)) {
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_RXFIFOHF);
 
 		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[1], 1);  /* DBG_PIN1_HIGH */
@@ -1149,8 +1129,26 @@ static void sdhc_stm32_isr(const struct device *dev)
 		__SDMMC_DISABLE_IT(sdmmc, SDMMC_IT_IDMABTC);
 		__SDMMC_CMDTRANS_DISABLE(sdmmc);
 
-		/* Clear all the static flags */
-		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
+		if ((xfer_ctx & SD_CONTEXT_IT) != 0U) {
+			if ((xfer_ctx & (SD_CONTEXT_READ_MULTIPLE_BLOCK | SD_CONTEXT_WRITE_MULTIPLE_BLOCK)) != 0U) {
+				errorstate = SDMMC_CmdStopTransfer(ctx->sdmmc);
+				if (errorstate != SDMMC_ERROR_NONE) {
+					/* @todo HAL_SD_ErrorCallback */
+				}
+			}
+
+			/* Clear all the static flags */
+			__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
+			ctx->xfer_ctx = SD_CONTEXT_NONE;
+			if ((xfer_ctx & (SD_CONTEXT_READ_MULTIPLE_BLOCK | SD_CONTEXT_WRITE_MULTIPLE_BLOCK)) != 0U) {
+				/* HAL_SD_RxCpltCallback */
+				k_sem_give(&ctx->sync);
+			} else {
+				/* HAL_SD_TxCpltCallback */
+				k_sem_give(&ctx->sync);
+			}
+		}
+
 		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[2], 0);  /* DBG_PIN2_LOW */
 	} else if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_TXFIFOHE)) {
 		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[3], 1);  /* DBG_PIN3_HIGH */
@@ -1364,27 +1362,7 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 
 	case SD_READ_SINGLE_BLOCK:
 	case SD_READ_MULTIPLE_BLOCK: {
-		if (cmd->opcode == SD_READ_SINGLE_BLOCK) {
-			ctx->xfer_ctx = SD_CONTEXT_READ_SINGLE_BLOCK;
-		} else {
-			ctx->xfer_ctx = SD_CONTEXT_READ_MULTIPLE_BLOCK;
-		}
-
-		ctx->num_blocks = data->blocks;
-		ctx->rx_buffer  = data->data;
-		ctx->rx_xfer_sz = data->blocks * BLOCKSIZE;
-		sdhc_stm32_cfg_data(sdmmc, ctx->rx_xfer_sz, SDMMC_DATABLOCK_SIZE_512B,
-				    SDMMC_TRANSFER_DIR_TO_SDMMC, SDMMC_DPSM_DISABLE);
-		ret = sdhc_stm32_snd_cmd(sdmmc, cmd, SDMMC_RESPONSE_SHORT);
-		if (ret == 0) {
-			#if (1)
-			SD_Read_Poll(ctx, sdmmc);
-			#else
-			__SDMMC_ENABLE_IT(sdmmc, (SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT |
-						  SDMMC_IT_RXOVERR  | SDMMC_IT_DATAEND  |
-						  SDMMC_FLAG_RXFIFOHF));
-			#endif
-		}
+		ret = sdhc_stm32_sdmmc_read_blocks(ctx, cmd, data);
 		break;
 	}
 
@@ -1397,7 +1375,7 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 			ctx->rx_buffer  = data->data;
 			ctx->rx_xfer_sz = data->blocks * data->block_size;
 			sdhc_stm32_cfg_data(sdmmc, ctx->rx_xfer_sz, SDMMC_DATABLOCK_SIZE_64B,
-					SDMMC_TRANSFER_DIR_TO_SDMMC, SDMMC_DPSM_ENABLE);
+					    SDMMC_TRANSFER_DIR_TO_SDMMC, SDMMC_DPSM_ENABLE);
 			ret = sdhc_stm32_snd_cmd(sdmmc, cmd, SDMMC_RESPONSE_SHORT);
 			if (ret == 0) {
 				ret = sdhc_stm32_get_speed(sdmmc, cmd->timeout_ms, ctx->rx_buffer);
