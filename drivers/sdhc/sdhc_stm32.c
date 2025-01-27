@@ -932,6 +932,19 @@ static void sdhc_stm32_cfg_data(SDMMC_TypeDef *sdmmc, uint32_t dat_len, uint32_t
 	}
 }
 
+static inline void sdhc_stm32_idma_setup(SDMMC_TypeDef *sdmmc, uint8_t *data)
+{
+	#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	sdmmc->IDMABASE0 = (uint32_t)data;
+	#elif defined(CONFIG_SOC_SERIES_STM32H5X)
+	sdmmc->IDMABASER = (uint32_t)data;
+	#else
+	#error "Unsupported STM32 series"
+	#endif
+
+	sdmmc->IDMACTRL  = SDMMC_ENABLE_IDMA_SINGLE_BUFF;
+}
+
 static int sdhc_stm32_sdmmc_read_blocks(struct sdhc_stm32_data *ctx,
 					struct sdhc_command *cmd, struct sdhc_data *data)
 {
@@ -949,8 +962,7 @@ static int sdhc_stm32_sdmmc_read_blocks(struct sdhc_stm32_data *ctx,
 	ctx->rx_xfer_sz = data->blocks * BLOCKSIZE;
 	sdhc_stm32_cfg_data(sdmmc, ctx->rx_xfer_sz, SDMMC_DATABLOCK_SIZE_512B,
 			    SDMMC_TRANSFER_DIR_TO_SDMMC, SDMMC_DPSM_DISABLE);
-	sdmmc->IDMABASER = (uint32_t)data->data;
-	sdmmc->IDMACTRL  = SDMMC_ENABLE_IDMA_SINGLE_BUFF;
+	sdhc_stm32_idma_setup(sdmmc, ctx->rx_buffer);
 
 	ret = sdhc_stm32_snd_cmd(sdmmc, cmd, SDMMC_RESPONSE_SHORT);
 	if (ret == 0) {
@@ -981,8 +993,7 @@ static int sdhc_stm32_sdmmc_write_blocks(struct sdhc_stm32_data *ctx,
 	ctx->tx_xfer_sz = data->blocks * BLOCKSIZE;
 	sdhc_stm32_cfg_data(sdmmc, ctx->tx_xfer_sz, SDMMC_DATABLOCK_SIZE_512B,
 				SDMMC_TRANSFER_DIR_TO_CARD, SDMMC_DPSM_DISABLE);
-	sdmmc->IDMABASER = (uint32_t)data->data;
-	sdmmc->IDMACTRL  = SDMMC_ENABLE_IDMA_SINGLE_BUFF;
+	sdhc_stm32_idma_setup(sdmmc, ctx->tx_buffer);
 	ret = sdhc_stm32_snd_cmd(sdmmc, cmd, SDMMC_RESPONSE_SHORT);
 	if (ret == 0) {
 		/* Enable transfer interrupts */

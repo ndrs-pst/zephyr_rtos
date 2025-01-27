@@ -259,7 +259,7 @@ static void update_metairq_preempt(struct k_thread* thread) {
         /* Record new preemption */
         _current_cpu->metairq_preempted = _current;
     }
-    else if (!thread_is_metairq(thread) && !z_is_idle_thread_object(thread)) {
+    else if (!thread_is_metairq(thread)) {
         /* Returning from existing preemption */
         _current_cpu->metairq_preempted = NULL;
     }
