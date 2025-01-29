@@ -1,5 +1,10 @@
 :orphan:
 
+..
+  See
+  https://docs.zephyrproject.org/latest/releases/index.html#migration-guides
+  for details of what is supposed to go into this document.
+
 .. _migration_4.1:
 
 Migration guide to Zephyr v4.1.0 (Working Draft)
@@ -506,6 +511,11 @@ Networking
   changed, a :c:struct:`http_request_ctx` parameter has been added. The application may use this to
   access the request headers of the HTTP upgrade request, which may be useful in deciding whether
   to accept or reject a websocket connection.
+
+* An additional ``_res_fallback`` parameter has been added to the :c:macro:`HTTP_SERVICE_DEFINE`
+  and :c:macro:`HTTPS_SERVICE_DEFINE` macros, allowing a fallback resource to be served if no other
+  resources match the requested path. To retain the existing behaviour, ``NULL`` can be passed as the
+  additional parameter.
 
 * The :kconfig:option:`CONFIG_NET_L2_OPENTHREAD` symbol no longer implies the
   :kconfig:option:`CONFIG_NVS` Kconfig option. Platforms using OpenThread must explicitly enable

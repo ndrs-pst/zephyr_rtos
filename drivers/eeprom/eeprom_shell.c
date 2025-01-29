@@ -206,9 +206,15 @@ static int cmd_fill(const struct shell* sh, size_t argc, char** argv) {
     return (0);
 }
 
+STRUCT_SECTION_START_EXTERN(Z_DEVICE_API_TYPE(eeprom));
+STRUCT_SECTION_END_EXTERN(Z_DEVICE_API_TYPE(eeprom));
+static bool device_is_eeprom(const struct device* dev) {
+    return DEVICE_API_IS(eeprom, dev);
+}
+
 /* Device name autocompletion support */
 static void device_name_get(size_t idx, struct shell_static_entry* entry) {
-    const struct device* dev = shell_device_lookup(idx, NULL);
+    const struct device* dev = shell_device_filter(idx, device_is_eeprom);
 
     entry->syntax  = (dev != NULL) ? dev->name : NULL;
     entry->handler = NULL;

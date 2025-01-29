@@ -1122,9 +1122,9 @@ static inline int32_t z_vrfy_k_usleep(int32_t us) {
 void z_impl_k_wakeup(k_tid_t thread) {
     SYS_PORT_TRACING_OBJ_FUNC(k_thread, wakeup, thread);
 
-    z_abort_thread_timeout(thread);
+    k_spinlock_key_t  key = k_spin_lock(&_sched_spinlock);
 
-    k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+    z_abort_thread_timeout(thread);
 
     if (!z_is_thread_sleeping(thread)) {
         k_spin_unlock(&_sched_spinlock, key);

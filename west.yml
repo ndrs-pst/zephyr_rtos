@@ -238,7 +238,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 08b45d76fecbd5575f972716cdd60e1ae6932816
+      revision: 920d3c7ec7952c0bfa05e7c5ade8b0e085045726
       path: modules/hal/stm32
       groups:
         - hal
@@ -303,7 +303,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 3e2c4136359b3be8fba21546a34c5c2e85290e05
+      revision: c7979ef748c72137ea07cc7cdc3695e5a4bd3e86
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -331,7 +331,7 @@ manifest:
       path: modules/lib/openthread
     - name: percepio
       path: modules/debug/percepio
-      revision: 388c2937db94f76ecba90b3e24542b03b88f1837
+      revision: 49e6dc202aa38c2a3edbafcc2dab85dec6aee973
       groups:
         - debug
     - name: picolibc
