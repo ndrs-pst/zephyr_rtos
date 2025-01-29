@@ -142,6 +142,9 @@ struct gnss_info {
     /** Horizontal dilution of precision in 1/1000 */
     uint32_t hdop;
 
+    /** Geoid separation in millimeters */
+    int32_t geoid_separation;
+
     /** The fix status */
     enum gnss_fix_status fix_status;
 
