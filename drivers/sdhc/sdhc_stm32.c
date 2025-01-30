@@ -63,6 +63,7 @@ struct sdhc_stm32_config {
 	const struct pinctrl_dev_config *pcfg;
 	const struct reset_dt_spec reset;
 
+	bool use_dma;
 	bool detect_dat3;
 	bool detect_cd;
 
@@ -79,12 +80,10 @@ struct sdhc_stm32_data {
 	struct gpio_callback cd_cb;
 	int status;
 
-	uint32_t ercd; /*!< SDIO Card Error codes */
 	HAL_SDIO_StateTypeDef state;
 	uint32_t xfer_ctx;
 	uint32_t prev_opcode;
 
-	bool use_dma;
 	bool card_present;
 
 	uint32_t num_blocks;
@@ -543,8 +542,8 @@ static int sdhc_stm32_get_scr(SDMMC_TypeDef *sdmmc, int timeout_ms, uint8_t* scr
 	while (!__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_RXOVERR | SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT | SDMMC_FLAG_DBCKEND |
 					SDMMC_FLAG_DATAEND)) {
 		if ((!__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_RXFIFOE)) && (index == 0U)) {
-			tempscr[0] = SDMMC_ReadFIFO(sdmmc);
-			tempscr[1] = SDMMC_ReadFIFO(sdmmc);
+			tempscr[0] = sdmmc->FIFO;
+			tempscr[1] = sdmmc->FIFO;
 			index++;
 		}
 
@@ -582,7 +581,7 @@ static int sdhc_stm32_get_speed(SDMMC_TypeDef *sdmmc, int timeout_ms, uint8_t* s
 					SDMMC_FLAG_DBCKEND | SDMMC_FLAG_DATAEND)) {
 		if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_RXFIFOHF)) {
 			for (uint32_t count = 0U; count < 8U; count++) {
-				uint32_t data = SDMMC_ReadFIFO(sdmmc);
+				uint32_t data = sdmmc->FIFO;
 
 				sys_put_le32(data, &status[(32U * loop) + (4 * count)]);
 			}
@@ -844,6 +843,8 @@ static int sdhc_stm32_sdio_rw_extend(struct sdhc_stm32_data *ctx, struct sdhc_co
 				     const struct sdhc_data *data)
 {
 	SDMMC_TypeDef *sdmmc = ctx->sdmmc;
+	struct device *dev = ctx->dev;
+	struct sdhc_stm32_config *cfg = dev->config;
 	SDMMC_DataInitTypeDef config;
 	uint32_t dir;
 	uint32_t arg;
@@ -892,7 +893,7 @@ static int sdhc_stm32_sdio_rw_extend(struct sdhc_stm32_data *ctx, struct sdhc_co
 		return -EIO;
 	}
 
-	if (ctx->use_dma) {
+	if (cfg->use_dma) {
 		/* @todo */
 	} else {
 		if (arg & BIT(SDIO_CMD_ARG_RW_SHIFT)) {
@@ -1023,7 +1024,7 @@ static sdhc_stm32_fc_enable(SDMMC_TypeDef *sdmmc)
 }
 #endif
 
-static void SD_Read_IT(struct sdhc_stm32_data *ctx, const SDMMC_TypeDef *sdmmc)
+static void sdhc_stm32_read_it(struct sdhc_stm32_data *ctx, const SDMMC_TypeDef *sdmmc)
 {
 	uint32_t count;
 	uint32_t data;
@@ -1034,7 +1035,7 @@ static void SD_Read_IT(struct sdhc_stm32_data *ctx, const SDMMC_TypeDef *sdmmc)
 	if (ctx->rx_xfer_sz >= SDMMC_FIFO_SIZE) {
 		/* Read data from SDMMC Rx FIFO */
 		for (count = 0U; count < (SDMMC_FIFO_SIZE / 4U); count++) {
-			data = SDMMC_ReadFIFO(sdmmc);
+			data = sdmmc->FIFO;
 			*tmp = (uint8_t)(data & 0xFFU);
 			tmp++;
 			*tmp = (uint8_t)((data >> 8U) & 0xFFU);
@@ -1054,7 +1055,7 @@ static void SD_Read_IT(struct sdhc_stm32_data *ctx, const SDMMC_TypeDef *sdmmc)
 	}
 }
 
-static void SD_Write_IT(struct sdhc_stm32_data *ctx, SDMMC_TypeDef *sdmmc) {
+static void sdhc_stm32_write_it(struct sdhc_stm32_data *ctx, SDMMC_TypeDef *sdmmc) {
 	uint32_t count;
 	uint32_t data;
 	uint8_t *tmp;
@@ -1072,7 +1073,7 @@ static void SD_Write_IT(struct sdhc_stm32_data *ctx, SDMMC_TypeDef *sdmmc) {
 			tmp++;
 			data |= ((uint32_t)(*tmp) << 24U);
 			tmp++;
-			(void)SDMMC_WriteFIFO(sdmmc, &data);
+			sdmmc->FIFO = data;
 		}
 
 		ctx->tx_buffer = tmp;
@@ -1100,7 +1101,7 @@ static void sdhc_stm32_isr(const struct device *dev)
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_RXFIFOHF);
 
 		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[1], 1);  /* DBG_PIN1_HIGH */
-		SD_Read_IT(ctx, sdmmc);
+		sdhc_stm32_read_it(ctx, sdmmc);
 		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[1], 0);  /* DBG_PIN1_LOW */
 	} else if ((flags & SDMMC_FLAG_DATAEND) != 0U) {
 		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[2], 1);  /* DBG_PIN2_HIGH */
@@ -1146,6 +1147,7 @@ static void sdhc_stm32_isr(const struct device *dev)
 			}
 
 			ctx->xfer_ctx = SD_CONTEXT_NONE;
+			ctx->status   = SDMMC_ERROR_NONE;
 			if ((xfer_ctx & (SD_CONTEXT_READ_MULTIPLE_BLOCK | SD_CONTEXT_WRITE_MULTIPLE_BLOCK)) != 0U) {
 				/* HAL_SD_RxCpltCallback */
 				k_sem_give(&ctx->sync);
@@ -1162,10 +1164,10 @@ static void sdhc_stm32_isr(const struct device *dev)
 		   ((xfer_ctx & SD_CONTEXT_IT) != 0U)) {
 		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[3], 1);  /* DBG_PIN3_HIGH */
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_TXFIFOHE);
-		SD_Write_IT(ctx, sdmmc);
+		sdhc_stm32_write_it(ctx, sdmmc);
 		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[3], 0);  /* DBG_PIN3_LOW */
-	} else if (__SDMMC_GET_FLAG(sdmmc, (SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT |
-					    SDMMC_FLAG_RXOVERR  | SDMMC_FLAG_TXUNDERR))) {
+	} else if ((flags & (SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT |
+			     SDMMC_FLAG_RXOVERR  | SDMMC_FLAG_TXUNDERR)) != 0U) {
 		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[5], 1);  /* DBG_PIN5_HIGH */
 		/* Clear All flags */
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
@@ -1199,6 +1201,8 @@ static void sdhc_stm32_isr(const struct device *dev)
 			/* Nothing to do */
 		}
 
+		ctx->status = flags & (SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT |
+				       SDMMC_FLAG_RXOVERR  | SDMMC_FLAG_TXUNDERR);
 		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[5], 0);  /* DBG_PIN5_LOW */
 	} else if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_IDMABTC)) {
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_IDMABTC);
@@ -1393,7 +1397,7 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 		ret = sdhc_stm32_snd_cmd(sdmmc, cmd, SDMMC_RESPONSE_SHORT);
 		break;
 
-	case SDIO_RW_DIRECT: {              /* HAL_SDIO_ReadDirect */
+	case SDIO_RW_DIRECT: {              /* HAL_SDIO_ReadDirect, HAL_SDIO_WriteDirect */
 		ret = sdhc_stm32_sdio_rw_direct(sdmmc, cmd);
 		break;
 	}
@@ -1776,7 +1780,7 @@ static int sdhc_stm32_init(const struct device *dev)
 
 	ret = sdhc_stm32_pwr_init(cfg);
 	if (ret) {
-		goto err_pwr;
+		goto err_card_detect;
 	}
 
 	ret = sdhc_stm32_registers_configure(dev);
@@ -1803,6 +1807,9 @@ static int sdhc_stm32_init(const struct device *dev)
 	return 0;
 
 err_pwr:
+	sdhc_stm32_pwr_uninit(cfg);
+
+err_card_detect:
 	sdhc_stm32_card_detect_uninit(dev);
 
 	return ret;
@@ -1839,6 +1846,7 @@ static DEVICE_API(sdhc, sdhc_stm32_api) = {
 		.cd_gpio = GPIO_DT_SPEC_INST_GET_OR(n, cd_gpios, {0}),                             \
 		.pwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, pwr_gpios, {0}),                           \
 		.reset = RESET_DT_SPEC_INST_GET(n),                                                \
+		.use_dma = DT_INST_PROP(n, idma),                                                  \
 		.props = {.is_spi = false,                                                         \
 			  .f_max = DT_INST_PROP(n, max_bus_freq),                                  \
 			  .f_min = DT_INST_PROP(n, min_bus_freq),                                  \
