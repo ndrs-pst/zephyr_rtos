@@ -100,15 +100,6 @@ struct sdhc_stm32_data {
 	void (*io_func_cb[SDIO_MAX_IO_NUMBER])(struct sdhc_stm32_data *data, uint32_t func);
 };
 
-#ifdef CONFIG_SDHC_STM32_HWFC
-static void stm32_sdmmc_fc_enable(struct stm32_sdmmc_priv *priv)
-{
-	MMC_TypeDef *sdmmcx = priv->hsd.Instance;
-
-	sdmmcx->CLKCR |= SDMMC_CLKCR_HWFC_EN;
-}
-#endif
-
 static int sdhc_stm32_clock_enable(const struct sdhc_stm32_config *cfg)
 {
 	const struct device *clock;
@@ -467,47 +458,35 @@ static int sdhc_stm32_get_resp(SDMMC_TypeDef *sdmmc, struct sdhc_command *cmd)
 
 	case SD_RSP_TYPE_R1:
 	case SD_RSP_TYPE_R1b:
+	case SD_RSP_TYPE_R5:
 		ret = sdhc_stm32_get_resp1_ll(sdmmc, cmd->timeout_ms, cmd->opcode);
 		if (ret == 0) {
-			cmd->response[0] = SDMMC_GetResponse(sdmmc, SDMMC_RESP1);
+			cmd->response[0] = sdmmc->RESP1;
 		}
 		break;
 
 	case SD_RSP_TYPE_R2:
 		ret = sdhc_stm32_get_resp2_ll(sdmmc, cmd->timeout_ms);
 		if (ret == 0) {
-			cmd->response[0] = SDMMC_GetResponse(sdmmc, SDMMC_RESP1);
-			cmd->response[1] = SDMMC_GetResponse(sdmmc, SDMMC_RESP2);
-			cmd->response[2] = SDMMC_GetResponse(sdmmc, SDMMC_RESP3);
-			cmd->response[3] = SDMMC_GetResponse(sdmmc, SDMMC_RESP4);
+			cmd->response[0] = sdmmc->RESP1;
+			cmd->response[1] = sdmmc->RESP2;
+			cmd->response[2] = sdmmc->RESP3;
+			cmd->response[3] = sdmmc->RESP4;
 		}
 		break;
 
 	case SD_RSP_TYPE_R3:
+	case SD_RSP_TYPE_R4:
 		ret = sdhc_stm32_get_resp3_ll(sdmmc, cmd->timeout_ms);
 		if (ret == 0) {
-			cmd->response[0] = SDMMC_GetResponse(sdmmc, SDMMC_RESP1);
-		}
-		break;
-
-	case SD_RSP_TYPE_R4:
-	case SD_RSP_TYPE_R5:
-		ret = sdhc_stm32_get_resp1_ll(sdmmc, cmd->timeout_ms, cmd->opcode);
-		if (ret == 0) {
-			/* We have received response, retrieve it for analysis  */
-			cmd->response[0] = SDMMC_GetResponse(sdmmc, SDMMC_RESP1);
-			if (rsp_type == SD_RSP_TYPE_R2) {
-				cmd->response[1] = SDMMC_GetResponse(sdmmc, SDMMC_RESP2);
-				cmd->response[2] = SDMMC_GetResponse(sdmmc, SDMMC_RESP3);
-				cmd->response[3] = SDMMC_GetResponse(sdmmc, SDMMC_RESP4);
-			}
+			cmd->response[0] = sdmmc->RESP1;
 		}
 		break;
 
 	case SD_RSP_TYPE_R6:
 		ret = sdhc_stm32_get_resp6_ll(sdmmc, cmd->timeout_ms, cmd->opcode);
 		if (ret == 0) {
-			cmd->response[0] = SDMMC_GetResponse(sdmmc, SDMMC_RESP1);
+			cmd->response[0] = sdmmc->RESP1;
 			if ((cmd->response[0] & (SDMMC_R6_GENERAL_UNKNOWN_ERROR | SDMMC_R6_ILLEGAL_CMD |
 						 SDMMC_R6_COM_CRC_FAILED)) != 0U) {
 				ret = -EIO;
@@ -518,7 +497,7 @@ static int sdhc_stm32_get_resp(SDMMC_TypeDef *sdmmc, struct sdhc_command *cmd)
 	case SD_RSP_TYPE_R7:
 		ret = sdhc_stm32_get_resp7_ll(sdmmc, cmd->timeout_ms);
 		if (ret == 0) {
-			cmd->response[0] = SDMMC_GetResponse(sdmmc, SDMMC_RESP1);
+			cmd->response[0] = sdmmc->RESP1;
 		}
 		break;
 
@@ -647,7 +626,7 @@ static int sdhc_stm32_sdio_rd_direct(SDMMC_TypeDef *sdmmc, uint32_t func_num, ui
 		__SDMMC_CMDTRANS_DISABLE(sdmmc);
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
 
-		*data_out = (uint8_t)SDMMC_GetResponse(sdmmc, SDMMC_RESP1);
+		*data_out = (uint8_t)sdmmc->RESP1;
 	}
 
 	return ret;
@@ -696,7 +675,7 @@ static int sdhc_stm32_sdio_rw_direct(SDMMC_TypeDef *sdmmc, struct sdhc_command *
 		__SDMMC_CMDTRANS_DISABLE(sdmmc);
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
 
-		cmd->response[0] = SDMMC_GetResponse(sdmmc, SDMMC_RESP1);
+		cmd->response[0] = sdmmc->RESP1;
 	}
 
 	return ret;
@@ -1015,7 +994,7 @@ static int sdhc_stm32_reset(const struct device *dev)
 }
 
 #if CONFIG_SDHC_STM32_HWFC
-static sdhc_stm32_fc_enable(SDMMC_TypeDef *sdmmc)
+static void sdhc_stm32_fc_enable(SDMMC_TypeDef *sdmmc)
 {
 	sdmmc->CLKCR |= SDMMC_CLKCR_HWFC_EN;
 }
