@@ -376,7 +376,7 @@ int z_impl_net_addr_pton(sa_family_t family, char const* src,
                     return (-EINVAL);
                 }
 
-                addr->s4_addr[index] = value;
+                addr->s4_addr[index] = (uint8_t)value;
 
                 if (*src == '\0') {
                     break;
