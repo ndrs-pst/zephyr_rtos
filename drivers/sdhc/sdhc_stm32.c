@@ -279,23 +279,48 @@ static int sdhc_stm32_get_cmd_err(SDMMC_TypeDef *sdmmc, int timeout_ms) {
 	return 0;
 }
 
-static int sdhc_stm32_get_resp1_ll(SDMMC_TypeDef *sdmmc, int timeout_ms, uint32_t opcode)
-{
+static int sdhc_stm32_get_resp_wait(SDMMC_TypeDef *sdmmc, int timeout_ms, uint32_t wait_flg) {
 	uint32_t sta_reg;
+	int timeout_us = 1000;
 
-	while (true) {
+	/* Busy waiting for the first 1 ms in the hope that we will get the response */
+	while (timeout_us-- > 0) {
 		sta_reg = sdmmc->STA;
 
-		if (((sta_reg & (SDMMC_FLAG_CCRCFAIL | SDMMC_FLAG_CMDREND | SDMMC_FLAG_CTIMEOUT |
-				 SDMMC_FLAG_BUSYD0END)) != 0U) &&
+		if (((sta_reg & wait_flg) != 0U) &&
 		    ((sta_reg & SDMMC_FLAG_CMDACT) == 0U)) {
-			break;
+			return 0;
+		}
+
+		k_busy_wait(1);
+	}
+	/* First 1 ms is already spent */
+	timeout_ms--;
+
+	/* Since the first 1 ms is not successful, switch to wait in 1 ms each instead */
+	while (timeout_ms-- > 0) {
+		sta_reg = sdmmc->STA;
+
+		if (((sta_reg & wait_flg) != 0U) &&
+		    ((sta_reg & SDMMC_FLAG_CMDACT) == 0U)) {
+			return 0;
 		}
 
 		k_msleep(1);
-		if (timeout_ms-- <= 0) {
-			return -ETIMEDOUT;
-		}
+	}
+
+	return -ETIMEDOUT;
+}
+
+static int sdhc_stm32_get_resp1_ll(SDMMC_TypeDef *sdmmc, int timeout_ms, uint32_t opcode)
+{
+	int ret;
+
+	ret = sdhc_stm32_get_resp_wait(sdmmc, timeout_ms,
+				       (SDMMC_FLAG_CCRCFAIL | SDMMC_FLAG_CMDREND |
+					SDMMC_FLAG_CTIMEOUT | SDMMC_FLAG_BUSYD0END));
+	if (ret) {
+		return ret;
 	}
 
 	if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_CTIMEOUT)) {
@@ -321,20 +346,13 @@ static int sdhc_stm32_get_resp1_ll(SDMMC_TypeDef *sdmmc, int timeout_ms, uint32_
 
 static int sdhc_stm32_get_resp2_ll(SDMMC_TypeDef *sdmmc, int timeout_ms)
 {
-	uint32_t sta_reg;
+	int ret;
 
-	while (true) {
-		sta_reg = sdmmc->STA;
-
-		if (((sta_reg & (SDMMC_FLAG_CCRCFAIL | SDMMC_FLAG_CMDREND | SDMMC_FLAG_CTIMEOUT)) != 0U) &&
-		    ((sta_reg & SDMMC_FLAG_CMDACT) == 0U)) {
-			break;
-		}
-
-		k_msleep(1);
-		if (timeout_ms-- <= 0) {
-			return -ETIMEDOUT;
-		}
+	ret = sdhc_stm32_get_resp_wait(sdmmc, timeout_ms,
+				       (SDMMC_FLAG_CCRCFAIL | SDMMC_FLAG_CMDREND |
+					SDMMC_FLAG_CTIMEOUT));
+	if (ret) {
+		return ret;
 	}
 
 	if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_CTIMEOUT)) {
@@ -353,20 +371,13 @@ static int sdhc_stm32_get_resp2_ll(SDMMC_TypeDef *sdmmc, int timeout_ms)
 
 static int sdhc_stm32_get_resp3_ll(SDMMC_TypeDef *sdmmc, int timeout_ms)
 {
-	uint32_t sta_reg;
+	int ret;
 
-	while (true) {
-		sta_reg = sdmmc->STA;
-
-		if (((sta_reg & (SDMMC_FLAG_CCRCFAIL | SDMMC_FLAG_CMDREND | SDMMC_FLAG_CTIMEOUT)) != 0U) &&
-		    ((sta_reg & SDMMC_FLAG_CMDACT) == 0U)) {
-			break;
-		}
-
-		k_msleep(1);
-		if (timeout_ms-- <= 0) {
-			return -ETIMEDOUT;
-		}
+	ret = sdhc_stm32_get_resp_wait(sdmmc, timeout_ms,
+				       (SDMMC_FLAG_CCRCFAIL | SDMMC_FLAG_CMDREND |
+					SDMMC_FLAG_CTIMEOUT));
+	if (ret) {
+		return ret;
 	}
 
 	if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_CTIMEOUT)) {
@@ -382,20 +393,13 @@ static int sdhc_stm32_get_resp3_ll(SDMMC_TypeDef *sdmmc, int timeout_ms)
 
 static int sdhc_stm32_get_resp6_ll(SDMMC_TypeDef *sdmmc, int timeout_ms, uint32_t opcode)
 {
-	uint32_t sta_reg;
+	int ret;
 
-	while (true) {
-		sta_reg = sdmmc->STA;
-
-		if (((sta_reg & (SDMMC_FLAG_CCRCFAIL | SDMMC_FLAG_CMDREND | SDMMC_FLAG_CTIMEOUT)) != 0U) &&
-		    ((sta_reg & SDMMC_FLAG_CMDACT) == 0U)) {
-			break;
-		}
-
-		k_msleep(1);
-		if (timeout_ms-- <= 0) {
-			return -ETIMEDOUT;
-		}
+	ret = sdhc_stm32_get_resp_wait(sdmmc, timeout_ms,
+				       (SDMMC_FLAG_CCRCFAIL | SDMMC_FLAG_CMDREND |
+					SDMMC_FLAG_CTIMEOUT));
+	if (ret) {
+		return ret;
 	}
 
 	if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_CTIMEOUT)) {
@@ -421,20 +425,13 @@ static int sdhc_stm32_get_resp6_ll(SDMMC_TypeDef *sdmmc, int timeout_ms, uint32_
 
 static int sdhc_stm32_get_resp7_ll(SDMMC_TypeDef *sdmmc, int timeout_ms)
 {
-	uint32_t sta_reg;
+	int ret;
 
-	while (true) {
-		sta_reg = sdmmc->STA;
-
-		if (((sta_reg & (SDMMC_FLAG_CCRCFAIL | SDMMC_FLAG_CMDREND | SDMMC_FLAG_CTIMEOUT)) != 0U) &&
-		    ((sta_reg & SDMMC_FLAG_CMDACT) == 0U)) {
-			break;
-		}
-
-		k_msleep(1);
-		if (timeout_ms-- <= 0) {
-			return -ETIMEDOUT;
-		}
+	ret = sdhc_stm32_get_resp_wait(sdmmc, timeout_ms,
+				       (SDMMC_FLAG_CCRCFAIL | SDMMC_FLAG_CMDREND |
+					SDMMC_FLAG_CTIMEOUT));
+	if (ret) {
+		return ret;
 	}
 
 	if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_CTIMEOUT)) {
