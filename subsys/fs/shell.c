@@ -181,7 +181,7 @@ static int cmd_ls(const struct shell* sh, size_t argc, char** argv) {
         return -ENOEXEC;
     }
 
-    while (1) {
+    while (true) {
         struct fs_dirent entry;
 
         err = fs_readdir(&dir, &entry);
@@ -340,20 +340,21 @@ static int cmd_read(const struct shell* sh, size_t argc, char** argv) {
             break;
         }
 
-        shell_fprintf(sh, SHELL_NORMAL, "%08X  ", (uint32_t)offset);
-
+        shell_fprintf_normal(sh, "%08X  ", (uint32_t)offset);
         for (i = 0; i < read; i++) {
-            shell_fprintf(sh, SHELL_NORMAL, "%02X ", buf[i]);
+            shell_fprintf_normal(sh, "%02X ", buf[i]);
         }
+
         for (; i < sizeof(buf); i++) {
-            shell_fprintf(sh, SHELL_NORMAL, "   ");
+            shell_fprintf_normal(sh, "   ");
         }
+
         i = sizeof(buf) - i;
-        shell_fprintf(sh, SHELL_NORMAL, "%*c", i * 3, ' ');
+        shell_fprintf_normal(sh, "%*c", i * 3, ' ');
 
         for (i = 0; i < read; i++) {
-            shell_fprintf(sh, SHELL_NORMAL, "%c", buf[i] < 32 ||
-                          buf[i] > 127 ? '.' : buf[i]);
+            shell_fprintf_normal(sh, "%c", buf[i] < 32 ||
+                                 buf[i] > 127 ? '.' : buf[i]);
         }
 
         shell_print(sh, "");
@@ -405,7 +406,7 @@ static int cmd_cat(const struct shell* sh, size_t argc, char** argv) {
             }
 
             for (int j = 0; j < read; j++) {
-                shell_fprintf(sh, SHELL_NORMAL, "%c", buf[j]);
+                shell_fprintf_normal(sh, "%c", buf[j]);
             }
         }
 
@@ -433,9 +434,8 @@ static int cmd_statvfs(const struct shell* sh, size_t argc, char** argv) {
         return -ENOEXEC;
     }
 
-    shell_fprintf(sh, SHELL_NORMAL,
-                  "bsize %lu, frsize %lu, blocks %lu, bfree %lu\n",
-                  stat.f_bsize, stat.f_frsize, stat.f_blocks, stat.f_bfree);
+    shell_fprintf_normal(sh, "bsize %lu, frsize %lu, blocks %lu, bfree %lu\n",
+                         stat.f_bsize, stat.f_frsize, stat.f_blocks, stat.f_bfree);
 
     return 0;
 }
@@ -478,6 +478,7 @@ static int cmd_write(const struct shell* sh, size_t argc, char** argv) {
     else {
         err = fs_seek(&file, offset, FS_SEEK_SET);
     }
+
     if (err) {
         shell_error(sh, "Failed to seek %s (%d)", path, err);
         fs_close(&file);
@@ -595,7 +596,7 @@ static int cmd_read_test(const struct shell* sh, size_t argc, char** argv) {
 
         /* Read data in chunk by chunk until the full size has been read */
         i = 0;
-        while (1) {
+        while (true) {
             err = fs_read(&file, random_data, sizeof(random_data));
             if (err < 0) {
                 shell_error(sh, "Failed to write %s (%d)",
