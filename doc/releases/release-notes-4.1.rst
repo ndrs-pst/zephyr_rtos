@@ -79,6 +79,10 @@ Removed APIs and options
 
 * :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO`
 
+* The :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE` option has been removed
+  after being deprecated in favor of :kconfig:option:`CONFIG_PM_DEVICE_SYSTEM_MANAGED`.
+
+
 Deprecated APIs and options
 ===========================
 
@@ -298,6 +302,9 @@ New Drivers
    * :dtcompatible:`ti,ads131m02`
    * :dtcompatible:`ti,tla2022`
    * :dtcompatible:`ti,tla2024`
+   * :dtcompatible:`ti,ads114s06`
+   * :dtcompatible:`ti,ads124s06`
+   * :dtcompatible:`ti,ads124s08`
 
 * ARM architecture
 

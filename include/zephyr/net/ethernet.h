@@ -638,11 +638,9 @@ struct ethernet_vlan {
 };
 
 #if defined(CONFIG_NET_VLAN_COUNT)
-#define NET_VLAN_MAX_COUNT CONFIG_NET_VLAN_COUNT
+#define NET_VLAN_MAX_COUNT  CONFIG_NET_VLAN_COUNT
 #else
-/* Even thou there are no VLAN support, the minimum count must be set to 1.
- */
-#define NET_VLAN_MAX_COUNT 1
+#define NET_VLAN_MAX_COUNT  0
 #endif
 
 /** @endcond */
@@ -703,7 +701,14 @@ struct ethernet_context {
     struct net_if* iface;
 
     #if defined(CONFIG_NET_LLDP)
-    struct ethernet_lldp lldp[NET_VLAN_MAX_COUNT];
+    #if (NET_VLAN_MAX_COUNT > 0)
+    #define NET_LLDP_MAX_COUNT NET_VLAN_MAX_COUNT
+    #else
+    #define NET_LLDP_MAX_COUNT 1
+    #endif /* (NET_VLAN_MAX_COUNT > 0) */
+
+    /** LLDP specific parameters */
+    struct ethernet_lldp lldp[NET_LLDP_MAX_COUNT];
     #endif
 
     /**
@@ -1002,7 +1007,7 @@ int net_eth_get_hw_config(struct net_if* iface, enum ethernet_config_type type,
  *
  * @return 0 if ok, <0 if error
  */
-#if defined(CONFIG_NET_VLAN)
+#if defined(CONFIG_NET_VLAN) && (NET_VLAN_MAX_COUNT > 0)
 int net_eth_vlan_enable(struct net_if* iface, uint16_t tag);
 #else
 static inline int net_eth_vlan_enable(struct net_if* iface, uint16_t tag) {
@@ -1021,7 +1026,7 @@ static inline int net_eth_vlan_enable(struct net_if* iface, uint16_t tag) {
  *
  * @return 0 if ok, <0 if error
  */
-#if defined(CONFIG_NET_VLAN)
+#if defined(CONFIG_NET_VLAN) && (NET_VLAN_MAX_COUNT > 0)
 int net_eth_vlan_disable(struct net_if* iface, uint16_t tag);
 #else
 static inline int net_eth_vlan_disable(struct net_if* iface, uint16_t tag) {
@@ -1043,7 +1048,7 @@ static inline int net_eth_vlan_disable(struct net_if* iface, uint16_t tag) {
  * @return VLAN tag for this interface or NET_VLAN_TAG_UNSPEC if VLAN
  * is not configured for that interface.
  */
-#if defined(CONFIG_NET_VLAN)
+#if defined(CONFIG_NET_VLAN) && (NET_VLAN_MAX_COUNT > 0)
 uint16_t net_eth_get_vlan_tag(struct net_if* iface);
 #else
 static inline uint16_t net_eth_get_vlan_tag(struct net_if* iface) {
@@ -1083,7 +1088,7 @@ struct net_if* net_eth_get_vlan_iface(struct net_if* iface, uint16_t tag) {
  * @return Network interface related to this tag or NULL if no such interface
  * exists.
  */
-#if defined(CONFIG_NET_VLAN)
+#if defined(CONFIG_NET_VLAN) && (NET_VLAN_MAX_COUNT > 0)
 struct net_if* net_eth_get_vlan_main(struct net_if* iface);
 #else
 static inline
@@ -1127,7 +1132,7 @@ static inline bool net_eth_is_vlan_enabled(struct ethernet_context* ctx,
  *
  * @return True if VLAN is enabled for this network interface, false if not.
  */
-#if defined(CONFIG_NET_VLAN)
+#if defined(CONFIG_NET_VLAN) && (NET_VLAN_MAX_COUNT > 0)
 bool net_eth_get_vlan_status(struct net_if* iface);
 #else
 static inline bool net_eth_get_vlan_status(struct net_if* iface) {
@@ -1144,7 +1149,7 @@ static inline bool net_eth_get_vlan_status(struct net_if* iface) {
  *
  * @return True if this network interface is VLAN one, false if not.
  */
-#if defined(CONFIG_NET_VLAN)
+#if defined(CONFIG_NET_VLAN) && (NET_VLAN_MAX_COUNT > 0)
 bool net_eth_is_vlan_interface(struct net_if* iface);
 #else
 static inline bool net_eth_is_vlan_interface(struct net_if* iface) {
