@@ -4,8 +4,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#if FFCONF_DEF != 80286
-//#error "Configuration version mismatch"
+#if FFCONF_DEF != 5380
+#error "Configuration version mismatch"
 #endif
 
 /*
