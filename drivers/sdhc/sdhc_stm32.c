@@ -84,9 +84,8 @@ struct sdhc_stm32_data {
 	uint32_t xfer_ctx;
 	uint32_t prev_opcode;
 
+	bool use_dma;
 	bool card_present;
-
-	uint32_t num_blocks;
 
 	uint8_t *tx_buffer;
 	size_t tx_xfer_sz;
@@ -919,7 +918,7 @@ static inline void sdhc_stm32_idma_setup(SDMMC_TypeDef *sdmmc, uint8_t *data)
 	#error "Unsupported STM32 series"
 	#endif
 
-	sdmmc->IDMACTRL  = SDMMC_ENABLE_IDMA_SINGLE_BUFF;
+	sdmmc->IDMACTRL = SDMMC_ENABLE_IDMA_SINGLE_BUFF;
 }
 
 static int sdhc_stm32_sdmmc_read_blocks(struct sdhc_stm32_data *ctx,
@@ -929,23 +928,31 @@ static int sdhc_stm32_sdmmc_read_blocks(struct sdhc_stm32_data *ctx,
 	int ret;
 
 	if (cmd->opcode == SD_READ_SINGLE_BLOCK) {
-		ctx->xfer_ctx = (SD_CONTEXT_READ_SINGLE_BLOCK | SD_CONTEXT_DMA);
+		ctx->xfer_ctx = SD_CONTEXT_READ_SINGLE_BLOCK;
 	} else {
-		ctx->xfer_ctx = (SD_CONTEXT_READ_MULTIPLE_BLOCK | SD_CONTEXT_DMA);
+		ctx->xfer_ctx = SD_CONTEXT_READ_MULTIPLE_BLOCK;
 	}
 
-	ctx->num_blocks = data->blocks;
 	ctx->rx_buffer  = data->data;
-	ctx->rx_xfer_sz = data->blocks * BLOCKSIZE;
+	ctx->rx_xfer_sz = (data->blocks * BLOCKSIZE);
 	sdhc_stm32_cfg_data(sdmmc, ctx->rx_xfer_sz, SDMMC_DATABLOCK_SIZE_512B,
 			    SDMMC_TRANSFER_DIR_TO_SDMMC, SDMMC_DPSM_DISABLE);
-	sdhc_stm32_idma_setup(sdmmc, ctx->rx_buffer);
+	if (ctx->use_dma) {
+		sdhc_stm32_idma_setup(sdmmc, ctx->rx_buffer);
+		ctx->xfer_ctx |= SD_CONTEXT_DMA;
+	} else {
+		ctx->xfer_ctx |= SD_CONTEXT_IT;
+	}
 
 	ret = sdhc_stm32_snd_cmd(sdmmc, cmd, SDMMC_RESPONSE_SHORT);
 	if (ret == 0) {
-		/* Enable transfer interrupts */
-		__SDMMC_ENABLE_IT(sdmmc, (SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT |
-					  SDMMC_IT_RXOVERR  | SDMMC_IT_DATAEND));
+		uint32_t int_flags = (SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT |
+				      SDMMC_IT_RXOVERR  | SDMMC_IT_DATAEND);
+		if (ctx->use_dma) {
+			__SDMMC_ENABLE_IT(sdmmc, int_flags);
+		} else {
+			__SDMMC_ENABLE_IT(sdmmc, int_flags | SDMMC_FLAG_RXFIFOHF);
+		}
 
 		ret = k_sem_take(&ctx->sync, K_MSEC(cmd->timeout_ms));
 	}
@@ -960,22 +967,32 @@ static int sdhc_stm32_sdmmc_write_blocks(struct sdhc_stm32_data *ctx,
 	int ret;
 
 	if (cmd->opcode == SD_WRITE_SINGLE_BLOCK) {
-		ctx->xfer_ctx = (SD_CONTEXT_WRITE_SINGLE_BLOCK | SD_CONTEXT_DMA);
+		ctx->xfer_ctx = SD_CONTEXT_WRITE_SINGLE_BLOCK;
 	} else {
-		ctx->xfer_ctx = (SD_CONTEXT_WRITE_MULTIPLE_BLOCK | SD_CONTEXT_DMA);
+		ctx->xfer_ctx = SD_CONTEXT_WRITE_MULTIPLE_BLOCK;
 	}
 
-	ctx->num_blocks = data->blocks;
 	ctx->tx_buffer  = data->data;
-	ctx->tx_xfer_sz = data->blocks * BLOCKSIZE;
+	ctx->tx_xfer_sz = (data->blocks * BLOCKSIZE);
 	sdhc_stm32_cfg_data(sdmmc, ctx->tx_xfer_sz, SDMMC_DATABLOCK_SIZE_512B,
-				SDMMC_TRANSFER_DIR_TO_CARD, SDMMC_DPSM_DISABLE);
-	sdhc_stm32_idma_setup(sdmmc, ctx->tx_buffer);
+			    SDMMC_TRANSFER_DIR_TO_CARD, SDMMC_DPSM_DISABLE);
+
+	if (ctx->use_dma) {
+		sdhc_stm32_idma_setup(sdmmc, ctx->tx_buffer);
+		ctx->xfer_ctx |= SD_CONTEXT_DMA;
+	} else {
+		ctx->xfer_ctx |= SD_CONTEXT_IT;
+	}
+
 	ret = sdhc_stm32_snd_cmd(sdmmc, cmd, SDMMC_RESPONSE_SHORT);
 	if (ret == 0) {
-		/* Enable transfer interrupts */
-		__SDMMC_ENABLE_IT(sdmmc, (SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT |
-					  SDMMC_IT_TXUNDERR | SDMMC_IT_DATAEND));
+		uint32_t int_flags = (SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT |
+				      SDMMC_IT_TXUNDERR | SDMMC_IT_DATAEND);
+		if (ctx->use_dma) {
+			__SDMMC_ENABLE_IT(sdmmc, int_flags);
+		} else {
+			__SDMMC_ENABLE_IT(sdmmc, int_flags | SDMMC_FLAG_TXFIFOHE);
+		}
 
 		ret = k_sem_take(&ctx->sync, K_MSEC(cmd->timeout_ms));
 	}
@@ -1394,7 +1411,6 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 			/* SD_APP_SET_BUS_WIDTH */
 			ret = sdhc_stm32_snd_cmd(sdmmc, cmd, SDMMC_RESPONSE_SHORT);
 		} else {
-			ctx->num_blocks = data->blocks;
 			ctx->rx_buffer  = data->data;
 			ctx->rx_xfer_sz = data->blocks * data->block_size;
 			sdhc_stm32_cfg_data(sdmmc, ctx->rx_xfer_sz, SDMMC_DATABLOCK_SIZE_64B,
@@ -1407,7 +1423,6 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 		break;
 
 	case SD_APP_SEND_SCR:               /* SDMMC_CmdSendSCR */
-		ctx->num_blocks = data->blocks;
 		ctx->rx_buffer  = data->data;
 		ctx->rx_xfer_sz = data->blocks * data->block_size;
 		sdhc_stm32_cfg_data(sdmmc, ctx->rx_xfer_sz, SDMMC_DATABLOCK_SIZE_8B,
@@ -1743,6 +1758,7 @@ static int sdhc_stm32_init(const struct device *dev)
 	}
 
 	ctx->dev = dev;
+	ctx->use_dma = cfg->use_dma;
 	cfg->irq_config(dev);
 
 	/* Initialize semaphores */
