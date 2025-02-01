@@ -27,6 +27,8 @@ LOG_MODULE_REGISTER(stm32_sdhc, CONFIG_SDHC_LOG_LEVEL);
 
 #include <zephyr/drivers/gpio.h>
 extern struct gpio_dt_spec const g_dbg_pin_gpio_dt[];
+#define DBG_PIN_SET(n, state) \
+	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[(n)], (state))
 
 // #define STM32_SDHC_USE_DMA DT_NODE_HAS_PROP(DT_DRV_INST(0), dmas)
 #define STM32_SDHC_USE_DMA      0
@@ -609,6 +611,29 @@ static int sdhc_stm32_snd_cmd(SDMMC_TypeDef *sdmmc, struct sdhc_command *cmd, ui
 	return ret;
 }
 
+static int sdhc_stm32_stp_xfer(SDMMC_TypeDef *sdmmc, struct sdhc_command *cmd)
+{
+	SDMMC_CmdInitTypeDef cmd_init;
+	int ret;
+
+	cmd_init.Argument = cmd->arg;
+	cmd_init.CmdIndex = cmd->opcode;
+	cmd_init.Response = SDMMC_RESPONSE_SHORT;
+	cmd_init.WaitForInterrupt = SDMMC_WAIT_NO;
+	cmd_init.CPSM = SDMMC_CPSM_ENABLE;
+
+	__SDMMC_CMDSTOP_ENABLE(sdmmc);
+	__SDMMC_CMDTRANS_DISABLE(sdmmc);
+
+	(void)SDMMC_SendCommand(sdmmc, &cmd_init);
+
+	ret = sdhc_stm32_get_resp(sdmmc, cmd);
+
+	__SDMMC_CMDSTOP_DISABLE(sdmmc);
+
+	return ret;
+}
+
 static int sdhc_stm32_sdio_rd_direct(SDMMC_TypeDef *sdmmc, uint32_t func_num, uint32_t reg_addr,
 				     uint8_t *data_out)
 {
@@ -1087,7 +1112,7 @@ static void sdhc_stm32_isr(const struct device *dev)
 	uint32_t err_state;
 	uint32_t flags;
 
-	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[0], 1);          /* DBG_PIN0_HIGH */
+	DBG_PIN_SET(0, 1);
 
 	/* @see HAL_SDIO_IRQHandler */
 	flags = sdmmc->STA;
@@ -1098,11 +1123,11 @@ static void sdhc_stm32_isr(const struct device *dev)
 	if (((flags & SDMMC_FLAG_RXFIFOHF) != 0U) && ((xfer_ctx & SD_CONTEXT_IT) != 0U)) {
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_RXFIFOHF);
 
-		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[1], 1);  /* DBG_PIN1_HIGH */
+		DBG_PIN_SET(1, 1);
 		sdhc_stm32_read_it(ctx, sdmmc);
-		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[1], 0);  /* DBG_PIN1_LOW */
+		DBG_PIN_SET(1, 0);
 	} else if ((flags & SDMMC_FLAG_DATAEND) != 0U) {
-		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[2], 1);  /* DBG_PIN2_HIGH */
+		DBG_PIN_SET(2, 1);
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_DATAEND);
 
 		__SDMMC_DISABLE_IT(sdmmc, SDMMC_IT_DATAEND  | SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT | \
@@ -1132,16 +1157,16 @@ static void sdhc_stm32_isr(const struct device *dev)
 		ctx->xfer_ctx = SD_CONTEXT_NONE;
 		k_sem_give(&ctx->sync);
 
-		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[2], 0);  /* DBG_PIN2_LOW */
+		DBG_PIN_SET(2, 0);
 	} else if (((flags & SDMMC_FLAG_TXFIFOHE) != 0U) &&
 		   ((xfer_ctx & SD_CONTEXT_IT) != 0U)) {
-		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[3], 1);  /* DBG_PIN3_HIGH */
+		DBG_PIN_SET(3, 1);
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_TXFIFOHE);
 		sdhc_stm32_write_it(ctx, sdmmc);
-		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[3], 0);  /* DBG_PIN3_LOW */
+		DBG_PIN_SET(3, 0);
 	} else if ((flags & (SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT |
 			     SDMMC_FLAG_RXOVERR  | SDMMC_FLAG_TXUNDERR)) != 0U) {
-		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[5], 1);  /* DBG_PIN5_HIGH */
+		DBG_PIN_SET(5, 1);
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
 
 		__SDMMC_DISABLE_IT(sdmmc, (SDMMC_IT_DATAEND  | SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT |
@@ -1167,7 +1192,7 @@ static void sdhc_stm32_isr(const struct device *dev)
 		ctx->ops_sts = flags & (SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT |
 					SDMMC_FLAG_RXOVERR  | SDMMC_FLAG_TXUNDERR);
 		k_sem_give(&ctx->sync);
-		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[5], 0);  /* DBG_PIN5_LOW */
+		DBG_PIN_SET(5, 0);
 	} else if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_IDMABTC)) {
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_IDMABTC);
 
@@ -1183,7 +1208,7 @@ static void sdhc_stm32_isr(const struct device *dev)
 		/* Nothing to do */
 	}
 
-	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[0], 0);          /* DBG_PIN0_LOW */
+	DBG_PIN_SET(0, 0);
 }
 
 /*
@@ -1421,8 +1446,8 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 		ret = sdhc_stm32_sdmmc_write_blocks(ctx, cmd, data);
 		break;
 
-	case SD_STOP_TRANSMISSION: /* SDMMC_CmdStopTransfer */
-		// TBA
+	case SD_STOP_TRANSMISSION:          /* SDMMC_CmdStopTransfer */
+		ret = sdhc_stm32_stp_xfer(sdmmc, cmd);
 		break;
 
 	default:
@@ -1433,6 +1458,17 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 	ctx->prev_opcode = cmd->opcode;
 
 	return (ret);
+}
+
+static void sdhc_stm32_abort(const struct device *dev)
+{
+	struct sdhc_command cmd = {
+		.opcode = SD_STOP_TRANSMISSION,
+		.arg = 0,
+		.response_type = SD_RSP_TYPE_R1b
+	};
+
+	sdhc_stm32_req_ll(dev, &cmd, NULL);
 }
 
 /*
@@ -1446,11 +1482,11 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 	int ret;
 
 	do {
-		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[4], 1);  /* DBG_PIN4_HIGH */
+		DBG_PIN_SET(4, 1);
 		ret = sdhc_stm32_req_ll(dev, cmd, data);
-		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[4], 0);  /* DBG_PIN4_LOW */
-		if (data && (ret || data->blocks > 1)) {
-			// FIXME sdhc_stm32_abort(dev);
+		DBG_PIN_SET(4, 0);
+		if (data && (ret || (data->blocks > 1))) {
+			sdhc_stm32_abort(dev);
 			while (busy_timeout > 0) {
 				if (!sdhc_stm32_card_busy(dev)) {
 					break;
