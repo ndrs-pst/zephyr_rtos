@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT st_stm32_sdhc
 
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/disk.h>
 #include <zephyr/drivers/sdhc.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
@@ -78,9 +79,9 @@ struct sdhc_stm32_data {
 	struct k_work cd_work;
 	struct k_work sdio_work;
 	struct gpio_callback cd_cb;
-	uint32_t status;
 
-	HAL_SDIO_StateTypeDef state;
+	uint32_t ops_sts;
+	uint32_t card_sts;
 	uint32_t xfer_ctx;
 	uint32_t prev_opcode;
 
@@ -92,6 +93,10 @@ struct sdhc_stm32_data {
 
 	uint8_t *rx_buffer;
 	size_t rx_xfer_sz;
+
+	sdhc_interrupt_cb_t sdhc_cb;
+	void *sdhc_cb_user_data;
+	int sdhc_int_sources;
 
 	uint8_t io_int_num;
 	uint8_t io_func_msk;
@@ -1116,12 +1121,12 @@ static void sdhc_stm32_isr(const struct device *dev)
 			sdmmc->IDMACTRL = SDMMC_DISABLE_IDMA;
 		}
 
-		ctx->status = SDMMC_ERROR_NONE;
+		ctx->ops_sts = SDMMC_ERROR_NONE;
 		if ((xfer_ctx & (SD_CONTEXT_READ_MULTIPLE_BLOCK | SD_CONTEXT_WRITE_MULTIPLE_BLOCK)) != 0U) {
 			/* Stop Transfer for Write Multi blocks or Read Multi blocks */
 			err_state = SDMMC_CmdStopTransfer(sdmmc);
 			if (err_state != SDMMC_ERROR_NONE) {
-				ctx->status = err_state;
+				ctx->ops_sts = err_state;
 			}
 		}
 		ctx->xfer_ctx = SD_CONTEXT_NONE;
@@ -1159,8 +1164,8 @@ static void sdhc_stm32_isr(const struct device *dev)
 		}
 
 		/* @see SDMMC_LL_Exported_Constants */
-		ctx->status = flags & (SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT |
-				       SDMMC_FLAG_RXOVERR  | SDMMC_FLAG_TXUNDERR);
+		ctx->ops_sts = flags & (SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT |
+					SDMMC_FLAG_RXOVERR  | SDMMC_FLAG_TXUNDERR);
 		k_sem_give(&ctx->sync);
 		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[5], 0);  /* DBG_PIN5_LOW */
 	} else if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_IDMABTC)) {
@@ -1501,14 +1506,22 @@ static void sdhc_stm32_card_detect_handler(struct k_work *item)
 	struct sdhc_stm32_data *ctx = CONTAINER_OF(item,
 						   struct sdhc_stm32_data,
 						   cd_work);
+	const struct device *dev = ctx->dev;
+	int int_sources;
 
 	if (sdhc_stm32_get_card_present(ctx->dev)) {
 		LOG_DBG("card inserted");
-		// FIXME ctx->status = DISK_STATUS_UNINIT;
+		ctx->card_sts = DISK_STATUS_UNINIT;
+		int_sources = SDHC_INT_INSERTED;
+
 	} else {
 		LOG_DBG("card removed");
-		// FIXME stm32_sdmmc_access_deinit(priv);
-		// FIXME ctx->status = DISK_STATUS_NOMEDIA;
+		ctx->card_sts = DISK_STATUS_NOMEDIA;
+		int_sources = SDHC_INT_REMOVED;
+	}
+
+	if (ctx->sdhc_cb) {
+		ctx->sdhc_cb(dev, int_sources, ctx->sdhc_cb_user_data);
 	}
 }
 
@@ -1626,6 +1639,63 @@ static int sdhc_stm32_get_host_props(const struct device *dev,
 	return 0;
 }
 
+static int sdhc_stm32_enable_interrupt(const struct device *dev,
+				       sdhc_interrupt_cb_t callback,
+				       int sources, void *user_data)
+{
+	struct sdhc_stm32_data *ctx = dev->data;
+	SDMMC_TypeDef *sdmmc = ctx->sdmmc;
+	int ret = 0;
+
+	/* Record SDIO callback parameters */
+	ctx->sdhc_cb = callback;
+	ctx->sdhc_cb_user_data = user_data;
+	ctx->sdhc_int_sources = sources;
+
+	if (sources & SDHC_INT_SDIO) {
+		/* Enable SDIO interrupt */
+	}
+
+	if (sources & SDHC_INT_INSERTED) {
+		/* Enable card detection interrupt */
+	}
+
+	if (sources & SDHC_INT_REMOVED) {
+		/* Enable card removal interrupt */
+	}
+
+	return ret;
+}
+
+static int sdhc_stm32_disable_interrupt(const struct device *dev, int sources)
+{
+	struct sdhc_stm32_data *ctx = dev->data;
+	SDMMC_TypeDef *sdmmc = ctx->sdmmc;
+	int ret = 0;
+
+	ctx->sdhc_int_sources &= ~sources;
+
+	if (sources & SDHC_INT_SDIO) {
+		/* Disable SDIO interrupt */
+	}
+
+	if (sources & SDHC_INT_INSERTED) {
+		/* Disable card detection interrupt */
+	}
+
+	if (sources & SDHC_INT_REMOVED) {
+		/* Disable card removal interrupt */
+	}
+
+	/* If all interrupt flags are disabled, remove callback */
+	if (ctx->sdhc_int_sources == 0) {
+		ctx->sdhc_cb = NULL;
+		ctx->sdhc_cb_user_data = NULL;
+	}
+
+	return ret;
+}
+
 static void sdhc_stm32_sdio_work_handler(struct k_work *work)
 {
 	struct sdhc_stm32_data *ctx = CONTAINER_OF(work, struct sdhc_stm32_data, sdio_work);
@@ -1727,9 +1797,7 @@ static int sdhc_stm32_init(const struct device *dev)
 	ctx->use_dma = cfg->use_dma;
 	cfg->irq_config(dev);
 
-	/* Initialize semaphores */
 	k_sem_init(&ctx->sync, 0, 1);
-
 	k_work_init(&ctx->cd_work, sdhc_stm32_card_detect_handler);
 	ret = sdhc_stm32_card_detect_init(dev);
 	if (ret) {
@@ -1742,8 +1810,8 @@ static int sdhc_stm32_init(const struct device *dev)
 	}
 
 	ret = sdhc_stm32_registers_configure(dev);
-	if (ret < 0) {
-		return ret;
+	if (ret) {
+		goto err_pwr;
 	}
 
 #if STM32_SDHC_USE_DMA
@@ -1787,7 +1855,9 @@ static DEVICE_API(sdhc, sdhc_stm32_api) = {
 	.set_io = sdhc_stm32_set_io,
 	.get_card_present = sdhc_stm32_get_card_present,
 	.card_busy = sdhc_stm32_card_busy,
-	.get_host_props = sdhc_stm32_get_host_props
+	.get_host_props = sdhc_stm32_get_host_props,
+	.enable_interrupt = sdhc_stm32_enable_interrupt,
+	.disable_interrupt = sdhc_stm32_disable_interrupt,
 };
 
 #define SDHC_STM32_INIT(n)                                                                         \
