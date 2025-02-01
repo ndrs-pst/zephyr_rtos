@@ -78,7 +78,7 @@ struct sdhc_stm32_data {
 	struct k_work cd_work;
 	struct k_work sdio_work;
 	struct gpio_callback cd_cb;
-	int status;
+	uint32_t status;
 
 	HAL_SDIO_StateTypeDef state;
 	uint32_t xfer_ctx;
@@ -1079,7 +1079,7 @@ static void sdhc_stm32_isr(const struct device *dev)
 	struct sdhc_stm32_data *ctx = dev->data;
 	SDMMC_TypeDef *sdmmc = ctx->sdmmc;
 	uint32_t xfer_ctx = ctx->xfer_ctx;
-	uint32_t errorstate;
+	uint32_t err_state;
 	uint32_t flags;
 
 	gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[0], 1);          /* DBG_PIN0_HIGH */
@@ -1108,49 +1108,24 @@ static void sdhc_stm32_isr(const struct device *dev)
 		__SDMMC_CMDTRANS_DISABLE(sdmmc);
 
 		if ((xfer_ctx & SD_CONTEXT_IT) != 0U) {
-			if ((xfer_ctx & (SD_CONTEXT_READ_MULTIPLE_BLOCK | SD_CONTEXT_WRITE_MULTIPLE_BLOCK)) != 0U) {
-				errorstate = SDMMC_CmdStopTransfer(sdmmc);
-				if (errorstate != SDMMC_ERROR_NONE) {
-					/* @todo HAL_SD_ErrorCallback */
-				}
-			}
-
 			/* Clear all the static flags */
 			__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
-
-			ctx->xfer_ctx = SD_CONTEXT_NONE;
-			if ((xfer_ctx & (SD_CONTEXT_READ_MULTIPLE_BLOCK | SD_CONTEXT_WRITE_MULTIPLE_BLOCK)) != 0U) {
-				/* HAL_SD_RxCpltCallback */
-				k_sem_give(&ctx->sync);
-			} else {
-				/* HAL_SD_TxCpltCallback */
-				k_sem_give(&ctx->sync);
-			}
-		} else if ((xfer_ctx & SD_CONTEXT_DMA) != 0U) {
+		} else { /* SD_CONTEXT_DMA */
 			sdmmc->DLEN     = 0;
 			sdmmc->DCTRL    = 0;
 			sdmmc->IDMACTRL = SDMMC_DISABLE_IDMA;
-
-			/* Stop Transfer for Write Multi blocks or Read Multi blocks */
-			if ((xfer_ctx & (SD_CONTEXT_READ_MULTIPLE_BLOCK | SD_CONTEXT_WRITE_MULTIPLE_BLOCK)) != 0U) {
-				errorstate = SDMMC_CmdStopTransfer(sdmmc);
-				if (errorstate != SDMMC_ERROR_NONE) {
-					/* @todo HAL_SD_ErrorCallback */
-				}
-			}
-
-			ctx->xfer_ctx = SD_CONTEXT_NONE;
-			ctx->status   = SDMMC_ERROR_NONE;
-			if ((xfer_ctx & (SD_CONTEXT_READ_MULTIPLE_BLOCK | SD_CONTEXT_WRITE_MULTIPLE_BLOCK)) != 0U) {
-				/* HAL_SD_RxCpltCallback */
-				k_sem_give(&ctx->sync);
-			} else {
-				/* HAL_SD_TxCpltCallback */
-				k_sem_give(&ctx->sync);
-			}
-		} else {
-			/* Nothing to do */
 		}
+
+		ctx->status = SDMMC_ERROR_NONE;
+		if ((xfer_ctx & (SD_CONTEXT_READ_MULTIPLE_BLOCK | SD_CONTEXT_WRITE_MULTIPLE_BLOCK)) != 0U) {
+			/* Stop Transfer for Write Multi blocks or Read Multi blocks */
+			err_state = SDMMC_CmdStopTransfer(sdmmc);
+			if (err_state != SDMMC_ERROR_NONE) {
+				ctx->status = err_state;
+			}
+		}
+		ctx->xfer_ctx = SD_CONTEXT_NONE;
+		k_sem_give(&ctx->sync);
 
 		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[2], 0);  /* DBG_PIN2_LOW */
 	} else if (((flags & SDMMC_FLAG_TXFIFOHE) != 0U) &&
@@ -1162,10 +1137,8 @@ static void sdhc_stm32_isr(const struct device *dev)
 	} else if ((flags & (SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT |
 			     SDMMC_FLAG_RXOVERR  | SDMMC_FLAG_TXUNDERR)) != 0U) {
 		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[5], 1);  /* DBG_PIN5_HIGH */
-		/* Clear All flags */
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
 
-		/* Disable all interrupts */
 		__SDMMC_DISABLE_IT(sdmmc, (SDMMC_IT_DATAEND  | SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT |
 					   SDMMC_IT_TXUNDERR | SDMMC_IT_RXOVERR));
 
@@ -1179,35 +1152,28 @@ static void sdhc_stm32_isr(const struct device *dev)
 
 		if ((xfer_ctx & SD_CONTEXT_IT) != 0U) {
 			ctx->xfer_ctx = SD_CONTEXT_NONE;
-
-			/* HAL_SD_ErrorCallback */
-			k_sem_give(&ctx->sync);
 		}
-		else if ((xfer_ctx & SD_CONTEXT_DMA) != 0U) {
-			/* Disable Internal DMA */
+		else { /* SD_CONTEXT_DMA */
 			__SDMMC_DISABLE_IT(sdmmc, SDMMC_IT_IDMABTC);
 			sdmmc->IDMACTRL = SDMMC_DISABLE_IDMA;
-
-			/* HAL_SD_ErrorCallback */
-			k_sem_give(&ctx->sync);
-		} else {
-			/* Nothing to do */
 		}
 
+		/* @see SDMMC_LL_Exported_Constants */
 		ctx->status = flags & (SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT |
 				       SDMMC_FLAG_RXOVERR  | SDMMC_FLAG_TXUNDERR);
+		k_sem_give(&ctx->sync);
 		gpio_pin_set_raw_dt(&g_dbg_pin_gpio_dt[5], 0);  /* DBG_PIN5_LOW */
 	} else if (__SDMMC_GET_FLAG(sdmmc, SDMMC_FLAG_IDMABTC)) {
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_FLAG_IDMABTC);
 
 		if ((xfer_ctx & SD_CONTEXT_WRITE_MULTIPLE_BLOCK) != 0U) {
 			/* HAL_SDEx_Write_DMALnkLstBufCpltCallback(hsd); */
-			k_sem_give(&ctx->sync);
 		}
 		else { /* SD_CONTEXT_READ_MULTIPLE_BLOCK */
 			/* HAL_SDEx_Read_DMALnkLstBufCpltCallback */
-			k_sem_give(&ctx->sync);
 		}
+
+		k_sem_give(&ctx->sync);
 	} else {
 		/* Nothing to do */
 	}
