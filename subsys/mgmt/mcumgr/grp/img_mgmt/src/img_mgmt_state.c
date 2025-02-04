@@ -387,11 +387,6 @@ done :
 int img_mgmt_state_confirm(void) {
     int rc;
 
-    #if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
-    int32_t  err_rc;
-    uint16_t err_group;
-    #endif
-
     /* Confirm disallowed if a test is pending. */
     if (img_mgmt_state_any_pending()) {
         rc = IMG_MGMT_ERR_IMAGE_ALREADY_PENDING;
@@ -401,8 +396,16 @@ int img_mgmt_state_confirm(void) {
     rc = img_mgmt_write_confirmed();
 
     #if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
-    (void) mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED, NULL, 0, &err_rc,
-                                &err_group);
+    if (!rc) {
+        int32_t err_rc;
+        uint16_t err_group;
+        struct img_mgmt_image_confirmed confirmed_data = {
+            .image = 0
+        };
+
+        (void) mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED, &confirmed_data,
+                                    sizeof(confirmed_data), &err_rc, &err_group);
+    }
     #endif
 
 err :
@@ -442,12 +445,12 @@ static bool img_mgmt_state_encode_slot(struct smp_streamer* ctxt, uint32_t slot,
         return (true);
     }
 
-    ok = zcbor_map_start_encode(zse, CONFIG_MCUMGR_GRP_IMG_IMAGE_SLOT_STATE_STATES)	&&
+    ok = zcbor_map_start_encode(zse, CONFIG_MCUMGR_GRP_IMG_IMAGE_SLOT_STATE_STATES) &&
          ((CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 1) ||
-           (zcbor_tstr_put_lit(zse, "image")                  &&
-           zcbor_uint32_put(zse, slot >> 1)))                       &&
-           zcbor_tstr_put_lit(zse, "slot")                          &&
-           zcbor_uint32_put(zse, slot % 2 )                         &&
+           (zcbor_tstr_put_lit(zse, "image")                                        &&
+           zcbor_uint32_put(zse, slot >> 1)))                                       &&
+           zcbor_tstr_put_lit(zse, "slot")                                          &&
+           zcbor_uint32_put(zse, slot % 2 )                                         &&
            zcbor_tstr_put_lit(zse, "version");
 
     if (ok) {
@@ -460,12 +463,12 @@ static bool img_mgmt_state_encode_slot(struct smp_streamer* ctxt, uint32_t slot,
         }
     }
 
-    ok = ok && zcbor_tstr_put_lit(zse, "hash")  &&
-         zcbor_bstr_encode(zse, &zhash)         &&
-         ZCBOR_ENCODE_FLAG(zse, "bootable", !(flags & IMAGE_F_NON_BOOTABLE))      &&
-         ZCBOR_ENCODE_FLAG(zse, "pending", state_flags & REPORT_SLOT_PENDING)     &&
-         ZCBOR_ENCODE_FLAG(zse, "confirmed", state_flags & REPORT_SLOT_CONFIRMED) &&
-         ZCBOR_ENCODE_FLAG(zse, "active", state_flags & REPORT_SLOT_ACTIVE)       &&
+    ok = ok && zcbor_tstr_put_lit(zse, "hash")                                      &&
+         zcbor_bstr_encode(zse, &zhash)                                             &&
+         ZCBOR_ENCODE_FLAG(zse, "bootable", !(flags & IMAGE_F_NON_BOOTABLE))        &&
+         ZCBOR_ENCODE_FLAG(zse, "pending", state_flags & REPORT_SLOT_PENDING)       &&
+         ZCBOR_ENCODE_FLAG(zse, "confirmed", state_flags & REPORT_SLOT_CONFIRMED)   &&
+         ZCBOR_ENCODE_FLAG(zse, "active", state_flags & REPORT_SLOT_ACTIVE)         &&
          ZCBOR_ENCODE_FLAG(zse, "permanent", state_flags & REPORT_SLOT_PERMANENT);
 
     if (!ok) {
@@ -579,15 +582,17 @@ static int img_mgmt_set_next_boot_slot_common(int slot, int active_slot, bool co
     }
 
     flash_area_close(fa);
-
     #if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
-    if (rc == 0 && slot == active_slot && confirm) {
-        int32_t  err_rc;
-        uint16_t err_group;
-
+    if ((rc == 0) && (slot == active_slot) && confirm) {
         /* Confirm event is only sent for active slot */
-        (void) mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED, NULL, 0, &err_rc,
-                                    &err_group);
+        int32_t err_rc;
+        uint16_t err_group;
+        struct img_mgmt_image_confirmed confirmed_data = {
+            .image = img_mgmt_slot_to_image(slot)
+        };
+
+        (void) mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED, &confirmed_data,
+                                    sizeof(confirmed_data), &err_rc, &err_group);
     }
     #endif
 

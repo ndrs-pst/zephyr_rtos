@@ -106,9 +106,8 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
                 cmd.append('--reset')
             if _op['kind'] == 'RESET_PIN':
                 cmd.append('--pinreset')
-        elif op_type == 'erasepage':
-            cmd.append('--erasepage')
-            cmd.append(f"0x{_op['page']:08x}")
+        elif op_type == 'erase':
+            cmd.append(f'--erase{_op["kind"]}')
         else:
             raise RuntimeError(f'Invalid operation: {op_type}')
 

@@ -161,38 +161,30 @@ static int smp_udp_ud_copy(struct net_buf* dst, const struct net_buf* src) {
 static int create_socket(enum proto_type proto, int* sock) {
     int tmp_sock;
     int err;
-    struct net_sockaddr* addr;
+    struct sockaddr_storage addr_storage;
+    struct net_sockaddr* addr = (struct net_sockaddr*)&addr_storage;
     socklen_t addr_len = 0;
 
-    #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
-    struct net_sockaddr_in addr4;
-    #endif
+    if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_UDP_IPV4) &&
+        proto == PROTOCOL_IPV4) {
+        struct net_sockaddr_in* addr4 = (struct net_sockaddr_in*)addr;
 
-    #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
-    struct net_sockaddr_in6 addr6;
-    #endif
-
-    #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
-    if (proto == PROTOCOL_IPV4) {
-        addr_len = sizeof(struct net_sockaddr_in);
-        memset(&addr4, 0, sizeof(addr4));
-        addr4.sin_family      = NET_AF_INET;
-        addr4.sin_port        = htons(CONFIG_MCUMGR_TRANSPORT_UDP_PORT);
-        addr4.sin_addr.s_addr_be = htonl(INADDR_ANY);
-        addr                  = (struct net_sockaddr*)&addr4;
+        addr_len = sizeof(*addr4);
+        memset(addr4, 0, sizeof(*addr4));
+        addr4->sin_family = NET_AF_INET;
+        addr4->sin_port = net_htons(CONFIG_MCUMGR_TRANSPORT_UDP_PORT);
+        addr4->sin_addr.s_addr_be = net_htonl(INADDR_ANY);
     }
-    #endif
+    else if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_UDP_IPV6) &&
+             proto == PROTOCOL_IPV6) {
+        struct net_sockaddr_in6* addr6 = (struct net_sockaddr_in6*)addr;
 
-    #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
-    if (proto == PROTOCOL_IPV6) {
-        addr_len = sizeof(struct net_sockaddr_in6);
-        memset(&addr6, 0, sizeof(addr6));
-        addr6.sin6_family = NET_AF_INET6;
-        addr6.sin6_port   = htons(CONFIG_MCUMGR_TRANSPORT_UDP_PORT);
-        addr6.sin6_addr   = in6addr_any;
-        addr              = (struct net_sockaddr*)&addr6;
+        addr_len = sizeof(*addr6);
+        memset(addr6, 0, sizeof(*addr6));
+        addr6->sin6_family = NET_AF_INET6;
+        addr6->sin6_port = net_htons(CONFIG_MCUMGR_TRANSPORT_UDP_PORT);
+        addr6->sin6_addr = in6addr_any;
     }
-    #endif
 
     tmp_sock = zsock_socket(addr->sa_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
     err = errno;
@@ -236,7 +228,7 @@ static void smp_udp_receive_thread(void* p1, void* p2, void* p3) {
     __ASSERT(rc >= 0, "Socket is invalid");
     LOG_INF("Started (%s)", smp_udp_proto_to_name(conf->proto));
 
-    while (1) {
+    while (true) {
         struct net_sockaddr addr;
         socklen_t       addr_len = sizeof(addr);
 
