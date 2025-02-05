@@ -50,6 +50,10 @@ Boards
   the required configuration by using ``mikroe_weather_click_i2c`` or ``mikroe_weather_click_spi``
   instead of ``mikroe_weather_click``.
 
+* All nRF52-based boards will now default to soft (system) reset
+  instead of pin reset when flashing with ``west flash``. If you want to keep
+  using pin reset on the nRF52 family of ICs you can use ``west flash --pinreset``.
+
 Devicetree
 **********
 
@@ -367,9 +371,10 @@ Stepper
     The function now takes the step interval in nanoseconds. This allows for a more precise control.
   * Deprecating setting max velocity via :c:func:`stepper_run`.
   * The :kconfig:option:`STEPPER_ADI_TMC_RAMP_GEN` is now deprecated and is replaced with the new
-    :kconfig:option:`STEPPER_ADI_TMC5041_RAMP_GEN` option.
-  * To control the velocity for :dtcompatible:`adi,tmc5041` stepper driver, use
-    :c:func:`tmc5041_stepper_set_max_velocity` or :c:func:`tmc5041_stepper_set_ramp`.
+    :kconfig:option:`STEPPER_ADI_TMC50XX_RAMP_GEN` option.
+  * Renamed tmc5041 stepper driver to tmc50xx.
+  * To control the velocity for :dtcompatible:`adi,tmc50xx` stepper driver, use
+    :c:func:`tmc50xx_stepper_set_max_velocity` or :c:func:`tmc50xx_stepper_set_ramp`.
   * Renamed the DeviceTree property ``en_spreadcycle`` to ``en-spreadcycle``.
   * Renamed the DeviceTree property ``i_scale_analog`` to ``i-scale-analog``.
   * Renamed the DeviceTree property ``index_optw`` to ``index-otpw``.
