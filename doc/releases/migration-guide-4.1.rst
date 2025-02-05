@@ -488,6 +488,10 @@ Bluetooth Audio
   be called. All Kconfig options still remain. Runtime configuration cannot override a disabled
   Kconfig option. (:github:`83730`)
 
+* Several services and service client (AICS, ASCS, CSIP, HAS, MCS, PACS, TBS, VCP and VOCS) now
+  depend on :kconfig:option:`CONFIG_BT_SMP` and may need to be explicitly enabled.
+  (:github:`84994``)
+
 Bluetooth Classic
 =================
 
@@ -550,6 +554,9 @@ Networking
 * The :kconfig:option:`CONFIG_NET_L2_OPENTHREAD` symbol no longer implies the
   :kconfig:option:`CONFIG_NVS` Kconfig option. Platforms using OpenThread must explicitly enable
   either the :kconfig:option:`CONFIG_NVS` or :kconfig:option:`CONFIG_ZMS` Kconfig option.
+
+* ``CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO`` was deprecated in favour of
+  :kconfig:option:`CONFIG_NET_TC_TX_SKIP_FOR_HIGH_PRIO` to avoid naming ambiguity.
 
 Other Subsystems
 ****************
