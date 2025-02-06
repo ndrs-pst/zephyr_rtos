@@ -54,6 +54,13 @@ Boards
   instead of pin reset when flashing with ``west flash``. If you want to keep
   using pin reset on the nRF52 family of ICs you can use ``west flash --pinreset``.
 
+* Erasing the external memory when programming a new firmware image with ``west
+  flash`` on the nRF52 and nRF53 series now always correctly honors the
+  ``--erase`` flag (and its absence) both when using the ``nrfjprog`` and
+  ``nrfutil`` backends.  Prior to this release, the ``nrjfprog`` backend would
+  always erase only the sectors of the external flash used by the new firmware,
+  and the ``nrfutil`` one would always erase the whole external flash.
+
 Devicetree
 **********
 
@@ -321,6 +328,21 @@ SDHC
 Sensors
 =======
 
+  * The :dtcompatible:`we,wsen-pads` driver has been renamed to
+    :dtcompatible:`we,wsen-pads-2511020213301`.
+    The Device Tree can be configured as follows:
+
+    .. code-block:: devicetree
+
+      &i2c0 {
+        pads:pads-2511020213301@5d {
+          compatible = "we,wsen-pads-2511020213301";
+          reg = <0x5d>;
+          odr = < 10 >;
+          interrupt-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+        };
+      };
+
   * The :dtcompatible:`we,wsen-pdus` driver has been renamed to
     :dtcompatible:`we,wsen-pdus-25131308XXXXX`.
     The Device Tree can be configured as follows:
@@ -407,6 +429,7 @@ Timer
 
 * Renamed the ``compatible`` from ``nxp,kinetis-ftm`` to :dtcompatible:`nxp,ftm` and relocate it
   under ``dts/bindings/timer``.
+* Renamed the device tree property from ``ticks_us`` to ``ticks-us``.
 
 USB
 ===
@@ -572,6 +595,10 @@ Filesystem
 
 hawkBit
 =======
+
+* The Kconfig symbols :kconfig:option:`CONFIG_SMF` and
+  :kconfig:option:`CONFIG_SMF_ANCESTOR_SUPPORT` are now required to be enabled to use the
+  hawkBit subsystem.
 
 MCUmgr
 ======
