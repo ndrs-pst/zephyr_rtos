@@ -848,8 +848,8 @@ static int sdhc_stm32_sdio_rw_extend(struct sdhc_stm32_data *ctx, struct sdhc_co
 				     const struct sdhc_data *data)
 {
 	SDMMC_TypeDef *sdmmc = ctx->sdmmc;
-	struct device *dev = ctx->dev;
-	struct sdhc_stm32_config *cfg = dev->config;
+	const struct device *dev = ctx->dev;
+	const struct sdhc_stm32_config *cfg = dev->config;
 	SDMMC_DataInitTypeDef config;
 	uint32_t dir;
 	uint32_t arg;
@@ -1392,7 +1392,12 @@ static int sdhc_stm32_req_ll(const struct device *dev, struct sdhc_command *cmd,
 	}
 
 	case SDIO_RW_EXTENDED: {
-		ret = sdhc_stm32_sdio_rw_extend(ctx, cmd, data);
+		if (data != NULL) {
+			ret = sdhc_stm32_sdio_rw_extend(ctx, cmd, data);
+		} else {
+			LOG_ERR("Data is NULL");
+			ret = -EINVAL;
+		}
 		break;
 	}
 
@@ -1778,13 +1783,13 @@ static int sdhc_stm32_registers_configure(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(cfg->reset.dev)) {
-		LOG_ERR("reset controller not ready");
+		LOG_ERR("Reset controller not ready");
 		return -ENODEV;
 	}
 
 	ret = reset_line_toggle_dt(&cfg->reset);
 	if (ret) {
-		LOG_ERR("failed to reset peripheral");
+		LOG_ERR("Failed to reset peripheral");
 		return ret;
 	}
 
@@ -1819,7 +1824,7 @@ static int sdhc_stm32_init(const struct device *dev)
 
 	ret = sdhc_stm32_clock_enable(cfg);
 	if (ret) {
-		LOG_ERR("failed to init clocks");
+		LOG_ERR("Failed to init clocks");
 		return ret;
 	}
 

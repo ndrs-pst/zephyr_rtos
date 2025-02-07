@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2017 Google LLC.
  * Copyright (c) 2022 Kamil Serwus
- * Copyright (c) 2023 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2023-2025 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,13 @@
 /**
  * @file
  * @brief Atmel SAMC MCU series initialization code
+ */
+
+/* Following configuration is for upstream, not our down stream setting */
+/* GCLK Gen 0 -> GCLK_MAIN @ OSC48M
+ * GCLK Gen 2 -> WDT       @ reserved
+ * GCLK Gen 0 -> ADC       @ OSC48M
+ * GCLK Gen 4 -> RTC       @ reserved
  */
 
 #include <zephyr/device.h>
@@ -313,3 +320,4 @@ void soc_reset_hook(void) {
     /* Configure the AHB Bridge Clocks */
     MCLK->AHBMASK.reg = 0x1DFFU;
 }
+
