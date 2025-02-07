@@ -550,7 +550,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata) {
     int err;
 
     #if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
-    char raw_remote_ip[INET_ADDRSTRLEN + 3] = {0};
+    char raw_remote_ip[NET_INET_ADDRSTRLEN + 3] = {0};
     int port = 0;
 
     err = cmd_ciprecvdata_parse(sock, data->rx_buf, len, &data_offset,
@@ -578,7 +578,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata) {
      * conv function. So we remove them by subtraction 2 from
      * raw_remote_ip length and index from &raw_remote_ip[1].
      */
-    char remote_ip_addr[INET_ADDRSTRLEN];
+    char remote_ip_addr[NET_INET_ADDRSTRLEN];
     size_t remote_ip_str_len;
 
     remote_ip_str_len = MIN(sizeof(remote_ip_addr) - 1,

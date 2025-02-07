@@ -138,7 +138,7 @@ static struct net_pkt* esp_socket_prepare_pkt(struct esp_socket* sock,
 
     #if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE)
     memcpy(&pkt->remote, &sock->context->remote, sizeof(pkt->remote));
-    pkt->family = sock->src.sa_family;
+    pkt->family = (uint8_t)sock->src.sa_family;
     #endif
 
     return (pkt);
