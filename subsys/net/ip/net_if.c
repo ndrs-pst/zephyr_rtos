@@ -5365,8 +5365,7 @@ static void notify_iface_down(struct net_if* iface) {
     }
 }
 
-static inline char const* net_if_oper_state2str(enum net_if_oper_state state) {
-    #if (CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG)
+char const* net_if_oper_state2str(enum net_if_oper_state state) {
     switch (state) {
         case NET_IF_OPER_UNKNOWN :
             return "UNKNOWN";
@@ -5394,11 +5393,6 @@ static inline char const* net_if_oper_state2str(enum net_if_oper_state state) {
     }
 
     return "<invalid>";
-    #else
-    ARG_UNUSED(state);
-
-    return "";
-    #endif /* CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG */
 }
 
 static void update_operational_state(struct net_if* iface) {
