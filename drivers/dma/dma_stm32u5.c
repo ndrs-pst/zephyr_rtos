@@ -45,14 +45,14 @@ static const uint32_t table_priority[4] = {
 
 static void dma_stm32_dump_stream_irq(const struct device* dev, uint32_t id) {
     const struct dma_stm32_config* config = dev->config;
-    DMA_TypeDef* dma = config->base;
+    DMA_TypeDef* dma = (DMA_TypeDef*)(config->base);
 
     stm32_dma_dump_stream_irq(dma, id);
 }
 
 static void dma_stm32_clear_stream_irq(const struct device* dev, uint32_t id) {
     const struct dma_stm32_config* config = dev->config;
-    DMA_TypeDef* dma = config->base;
+    DMA_TypeDef* dma = (DMA_TypeDef*)(config->base);
 
     dma_stm32_clear_tc(dma, id);
     dma_stm32_clear_ht(dma, id);
@@ -502,6 +502,12 @@ static int dma_stm32_configure(const struct device* dev,
         LL_DMA_EnableIT_HT(dma, dma_stm32_id_to_stream(id));
     }
 
+    #ifdef CONFIG_ARM_SECURE_FIRMWARE
+    LL_DMA_ConfigChannelSecure(dma, dma_stm32_id_to_stream(id),
+                               (LL_DMA_CHANNEL_SEC | LL_DMA_CHANNEL_SRC_SEC | LL_DMA_CHANNEL_DEST_SEC));
+    LL_DMA_EnableChannelPrivilege(dma, dma_stm32_id_to_stream(id));
+    #endif
+
     LL_DMA_EnableIT_TC (dma, dma_stm32_id_to_stream(id));
     LL_DMA_EnableIT_USE(dma, dma_stm32_id_to_stream(id));
     LL_DMA_EnableIT_ULE(dma, dma_stm32_id_to_stream(id));
@@ -514,7 +520,7 @@ static int dma_stm32_reload(const struct device* dev, uint32_t id,
                             uint32_t src, uint32_t dst,
                             size_t size) {
     const struct dma_stm32_config* config = dev->config;
-    DMA_TypeDef* dma = config->base;
+    DMA_TypeDef* dma = (DMA_TypeDef*)(config->base);
     struct dma_stm32_stream* stream;
 
     /* Give channel from index 0 */
@@ -549,7 +555,7 @@ static int dma_stm32_reload(const struct device* dev, uint32_t id,
 
 static int dma_stm32_start(const struct device* dev, uint32_t id) {
     const struct dma_stm32_config* config = dev->config;
-    DMA_TypeDef* dma = config->base;
+    DMA_TypeDef* dma = (DMA_TypeDef*)(config->base);
     struct dma_stm32_stream* stream;
 
     /* Give channel from index 0 */
@@ -578,7 +584,7 @@ static int dma_stm32_start(const struct device* dev, uint32_t id) {
 
 static int dma_stm32_suspend(const struct device* dev, uint32_t id) {
     const struct dma_stm32_config* config = dev->config;
-    DMA_TypeDef* dma = config->base;
+    DMA_TypeDef* dma = (DMA_TypeDef*)(config->base);
 
     /* Give channel from index 0 */
     id = (id - STM32_DMA_STREAM_OFFSET);
@@ -599,7 +605,7 @@ static int dma_stm32_suspend(const struct device* dev, uint32_t id) {
 
 static int dma_stm32_resume(const struct device* dev, uint32_t id) {
     const struct dma_stm32_config* config = dev->config;
-    DMA_TypeDef* dma = config->base;
+    DMA_TypeDef* dma = (DMA_TypeDef*)(config->base);
 
     /* Give channel from index 0 */
     id = (id - STM32_DMA_STREAM_OFFSET);
@@ -616,7 +622,7 @@ static int dma_stm32_resume(const struct device* dev, uint32_t id) {
 static int dma_stm32_stop(const struct device* dev, uint32_t id) {
     const struct dma_stm32_config* config = dev->config;
     struct dma_stm32_stream* stream = &config->streams[id - STM32_DMA_STREAM_OFFSET];
-    DMA_TypeDef* dma = config->base;
+    DMA_TypeDef* dma = (DMA_TypeDef*)(config->base);
 
     /* Give channel from index 0 */
     id = (id - STM32_DMA_STREAM_OFFSET);
@@ -674,7 +680,7 @@ static int dma_stm32_init(const struct device* dev) {
 static int dma_stm32_get_status(const struct device* dev,
                                 uint32_t id, struct dma_status* stat) {
     const struct dma_stm32_config* config = dev->config;
-    DMA_TypeDef* dma = config->base;
+    DMA_TypeDef* dma = (DMA_TypeDef*)(config->base);
     struct dma_stm32_stream* stream;
 
     /* Give channel from index 0 */
