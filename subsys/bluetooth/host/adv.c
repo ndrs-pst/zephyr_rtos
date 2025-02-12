@@ -1140,7 +1140,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 		size = sizeof(struct bt_hci_cp_le_set_ext_adv_param);
 	}
 
-	buf = bt_hci_cmd_create(opcode, size);
+	buf = bt_hci_cmd_create(opcode, (uint8_t)size);
 	if (!buf) {
 		return -ENOBUFS;
 	}

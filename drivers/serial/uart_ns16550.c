@@ -568,9 +568,7 @@ static int uart_ns16550_configure(const struct device *dev,
 	struct uart_ns16550_dev_data * const dev_data = dev->data;
 	const struct uart_ns16550_dev_config * const dev_cfg = dev->config;
 	uint32_t pclk = 0U;
-
-	/* temp for return value if error occurs in this locked region */
-	int ret = 0;
+	int ret;
 
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
 
@@ -614,6 +612,11 @@ static int uart_ns16550_configure(const struct device *dev,
 	} else {
 		if (!device_is_ready(dev_cfg->clock_dev)) {
 			ret = -EINVAL;
+			goto out;
+		}
+
+		ret = clock_control_on(dev_cfg->clock_dev, dev_cfg->clock_subsys);
+		if (ret != 0 && ret != -EALREADY) {
 			goto out;
 		}
 
@@ -712,6 +715,7 @@ static int uart_ns16550_configure(const struct device *dev,
 
 	/* disable interrupts  */
 	ns16550_outbyte(dev, REG_IER, 0x00);
+	ret = 0;
 
 out:
 	k_spin_unlock(&dev_data->lock, key);
