@@ -648,7 +648,7 @@ static int rtc_sam0_init(const struct device *dev)
 	return 0;
 }
 
-static struct rtc_driver_api DT_CONST rtc_sam0_driver_api = {
+static DEVICE_API(rtc, rtc_sam0_driver_api) = {
 	.set_time = rtc_sam0_set_time,
 	.get_time = rtc_sam0_get_time,
 

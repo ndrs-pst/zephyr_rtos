@@ -15,6 +15,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_if.h>
 #include <zephyr/net/socket_poll.h>
 #include <zephyr/net/net_core.h>
 
@@ -227,13 +228,6 @@ struct dns_socket_dispatcher {
 	k_timeout_t buf_timeout;
 };
 
-struct mdns_responder_context {
-	struct net_sockaddr server_addr;
-	struct dns_socket_dispatcher dispatcher;
-	struct zsock_pollfd fds[1];
-	int sock;
-};
-
 /**
  * @brief Register a DNS dispatcher socket. Each code wanting to use
  * the dispatcher needs to create the dispatcher context and call
@@ -443,6 +437,29 @@ struct dns_resolve_context {
 	/** Is this context in use */
 	enum dns_resolve_context_state state;
 };
+
+/** @cond INTERNAL_HIDDEN */
+
+struct mdns_probe_user_data {
+	struct mdns_responder_context *ctx;
+	char query[DNS_MAX_NAME_SIZE + 1];
+	uint16_t dns_id;
+};
+
+struct mdns_responder_context {
+	struct net_sockaddr server_addr;
+	struct dns_socket_dispatcher dispatcher;
+	struct zsock_pollfd fds[1];
+	int sock;
+	struct net_if *iface;
+#if defined(CONFIG_MDNS_RESPONDER_PROBE)
+	struct k_work_delayable probe_timer;
+	struct dns_resolve_context probe_ctx;
+	struct mdns_probe_user_data probe_data;
+#endif
+};
+
+/** @endcond */
 
 /**
  * @brief Init DNS resolving context.

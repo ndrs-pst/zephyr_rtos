@@ -94,6 +94,26 @@ static int gpio_stm32_flags_to_conf(gpio_flags_t flags, uint32_t* pincfg) {
         tmp = STM32_PINCFG_MODE_ANALOG;
     }
 
+    #if !defined(CONFIG_SOC_SERIES_STM32F1X)
+    switch (flags & (STM32_GPIO_SPEED_MASK << STM32_GPIO_SPEED_SHIFT)) {
+        case STM32_GPIO_VERY_HIGH_SPEED :
+            tmp |= STM32_OSPEEDR_VERY_HIGH_SPEED;
+            break;
+
+        case STM32_GPIO_HIGH_SPEED :
+            tmp |= STM32_OSPEEDR_HIGH_SPEED;
+            break;
+
+        case STM32_GPIO_MEDIUM_SPEED :
+            tmp |= STM32_OSPEEDR_MEDIUM_SPEED;
+            break;
+
+        default :
+            tmp |= STM32_OSPEEDR_LOW_SPEED;
+            break;
+    }
+    #endif /* !CONFIG_SOC_SERIES_STM32F1X */
+
     *pincfg = tmp;
 
     return (0);
