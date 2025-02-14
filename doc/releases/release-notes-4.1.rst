@@ -117,6 +117,11 @@ Deprecated APIs and options
 * The TinyCrypt library has been deprecated as the upstream version is no longer maintained.
   PSA Crypto API is now the recommended cryptographic library for Zephyr.
 
+* The :kconfig:option:`CONFIG_BT_DIS_MODEL` and :kconfig:option:`CONFIG_BT_DIS_MANUF` have been
+  deprecated. Application developers can achieve the same configuration by using the new
+  :kconfig:option:`CONFIG_BT_DIS_MODEL_NUMBER_STR` and
+  :kconfig:option:`CONFIG_BT_DIS_MANUF_NAME_STR` Kconfig options.
+
 New APIs and options
 ====================
 
@@ -151,6 +156,16 @@ New APIs and options
     * :c:member:`bt_mesh_health_cli::update` callback can be used to periodically update the message
       published by the Health Client.
 
+  * Services
+
+    * The :kconfig:option:`CONFIG_BT_DIS_MODEL_NUMBER` and
+      :kconfig:option:`CONFIG_BT_DIS_MANUF_NAME` Kconfig options can be used to control the
+      presence of the Model Number String and Manufacturer Name String characteristics inside
+      the Device Information Service (DIS). The :kconfig:option:`CONFIG_BT_DIS_MODEL_NUMBER_STR`
+      and :kconfig:option:`CONFIG_BT_DIS_MANUF_NAME_STR` Kconfig options are now used to set the
+      string values in these characteristics. They replace the functionality of the deprecated
+      :kconfig:option:`CONFIG_BT_DIS_MODEL` and :kconfig:option:`CONFIG_BT_DIS_MANUF` Kconfigs.
+
 * Build system
 
   * Sysbuild
@@ -176,6 +191,11 @@ New APIs and options
 
     * Image management :c:macro:`MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED` now has image data field
       :c:struct:`img_mgmt_image_confirmed`.
+
+* MCUboot
+
+  * Signed hex files where an encryption key Kconfig is set now have the encrypted flag set in
+    the image header.
 
 * Video
 
