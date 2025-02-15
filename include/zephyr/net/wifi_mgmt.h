@@ -111,10 +111,8 @@ enum net_request_wifi_cmd {
     NET_REQUEST_WIFI_CMD_AP_CONFIG_PARAM,
     /** DPP actions */
     NET_REQUEST_WIFI_CMD_DPP,
-    #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
     /** BSS transition management query */
     NET_REQUEST_WIFI_CMD_BTM_QUERY,
-    #endif
     /** Flush PMKSA cache entries */
     NET_REQUEST_WIFI_CMD_PMKSA_FLUSH,
     /** Set enterprise mode credential */
@@ -277,12 +275,10 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_CONFIG_PARAM);
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_DPP);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 /** Request a Wi-Fi BTM query */
 #define NET_REQUEST_WIFI_BTM_QUERY (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_BTM_QUERY)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BTM_QUERY);
-#endif
 
 /** Request a Wi-Fi PMKSA cache entries flush */
 #define NET_REQUEST_WIFI_PMKSA_FLUSH        \
@@ -1675,7 +1671,6 @@ struct wifi_mgmt_ops {
      */
     int (*channel)(const struct device* dev, struct wifi_channel_info* channel);
 
-    #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
     /** Send BTM query
      *
      * @param dev Pointer to the device structure for the driver instance.
@@ -1684,7 +1679,6 @@ struct wifi_mgmt_ops {
      * @return 0 if ok, < 0 if error
      */
     int (*btm_query)(const struct device* dev, uint8_t reason);
-    #endif
 
     /** Judge ap whether support the capability
      *

@@ -3361,7 +3361,7 @@ Settings:
     - subsys/settings/
     - tests/subsys/settings/
     - samples/subsys/settings/
-    - doc/services/settings/
+    - doc/services/storage/settings/
   labels:
     - "area: Settings"
   tests:
@@ -4343,12 +4343,23 @@ Secure storage:
     - subsys/secure_storage/
     - include/zephyr/psa/
     - samples/psa/
-    - doc/services/secure_storage.rst
+    - doc/services/storage/secure_storage/index.rst
     - tests/subsys/secure_storage/
   labels:
     - "area: Secure storage"
   tests:
     - psa.secure_storage
+
+Sensry Platforms:
+  status: maintained
+  maintainers:
+    - tswaehn
+  files:
+    - boards/sensry/
+  files-regex:
+    - .*sy1xx.*
+  labels:
+    - "platform: sensry"
 
 Storage:
   status: odd fixes
@@ -4478,6 +4489,18 @@ TDK Sensors:
     - cmake/linker/armlink/
     - include/zephyr/toolchain/armclang.h
     - lib/libc/armstdc/*
+  labels:
+    - "area: Toolchains"
+
+"Toolchain IAR":
+  status: maintained
+  maintainers:
+    - RobinKastberg
+  files:
+    - cmake/*/iar/
+    - include/zephyr/toolchain/iar.h
+    - include/zephyr/toolchain/iar/*
+    - lib/libc/iar/*
   labels:
     - "area: Toolchains"
 
