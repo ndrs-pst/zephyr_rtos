@@ -527,6 +527,9 @@ static int sdhc_stm32_get_scr(SDMMC_TypeDef *sdmmc, int timeout_ms, uint8_t* scr
 			tempscr[0] = sdmmc->FIFO;
 			tempscr[1] = sdmmc->FIFO;
 			index++;
+
+			sys_put_be32(tempscr[1], scr);
+			sys_put_be32(tempscr[0], scr + 4);
 		}
 
 		if ((HAL_GetTick() - tickstart) >= SDMMC_SWDATATIMEOUT) {
@@ -546,9 +549,6 @@ static int sdhc_stm32_get_scr(SDMMC_TypeDef *sdmmc, int timeout_ms, uint8_t* scr
 	} else {
 		/* Clear all the static flags */
 		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
-
-		sys_put_be32(tempscr[1], scr);
-		sys_put_be32(tempscr[0], scr + 4);
 	}
 
 	return 0;
