@@ -284,12 +284,6 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		s_nxp_wifi_UapActivated = true;
 		break;
 	case WLAN_REASON_UAP_CLIENT_ASSOC:
-		LOG_DBG("WLAN: UAP a Client Associated");
-		LOG_DBG("Client => ");
-		print_mac((const char *)data);
-		LOG_DBG("Associated with Soft AP");
-		break;
-	case WLAN_REASON_UAP_CLIENT_CONN:
 		wlan_get_current_uap_network(&nxp_wlan_uap_network);
 #ifdef CONFIG_NXP_WIFI_11AX
 		if (nxp_wlan_uap_network.dot11ax) {
@@ -312,6 +306,12 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		ap_sta_info.twt_capable = status.twt_capable;
 
 		wifi_mgmt_raise_ap_sta_connected_event(g_uap.netif, &ap_sta_info);
+		LOG_DBG("WLAN: UAP a Client Associated");
+		LOG_DBG("Client => ");
+		print_mac((const char *)data);
+		LOG_DBG("Associated with Soft AP");
+		break;
+	case WLAN_REASON_UAP_CLIENT_CONN:
 		LOG_DBG("WLAN: UAP a Client Connected");
 		LOG_DBG("Client => ");
 		print_mac((const char *)data);
@@ -1278,6 +1278,10 @@ static int nxp_wifi_stats(const struct device *dev, struct net_stats_wifi *stats
 	stats->unicast.tx = if_handle->stats.unicast.tx;
 	stats->overrun_count = if_handle->stats.errors.rx + if_handle->stats.errors.tx;
 
+	if (!net_if_is_admin_up(net_if_lookup_by_dev(dev))) {
+		return 0;
+	}
+
 #ifdef CONFIG_NXP_WIFI_GET_LOG
 	wifi_stats = k_malloc(sizeof(wlan_pkt_stats_t));
 	if (!wifi_stats) {
@@ -1325,6 +1329,10 @@ int nxp_wifi_reset_stats(const struct device *dev)
 
 	/* clear local statistics */
 	memset(&if_handle->stats, 0, sizeof(if_handle->stats));
+
+	if (!net_if_is_admin_up(net_if_lookup_by_dev(dev))) {
+		return 0;
+	}
 
 #ifdef CONFIG_NXP_WIFI_GET_LOG
 	/* store firmware statistics */
