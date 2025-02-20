@@ -620,7 +620,7 @@ static inline int net_ipv6_pe_init(struct net_if* iface) {
 #endif /* CONFIG_NET_IPV6_PE */
 
 typedef void (*net_ipv6_pe_filter_cb_t)(struct net_in6_addr* prefix,
-                                        bool is_blacklist,
+                                        bool is_denylist,
                                         void* user_data);
 
 /**
