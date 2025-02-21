@@ -54,9 +54,9 @@ extern "C" {
 #define INT_TO_POINTER(x)   ((void*)(intptr_t)(x))
 
 #if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
-#define __CHAR_BIT__            8UL
-#define __SIZEOF_LONG__         4UL
-#define __SIZEOF_LONG_LONG__    8UL
+#define __CHAR_BIT__            8
+#define __SIZEOF_LONG__         4
+#define __SIZEOF_LONG_LONG__    8
 #endif
 
 #if !(defined(__CHAR_BIT__) && defined(__SIZEOF_LONG__) && defined(__SIZEOF_LONG_LONG__))
