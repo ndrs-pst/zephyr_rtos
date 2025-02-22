@@ -23,8 +23,8 @@
 
 struct waitq_walk_data {
 	sys_dlist_t *list;
-	size_t       bytes_requested;
-	size_t       bytes_available;
+	size_t bytes_requested;
+	size_t bytes_available;
 };
 
 static int pipe_get_internal(k_spinlock_key_t key, struct k_pipe *pipe,
@@ -117,7 +117,7 @@ static inline bool handle_poll_events(struct k_pipe *pipe)
 
 void z_impl_k_pipe_flush(struct k_pipe *pipe)
 {
-	size_t  bytes_read;
+	size_t bytes_read;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, flush, pipe);
 
@@ -141,7 +141,7 @@ void z_vrfy_k_pipe_flush(struct k_pipe *pipe)
 
 void z_impl_k_pipe_buffer_flush(struct k_pipe *pipe)
 {
-	size_t  bytes_read;
+	size_t bytes_read;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, buffer_flush, pipe);
 

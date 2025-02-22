@@ -17,7 +17,7 @@ int sensing_open_sensor(const struct sensing_sensor_info *sensor_info,
 			struct sensing_callback_list *cb_list,
 			sensing_sensor_handle_t *handle)
 {
-	int ret = 0;
+	int ret;
 
 	if (sensor_info == NULL || handle == NULL) {
 		return -ENODEV;
@@ -40,7 +40,7 @@ int sensing_open_sensor_by_dt(const struct device *dev,
 			      struct sensing_callback_list *cb_list,
 			      sensing_sensor_handle_t *handle)
 {
-	int ret = 0;
+	int ret;
 	struct sensing_sensor *sensor;
 
 	if (handle == NULL) {
