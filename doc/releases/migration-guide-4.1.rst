@@ -216,6 +216,7 @@ Entropy
 Ethernet
 ========
 
+* Deprecated eth_mcux driver was removed.
 * Silabs gecko ethernet changes:
 
   * Renamed the devicetree property ``location-phy_mdc`` to ``location-phy-mdc``.
@@ -678,6 +679,15 @@ LoRa
 * The function :c:func:`lora_recv_async` and callback ``lora_recv_cb`` now include an
   additional ``user_data`` parameter, which is a void pointer. This parameter can be used to reference
   any user-defined data structure. To maintain the current behavior, set this parameter to ``NULL``.
+
+Secure Storage
+==============
+
+* Store backends no longer automatically enable their dependencies through ``select`` or ``imply``.
+  Users must ensure that the depencies are enabled in their applications.
+  :kconfig:option:`CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS` previously enabled NVS
+  and settings, which means the NVS settings backend would get used by default if ZMS wasn't
+  enabled. (:github:`86181`)
 
 Stream Flash
 ============
