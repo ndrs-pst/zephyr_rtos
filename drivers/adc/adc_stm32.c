@@ -1068,10 +1068,7 @@ static void adc_context_start_sampling(struct adc_context* ctx) {
         CONTAINER_OF(ctx, struct adc_stm32_data, ctx);
     const struct device* dev = data->dev;
     const struct adc_stm32_cfg* config = dev->config;
-    ADC_TypeDef* adc = config->base;
-
-    /* Remove warning for some series */
-    ARG_UNUSED(adc);
+    __maybe_unused ADC_TypeDef* adc = config->base;
 
     data->repeat_buffer = data->buffer;
 
@@ -1136,7 +1133,7 @@ static void adc_stm32_isr(const struct device* dev) {
 static void adc_context_on_complete(struct adc_context* ctx, int status) {
     struct adc_stm32_data* data =
         CONTAINER_OF(ctx, struct adc_stm32_data, ctx);
-    ADC_TypeDef* adc = DEVICE_STM32_GET_ADC(data->dev);
+    __maybe_unused ADC_TypeDef* adc = DEVICE_STM32_GET_ADC(data->dev);
 
     ARG_UNUSED(status);
 
@@ -1147,8 +1144,6 @@ static void adc_context_on_complete(struct adc_context* ctx, int status) {
     #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32U5X)
     /* Reset channel pre-selection register */
     LL_ADC_SetChannelPreselection(adc, 0);
-    #else
-    ARG_UNUSED(adc);
     #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32U5X */
 }
 
@@ -1215,7 +1210,7 @@ static int adc_stm32_sampling_time_setup(const struct device* dev, uint8_t id,
                                          uint16_t acq_time) {
     const struct adc_stm32_cfg* config = dev->config;
     ADC_TypeDef* adc = config->base;
-    struct adc_stm32_data* data = dev->data;
+    __maybe_unused struct adc_stm32_data* data = dev->data;
 
     int acq_time_index;
 
@@ -1233,7 +1228,6 @@ static int adc_stm32_sampling_time_setup(const struct device* dev, uint8_t id,
     switch (config->num_sampling_time_common_channels) {
         case 0 :
             #if ANY_NUM_COMMON_SAMPLING_TIME_CHANNELS_IS(0)
-            ARG_UNUSED(data);
             LL_ADC_SetChannelSamplingTime(adc,
                                           __LL_ADC_DECIMAL_NB_TO_CHANNEL(id),
                                           (uint32_t)acq_time_index);
@@ -1486,10 +1480,8 @@ static int adc_stm32h7_setup_boost(const struct adc_stm32_cfg* config, ADC_TypeD
 static int adc_stm32_set_clock(const struct device* dev) {
     const struct adc_stm32_cfg* config = dev->config;
     const struct device* const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-    ADC_TypeDef* adc = config->base;
+    __maybe_unused ADC_TypeDef* adc = config->base;
     int ret = 0;
-
-    ARG_UNUSED(adc); /* Necessary to avoid warnings on some series */
 
     if (clock_control_on(clk,
                          (clock_control_subsys_t)&config->pclken[0]) != 0) {
@@ -1553,10 +1545,8 @@ static int adc_stm32_init(const struct device* dev) {
     struct adc_stm32_data* data = dev->data;
     const struct adc_stm32_cfg* config = dev->config;
     const struct device* const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-    ADC_TypeDef* adc = config->base;
+    __maybe_unused ADC_TypeDef* adc = config->base;
     int err;
-
-    ARG_UNUSED(adc); /* Necessary to avoid warnings on some series */
 
     LOG_DBG("Initializing %s", dev->name);
 
