@@ -96,6 +96,11 @@ struct net_if_addr {
         struct {
             /** Duplicate address detection (DAD) timer */
             sys_snode_t dad_node;
+
+            /** DAD needed list node */
+            sys_snode_t dad_need_node;
+
+            /** DAD start time */
             uint32_t dad_start;
 
             /** How many times we have done DAD */
@@ -107,6 +112,11 @@ struct net_if_addr {
         struct {
             /** Address conflict detection (ACD) timer. */
             sys_snode_t acd_node;
+
+            /** ACD needed list node */
+            sys_snode_t acd_need_node;
+
+            /** ACD timeout value. */
             k_timepoint_t acd_timeout;
 
             /** ACD probe/announcement counter. */
@@ -151,6 +161,9 @@ struct net_if_addr {
 struct net_if_mcast_addr {
     /** IP address */
     struct net_addr address;
+
+    /** Rejoining multicast groups list node */
+    sys_snode_t rejoin_node;
 
     #if defined(CONFIG_NET_IPV4_IGMPV3)
     /** Sources to filter on */
