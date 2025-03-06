@@ -101,7 +101,6 @@ struct sdhc_stm32_data {
 	uint8_t io_int_num;
 	uint8_t io_func_msk;
 	uint8_t opr_cnt;
-	void (*io_func_cb[SDIO_MAX_IO_NUMBER])(struct sdhc_stm32_data *data, uint32_t func);
 };
 
 static int sdhc_stm32_clock_enable(const struct sdhc_stm32_config *cfg)
@@ -1561,7 +1560,7 @@ static void sdhc_stm32_card_detect_handler(struct k_work *item)
 		int_sources = SDHC_INT_REMOVED;
 	}
 
-	if (ctx->sdhc_cb) {
+	if (ctx->sdhc_cb != NULL) {
 		ctx->sdhc_cb(dev, int_sources, ctx->sdhc_cb_user_data);
 	}
 }
@@ -1771,34 +1770,9 @@ static void sdhc_stm32_sdio_work_handler(struct k_work *work)
 {
 	struct sdhc_stm32_data *ctx = CONTAINER_OF(work, struct sdhc_stm32_data, sdio_work);
 	SDMMC_TypeDef *sdmmc = ctx->sdmmc;
-	uint8_t int_pending;
 
-	if (ctx->io_int_num == 1U) { /* HAL_SDIO_RegisterIOFunctionCallback */
-		if ((ctx->io_func_cb[ctx->io_func_msk - 1U]) != NULL) {
-			(ctx->io_func_cb[ctx->io_func_msk - 1U])(ctx, ctx->io_func_msk - 1U);
-		}
-	} else if ((ctx->io_int_num > 1U) && (ctx->io_func_msk != 0U)) {
-		/* Get pending int firstly */
-		int ret;
-
-		ret = sdhc_stm32_sdio_rd_direct(sdmmc, SDIO_FUNC_NUM_0, SDIO_CCCR_INT_P,
-						&int_pending);
-		if (ret) {
-			return;
-		}
-
-		if ((int_pending != 0U) && (ctx->io_func_msk != 0U)) {
-			for (size_t count = 1; count <= SDIO_MAX_IO_NUMBER; count++) {
-				if (((int_pending & (1U << count)) != 0U) &&
-				    (((1U << count) & ctx->io_func_msk) != 0U)) {
-					if ((ctx->io_func_cb[count - 1U]) != NULL) {
-						(ctx->io_func_cb[count - 1U])(ctx, count);
-					}
-				}
-			}
-		}
-	} else {
-		/* Nothing to do */
+	if (ctx->sdhc_cb != NULL) {
+		ctx->sdhc_cb(ctx->dev, SDHC_INT_SDIO, ctx->sdhc_cb_user_data);
 	}
 }
 
