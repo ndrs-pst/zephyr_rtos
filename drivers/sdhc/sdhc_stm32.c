@@ -67,8 +67,6 @@ struct sdhc_stm32_config {
 	const struct reset_dt_spec reset;
 
 	bool use_dma;
-	bool detect_dat3;
-	bool detect_cd;
 
 	struct sdhc_host_props props;
 };
@@ -1533,18 +1531,7 @@ static int sdhc_stm32_get_card_present(const struct device *dev)
 	const struct sdhc_stm32_config *cfg = dev->config;
 	struct sdhc_stm32_data *ctx = dev->data;
 
-	if (cfg->detect_dat3) {
-		if (!ctx->card_present) {
-			/* Detect card presence with DAT3 line pull */
-
-			/* Delay to ensure host has time to detect card */
-			k_busy_wait(1000);
-
-			/* Clear card detection and pull */
-		}
-	} else if (cfg->detect_cd) {
-		/* TBA */
-	} else if (cfg->cd_gpio.port) {
+	if (cfg->cd_gpio.port) {
 		ctx->card_present = gpio_pin_get_dt(&cfg->cd_gpio) > 0;
 	} else {
 		LOG_WRN("No card detection method configured, assuming card "
@@ -1708,14 +1695,29 @@ static int sdhc_stm32_enable_interrupt(const struct device *dev,
 
 	if (sources & SDHC_INT_SDIO) {
 		/* Enable SDIO interrupt */
+		sdmmc->DCTRL = SDMMC_DCTRL_SDIOEN;
 	}
 
 	if (sources & SDHC_INT_INSERTED) {
 		/* Enable card detection interrupt */
+		if (cfg->cd_gpio.port) {
+			ret = gpio_pin_interrupt_configure_dt(&cfg->cd_gpio,
+							      GPIO_INT_EDGE_RISING);
+			if (ret) {
+				return ret;
+			}
+		}
 	}
 
 	if (sources & SDHC_INT_REMOVED) {
 		/* Enable card removal interrupt */
+		if (cfg->cd_gpio.port) {
+			ret = gpio_pin_interrupt_configure_dt(&cfg->cd_gpio,
+							      GPIO_INT_EDGE_FALLING);
+			if (ret) {
+				return ret;
+			}
+		}
 	}
 
 	return ret;
@@ -1731,14 +1733,29 @@ static int sdhc_stm32_disable_interrupt(const struct device *dev, int sources)
 
 	if (sources & SDHC_INT_SDIO) {
 		/* Disable SDIO interrupt */
+		sdmmc->DCTRL = 0;
 	}
 
 	if (sources & SDHC_INT_INSERTED) {
 		/* Disable card detection interrupt */
+		if (cfg->cd_gpio.port) {
+			ret = gpio_pin_interrupt_configure_dt(&cfg->cd_gpio,
+							      GPIO_INT_DISABLE);
+			if (ret) {
+				return ret;
+			}
+		}
 	}
 
 	if (sources & SDHC_INT_REMOVED) {
 		/* Disable card removal interrupt */
+		if (cfg->cd_gpio.port) {
+			ret = gpio_pin_interrupt_configure_dt(&cfg->cd_gpio,
+							      GPIO_INT_DISABLE);
+			if (ret) {
+				return ret;
+			}
+		}
 	}
 
 	/* If all interrupt flags are disabled, remove callback */
