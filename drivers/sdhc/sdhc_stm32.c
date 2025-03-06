@@ -1034,8 +1034,21 @@ static int sdhc_stm32_reset(const struct device *dev)
 {
 	const struct sdhc_stm32_config *cfg = dev->config;
 	struct sdhc_stm32_data *ctx = dev->data;
+	SDMMC_TypeDef *sdmmc = ctx->sdmmc;
+	int ret;
 
-	/* Switch to default I/O voltage of 3.3V */
+	/* Do card cycle power process */
+	ret = reset_line_toggle_dt(&cfg->reset);
+	if (ret) {
+		LOG_ERR("Failed to reset peripheral");
+		return ret;
+	}
+
+	(void)SDMMC_PowerState_Cycle(sdmmc);
+	k_sleep(K_MSEC(1));
+	(void)SDMMC_PowerState_OFF(sdmmc);
+	k_sleep(K_MSEC(1));
+	(void)SDMMC_PowerState_ON(sdmmc);
 
 	return 0;
 }
