@@ -1319,8 +1319,8 @@ void net_if_ipv6_start_dad(struct net_if* iface,
 }
 
 void net_if_start_dad(struct net_if* iface) {
-    struct net_if_addr const* ifaddr;
-    struct net_if_addr const* next;
+    struct net_if_addr* ifaddr;
+    struct net_if_addr* next;
     struct net_if_ipv6* ipv6;
     sys_slist_t dad_needed;
     struct net_in6_addr addr = {0};
