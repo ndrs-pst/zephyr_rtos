@@ -631,59 +631,6 @@ static int sdhc_stm32_stp_xfer(SDMMC_TypeDef *sdmmc, struct sdhc_command *cmd)
 	return ret;
 }
 
-static int sdhc_stm32_sdio_rd_direct(SDMMC_TypeDef *sdmmc, uint32_t func_num, uint32_t reg_addr,
-				     uint8_t *data_out)
-{
-	SDMMC_CmdInitTypeDef cmd_init;
-	int ret;
-	uint32_t arg;
-
-	arg = ((func_num << 28U) | ((reg_addr & 0x1FFFFU) << 9U));
-
-	cmd_init.Argument = arg;
-	cmd_init.CmdIndex = SDMMC_CMD_SDMMC_RW_DIRECT;
-	cmd_init.Response = SDMMC_RESPONSE_SHORT;
-	cmd_init.WaitForInterrupt = SDMMC_WAIT_NO;
-	cmd_init.CPSM = SDMMC_CPSM_ENABLE;
-	(void)SDMMC_SendCommand(sdmmc, &cmd_init);
-
-	ret = sdhc_stm32_get_resp1_ll(sdmmc, 1, SDMMC_CMD_SDMMC_RW_DIRECT);
-	if (ret == 0) {
-		__SDMMC_CMDTRANS_DISABLE(sdmmc);
-		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
-
-		*data_out = (uint8_t)sdmmc->RESP1;
-	}
-
-	return ret;
-}
-
-static int sdhc_stm32_sdio_wr_direct(SDMMC_TypeDef *sdmmc, uint32_t func_num, uint32_t raw,
-				     uint32_t reg_addr, uint8_t data_in)
-{
-	SDMMC_CmdInitTypeDef cmd_init;
-	int ret;
-	uint32_t arg;
-
-	arg = (BIT(31) | (func_num << 28U) | (raw << 27U) | ((reg_addr & 0x1FFFFU) << 9U) |
-	       ((uint32_t)data_in & 0x000000FFU));
-
-	cmd_init.Argument = arg;
-	cmd_init.CmdIndex = SDMMC_CMD_SDMMC_RW_DIRECT;
-	cmd_init.Response = SDMMC_RESPONSE_SHORT;
-	cmd_init.WaitForInterrupt = SDMMC_WAIT_NO;
-	cmd_init.CPSM = SDMMC_CPSM_ENABLE;
-	(void)SDMMC_SendCommand(sdmmc, &cmd_init);
-
-	ret = sdhc_stm32_get_resp1_ll(sdmmc, 1, SDMMC_CMD_SDMMC_RW_DIRECT);
-	if (ret == 0) {
-		__SDMMC_CMDTRANS_DISABLE(sdmmc);
-		__SDMMC_CLEAR_FLAG(sdmmc, SDMMC_STATIC_DATA_FLAGS);
-	}
-
-	return ret;
-}
-
 static int sdhc_stm32_sdio_rw_direct(SDMMC_TypeDef *sdmmc, struct sdhc_command *cmd)
 {
 	SDMMC_CmdInitTypeDef cmd_init;
@@ -1683,6 +1630,7 @@ static int sdhc_stm32_enable_interrupt(const struct device *dev,
 				       sdhc_interrupt_cb_t callback,
 				       int sources, void *user_data)
 {
+	struct sdhc_stm32_config const* cfg = dev->config;
 	struct sdhc_stm32_data *ctx = dev->data;
 	SDMMC_TypeDef *sdmmc = ctx->sdmmc;
 	int ret = 0;
@@ -1724,6 +1672,7 @@ static int sdhc_stm32_enable_interrupt(const struct device *dev,
 
 static int sdhc_stm32_disable_interrupt(const struct device *dev, int sources)
 {
+	struct sdhc_stm32_config const* cfg = dev->config;
 	struct sdhc_stm32_data *ctx = dev->data;
 	SDMMC_TypeDef *sdmmc = ctx->sdmmc;
 	int ret = 0;
@@ -1769,7 +1718,6 @@ static int sdhc_stm32_disable_interrupt(const struct device *dev, int sources)
 static void sdhc_stm32_sdio_work_handler(struct k_work *work)
 {
 	struct sdhc_stm32_data *ctx = CONTAINER_OF(work, struct sdhc_stm32_data, sdio_work);
-	SDMMC_TypeDef *sdmmc = ctx->sdmmc;
 
 	if (ctx->sdhc_cb != NULL) {
 		ctx->sdhc_cb(ctx->dev, SDHC_INT_SDIO, ctx->sdhc_cb_user_data);
@@ -1882,6 +1830,8 @@ err_pwr:
 
 err_card_detect:
 	sdhc_stm32_card_detect_uninit(dev);
+
+	sdhc_stm32_clock_disable(cfg);
 
 	return ret;
 }
