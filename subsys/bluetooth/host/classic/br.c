@@ -1069,7 +1069,8 @@ static int bt_br_write_current_iac_lap(bool limited)
 
 	LOG_DBG("limited discoverable mode? %s", limited ? "Yes" : "No");
 
-	param_len = sizeof(*iac_lap) + (num_current_iac * sizeof(struct bt_hci_iac_lap));
+	param_len = BT_HCI_CP_WRITE_CURRENT_IAC_LAP_PACKETS_SZ +
+		(num_current_iac * sizeof(struct bt_hci_iac_lap));
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_WRITE_CURRENT_IAC_LAP, param_len);
 	if (!buf) {

@@ -789,9 +789,10 @@ struct bt_hci_iac_lap {
 	uint8_t iac[3];
 } __packed;
 
+#define BT_HCI_CP_WRITE_CURRENT_IAC_LAP_PACKETS_SZ 1
 struct bt_hci_cp_write_current_iac_lap {
 	uint8_t  num_current_iac;
-	struct bt_hci_iac_lap lap[0];
+	struct bt_hci_iac_lap lap[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 #define BT_HCI_OP_WRITE_INQUIRY_MODE            BT_OP(BT_OGF_BASEBAND, 0x0045) /* 0x0c45 */
