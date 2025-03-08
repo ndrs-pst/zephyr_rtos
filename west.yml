@@ -152,12 +152,12 @@ manifest:
       groups:
         - hal
     - name: hal_ambiq
-      revision: 87a188b91aca22ce3ce7deb4a1cbf7780d784673
+      revision: 77d99efc16c7de7c17e9507693e4e3d8be1a5cb7
       path: modules/hal/ambiq
       groups:
         - hal
     - name: hal_atmel
-      revision: 68a250dd8e3d7918541226770b0e827a8016c965
+      revision: 67481a1188402d706668ece975567963adef6401
       path: modules/hal/atmel
       groups:
         - hal
@@ -188,7 +188,7 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: fa2431a906ffb560160d40739d7cf04169551103
+      revision: 8ea892e6ade63b0b20f9adc76cb5fea774eba3a3
       path: modules/hal/microchip
       groups:
         - hal
@@ -228,7 +228,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 8a173e9e566a396a19d18da4661cb54ce098f268
+      revision: 2ad0fd7d56a9142a0479f5745277fda8b21da0db
       path: modules/hal/silabs
       groups:
         - hal
@@ -268,7 +268,7 @@ manifest:
       groups:
         - hal
     - name: hal_xtensa
-      revision: baa56aa3e119b5aae43d16f9b2d2c8112e052871
+      revision: b38620c7cc61e349e192ed86a54940a5cd0636b7
       path: modules/hal/xtensa
       groups:
         - hal
@@ -318,10 +318,10 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 73a5d5827a94820be65b7d276d28173ec10bab9f
+      revision: b84bd7314a239f818e78f6927f5673247816df53
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: e35f707a782b7c4c0eb83a3b06ca4e6eb693f29f
+      revision: 86de376136b668bf9372e8e5414aa6aad89ccd13
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: 52bb1783521c62c019451cee9b05b8eda9d7425f
@@ -353,7 +353,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 918f32d9fce5e0ee59fc33844b5317b7626ce37a
+      revision: f04edd12b5e5de2e2291f6e0a15efc03924dcbc3
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

@@ -2543,7 +2543,7 @@ skip_alloc:
 
 		context_finalize_packet(context, family, pkt);
 
-		ret = net_send_data(pkt);
+		ret = net_try_send_data(pkt, timeout);
 	} else if (IS_ENABLED(CONFIG_NET_TCP) &&
 		   net_context_get_proto(context) == NET_IPPROTO_TCP) {
 
@@ -2587,7 +2587,7 @@ skip_alloc:
 			}
 
 			/* Pass to L2: */
-			ret = net_send_data(pkt);
+			ret = net_try_send_data(pkt, timeout);
 		} else {
 			struct net_sockaddr_ll_ptr *ll_src_addr;
 			struct net_sockaddr_ll *ll_dst_addr;
@@ -2608,7 +2608,7 @@ skip_alloc:
 			net_pkt_set_ll_proto_type(pkt,
 						  net_ntohs(ll_dst_addr->sll_protocol));
 
-			net_if_queue_tx(net_pkt_iface(pkt), pkt);
+			net_if_try_queue_tx(net_pkt_iface(pkt), pkt, timeout);
 		}
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == NET_AF_CAN &&
 		   net_context_get_proto(context) == CAN_RAW) {
@@ -2619,7 +2619,7 @@ skip_alloc:
 
 		net_pkt_cursor_init(pkt);
 
-		ret = net_send_data(pkt);
+		ret = net_try_send_data(pkt, timeout);
 	} else {
 		NET_DBG("Unknown protocol while sending packet: %d",
 		net_context_get_proto(context));

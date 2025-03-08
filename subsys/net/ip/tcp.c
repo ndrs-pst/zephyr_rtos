@@ -2937,6 +2937,7 @@ static enum net_verdict tcp_in(struct tcp* conn, struct net_pkt* pkt) {
         net_stats_update_tcp_seg_rst(net_pkt_iface(pkt));
         do_close     = true;
         close_status = -ECONNRESET;
+        conn->rst_received = true;
 
         /* If we receive RST and ACK for the sent SYN, it means
          * that there is no socket listening the port we are trying
@@ -4071,7 +4072,12 @@ int net_tcp_connect(struct net_context* context,
 
     if (!IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)) {
         if ((conn->state == TCP_UNUSED) || (conn->state == TCP_CLOSED)) {
-            ret = -ENOTCONN;
+            if (conn->rst_received) {
+                ret = -ECONNREFUSED;
+            }
+            else {
+                ret = -ENOTCONN;
+            }
             goto out_unref;
         }
         else if ((K_TIMEOUT_EQ(timeout, K_NO_WAIT)) &&
@@ -4086,7 +4092,12 @@ int net_tcp_connect(struct net_context* context,
                 tcp_conn_close(conn, -ETIMEDOUT);
             }
 
-            ret = -ETIMEDOUT;
+            if (conn->rst_received) {
+                ret = -ECONNREFUSED;
+            }
+            else {
+                ret = -ETIMEDOUT;
+            }
             goto out_unref;
         }
         conn->in_connect = false;

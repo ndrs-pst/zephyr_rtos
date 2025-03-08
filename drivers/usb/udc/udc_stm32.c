@@ -414,7 +414,7 @@ static void handle_msg_setup(struct udc_stm32_data *priv)
 
 	if ((setup->bmRequestType == 0) && (setup->bRequest == USB_SREQ_SET_ADDRESS)) {
 		/* HAL requires we set the address before submitting status */
-		HAL_PCD_SetAddress(&priv->pcd, setup->wValue);
+		HAL_PCD_SetAddress(&priv->pcd, (uint8_t)setup->wValue);
 	}
 
 	if (udc_ctrl_stage_is_data_out(dev)) {
