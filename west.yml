@@ -298,7 +298,7 @@ manifest:
       revision: 1ed1ddd881c3784049a92bb9fe37c38c6c74d998
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: 4952e1328529ee549d412b498ea71c54f30aa3b1
+      revision: 3bc59adb8ca1ad0780192f206c5dc1cfad635c2b
       path: modules/crypto/mbedtls
       groups:
         - crypto
@@ -321,7 +321,7 @@ manifest:
       revision: b84bd7314a239f818e78f6927f5673247816df53
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: 86de376136b668bf9372e8e5414aa6aad89ccd13
+      revision: 396059ca7a6162d07276c5797adbb1311b81cd78
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: 52bb1783521c62c019451cee9b05b8eda9d7425f
