@@ -296,12 +296,11 @@ extern volatile uintptr_t __stack_chk_guard;
 __pinned_bss
 bool z_sys_post_kernel;
 
-static int do_device_init(const struct init_entry* entry) {
-    const struct device* dev = entry->dev;
+static int do_device_init(struct device const* dev) {
     int rc = 0;
 
-    if (entry->init_fn.dev != NULL) {
-        rc = entry->init_fn.dev(dev);
+    if (dev->ops.init != NULL) {
+        rc = dev->ops.init(dev);
         /* Mark device initialized. If initialization
          * failed, record the error condition.
          */
@@ -309,6 +308,7 @@ static int do_device_init(const struct init_entry* entry) {
             if (rc < 0) {
                 rc = -rc;
             }
+
             if (rc > UINT8_MAX) {
                 rc = UINT8_MAX;
             }
@@ -354,31 +354,27 @@ static void z_sys_init_run_level(enum init_level level) {
 
     for (entry = levels[level]; entry < levels[level + 1]; entry++) {
         const struct device* dev = entry->dev;
-        int result;
+        int result = 0;
 
         sys_trace_sys_init_enter(entry, level);
         if (dev != NULL) {
-            result = do_device_init(entry);
+            if ((dev->flags & DEVICE_FLAG_INIT_DEFERRED) == 0U) {
+                result = do_device_init(dev);
+            }
         }
         else {
-            result = entry->init_fn.sys();
+            result = entry->init_fn();
         }
         sys_trace_sys_init_exit(entry, level, result);
     }
 }
 
-int z_impl_device_init(const struct device* dev) {
-    if (dev == NULL) {
-        return (-ENOENT);
+int z_impl_device_init(struct device const* dev) {
+    if (dev->state->initialized) {
+        return (-EALREADY);
     }
 
-    STRUCT_SECTION_FOREACH_ALTERNATE(_deferred_init, init_entry, entry) {
-        if (entry->dev == dev) {
-            return do_device_init(entry);
-        }
-    }
-
-    return (-ENOENT);
+    return do_device_init(dev);
 }
 
 #ifdef CONFIG_USERSPACE
