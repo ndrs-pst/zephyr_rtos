@@ -11,20 +11,18 @@
 
 uint32_t ring_buf_area_claim(struct ring_buf* buf, struct ring_buf_index* ring,
                              uint8_t** data, uint32_t size) {
-    uint32_t wrap_size;
-    int32_t  base;
+    ring_buf_idx_t head_offset;
+    ring_buf_idx_t wrap_size;
 
-    base = ring->base;
-    wrap_size = ring->head - base;
-    if (unlikely(wrap_size >= buf->size)) {
+    head_offset = (ring->head - ring->base);
+    if (unlikely(head_offset >= buf->size)) {
         /* ring->base is not yet adjusted */
-        wrap_size -= buf->size;
-        base += buf->size;
+        head_offset -= buf->size;
     }
-    wrap_size = buf->size - wrap_size;
+    wrap_size = (buf->size - head_offset);
     size = MIN(size, wrap_size);
 
-    *data = &buf->buffer[ring->head - base];
+    *data = &buf->buffer[head_offset];
     ring->head += size;
 
     return (size);
@@ -32,8 +30,8 @@ uint32_t ring_buf_area_claim(struct ring_buf* buf, struct ring_buf_index* ring,
 
 int ring_buf_area_finish(struct ring_buf* buf, struct ring_buf_index* ring,
                          uint32_t size) {
-    uint32_t claimed_size;
-    uint32_t wrap_size;
+    ring_buf_idx_t claimed_size;
+    ring_buf_idx_t tail_offset;
 
     claimed_size = (ring->head - ring->tail);
     if (unlikely(size > claimed_size)) {
@@ -43,8 +41,8 @@ int ring_buf_area_finish(struct ring_buf* buf, struct ring_buf_index* ring,
     ring->tail += size;
     ring->head = ring->tail;
 
-    wrap_size = ring->tail - ring->base;
-    if (unlikely(wrap_size >= buf->size)) {
+    tail_offset = (ring->tail - ring->base);
+    if (unlikely(tail_offset >= buf->size)) {
         /* we wrapped: adjust ring->base */
         ring->base += buf->size;
     }
