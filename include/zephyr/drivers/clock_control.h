@@ -125,6 +125,10 @@ static inline int clock_control_on(const struct device* dev,
                                    clock_control_subsys_t sys) {
     const struct clock_control_driver_api* api = (const struct clock_control_driver_api*)dev->api;
 
+    if (api->on == NULL) {
+        return (-ENOSYS);
+    }
+
     return api->on(dev, sys);
 }
 
@@ -142,6 +146,10 @@ static inline int clock_control_off(const struct device* dev,
                                     clock_control_subsys_t sys) {
     const struct clock_control_driver_api* api = (const struct clock_control_driver_api*)dev->api;
 
+    if (api->off == NULL) {
+        return (-ENOSYS);
+    }
+
     return (api->off(dev, sys));
 }
 
@@ -151,9 +159,9 @@ static inline int clock_control_off(const struct device* dev,
  * Function is non-blocking and can be called from any context. User callback is
  * called when clock is started.
  *
- * @param dev	    Device.
- * @param sys	    A pointer to an opaque data representing the sub-system.
- * @param cb	    Callback.
+ * @param dev Device.
+ * @param sys A pointer to an opaque data representing the sub-system.
+ * @param cb  Callback.
  * @param user_data User context passed to the callback.
  *
  * @retval 0 if start is successfully initiated.
