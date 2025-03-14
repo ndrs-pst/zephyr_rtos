@@ -310,7 +310,14 @@ int bt_l2cap_br_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *buf,
 {
 	struct bt_l2cap_hdr *hdr;
 	struct bt_l2cap_chan *ch = bt_l2cap_br_lookup_tx_cid(conn, cid);
-	struct bt_l2cap_br_chan *br_chan = CONTAINER_OF(ch, struct bt_l2cap_br_chan, chan);
+	struct bt_l2cap_br_chan *br_chan;
+
+	if (ch == NULL) {
+		LOG_WRN("CID %d is not found on conn %p", cid, conn);
+		return -ESHUTDOWN;
+	}
+
+	br_chan = CONTAINER_OF(ch, struct bt_l2cap_br_chan, chan);
 
 	LOG_DBG("chan %p buf %p len %zu", br_chan, buf, buf->len);
 
@@ -923,8 +930,7 @@ static int l2cap_br_conn_req_reply(struct bt_l2cap_chan *chan, uint16_t result)
 	return 0;
 }
 
-#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-#if defined(CONFIG_BT_L2CAP_LOG_LEVEL_DBG)
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL) && defined(CONFIG_BT_L2CAP_LOG_LEVEL_DBG)
 void bt_l2cap_br_chan_set_state_debug(struct bt_l2cap_chan *chan,
 				   bt_l2cap_chan_state_t state,
 				   const char *func, int line)
@@ -976,8 +982,7 @@ void bt_l2cap_br_chan_set_state(struct bt_l2cap_chan *chan,
 {
 	BR_CHAN(chan)->state = state;
 }
-#endif /* CONFIG_BT_L2CAP_LOG_LEVEL_DBG */
-#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
+#endif /* CONFIG_BT_L2CAP_LOG_LEVEL_DBG && CONFIG_BT_L2CAP_DYNAMIC_CHANNEL*/
 
 void bt_l2cap_br_chan_del(struct bt_l2cap_chan *chan)
 {
