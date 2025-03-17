@@ -2598,12 +2598,12 @@ skip_alloc:
 			ll_dst_addr = (struct net_sockaddr_ll *)&context->remote;
 			ll_src_addr = (struct net_sockaddr_ll_ptr *)&context->local;
 
-			net_pkt_lladdr_dst(pkt)->addr = ll_dst_addr->sll_addr;
-			net_pkt_lladdr_dst(pkt)->len =
-						sizeof(struct net_eth_addr);
-			net_pkt_lladdr_src(pkt)->addr = ll_src_addr->sll_addr;
-			net_pkt_lladdr_src(pkt)->len =
-						sizeof(struct net_eth_addr);
+			(void)net_linkaddr_set(net_pkt_lladdr_dst(pkt),
+					       ll_dst_addr->sll_addr,
+					       sizeof(struct net_eth_addr));
+			(void)net_linkaddr_set(net_pkt_lladdr_src(pkt),
+					       ll_src_addr->sll_addr,
+					       sizeof(struct net_eth_addr));
 
 			net_pkt_set_ll_proto_type(pkt,
 						  net_ntohs(ll_dst_addr->sll_protocol));

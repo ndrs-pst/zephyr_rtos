@@ -253,7 +253,7 @@ manifest:
       groups:
         - hal
     - name: hal_ti
-      revision: 46407c76196ca250c3f955376d52dc3ea25ba381
+      revision: 258652a3ac5d7df68ba8df20e4705c3bd98ede38
       path: modules/hal/ti
       groups:
         - hal
@@ -303,7 +303,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 2e05d05915f1c106554f4c824afa99921e269bdd
+      revision: 14286c7b0e4ec2659b1f00516ed178f3239da498
       path: bootloader/mcuboot
       groups:
         - bootloader

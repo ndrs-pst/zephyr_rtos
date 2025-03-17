@@ -46,6 +46,18 @@ Boards
 
 * Zephyr now supports version 1.11.1 of the :zephyr:board:`neorv32`.
 
+* ``arduino_uno_r4_minima``, ``arduino_uno_r4_wifi``, and ``mikroe_clicker_ra4m1`` have migrated to
+  new FSP-based configurations.
+  While there are no major functional changes, the device tree structure has been significantly revised.
+  The following device tree bindings are now removed:
+  ``renesas,ra-gpio``, ``renesas,ra-uart-sci``, ``renesas,ra-pinctrl``,
+  ``renesas,ra-clock-generation-circuit``, and ``renesas,ra-interrupt-controller-unit``.
+  Instead, use the following replacements:
+  - :dtcompatible:`renesas,ra-gpio-ioport`
+  - :dtcompatible:`renesas,ra-sci-uart`
+  - :dtcompatible:`renesas,ra-pinctrl-pfs`
+  - :dtcompatible:`renesas,ra-cgc-pclk-block`
+
 Device Drivers and Devicetree
 *****************************
 
@@ -132,6 +144,18 @@ Bluetooth Host
 
 Networking
 **********
+
+* The struct ``net_linkaddr_storage`` has been renamed to struct
+  :c:struct:`net_linkaddr` and the old struct ``net_linkaddr`` has been removed.
+  The struct :c:struct:`net_linkaddr` now contains space to store the link
+  address instead of having pointer that point to the link address. This avoids
+  possible dangling pointers when cloning struct :c:struct:`net_pkt`. This will
+  increase the size of struct :c:struct:`net_pkt` by 4 octets for IEEE 802.15.4,
+  but there is no size increase for other network technologies like Ethernet.
+  Note that any code that is using struct :c:struct:`net_linkaddr` directly, and
+  which has checks like ``if (lladdr->addr == NULL)``, will no longer work as expected
+  (because the addr is not a pointer) and must be changed to ``if (lladdr->len == 0)``
+  if the code wants to check that the link address is not set.
 
 Other subsystems
 ****************
