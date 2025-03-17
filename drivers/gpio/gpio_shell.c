@@ -224,7 +224,7 @@ static int get_sh_gpio(const struct shell* sh, char** argv, struct sh_gpio* gpio
     return (0);
 }
 
-static int cmd_gpio_conf(const struct shell* sh, size_t argc, char** argv, void* data) {
+static int cmd_gpio_conf(const struct shell* sh, size_t argc, char** argv) {
     gpio_flags_t flags = 0;
     gpio_flags_t vendor_specific;
     struct sh_gpio gpio;
@@ -481,13 +481,25 @@ static int cmd_gpio_blink(const struct shell* sh, size_t argc, char** argv) {
     return (0);
 }
 
+static char const* gpio_device_name(struct device const* dev) {
+    #ifdef CONFIG_DEVICE_DT_METADATA
+    struct device_dt_nodelabels const* nl = device_get_dt_nodelabels(dev);
+
+    if ((nl != NULL) && (nl->num_nodelabels > 0)) {
+        return (nl->nodelabels[0]);
+    }
+    #endif
+
+    return (dev->name);
+}
+
 static void device_name_get(size_t idx, struct shell_static_entry* entry) {
     if (idx >= ARRAY_SIZE(gpio_list)) {
         entry->syntax = NULL;
         return;
     }
 
-    entry->syntax  = gpio_list[idx].dev->name;
+    entry->syntax  = gpio_device_name(dev);
     entry->handler = NULL;
     entry->help    = "Device";
     entry->subcmd  = gpio_list[idx].subcmd;
@@ -603,7 +615,7 @@ static void pin_ordered(const struct pin_info* info, void* user_data) {
     shell_print(data->sh, "   %-12s %-8c %-16s %2u",
                 data->next.line_name,
                 data->next.reserved ? '*' : ' ',
-                data->next.dev->name,
+                gpio_device_name(data->next.dev),
                 data->next.pin);
 
     data->prev = data->next;
