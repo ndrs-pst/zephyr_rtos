@@ -1590,6 +1590,7 @@ struct k_timer {
         .wait_q = Z_WAIT_Q_INIT(&obj.wait_q),   \
         .expiry_fn = expiry,                    \
         .stop_fn   = stop,                      \
+        .period    = {0},                       \
         .status    = 0,                         \
         .user_data = 0,                         \
     }
@@ -1604,6 +1605,7 @@ struct k_timer {
         .wait_q = Z_WAIT_Q_INIT(&obj.wait_q),   \
         .expiry_fn = expiry,                    \
         .stop_fn   = stop,                      \
+        .period    = {},                        \
         .status    = 0,                         \
         .user_data = 0,                         \
     }
@@ -2351,7 +2353,8 @@ struct k_event {
 #define Z_EVENT_INITIALIZER(obj) \
     { \
     .wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
-    .events = 0 \
+    .events = 0, \
+    .lock = {}, \
     }
 
 /**
@@ -2623,6 +2626,7 @@ static inline void k_fifo_put(struct k_fifo* fifo, void* data) {
         SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_fifo, alloc_put, fifo, _data); \
         int fap_ret = k_queue_alloc_append(&(fifo)->_queue, _data); \
         SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_fifo, alloc_put, fifo, _data, fap_ret); \
+        fap_ret; \
     })
 
 /**
@@ -4664,6 +4668,7 @@ struct /**/k_msgq {
 #define Z_MSGQ_INITIALIZER(obj, q_buffer, q_msg_size, q_max_msgs) \
     { \
     .wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
+    .lock = {}, \
     .msg_size = q_msg_size, \
     .max_msgs = q_max_msgs, \
     .buffer_start = q_buffer, \
@@ -4671,6 +4676,7 @@ struct /**/k_msgq {
     .read_ptr = q_buffer, \
     .write_ptr = q_buffer, \
     .used_msgs = 0, \
+    .flags = 0, \
     Z_POLL_EVENT_OBJ_INIT(obj) \
     }
 

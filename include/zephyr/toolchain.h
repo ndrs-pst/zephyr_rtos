@@ -156,28 +156,6 @@ static inline int __builtin_clzll(unsigned long long int x) {
 #endif
 
 /**
- * @def TOOLCHAIN_IGNORE_WSHADOW_BEGIN
- * @brief Begin of block to ignore -Wshadow.
- *
- * To be used inside another macro.
- * Only for toolchain supporting _Pragma("GCC diagnostic ...").
- */
-#ifndef TOOLCHAIN_IGNORE_WSHADOW_BEGIN
-#define TOOLCHAIN_IGNORE_WSHADOW_BEGIN
-#endif
-
-/**
- * @def TOOLCHAIN_IGNORE_WSHADOW_END
- * @brief End of block to ignore -Wshadow.
- *
- * To be used inside another macro.
- * Only for toolchain supporting _Pragma("GCC diagnostic ...").
- */
-#ifndef TOOLCHAIN_IGNORE_WSHADOW_END
-#define TOOLCHAIN_IGNORE_WSHADOW_END
-#endif
-
-/**
  * @def TOOLCHAIN_PRAGMA
  * @brief Helper for using pragma in macros.
  */

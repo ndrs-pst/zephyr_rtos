@@ -270,14 +270,13 @@ int enabled_clock(uint32_t src_clk) {
     return (r);
 }
 
-static inline int stm32_clock_control_on(const struct device* dev,
-                                         clock_control_subsys_t sub_system) {
+static int stm32_clock_control_on(const struct device* dev, clock_control_subsys_t sub_system) {
     struct stm32_pclken* pclken = (struct stm32_pclken*)(sub_system);
     volatile int temp;
 
     ARG_UNUSED(dev);
 
-    if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
+    if (!IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
         /* Attempt to change a wrong periph clock bit */
         return (-ENOTSUP);
     }
@@ -293,13 +292,12 @@ static inline int stm32_clock_control_on(const struct device* dev,
     return (0);
 }
 
-static inline int stm32_clock_control_off(const struct device* dev,
-                                          clock_control_subsys_t sub_system) {
+static int stm32_clock_control_off(const struct device* dev, clock_control_subsys_t sub_system) {
     struct stm32_pclken* pclken = (struct stm32_pclken*)(sub_system);
 
     ARG_UNUSED(dev);
 
-    if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == 0) {
+    if (!IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
         /* Attempt to toggle a wrong periph clock bit */
         return (-ENOTSUP);
     }
@@ -310,9 +308,9 @@ static inline int stm32_clock_control_off(const struct device* dev,
     return (0);
 }
 
-static inline int stm32_clock_control_configure(const struct device* dev,
-                                                clock_control_subsys_t sub_system,
-                                                void* data) {
+static int stm32_clock_control_configure(const struct device* dev,
+                                         clock_control_subsys_t sub_system,
+                                         void* data) {
     /* At least one alt src clock available */
     struct stm32_pclken* pclken = (struct stm32_pclken*)(sub_system);
     int err;
@@ -516,7 +514,7 @@ static enum clock_control_status stm32_clock_control_get_status(const struct dev
 
     ARG_UNUSED(dev);
 
-    if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == true) {
+    if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
         /* Gated clocks */
         if ((sys_read32(rcc_dt_reg_addr + pclken->bus) & pclken->enr)
             == pclken->enr) {

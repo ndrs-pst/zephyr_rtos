@@ -154,6 +154,7 @@ struct modem_cellular_config {
     const struct device* uart;
     struct gpio_dt_spec power_gpio;
     struct gpio_dt_spec reset_gpio;
+    struct gpio_dt_spec wake_gpio;
     uint16_t power_pulse_duration_ms;
     uint16_t reset_pulse_duration_ms;
     uint16_t startup_time_ms;
@@ -604,6 +605,10 @@ static void modem_cellular_begin_power_off_pulse(struct modem_cellular_data* dat
 static int modem_cellular_on_idle_state_enter(struct modem_cellular_data* data) {
     struct modem_cellular_config const* config = data->dev->config;
 
+    if (modem_cellular_gpio_is_enabled(&config->wake_gpio)) {
+        gpio_pin_set_dt(&config->wake_gpio, 0);
+    }
+
     if (modem_cellular_gpio_is_enabled(&config->reset_gpio)) {
         gpio_pin_set_dt(&config->reset_gpio, 1);
     }
@@ -665,11 +670,19 @@ static int modem_cellular_on_idle_state_leave(struct modem_cellular_data* data) 
         gpio_pin_set_dt(&config->reset_gpio, 0);
     }
 
+    if (modem_cellular_gpio_is_enabled(&config->wake_gpio)) {
+        gpio_pin_set_dt(&config->wake_gpio, 1);
+    }
+
     return (0);
 }
 
 static int modem_cellular_on_reset_pulse_state_enter(struct modem_cellular_data* data) {
     struct modem_cellular_config const* config = data->dev->config;
+
+    if (modem_cellular_gpio_is_enabled(&config->wake_gpio)) {
+        gpio_pin_set_dt(&config->wake_gpio, 0);
+    }
 
     gpio_pin_set_dt(&config->reset_gpio, 1);
     modem_cellular_start_timer(data, K_MSEC(config->reset_pulse_duration_ms));
@@ -697,6 +710,11 @@ static int modem_cellular_on_reset_pulse_state_leave(struct modem_cellular_data*
     struct modem_cellular_config const* config = data->dev->config;
 
     gpio_pin_set_dt(&config->reset_gpio, 0);
+
+    if (modem_cellular_gpio_is_enabled(&config->wake_gpio)) {
+        gpio_pin_set_dt(&config->wake_gpio, 1);
+    }
+
     modem_cellular_stop_timer(data);
 
     return (0);
@@ -1676,6 +1694,10 @@ static int modem_cellular_init(const struct device* dev) {
 
     k_sem_init(&data->suspended_sem, 0, 1);
 
+    if (modem_cellular_gpio_is_enabled(&config->wake_gpio)) {
+        gpio_pin_configure_dt(&config->wake_gpio, GPIO_OUTPUT_INACTIVE);
+    }
+
     if (modem_cellular_gpio_is_enabled(&config->power_gpio)) {
         gpio_pin_configure_dt(&config->power_gpio, GPIO_OUTPUT_INACTIVE);
     }
@@ -2088,10 +2110,16 @@ MODEM_CHAT_SCRIPT_DEFINE(u_blox_lara_r6_periodic_chat_script,
 
 #if DT_HAS_COMPAT_STATUS_OKAY(swir_hl7800)
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(swir_hl7800_init_chat_script_cmds,
-                            MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
-                            MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
-                            MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
-                            MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
+                            MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 1000),
+                            MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 1000),
+                            MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 1000),
+                            MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 1000),
+                            /* Turn off sleep mode */
+                            MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSLEEP=2", ok_match),
+                            /* Turn off PSM */
+                            MODEM_CHAT_SCRIPT_CMD_RESP("AT+CPSMS=0", ok_match),
+                            /* Turn off eDRX */
+                            MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEDRXS=0", ok_match),
                             MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
                             MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
                             MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0", allow_match),
@@ -2349,6 +2377,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
         .uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                       \
         .power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}), \
         .reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}), \
+        .wake_gpio  = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_wake_gpios , {}), \
         .power_pulse_duration_ms = (power_ms),                          \
         .reset_pulse_duration_ms = (reset_ms),                          \
         .startup_time_ms  = (startup_ms),                               \

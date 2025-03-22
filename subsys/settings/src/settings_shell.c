@@ -9,6 +9,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
+#include <ctype.h>
 #include <stdint.h>
 #include <stddef.h>
 
@@ -49,6 +50,7 @@ static int cmd_list(const struct shell* shell_ptr, size_t argc, char* argv[]) {
     err = settings_load_subtree_direct(params.subtree, settings_list_callback, &params);
     if (err != 0) {
         shell_error(shell_ptr, "Failed to load settings: %d", err);
+        err = -ENOEXEC;
     }
 
     return (err);
@@ -71,6 +73,7 @@ static int settings_read_callback(char const* key,
                                   void* cb_arg,
                                   void* param) {
     uint8_t buffer[SETTINGS_MAX_VAL_LEN];
+    ssize_t i;
     ssize_t num_read_bytes = MIN(len, SETTINGS_MAX_VAL_LEN);
     struct settings_read_callback_params* params = param;
 
@@ -98,11 +101,13 @@ static int settings_read_callback(char const* key,
             break;
 
         case SETTINGS_VALUE_STRING :
-            if (buffer[num_read_bytes - 1] != '\0') {
-                shell_error(params->shell_ptr, "Value is not a string");
-                return (0);
+            for (i = 0; i < num_read_bytes; i++) {
+                if (!isprint(buffer[i])) {
+                    shell_error(params->shell_ptr, "Value is not a string");
+                    return 0;
+                }
             }
-            shell_print(params->shell_ptr, "%s", buffer);
+            shell_print(params->shell_ptr, "%.*s", (int)num_read_bytes, buffer);
             break;
     }
 
@@ -136,7 +141,7 @@ static int cmd_read(const struct shell* shell_ptr, size_t argc, char* argv[]) {
         err = settings_parse_type(argv[1], &value_type);
         if (err) {
             shell_error(shell_ptr, "Invalid type: %s", argv[1]);
-            return (err);
+            return (-EINVAL);
         }
     }
 
@@ -149,10 +154,11 @@ static int cmd_read(const struct shell* shell_ptr, size_t argc, char* argv[]) {
     err = settings_load_subtree_direct(argv[argc - 1], settings_read_callback, &params);
     if (err != 0) {
         shell_error(shell_ptr, "Failed to load setting: %d", err);
+        err = -ENOEXEC;
     }
     else if (!params.value_found) {
-        err = -ENOENT;
         shell_error(shell_ptr, "Setting not found");
+        err = -ENOEXEC;
     }
 
     return (err);
@@ -161,48 +167,38 @@ static int cmd_read(const struct shell* shell_ptr, size_t argc, char* argv[]) {
 static int cmd_write(const struct shell* shell_ptr, size_t argc, char* argv[]) {
     int err;
     uint8_t buffer[CONFIG_SHELL_CMD_BUFF_SIZE / 2];
-    size_t buffer_len = 0;
+    void const* value;
+    size_t value_len = 0;
     enum settings_value_types value_type = SETTINGS_VALUE_HEX;
 
     if (argc > 3) {
         err = settings_parse_type(argv[1], &value_type);
         if (err) {
             shell_error(shell_ptr, "Invalid type: %s", argv[1]);
-            return (err);
+            return (-EINVAL);
         }
     }
 
     switch (value_type) {
         case SETTINGS_VALUE_HEX:
-            buffer_len = hex2bin(argv[argc - 1], strlen(argv[argc - 1]),
-            buffer, sizeof(buffer));
+            value = buffer;
+            value_len = hex2bin(argv[argc - 1], strlen(argv[argc - 1]), buffer, sizeof(buffer));
             break;
-
         case SETTINGS_VALUE_STRING:
-            buffer_len = strlen(argv[argc - 1]) + 1;
-            if (buffer_len > sizeof(buffer)) {
-                shell_error(shell_ptr, "%s is bigger than shell's buffer", argv[argc - 1]);
-                return (-EINVAL);
-            }
-
-            memcpy(buffer, argv[argc - 1], buffer_len);
+            value = argv[argc - 1];
+            value_len = strlen(argv[argc - 1]);
             break;
     }
 
-        case SETTINGS_VALUE_STRING :
-            buffer_len = strlen(argv[argc - 1]) + 1;
-            memcpy(buffer, argv[argc - 1], buffer_len);
-            break;
-    }
-
-    if (buffer_len == 0) {
+    if (value_len == 0) {
         shell_error(shell_ptr, "Failed to parse value");
         return (-EINVAL);
     }
 
-    err = settings_save_one(argv[argc - 2], buffer, buffer_len);
+    err = settings_save_one(argv[argc - 2], value, value_len);
     if (err != 0) {
         shell_error(shell_ptr, "Failed to write setting: %d", err);
+        err = -ENOEXEC;
     }
 
     return (err);
@@ -214,6 +210,7 @@ static int cmd_delete(const struct shell* shell_ptr, size_t argc, char* argv[]) 
     err = settings_delete(argv[1]);
     if (err != 0) {
         shell_error(shell_ptr, "Failed to delete setting: %d", err);
+        err = -ENOEXEC;
     }
 
     return (err);

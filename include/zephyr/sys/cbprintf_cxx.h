@@ -81,20 +81,19 @@ static inline int z_cbprintf_cxx_is_pchar(const volatile wchar_t *, bool const_a
 template < typename T >
 static inline int z_cbprintf_cxx_is_pchar(T arg, bool const_as_fixed)
 {
-    ARG_UNUSED(arg);
-    ARG_UNUSED(const_as_fixed);
-    return 0;
+	ARG_UNUSED(arg);
+	ARG_UNUSED(const_as_fixed);
+	return 0;
 }
 #else
 template < typename T >
 static inline int z_cbprintf_cxx_is_pchar(T arg, bool const_as_fixed)
 {
-    ARG_UNUSED(arg);
-    _Pragma("GCC diagnostic push")
-    _Pragma("GCC diagnostic ignored \"-Wpointer-arith\"")
-    ARG_UNUSED(const_as_fixed);
-    return 0;
-    _Pragma("GCC diagnostic pop")
+	ARG_UNUSED(arg);
+	TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH);
+	ARG_UNUSED(const_as_fixed);
+	return 0;
+	TOOLCHAIN_ENABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH);
 }
 #endif
 
@@ -143,10 +142,9 @@ template < typename T >
 static inline int z_cbprintf_cxx_is_word_num(T arg)
 {
 	ARG_UNUSED(arg);
-	_Pragma("GCC diagnostic push")
-	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"")
+	TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH);
 	return 0;
-	_Pragma("GCC diagnostic pop")
+	TOOLCHAIN_ENABLE_GCC_WARNING(TOOLCHAIN_WARNING_POINTER_ARITH);
 }
 
 /* C++ version for determining if argument is a none character pointer. */
@@ -387,7 +385,7 @@ static inline size_t z_cbprintf_cxx_alignment(unsigned long long arg)
 template < typename T >
 static inline size_t z_cbprintf_cxx_alignment(T arg)
 {
-    return MAX(alignof(T), VA_STACK_MIN_ALIGN);
+	return MAX(alignof(T), VA_STACK_MIN_ALIGN);
 }
 #else
 template < typename T >

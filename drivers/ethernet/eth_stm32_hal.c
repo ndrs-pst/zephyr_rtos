@@ -517,11 +517,10 @@ static int /**/eth_stm32_tx(const struct device* dev, struct net_pkt* pkt) {
         res = -ENOBUFS;
         goto error;
     }
-
     #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
     #if defined(CONFIG_ETH_STM32_HAL_API_V2)
-    tx_config.Length = total_len;
+    tx_config.Length   = total_len;
     tx_config.pData    = tx_ctx;
     tx_config.TxBuffer = &dma_tx_buffer_header[tx_ctx->first_tx_buffer_index].tx_buff;
 
@@ -717,7 +716,6 @@ static struct net_pkt* /**/eth_stm32_rx(const struct device* dev) {
         timestamp.second     = ts_registers.TimeStampHigh;
         timestamp.nanosecond = ts_registers.TimeStampLow;
     }
-
     #else
     __IO ETH_DMADescTypeDef* last_dma_rx_desc;
 
@@ -986,7 +984,7 @@ void HAL_ETH_ErrorCallback(ETH_HandleTypeDef* heth) {
     ctx->stats.error_details.rx_crc_errors   = heth->Instance->MMCRCRCEPR;
     ctx->stats.error_details.rx_align_errors = heth->Instance->MMCRAEPR;
     #else
-    ctx->stats.error_details.rx_crc_errors = heth->Instance->MMCRFCECR;
+    ctx->stats.error_details.rx_crc_errors   = heth->Instance->MMCRFCECR;
     ctx->stats.error_details.rx_align_errors = heth->Instance->MMCRFAECR;
     #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
 
@@ -1501,6 +1499,50 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device*
         ;
 }
 
+static int eth_stm32_hal_get_config(const struct device* dev, enum ethernet_config_type type,
+                                    struct ethernet_config* config) {
+    int ret = -ENOTSUP;
+    struct eth_stm32_hal_dev_data* ctx;
+    ETH_HandleTypeDef* heth;
+
+    ctx = dev->data;
+    heth = &ctx->heth;
+
+    switch (type) {
+        case ETHERNET_CONFIG_TYPE_MAC_ADDRESS :
+            memcpy(config->mac_address.addr, ctx->mac_addr,
+                   sizeof(config->mac_address.addr));
+            ret = 0;
+            break;
+
+        case ETHERNET_CONFIG_TYPE_PROMISC_MODE :
+            #if defined(CONFIG_NET_PROMISCUOUS_MODE)
+            #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
+            if (heth->Instance->MACPFR & ETH_MACPFR_PR) {
+                config->promisc_mode = true;
+            }
+            else {
+                config->promisc_mode = false;
+            }
+            #else
+            if (heth->Instance->MACFFR & ETH_MACFFR_PM) {
+                config->promisc_mode = true;
+            }
+            else {
+                config->promisc_mode = false;
+            }
+            #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
+            ret = 0;
+            #endif /* CONFIG_NET_PROMISCUOUS_MODE */
+            break;
+
+        default :
+            break;
+    }
+
+    return (ret);
+}
+
 static int eth_stm32_start(const struct device* dev) {
     const struct eth_stm32_hal_dev_cfg* cfg = dev->config;
     struct eth_stm32_hal_dev_data* ctx = dev->data;
@@ -1684,6 +1726,7 @@ static const struct ethernet_api eth_stm32_api = {
     .stop  = eth_stm32_stop,
     .get_capabilities = eth_stm32_hal_get_capabilities,
     .set_config = eth_stm32_hal_set_config,
+    .get_config = eth_stm32_hal_get_config,
 
     #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_mdio)
     .get_phy = eth_stm32_hal_get_phy,
