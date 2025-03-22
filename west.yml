@@ -193,12 +193,12 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 35bf3ca665122ddfe8c0c38cec8f19deef2ff62d
+      revision: 7440d573d36953b80cb6fb6438b147acb21bf753
       path: modules/hal/nordic
       groups:
         - hal
     - name: hal_nuvoton
-      revision: 40f7b809b28d9d391bee8b58188293277fabc51a
+      revision: 8eec051270fe45c3f9a1a12de60220e1ab26b579
       path: modules/hal/nuvoton
       groups:
         - hal
@@ -219,7 +219,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: cc1323049d15647eb93b60cffe042a5b772ed0de
+      revision: cbaf9b554988614ce11805a9b2f03f6bb0310b8b
       groups:
         - hal
     - name: hal_rpi_pico
@@ -238,7 +238,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 9611a7f2a0b4028a1187b7e79102c5de33d8ffd6
+      revision: 0f23d92c5bbf57bfc4eecfa31572fbe9b1f9bc1d
       path: modules/hal/stm32
       groups:
         - hal

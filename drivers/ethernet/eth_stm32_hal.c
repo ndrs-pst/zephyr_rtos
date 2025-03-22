@@ -133,8 +133,16 @@ static const struct device* eth_stm32_phy_dev = DEVICE_PHY_BY_NAME(0);
 #define __eth_stm32_buf  __aligned(4)
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
+static ETH_DMADescTypeDef
+    dma_rx_desc_tab[ETH_DMA_RX_CH_CNT][ETH_RXBUFNB] ALIGN_32BYTES(__eth_stm32_desc);
+static ETH_DMADescTypeDef
+    dma_tx_desc_tab[ETH_DMA_TX_CH_CNT][ETH_TXBUFNB] ALIGN_32BYTES(__eth_stm32_desc);
+#else
 static ETH_DMADescTypeDef dma_rx_desc_tab[ETH_RXBUFNB] __eth_stm32_desc;
 static ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __eth_stm32_desc;
+#endif
+
 static uint8_t dma_rx_buffer[ETH_RXBUFNB][ETH_STM32_RX_BUF_SIZE] __eth_stm32_buf;
 static uint8_t dma_tx_buffer[ETH_TXBUFNB][ETH_STM32_TX_BUF_SIZE] __eth_stm32_buf;
 
@@ -630,7 +638,7 @@ static int /**/eth_stm32_tx(const struct device* dev, struct net_pkt* pkt) {
 error :
 
     #if defined(CONFIG_ETH_STM32_HAL_API_V2)
-    if (!tx_ctx) {
+    if (tx_ctx == NULL) {
         /* The HAL owns the tx context */
         HAL_ETH_ReleaseTxPacket(heth);
     }
@@ -821,8 +829,11 @@ static void eth_stm32_rx_thread(void* p1, void* p2, void* p3) {
     __ASSERT_NO_MSG(ctx != NULL);
 
     while (true) {
-        res = k_sem_take(&ctx->rx_int_sem,
-                         K_MSEC(CONFIG_ETH_STM32_CARRIER_CHECK_RX_IDLE_TIMEOUT_MS));
+        res = k_sem_take(
+            &ctx->rx_int_sem,
+            COND_CODE_1(CONFIG_ETH_STM32_CARRIER_CHECK,
+                (K_MSEC(CONFIG_ETH_STM32_CARRIER_CHECK_RX_IDLE_TIMEOUT_MS)),
+                (K_FOREVER)));
         if (res == 0) {
             /* semaphore taken, update link status and receive packets */
             if (ctx->link_up != true) {
@@ -845,7 +856,7 @@ static void eth_stm32_rx_thread(void* p1, void* p2, void* p3) {
                 }
             }
         }
-        else if (res == -EAGAIN) {
+        else if (IS_ENABLED(CONFIG_ETH_STM32_CARRIER_CHECK) && res == -EAGAIN) {
             /* semaphore timeout period expired, check link status */
             hal_ret = read_eth_phy_register(&ctx->heth,
                                             PHY_ADDR, PHY_BSR, &status);
@@ -917,7 +928,12 @@ void HAL_ETH_ErrorCallback(ETH_HandleTypeDef* heth) {
             CONTAINER_OF(heth, struct eth_stm32_hal_dev_data, heth);
 
     switch (error_code) {
+        #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
+        case HAL_ETH_ERROR_DMA_CH0 :
+        case HAL_ETH_ERROR_DMA_CH1 :
+        #else
         case HAL_ETH_ERROR_DMA :
+        #endif
             dma_error = HAL_ETH_GetDMAError(heth);
 
             #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
@@ -1014,6 +1030,31 @@ static void eth_stm32_generate_mac(uint8_t* mac_addr) {
     #endif
 }
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
+/**
+ * Configures the RISAF (RIF Security Attribute Framework) for Ethernet on STM32N6.
+ * This function sets up the master and slave security attributes for the Ethernet peripheral.
+ */
+
+static void RISAF_Config(void) {
+    /* Define and initialize the master configuration structure */
+    RIMC_MasterConfig_t RIMC_master = {0};
+
+    /* Enable the clock for the RIFSC (RIF Security Controller) */
+    __HAL_RCC_RIFSC_CLK_ENABLE();
+
+    RIMC_master.MasterCID = RIF_CID_1;
+    RIMC_master.SecPriv = RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV;
+
+    /* Configure the master attributes for the Ethernet peripheral (ETH1) */
+    HAL_RIF_RIMC_ConfigMasterAttributes(RIF_MASTER_INDEX_ETH1, &RIMC_master);
+
+    /* Set the secure and privileged attributes for the Ethernet peripheral (ETH1) as a slave */
+    HAL_RIF_RISC_SetSlaveSecureAttributes(RIF_RISC_PERIPH_INDEX_ETH1,
+                                          RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV);
+}
+#endif
+
 static int /**/eth_stm32_initialize(const struct device* dev) {
     struct eth_stm32_hal_dev_data* ctx;
     const struct eth_stm32_hal_dev_cfg* cfg;
@@ -1037,6 +1078,11 @@ static int /**/eth_stm32_initialize(const struct device* dev) {
         return (-ENODEV);
     }
 
+    #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
+    /* RISAF Configuration */
+    RISAF_Config();
+    #endif
+
     /* enable clock */
     ret = clock_control_on(ctx->clock,
             (clock_control_subsys_t)&cfg->pclken);
@@ -1045,7 +1091,7 @@ static int /**/eth_stm32_initialize(const struct device* dev) {
     ret |= clock_control_on(ctx->clock,
             (clock_control_subsys_t)&cfg->pclken_rx);
     #if DT_INST_CLOCKS_HAS_NAME(0, mac_clk_ptp)
-    ret |= clock_control_on(tx_ctx->clock,
+    ret |= clock_control_on(ctx->clock,
             (clock_control_subsys_t)&cfg->pclken_ptp);
     #endif
 
@@ -1271,8 +1317,15 @@ static int eth_stm32_init_api_v2(const struct device* dev) {
     ctx = dev->data;
     heth = &ctx->heth;
 
+    #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
+    for (int ch = 0; ch < ETH_DMA_CH_CNT; ch++) {
+        heth->Init.TxDesc[ch] = dma_tx_desc_tab[ch];
+        heth->Init.RxDesc[ch] = dma_rx_desc_tab[ch];
+    }
+    #else
     heth->Init.TxDesc = dma_tx_desc_tab;
     heth->Init.RxDesc = dma_rx_desc_tab;
+    #endif
     heth->Init.RxBuffLen = ETH_STM32_RX_BUF_SIZE;
 
     hal_ret = HAL_ETH_Init(heth);
@@ -1396,7 +1449,7 @@ static void /**/eth_stm32_iface_init(struct net_if* iface) {
         k_thread_create(&ctx->rx_thread, ctx->rx_thread_stack,
                         K_KERNEL_STACK_SIZEOF(ctx->rx_thread_stack),
                         eth_stm32_rx_thread, (void*)dev, NULL, NULL,
-                        IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)
+                        IS_ENABLED(CONFIG_ETH_STM32_HAL_RX_THREAD_PREEMPTIVE)
                             ? K_PRIO_PREEMPT(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO)
                             : K_PRIO_COOP(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO),
                         0, K_NO_WAIT);

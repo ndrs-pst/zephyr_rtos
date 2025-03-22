@@ -249,12 +249,12 @@ struct net_sockaddr_ll_ptr {
 /** Socket address struct for unix socket where address is a pointer */
 struct net_sockaddr_un_ptr {
     sa_family_t sun_family;    /**< Always AF_UNIX */
-    char        *sun_path;     /**< pathname */
+    char* sun_path;            /**< pathname */
 };
 
 struct net_sockaddr_can_ptr {
     sa_family_t can_family;
-    int         can_ifindex;
+    int can_ifindex;
 };
 
 /** @endcond */
@@ -515,20 +515,23 @@ extern const struct net_in6_addr in6addr_loopback;
 
 /** @brief IP Maximum Transfer Unit */
 enum net_ip_mtu {
-
-/** IPv6 MTU length. We must be able to receive this size IPv6 packet
- * without fragmentation.
- */
-#if defined(CONFIG_NET_NATIVE_IPV6)
+    /** IPv6 MTU length. We must be able to receive this size IPv6 packet
+     * without fragmentation.
+     */
+    #if defined(CONFIG_NET_NATIVE_IPV6)
     NET_IPV6_MTU = CONFIG_NET_IPV6_MTU,
-#else
+    #else
     NET_IPV6_MTU = 1280,
-#endif
+    #endif
 
     /** IPv4 MTU length. We must be able to receive this size IPv4 packet
      * without fragmentation.
      */
+    #if defined(CONFIG_NET_NATIVE_IPV4)
+    NET_IPV4_MTU = CONFIG_NET_IPV4_MTU,
+    #else
     NET_IPV4_MTU = 576,
+    #endif
 };
 
 /** @brief Network packet priority settings described in IEEE 802.1Q Annex I.1 */
@@ -856,7 +859,7 @@ static inline bool net_ipv4_is_addr_loopback(const struct net_in_addr* addr) {
  *  @return True if the address is unspecified, false otherwise.
  */
 static inline bool net_ipv4_is_addr_unspecified(const struct net_in_addr* addr) {
-    return UNALIGNED_GET(&addr->s_addr_be) == 0;
+    return (UNALIGNED_GET(&addr->s_addr_be) == 0);
 }
 
 /**
@@ -867,7 +870,7 @@ static inline bool net_ipv4_is_addr_unspecified(const struct net_in_addr* addr) 
  * @return True if address is multicast address, False otherwise.
  */
 static inline bool net_ipv4_is_addr_mcast(const struct net_in_addr* addr) {
-    return (net_ntohl(UNALIGNED_GET(&addr->s_addr_be)) & 0xF0000000) == 0xE0000000;
+    return ((net_ntohl(UNALIGNED_GET(&addr->s_addr_be)) & 0xF0000000) == 0xE0000000);
 }
 
 /**
@@ -878,7 +881,7 @@ static inline bool net_ipv4_is_addr_mcast(const struct net_in_addr* addr) {
  * @return True if it is, false otherwise.
  */
 static inline bool net_ipv4_is_ll_addr(const struct net_in_addr* addr) {
-    return (net_ntohl(UNALIGNED_GET(&addr->s_addr_be)) & 0xFFFF0000) == 0xA9FE0000;
+    return ((net_ntohl(UNALIGNED_GET(&addr->s_addr_be)) & 0xFFFF0000) == 0xA9FE0000);
 }
 
 /**
@@ -899,7 +902,7 @@ static inline bool net_ipv4_is_private_addr(const struct net_in_addr* addr) {
     masked_10 = masked_24 & 0xFFC00000;
     masked_8  = masked_24 & 0xFF000000;
 
-    return masked_8 == 0x0A000000 ||  /* 10.0.0.0/8      */
+    return masked_8  == 0x0A000000 || /* 10.0.0.0/8      */
            masked_10 == 0x64400000 || /* 100.64.0.0/10   */
            masked_12 == 0xAC100000 || /* 172.16.0.0/12   */
            masked_16 == 0xC0A80000 || /* 192.168.0.0/16  */
@@ -951,7 +954,7 @@ static inline void net_ipv6_addr_copy_raw(uint8_t* dest,
  */
 static inline bool net_ipv4_addr_cmp(const struct net_in_addr* addr1,
                                      const struct net_in_addr* addr2) {
-    return UNALIGNED_GET(&addr1->s_addr_be) == UNALIGNED_GET(&addr2->s_addr_be);
+    return (UNALIGNED_GET(&addr1->s_addr_be) == UNALIGNED_GET(&addr2->s_addr_be));
 }
 
 /**
@@ -1003,7 +1006,7 @@ static inline bool net_ipv6_addr_cmp_raw(uint8_t const* addr1,
  * @return True if it is, false otherwise.
  */
 static inline bool net_ipv6_is_ll_addr(const struct net_in6_addr* addr) {
-    return UNALIGNED_GET(&addr->s6_addr16[0]) == net_htons(0xFE80);
+    return (UNALIGNED_GET(&addr->s6_addr16[0]) == net_htons(0xFE80));
 }
 
 /**
@@ -1014,7 +1017,7 @@ static inline bool net_ipv6_is_ll_addr(const struct net_in6_addr* addr) {
  * @return True if it is, false otherwise.
  */
 static inline bool net_ipv6_is_sl_addr(const struct net_in6_addr* addr) {
-    return UNALIGNED_GET(&addr->s6_addr16[0]) == net_htons(0xFEC0);
+    return (UNALIGNED_GET(&addr->s6_addr16[0]) == net_htons(0xFEC0));
 }
 
 /**
@@ -1052,10 +1055,10 @@ static inline bool net_ipv6_is_private_addr(const struct net_in6_addr* addr) {
     uint32_t masked_32, masked_7;
 
     masked_32 = net_ntohl(UNALIGNED_GET(&addr->s6_addr32[0]));
-    masked_7  = masked_32 & 0xfc000000;
+    masked_7  = masked_32 & 0xFC000000;
 
-    return masked_32 == 0x20010db8 || /* 2001:db8::/32 */
-           masked_7 == 0xfc000000;    /* fc00::/7      */
+    return masked_32 == 0x20010DB8 || /* 2001:db8::/32 */
+           masked_7  == 0xFC000000;   /* fc00::/7      */
 }
 
 /**
@@ -1191,7 +1194,7 @@ static inline bool net_ipv6_is_addr_solicited_node(const struct net_in6_addr* ad
  */
 static inline bool net_ipv6_is_addr_mcast_scope(const struct net_in6_addr* addr,
                                                 int scope) {
-    return (addr->s6_addr[0] == 0xff) && ((addr->s6_addr[1] & 0x0F) == scope);
+    return (addr->s6_addr[0] == 0xFF) && ((addr->s6_addr[1] & 0x0F) == scope);
 }
 
 /**
@@ -1529,8 +1532,10 @@ static inline bool net_ipv6_addr_based_on_ll(const struct net_in6_addr* addr,
                 (addr->s6_addr[8] ^ 0x02) == lladdr->addr[0]) {
                 return true;
             }
-
             break;
+
+        default :
+            return false;
     }
 
     return false;
