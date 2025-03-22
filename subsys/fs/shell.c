@@ -406,10 +406,13 @@ static int cmd_read(const struct shell* sh, size_t argc, char** argv) {
     ssize_t read;
     while (count > 0) {
         uint8_t buf[16];
-        int     i;
+        int i;
 
         read = fs_read(&file, buf, MIN(count, sizeof(buf)));
         if (read <= 0) {
+            if (read < 0) {
+                shell_error(sh, "Failed to read from file %s (err: %zd)", path, read);
+            }
             break;
         }
 
@@ -433,10 +436,6 @@ static int cmd_read(const struct shell* sh, size_t argc, char** argv) {
 
         offset += read;
         count -= read;
-    }
-
-    if (read < 0) {
-        shell_error(sh, "Failed to read from file %s (err: %zd)", path, read);
     }
 
     fs_close(&file);
