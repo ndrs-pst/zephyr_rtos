@@ -36,7 +36,7 @@ LOG_MODULE_DECLARE(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include "../../ip/tcp_internal.h"
 #include "../../ip/net_private.h"
 
-const struct socket_op_vtable sock_fd_op_vtable;
+static const struct socket_op_vtable sock_fd_op_vtable;
 
 static void zsock_received_cb(struct net_context *ctx,
 			      struct net_pkt *pkt,
@@ -1887,13 +1887,10 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 					errno = -ret;
 					return -1;
 				}
-
 				return 0;
 			}
-
 			break;
 		}
-
 		break;
 
 	case NET_IPPROTO_IP:
@@ -1902,16 +1899,13 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_DSCP_ECN)) {
 				ret = net_context_get_option(ctx,
 							     NET_OPT_DSCP_ECN,
-							     optval,
-							     optlen);
+							     optval, optlen);
 				if (ret < 0) {
 					errno  = -ret;
 					return -1;
 				}
-
 				return 0;
 			}
-
 			break;
 
 		case NET_IP_TTL:
@@ -1921,7 +1915,6 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 				errno  = -ret;
 				return -1;
 			}
-
 			return 0;
 
 		case NET_IP_MULTICAST_IF:
@@ -1933,7 +1926,6 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 				return ipv4_multicast_if(ctx, optval, *optlen, true);
 			}
-
 			break;
 
 		case NET_IP_MULTICAST_TTL:
@@ -1943,7 +1935,6 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 				errno  = -ret;
 				return -1;
 			}
-
 			return 0;
 
 		case NET_IP_MTU:
@@ -1954,13 +1945,11 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 					errno  = -ret;
 					return -1;
 				}
-
 				return 0;
 			}
-
 			break;
 
-		case IP_LOCAL_PORT_RANGE:
+		case NET_IP_LOCAL_PORT_RANGE:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_CLAMP_PORT_RANGE)) {
 				ret = net_context_get_option(ctx,
 							     NET_OPT_LOCAL_PORT_RANGE,
@@ -1969,13 +1958,22 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 					errno  = -ret;
 					return -1;
 				}
-
 				return 0;
 			}
-
 			break;
-		}
 
+#if defined(CONFIG_NET_IPV4)
+		case NET_IP_MULTICAST_LOOP:
+			ret = net_context_get_option(ctx,
+						     NET_OPT_IPV4_MCAST_LOOP,
+						     optval, optlen);
+			if (ret < 0) {
+				errno  = -ret;
+				return -1;
+			}
+			return 0;
+#endif
+		}
 		break;
 
 	case NET_IPPROTO_IPV6:
@@ -1988,10 +1986,8 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 					errno  = -ret;
 					return -1;
 				}
-
 				return 0;
 			}
-
 			break;
 
 		case IPV6_V6ONLY:
@@ -2004,10 +2000,8 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 					errno  = -ret;
 					return -1;
 				}
-
 				return 0;
 			}
-
 			break;
 
 		case IPV6_ADDR_PREFERENCES:
@@ -2020,10 +2014,8 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 					errno  = -ret;
 					return -1;
 				}
-
 				return 0;
 			}
-
 			break;
 
 		case IPV6_TCLASS:
@@ -2036,10 +2028,8 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 					errno  = -ret;
 					return -1;
 				}
-
 				return 0;
 			}
-
 			break;
 
 		case IPV6_UNICAST_HOPS:
@@ -2050,7 +2040,6 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 				errno  = -ret;
 				return -1;
 			}
-
 			return 0;
 
 		case IPV6_MULTICAST_IF:
@@ -2067,10 +2056,8 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 					errno  = -ret;
 					return -1;
 				}
-
 				return 0;
 			}
-
 			break;
 
 		case IPV6_MULTICAST_HOPS:
@@ -2081,7 +2068,6 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 				errno  = -ret;
 				return -1;
 			}
-
 			return 0;
 
 		case IPV6_MULTICAST_LOOP:
@@ -2092,11 +2078,9 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 				errno = -ret;
 				return -1;
 			}
-
 			return 0;
 
 		}
-
 		break;
 	}
 
@@ -2592,7 +2576,7 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			break;
 
-		case IP_LOCAL_PORT_RANGE:
+		case NET_IP_LOCAL_PORT_RANGE:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_CLAMP_PORT_RANGE)) {
 				ret = net_context_set_option(ctx,
 							     NET_OPT_LOCAL_PORT_RANGE,
@@ -2604,10 +2588,20 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 				return 0;
 			}
-
 			break;
-		}
 
+#if defined(CONFIG_NET_IPV4)
+		case NET_IP_MULTICAST_LOOP:
+			ret = net_context_set_option(ctx,
+						     NET_OPT_IPV4_MCAST_LOOP,
+						     optval, optlen);
+			if (ret < 0) {
+				errno  = -ret;
+				return -1;
+			}
+			return 0;
+#endif
+		}
 		break;
 
 	case NET_IPPROTO_IPV6:
@@ -3035,7 +3029,7 @@ static int sock_getsockname_vmeth(void *obj, struct net_sockaddr *addr,
 	return zsock_getsockname_ctx(obj, addr, addrlen);
 }
 
-const struct socket_op_vtable sock_fd_op_vtable = {
+static const struct socket_op_vtable sock_fd_op_vtable = {
 	.fd_vtable = {
 		.read = sock_read_vmeth,
 		.write = sock_write_vmeth,

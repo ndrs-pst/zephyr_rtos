@@ -966,6 +966,8 @@ struct in_pktinfo {
 #define NET_IP_MULTICAST_IF 32
 /** Set IPv4 multicast TTL value. */
 #define NET_IP_MULTICAST_TTL 33
+/** Set IPv4 multicast loop value. */
+#define NET_IP_MULTICAST_LOOP 34
 /** Join IPv4 multicast group. */
 #define NET_IP_ADD_MEMBERSHIP 35
 /** Leave IPv4 multicast group. */
@@ -975,6 +977,7 @@ struct in_pktinfo {
 #define IP_MTU              NET_IP_MTU
 #define IP_MULTICAST_IF     NET_IP_MULTICAST_IF
 #define IP_MULTICAST_TTL    NET_IP_MULTICAST_TTL
+#define IP_MULTICAST_LOOP   NET_IP_MULTICAST_LOOP
 #define IP_ADD_MEMBERSHIP   NET_IP_ADD_MEMBERSHIP
 #define IP_DROP_MEMBERSHIP  NET_IP_DROP_MEMBERSHIP
 #endif
@@ -997,7 +1000,7 @@ struct net_ip_mreq  {
 };
 
 /** Clamp down the global port range for a given socket */
-#define IP_LOCAL_PORT_RANGE 51
+#define NET_IP_LOCAL_PORT_RANGE 51
 
 /** @} */
 
