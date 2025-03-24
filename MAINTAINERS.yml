@@ -364,9 +364,9 @@ Bluetooth Controller:
     - carlescufi
     - thoh-ot
     - ppryga
-    - mtpr-ot
     - wopu-ot
     - erbr-ot
+    - Tronil
   files:
     - doc/connectivity/bluetooth/bluetooth-ctlr-arch.rst
     - doc/connectivity/bluetooth/img/ctlr*
@@ -438,6 +438,7 @@ Bluetooth Host:
     - subsys/bluetooth/host/iso_internal.h
     - subsys/bluetooth/host/shell/iso.c
     - tests/bluetooth/audio/
+    - tests/bluetooth/classic/
     - tests/bluetooth/controller/
     - tests/bluetooth/mesh*/
     - tests/bluetooth/qualification/
@@ -534,6 +535,7 @@ Bluetooth Classic:
     - subsys/bluetooth/common/
     - subsys/bluetooth/host/classic/
     - include/zephyr/bluetooth/classic/
+    - tests/bluetooth/classic/
   labels:
     - "area: Bluetooth Classic"
     - "area: Bluetooth"
