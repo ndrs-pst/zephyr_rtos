@@ -265,12 +265,12 @@ static char const* modem_cellular_event_str(enum modem_cellular_event event) {
     return "";
 }
 
-static bool modem_cellular_gpio_is_enabled(const struct gpio_dt_spec* gpio) {
+static bool modem_cellular_gpio_is_enabled(struct gpio_dt_spec const* gpio) {
     return (gpio->port != NULL);
 }
 
 static void modem_cellular_notify_user_pipes_connected(struct modem_cellular_data* data) {
-    const struct modem_cellular_config* config = data->dev->config;
+    struct modem_cellular_config const* config = data->dev->config;
     struct modem_cellular_user_pipe* user_pipe;
     struct modem_pipelink* pipelink;
 
@@ -282,7 +282,7 @@ static void modem_cellular_notify_user_pipes_connected(struct modem_cellular_dat
 }
 
 static void modem_cellular_notify_user_pipes_disconnected(struct modem_cellular_data* data) {
-    const struct modem_cellular_config* config = data->dev->config;
+    struct modem_cellular_config const* config = data->dev->config;
     struct modem_cellular_user_pipe* user_pipe;
     struct modem_pipelink* pipelink;
 
@@ -477,9 +477,6 @@ static void modem_cellular_chat_on_cxreg(struct modem_chat* chat, char** argv, u
     else if (argc >= 2) {
         /* +CEREG: <stat>[,<tac>[...]] */
         registration_status = atoi(argv[1]);
-    }
-    else if ((argc == 3) || (argc == 6)) {
-        registration_status = atoi(argv[2]);
     }
     else {
         return;
@@ -763,7 +760,7 @@ static int modem_cellular_on_await_power_on_state_enter(struct modem_cellular_da
 
 static void modem_cellular_await_power_on_event_handler(struct modem_cellular_data* data,
                                                         enum modem_cellular_event evt) {
-    const struct modem_cellular_config* config = data->dev->config;
+    struct modem_cellular_config const* config = data->dev->config;
 
     switch (evt) {
         case MODEM_CELLULAR_EVENT_TIMEOUT :
@@ -792,7 +789,7 @@ static int modem_cellular_on_set_baudrate_state_enter(struct modem_cellular_data
 
 static void modem_cellular_set_baudrate_event_handler(struct modem_cellular_data* data,
                                                       enum modem_cellular_event evt) {
-    const struct modem_cellular_config* config = data->dev->config;
+    struct modem_cellular_config const* config = data->dev->config;
     struct uart_config cfg = {0};
     int ret;
 

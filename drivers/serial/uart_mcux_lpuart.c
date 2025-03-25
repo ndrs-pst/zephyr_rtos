@@ -674,6 +674,7 @@ static void dma_callback(struct device const* dma_dev, void* callback_arg, uint3
             (rx_dma_params->buf_len > 0)) {
             /* Request the next buffer */
             async_evt_rx_buf_request(dev);
+        }
         else {
             /* Buffer full without valid next buffer, disable RX DMA */
             LOG_INF("Disabled RX DMA, no valid next buffer ");

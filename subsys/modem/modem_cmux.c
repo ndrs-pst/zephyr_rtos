@@ -324,7 +324,7 @@ static uint16_t modem_cmux_transmit_frame(struct modem_cmux* cmux,
 }
 
 static bool modem_cmux_transmit_cmd_frame(struct modem_cmux* cmux,
-                                          const struct modem_cmux_frame* frame) {
+                                          struct modem_cmux_frame const* frame) {
     uint16_t space;
     struct modem_cmux_command* command;
 
@@ -347,7 +347,7 @@ static bool modem_cmux_transmit_cmd_frame(struct modem_cmux* cmux,
 }
 
 static int16_t modem_cmux_transmit_data_frame(struct modem_cmux* cmux,
-                                              const struct modem_cmux_frame* frame) {
+                                              struct modem_cmux_frame const* frame) {
     uint16_t space;
     int ret;
 
