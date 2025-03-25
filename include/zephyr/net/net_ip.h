@@ -1549,9 +1549,9 @@ static inline bool net_ipv6_addr_based_on_ll(const struct net_in6_addr* addr,
  *
  * @return Pointer to socket address (struct sockaddr)
  */
-static inline struct sockaddr *net_sad(const struct sockaddr_storage *addr)
+static inline struct net_sockaddr *net_sad(const struct net_sockaddr_storage *addr)
 {
-	return (struct sockaddr *)addr;
+	return (struct net_sockaddr *)addr;
 }
 
 /**
