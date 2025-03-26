@@ -158,7 +158,7 @@ static void sh_mqtt_close_and_cleanup(struct shell_mqtt *sh)
 	 */
 	if ((sh->network_state == SHELL_MQTT_NETWORK_CONNECTED) &&
 	    (sh->transport_state == SHELL_MQTT_TRANSPORT_CONNECTED)) {
-		rc = mqtt_disconnect(&sh->mqtt_cli);
+		rc = mqtt_disconnect(&sh->mqtt_cli, NULL);
 	}
 
 	/* If network/mqtt disconnected, or mqtt_disconnect failed, do mqtt_abort */

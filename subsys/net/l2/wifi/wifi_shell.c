@@ -330,9 +330,20 @@ static void handle_wifi_connect_result(const struct net_mgmt_event_callback *cb)
 	const struct wifi_status *status =
 		(const struct wifi_status *) cb->info;
 	const struct shell *sh = context.sh;
+	int st = status->status;
 
-	if (status->status) {
-		PR_WARNING("Connection request failed (%d)\n", status->status);
+	if (st) {
+		if (st < 0) {
+			/* Errno values are negative, try to map to
+			 * wifi status values.
+			 */
+			if (st == -ETIMEDOUT) {
+				st = WIFI_STATUS_CONN_TIMEOUT;
+			}
+		}
+
+		PR_WARNING("Connection request failed (%s/%d)\n",
+			   wifi_conn_status_txt(st), st);
 	} else {
 		PR("Connected\n");
 	}
@@ -735,6 +746,13 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 				case 6:
 					params->band = WIFI_FREQ_BAND_6_GHZ;
 					break;
+				case 0:
+					/* Allow default value when connecting */
+					if (iface_mode == WIFI_MODE_INFRA) {
+						params->band = WIFI_FREQ_BAND_UNKNOWN;
+						break;
+					}
+					__fallthrough;
 				default:
 					PR_ERROR("Invalid band: %d\n", atoi(state->optarg));
 					return -EINVAL;

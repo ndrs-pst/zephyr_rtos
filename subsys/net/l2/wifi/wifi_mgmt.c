@@ -397,6 +397,28 @@ const char* wifi_ps_exit_strategy_txt(enum wifi_ps_exit_strategy ps_exit_strateg
     }
 }
 
+const char* wifi_conn_status_txt(enum wifi_conn_status status) {
+    switch (status) {
+        case WIFI_STATUS_CONN_SUCCESS :
+            return "Connection successful";
+
+        case WIFI_STATUS_CONN_FAIL :
+            return "Connection failed";
+
+        case WIFI_STATUS_CONN_WRONG_PASSWORD :
+            return "Wrong password";
+
+        case WIFI_STATUS_CONN_TIMEOUT :
+            return "Connection timeout";
+
+        case WIFI_STATUS_CONN_AP_NOT_FOUND :
+            return "AP not found";
+
+        default :
+            return "UNKNOWN";
+    }
+}
+
 static const struct wifi_mgmt_ops* const get_wifi_api(struct net_if* iface) {
     const struct device* dev = net_if_get_device(iface);
     struct net_wifi_mgmt_offload* off_api;
