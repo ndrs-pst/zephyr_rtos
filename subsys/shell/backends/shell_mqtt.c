@@ -91,9 +91,9 @@ static void prepare_fds(struct shell_mqtt *sh)
 	sh->nfds = 1;
 }
 
-static void clear_fds(void)
+static void clear_fds(struct shell_mqtt *sh)
 {
-	sh_mqtt->nfds = 0;
+	sh->nfds = 0;
 }
 
 /*
@@ -171,7 +171,7 @@ static void sh_mqtt_close_and_cleanup(struct shell_mqtt *sh)
 	}
 
 	/* Cleanup socket */
-	clear_fds();
+	clear_fds(sh);
 }
 
 static void broker_init(struct shell_mqtt *sh)
@@ -291,6 +291,7 @@ static void sh_mqtt_subscribe_handler(struct k_work *work)
 {
 	ARG_UNUSED(work);
 	struct shell_mqtt *sh = sh_mqtt;
+
 	/* Subscribe config information */
 	struct mqtt_topic subs_topic = {
 		.topic = {
