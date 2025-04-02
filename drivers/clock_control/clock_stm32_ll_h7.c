@@ -176,12 +176,19 @@
 #endif
 #endif /* CONFIG_CPU_CORTEX_M7 */
 
+#if (__GTEST == 0) /* #CUSTOM@NDRS */
+static mem_addr_t const rcc_dt_reg_addr = DT_REG_ADDR(DT_NODELABEL(rcc));
+#else
+#include "mcu_reg_stub.h"
+static mem_addr_t rcc_dt_reg_addr;
+#endif
+
 #if defined(CONFIG_CPU_CORTEX_M7)
 /* Offset to access bus clock registers from M7 (or only) core */
-#define STM32H7_BUS_CLK_REG	DT_REG_ADDR(DT_NODELABEL(rcc))
+#define STM32H7_BUS_CLK_REG	rcc_dt_reg_addr
 #elif defined(CONFIG_CPU_CORTEX_M4)
 /* Offset to access bus clock registers from M4 core */
-#define STM32H7_BUS_CLK_REG	DT_REG_ADDR(DT_NODELABEL(rcc)) + 0x60
+#define STM32H7_BUS_CLK_REG	(rcc_dt_reg_addr + 0x60)
 #endif
 
 static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
@@ -987,6 +994,10 @@ static int set_up_plls(void)
 int stm32_clock_control_init(const struct device *dev)
 {
 	int r = 0;
+
+	#if (__GTEST == 1) /* #CUSTOM@NDRS */
+    rcc_dt_reg_addr = RCC_BASE;
+    #endif
 
 #if defined(CONFIG_CPU_CORTEX_M7)
 	uint32_t old_hclk_freq;

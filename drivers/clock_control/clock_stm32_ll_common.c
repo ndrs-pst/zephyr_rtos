@@ -22,10 +22,10 @@
 extern uint32_t HAL_RCC_GetSysClockFreq(void); /* #CUSTOM@NDRS */
 
 #if (__GTEST == 0) /* #CUSTOM@NDRS */
-mem_addr_t const rcc_dt_reg_addr = DT_REG_ADDR(DT_NODELABEL(rcc));
+static mem_addr_t const rcc_dt_reg_addr = DT_REG_ADDR(DT_NODELABEL(rcc));
 #else
 #include "mcu_reg_stub.h"
-mem_addr_t rcc_dt_reg_addr;
+static mem_addr_t rcc_dt_reg_addr;
 #endif
 
 /* Macros to fill up prescaler values */
