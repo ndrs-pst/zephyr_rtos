@@ -503,20 +503,22 @@ skip_ipv6:
 
 #if defined(CONFIG_NET_DHCPV6)
 	if (net_if_flag_is_set(iface, NET_IF_IPV6)) {
-		PR("DHCPv6 renewal time (T1) : %llu ms\n",
-		   iface->config.dhcpv6.t1);
-		PR("DHCPv6 rebind time (T2)  : %llu ms\n",
-		   iface->config.dhcpv6.t2);
-		PR("DHCPv6 expire time       : %llu ms\n",
-		   iface->config.dhcpv6.expire);
-		if (iface->config.dhcpv6.params.request_addr) {
-			PR("DHCPv6 address           : %s\n",
-			   net_sprint_ipv6_addr(&iface->config.dhcpv6.addr));
-		}
+		if (iface->config.dhcpv6.state != NET_DHCPV6_DISABLED) {
+			PR("DHCPv6 renewal time (T1) : %llu ms\n",
+			   iface->config.dhcpv6.t1);
+			PR("DHCPv6 rebind time (T2)  : %llu ms\n",
+			   iface->config.dhcpv6.t2);
+			PR("DHCPv6 expire time       : %llu ms\n",
+			   iface->config.dhcpv6.expire);
+			if (iface->config.dhcpv6.params.request_addr) {
+				PR("DHCPv6 address           : %s\n",
+				   net_sprint_ipv6_addr(&iface->config.dhcpv6.addr));
+			}
 
-		if (iface->config.dhcpv6.params.request_prefix) {
-			PR("DHCPv6 prefix            : %s\n",
-			   net_sprint_ipv6_addr(&iface->config.dhcpv6.prefix));
+			if (iface->config.dhcpv6.params.request_prefix) {
+				PR("DHCPv6 prefix            : %s\n",
+				   net_sprint_ipv6_addr(&iface->config.dhcpv6.prefix));
+			}
 		}
 
 		PR("DHCPv6 state             : %s\n",
@@ -601,18 +603,23 @@ skip_ipv4:
 
 #if defined(CONFIG_NET_DHCPV4)
 	if (net_if_flag_is_set(iface, NET_IF_IPV4)) {
-		PR("DHCPv4 lease time : %u\n",
-		   iface->config.dhcpv4.lease_time);
-		PR("DHCPv4 renew time : %u\n",
-		   iface->config.dhcpv4.renewal_time);
-		PR("DHCPv4 server     : %s\n",
-		   net_sprint_ipv4_addr(&iface->config.dhcpv4.server_id));
-		PR("DHCPv4 requested  : %s\n",
-		   net_sprint_ipv4_addr(&iface->config.dhcpv4.requested_ip));
+		if (iface->config.dhcpv4.state != NET_DHCPV4_DISABLED) {
+			PR("DHCPv4 lease time : %u\n",
+			   iface->config.dhcpv4.lease_time);
+			PR("DHCPv4 renew time : %u\n",
+			   iface->config.dhcpv4.renewal_time);
+			PR("DHCPv4 server     : %s\n",
+			   net_sprint_ipv4_addr(&iface->config.dhcpv4.server_id));
+			PR("DHCPv4 requested  : %s\n",
+			   net_sprint_ipv4_addr(&iface->config.dhcpv4.requested_ip));
+			PR("DHCPv4 state      : %s\n",
+			   net_dhcpv4_state_name(iface->config.dhcpv4.state));
+			PR("DHCPv4 attempts   : %d\n",
+			   iface->config.dhcpv4.attempts);
+		}
+
 		PR("DHCPv4 state      : %s\n",
 		   net_dhcpv4_state_name(iface->config.dhcpv4.state));
-		PR("DHCPv4 attempts   : %d\n",
-		   iface->config.dhcpv4.attempts);
 	}
 #endif /* CONFIG_NET_DHCPV4 */
 }
