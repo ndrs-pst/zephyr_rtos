@@ -11,7 +11,7 @@
 #include <stdint.h>
 
 #if defined(_MSC_VER) /* #CUSTOM@NDRS */
-typedef signed int ssize_t;		  ///< Signed size type, usually encodes negative errors
+typedef signed int ssize_t;                 ///< Signed size type, usually encodes negative errors
 #endif
 
 #ifdef __cplusplus
@@ -52,7 +52,23 @@ typedef union {
 #endif /* Z_THREAD_LOCAL */
 
 #ifdef __cplusplus
-/* Zephyr requires an int main(void) signature with C linkage for the application main if present */
+
+#if (!__STDC_HOSTED__)
+/*
+ * Zephyr requires an int main(void) signature with C linkage for the
+ * application main if present. gcc, and clang when building in 'hosted' mode
+ * will correctly assume this. But, when building freestanding, clang does not
+ * treat main() specially, and by default name mangles its symbol, which
+ * results in the linker not linking from the kernel init code into this
+ * name mangled app main().
+ *
+ * At the same time, according to the C++ standard Section 6.9.3.1 of
+ * ISO/IEC 14882:2024, main cannot be explicitly declared to have "C" linkage.
+ * This restriction is relaxed for freestanding code, as main is not treated
+ * specially in these circumstances.
+ * Therefore, let's include the prototype when we are not building the code as
+ * freestanding/not-hosted.
+ */
 #if defined(_MSC_VER) /* #CUSTOM@NDRS */
 /* pass */
 #else
@@ -60,7 +76,6 @@ extern int main(void);
 #endif
 #endif
 
-#ifdef __cplusplus
 }
 #endif
 

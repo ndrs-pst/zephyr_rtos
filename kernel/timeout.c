@@ -79,9 +79,8 @@ static int32_t elapsed(void) {
     return announce_remaining == 0 ? sys_clock_elapsed() : 0U;
 }
 
-static int32_t next_timeout(void) {
+static int32_t next_timeout(int32_t ticks_elapsed) {
     struct _timeout* to   = first();
-    int32_t ticks_elapsed = elapsed();
     int32_t ret;
 
     if ((to == NULL) ||
@@ -110,9 +109,13 @@ void z_add_timeout(struct _timeout* to, _timeout_func_t fn,
 
     K_SPINLOCK(&timeout_lock) {
         struct _timeout* t;
+        int32_t ticks_elapsed;
+        bool has_elapsed = false;
 
         if (Z_IS_TIMEOUT_RELATIVE(timeout)) {
-            to->dticks = timeout.ticks + 1 + elapsed();
+            ticks_elapsed = elapsed();
+            has_elapsed = true;
+            to->dticks = timeout.ticks + 1 + ticks_elapsed;
         }
         else {
             k_ticks_t ticks = Z_TICK_ABS(timeout.ticks) - curr_tick;
@@ -134,7 +137,13 @@ void z_add_timeout(struct _timeout* to, _timeout_func_t fn,
         }
 
         if ((to == first()) && (announce_remaining == 0)) {
-            sys_clock_set_timeout(next_timeout(), false);
+            if (!has_elapsed) {
+                /* In case of absolute timeout that is first to expire
+                 * elapsed need to be read from the system clock.
+                 */
+                ticks_elapsed = elapsed();
+            }
+            sys_clock_set_timeout(next_timeout(ticks_elapsed), false);
         }
     }
 }
@@ -149,7 +158,7 @@ int z_abort_timeout(struct _timeout* to) {
             remove_timeout(to);
             ret = 0;
             if (is_first) {
-                sys_clock_set_timeout(next_timeout(), false);
+                sys_clock_set_timeout(next_timeout(elapsed()), false);
             }
         }
     }
@@ -200,7 +209,7 @@ int32_t z_get_next_timeout_expiry(void) {
     int32_t ret = (int32_t)K_TICKS_FOREVER;
 
     K_SPINLOCK(&timeout_lock) {
-        ret = next_timeout();
+        ret = next_timeout(elapsed());
     }
 
     return (ret);
@@ -247,7 +256,7 @@ void sys_clock_announce(int32_t ticks) {
     curr_tick += announce_remaining;
     announce_remaining = 0;
 
-    sys_clock_set_timeout(next_timeout(), false);
+    sys_clock_set_timeout(next_timeout(0), false);
 
     k_spin_unlock(&timeout_lock, key);
 
