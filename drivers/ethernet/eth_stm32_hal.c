@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/phy.h>
+#include <zephyr/net/mii.h>
 #include <ethernet/eth_stats.h>
 #include <soc.h>
 #include <zephyr/sys/printk.h>
@@ -255,6 +256,47 @@ static inline struct eth_stm32_tx_context *allocate_tx_context(struct net_pkt *p
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
 static __noinit ETH_TxPacketConfigTypeDef tx_config;
 #endif
+
+/*
+ ****************************
+ * PHY management functions *
+ ****************************
+ */
+static int eth_stm32_phy_reset_and_configure(const struct device *phy)
+{
+	int32_t tmout_us;
+	uint32_t reg;
+	int ret;
+
+	/* Reset the PHY */
+	ret = phy_write(phy, MII_BMCR, MII_BMCR_RESET);
+	if (ret == 0) {
+		/* 802.3u standard says reset takes up to 0.5s */
+		tmout_us = 500000;
+		while (true) {
+			k_busy_wait(1000);
+			ret = phy_read(phy, MII_BMCR, &reg);
+			if ((ret == 0) &&
+			    ((reg & MII_BMCR_RESET) == 0)) {
+				break;
+			}
+
+			tmout_us -= 1000;
+			if (tmout_us < 0) {
+				ret = -ETIMEDOUT;
+				break;
+			}
+		}
+	}
+
+	if (ret == 0) {
+		/* Configure the PHY */
+		ret = phy_configure_link(phy, (LINK_HALF_10BASE_T | LINK_FULL_10BASE_T |
+					       LINK_HALF_100BASE_T | LINK_FULL_100BASE_T));
+	}
+
+	return ret;
+}
 
 static inline void eth_stm32_setup_mac_filter(ETH_HandleTypeDef *heth)
 {
@@ -923,8 +965,6 @@ static int eth_stm32_initialize(const struct device *dev)
 		return -EIO;
 	}
 
-	HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_HSE, RCC_MCODIV_1);  /* #CUSTOM@NDRS mco1-enable */
-
 	/* configure pinmux */
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
@@ -1237,6 +1277,10 @@ static void eth_stm32_iface_init(struct net_if *iface)
 	net_lldp_set_lldpdu(iface);
 
 	if (device_is_ready(eth_stm32_phy_dev)) {
+		int ret = eth_stm32_phy_reset_and_configure(eth_stm32_phy_dev);
+		if (ret) {
+			LOG_ERR("PHY device failed to configure");
+		}
 		phy_link_callback_set(eth_stm32_phy_dev, phy_link_state_changed, (void *)dev);
 	} else {
 		LOG_ERR("PHY device not ready");
@@ -1399,18 +1443,18 @@ static const struct device *eth_stm32_hal_get_phy(const struct device *dev)
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 static const struct device *eth_stm32_get_ptp_clock(const struct device *dev)
 {
-	struct eth_stm32_hal_dev_data *tx_ctx = dev->data;
+	struct eth_stm32_hal_dev_data *ctx = dev->data;
 
-	return tx_ctx->ptp_clock;
+	return ctx->ptp_clock;
 }
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 static struct net_stats_eth *eth_stm32_hal_get_stats(const struct device *dev)
 {
-	struct eth_stm32_hal_dev_data *tx_ctx = dev->data;
+	struct eth_stm32_hal_dev_data *ctx = dev->data;
 
-	return &tx_ctx->stats;
+	return &ctx->stats;
 }
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
 
