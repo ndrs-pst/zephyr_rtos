@@ -363,8 +363,9 @@ static int nvs_flash_erase_sector(struct nvs_fs* fs, uint32_t addr) {
         return (rc);
     }
 
-    if (nvs_flash_cmp_const(fs, addr, fs->flash_parameters->erase_value,
-                            fs->sector_size)) {
+    rc = nvs_flash_cmp_const(fs, addr, fs->flash_parameters->erase_value,
+                             fs->sector_size);
+    if (rc != 0) {
         rc = -ENXIO;
     }
 
