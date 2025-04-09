@@ -44,6 +44,9 @@ struct dma_stm32_config {
     uint8_t offset; /* position in the list of dmamux channel list */
 #endif
     struct dma_stm32_stream* streams;
+#ifdef CONFIG_DMA_STM32U5
+    volatile uint32_t* linked_list_buffer;
+#endif
 };
 
 uint32_t dma_stm32_id_to_stream(uint32_t id);
@@ -97,8 +100,8 @@ void stm32_dma_config_channel_function(DMA_TypeDef* dma, uint32_t id,
 #endif
 
 #ifdef CONFIG_DMA_STM32_V1
-void     stm32_dma_disable_fifo_irq(DMA_TypeDef* dma, uint32_t id);
-bool     stm32_dma_check_fifo_mburst(LL_DMA_InitTypeDef const* DMAx);
+void stm32_dma_disable_fifo_irq(DMA_TypeDef* dma, uint32_t id);
+bool stm32_dma_check_fifo_mburst(LL_DMA_InitTypeDef const* DMAx);
 uint32_t stm32_dma_get_fifo_threshold(uint16_t fifo_mode_control);
 uint32_t stm32_dma_get_mburst(struct dma_config const* config, bool source_periph);
 uint32_t stm32_dma_get_pburst(struct dma_config const* config, bool source_periph);

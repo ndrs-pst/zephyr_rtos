@@ -1793,8 +1793,8 @@ static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
 				 &iface->config.dhcpv4.node);
 
 		dhcpv4_set_timeout(&iface->config.dhcpv4, timeout);
-
 		break;
+
 	case NET_DHCPV4_INIT:
 	case NET_DHCPV4_SELECTING:
 	case NET_DHCPV4_REQUESTING:
@@ -1976,8 +1976,8 @@ bool net_dhcpv4_accept_unicast(struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
 	struct net_pkt_cursor backup;
-	struct net_udp_hdr *udp_hdr;
-	struct net_if *iface;
+	const struct net_udp_hdr *udp_hdr;
+	const struct net_if *iface;
 	bool accept = false;
 
 	iface = net_pkt_iface(pkt);
@@ -1997,7 +1997,7 @@ bool net_dhcpv4_accept_unicast(struct net_pkt *pkt)
 	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt));
 
 	/* Verify destination UDP port. */
-	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data(pkt, &udp_access);
+	udp_hdr = (const struct net_udp_hdr *)net_pkt_get_data(pkt, &udp_access);
 	if (udp_hdr == NULL) {
 		goto out;
 	}
