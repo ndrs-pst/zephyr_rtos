@@ -667,7 +667,7 @@ struct usbd_class_api usbd_hid_api = {
 	.shutdown = usbd_hid_shutdown,
 };
 
-static const struct hid_device_driver_api hid_device_api = {
+static DEVICE_API(hid_device, hid_device_api) = {
 	.submit_report = hid_dev_submit_report,
 	.dev_register = hid_dev_register,
 };

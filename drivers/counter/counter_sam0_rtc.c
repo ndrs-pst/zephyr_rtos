@@ -371,7 +371,7 @@ static int counter_sam0_rtc_initialize(const struct device* dev) {
     return (0);
 }
 
-static const struct counter_driver_api counter_sam0_rtc_driver_api = {
+static DEVICE_API(counter, counter_sam0_rtc_driver_api) = {
     .start           = counter_sam0_rtc_start,
     .stop            = counter_sam0_rtc_stop,
     .get_value       = counter_sam0_rtc_get_value,

@@ -509,7 +509,7 @@ static int fram_cy15x_init(const struct device* dev) {
     return (0);
 }
 
-static const struct fram_driver_api fram_cy15x_api = {
+static DEVICE_API(fram, fram_cy15x_api) = {
     .read  = fram_cy15x_read,
     .write = fram_cy15x_write,
     .size  = fram_cy15x_size
