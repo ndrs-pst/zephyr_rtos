@@ -137,9 +137,9 @@ int net_udp_register(uint8_t family,
 		     void *user_data,
 		     struct net_conn_handle **handle)
 {
-	return net_conn_register(NET_IPPROTO_UDP, family, remote_addr, local_addr,
-				 remote_port, local_port, context, cb,
-				 user_data, handle);
+	return net_conn_register(NET_IPPROTO_UDP, NET_SOCK_DGRAM, family, remote_addr,
+				 local_addr, remote_port, local_port, context,
+				 cb, user_data, handle);
 }
 
 int net_udp_unregister(struct net_conn_handle *handle)

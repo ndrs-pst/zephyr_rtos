@@ -333,14 +333,14 @@ static int mcux_lpuart_irq_tx_ready(struct device const* dev) {
 
 static void mcux_lpuart_irq_rx_enable(struct device const* dev) {
     const struct mcux_lpuart_config* config = dev->config;
-    uint32_t mask = kLPUART_RxDataRegFullInterruptEnable;
+    uint32_t mask = kLPUART_RxDataRegFullInterruptEnable | kLPUART_RxOverrunInterruptEnable;
 
     LPUART_EnableInterrupts(config->base, mask);
 }
 
 static void mcux_lpuart_irq_rx_disable(struct device const* dev) {
     const struct mcux_lpuart_config* config = dev->config;
-    uint32_t mask = kLPUART_RxDataRegFullInterruptEnable;
+    uint32_t mask = kLPUART_RxDataRegFullInterruptEnable | kLPUART_RxOverrunInterruptEnable;
 
     LPUART_DisableInterrupts(config->base, mask);
 }

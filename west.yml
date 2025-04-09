@@ -203,7 +203,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 6af2fd7a9b21a567866585384d28963daeb7d350
+      revision: 4c94d433ba1a7638a0f3a319ab0adb43238f9be3
       path: modules/hal/nxp
       groups:
         - hal
@@ -219,7 +219,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 304831e59da1a72ce1f56d8738ad27c58379e7b0
+      revision: 15c3f057d5715b78b0a2201314b07ad6d2dbd1b1
       groups:
         - hal
     - name: hal_rpi_pico
@@ -274,7 +274,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: e83c94958cab8e2327c85e484f50cbf570f5ac3f
+      revision: 86044b5f2487a6c5e4a78e469eafa75bc61ef2e6
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -298,7 +298,7 @@ manifest:
       revision: 1ed1ddd881c3784049a92bb9fe37c38c6c74d998
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: 3bc59adb8ca1ad0780192f206c5dc1cfad635c2b
+      revision: 5f889934359deccf421554c7045a8381ef75298f
       path: modules/crypto/mbedtls
       groups:
         - crypto
