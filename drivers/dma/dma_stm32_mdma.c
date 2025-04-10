@@ -313,7 +313,7 @@ static int mdma_stm32_disable_channel(MDMA_TypeDef* mdma, uint32_t id) {
     int count;
 
     count = 0;
-    for (;;) {
+    while (true) {
         if (stm32_mdma_disable_channel(mdma, id) == 0) {
             return (0);
         }
@@ -671,7 +671,7 @@ int mdma_stm32_get_status(const struct device* dev,
     return (0);
 }
 
-static DEVICE_API(dma, dma_funcs) = {
+static DEVICE_API(dma, mdma_stm32_api) = {
     .reload     = mdma_stm32_reload,
     .config     = mdma_stm32_configure,
     .start      = mdma_stm32_start,
@@ -696,11 +696,11 @@ static struct mdma_stm32_data mdma_stm32_data_##index = {       \
 };                                                              \
                                                                 \
 DEVICE_DT_INST_DEFINE(index,                                    \
-                      &mdma_stm32_init,                         \
+                      mdma_stm32_init,                          \
                       NULL,                                     \
                       &mdma_stm32_data_##index, &mdma_stm32_config_##index, \
                       PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,    \
-                      &dma_funcs)
+                      &mdma_stm32_api)
 
 #define MDMA_STM32_DEFINE_IRQ_HANDLER(mdma, chan)               \
     static void mdma_stm32_irq_##mdma##_##chan(const struct device* dev) {  \

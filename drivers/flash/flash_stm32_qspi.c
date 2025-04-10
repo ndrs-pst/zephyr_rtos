@@ -53,7 +53,7 @@ LOG_MODULE_REGISTER(flash_stm32_qspi, CONFIG_FLASH_LOG_LEVEL);
 #define STM32_QSPI_UNKNOWN_MODE         (0xFF)
 
 #define STM32_QSPI_USE_DMA              DT_NODE_HAS_PROP(DT_INST_PARENT(0), dmas)
-#define STM32_QSPI_DMA_THRESHOLD        32      /* Threshold value in bytes for DMA use #CUSTOM@NDRS */
+#define STM32_QSPI_DMA_THRESHOLD        64      /* Threshold value in bytes for DMA use #CUSTOM@NDRS */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_qspi_nor)
 
@@ -270,7 +270,8 @@ static int qspi_read_access(struct device const* dev, QSPI_CommandTypeDef* cmd,
 
     dev_data->cmd_status = 0;
 
-    hal_sts = HAL_QSPI_Command_IT(&dev_data->hqspi, cmd);
+    hal_sts = HAL_QSPI_Command(&dev_data->hqspi, cmd,
+                               HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
     if (hal_sts != HAL_OK) {
         LOG_ERR("%d: Failed to send QSPI instruction", hal_sts);
         return (-EIO);
@@ -311,7 +312,8 @@ static int qspi_write_access(struct device const* dev, QSPI_CommandTypeDef* cmd,
 
     dev_data->cmd_status = 0;
 
-    hal_ret = HAL_QSPI_Command_IT(&dev_data->hqspi, cmd);
+    hal_ret = HAL_QSPI_Command(&dev_data->hqspi, cmd,
+                               HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
     if (hal_ret != HAL_OK) {
         LOG_ERR("%d: Failed to send QSPI instruction", hal_ret);
         return (-EIO);
@@ -358,8 +360,8 @@ static int qspi_read_jedec_id(struct device const* dev, uint8_t* id) {
 
     HAL_StatusTypeDef hal_ret;
 
-    hal_ret = HAL_QSPI_Command_IT(&dev_data->hqspi, &cmd);
-
+    hal_ret = HAL_QSPI_Command(&dev_data->hqspi, &cmd,
+                               HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
     if (hal_ret != HAL_OK) {
         LOG_ERR("%d: Failed to send OSPI instruction", hal_ret);
         return (-EIO);
