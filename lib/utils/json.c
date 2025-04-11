@@ -898,8 +898,8 @@ static int64_t obj_parse(struct json_obj *obj, const struct json_obj_descr *desc
 			}
 
 			/* Store the decoded value */
-			ret = decode_value(obj, &descr[i], &kv.value,
-					   decode_field, val);
+			ret = (int)decode_value(obj, &descr[i], &kv.value,
+						decode_field, val);
 			if (ret < 0) {
 				return ret;
 			}
@@ -934,7 +934,8 @@ int64_t json_obj_parse(char *payload, size_t len,
 		return ret;
 	}
 
-	return obj_parse(&obj, descr, descr_len, val);
+	ret = obj_parse(&obj, descr, descr_len, val);
+	return ret;
 }
 
 int json_arr_parse(char *payload, size_t len,
@@ -950,8 +951,9 @@ int json_arr_parse(char *payload, size_t len,
 
 	void *ptr = (char *)val + descr->offset;
 
-	return arr_parse(&arr, descr->array.element_descr,
-			 descr->array.n_elements, ptr, val);
+	ret = arr_parse(&arr, descr->array.element_descr,
+			descr->array.n_elements, ptr, val);
+	return ret;
 }
 
 
@@ -964,6 +966,7 @@ int json_arr_separate_parse_object(struct json_obj *json, const struct json_obj_
 			  size_t descr_len, void *val)
 {
 	struct json_token tok;
+	int ret;
 
 	if (!lexer_next(&json->lex, &tok)) {
 		return -EINVAL;
@@ -981,7 +984,8 @@ int json_arr_separate_parse_object(struct json_obj *json, const struct json_obj_
 		return -EINVAL;
 	}
 
-	return obj_parse(json, descr, descr_len, val);
+	ret = (int)obj_parse(json, descr, descr_len, val);
+	return ret;
 }
 
 static char escape_as(char chr)
