@@ -152,7 +152,7 @@ manifest:
       groups:
         - hal
     - name: hal_ambiq
-      revision: 77d99efc16c7de7c17e9507693e4e3d8be1a5cb7
+      revision: a6dff0a5f49e898f29bc428e01538a8911364460
       path: modules/hal/ambiq
       groups:
         - hal
@@ -238,7 +238,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 9340cb89feb5a95c9f5d0bc897d6ba2ea997cadd
+      revision: cbd4817b8ef14bf85aea1665cbc4b51060c962e8
       path: modules/hal/stm32
       groups:
         - hal
