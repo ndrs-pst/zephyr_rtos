@@ -232,7 +232,7 @@ struct fs_statvfs {
  *
  * @param node_id the node identifier for a child entry in a zephyr,fstab node.
  */
-#define FS_FSTAB_ENTRY(node_id) _CONCAT(z_fsmp_, node_id)
+#define FS_FSTAB_ENTRY(node_id) Z_CONCAT(z_fsmp_, node_id)
 
 /**
  * @brief Generate a declaration for the externally defined fstab

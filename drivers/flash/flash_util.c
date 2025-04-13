@@ -91,7 +91,8 @@ int z_impl_flash_flatten(const struct device *dev, off_t offset, size_t size)
 /* note: caller must first check for positivity (>=0) */
 static inline bool off_add_overflow(off_t offset, off_t size, off_t *result)
 {
-	BUILD_ASSERT((sizeof(off_t) == sizeof(uint32_t)) || (sizeof(off_t) == sizeof(uint64_t)));
+	BUILD_ASSERT((sizeof(off_t) == sizeof(uint32_t)) || (sizeof(off_t) == sizeof(uint64_t)),
+		     "sizeof(off_t) error !!");
 
 	if (sizeof(off_t) == sizeof(uint32_t)) {
 		uint32_t end;

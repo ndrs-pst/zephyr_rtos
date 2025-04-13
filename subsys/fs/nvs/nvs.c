@@ -1060,13 +1060,7 @@ int nvs_mount(struct nvs_fs* fs) {
                         LOG_ERR("Configuration error - sector count");
                     }
                     else {
-                        if (IS_ENABLED(__GTEST)) { /* #CUSTOM@NDRS */
-                            rc = 0;
-                        }
-                        else {
-                            rc = nvs_startup(fs);
-                        }
-
+                        rc = nvs_startup(fs);
                         if (rc == 0) {
                             /* nvs is ready for use */
                             fs->ready = true;
