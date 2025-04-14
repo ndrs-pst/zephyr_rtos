@@ -1152,4 +1152,24 @@ int littlefs_init(void)
 	return rc;
 }
 
+#if (__GTEST == 1U)
+int ut_littlefs_init_mem_slab(void) {
+	int rc;
+
+	rc = k_mem_slab_init(&file_data_pool, _k_mem_slab_buf_file_data_pool,
+						 sizeof(struct lfs_file_data), CONFIG_FS_LITTLEFS_NUM_FILES);
+	if (rc == 0) {
+		rc = k_mem_slab_init(&lfs_dir_pool, _k_mem_slab_buf_lfs_dir_pool,
+							 sizeof(struct lfs_dir), CONFIG_FS_LITTLEFS_NUM_DIRS);
+	}
+
+	if (rc == 0) {
+		k_heap_init(&file_cache_heap, kheap_file_cache_heap,
+					sizeof(kheap_file_cache_heap));
+	}
+
+	return (rc);
+}
+#endif
+
 SYS_INIT(littlefs_init, POST_KERNEL, CONFIG_FILE_SYSTEM_INIT_PRIORITY);
