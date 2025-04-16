@@ -178,7 +178,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 468e955eb49b8a731474ff194ca17b6e6a08c2d9
+      revision: 9df9d40571b25171cb752459c6dd96bd83ec8570
       path: modules/hal/infineon
       groups:
         - hal
@@ -238,7 +238,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: cbd4817b8ef14bf85aea1665cbc4b51060c962e8
+      revision: 3f58b6da204769761c0ba4e3f69bfc58b3c2f73b
       path: modules/hal/stm32
       groups:
         - hal
@@ -321,7 +321,7 @@ manifest:
       revision: fe4ff0e191a52de4f85ecc3475f0253eca6fc5bf
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: 8fd3cd7b088d62f145b8b9f5ecc985dd73bd9e77
+      revision: pull/46/head
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: f7f4d083c7909a39d86e217376c69b416ec4faf3
