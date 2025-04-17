@@ -477,6 +477,23 @@ static char** prepare_main_args(int* argc) {
 }
 #endif
 
+#if (defined(CONFIG_STATIC_INIT_GNU) && !defined(_MSC_VER)) /* #CUSTOM@NDRS */
+extern void (*__zephyr_init_array_start[])();
+extern void (*__zephyr_init_array_end[])();
+
+static void z_static_init_gnu(void) {
+    void (**fn)();
+
+    for (fn = __zephyr_init_array_start; fn != __zephyr_init_array_end; fn++) {
+        /* MWDT toolchain sticks a NULL at the end of the array */
+        if (*fn == NULL) {
+            break;
+        }
+        (**fn)();
+    }
+}
+#endif
+
 /**
  * @brief Mainline for kernel's background thread
  *
@@ -518,8 +535,9 @@ static void bg_thread_main(void* unused1, void* unused2, void* unused3) {
     #endif /* CONFIG_STACK_POINTER_RANDOM */
     boot_banner();
 
-    void z_init_static(void);
-    z_init_static();
+    #if (defined(CONFIG_STATIC_INIT_GNU) && !defined(_MSC_VER)) /* #CUSTOM@NDRS */
+    z_static_init_gnu();
+    #endif /* CONFIG_STATIC_INIT_GNU */
 
     /* Final init level before app starts */
     z_sys_init_run_level(INIT_LEVEL_APPLICATION);
