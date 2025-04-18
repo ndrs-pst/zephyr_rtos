@@ -227,12 +227,12 @@ void z_bss_zero(void) {
 
     #if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
     z_early_memset(&__dtcm_bss_start, 0,
-                   (uintptr_t) &__dtcm_bss_end - (uintptr_t)&__dtcm_bss_start);
+                   (uintptr_t)&__dtcm_bss_end - (uintptr_t)&__dtcm_bss_start);
     #endif
 
     #if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_ocm))
     z_early_memset(&__ocm_bss_start, 0,
-                   (uintptr_t) &__ocm_bss_end - (uintptr_t)&__ocm_bss_start);
+                   (uintptr_t)&__ocm_bss_end - (uintptr_t)&__ocm_bss_start);
     #endif
 
     #ifdef CONFIG_CODE_DATA_RELOCATION
@@ -243,8 +243,13 @@ void z_bss_zero(void) {
 
     #ifdef CONFIG_COVERAGE_GCOV
     z_early_memset(&__gcov_bss_start, 0,
-                   ((uintptr_t) &__gcov_bss_end - (uintptr_t) &__gcov_bss_start));
+                   ((uintptr_t)&__gcov_bss_end - (uintptr_t)&__gcov_bss_start));
     #endif /* CONFIG_COVERAGE_GCOV */
+
+    #ifdef CONFIG_NOCACHE_MEMORY
+    z_early_memset(&_nocache_ram_start, 0,
+                   (uintptr_t)&_nocache_ram_end - (uintptr_t)&_nocache_ram_start);
+    #endif
 }
 
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION

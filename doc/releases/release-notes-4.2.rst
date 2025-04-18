@@ -163,6 +163,10 @@ New APIs and options
 
   * :c:func:`stepper_stop()`
 
+* Storage
+
+  * :c:func:`flash_area_copy()`
+
 * Counter
 
   * :c:func:`counter_reset`
@@ -171,6 +175,9 @@ New APIs and options
 
   * :c:func:`util_eq`
   * :c:func:`util_memeq`
+
+* LoRaWAN
+   * :c:func:`lorawan_request_link_check`
 
 New Boards
 **********

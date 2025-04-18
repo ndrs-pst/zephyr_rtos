@@ -767,14 +767,19 @@ static int bind_default(struct net_context *context)
 
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && family == NET_AF_PACKET) {
 		struct net_sockaddr_ll ll_addr;
+		struct net_if *iface = net_context_get_iface(context);
 
 		if (net_sll_ptr(&context->local)->sll_addr) {
 			return 0;
 		}
 
+		if (iface == NULL) {
+			iface = net_if_get_default();
+		}
+
 		ll_addr.sll_family = NET_AF_PACKET;
 		ll_addr.sll_protocol = net_htons(ETH_P_ALL);
-		ll_addr.sll_ifindex = net_if_get_by_iface(net_if_get_default());
+		ll_addr.sll_ifindex = net_if_get_by_iface(iface);
 
 		return net_context_bind(context, (struct net_sockaddr *)&ll_addr,
 					sizeof(ll_addr));
@@ -2488,6 +2493,8 @@ static int context_sendto(struct net_context *context,
 					ll_addr->sll_ifindex);
 				return -EDESTADDRREQ;
 			}
+
+			net_context_set_iface(context, iface);
 		}
 
 		if (net_context_get_type(context) == NET_SOCK_DGRAM) {
