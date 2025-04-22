@@ -19,7 +19,7 @@ static const struct device* const uart_mcumgr_dev =
     DEVICE_DT_GET(DT_CHOSEN(zephyr_uart_mcumgr));
 
 /** Callback to execute when a valid fragment has been received. */
-static uart_mcumgr_recv_fn* uart_mgumgr_recv_cb;
+static uart_mcumgr_recv_fn* uart_mcumgr_recv_cb;
 
 /** Contains the fragment currently being received. */
 static struct uart_mcumgr_rx_buf* uart_mcumgr_cur_buf;
@@ -122,8 +122,8 @@ static struct uart_mcumgr_rx_buf* uart_mcumgr_rx_byte(uint8_t byte) {
 #if defined(CONFIG_MCUMGR_TRANSPORT_UART_ASYNC)
 static void uart_mcumgr_async(const struct device* dev, struct uart_event* evt, void* user_data) {
     struct uart_mcumgr_rx_buf* rx_buf;
-    uint8_t*                   p;
-    int                        len;
+    uint8_t* p;
+    int len;
 
     ARG_UNUSED(dev);
 
@@ -139,7 +139,7 @@ static void uart_mcumgr_async(const struct device* dev, struct uart_event* evt, 
             for (int i = 0; i < len; i++) {
                 rx_buf = uart_mcumgr_rx_byte(p[i]);
                 if (rx_buf != NULL) {
-                    uart_mgumgr_recv_cb(rx_buf);
+                    uart_mcumgr_recv_cb(rx_buf);
                 }
             }
             break;
@@ -190,7 +190,7 @@ static void uart_mcumgr_isr(const struct device* unused, void* user_data) {
         for (i = 0; i < chunk_len; i++) {
             rx_buf = uart_mcumgr_rx_byte(buf[i]);
             if (rx_buf != NULL) {
-                uart_mgumgr_recv_cb(rx_buf);
+                uart_mcumgr_recv_cb(rx_buf);
             }
         }
     }
@@ -233,7 +233,7 @@ static void uart_mcumgr_setup(const struct device* uart) {
 #endif
 
 void uart_mcumgr_register(uart_mcumgr_recv_fn* cb) {
-    uart_mgumgr_recv_cb = cb;
+    uart_mcumgr_recv_cb = cb;
 
     if (device_is_ready(uart_mcumgr_dev)) {
         uart_mcumgr_setup(uart_mcumgr_dev);
