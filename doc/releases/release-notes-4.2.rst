@@ -99,6 +99,10 @@ Deprecated APIs and options
 * ``xiao_esp32c6`` board target has been deprecated and renamed to
   ``xiao_esp32c6/esp32c6/hpcore``.
 
+* :kconfig:option:`CONFIG_HAWKBIT_DDI_NO_SECURITY` Kconfig option has been
+  deprecated, because support for anonymous authentication had been removed from the
+  hawkBit server in version 0.8.0.
+
 New APIs and options
 ====================
 
@@ -162,6 +166,10 @@ New APIs and options
   * Sockets
 
     * :kconfig:option:`CONFIG_NET_SOCKETS_INET_RAW`
+
+  * OpenThread
+
+    * Moved OpenThread-related Kconfig options from ``subsys/net/l2/openthread/Kconfig`` to ``modules/openthread/Kconfig``.
 
 * Sensor
 

@@ -26,8 +26,10 @@
 #include <zephyr/net/ethernet_vlan.h>
 #include <zephyr/net/ptp_time.h>
 
-#if defined(CONFIG_NET_DSA)
+#if defined(CONFIG_NET_DSA_DEPRECATED)
 #include <zephyr/net/dsa.h>
+#else
+#include <zephyr/net/dsa_core.h>
 #endif
 
 #if defined(CONFIG_NET_ETHERNET_BRIDGE)
@@ -128,17 +130,9 @@ struct net_eth_addr {
 #endif
 
 #define _NET_ETH_MAX_FRAME_SIZE     (NET_ETH_MTU + _NET_ETH_MAX_HDR_SIZE)
-/*
- * Extend the max frame size for DSA (KSZ8794) by one byte (to 1519) to
- * store tail tag.
- */
-#if defined(CONFIG_NET_DSA)
+
 #define NET_ETH_MAX_FRAME_SIZE      (_NET_ETH_MAX_FRAME_SIZE + DSA_TAG_SIZE)
 #define NET_ETH_MAX_HDR_SIZE        (_NET_ETH_MAX_HDR_SIZE + DSA_TAG_SIZE)
-#else
-#define NET_ETH_MAX_FRAME_SIZE      (_NET_ETH_MAX_FRAME_SIZE)
-#define NET_ETH_MAX_HDR_SIZE        (_NET_ETH_MAX_HDR_SIZE)
-#endif
 
 #define NET_ETH_VLAN_HDR_SIZE       4
 
@@ -146,6 +140,9 @@ struct net_eth_addr {
 
 /** @brief Ethernet hardware capabilities */
 enum ethernet_hw_caps {
+    /** No specific hardware capabilities */
+    ETHERNET_HW_CAPS_NONE           = 0,
+
     /** TX Checksum offloading supported for all of IPv4, UDP, TCP */
     ETHERNET_HW_TX_CHKSUM_OFFLOAD   = BIT(0),
 
@@ -191,11 +188,11 @@ enum ethernet_hw_caps {
     /** VLAN Tag stripping */
     ETHERNET_HW_VLAN_TAG_STRIP      = BIT(14),
 
-    /** DSA switch slave port */
-    ETHERNET_DSA_SLAVE_PORT         = BIT(15),
+    /** DSA switch user port */
+    ETHERNET_DSA_USER_PORT          = BIT(15),
 
-    /** DSA switch master port */
-    ETHERNET_DSA_MASTER_PORT        = BIT(16),
+    /** DSA switch conduit port */
+    ETHERNET_DSA_CONDUIT_PORT       = BIT(16),
 
     /** IEEE 802.1Qbv (scheduled traffic) supported */
     ETHERNET_QBV                    = BIT(17),
@@ -724,7 +721,7 @@ struct ethernet_context {
     int port;
     #endif
 
-    #if defined(CONFIG_NET_DSA)
+    #if defined(CONFIG_NET_DSA_DEPRECATED)
     /** DSA RX callback function - for custom processing - like e.g.
      * redirecting packets when MAC address is caught
      */
@@ -738,6 +735,13 @@ struct ethernet_context {
 
     /** Send a network packet via DSA master port */
     dsa_send_t dsa_send;
+
+    #elif defined(CONFIG_NET_DSA)
+    /** DSA port tpye */
+    enum dsa_port_type dsa_port;
+
+    /** DSA switch context pointer */
+    struct dsa_switch_context* dsa_switch_ctx;
     #endif
 
     /** Is network carrier up */
@@ -968,12 +972,23 @@ static inline
 enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if* iface) {
     struct device const* dev = net_if_get_device(iface);
     struct ethernet_api const* api = (struct ethernet_api*)dev->api;
+    enum ethernet_hw_caps caps = ETHERNET_HW_CAPS_NONE;
 
-    if (!api || !api->get_capabilities) {
-        return (enum ethernet_hw_caps)0;
+    #if defined(CONFIG_NET_DSA) && !defined(CONFIG_NET_DSA_DEPRECATED)
+    struct ethernet_context *eth_ctx = net_if_l2_data(iface);
+
+    if (eth_ctx->dsa_port == DSA_CONDUIT_PORT) {
+        caps |= ETHERNET_DSA_CONDUIT_PORT;
+    }
+    else if (eth_ctx->dsa_port == DSA_USER_PORT) {
+        caps |= ETHERNET_DSA_USER_PORT;
+    }
+    #endif
+    if (api == NULL || api->get_capabilities == NULL) {
+        return (caps);
     }
 
-    return api->get_capabilities(dev);
+    return (enum ethernet_hw_caps)(caps | api->get_capabilities(dev));
 }
 
 /**

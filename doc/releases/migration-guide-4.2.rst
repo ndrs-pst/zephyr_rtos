@@ -142,6 +142,10 @@ Ethernet
 * NuMaker Ethernet driver ``eth_numaker.c`` now supports ``gen_random_mac``,
   and the EMAC data flash feature has been removed (:github:`87953`).
 
+* The enum ``ETHERNET_DSA_MASTER_PORT`` and ``ETHERNET_DSA_SLAVE_PORT`` in
+  :zephyr_file:`include/zephyr/net/ethernet.h` have been renamed
+  to ``ETHERNET_DSA_CONDUIT_PORT`` and ``ETHERNET_DSA_USER_PORT``.
+
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
 
@@ -299,6 +303,10 @@ Networking
 * :kconfig:option:`NET_ZPERF` no longer includes server support by default. To use
   the server commands, enable :kconfig:option:`NET_ZPERF_SERVER`. If server support
   is not needed, :kconfig:option:`ZVFS_POLL_MAX` can possibly be reduced.
+
+* The OpenThread-related Kconfig options from ``subsys/net/l2/openthread/Kconfig`` have been moved to
+  ``modules/openthread/Kconfig``. All the Kconfig options remain the same. You can still use them in the
+  same way as before, but to modify them, use the new path in the menuconfig or guiconfig.
 
 SPI
 ===
