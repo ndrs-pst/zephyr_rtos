@@ -266,6 +266,11 @@ static bool net_if_tx(struct net_if* iface, struct net_pkt* pkt) {
             uint32_t end_tick    = k_cycle_get_32();
             uint32_t create_time = net_pkt_create_time(pkt);
 
+            if (status < 0) {
+                NET_WARN("iface %d pkt %p send failure status %d",
+                         net_if_get_by_iface(iface), pkt, status);
+            }
+
             net_pkt_set_tx_stats_tick(pkt, end_tick);
 
             net_stats_update_tc_tx_time(iface,
@@ -297,7 +302,7 @@ static bool net_if_tx(struct net_if* iface, struct net_pkt* pkt) {
     }
     else {
         /* Drop packet if interface is not up */
-        NET_WARN("iface %p is down", iface);
+        NET_WARN("iface %d is down", net_if_get_by_iface(iface));
         status = -ENETDOWN;
     }
 
@@ -434,7 +439,7 @@ static inline void init_iface(struct net_if* iface) {
 
     net_virtual_init(iface);
 
-    NET_DBG("On iface %p", iface);
+    NET_DBG("On iface %d", net_if_get_by_iface(iface));
 
     #ifdef CONFIG_USERSPACE
     k_object_init(iface);
@@ -460,7 +465,7 @@ enum net_verdict net_if_try_send_data(struct net_if* iface, struct net_pkt* pkt,
     if (!net_if_flag_is_set(iface, NET_IF_LOWER_UP) ||
         net_if_flag_is_set(iface, NET_IF_SUSPENDED)) {
         /* Drop packet if interface is not up */
-        NET_WARN("iface %p is down", iface);
+        NET_WARN("iface %d is down", net_if_get_by_iface(iface));
         verdict = NET_DROP;
         status  = -ENETDOWN;
         goto done;
@@ -473,7 +478,7 @@ enum net_verdict net_if_try_send_data(struct net_if* iface, struct net_pkt* pkt,
         l2 = net_if_l2(iface);
         if (l2 == NULL) {
             /* Offloaded ifaces may choose not to use an L2 at all. */
-            NET_WARN("no l2 for iface %p, discard pkt", iface);
+            NET_WARN("no l2 for iface %d, discard pkt", net_if_get_by_iface(iface));
             verdict = NET_DROP;
             goto done;
         }
@@ -481,7 +486,8 @@ enum net_verdict net_if_try_send_data(struct net_if* iface, struct net_pkt* pkt,
             /* Or, their chosen L2 (for example, OFFLOADED_NETDEV_L2)
              * might simply not implement send.
              */
-            NET_WARN("l2 for iface %p cannot send, discard pkt", iface);
+            NET_WARN("l2 for iface %d cannot send, discard pkt",
+                     net_if_get_by_iface(iface));
             verdict = NET_DROP;
             goto done;
         }
@@ -1328,7 +1334,7 @@ void net_if_start_dad(struct net_if* iface) {
 
     net_if_lock(iface);
 
-    NET_DBG("Starting DAD for iface %p", iface);
+    NET_DBG("Starting DAD for iface %d", net_if_get_by_iface(iface));
 
     ret = net_if_config_ipv6_get(iface, &ipv6);
     if (ret < 0) {
@@ -1520,8 +1526,8 @@ static void rs_timeout(struct k_work* work) {
         }
 
         if (iface) {
-            NET_DBG("RS no respond iface %p count %d",
-                    iface, ipv6->rs_count);
+            NET_DBG("RS no respond iface %d count %d",
+                    net_if_get_by_iface(iface), ipv6->rs_count);
             if (ipv6->rs_count < RS_COUNT) {
                 net_if_start_rs(iface);
             }
@@ -1548,7 +1554,7 @@ void net_if_start_rs(struct net_if* iface) {
 
     net_if_unlock(iface);
 
-    NET_DBG("Starting ND/RS for iface %p", iface);
+    NET_DBG("Starting ND/RS for iface %d", net_if_get_by_iface(iface));
 
     if (!net_ipv6_start_rs(iface)) {
         ipv6->rs_start = k_uptime_get_32();
@@ -1578,7 +1584,7 @@ void net_if_stop_rs(struct net_if* iface) {
         goto out;
     }
 
-    NET_DBG("Stopping ND/RS for iface %p", iface);
+    NET_DBG("Stopping ND/RS for iface %d", net_if_get_by_iface(iface));
 
     k_mutex_lock(&lock, K_FOREVER);
     sys_slist_find_and_remove(&active_rs_timers, &ipv6->rs_node);
@@ -4266,9 +4272,9 @@ void net_if_ipv4_start_acd(struct net_if* iface, struct net_if_addr* ifaddr) {
                                    net_sprint_ipv4_addr(&ifaddr->address.in_addr));
 
         if (net_ipv4_acd_start(iface, ifaddr) != 0) {
-            NET_DBG("Failed to start ACD for %s on iface %p.",
+            NET_DBG("Failed to start ACD for %s on iface %d.",
                     net_sprint_ipv4_addr(&ifaddr->address.in_addr),
-                    iface);
+                    net_if_get_by_iface(iface));
 
             /* Just act as if no conflict was detected. */
             net_if_ipv4_acd_succeeded(iface, ifaddr);
@@ -4289,7 +4295,7 @@ void net_if_start_acd(struct net_if* iface) {
 
     net_if_lock(iface);
 
-    NET_DBG("Starting ACD for iface %p", iface);
+    NET_DBG("Starting ACD for iface %d", net_if_get_by_iface(iface));
 
     ret = net_if_config_ipv4_get(iface, &ipv4);
     if (ret < 0) {
@@ -5722,7 +5728,7 @@ int net_if_down(struct net_if* iface) {
     struct net_l2 const* l2;
     int status = 0;
 
-    NET_DBG("iface %p", iface);
+    NET_DBG("iface %d", net_if_get_by_iface(iface));
 
     net_if_lock(iface);
 
