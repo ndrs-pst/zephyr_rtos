@@ -76,76 +76,78 @@ struct adc_hdl {
 
 static struct adc_hdl adc_list[] = {
     /* zephyr-keep-sorted-start */
-    DT_FOREACH_STATUS_OKAY(adi_ad4114_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(adi_ad559x_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(atmel_sam0_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(atmel_sam_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(atmel_sam_afec, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(espressif_esp32_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(gd_gd32_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(infineon_cat1_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(infineon_xmc4xxx_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ite_it51xxx_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ite_it8xxx2_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(lltc_ltc2451, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(maxim_max11102, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(maxim_max11103, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(maxim_max11105, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(maxim_max11106, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(maxim_max11110, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(maxim_max11111, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(maxim_max11115, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(maxim_max11116, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(maxim_max11117, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(maxim_max11253, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(maxim_max11254, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(microchip_mcp3204, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(microchip_mcp3208, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(microchip_xec_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(nordic_nrf_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(nordic_nrf_saadc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(nuvoton_npcx_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(nuvoton_numaker_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(nxp_adc12, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(nxp_gau_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(nxp_kinetis_adc16, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(nxp_lpc_lpadc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(nxp_mcux_12b1msps_sar, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(nxp_s32_adc_sar, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(nxp_vf610_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(raspberrypi_pico_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(renesas_smartbond_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(renesas_smartbond_sdadc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(silabs_gecko_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(silabs_gecko_iadc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(st_stm32_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(st_stm32f1_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(st_stm32f4_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(telink_b91_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ti_ads1013, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ti_ads1014, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ti_ads1015, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ti_ads1112, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ti_ads1113, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ti_ads1114, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ti_ads1115, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ti_ads1119, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ti_ads114s08, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ti_ads7052, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ti_cc13xx_cc26xx_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ti_cc32xx_adc, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ti_lmp90077, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ti_lmp90078, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ti_lmp90079, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ti_lmp90080, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ti_lmp90097, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ti_lmp90098, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ti_lmp90099, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ti_lmp90100, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ti_tla2021, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ti_tla2022, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(ti_tla2024, ADC_HDL_LIST_ENTRY)
-    DT_FOREACH_STATUS_OKAY(zephyr_adc_emul, ADC_HDL_LIST_ENTRY)
+    FOR_EACH_FIXED_ARG(DT_FOREACH_STATUS_OKAY, (), ADC_HDL_LIST_ENTRY,
+                       adi_ad4114_adc,
+                       adi_ad559x_adc,
+                       atmel_sam0_adc,
+                       atmel_sam_adc,
+                       atmel_sam_afec,
+                       espressif_esp32_adc,
+                       gd_gd32_adc,
+                       infineon_cat1_adc,
+                       infineon_xmc4xxx_adc,
+                       ite_it51xxx_adc,
+                       ite_it8xxx2_adc,
+                       lltc_ltc2451,
+                       maxim_max11102,
+                       maxim_max11103,
+                       maxim_max11105,
+                       maxim_max11106,
+                       maxim_max11110,
+                       maxim_max11111,
+                       maxim_max11115,
+                       maxim_max11116,
+                       maxim_max11117,
+                       maxim_max11253,
+                       maxim_max11254,
+                       microchip_mcp3204,
+                       microchip_mcp3208,
+                       microchip_xec_adc,
+                       nordic_nrf_adc,
+                       nordic_nrf_saadc,
+                       nuvoton_npcx_adc,
+                       nuvoton_numaker_adc,
+                       nxp_adc12,
+                       nxp_gau_adc,
+                       nxp_kinetis_adc16,
+                       nxp_lpc_lpadc,
+                       nxp_mcux_12b1msps_sar,
+                       nxp_s32_adc_sar,
+                       nxp_vf610_adc,
+                       raspberrypi_pico_adc,
+                       renesas_smartbond_adc,
+                       renesas_smartbond_sdadc)
+    FOR_EACH_FIXED_ARG(DT_FOREACH_STATUS_OKAY, (), ADC_HDL_LIST_ENTRY,
+                       silabs_gecko_adc,
+                       silabs_gecko_iadc,
+                       st_stm32_adc,
+                       st_stm32f1_adc,
+                       st_stm32f4_adc,
+                       telink_b91_adc,
+                       ti_ads1013,
+                       ti_ads1014,
+                       ti_ads1015,
+                       ti_ads1112,
+                       ti_ads1113,
+                       ti_ads1114,
+                       ti_ads1115,
+                       ti_ads1119,
+                       ti_ads114s08,
+                       ti_ads7052,
+                       ti_cc13xx_cc26xx_adc,
+                       ti_cc32xx_adc,
+                       ti_lmp90077,
+                       ti_lmp90078,
+                       ti_lmp90079,
+                       ti_lmp90080,
+                       ti_lmp90097,
+                       ti_lmp90098,
+                       ti_lmp90099,
+                       ti_lmp90100,
+                       ti_tla2021,
+                       ti_tla2022,
+                       ti_tla2024,
+                       zephyr_adc_emul)
     /* zephyr-keep-sorted-stop */
 };
 
