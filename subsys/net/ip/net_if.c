@@ -1560,7 +1560,11 @@ void net_if_start_rs(struct net_if* iface) {
         ipv6->rs_start = k_uptime_get_32();
 
         k_mutex_lock(&lock, K_FOREVER);
+
+        /* Make sure that the RS timer is not in the list twice */
+        (void) sys_slist_find_and_remove(&active_rs_timers, &ipv6->rs_node);
         sys_slist_append(&active_rs_timers, &ipv6->rs_node);
+
         k_mutex_unlock(&lock);
 
         /* FUTURE: use schedule, not reschedule. */
@@ -3030,10 +3034,12 @@ static uint8_t get_diff_ipv6(const struct net_in6_addr* src,
 }
 
 static inline bool is_proper_ipv6_address(struct net_if_addr const* addr) {
-    if (addr->is_used && (addr->addr_state == NET_ADDR_PREFERRED) &&
-        (addr->address.family == NET_AF_INET6) &&
+    if (addr->is_used && (addr->address.family == NET_AF_INET6) &&
         !net_ipv6_is_ll_addr(&addr->address.in6_addr)) {
-        return (true);
+        if ((addr->addr_state == NET_ADDR_PREFERRED) ||
+            (addr->addr_state == NET_ADDR_DEPRECATED)) {
+            return (true);
+        }
     }
 
     return (false);
@@ -3065,6 +3071,7 @@ static struct net_in6_addr* net_if_ipv6_get_best_match(struct net_if* iface,
                                                        uint8_t prefix_len,
                                                        uint8_t* best_so_far,
                                                        int flags) {
+    enum net_addr_state addr_state = NET_ADDR_ANY_STATE;
     struct net_if_ipv6*  ipv6 = iface->config.ip.ipv6;
     struct net_if_addr*  public_addr = NULL;
     struct net_in6_addr* src = NULL;
@@ -3123,6 +3130,25 @@ static struct net_in6_addr* net_if_ipv6_get_best_match(struct net_if* iface,
                 continue;
             }
 
+            if ((len == *best_so_far) &&
+                (ipv6->unicast[i].addr_state == NET_ADDR_DEPRECATED) &&
+                (addr_state == NET_ADDR_PREFERRED)) {
+                /* We have a preferred address and a deprecated
+                 * address. We prefer the preferred address if the
+                 * prefix lengths are the same.
+                 * See RFC 6724 chapter 5.
+                 */
+                continue;
+            }
+
+            addr_state = ipv6->unicast[i].addr_state;
+
+            NET_DBG("[%zd] Checking %s (%s) dst %s/%d", i,
+                    net_sprint_ipv6_addr(&ipv6->unicast[i].address.in6_addr),
+                    addr_state == NET_ADDR_PREFERRED  ? "preferred" :
+                    addr_state == NET_ADDR_DEPRECATED ? "deprecated" : "?",
+                    net_sprint_ipv6_addr(dst), prefix_len);
+
             ret = use_public_address(iface->pe_prefer_public,
                                      ipv6->unicast[i].is_temporary,
                                      flags);
@@ -3174,6 +3200,14 @@ static struct net_in6_addr* net_if_ipv6_get_best_match(struct net_if* iface,
 
 out :
     net_if_unlock(iface);
+
+    if (src != NULL) {
+        NET_DBG("Selected %s (%s) dst %s/%d",
+                net_sprint_ipv6_addr(src),
+                addr_state == NET_ADDR_PREFERRED  ? "preferred" :
+                addr_state == NET_ADDR_DEPRECATED ? "deprecated" : "?",
+                net_sprint_ipv6_addr(dst), prefix_len);
+    }
 
     return (src);
 }
@@ -3335,6 +3369,8 @@ static void iface_ipv6_stop(struct net_if* iface) {
 
     IF_ENABLED(CONFIG_NET_IPV6_IID_STABLE, (ipv6->network_counter++));
     IF_ENABLED(CONFIG_NET_IPV6_IID_STABLE, (ipv6->iid = NULL));
+
+    net_if_stop_rs(iface);
 
     /* Remove all autoconf addresses */
     ARRAY_FOR_EACH(ipv6->unicast, i) {

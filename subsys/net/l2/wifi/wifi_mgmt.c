@@ -169,7 +169,7 @@ char const* wifi_band_txt(enum wifi_frequency_bands band) {
     }
 }
 
-const char* const wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth) {
+const char* wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth) {
     switch (bandwidth) {
         case WIFI_FREQ_BANDWIDTH_20MHZ :
             return "20 MHz";

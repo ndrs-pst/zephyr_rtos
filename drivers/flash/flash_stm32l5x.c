@@ -11,6 +11,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/cache.h>
 #include <string.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/init.h>
@@ -33,87 +34,6 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #define PAGES_PER_BANK ((FLASH_SIZE / FLASH_PAGE_SIZE) / 2)
 
 #define BANK2_OFFSET (KB(STM32_SERIES_MAX_FLASH) / 2)
-
-#define ICACHE_DISABLE_TIMEOUT_VALUE    1U /* 1ms */
-#define ICACHE_INVALIDATE_TIMEOUT_VALUE 1U /* 1ms */
-
-static int stm32_icache_disable(void) {
-    uint32_t tickstart;
-    int status = 0;
-
-    LOG_DBG("I-cache Disable");
-    /* Clear BSYENDF flag first and then disable the instruction cache
-     * that starts a cache invalidation procedure
-     */
-    CLEAR_BIT(ICACHE->FCR, ICACHE_FCR_CBSYENDF);
-
-    LL_ICACHE_Disable();
-
-    /* Get tick */
-    tickstart = k_uptime_get_32();
-
-    /* Wait for instruction cache to get disabled */
-    while (LL_ICACHE_IsEnabled()) {
-        if ((k_uptime_get_32() - tickstart) >
-                                        ICACHE_DISABLE_TIMEOUT_VALUE) {
-            /* New check to avoid false timeout detection in case
-             * of preemption.
-             */
-            if (LL_ICACHE_IsEnabled()) {
-                status = -ETIMEDOUT;
-                break;
-            }
-        }
-    }
-
-    return (status);
-}
-
-static void stm32_icache_enable(void) {
-    LOG_DBG("I-cache Enable");
-    LL_ICACHE_Enable();
-}
-
-static int icache_wait_for_invalidate_complete(void) {
-    uint32_t tickstart;
-    int status = -EIO;
-
-    /* Check if ongoing invalidation operation */
-    if (LL_ICACHE_IsActiveFlag_BUSY()) {
-        /* Get tick */
-        tickstart = k_uptime_get_32();
-
-        /* Wait for end of cache invalidation */
-        while (!LL_ICACHE_IsActiveFlag_BSYEND()) {
-            if ((k_uptime_get_32() - tickstart) >
-                            ICACHE_INVALIDATE_TIMEOUT_VALUE) {
-                break;
-            }
-        }
-    }
-
-    /* Clear any pending flags */
-    if (LL_ICACHE_IsActiveFlag_BSYEND()) {
-        LOG_DBG("I-cache Invalidation complete");
-
-        LL_ICACHE_ClearFlag_BSYEND();
-        status = 0;
-    }
-    else {
-        LOG_ERR("I-cache Invalidation timeout");
-
-        status = -ETIMEDOUT;
-    }
-
-    if (LL_ICACHE_IsActiveFlag_ERR()) {
-        LOG_ERR("I-cache error");
-
-        LL_ICACHE_ClearFlag_ERR();
-        status = -EIO;
-    }
-
-    return (status);
-}
 
 /* Macro to check if the flash is Dual bank or not */
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
@@ -159,8 +79,8 @@ static int write_nwords(struct device const* dev, off_t offset, uint32_t const* 
                                             + FLASH_STM32_BASE_ADDRESS);
     bool full_zero = true;
     uint32_t tmp;
-    size_t i;
     int rc;
+    size_t i;
 
     /* if the non-secure control register is locked,do not fail silently */
     if (regs->NSCR & FLASH_STM32_NSLOCK) {
@@ -304,37 +224,26 @@ int flash_stm32_block_erase_loop(struct device const* dev,
                                  unsigned int len) {
     unsigned int address = offset;
     int rc = 0;
-    bool icache_enabled = LL_ICACHE_IsEnabled();
 
-    if (icache_enabled) {
-        /* Disable icache, this will start the invalidation procedure.
-         * All changes(erase/write) to flash memory should happen when
-         * i-cache is disabled. A write to flash performed without
-         * disabling i-cache will set ERRF error flag in SR register.
-         */
-        rc = stm32_icache_disable();
-        if (rc != 0) {
-            return (rc);
-        }
-    }
+    /* Disable icache, this will start the invalidation procedure.
+     * All changes(erase/write) to flash memory should happen when
+     * i-cache is disabled. A write to flash performed without
+     * disabling i-cache will set ERRF error flag in SR register.
+     */
 
-    for (; address <= offset + len - 1; address += FLASH_PAGE_SIZE) {
+    bool cache_enabled = LL_ICACHE_IsEnabled();
+
+    sys_cache_instr_disable();
+
+    for (; address <= offset + len - 1 ; address += FLASH_PAGE_SIZE) {
         rc = erase_page(dev, address);
         if (rc < 0) {
             break;
         }
     }
 
-    if (icache_enabled) {
-        /* Since i-cache was disabled, this would start the
-         * invalidation procedure, so wait for completion.
-         */
-        rc = icache_wait_for_invalidate_complete();
-
-        /* I-cache should be enabled only after the
-         * invalidation is complete.
-         */
-        stm32_icache_enable();
+    if (cache_enabled) {
+        sys_cache_instr_enable();
     }
 
     return (rc);
@@ -342,45 +251,29 @@ int flash_stm32_block_erase_loop(struct device const* dev,
 
 int flash_stm32_write_range(struct device const* dev, unsigned int offset,
                             void const* data, unsigned int len) {
-    int  rc = 0;
-    bool icache_enabled = LL_ICACHE_IsEnabled();
+    int i;
+    int rc = 0;
 
-    if (icache_enabled) {
-        /* Disable icache, this will start the invalidation procedure.
-         * All changes(erase/write) to flash memory should happen when
-         * i-cache is disabled. A write to flash performed without
-         * disabling i-cache will set ERRF error flag in SR register.
-         */
-        rc = stm32_icache_disable();
-        if (rc != 0) {
-            return (rc);
-        }
-    }
+    /* Disable icache, this will start the invalidation procedure.
+     * All changes(erase/write) to flash memory should happen when
+     * i-cache is disabled. A write to flash performed without
+     * disabling i-cache will set ERRF error flag in SR register.
+     */
 
-    for (size_t i = 0U; i < len; i += FLASH_STM32_WRITE_BLOCK_SIZE) {
-        rc = write_nwords(dev, offset + i, ((uint32_t const*)data + (i >> 2)),
-                          FLASH_STM32_WRITE_BLOCK_SIZE / 4);
+    bool cache_enabled = LL_ICACHE_IsEnabled();
+
+    sys_cache_instr_disable();
+
+    for (i = 0; i < len; i += FLASH_STM32_WRITE_BLOCK_SIZE) {
+        rc = write_nwords(dev, offset + i, ((const uint32_t *) data + (i>>2)),
+                  FLASH_STM32_WRITE_BLOCK_SIZE / 4);
         if (rc < 0) {
             break;
         }
     }
 
-    if (icache_enabled) {
-        int rc2;
-
-        /* Since i-cache was disabled, this would start the
-         * invalidation procedure, so wait for completion.
-         */
-        rc2 = icache_wait_for_invalidate_complete();
-
-        if (!rc) {
-            rc = rc2;
-        }
-
-        /* I-cache should be enabled only after the
-         * invalidation is complete.
-         */
-        stm32_icache_enable();
+    if (cache_enabled) {
+        sys_cache_instr_enable();
     }
 
     return (rc);
