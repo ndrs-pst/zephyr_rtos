@@ -297,8 +297,9 @@ static inline uint32_t ring_buf_size_get(struct ring_buf const* buf) {
 static inline uint32_t ring_buf_put_claim(struct ring_buf* buf,
                                           uint8_t** data,
                                           uint32_t size) {
-    return ring_buf_area_claim(buf, &buf->put, data,
-                               MIN(size, ring_buf_space_get(buf)));
+    uint32_t buf_size = ring_buf_size_get(buf);
+    return ring_buf_area_claim(buf, &buf->get, data,
+                               MIN(size, buf_size));
 }
 
 /**
@@ -376,8 +377,9 @@ uint32_t ring_buf_put(struct ring_buf* buf, uint8_t const* data, uint32_t size);
 static inline uint32_t ring_buf_get_claim(struct ring_buf* buf,
                                           uint8_t** data,
                                           uint32_t size) {
+    uint32_t buf_size = ring_buf_size_get(buf);
     return ring_buf_area_claim(buf, &buf->get, data,
-                               MIN(size, ring_buf_size_get(buf)));
+                               MIN(size, buf_size));
 }
 
 /**
