@@ -371,10 +371,10 @@ manifest:
   # zephyr-keep-sorted-stop
     - name: thingset
       path: modules/lib/thingset
-      revision: 2cd8dda5a38038a1a75667d9369f8e976f908ebf
+      revision: 84c603f181928dd057989a3b305cb46f14ac2644
     - name: thingset-node-c
       path: modules/lib/thingset-node-c
-      revision: ecd807b7ab26f3b0fd818b2118b2258736851a22
+      revision: 2ed57596d363053178aa6104dcd062be3f2b92ce
 
   self:
     path: zephyr_rtos
