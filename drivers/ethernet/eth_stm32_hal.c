@@ -291,8 +291,8 @@ static int eth_stm32_phy_reset_and_configure(const struct device *phy)
 
 	if (ret == 0) {
 		/* Configure the PHY */
-		ret = phy_configure_link(phy, (LINK_HALF_10BASE_T | LINK_FULL_10BASE_T |
-					       LINK_HALF_100BASE_T | LINK_FULL_100BASE_T));
+		ret = phy_configure_link(phy, (LINK_HALF_10BASE | LINK_FULL_10BASE |
+					       LINK_HALF_100BASE | LINK_FULL_100BASE));
 	}
 
 	return ret;
@@ -1314,7 +1314,7 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T
+	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE
 #if defined(CONFIG_NET_VLAN)
 		| ETHERNET_HW_VLAN
 #endif

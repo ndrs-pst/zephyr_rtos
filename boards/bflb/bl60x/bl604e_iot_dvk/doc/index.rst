@@ -34,9 +34,6 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
-The default configuration can be found in the Kconfig
-:zephyr_file:`boards/bouffalolab/bl60x/bl604e_iot_dvk/bl604e_iot_dvk_defconfig`.
-
 System Clock
 ============
 
@@ -51,6 +48,8 @@ to USB Serial converter and port is used for both program and console.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 Samples
 =======
