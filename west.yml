@@ -142,7 +142,7 @@ manifest:
       groups:
         - fs
     - name: hal_adi
-      revision: 67b88309c327d207e87bb7af6e37c704cd9d5b9d
+      revision: 8f33130dc5fe33ce14eb1cf29364bfc39dc82020
       path: modules/hal/adi
       groups:
         - hal
@@ -167,7 +167,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: c811e7e58ecb2574a4ae6a1c777015185cdaf199
+      revision: e794f935ff732f4e03f2e007d1e342f881ef0d4a
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -208,7 +208,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 6b11d190e0092aafec81489d0e7045a3bcf80c60
+      revision: 601e1e538abaf9f5985e28531b3b6a2a07e38d2a
       path: modules/hal/nxp
       groups:
         - hal
@@ -243,7 +243,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 78241a83d342f723f7ecb9f6d10f3aadf8087c6b
+      revision: 744c90542d610f8455c3b501e6c9dac2206ada0f
       path: modules/hal/stm32
       groups:
         - hal
