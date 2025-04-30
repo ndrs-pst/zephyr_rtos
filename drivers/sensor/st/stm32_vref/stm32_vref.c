@@ -41,7 +41,7 @@ struct stm32_vref_config {
 static int stm32_vref_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct stm32_vref_data *data = dev->data;
-	struct adc_sequence *sp = &data->adc_seq;
+	const struct adc_sequence *sp = &data->adc_seq;
 	int rc;
 	uint32_t path;
 
@@ -86,7 +86,7 @@ unlock:
 static int stm32_vref_channel_get(const struct device *dev, enum sensor_channel chan,
 				  struct sensor_value *val)
 {
-	struct stm32_vref_data *data = dev->data;
+	const struct stm32_vref_data *data = dev->data;
 	const struct stm32_vref_config *cfg = dev->config;
 	int32_t vref;
 
@@ -163,11 +163,13 @@ BUILD_ASSERT(0,	"ADC '" DT_NODE_FULL_NAME(DT_INST_IO_CHANNELS_CTLR(0)) "' needed
 static struct stm32_vref_data stm32_vref_dev_data = {
 	.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(0)),
 	.adc_base = (ADC_TypeDef *)DT_REG_ADDR(DT_INST_IO_CHANNELS_CTLR(0)),
-	.adc_cfg = {.gain = ADC_GAIN_1,
-		    .reference = ADC_REF_INTERNAL,
-		    .acquisition_time = ADC_ACQ_TIME_MAX,
-		    .channel_id = DT_INST_IO_CHANNELS_INPUT(0),
-		    .differential = 0},
+	.adc_cfg = {
+		.gain = ADC_GAIN_1,
+		.reference = ADC_REF_INTERNAL,
+		.acquisition_time = ADC_ACQ_TIME_MAX,
+		.channel_id = DT_INST_IO_CHANNELS_INPUT(0),
+		.differential = 0
+	},
 };
 
 static const struct stm32_vref_config stm32_vref_dev_config = {

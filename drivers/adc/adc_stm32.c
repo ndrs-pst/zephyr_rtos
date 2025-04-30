@@ -148,13 +148,13 @@ static uint32_t const table_seq_len[] = {
 
 #ifdef CONFIG_ADC_STM32_DMA
 struct stream {
-    const struct device*    dma_dev;
-    uint32_t                channel;
-    struct dma_config       dma_cfg;
+    const struct device* dma_dev;
+    uint32_t channel;
+    struct dma_config dma_cfg;
     struct dma_block_config dma_blk_cfg;
-    uint8_t                 priority;
-    bool                    src_addr_increment;
-    bool                    dst_addr_increment;
+    uint8_t priority;
+    bool src_addr_increment;
+    bool dst_addr_increment;
 };
 #endif /* CONFIG_ADC_STM32_DMA */
 
@@ -165,7 +165,7 @@ typedef uint16_t adc_data_size_t;
 #endif
 
 struct adc_stm32_data {
-    struct adc_context   ctx;
+    struct adc_context ctx;
     const struct device* dev;
     adc_data_size_t* buffer;
     adc_data_size_t* repeat_buffer;
@@ -177,7 +177,7 @@ struct adc_stm32_data {
     int8_t   acq_time_index[2];
 
 #ifdef CONFIG_ADC_STM32_DMA
-    volatile int  dma_error;
+    volatile int dma_error;
     struct stream dma;
 #endif
 };
