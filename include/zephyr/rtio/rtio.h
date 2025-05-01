@@ -849,7 +849,7 @@ static inline void rtio_block_pool_free(struct rtio* r, void* buf, uint32_t buf_
         .free_q = MPSC_INIT((name.free_q)), \
         .pool_size = sz,                    \
         .pool_free = sz,                    \
-        .pool = _Z_CONCAT(_sqe_pool_, name),\
+        .pool = Z_CONCAT(_sqe_pool_, name), \
     }
 
 

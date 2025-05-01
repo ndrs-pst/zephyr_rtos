@@ -935,7 +935,11 @@ struct __attribute__((__packed__)) sensor_data_generic_header {
 	int8_t _padding[sizeof(struct sensor_chan_spec) - 1];
 
 	/* Channels present in the frame */
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	struct sensor_chan_spec channels[1];
+	#else
 	struct sensor_chan_spec channels[0];
+	#endif
 };
 
 /**
@@ -1221,9 +1225,9 @@ static inline int32_t sensor_ms2_to_mg(const struct sensor_value *ms2)
 	int64_t nano_ms2 = (ms2->val1 * 1000000LL + ms2->val2) * 1000LL;
 
 	if (nano_ms2 > 0) {
-		return (nano_ms2 + SENSOR_G / 2) / SENSOR_G;
+		return (int32_t)((nano_ms2 + SENSOR_G / 2) / SENSOR_G);
 	} else {
-		return (nano_ms2 - SENSOR_G / 2) / SENSOR_G;
+		return (int32_t)((nano_ms2 - SENSOR_G / 2) / SENSOR_G);
 	}
 }
 
@@ -1322,7 +1326,7 @@ static inline void sensor_10udegrees_to_rad(int32_t d, struct sensor_value *rad)
  */
 static inline double sensor_value_to_double(const struct sensor_value *val)
 {
-	return (double)val->val1 + (double)val->val2 / 1000000;
+	return (double)val->val1 + ((double)val->val2 / 1000000.0);
 }
 
 /**
@@ -1333,7 +1337,7 @@ static inline double sensor_value_to_double(const struct sensor_value *val)
  */
 static inline float sensor_value_to_float(const struct sensor_value *val)
 {
-	return (float)val->val1 + (float)val->val2 / 1000000;
+	return (float)val->val1 + ((float)val->val2 / 1000000.0f);
 }
 
 /**
@@ -1370,14 +1374,15 @@ static inline int sensor_value_from_double(struct sensor_value *val, double inp)
  */
 static inline int sensor_value_from_float(struct sensor_value *val, float inp)
 {
-	float val2 = (inp - (int32_t)inp) * 1000000.0f;
+	int32_t val1 = (int32_t)inp;
+	int32_t val2 = (int32_t)((inp - (float)val1) * 1000000.0f);
 
-	if (val2 < INT32_MIN || val2 > (float)(INT32_MAX - 1)) {
+	if (val2 < -999999) {
 		return -ERANGE;
 	}
 
-	val->val1 = (int32_t)inp;
-	val->val2 = (int32_t)val2;
+	val->val1 = val1;
+	val->val2 = val2;
 
 	return 0;
 }
@@ -1404,7 +1409,7 @@ struct sensor_info {
 		SENSOR_INFO_INITIALIZER(__VA_ARGS__)
 
 #define SENSOR_INFO_DT_NAME(node_id)					\
-	_CONCAT(__sensor_info, DEVICE_DT_NAME_GET(node_id))
+	Z_CONCAT(__sensor_info, DEVICE_DT_NAME_GET(node_id))
 
 #define SENSOR_INFO_DT_DEFINE(node_id)					\
 	SENSOR_INFO_DEFINE(SENSOR_INFO_DT_NAME(node_id),		\

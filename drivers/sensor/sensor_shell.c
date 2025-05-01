@@ -175,6 +175,8 @@ static int find_sensor_trigger_device(const struct device *sensor)
 	return -1;
 }
 
+STRUCT_SECTION_START_EXTERN(Z_DEVICE_API_TYPE(sensor));
+STRUCT_SECTION_END_EXTERN(Z_DEVICE_API_TYPE(sensor));
 static bool sensor_device_check(const struct device *dev)
 {
 	return DEVICE_API_IS(sensor, dev);
@@ -681,9 +683,10 @@ static void cmd_sensor_attr_get_handler(const struct shell *shell_ptr, const str
 		return;
 	}
 
+	double value_double = sensor_value_to_double(&value);
 	shell_info(shell_ptr, "%s(channel=%s, attr=%s) value=%.6f", dev->name,
 		   sensor_channel_name[channel], sensor_attribute_name[attr],
-		   sensor_value_to_double(&value));
+		   value_double);
 }
 
 static int cmd_sensor_attr_get(const struct shell *shell_ptr, size_t argc, char *argv[])
