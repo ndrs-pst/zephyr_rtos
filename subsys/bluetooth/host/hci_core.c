@@ -600,8 +600,6 @@ static void hci_num_completed_packets(struct net_buf *buf)
 		while (count--) {
 			sys_snode_t *node;
 
-			k_sem_give(bt_conn_get_pkts(conn));
-
 			/* move the next TX context from the `pending` list to
 			 * the `complete` list.
 			 */
@@ -612,6 +610,8 @@ static void hci_num_completed_packets(struct net_buf *buf)
 				__ASSERT_NO_MSG(0);
 				break;
 			}
+
+			k_sem_give(bt_conn_get_pkts(conn));
 
 			sys_slist_append(&conn->tx_complete, node);
 
