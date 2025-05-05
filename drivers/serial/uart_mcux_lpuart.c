@@ -954,8 +954,30 @@ static void mcux_lpuart_isr(struct device const* dev) {
 }
 #endif /* CONFIG_UART_MCUX_LPUART_ISR_SUPPORT */
 
+static int mcux_lpuart_config_pinctrl(struct device const* dev, uint8_t flow_ctrl) {
+    struct mcux_lpuart_config const* config = dev->config;
+    int err;
+
+    if (flow_ctrl) {
+        err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_FLOWCONTROL);
+        if (err < 0) {
+            LOG_WRN("Failed to set flowcontrol state, using default state");
+            /* Fallback to default state if flow-control pins are not set */
+            err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+        }
+    }
+    else {
+        err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+    }
+
+    return (err);
+}
+
 #if LPUART_HAS_MODEM
-static int mcux_lpuart_config_flowctrl(uint8_t flow_ctrl, lpuart_config_t* uart_config) {
+static int mcux_lpuart_config_flowctrl(struct device const* dev, uint8_t flow_ctrl,
+                                       lpuart_config_t* uart_config) {
+    int ret = 0;
+
     switch (flow_ctrl) {
         case UART_CFG_FLOW_CTRL_NONE :
         case UART_CFG_FLOW_CTRL_RS485 :
@@ -969,13 +991,20 @@ static int mcux_lpuart_config_flowctrl(uint8_t flow_ctrl, lpuart_config_t* uart_
             break;
 
         default :
-            return (-ENOTSUP);
+            ret = -ENOTSUP;
+            break;
     }
 
-    return (0);
+    if (ret == 0) {
+        /* Configure the pinctrl for flow control */
+        ret = mcux_lpuart_config_pinctrl(dev, flow_ctrl);
+    }
+
+    return (ret);
 }
 #else
-static int mcux_lpuart_config_flowctrl(uint8_t flow_ctrl, lpuart_config_t* uart_config) {
+static int mcux_lpuart_config_flowctrl(struct device const* dev, uint8_t flow_ctrl,
+                                       lpuart_config_t* uart_config) {
     if (flow_ctrl != UART_CFG_FLOW_CTRL_NONE) {
         return (-ENOTSUP);
     }
@@ -1044,7 +1073,7 @@ static int mcux_lpuart_configure_basic(struct device const* dev, const struct ua
         return (-ENOTSUP);
     }
 
-    ret = mcux_lpuart_config_flowctrl(cfg->flow_ctrl, uart_config);
+    ret = mcux_lpuart_config_flowctrl(dev, cfg->flow_ctrl, uart_config);
     if (ret) {
         return (ret);
     }
@@ -1301,18 +1330,7 @@ static int mcux_lpuart_init(struct device const* dev) {
 
     /* set initial configuration */
     mcux_lpuart_configure_init(dev, uart_api_config);
-    if (config->flow_ctrl) {
-        const struct pinctrl_state* state;
-
-        err = pinctrl_lookup_state(config->pincfg, PINCTRL_STATE_FLOWCONTROL, &state);
-        if (err < 0) {
-            err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-        }
-    }
-    else {
-        err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-    }
-
+    err = mcux_lpuart_config_pinctrl(dev, config->flow_ctrl);
     if (err < 0) {
         return (err);
     }
