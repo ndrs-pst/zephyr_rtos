@@ -31,7 +31,7 @@ static inline struct flash_area const* get_flash_area_from_id(int idx) {
 
 static inline bool is_in_flash_area_bounds(const struct flash_area* fa,
                                            off_t off, size_t len) {
-    return (off >= 0) && (off < fa->fa_size) && (len <= (fa->fa_size - off));
+    return ((off >= 0) && (off < (off_t)fa->fa_size) && (len <= (fa->fa_size - off)));
 }
 
 #endif /* ZEPHYR_SUBSYS_STORAGE_FLASH_MAP_PRIV_H_ */
