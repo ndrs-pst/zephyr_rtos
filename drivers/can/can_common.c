@@ -26,6 +26,8 @@ struct can_tx_default_cb_ctx {
 static void can_tx_default_cb(const struct device* dev, int error, void* user_data) {
     struct can_tx_default_cb_ctx* ctx = user_data;
 
+    ARG_UNUSED(dev);
+
     ctx->status = error;
     k_sem_give(&ctx->done);
 }
@@ -181,6 +183,9 @@ static int update_sample_pnt(uint32_t total_tq, uint32_t sample_pnt, struct can_
             return (-ENOTSUP);
         }
     }
+    else {
+        /* Sample point location within range */
+    }
 
     res->phase_seg2 = tseg2;
 
@@ -197,6 +202,9 @@ static int update_sample_pnt(uint32_t total_tq, uint32_t sample_pnt, struct can_
         /* Even tseg1 distribution not possible, increase phase_seg1 */
         res->phase_seg1 = min->phase_seg1;
         res->prop_seg   = tseg1 - res->phase_seg1;
+    }
+    else {
+        /* No redistribution necessary */
     }
 
     /* Calculate the resulting sample point */
