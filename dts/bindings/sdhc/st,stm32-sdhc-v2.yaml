@@ -4,7 +4,7 @@
 
 description: STM32 SDMMC controller
 
-compatible: "st,stm32-sdhc"
+compatible: "st,stm32-sdhc-v2"
 
 include: [sdhc.yaml, pinctrl-device.yaml, reset-device.yaml]
 

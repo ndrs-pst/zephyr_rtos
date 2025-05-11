@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT st_stm32_sdhc
+#define DT_DRV_COMPAT st_stm32_sdhc_v2
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/disk.h>
@@ -997,7 +997,7 @@ static int sdhc_stm32_reset(const struct device *dev)
 	return 0;
 }
 
-#if CONFIG_SDHC_STM32_HWFC
+#if CONFIG_SDHC_STM32_HWFC_V2
 static void sdhc_stm32_fc_enable(SDMMC_TypeDef *sdmmc)
 {
 	sdmmc->CLKCR |= SDMMC_CLKCR_HWFC_EN;
@@ -1815,7 +1815,7 @@ static int sdhc_stm32_init(const struct device *dev)
 	}
 #endif
 
-#ifdef CONFIG_SDHC_STM32_HWFC
+#ifdef CONFIG_SDHC_STM32_HWFC_V2
 	sdhc_stm32_fc_enable(ctx->sdmmc);
 #endif
 
