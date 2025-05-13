@@ -103,6 +103,10 @@ Deprecated APIs and options
   deprecated, because support for anonymous authentication had been removed from the
   hawkBit server in version 0.8.0.
 
+* The :kconfig:option:`CONFIG_BT_CONN_TX_MAX` Kconfig option has been deprecated. The number of
+  pending TX buffers is now aligned with the :kconfig:option:`CONFIG_BT_BUF_ACL_TX_COUNT` Kconfig
+  option.
+
 New APIs and options
 ====================
 
@@ -221,6 +225,12 @@ New APIs and options
 * PCIe
 
    * :kconfig:option:`CONFIG_NVME_PRP_PAGE_SIZE`
+
+* Debug
+
+  * Core Dump
+
+    * :kconfig:option:`CONFIG_DEBUG_COREDUMP_THREAD_STACK_TOP`, enabled by default for ARM Cortex M when :kconfig:option:`CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_MIN` is selected.
 
 * Other
 
