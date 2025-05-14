@@ -60,6 +60,7 @@ enum modem_cellular_state {
     MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT,
     MODEM_CELLULAR_STATE_AWAIT_REGISTERED,
     MODEM_CELLULAR_STATE_CARRIER_ON,
+    MODEM_CELLULAR_STATE_DORMANT,
     MODEM_CELLULAR_STATE_INIT_POWER_OFF,
     MODEM_CELLULAR_STATE_RUN_SHUTDOWN_SCRIPT,
     MODEM_CELLULAR_STATE_POWER_OFF_PULSE,
@@ -78,7 +79,8 @@ enum modem_cellular_event {
     MODEM_CELLULAR_EVENT_REGISTERED,
     MODEM_CELLULAR_EVENT_DEREGISTERED,
     MODEM_CELLULAR_EVENT_BUS_OPENED,
-    MODEM_CELLULAR_EVENT_BUS_CLOSED
+    MODEM_CELLULAR_EVENT_BUS_CLOSED,
+    MODEM_CELLULAR_EVENT_PPP_DEAD,
 };
 
 struct modem_cellular_data {
@@ -126,6 +128,7 @@ struct modem_cellular_data {
 
     /* PPP */
     struct modem_ppp* ppp;
+    struct net_mgmt_event_callback net_mgmt_event_callback;
 
     enum modem_cellular_state state;
     const struct device*      dev;
@@ -207,6 +210,9 @@ static char const* modem_cellular_state_str(enum modem_cellular_state state) {
         case MODEM_CELLULAR_STATE_CARRIER_ON :
             return "carrier on";
 
+        case MODEM_CELLULAR_STATE_DORMANT:
+            return "dormant";
+
         case MODEM_CELLULAR_STATE_INIT_POWER_OFF :
             return "init power off";
 
@@ -260,6 +266,9 @@ static char const* modem_cellular_event_str(enum modem_cellular_event event) {
 
         case MODEM_CELLULAR_EVENT_BUS_CLOSED :
             return "bus closed";
+
+        case MODEM_CELLULAR_EVENT_PPP_DEAD :
+            return "ppp dead";
     }
 
     return "";
@@ -1002,6 +1011,10 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
             modem_chat_run_script_async(&data->chat, config->dial_chat_script);
             break;
 
+        case MODEM_CELLULAR_EVENT_SCRIPT_FAILED :
+            modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+            break;
+
         case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS :
             modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_REGISTERED);
             break;
@@ -1085,7 +1098,7 @@ static void modem_cellular_carrier_on_event_handler(struct modem_cellular_data* 
             break;
 
         case MODEM_CELLULAR_EVENT_DEREGISTERED :
-            modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+            modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_DORMANT);
             break;
 
         case MODEM_CELLULAR_EVENT_SUSPEND :
@@ -1099,9 +1112,33 @@ static void modem_cellular_carrier_on_event_handler(struct modem_cellular_data* 
 
 static int modem_cellular_on_carrier_on_state_leave(struct modem_cellular_data* data) {
     modem_cellular_stop_timer(data);
+
+    return 0;
+}
+
+static int modem_cellular_on_dormant_state_enter(struct modem_cellular_data* data) {
+    net_if_dormant_on(modem_ppp_get_iface(data->ppp));
+
+    return 0;
+}
+
+static void modem_cellular_dormant_event_handler(struct modem_cellular_data* data,
+                                                 enum modem_cellular_event evt) {
+    switch (evt) {
+        case MODEM_CELLULAR_EVENT_PPP_DEAD :
+            modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+            break;
+
+        default :
+            break;
+    }
+}
+
+static int modem_cellular_on_dormant_state_leave(struct modem_cellular_data* data) {
     net_if_carrier_off(modem_ppp_get_iface(data->ppp));
     modem_chat_release(&data->chat);
     modem_ppp_release(data->ppp);
+    net_if_dormant_off(modem_ppp_get_iface(data->ppp));
 
     return (0);
 }
@@ -1279,6 +1316,10 @@ static int modem_cellular_on_state_enter(struct modem_cellular_data* data) {
             ret = modem_cellular_on_carrier_on_state_enter(data);
             break;
 
+        case MODEM_CELLULAR_STATE_DORMANT :
+            ret = modem_cellular_on_dormant_state_enter(data);
+            break;
+
         case MODEM_CELLULAR_STATE_INIT_POWER_OFF :
             ret = modem_cellular_on_init_power_off_state_enter(data);
             break;
@@ -1337,6 +1378,10 @@ static int modem_cellular_on_state_leave(struct modem_cellular_data* data) {
 
         case MODEM_CELLULAR_STATE_CARRIER_ON :
             ret = modem_cellular_on_carrier_on_state_leave(data);
+            break;
+
+        case MODEM_CELLULAR_STATE_DORMANT :
+            ret = modem_cellular_on_dormant_state_leave(data);
             break;
 
         case MODEM_CELLULAR_STATE_INIT_POWER_OFF :
@@ -1431,6 +1476,10 @@ static void modem_cellular_event_handler(struct modem_cellular_data* data,
 
         case MODEM_CELLULAR_STATE_CARRIER_ON :
             modem_cellular_carrier_on_event_handler(data, evt);
+            break;
+
+        case MODEM_CELLULAR_STATE_DORMANT :
+            modem_cellular_dormant_event_handler(data, evt);
             break;
 
         case MODEM_CELLULAR_STATE_INIT_POWER_OFF :
@@ -1678,9 +1727,24 @@ static int modem_cellular_pm_action(const struct device* dev, enum pm_device_act
 }
 #endif /* CONFIG_PM_DEVICE */
 
+static void net_mgmt_event_handler(struct net_mgmt_event_callback* cb, uint32_t mgmt_event,
+                                   struct net_if* iface) {
+    struct modem_cellular_data* data =
+        CONTAINER_OF(cb, struct modem_cellular_data, net_mgmt_event_callback);
+
+    switch (mgmt_event) {
+        case NET_EVENT_PPP_PHASE_DEAD :
+            modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_PPP_DEAD);
+            break;
+
+        default :
+            break;
+    }
+}
+
 static int modem_cellular_init(const struct device* dev) {
-    struct modem_cellular_data* data = dev->data;
-    struct modem_cellular_config const* config = dev->config;
+    struct modem_cellular_data* data = (struct modem_cellular_data *)dev->data;
+    struct modem_cellular_config* config = (struct modem_cellular_config *)dev->config;
 
     data->dev = dev;
 
@@ -1783,6 +1847,12 @@ static int modem_cellular_init(const struct device* dev) {
         };
 
         modem_chat_init(&data->chat, &chat_config);
+    }
+
+    {
+        net_mgmt_init_event_callback(&data->net_mgmt_event_callback, net_mgmt_event_handler,
+                                     NET_EVENT_PPP_PHASE_DEAD);
+        net_mgmt_add_event_callback(&data->net_mgmt_event_callback);
     }
 
     #ifndef CONFIG_PM_DEVICE

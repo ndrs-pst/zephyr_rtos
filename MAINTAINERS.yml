@@ -126,6 +126,19 @@ ACPI:
   tests:
     - acpi
 
+Aesc Platform:
+  status: maintained
+  maintainers:
+    - dnltz
+  files:
+    - soc/aesc/
+    - dts/riscv/aesc/
+    - boards/aesc/
+  files-regex:
+    - ^drivers/.*aesc(\.c)?$
+  labels:
+    - "area: Aesc Silicon Platform"
+
 Antmicro platforms:
   status: maintained
   maintainers:
@@ -170,6 +183,7 @@ Arduino Platforms:
     - facchinm
   files:
     - boards/arduino/
+    - drivers/*/*modulino*
 
 ARM arch:
   status: maintained
@@ -4590,6 +4604,9 @@ TDK Sensors:
   status: maintained
   maintainers:
     - RobinKastberg
+  collaborators:
+    - bjorniuppsala
+    - LoveKarlsson
   files:
     - cmake/*/iar/
     - include/zephyr/toolchain/iar.h
@@ -5811,3 +5828,19 @@ zbus:
     - "area: llext"
   tests:
     - llext
+
+RX arch:
+  status: maintained
+  maintainers:
+    - duynguyenxa
+  files:
+    - arch/rx/
+    - include/zephyr/arch/rx/
+    - dts/rx/
+    - boards/qemu/rx/
+    - soc/renesas/rx/
+    - tests/arch/rx/
+  labels:
+    - "area: RX"
+  tests:
+    - arch.rx

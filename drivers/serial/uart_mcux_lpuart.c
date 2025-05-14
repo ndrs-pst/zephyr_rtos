@@ -1231,6 +1231,7 @@ static int mcux_lpuart_configure(struct device const* dev,
 #if LPUART_HAS_MODEM
 static void mcux_lpuart_line_ctrl_set_rts(struct device const* dev, uint32_t val) {
     struct mcux_lpuart_config const* config = dev->config;
+    uint32_t old_ctrl = config->base->CTRL;
 
     /* Disable Transmitter and Receiver */
     config->base->CTRL &= ~(LPUART_CTRL_TE_MASK | LPUART_CTRL_RE_MASK);
@@ -1245,6 +1246,9 @@ static void mcux_lpuart_line_ctrl_set_rts(struct device const* dev, uint32_t val
         config->base->MODIR &= ~(LPUART_MODIR_RXRTSE_MASK);
         config->base->MODIR |= (LPUART_MODIR_TXRTSPOL_MASK | LPUART_MODIR_TXRTSE_MASK);
     }
+
+    /* Restore Transmitter and Receiver */
+    config->base->CTRL = old_ctrl;
 }
 #else
 #define mcux_lpuart_line_ctrl_set_rts(dev, val) ret = -ENOTSUP

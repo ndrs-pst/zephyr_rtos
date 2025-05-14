@@ -392,11 +392,10 @@ void bt_conn_reset_rx_state(struct bt_conn *conn)
 	conn->rx = NULL;
 }
 
-static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
+static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
+			uint8_t flags)
 {
 	uint16_t acl_total_len;
-
-	bt_acl_set_ncp_sent(buf, false);
 
 	/* Check packet boundary flags */
 	switch (flags) {
@@ -409,7 +408,7 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags
 		LOG_DBG("First, len %u final %u", buf->len,
 			(buf->len < sizeof(uint16_t)) ? 0 : sys_get_le16(buf->data));
 
-		conn->rx = net_buf_ref(buf);
+		conn->rx = buf;
 		break;
 	case BT_ACL_CONT:
 		if (!conn->rx) {
@@ -439,6 +438,7 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags
 		}
 
 		net_buf_add_mem(conn->rx, buf->data, buf->len);
+		net_buf_unref(buf);
 		break;
 	default:
 		/* BT_ACL_START_NO_FLUSH and BT_ACL_COMPLETE are not allowed on
@@ -455,10 +455,6 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags
 		/* Still not enough data received to retrieve the L2CAP header
 		 * length field.
 		 */
-		bt_send_one_host_num_completed_packets(conn->handle);
-		bt_acl_set_ncp_sent(buf, true);
-		net_buf_unref(buf);
-
 		return;
 	}
 
@@ -466,14 +462,8 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags
 
 	if (conn->rx->len < acl_total_len) {
 		/* L2CAP frame not complete. */
-		bt_send_one_host_num_completed_packets(conn->handle);
-		bt_acl_set_ncp_sent(buf, true);
-		net_buf_unref(buf);
-
 		return;
 	}
-
-	net_buf_unref(buf);
 
 	if ((conn->type != BT_CONN_TYPE_BR) && (conn->rx->len > acl_total_len)) {
 		LOG_ERR("ACL len mismatch (%u > %u)", conn->rx->len, acl_total_len);
@@ -484,8 +474,6 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags
 	/* L2CAP frame complete. */
 	buf = conn->rx;
 	conn->rx = NULL;
-
-	__ASSERT(buf->ref == 1, "buf->ref %d", buf->ref);
 
 	LOG_DBG("Successfully parsed %u byte L2CAP packet", buf->len);
 	if (IS_ENABLED(CONFIG_BT_CLASSIC) && (conn->type == BT_CONN_TYPE_BR)) {
