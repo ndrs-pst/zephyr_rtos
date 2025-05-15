@@ -105,7 +105,7 @@ struct ads1119_data {
 static int ads1119_read_reg(const struct device* dev, enum ads1119_reg reg_addr, uint8_t* reg_val) {
     const struct ads1119_config* config = dev->config;
 
-    return i2c_reg_read_byte_dt(&config->bus, (uint8_t)(ADS1119_CMD_READ_REG | reg_addr), reg_val);
+    return i2c_reg_read_byte_dt(&config->bus, ((uint8_t)ADS1119_CMD_READ_REG | (uint8_t)reg_addr), reg_val);
 }
 
 static int ads1119_write_reg(const struct device* dev, uint8_t reg) {

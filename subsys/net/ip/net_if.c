@@ -5489,7 +5489,7 @@ static bool need_calc_checksum(struct net_if* iface, enum ethernet_hw_caps caps,
     }
 
     /* bitmaps are encoded such that this works */
-    return !((config.chksum_support & chksum_type) == chksum_type);
+    return !(((uint32_t)config.chksum_support & (uint32_t)chksum_type) == (uint32_t)chksum_type);
     #else
     ARG_UNUSED(iface);
     ARG_UNUSED(caps);
