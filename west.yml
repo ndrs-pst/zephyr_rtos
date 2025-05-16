@@ -148,11 +148,6 @@ manifest:
       path: modules/hal/adi
       groups:
         - hal
-    - name: hal_altera
-      revision: 4fe4df959d4593ce66e676aeba0b57f546dba0fe
-      path: modules/hal/altera
-      groups:
-        - hal
     - name: hal_ambiq
       revision: 9da9656d3bc78300a757faebf1f265efd4e7b275
       path: modules/hal/ambiq
@@ -210,7 +205,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 5e5a498e79347c6b1be9cf6d7e553c5ff96cb379
+      revision: a961ce3ba3fa3a4f5c6d84918b1d2262197f46d3
       path: modules/hal/nxp
       groups:
         - hal
