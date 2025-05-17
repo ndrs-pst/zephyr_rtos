@@ -89,6 +89,10 @@ Devicetree
   to more specific locations. Therefore, any dts files which ``#include <common/some_file.dtsi>``
   a file from in the zephyr tree will need to be changed to just ``#include <some_file.dtsi>``.
 
+* Silicon Labs SoC-level dts files for Series 2 have been reorganized in subdirectories per device
+  superfamily. Therefore, any dts files for boards that use Series 2 SoCs will need to change their
+  include from ``#include <silabs/some_soc.dtsi>`` to ``#include <silabs/xg2[1-9]/some_soc.dtsi>``.
+
 DAI
 ===
 
@@ -214,6 +218,24 @@ Sensors
 * :dtcompatible:`meas,ms5837` has been replaced by :dtcompatible:`meas,ms5837-30ba`
   and :dtcompatible:`meas,ms5837-02ba`. In order to use one of the two variants, the
   status property needs to be used as well.
+
+* The :dtcompatible:`we,wsen-itds` driver has been renamed to
+  :dtcompatible:`we,wsen-itds-2533020201601`.
+  The Device Tree can be configured as follows:
+
+  .. code-block:: devicetree
+
+    &i2c0 {
+      itds:itds-2533020201601@19 {
+        compatible = "we,wsen-itds-2533020201601";
+        reg = <0x19>;
+        odr = "400";
+        op-mode = "high-perf";
+        power-mode = "normal";
+        events-interrupt-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+        drdy-interrupt-gpios = < &gpio1 2 GPIO_ACTIVE_HIGH >;
+      };
+    };
 
 Serial
 =======
@@ -510,6 +532,14 @@ Video
   Also the ``capture-rate`` property has been replaced by the usage of the frame interval API
   :c:func:`video_set_frmival`.
   See (:github:`89627`).
+
+* video_endpoint_id enum has been dropped. It is no longer a parameter in any video API.
+
+* video_buf_type enum has been added. It is a required parameter in the following video APIs:
+
+  ``set_stream``
+  ``video_stream_start``
+  ``video_stream_stop``
 
 Other subsystems
 ****************
