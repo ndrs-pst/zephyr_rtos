@@ -164,7 +164,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 19deab41774962eda2fbe6ced5ee30365e658df9
+      revision: fa60a7aaa1f834c66413bbaa771794cf8aa82946
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -240,7 +240,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 78b9647add1f3b9228a770c0be6032330b66080b
+      revision: 91c9198e4fd45efaba1afc23a2479df60cddc31f
       path: modules/hal/stm32
       groups:
         - hal
@@ -292,7 +292,7 @@ manifest:
       path: modules/fs/littlefs
       groups:
         - fs
-      revision: 694b7573495ed207a09860191c502e25111411e2
+      revision: 32fa5540b5dacb1622664713acefcb46445f01e6
     - name: loramac-node
       revision: 88deb45109317473ac5706e97a6b8bbeb524aab1
       path: modules/lib/loramac-node
