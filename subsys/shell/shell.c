@@ -47,9 +47,11 @@ static inline void receive_state_change(const struct shell* sh,
 }
 
 static void cmd_buffer_clear(const struct shell* sh) {
-    sh->ctx->cmd_buff[0]  = '\0'; /* clear command buffer */
-    sh->ctx->cmd_buff_pos = 0;
-    sh->ctx->cmd_buff_len = 0;
+    struct shell_ctx* ctx = sh->ctx;
+
+    ctx->cmd_buff[0]  = '\0'; /* clear command buffer */
+    ctx->cmd_buff_pos = 0;
+    ctx->cmd_buff_len = 0;
 }
 
 static void shell_internal_help_print(const struct shell* sh) {
@@ -122,22 +124,23 @@ static void tab_item_print(const struct shell* sh, char const* option,
                            uint16_t longest_option) {
     static char const* tab = "  ";
     static uint16_t const tab_len = 2U;
+    struct shell_vt100_ctx* vt100_ctx = &sh->ctx->vt100_ctx;
     uint16_t columns;
     uint16_t diff;
 
     /* Function initialization has been requested. */
     if (option == NULL) {
-        sh->ctx->vt100_ctx.printed_cmd = 0;
+        vt100_ctx->printed_cmd = 0;
         return;
     }
 
     longest_option += tab_len;
 
-    columns = (sh->ctx->vt100_ctx.cons.terminal_wid - tab_len) / longest_option;
+    columns = (vt100_ctx->cons.terminal_wid - tab_len) / longest_option;
     __ASSERT_NO_MSG(columns != 0);
     diff    = longest_option - z_shell_strlen(option);
 
-    if (sh->ctx->vt100_ctx.printed_cmd++ % columns == 0U) {
+    if (vt100_ctx->printed_cmd++ % columns == 0U) {
         z_shell_fprintf(sh, SHELL_OPTION, "\n%s%s", tab, option);
     }
     else {
@@ -181,6 +184,7 @@ static void history_put(const struct shell* sh, uint8_t* line, size_t length) {
 }
 
 static void history_handle(const struct shell* sh, bool up) {
+    struct shell_ctx* ctx = sh->ctx;
     bool history_mode;
     uint16_t len;
 
@@ -198,14 +202,13 @@ static void history_handle(const struct shell* sh, bool up) {
     /* Backup command if history is entered */
     if (!z_shell_history_active(sh->history)) {
         if (up) {
-            uint16_t cmd_len = z_shell_strlen(sh->ctx->cmd_buff);
+            uint16_t cmd_len = z_shell_strlen(ctx->cmd_buff);
 
             if (cmd_len) {
-                strcpy(sh->ctx->temp_buff,
-                       sh->ctx->cmd_buff);
+                strcpy(ctx->temp_buff, ctx->cmd_buff);
             }
             else {
-                sh->ctx->temp_buff[0] = '\0';
+                ctx->temp_buff[0] = '\0';
             }
         }
         else {
@@ -216,19 +219,19 @@ static void history_handle(const struct shell* sh, bool up) {
 
     /* Start by checking if history is not empty. */
     history_mode = z_shell_history_get(sh->history, up,
-                                       sh->ctx->cmd_buff, &len);
+                                       ctx->cmd_buff, &len);
 
     /* On exiting history mode print backed up command. */
     if (!history_mode) {
-        strcpy(sh->ctx->cmd_buff, sh->ctx->temp_buff);
-        len = z_shell_strlen(sh->ctx->cmd_buff);
+        strcpy(ctx->cmd_buff, ctx->temp_buff);
+        len = z_shell_strlen(ctx->cmd_buff);
     }
 
     z_shell_op_cursor_home_move(sh);
     z_clear_eos(sh);
     z_shell_print_cmd(sh);
-    sh->ctx->cmd_buff_pos = len;
-    sh->ctx->cmd_buff_len = len;
+    ctx->cmd_buff_pos = len;
+    ctx->cmd_buff_len = len;
     z_shell_op_cond_next_line(sh);
 }
 
@@ -245,20 +248,20 @@ static bool tab_prepare(const struct shell* sh,
                         char const*** argv, size_t* argc,
                         size_t* complete_arg_idx,
                         struct shell_static_entry* d_entry) {
+    struct shell_ctx* ctx = sh->ctx;
     uint16_t compl_space = completion_space_get(sh);
-    size_t   search_argc;
+    size_t search_argc;
 
     if (compl_space == 0U) {
         return (false);
     }
 
     /* Copy command from its beginning to cursor position. */
-    memcpy(sh->ctx->temp_buff, sh->ctx->cmd_buff,
-           sh->ctx->cmd_buff_pos);
-    sh->ctx->temp_buff[sh->ctx->cmd_buff_pos] = '\0';
+    memcpy(ctx->temp_buff, ctx->cmd_buff, ctx->cmd_buff_pos);
+    ctx->temp_buff[ctx->cmd_buff_pos] = '\0';
 
     /* Create argument list. */
-    (void) z_shell_make_argv(argc, *argv, sh->ctx->temp_buff,
+    (void) z_shell_make_argv(argc, *argv, ctx->temp_buff,
                              CONFIG_SHELL_ARGC_MAX);
 
     if (*argc > CONFIG_SHELL_ARGC_MAX) {
@@ -279,8 +282,8 @@ static bool tab_prepare(const struct shell* sh,
     /* If last command is not completed (followed by space) it is treated
      * as uncompleted one.
      */
-    int space = (sh->ctx->cmd_buff_pos > 0) ?
-                 isspace((int)sh->ctx->cmd_buff[sh->ctx->cmd_buff_pos - 1]) : 0;
+    int space = (ctx->cmd_buff_pos > 0) ?
+                 isspace((int)ctx->cmd_buff[ctx->cmd_buff_pos - 1]) : 0;
 
     /* root command completion */
     if ((*argc == 0) || ((space == 0) && (*argc == 1))) {
@@ -348,11 +351,12 @@ static void autocomplete(const struct shell* sh,
     const struct shell_static_entry* match;
     uint16_t cmd_len;
     uint16_t arg_len = z_shell_strlen(arg);
+    struct shell_ctx* ctx = sh->ctx;
 
-    /* sh->ctx->active_cmd can be safely used outside of command context
+    /* ctx->active_cmd can be safely used outside of command context
      * to save stack
      */
-    match = z_shell_cmd_get(cmd, subcmd_idx, &sh->ctx->active_cmd);
+    match = z_shell_cmd_get(cmd, subcmd_idx, &ctx->active_cmd);
     __ASSERT_NO_MSG(match != NULL);
     cmd_len = z_shell_strlen(match->syntax);
 
@@ -374,8 +378,7 @@ static void autocomplete(const struct shell* sh,
     }
 
     /* Next character in the buffer is not 'space'. */
-    if (isspace((int)sh->ctx->cmd_buff[
-                                    sh->ctx->cmd_buff_pos]) == 0) {
+    if (isspace((int)ctx->cmd_buff[ctx->cmd_buff_pos]) == 0) {
         if (z_flag_insert_mode_get(sh)) {
             z_flag_insert_mode_set(sh, false);
             z_shell_op_char_insert(sh, ' ');
@@ -449,13 +452,14 @@ static uint16_t common_beginning_find(const struct shell* sh,
     const struct shell_static_entry* match;
     uint16_t common = UINT16_MAX;
     size_t idx = (first + 1);
+    struct shell_ctx* ctx = sh->ctx;
 
     __ASSERT_NO_MSG(cnt > 1);
 
     match = z_shell_cmd_get(cmd, first, &dynamic_entry);
     __ASSERT_NO_MSG(match);
-    strncpy(sh->ctx->temp_buff, match->syntax,
-            sizeof(sh->ctx->temp_buff) - 1);
+    strncpy(ctx->temp_buff, match->syntax,
+            sizeof(ctx->temp_buff) - 1);
 
     *str = match->syntax;
 
@@ -469,8 +473,7 @@ static uint16_t common_beginning_find(const struct shell* sh,
             break;
         }
 
-        curr_common = str_common(sh->ctx->temp_buff, match2->syntax,
-                                 UINT16_MAX);
+        curr_common = str_common(ctx->temp_buff, match2->syntax, UINT16_MAX);
         if ((arg_len == 0U) || (curr_common >= arg_len)) {
             --cnt;
             common = (curr_common < common) ? curr_common : common;
@@ -501,16 +504,17 @@ static void partial_autocomplete(const struct shell* sh,
 
 static int exec_cmd(const struct shell* sh, size_t argc, char const** argv,
                     const struct shell_static_entry* help_entry) {
+    struct shell_ctx* ctx = sh->ctx;
     int ret_val = 0;
 
-    if (sh->ctx->active_cmd.handler == NULL) {
+    if (ctx->active_cmd.handler == NULL) {
         if ((help_entry != NULL) && IS_ENABLED(CONFIG_SHELL_HELP)) {
             if (help_entry->help == NULL) {
                 return (-ENOEXEC);
             }
 
-            if (help_entry->help != sh->ctx->active_cmd.help) {
-                sh->ctx->active_cmd = *help_entry;
+            if (help_entry->help != ctx->active_cmd.help) {
+                ctx->active_cmd = *help_entry;
             }
 
             shell_internal_help_print(sh);
@@ -526,9 +530,9 @@ static int exec_cmd(const struct shell* sh, size_t argc, char const** argv,
         }
     }
 
-    if (sh->ctx->active_cmd.args.mandatory) {
-        uint32_t mand = sh->ctx->active_cmd.args.mandatory;
-        uint8_t  opt8 = sh->ctx->active_cmd.args.optional;
+    if (ctx->active_cmd.args.mandatory) {
+        uint32_t mand = ctx->active_cmd.args.mandatory;
+        uint8_t  opt8 = ctx->active_cmd.args.optional;
         uint32_t opt  = (opt8 == SHELL_OPT_ARG_CHECK_SKIP) ?
                         UINT16_MAX : opt8;
         bool const in_range = IN_RANGE(argc, mand, mand + opt);
@@ -546,11 +550,11 @@ static int exec_cmd(const struct shell* sh, size_t argc, char const** argv,
         /* Unlock thread mutex in case command would like to borrow
          * shell context to other thread to avoid mutex deadlock.
          */
-        k_mutex_unlock(&sh->ctx->wr_mtx);
-        ret_val = sh->ctx->active_cmd.handler(sh, argc,
+        k_mutex_unlock(&ctx->wr_mtx);
+        ret_val = ctx->active_cmd.handler(sh, argc,
                                               (char**)argv);
         /* Bring back mutex to shell thread. */
-        k_mutex_lock(&sh->ctx->wr_mtx, K_FOREVER);
+        k_mutex_lock(&ctx->wr_mtx, K_FOREVER);
         z_flag_cmd_ctx_set(sh, false);
     }
 
@@ -625,7 +629,8 @@ static int execute(const struct shell* sh) {
     size_t args_left = SIZE_MAX;
     char quote;
     char const** argvp;
-    char* cmd_buf = sh->ctx->cmd_buff;
+    struct shell_ctx* ctx = sh->ctx;
+    char* cmd_buf = ctx->cmd_buff;
     bool  has_last_handler = false;
 
     z_shell_op_cursor_end_move(sh);
@@ -633,12 +638,11 @@ static int execute(const struct shell* sh) {
         z_cursor_next_line_move(sh);
     }
 
-    memset(&sh->ctx->active_cmd, 0, sizeof(sh->ctx->active_cmd));
+    memset(&ctx->active_cmd, 0, sizeof(ctx->active_cmd));
 
     if (IS_ENABLED(CONFIG_SHELL_HISTORY)) {
         z_shell_cmd_trim(sh);
-        history_put(sh, sh->ctx->cmd_buff,
-                    sh->ctx->cmd_buff_len);
+        history_put(sh, ctx->cmd_buff, ctx->cmd_buff_len);
     }
 
     if (IS_ENABLED(CONFIG_SHELL_WILDCARD)) {
@@ -650,7 +654,7 @@ static int execute(const struct shell* sh) {
         argv[0] = parent->syntax;
         argv[1] = cmd_buf;
         argvp   = &argv[1];
-        active_cmd_prepare(parent, &sh->ctx->active_cmd, &help_entry,
+        active_cmd_prepare(parent, &ctx->active_cmd, &help_entry,
                            &cmd_lvl, &cmd_with_handler_lvl, &args_left);
         cmd_lvl++;
     }
@@ -960,11 +964,12 @@ static inline int ascii_filter(char const data) {
 }
 
 static void state_collect(const struct shell* sh) {
+    struct shell_ctx* ctx = sh->ctx;
     size_t count = 0U;
     char data;
 
     while (true) {
-        shell_bypass_cb_t bypass = sh->ctx->bypass;
+        shell_bypass_cb_t bypass = ctx->bypass;
 
         if (bypass) {
             #if defined(CONFIG_SHELL_BACKEND_RTT) && defined(CONFIG_SEGGER_RTT_BUFFER_SIZE_DOWN)
@@ -980,7 +985,7 @@ static void state_collect(const struct shell* sh) {
                 bypass(sh, buf, count);
                 z_flag_cmd_ctx_set(sh, false);
                 /* Check if bypass mode ended. */
-                if (!(volatile shell_bypass_cb_t*)sh->ctx->bypass) {
+                if (!(volatile shell_bypass_cb_t*)ctx->bypass) {
                     state_set(sh, SHELL_STATE_ACTIVE);
                 }
                 else {
@@ -1001,16 +1006,16 @@ static void state_collect(const struct shell* sh) {
             continue;
         }
 
-        switch (sh->ctx->receive_state) {
+        switch (ctx->receive_state) {
             case SHELL_RECEIVE_DEFAULT :
                 if (process_nl(sh, data)) {
-                    if (!sh->ctx->cmd_buff_len) {
+                    if (!ctx->cmd_buff_len) {
                         history_mode_exit(sh);
                         z_cursor_next_line_move(sh);
                     }
                     else {
                         /* Command execution */
-                        sh->ctx->ret_val = execute(sh);
+                        ctx->ret_val = execute(sh);
                     }
                     /* Function responsible for printing prompt
                      * on received NL.
@@ -1204,22 +1209,23 @@ static int instance_init(const struct shell* sh,
                          struct shell_backend_config_flags cfg_flags) {
     __ASSERT_NO_MSG((sh->shell_flag == SHELL_FLAG_CRLF_DEFAULT) ||
                     (sh->shell_flag == SHELL_FLAG_OLF_CRLF));
+    struct shell_ctx* ctx = sh->ctx;
 
-    memset(sh->ctx, 0, sizeof(*sh->ctx));
+    memset(ctx, 0, sizeof(*ctx));
     if (CONFIG_SHELL_CMD_ROOT[0]) {
-        sh->ctx->selected_cmd = root_cmd_find(CONFIG_SHELL_CMD_ROOT);
+        ctx->selected_cmd = root_cmd_find(CONFIG_SHELL_CMD_ROOT);
     }
 
     history_init(sh);
 
-    k_mutex_init(&sh->ctx->wr_mtx);
+    k_mutex_init(&ctx->wr_mtx);
 
     for (int i = 0; i < SHELL_SIGNALS; i++) {
-        k_poll_signal_init(&sh->ctx->signals[i]);
-        k_poll_event_init(&sh->ctx->events[i],
+        k_poll_signal_init(&ctx->signals[i]);
+        k_poll_event_init(&ctx->events[i],
                           K_POLL_TYPE_SIGNAL,
                           K_POLL_MODE_NOTIFY_ONLY,
-                          &sh->ctx->signals[i]);
+                          &ctx->signals[i]);
     }
 
     if (IS_ENABLED(CONFIG_SHELL_STATS)) {
@@ -1228,16 +1234,14 @@ static int instance_init(const struct shell* sh,
 
     z_flag_tx_rdy_set(sh, true);
 
-    sh->ctx->vt100_ctx.cons.terminal_wid =
-                                    CONFIG_SHELL_DEFAULT_TERMINAL_WIDTH;
-    sh->ctx->vt100_ctx.cons.terminal_hei =
-                                    CONFIG_SHELL_DEFAULT_TERMINAL_HEIGHT;
+    ctx->vt100_ctx.cons.terminal_wid = CONFIG_SHELL_DEFAULT_TERMINAL_WIDTH;
+    ctx->vt100_ctx.cons.terminal_hei = CONFIG_SHELL_DEFAULT_TERMINAL_HEIGHT;
 
     #if defined(CONFIG_SHELL_PROMPT_CHANGE) && CONFIG_SHELL_PROMPT_CHANGE
     shell_prompt_change(sh, sh->default_prompt);
     #else
-    sh->ctx->prompt = sh->default_prompt;
-    sh->ctx->vt100_ctx.cons.name_len = z_shell_strlen(sh->ctx->prompt);
+    ctx->prompt = sh->default_prompt;
+    ctx->vt100_ctx.cons.name_len = z_shell_strlen(ctx->prompt);
     #endif
 
     /* Configure backend according to enabled shell features and backend
@@ -1248,7 +1252,7 @@ static int instance_init(const struct shell* sh,
     cfg_flags.use_vt100   &= IS_ENABLED(CONFIG_SHELL_VT100_COMMANDS);
     cfg_flags.echo        &= IS_ENABLED(CONFIG_SHELL_ECHO_STATUS);
     cfg_flags.mode_delete &= IS_ENABLED(CONFIG_SHELL_BACKSPACE_MODE_DELETE);
-    sh->ctx->cfg.flags = cfg_flags;
+    ctx->cfg.flags = cfg_flags;
 
     int ret = sh->iface->api->init(sh->iface, transport_config,
                                    transport_evt_handler,
@@ -1319,12 +1323,14 @@ static void kill_handler(const struct shell* sh) {
 void shell_thread(void* shell_handle, void* arg_log_backend,
                   void* arg_log_level) {
     struct shell* sh = shell_handle;
+    struct shell_ctx* ctx = sh->ctx;
+    const struct shell_transport_api* api = sh->iface->api;
     int err;
 
     z_flag_handle_log_set(sh, (bool)arg_log_backend);
-    sh->ctx->log_level = POINTER_TO_UINT(arg_log_level);
+    ctx->log_level = POINTER_TO_UINT(arg_log_level);
 
-    err = sh->iface->api->enable(sh->iface, false);
+    err = api->enable(sh->iface, false);
     if (err != 0) {
         return;
     }
@@ -1339,20 +1345,20 @@ void shell_thread(void* shell_handle, void* arg_log_backend,
 
     while (true) {
         /* waiting for all signals except SHELL_SIGNAL_TXDONE */
-        err = k_poll(sh->ctx->events, SHELL_SIGNAL_TXDONE,
+        err = k_poll(ctx->events, SHELL_SIGNAL_TXDONE,
                      K_FOREVER);
 
         if (err != 0) {
-            if (k_mutex_lock(&sh->ctx->wr_mtx, K_MSEC(SHELL_TX_MTX_TIMEOUT_MS)) != 0) {
+            if (k_mutex_lock(&ctx->wr_mtx, K_MSEC(SHELL_TX_MTX_TIMEOUT_MS)) != 0) {
                 return;
             }
             z_shell_fprintf(sh, SHELL_ERROR,
                             "Shell thread error: %d", err);
-            k_mutex_unlock(&sh->ctx->wr_mtx);
+            k_mutex_unlock(&ctx->wr_mtx);
             return;
         }
 
-        k_mutex_lock(&sh->ctx->wr_mtx, K_FOREVER);
+        k_mutex_lock(&ctx->wr_mtx, K_FOREVER);
 
         shell_signal_handle(sh, SHELL_SIGNAL_KILL, kill_handler);
         shell_signal_handle(sh, SHELL_SIGNAL_RXRDY, shell_process);
@@ -1361,11 +1367,11 @@ void shell_thread(void* shell_handle, void* arg_log_backend,
                                 shell_log_process);
         }
 
-        if (sh->iface->api->update) {
-            sh->iface->api->update(sh->iface);
+        if (api->update) {
+            api->update(sh->iface);
         }
 
-        k_mutex_unlock(&sh->ctx->wr_mtx);
+        k_mutex_unlock(&ctx->wr_mtx);
     }
 }
 
@@ -1522,11 +1528,13 @@ const struct shell* shell_backend_get_by_name(char const* backend_name) {
  */
 void shell_vfprintf(const struct shell* sh, enum shell_vt100_color color,
                     char const* fmt, va_list args) {
+    struct shell_ctx* ctx = sh->ctx;
+
     __ASSERT_NO_MSG(sh);
     __ASSERT(!k_is_in_isr(), "Thread context required.");
-    __ASSERT_NO_MSG(sh->ctx);
+    __ASSERT_NO_MSG(ctx);
     __ASSERT_NO_MSG(z_flag_cmd_ctx_get(sh) ||
-                    (k_current_get() != sh->ctx->tid));
+                    (k_current_get() != ctx->tid));
     __ASSERT_NO_MSG(sh->fprintf_ctx);
     __ASSERT_NO_MSG(fmt);
 
@@ -1536,20 +1544,20 @@ void shell_vfprintf(const struct shell* sh, enum shell_vt100_color color,
         return;
     }
 
-    if (k_mutex_lock(&sh->ctx->wr_mtx, K_MSEC(SHELL_TX_MTX_TIMEOUT_MS)) != 0) {
+    if (k_mutex_lock(&ctx->wr_mtx, K_MSEC(SHELL_TX_MTX_TIMEOUT_MS)) != 0) {
         return;
     }
 
-    if (!z_flag_cmd_ctx_get(sh) && !sh->ctx->bypass && z_flag_use_vt100_get(sh)) {
+    if (!z_flag_cmd_ctx_get(sh) && !ctx->bypass && z_flag_use_vt100_get(sh)) {
         z_shell_cmd_line_erase(sh);
     }
     z_shell_vfprintf(sh, color, fmt, args);
-    if (!z_flag_cmd_ctx_get(sh) && !sh->ctx->bypass && z_flag_use_vt100_get(sh)) {
+    if (!z_flag_cmd_ctx_get(sh) && !ctx->bypass && z_flag_use_vt100_get(sh)) {
         z_shell_print_prompt_and_cmd(sh);
     }
     z_transport_buffer_flush(sh);
 
-    k_mutex_unlock(&sh->ctx->wr_mtx);
+    k_mutex_unlock(&ctx->wr_mtx);
 }
 
 /* These functions mustn't be used from shell context to avoid deadlock:
@@ -1721,16 +1729,17 @@ int shell_execute_cmd(const struct shell* sh, char const* cmd) {
 
     __ASSERT(!z_flag_cmd_ctx_get(sh), "Function cannot be called"
                                       " from command context");
+    struct shell_ctx* ctx = sh->ctx;
 
-    strcpy(sh->ctx->cmd_buff, cmd);
-    sh->ctx->cmd_buff_len = cmd_len;
-    sh->ctx->cmd_buff_pos = cmd_len;
+    strcpy(ctx->cmd_buff, cmd);
+    ctx->cmd_buff_len = cmd_len;
+    ctx->cmd_buff_pos = cmd_len;
 
-    if (k_mutex_lock(&sh->ctx->wr_mtx, K_MSEC(SHELL_TX_MTX_TIMEOUT_MS)) != 0) {
+    if (k_mutex_lock(&ctx->wr_mtx, K_MSEC(SHELL_TX_MTX_TIMEOUT_MS)) != 0) {
         return (-ENOEXEC);
     }
     ret_val = execute(sh);
-    k_mutex_unlock(&sh->ctx->wr_mtx);
+    k_mutex_unlock(&ctx->wr_mtx);
 
     cmd_buffer_clear(sh);
 
