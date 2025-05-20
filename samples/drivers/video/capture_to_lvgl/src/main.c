@@ -79,7 +79,6 @@ int main(void)
 	/* Set format */
 	fmt.width = CONFIG_VIDEO_WIDTH;
 	fmt.height = CONFIG_VIDEO_HEIGHT;
-	fmt.pitch = fmt.width * 2;
 	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
 
 	if (video_set_format(video_dev, &fmt)) {
