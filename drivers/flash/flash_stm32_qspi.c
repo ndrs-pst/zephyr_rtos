@@ -385,7 +385,7 @@ static int qspi_read_jedec_id(struct device const* dev, uint8_t* id) {
 
 static int qspi_write_unprotect(const struct device* dev) {
     int ret = 0;
-    QSPI_CommandTypeDef cmd_unprotect = {
+    static QSPI_CommandTypeDef const cmd_unprotect = {
         .Instruction = SPI_NOR_CMD_ULBPR,
         .InstructionMode = QSPI_INSTRUCTION_1_LINE,
     };
