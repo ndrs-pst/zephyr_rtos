@@ -4,13 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&rcc {
-	apb2-prescaler = <2>;
-};
-
-&spi1 {
-	dmas = <&gpdma1 0 2 STM32_DMA_PERIPH_TX
-		&gpdma1 1 1 STM32_DMA_PERIPH_RX>;
+&spi3 {
+	dmas = <&dmamux1 2 41 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)
+		&dmamux1 1 40 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
 	dma-names = "tx", "rx";
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
@@ -24,6 +20,14 @@
 	};
 };
 
-&gpdma1 {
+&dma1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};
+
+&dmamux1 {
 	status = "okay";
 };

@@ -347,11 +347,12 @@ static int qspi_write_access(struct device const* dev, QSPI_CommandTypeDef* cmd,
 static int qspi_read_jedec_id(struct device const* dev, uint8_t* id) {
     struct flash_stm32_qspi_data* dev_data = dev->data;
     uint8_t data[JESD216_READ_ID_LEN];
+    uint32_t dummy_cycles = DT_INST_PROP(0, st_read_id_dummy_cycles);
 
     QSPI_CommandTypeDef cmd = {
         .Instruction     = JESD216_CMD_READ_ID,
         .AddressSize     = QSPI_ADDRESS_NONE,
-        .DummyCycles     = 8,
+        .DummyCycles     = dummy_cycles,
         .InstructionMode = QSPI_INSTRUCTION_1_LINE,
         .AddressMode     = QSPI_ADDRESS_1_LINE,
         .DataMode        = QSPI_DATA_1_LINE,
@@ -363,7 +364,7 @@ static int qspi_read_jedec_id(struct device const* dev, uint8_t* id) {
     hal_ret = HAL_QSPI_Command(&dev_data->hqspi, &cmd,
                                HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
     if (hal_ret != HAL_OK) {
-        LOG_ERR("%d: Failed to send OSPI instruction", hal_ret);
+        LOG_ERR("%d: Failed to send QSPI instruction", hal_ret);
         return (-EIO);
     }
 
