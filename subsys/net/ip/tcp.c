@@ -1570,6 +1570,10 @@ void net_tcp_reply_rst(struct net_pkt* pkt) {
     else {
         uint32_t ack = net_ntohl(th_pkt->th_seq) + tcp_data_len(pkt);
 
+        if (th_flags(th_pkt) & SYN) {
+            ack++;
+        }
+
         UNALIGNED_PUT(RST | ACK, &th_rst->th_flags);
         UNALIGNED_PUT(net_htonl(ack), &th_rst->th_ack);
     }
@@ -2929,8 +2933,8 @@ static enum net_verdict tcp_in(struct tcp* conn, struct net_pkt* pkt) {
     NET_DBG("%s", tcp_conn_state(conn, pkt));
 
     if (th_off(th) < 5) {
-        tcp_out(conn, RST);
-        do_close     = true;
+        net_tcp_reply_rst(pkt);
+        do_close = true;
         close_status = -ECONNRESET;
         goto out;
     }
@@ -2957,6 +2961,13 @@ static enum net_verdict tcp_in(struct tcp* conn, struct net_pkt* pkt) {
         if (conn->in_connect) {
             fl = th_flags(th);
             if (FL(&fl, ==, RST | ACK)) {
+                if (th_ack(th) != conn->seq) {
+                    /* Invalid ACKnum - drop it */
+                    net_stats_update_tcp_seg_rsterr(net_pkt_iface(pkt));
+                    k_mutex_unlock(&conn->lock);
+                    return (NET_DROP);
+                }
+
                 close_status = -ECONNREFUSED;
             }
         }
@@ -2967,8 +2978,8 @@ static enum net_verdict tcp_in(struct tcp* conn, struct net_pkt* pkt) {
     if (tcp_options_len && !tcp_options_check(&conn->recv_options, pkt,
                                               tcp_options_len)) {
         NET_DBG("DROP: Invalid TCP option list");
-        tcp_out(conn, RST);
-        do_close     = true;
+        net_tcp_reply_rst(pkt);
+        do_close = true;
         close_status = -ECONNRESET;
         goto out;
     }
@@ -2982,8 +2993,8 @@ static enum net_verdict tcp_in(struct tcp* conn, struct net_pkt* pkt) {
         NET_DBG("conn: %p, SYN received in %s state, dropping connection",
                 conn, tcp_state_to_str(conn->state, false));
         net_stats_update_tcp_seg_drop(conn->iface);
-        tcp_out(conn, RST);
-        do_close     = true;
+        net_tcp_reply_rst(pkt);
+        do_close = true;
         close_status = -ECONNRESET;
         goto out;
     }
@@ -3266,8 +3277,8 @@ static enum net_verdict tcp_in(struct tcp* conn, struct net_pkt* pkt) {
                             "(total=%zu)", conn, len_acked,
                             conn->send_data_total);
                     net_stats_update_tcp_seg_drop(conn->iface);
-                    tcp_out(conn, RST);
-                    do_close     = true;
+                    net_tcp_reply_rst(pkt);
+                    do_close = true;
                     close_status = -ECONNRESET;
                     break;
                 }
