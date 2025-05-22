@@ -114,6 +114,15 @@ DMA
 * Renamed the devicetree property ``nxp,a_on`` to ``nxp,a-on``.
 * Renamed the devicetree property ``dma_channels`` to ``dma-channels``.
 
+Regulator
+=========
+
+* :dtcompatible:`nordic,npm1300-regulator` BUCK and LDO node GPIO properties are now specified as an
+  integer array without a GPIO controller, removing the requirement for a
+  :dtcompatible:`nordic,npm1300-gpio` node to be present and enabled for GPIO control of the output
+  rails. For example, ``enable-gpios = <&pmic_gpios 3 GPIO_ACTIVE_LOW>;`` is now specified as
+  ``enable-gpio-config = <3 GPIO_ACTIVE_LOW>;``.
+
 Counter
 =======
 
@@ -400,9 +409,9 @@ Networking
   :c:macro:`HTTPS_SERVICE_DEFINE_EMPTY`, :c:macro:`HTTP_SERVICE_DEFINE` and
   :c:macro:`HTTPS_SERVICE_DEFINE`.
 
-* :kconfig:option:`NET_ZPERF` no longer includes server support by default. To use
-  the server commands, enable :kconfig:option:`NET_ZPERF_SERVER`. If server support
-  is not needed, :kconfig:option:`ZVFS_POLL_MAX` can possibly be reduced.
+* :kconfig:option:`CONFIG_NET_ZPERF` no longer includes server support by default. To use
+  the server commands, enable :kconfig:option:`CONFIG_NET_ZPERF_SERVER`. If server support
+  is not needed, :kconfig:option:`CONFIG_ZVFS_POLL_MAX` can possibly be reduced.
 
 * The L2 Wi-Fi shell now supports interface option for most commands, to accommodate this
   change some of the existing options have been renamed. The following table
