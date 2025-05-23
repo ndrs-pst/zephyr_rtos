@@ -2258,7 +2258,7 @@ static int flash_stm32_xspi_init(const struct device *dev)
 	const uint8_t decl_nph = 2;
 	union {
 		/* We only process BFP so use one parameter block */
-		uint8_t raw[JESD216_SFDP_SIZE(decl_nph)];
+		uint8_t raw[JESD216_SFDP_SIZE(2)];
 		struct jesd216_sfdp_header sfdp;
 	} u;
 	const struct jesd216_sfdp_header *hp = &u.sfdp;

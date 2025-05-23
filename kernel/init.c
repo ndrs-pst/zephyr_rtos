@@ -254,7 +254,7 @@ void z_bss_zero(void) {
 
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION
 /**
- * @brief Clear BSS within the bot region
+ * @brief Clear BSS within the boot region
  *
  * This routine clears the BSS within the boot region.
  * This is separate from z_bss_zero() as boot region may
