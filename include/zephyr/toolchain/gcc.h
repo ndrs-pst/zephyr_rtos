@@ -243,8 +243,17 @@ do {                        \
 #define __ramfunc
 #elif defined(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT)
 #if defined(CONFIG_ARM)
-#define __ramfunc   __attribute__((noinline))   \
-                    __attribute__((long_call, section(".ramfunc")))
+#if defined(__clang__)
+/* No long_call attribute for Clang.
+ * Rely on linker to place required veneers.
+ * https://github.com/llvm/llvm-project/issues/39969
+ */
+#define __ramfunc __attribute__((noinline)) __attribute__((section(".ramfunc")))
+#else
+/* GCC version */
+#define __ramfunc    __attribute__((noinline))  \
+                     __attribute__((long_call, section(".ramfunc")))
+#endif
 #else
 #define __ramfunc   __attribute__((noinline))   \
                     __attribute__((section(".ramfunc")))
@@ -783,9 +792,9 @@ do {                        \
 #define TOOLCHAIN_WARNING_STRINGOP_OVERREAD "-Wstringop-overread"
 #endif
 
-#define _TOOLCHAIN_DISABLE_WARNING(compiler, warning)                                              \
-	TOOLCHAIN_PRAGMA(compiler diagnostic push)                                                 \
-	TOOLCHAIN_PRAGMA(compiler diagnostic ignored warning)
+#define _TOOLCHAIN_DISABLE_WARNING(compiler, warning)           \
+    TOOLCHAIN_PRAGMA(compiler diagnostic push)                  \
+    TOOLCHAIN_PRAGMA(compiler diagnostic ignored warning)
 
 #define _TOOLCHAIN_ENABLE_WARNING(compiler, warning) TOOLCHAIN_PRAGMA(compiler diagnostic pop)
 
