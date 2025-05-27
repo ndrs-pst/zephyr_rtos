@@ -547,7 +547,7 @@ void i2c_stm32_dma_rx_cb(const struct device* dma_dev, void* user_data,
              .sda = GPIO_DT_SPEC_INST_GET_OR(index, sda_gpios, {0}), )) \
         IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2),  \
             (.timings = (const struct i2c_config_timing*)i2c_timings_##index, \
-             .n_timings = ARRAY_SIZE(i2c_timings_##index), ))   \
+             .n_timings = sizeof(i2c_timings_##index) / (sizeof(struct i2c_config_timing)), )) \
         I2C_DMA_INIT(index, tx)                                 \
         I2C_DMA_INIT(index, rx)                                 \
     };                                                          \
