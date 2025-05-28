@@ -482,6 +482,13 @@ static int net_context_check(sa_family_t family, enum net_sock_type type,
 			NET_DBG("AF_PACKET disabled");
 			return -EPFNOSUPPORT;
 		}
+
+		if (!IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM) &&
+		    type == NET_SOCK_DGRAM) {
+			NET_DBG("DGRAM socket type disabled.");
+			return -EPROTOTYPE;
+		}
+
 		if (type != NET_SOCK_RAW && type != NET_SOCK_DGRAM) {
 			NET_DBG("AF_PACKET only supports RAW and DGRAM socket "
 				"types.");
