@@ -652,12 +652,16 @@ static inline char const* net_addr_type2str(enum net_addr_type type) {
     switch (type) {
         case NET_ADDR_AUTOCONF :
             return "AUTO";
+
         case NET_ADDR_DHCP :
             return "DHCP";
+
         case NET_ADDR_MANUAL :
             return "MANUAL";
+
         case NET_ADDR_OVERRIDABLE :
             return "OVERRIDE";
+
         case NET_ADDR_ANY :
         default :
             break;
@@ -817,27 +821,27 @@ static inline bool net_ipv6_is_prefix(uint8_t const* addr1,
  * @param prefix_len Prefix length (max length is 128).
  */
 static inline void net_ipv6_addr_prefix_mask(const uint8_t *inaddr,
-					     uint8_t *outaddr,
-					     uint8_t prefix_len)
+                         uint8_t *outaddr,
+                         uint8_t prefix_len)
 {
-	uint8_t bits = 128 - prefix_len;
-	uint8_t bytes = prefix_len / 8U;
-	uint8_t remain = bits % 8;
-	uint8_t mask;
+    uint8_t bits = 128 - prefix_len;
+    uint8_t bytes = prefix_len / 8U;
+    uint8_t remain = bits % 8;
+    uint8_t mask;
 
-	memset(outaddr, 0, 16U);
-	memcpy(outaddr, inaddr, bytes);
+    memset(outaddr, 0, 16U);
+    memcpy(outaddr, inaddr, bytes);
 
-	if (!remain) {
-		/* No remaining bits, the prefixes are the same as first
-		 * bytes are the same.
-		 */
-		return;
-	}
+    if (!remain) {
+        /* No remaining bits, the prefixes are the same as first
+         * bytes are the same.
+         */
+        return;
+    }
 
-	/* Create a mask that has remaining most significant bits set */
-	mask = (uint8_t)((0xff << (8 - remain)) ^ 0xff) << remain;
-	outaddr[bytes] = inaddr[bytes] & mask;
+    /* Create a mask that has remaining most significant bits set */
+    mask = (uint8_t)((0xff << (8 - remain)) ^ 0xff) << remain;
+    outaddr[bytes] = inaddr[bytes] & mask;
 }
 
 /**
@@ -1527,6 +1531,10 @@ static inline bool net_ipv6_addr_based_on_ll(const struct net_in6_addr* addr,
             break;
 
         case 8 :
+            if (sizeof(lladdr->addr) < 8) {
+                return false;
+            }
+
             if (!memcmp(&addr->s6_addr[9], &lladdr->addr[1],
                         lladdr->len - 1) &&
                 (addr->s6_addr[8] ^ 0x02) == lladdr->addr[0]) {
@@ -1551,7 +1559,7 @@ static inline bool net_ipv6_addr_based_on_ll(const struct net_in6_addr* addr,
  */
 static inline struct net_sockaddr *net_sad(const struct net_sockaddr_storage *addr)
 {
-	return (struct net_sockaddr *)addr;
+    return (struct net_sockaddr *)addr;
 }
 
 /**
@@ -1670,7 +1678,7 @@ __syscall char* net_addr_ntop(sa_family_t family, void const* src,
  * @return 0 if ok, < 0 if error
  */
 int net_mask_len_to_netmask(sa_family_t family, uint8_t mask_len,
-			    struct net_sockaddr *mask);
+                            struct net_sockaddr* mask);
 
 /**
  * @brief Create mask length from netmask.
@@ -1682,8 +1690,8 @@ int net_mask_len_to_netmask(sa_family_t family, uint8_t mask_len,
  *
  * @return 0 if ok, < 0 if error
  */
-int net_netmask_to_mask_len(sa_family_t family, struct net_sockaddr *mask,
-			    uint8_t *mask_len);
+int net_netmask_to_mask_len(sa_family_t family, struct net_sockaddr* mask,
+                            uint8_t* mask_len);
 
 /**
  * @brief Parse a string that contains either IPv4 or IPv6 address
@@ -1736,8 +1744,8 @@ bool net_ipaddr_parse(char const* str, size_t str_len,
  *         "" if we could parse the IP address and there is nothing more to parse.
  *         All other values point to next character after the "," or " " in the string.
  */
-const char *net_ipaddr_parse_mask(const char *str, size_t str_len,
-				  struct net_sockaddr *addr, uint8_t *mask_len);
+char const* net_ipaddr_parse_mask(const char *str, size_t str_len,
+                                  struct net_sockaddr *addr, uint8_t *mask_len);
 
 /**
  * @brief Set the default port in the sockaddr structure.

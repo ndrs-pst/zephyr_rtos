@@ -210,7 +210,7 @@ static inline int ipv6_handle_ext_hdr_options(struct net_pkt* pkt,
                                               struct net_ipv6_hdr* hdr,
                                               uint16_t pkt_len) {
     uint_fast16_t exthdr_len = 0U;
-    uint_fast16_t length     = 0U;
+    uint_fast16_t length = 0U;
 
     {
         uint8_t val = 0U;
@@ -1040,6 +1040,12 @@ int net_ipv6_addr_generate_iid(struct net_if* iface,
                 break;
 
             case 8 :
+                if (sizeof(lladdr->addr) < 8) {
+                    NET_ERR("Invalid link layer address length %zu, expecting 8",
+                            sizeof(lladdr->addr));
+                    return (-EINVAL);
+                }
+
                 memcpy(&tmp_addr.s6_addr[8], lladdr->addr, lladdr->len);
                 tmp_addr.s6_addr[8] ^= 0x02;
                 break;

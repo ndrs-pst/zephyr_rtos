@@ -448,7 +448,6 @@ void can_mcan_state_change_handler(const struct device* dev) {
     void* state_cb_data = data->common.state_change_cb_user_data;
     const struct can_mcan_callbacks* cbs = config->callbacks;
     can_tx_callback_t tx_cb;
-    uint32_t tx_idx;
     struct can_bus_err_cnt err_cnt;
     enum can_state state;
     uint32_t cccr;
@@ -471,7 +470,7 @@ void can_mcan_state_change_handler(const struct device* dev) {
         }
 
         /* Call all TX queue callbacks with -ENETUNREACH */
-        for (tx_idx = 0U; tx_idx < cbs->num_tx; tx_idx++) {
+        for (uint32_t tx_idx = 0U; tx_idx < cbs->num_tx; tx_idx++) {
             tx_cb = cbs->tx[tx_idx].function;
 
             if (tx_cb != NULL) {
@@ -1074,11 +1073,10 @@ int can_mcan_add_rx_filter_std(const struct device* dev, can_rx_callback_t callb
     };
     int filter_id = -ENOSPC;
     int err;
-    int i;
 
     k_mutex_lock(&data->lock, K_FOREVER);
 
-    for (i = 0; i < cbs->num_std; i++) {
+    for (int i = 0; i < cbs->num_std; i++) {
         if (cbs->std[i].function == NULL) {
             filter_id = i;
             break;
@@ -1125,11 +1123,10 @@ static int can_mcan_add_rx_filter_ext(const struct device* dev, can_rx_callback_
     };
     int filter_id = -ENOSPC;
     int err;
-    int i;
 
     k_mutex_lock(&data->lock, K_FOREVER);
 
-    for (i = 0; i < cbs->num_ext; i++) {
+    for (int i = 0; i < cbs->num_ext; i++) {
         if (cbs->ext[i].function == NULL) {
             filter_id = i;
             break;
@@ -1389,11 +1386,9 @@ int can_mcan_init(const struct device* dev) {
     k_mutex_init(&data->tx_mtx);
     k_sem_init(&data->tx_sem, cbs->num_tx, cbs->num_tx);
 
-    if (config->common.phy != NULL) {
-        if (!device_is_ready(config->common.phy)) {
-            LOG_ERR("CAN transceiver not ready");
-            return (-ENODEV);
-        }
+    if ((config->common.phy != NULL) && !device_is_ready(config->common.phy)) {
+        LOG_ERR("CAN transceiver not ready");
+        return (-ENODEV);
     }
 
     err = can_mcan_exit_sleep_mode(dev);
