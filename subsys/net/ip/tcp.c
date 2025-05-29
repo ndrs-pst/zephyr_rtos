@@ -1687,7 +1687,7 @@ out :
 }
 
 static void tcp_out(struct tcp* conn, uint8_t flags) {
-    (void)tcp_out_ext(conn, flags, NULL /* no data */, conn->seq);
+    (void) tcp_out_ext(conn, flags, NULL /* no data */, conn->seq + conn->unacked_len);
 }
 
 static int tcp_pkt_pull(struct net_pkt* pkt, size_t len) {
@@ -2114,7 +2114,7 @@ static void tcp_send_keepalive_probe(struct k_work* work) {
     k_work_reschedule_for_queue(&tcp_work_q, &conn->keepalive_timer,
                                 K_SECONDS(conn->keep_intvl));
 
-    (void) tcp_out_ext(conn, ACK, NULL, conn->seq - 1);
+    (void) tcp_out_ext(conn, ACK, NULL, conn->seq + conn->unacked_len - 1);
 }
 #endif /* CONFIG_NET_TCP_KEEPALIVE */
 
@@ -2124,7 +2124,7 @@ static void tcp_send_zwp(struct k_work* work) {
 
     k_mutex_lock(&conn->lock, K_FOREVER);
 
-    (void) tcp_out_ext(conn, ACK, NULL, conn->seq - 1);
+    (void) tcp_out_ext(conn, ACK, NULL, conn->seq + conn->unacked_len - 1);
 
     tcp_derive_rto(conn);
 
@@ -3114,7 +3114,7 @@ static enum net_verdict tcp_in(struct tcp* conn, struct net_pkt* pkt) {
                 accept_cb(conn->context, &conn->context->remote,
                           (net_context_get_family(context) == NET_AF_INET6) ?
                           sizeof(struct net_sockaddr_in6) : sizeof(struct net_sockaddr_in),
-                          0, context);
+                          0, context->user_data);
 
                 next = TCP_ESTABLISHED;
 
