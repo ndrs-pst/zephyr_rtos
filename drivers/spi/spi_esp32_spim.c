@@ -411,11 +411,7 @@ static int transceive(struct device const* dev,
                       void* userdata) {
     const struct spi_esp32_config* cfg = dev->config;
     struct spi_esp32_data* data = dev->data;
-    int ret;
-
-    if (!tx_bufs && !rx_bufs) {
-        return (0);
-    }
+    int ret = 0;
 
     #ifndef CONFIG_SPI_ESP32_INTERRUPT
     if (asynchronous) {
@@ -427,12 +423,16 @@ static int transceive(struct device const* dev,
 
     data->dfs = spi_esp32_get_frame_size(spi_cfg);
 
+    spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, data->dfs);
+
+    if (data->ctx.tx_buf == NULL && data->ctx.rx_buf == NULL) {
+        goto done;
+    }
+
     ret = spi_esp32_configure(dev, spi_cfg);
     if (ret) {
         goto done;
     }
-
-    spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, data->dfs);
 
     spi_context_cs_control(&data->ctx, true);
 
