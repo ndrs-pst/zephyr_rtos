@@ -3706,6 +3706,18 @@ void k_work_queue_start(struct k_work_q* queue,
                         k_thread_stack_t* stack, size_t stack_size,
                         int prio, const struct k_work_queue_config* cfg);
 
+/** @brief Run work queue using calling thread
+ *
+ * This will run the work queue forever unless stopped by @ref k_work_queue_stop.
+ *
+ * @param queue the queue to run
+ *
+ * @param cfg optional additional configuration parameters.  Pass @c
+ * NULL if not required, to use the defaults documented in
+ * k_work_queue_config.
+ */
+void k_work_queue_run(struct k_work_q* queue, const struct k_work_queue_config* cfg);
+
 /** @brief Access the thread that animates a work queue.
  *
  * This is necessary to grant a work queue thread access to things the work
@@ -4082,8 +4094,8 @@ enum {
     K_WORK_QUEUE_DRAIN       = BIT(K_WORK_QUEUE_DRAIN_BIT),
     K_WORK_QUEUE_PLUGGED_BIT = 3,
     K_WORK_QUEUE_PLUGGED     = BIT(K_WORK_QUEUE_PLUGGED_BIT),
-	K_WORK_QUEUE_STOP_BIT = 4,
-	K_WORK_QUEUE_STOP = BIT(K_WORK_QUEUE_STOP_BIT),
+    K_WORK_QUEUE_STOP_BIT    = 4,
+    K_WORK_QUEUE_STOP        = BIT(K_WORK_QUEUE_STOP_BIT),
 
     /* Static work queue flags */
     K_WORK_QUEUE_NO_YIELD_BIT = 8,
@@ -4285,6 +4297,11 @@ struct k_work_q {
     /* The thread that animates the work. */
     struct k_thread thread;
 
+    /* The thread ID that animates the work. This may be an external thread
+     * if k_work_queue_run() is used.
+     */
+    k_tid_t thread_id;
+
     /* All the following fields must be accessed only while the
      * work module spinlock is held.
      */
@@ -4329,7 +4346,7 @@ static inline k_ticks_t k_work_delayable_remaining_get(
 }
 
 static inline k_tid_t k_work_queue_thread_get(struct k_work_q* queue) {
-    return &queue->thread;
+    return queue->thread_id;
 }
 
 /** @} */
@@ -5801,7 +5818,7 @@ void* k_heap_alloc(struct k_heap* h, size_t bytes,
  * @return A pointer to valid heap memory, or NULL
  */
 void *k_heap_calloc(struct k_heap *h, size_t num, size_t size, k_timeout_t timeout)
-	__attribute_nonnull(1);
+    __attribute_nonnull(1);
 
 /**
  * @brief Reallocate memory from a k_heap
