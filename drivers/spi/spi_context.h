@@ -28,12 +28,24 @@ enum spi_ctx_runtime_op_mode {
 
 struct spi_context {
     const struct spi_config* config;
+
+    #ifdef CONFIG_MULTITHREADING
     const struct spi_config* owner;
+    #endif
+
     const struct gpio_dt_spec* cs_gpios;
     size_t num_cs_gpios;
 
+    #ifdef CONFIG_MULTITHREADING
     struct k_sem lock;
     struct k_sem sync;
+    #else
+    /* An atomic flag that signals completed transfer
+     * when threads are not enabled.
+     */
+    atomic_t ready;
+    #endif /* CONFIG_MULTITHREADING */
+
     int sync_status;
 
     #ifdef CONFIG_SPI_ASYNC
@@ -102,16 +114,16 @@ static inline void spi_context_lock(struct spi_context *ctx,
                                     spi_callback_t callback,
                                     void* callback_data,
                                     const struct spi_config* spi_cfg) {
+    #ifdef CONFIG_MULTITHREADING
     bool already_locked = (spi_cfg->operation & SPI_LOCK_ON) &&
                           (k_sem_count_get(&ctx->lock) == 0) &&
                           (ctx->owner == spi_cfg);
 
-    if (already_locked) {
-        return;
+    if (!already_locked) {
+        k_sem_take(&ctx->lock, K_FOREVER);
+        ctx->owner = spi_cfg;
     }
-
-    k_sem_take(&ctx->lock, K_FOREVER);
-    ctx->owner = spi_cfg;
+    #endif /* CONFIG_MULTITHREADING */
 
     #ifdef CONFIG_SPI_ASYNC
     ctx->asynchronous  = asynchronous;
@@ -128,8 +140,9 @@ static inline void spi_context_lock(struct spi_context *ctx,
  * in the configuration.
  */
 static inline void spi_context_release(struct spi_context* ctx, int status) {
+    #ifdef CONFIG_MULTITHREADING
     #ifdef CONFIG_SPI_SLAVE
-    if (status >= 0 && (ctx->config->operation & SPI_LOCK_ON)) {
+    if ((status >= 0) && (ctx->config->operation & SPI_LOCK_ON)) {
         return;
     }
     #endif /* CONFIG_SPI_SLAVE */
@@ -145,6 +158,7 @@ static inline void spi_context_release(struct spi_context* ctx, int status) {
         k_sem_give(&ctx->lock);
     }
     #endif /* CONFIG_SPI_ASYNC */
+    #endif /* CONFIG_MULTITHREADING */
 }
 
 static inline size_t spi_context_total_tx_len(struct spi_context *ctx);
@@ -169,6 +183,7 @@ static inline int spi_context_wait_for_completion(struct spi_context* ctx) {
 
     if (wait == true) {
         k_timeout_t timeout;
+        uint32_t timeout_ms;
 
         /* Do not use any timeout in the slave mode, as in this case
          * it is not known when the transfer will actually start and
@@ -176,11 +191,11 @@ static inline int spi_context_wait_for_completion(struct spi_context* ctx) {
          */
         if (IS_ENABLED(CONFIG_SPI_SLAVE) && spi_context_is_slave(ctx)) {
             timeout = K_FOREVER;
+            timeout_ms = UINT32_MAX;
         }
         else {
             uint32_t tx_len = spi_context_total_tx_len(ctx);
             uint32_t rx_len = spi_context_total_rx_len(ctx);
-            uint32_t timeout_ms;
 
             timeout_ms  = (MAX(tx_len, rx_len) * 8UL * 1000UL) / ctx->config->frequency;
             timeout_ms += CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE;
@@ -188,18 +203,48 @@ static inline int spi_context_wait_for_completion(struct spi_context* ctx) {
             timeout = K_MSEC(timeout_ms);
         }
 
+        #ifdef CONFIG_MULTITHREADING
         if (k_sem_take(&ctx->sync, timeout)) {
             LOG_ERR("Timeout waiting for transfer complete");
             return (-ETIMEDOUT);
         }
+        #else
+        if (timeout_ms == UINT32_MAX) {
+            /* In slave mode, we wait indefinitely, so we can go idle. */
+            unsigned int key = irq_lock();
+
+            while (!atomic_get(&ctx->ready)) {
+                k_cpu_atomic_idle(key);
+                key = irq_lock();
+            }
+
+            ctx->ready = 0;
+            irq_unlock(key);
+        }
+        else {
+            const uint32_t tms = k_uptime_get_32();
+
+            while (!atomic_get(&ctx->ready) && (k_uptime_get_32() - tms < timeout_ms)) {
+                k_busy_wait(1);
+            }
+
+            if (!ctx->ready) {
+                LOG_ERR("Timeout waiting for transfer complete");
+                return -ETIMEDOUT;
+            }
+
+            ctx->ready = 0;
+        }
+        #endif /* CONFIG_MULTITHREADING */
+
         status = ctx->sync_status;
     }
 
-#ifdef CONFIG_SPI_SLAVE
+    #ifdef CONFIG_SPI_SLAVE
     if (spi_context_is_slave(ctx) && !status) {
         return ctx->recv_frames;
     }
-#endif /* CONFIG_SPI_SLAVE */
+    #endif /* CONFIG_SPI_SLAVE */
 
     return (status);
 }
@@ -238,7 +283,11 @@ static inline void spi_context_complete(struct spi_context* ctx,
     }
     #else
     ctx->sync_status = status;
+    #ifdef CONFIG_MULTITHREADING
     k_sem_give(&ctx->sync);
+    #else
+    atomic_set(&ctx->ready, 1);
+    #endif /* CONFIG_MULTITHREADING */
     #endif /* CONFIG_SPI_ASYNC */
 }
 
@@ -270,42 +319,40 @@ static inline int spi_context_cs_configure_all(struct spi_context* ctx) {
 }
 
 /* Helper function to power manage the GPIO CS pins, not meant to be used directly by drivers */
-static inline int _spi_context_cs_pm_all(struct spi_context *ctx, bool get)
-{
-	const struct gpio_dt_spec *cs_gpio;
-	int ret;
+static inline int _spi_context_cs_pm_all(struct spi_context* ctx, bool get) {
+    const struct gpio_dt_spec* cs_gpio;
+    int ret;
 
-	for (cs_gpio = ctx->cs_gpios; cs_gpio < &ctx->cs_gpios[ctx->num_cs_gpios]; cs_gpio++) {
-		if (get) {
-			ret = pm_device_runtime_get(cs_gpio->port);
-		} else {
-			ret = pm_device_runtime_put(cs_gpio->port);
-		}
+    for (cs_gpio = ctx->cs_gpios; cs_gpio < &ctx->cs_gpios[ctx->num_cs_gpios]; cs_gpio++) {
+        if (get) {
+            ret = pm_device_runtime_get(cs_gpio->port);
+        }
+        else {
+            ret = pm_device_runtime_put(cs_gpio->port);
+        }
 
-		if (ret < 0) {
-			return ret;
-		}
-	}
+        if (ret < 0) {
+            return (ret);
+        }
+    }
 
-	return 0;
+    return (0);
 }
 
 /* This function should be called by drivers to pm get all the chip select lines in
  * master mode in the case of any CS being a GPIO. This should be called from the
  * drivers pm action hook on pm resume.
  */
-static inline int spi_context_cs_get_all(struct spi_context *ctx)
-{
-	return _spi_context_cs_pm_all(ctx, true);
+static inline int spi_context_cs_get_all(struct spi_context* ctx) {
+    return _spi_context_cs_pm_all(ctx, true);
 }
 
 /* This function should be called by drivers to pm put all the chip select lines in
  * master mode in the case of any CS being a GPIO. This should be called from the
  * drivers pm action hook on pm suspend.
  */
-static inline int spi_context_cs_put_all(struct spi_context *ctx)
-{
-	return _spi_context_cs_pm_all(ctx, false);
+static inline int spi_context_cs_put_all(struct spi_context* ctx) {
+    return _spi_context_cs_pm_all(ctx, false);
 }
 
 /* Helper function to control the GPIO CS, not meant to be used directly by drivers */
@@ -348,10 +395,12 @@ static inline void spi_context_unlock_unconditionally(struct spi_context* ctx) {
     /* Forcing CS to go to inactive status */
     _spi_context_cs_control(ctx, false, true);
 
+    #ifdef CONFIG_MULTITHREADING
     if (k_sem_count_get(&ctx->lock) == 0) {
         ctx->owner = NULL;
         k_sem_give(&ctx->lock);
     }
+    #endif /* CONFIG_MULTITHREADING */
 }
 
 /*
