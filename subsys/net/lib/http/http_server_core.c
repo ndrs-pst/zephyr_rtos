@@ -201,7 +201,7 @@ int http_server_init(struct http_server_ctx *ctx)
 		}
 #endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 
-		if (zsock_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &(int){1},
+		if (zsock_setsockopt(fd, NET_SOL_SOCKET, NET_SO_REUSEADDR, &(int){1},
 				     sizeof(int)) < 0) {
 			LOG_ERR("setsockopt: %d", errno);
 			zsock_close(fd);
@@ -595,8 +595,8 @@ static int http_server_run(struct http_server_ctx *ctx)
 			}
 
 			if (ctx->fds[i].revents & ZSOCK_POLLERR) {
-				(void)zsock_getsockopt(ctx->fds[i].fd, SOL_SOCKET,
-						       SO_ERROR, &sock_error, &optlen);
+				(void)zsock_getsockopt(ctx->fds[i].fd, NET_SOL_SOCKET,
+						       NET_SO_ERROR, &sock_error, &optlen);
 				LOG_DBG("Error on fd %d %d", ctx->fds[i].fd, sock_error);
 
 				if (i >= ctx->listen_fds) {
