@@ -379,7 +379,7 @@ manifest:
       revision: 2ed57596d363053178aa6104dcd062be3f2b92ce
     - name: FlashDB
       path: modules/lib/flashdb
-      revision: 6710c6d57f235e0b679a3ac728d567a472a77b19
+      revision: 9b5ce74a8aadb487e1bcb2bcb8c2f5e7d31f474a
 
   self:
     path: zephyr_rtos

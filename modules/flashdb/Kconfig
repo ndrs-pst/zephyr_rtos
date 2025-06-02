@@ -6,8 +6,6 @@ config ZEPHYR_FLASHDB_MODULE
 
 config FLASHDB
 	bool "Flashdb Database"
-	depends on POSIX_FILE_SYSTEM
-	depends on POSIX_THREADS
 	help
 	 This option enables flashdb database support.
 

@@ -7,6 +7,7 @@ zephyr_interface_library_named(FLASHDB)
 
 zephyr_include_directories(include)
 zephyr_include_directories(${ZEPHYR_FLASHDB_MODULE_DIR}/inc)
+zephyr_include_directories(${ZEPHYR_FLASHDB_MODULE_DIR}/port/fal/inc)
 
 zephyr_library()
 zephyr_library_sources(

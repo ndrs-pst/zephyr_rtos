@@ -31,13 +31,11 @@
 
 #endif /* CONFIG_FLASHDB_TIMESERIES */
 
-/* Using file storage mode by POSIX file API, like open/read/write/close */
-/* For now, we are using in POSIX file mode for zephyr */
-#define FDB_USING_FILE_POSIX_MODE
+#define FDB_USING_FAL_MODE_ZEPHYR
 
 #if defined CONFIG_FLASHDB_DEBUG_ENABLE
 /* log print macro. default EF_PRINT macro is printf() */
-#define FDB_PRINT(...)              printk(__VA_ARGS__)
+#define FDB_PRINT           LOG_INF
 
 /* print debug information */
 #define FDB_DEBUG_ENABLE
