@@ -35,7 +35,20 @@
 
 #if defined(CONFIG_FLASHDB_DEBUG_ENABLE)
 /* log print macro. default EF_PRINT macro is printf() */
+#if defined(_MSC_VER)
+#define FDB_PRINT           printf
+#else
 #define FDB_PRINT           LOG_INF
+#endif
+
+/**
+ * Flash write granularity in bits.
+ *
+ * Defines the minimum writable unit (1 → bit, 8 → byte, 32 → word, etc.).
+ * Must match flash hardware capabilities; incorrect value may cause data errors.
+ * Check the flash datasheet for proper setting.
+ */
+#define FDB_WRITE_GRAN      8               // Example: 32-bit granularity for MCU internal flash
 
 /* print debug information */
 #define FDB_DEBUG_ENABLE
