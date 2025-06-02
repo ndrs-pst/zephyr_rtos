@@ -323,7 +323,6 @@ struct tcp { /* TCP connection */
     #endif
 
     size_t             send_data_total;
-    size_t             send_retries;
     int                unacked_len;
     atomic_t           ref_count;
     enum tcp_state     state;
@@ -357,15 +356,14 @@ struct tcp { /* TCP connection */
     #endif
 
     uint8_t zwp_retries;
-    bool in_retransmission : 1;
     bool in_connect : 1;
     bool in_close : 1;
     #if defined(CONFIG_NET_TCP_KEEPALIVE)
     bool keep_alive : 1;
     #endif /* CONFIG_NET_TCP_KEEPALIVE */
     bool tcp_nodelay : 1;
-	bool addr_ref_done : 1;
-	bool rst_received : 1;
+    bool addr_ref_done : 1;
+    bool rst_received : 1;
 };
 
 #define _flags(_fl, _op, _mask, _cond)                          \
