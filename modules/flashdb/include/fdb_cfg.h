@@ -13,7 +13,7 @@
 #define _FDB_CFG_H_
 
 /* using KVDB feature */
-#if defined CONFIG_FLASHDB_KEYVALUE
+#if defined(CONFIG_FLASHDB_KEYVALUE)
 #define FDB_USING_KVDB
 
 #ifdef FDB_USING_KVDB
@@ -24,16 +24,16 @@
 
 #endif /* CONFIG_FLASHDB_KEYVALUE */
 
-#if defined CONFIG_FLASHDB_TIMESERIES
+#if defined(CONFIG_FLASHDB_TIMESERIES)
 
 /* using TSDB (Time series database) feature */
 #define FDB_USING_TSDB
 
 #endif /* CONFIG_FLASHDB_TIMESERIES */
 
-#define FDB_USING_FAL_MODE_ZEPHYR
+#define FDB_USING_ZEPHYR_FLASH_MAP          1
 
-#if defined CONFIG_FLASHDB_DEBUG_ENABLE
+#if defined(CONFIG_FLASHDB_DEBUG_ENABLE)
 /* log print macro. default EF_PRINT macro is printf() */
 #define FDB_PRINT           LOG_INF
 
