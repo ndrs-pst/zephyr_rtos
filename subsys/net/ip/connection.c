@@ -514,7 +514,7 @@ static bool conn_addr_cmp(struct net_pkt *pkt,
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
 	    net_pkt_family(pkt) == NET_AF_INET6 &&
 	    addr->sa_family == NET_AF_INET6) {
-		uint8_t *addr6;
+		const uint8_t *addr6;
 
 		if (is_remote) {
 			addr6 = ip_hdr->ipv6->src;
@@ -534,7 +534,7 @@ static bool conn_addr_cmp(struct net_pkt *pkt,
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		   net_pkt_family(pkt) == NET_AF_INET &&
 		   addr->sa_family == NET_AF_INET) {
-		uint8_t *addr4;
+		const uint8_t *addr4;
 
 		if (is_remote) {
 			addr4 = ip_hdr->ipv4->src;

@@ -1478,7 +1478,7 @@ struct sensor_info {
  */
 static inline int64_t sensor_value_to_deci(const struct sensor_value *val)
 {
-	return ((int64_t)val->val1 * 10) + val->val2 / 100000;
+	return ((int64_t)val->val1 * 10) + (val->val2 / 100000);
 }
 
 /**
@@ -1489,7 +1489,7 @@ static inline int64_t sensor_value_to_deci(const struct sensor_value *val)
  */
 static inline int64_t sensor_value_to_centi(const struct sensor_value *val)
 {
-	return ((int64_t)val->val1 * 100) + val->val2 / 10000;
+	return ((int64_t)val->val1 * 100) + (val->val2 / 10000);
 }
 
 /**
@@ -1500,7 +1500,7 @@ static inline int64_t sensor_value_to_centi(const struct sensor_value *val)
  */
 static inline int64_t sensor_value_to_milli(const struct sensor_value *val)
 {
-	return ((int64_t)val->val1 * 1000) + val->val2 / 1000;
+	return ((int64_t)val->val1 * 1000) + (val->val2 / 1000);
 }
 
 /**
