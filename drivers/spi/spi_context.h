@@ -477,7 +477,7 @@ static ALWAYS_INLINE
 void spi_context_update_tx(struct spi_context* ctx, uint8_t dfs, uint32_t len) {
     if (ctx->tx_len > 0U) {
         if (len <= ctx->tx_len) {
-            ctx->tx_len -= len;
+            ctx->tx_len -= (len * dfs);
             if (ctx->tx_len == 0U) {
                 /* Current buffer is done. Get the next one to be processed. */
                 ++ctx->current_tx;
@@ -532,7 +532,7 @@ void spi_context_update_rx(struct spi_context* ctx, uint8_t dfs, uint32_t len) {
 
     if (ctx->rx_len > 0U) {
         if (len <= ctx->rx_len) {
-            ctx->rx_len -= len;
+            ctx->rx_len -= (len * dfs);
             if (ctx->rx_len == 0U) {
                 /* Current buffer is done. Get the next one to be processed. */
                 ++ctx->current_rx;

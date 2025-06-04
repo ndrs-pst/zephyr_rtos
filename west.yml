@@ -200,7 +200,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 4eafaa44a55a557595e529f8cbdfc8dc1248da36
+      revision: 1f169d927e367eb1e161972e9504da5aa1f10c42
       path: modules/hal/nordic
       groups:
         - hal
@@ -226,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 9d68ee711aaeab39b216a61101a2646c5a1b0fc0
+      revision: 9b3c0cef9b590b41e0319168c0c4c4205849eed6
       groups:
         - hal
     - name: hal_rpi_pico
@@ -235,7 +235,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 389726f350880238b9a1034f575ffd46c4309827
+      revision: a0095a7ac356a04e12188bb563e6207594f8e6b2
       path: modules/hal/silabs
       groups:
         - hal
