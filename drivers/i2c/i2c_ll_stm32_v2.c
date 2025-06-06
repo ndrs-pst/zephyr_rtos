@@ -672,36 +672,6 @@ end :
     return (-EIO);
 }
 
-#if defined(CONFIG_DCACHE) && defined(CONFIG_I2C_STM32_V2_DMA)
-static bool buf_in_nocache(uintptr_t buf, size_t len_bytes) {
-    bool buf_within_nocache;
-
-    #ifdef CONFIG_NOCACHE_MEMORY
-    /* Check if buffer is in nocache region defined by the linker */
-    buf_within_nocache = (buf >= ((uintptr_t)_nocache_ram_start)) &&
-        ((buf + len_bytes - 1) <= ((uintptr_t)_nocache_ram_end));
-    if (buf_within_nocache) {
-        return (true);
-    }
-    #endif /* CONFIG_NOCACHE_MEMORY */
-
-    #ifdef CONFIG_MEM_ATTR
-    /* Check if buffer is in nocache memory region defined in DT */
-    buf_within_nocache = mem_attr_check_buf(
-        (void*)buf, len_bytes, DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)) == 0;
-    if (buf_within_nocache) {
-        return (true);
-    }
-    #endif /* CONFIG_MEM_ATTR */
-
-    /* Check if buffer is in RO region (Flash..) */
-    buf_within_nocache = (buf >= ((uintptr_t)__rodata_region_start)) &&
-        ((buf + len_bytes - 1) <= ((uintptr_t)__rodata_region_end));
-
-    return (buf_within_nocache);
-}
-#endif /* CONFIG_DCACHE && CONFIG_I2C_STM32_V2_DMA */
-
 static int i2c_stm32_msg_write(const struct device* dev, struct i2c_msg* msg,
                                uint8_t const* next_msg_flags, uint16_t slave) {
     const struct i2c_stm32_config* cfg = dev->config;
@@ -716,13 +686,13 @@ static int i2c_stm32_msg_write(const struct device* dev, struct i2c_msg* msg,
     data->current.is_err   = 0U;
     data->current.msg      = msg;
 
-    #if defined(CONFIG_DCACHE) && defined(CONFIG_I2C_STM32_V2_DMA)
-    if (!buf_in_nocache((uintptr_t)msg->buf, msg->len)) {
+    #if defined(CONFIG_I2C_STM32_V2_DMA)
+    if (!stm32_buf_in_nocache((uintptr_t)msg->buf, msg->len)) {
         LOG_DBG("Tx buffer at %p (len %zu) is in cached memory; cleaning cache", msg->buf,
                 msg->len);
         sys_cache_data_flush_range((void*)msg->buf, msg->len);
     }
-    #endif /* CONFIG_DCACHE && CONFIG_I2C_STM32_V2_DMA*/
+    #endif /* CONFIG_I2C_STM32_V2_DMA */
 
     msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_WRITE);
 
@@ -795,13 +765,13 @@ static int i2c_stm32_msg_read(const struct device* dev, struct i2c_msg* msg,
         is_timeout = true;
     }
 
-    #if defined(CONFIG_DCACHE) && defined(CONFIG_I2C_STM32_V2_DMA)
-    if (!buf_in_nocache((uintptr_t)msg->buf, msg->len)) {
+    #if defined(CONFIG_I2C_STM32_V2_DMA)
+    if (!stm32_buf_in_nocache((uintptr_t)msg->buf, msg->len)) {
         LOG_DBG("Rx buffer at %p (len %zu) is in cached memory; invalidating cache",
                 msg->buf, msg->len);
         sys_cache_data_invd_range((void*)msg->buf, msg->len);
     }
-    #endif /* CONFIG_DCACHE && CONFIG_I2C_STM32_V2_DMA */
+    #endif /* CONFIG_I2C_STM32_V2_DMA */
 
     if (data->current.is_nack || data->current.is_err ||
         data->current.is_arlo || is_timeout) {
@@ -1182,7 +1152,7 @@ int i2c_stm32_configure_timing(const struct device* dev, uint32_t clock) {
                 i2c_compute_presc_scldel_sdadel(clock, speed);
                 idx = i2c_compute_scll_sclh(clock, speed);
                 if (idx < I2C_STM32_VALID_TIMING_NBR) {
-                    timing = ((i2c_valid_timing[idx].presc & 0x0FU) << 28) |
+                    timing = ((i2c_valid_timing[idx].presc   & 0x0FU) << 28) |
                              ((i2c_valid_timing[idx].tscldel & 0x0FU) << 20) |
                              ((i2c_valid_timing[idx].tsdadel & 0x0FU) << 16) |
                              ((i2c_valid_timing[idx].sclh & 0xFFU) << 8) |
