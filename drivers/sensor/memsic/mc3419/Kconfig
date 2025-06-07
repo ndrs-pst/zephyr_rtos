@@ -43,7 +43,7 @@ config MC3419_THREAD_PRIORITY
 	default 10
 
 config MC3419_THREAD_STACK_SIZE
-	int "Own thread stask size"
+	int "Own thread stack size"
 	depends on MC3419_TRIGGER_OWN_THREAD
 	default 1024
 
