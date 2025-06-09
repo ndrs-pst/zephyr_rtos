@@ -694,6 +694,18 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
  * @param len        Device Capability descriptor length
  * @param subset     Pointer to a Device Capability descriptor
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+/* Remove BUILD_ASSERT statement */
+#define USBD_DESC_BOS_DEFINE(name, len, subset)					\
+	static struct usbd_desc_node name = {					\
+		.bos = {							\
+			.utype = USBD_DUT_BOS_NONE,				\
+		},								\
+		.ptr = subset,							\
+		.bLength = len,							\
+		.bDescriptorType = USB_DESC_BOS,				\
+	}
+#else
 #define USBD_DESC_BOS_DEFINE(name, len, subset)					\
 	BUILD_ASSERT(IS_ENABLED(CONFIG_USBD_BOS_SUPPORT),			\
 		     "USB device BOS support is disabled");			\
@@ -705,6 +717,7 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 		.bLength = len,							\
 		.bDescriptorType = USB_DESC_BOS,				\
 	}
+#endif
 
 /**
  * @brief Define a vendor request with recipient device
