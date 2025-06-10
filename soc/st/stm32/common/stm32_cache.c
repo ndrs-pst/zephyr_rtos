@@ -14,7 +14,7 @@ bool stm32_buf_in_nocache(uintptr_t buf, size_t len_bytes)
 	uintptr_t buf_end;
 
 	/* Note: (len_bytes - 1) is safe because a length of 0 would overflow to 4 billion. */
-	if (u32_add_overflow(buf, len_bytes - 1, (uint32_t *)&buf_end)) {
+	if (u32_add_overflow(buf, (len_bytes - 1), (uint32_t *)&buf_end)) {
 		return false;
 	}
 
@@ -24,7 +24,8 @@ bool stm32_buf_in_nocache(uintptr_t buf, size_t len_bytes)
 	 *
 	 * NOTE: This incorrectly returns true if Zephyr image RAM resides in external memory.
 	 */
-	if (((uintptr_t)_image_ram_start) <= buf && buf_end < ((uintptr_t)_image_ram_end)) {
+	if (((uintptr_t)_image_ram_start <= buf) &&
+	    (buf_end < (uintptr_t)_image_ram_end)) {
 		return true;
 	}
 #endif /* CONFIG_EXTERNAL_CACHE */
@@ -46,7 +47,8 @@ bool stm32_buf_in_nocache(uintptr_t buf, size_t len_bytes)
 	/* Check if buffer is in read-only region, which cannot be stale due to DCACHE because it is
 	 * not writeable.
 	 */
-	if ((uintptr_t)__rodata_region_start <= buf && buf_end <= (uintptr_t)__rodata_region_end) {
+	if (((uintptr_t)__rodata_region_start <= buf) &&
+	    (buf_end <= (uintptr_t)__rodata_region_end)) {
 		return true;
 	}
 
