@@ -77,12 +77,16 @@ static int spi_sam0_configure(const struct device* dev,
     SercomSpi* regs;
     SERCOM_SPI_CTRLA_Type ctrla;
     SERCOM_SPI_CTRLB_Type ctrlb;
+    #ifdef SERCOM_SPI_CTRLC_MASK
+    SERCOM_SPI_CTRLC_Type ctrlc = {.reg = 0};
+    SERCOM_SPI_LENGTH_Type length = {.reg = 0};
+    #endif
     int div;
     int ret;
     bool rc;
 
     data = dev->data;
-    rc   = spi_context_configured(&data->ctx, config);
+    rc = spi_context_configured(&data->ctx, config);
     if (rc == false) {
         ret = -ENOTSUP;
 
@@ -134,19 +138,40 @@ static int spi_sam0_configure(const struct device* dev,
             div = ((SOC_ATMEL_SAM0_GCLK1_FREQ_HZ / config->frequency) / 2U) - 1U;
             div = CLAMP(div, 0, UINT8_MAX);
 
+            #ifdef SERCOM_SPI_CTRLC_MASK
+            /* LENGTH.LEN must only be enabled when CTRLC.bit.DATA32B is enabled.
+             * Since we are about to explicitly disable it, we need to clear the LENGTH register.
+             */
+            length.reg = SERCOM_SPI_LENGTH_RESETVALUE;
+
+            /* Disable inter-character spacing and the 32-bit read/write extension */
+            ctrlc.reg = SERCOM_SPI_CTRLC_RESETVALUE;
+            #endif
+
             /* Update the configuration only if it has changed */
-            if (regs->CTRLA.reg != ctrla.reg ||
-                regs->CTRLB.reg != ctrlb.reg ||
-                regs->BAUD.reg  != div) {
+            if ((regs->CTRLA.reg != ctrla.reg) ||
+                (regs->CTRLB.reg != ctrlb.reg) ||
+                (regs->BAUD.reg  != div)
+                #ifdef SERCOM_SPI_CTRLC_MASK
+                || (regs->LENGTH.reg != length.reg) || (regs->CTRLC.reg != ctrlc.reg)
+                #endif
+            ) {
                 regs->CTRLA.bit.ENABLE = 0;
                 wait_synchronization(regs);
-
                 regs->CTRLB.reg = ctrlb.reg;
                 wait_synchronization(regs);
                 regs->BAUD.reg = div;
                 wait_synchronization(regs);
                 regs->CTRLA.reg = ctrla.reg;
                 wait_synchronization(regs);
+
+                #ifdef SERCOM_SPI_CTRLC_MASK
+                regs->LENGTH = length;
+                wait_synchronization(regs);
+
+                /* Although CTRLC is not write-synchronized, it is enabled-protected */
+                regs->CTRLC = ctrlc;
+                #endif
             }
 
             data->ctx.config = config;
@@ -699,6 +724,10 @@ static int spi_sam0_init(const struct device* dev) {
                         GCLK_CLKCTRL_GEN(cfg->gclk_gen) |
                         GCLK_CLKCTRL_ID(cfg->gclk_id);
     #endif
+
+    /* Ensure all registers are at their default values */
+    regs->CTRLA.bit.SWRST = 1;
+    wait_synchronization(regs);
 
     /* Disable all SPI interrupts */
     regs->INTENCLR.reg = SERCOM_SPI_INTENCLR_MASK;
