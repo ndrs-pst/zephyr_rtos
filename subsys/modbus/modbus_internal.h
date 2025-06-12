@@ -13,7 +13,7 @@
  *
  *      Copyright 2003-2020 Silicon Laboratories Inc. www.silabs.com
  *
- *                   SPDX-License-Identifier: APACHE-2.0
+ *                   SPDX-License-Identifier: Apache-2.0
  *
  * This software is subject to an open source license and is distributed by
  *  Silicon Laboratories Inc. pursuant to the terms of the Apache License,
@@ -99,6 +99,7 @@ struct modbus_serial_config {
 };
 
 #define MODBUS_STATE_CONFIGURED             0
+#define MODBUS_STATE_RX_ENABLED             1
 
 struct modbus_context {
     /* Interface name */
@@ -221,14 +222,14 @@ void modbus_reset_stats(struct modbus_context* ctx);
  *
  * @param ctx        Modbus interface context
  */
-void modbus_serial_rx_disable(struct modbus_context const* ctx);
+void modbus_serial_rx_disable(struct modbus_context* ctx);
 
 /**
  * @brief Enable serial line reception.
  *
  * @param ctx        Modbus interface context
  */
-void modbus_serial_rx_enable(struct modbus_context const* ctx);
+void modbus_serial_rx_enable(struct modbus_context* ctx);
 
 /**
  * @brief Assemble ADU from serial line RX buffer

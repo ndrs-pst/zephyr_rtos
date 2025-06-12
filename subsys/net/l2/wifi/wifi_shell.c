@@ -1163,6 +1163,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		case 'g':
 			params->ignore_broadcast_ssid = (uint8_t)shell_strtol(state->optarg, 10, &ret);
 			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
 		case 'h':
 			return -ENOEXEC;
 		default:
@@ -2142,6 +2145,10 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 			params->setup.twt_mantissa = (uint16_t)value;
 			break;
 
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
+
 		case 'h':
 			return -ENOEXEC;
 		}
@@ -2449,6 +2456,9 @@ static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, ch
 			params->type |= WIFI_AP_CONFIG_PARAM_VHT_CAPAB;
 			break;
 #endif
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
 		case 'h':
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
@@ -2544,6 +2554,9 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 			break;
 		case 'v':
 			verbose = true;
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
 			return -ENOEXEC;
@@ -3248,6 +3261,9 @@ static int parse_dpp_args_auth_init(const struct shell *sh, size_t argc, char *a
 		case 's':
 			strncpy(params->u.auth_init.ssid, state->optarg, WIFI_SSID_MAX_LEN);
 			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
@@ -3285,6 +3301,9 @@ static int parse_dpp_args_chirp(const struct shell *sh, size_t argc, char *argv[
 		case 'f':
 			params->u.chirp.freq = shell_strtol(state->optarg, 10, &ret);
 			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
@@ -3321,6 +3340,9 @@ static int parse_dpp_args_listen(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'f':
 			params->u.listen.freq = shell_strtol(state->optarg, 10, &ret);
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
@@ -3367,6 +3389,9 @@ static int parse_dpp_args_btstrap_gen(const struct shell *sh, size_t argc, char 
 		case 'a':
 			ret = net_bytes_from_str(params->u.bootstrap_gen.mac,
 						 WIFI_MAC_ADDR_LEN, state->optarg);
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
@@ -3426,6 +3451,9 @@ static int parse_dpp_args_set_config_param(const struct shell *sh, size_t argc, 
 			break;
 		case 's':
 			strncpy(params->u.configurator_set.ssid, state->optarg, WIFI_SSID_MAX_LEN);
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
 			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
@@ -3711,6 +3739,9 @@ static int cmd_wifi_dpp_ap_auth_init(const struct shell *sh, size_t argc, char *
 		case 'p':
 			params.u.auth_init.peer = shell_strtol(state->optarg, 10, &ret);
 			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
@@ -3954,7 +3985,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "[-h --channel <channel>]\n"
 		      "[-a --mac <mac_addr>]\n"
 		      "[-i, --iface=<interface index>] : Interface index.\n",
-		      cmd_wifi_dpp_btstrap_gen, 1, 2),
+		      cmd_wifi_dpp_btstrap_gen, 1, 10),
 	SHELL_CMD_ARG(btstrap_get_uri, NULL,
 		      " Get DPP bootstrap uri by id:\n"
 		      "<bootstrap_id>\n"
@@ -3990,7 +4021,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      " AP Input QR code:\n"
 		      "<qr_code_string>\n"
 		      "[-i, --iface=<interface index>] : Interface index.\n",
-		      cmd_wifi_dpp_ap_qr_code, 3, 2),
+		      cmd_wifi_dpp_ap_qr_code, 2, 2),
 	SHELL_CMD_ARG(ap_auth_init, NULL,
 		      "AP DPP start auth request as enrollee:\n"
 		      "-p --peer <peer_bootstrap_id>\n"

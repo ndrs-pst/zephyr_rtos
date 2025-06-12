@@ -208,9 +208,9 @@ void i2c_stm32_error_isr(void* arg);
     }
 
 #else /* CONFIG_I2C_STM32_INTERRUPT */
-#define STM32_I2C_IRQ_HANDLER_DECL(index)
-#define STM32_I2C_IRQ_HANDLER_FUNCTION(index)
-#define STM32_I2C_IRQ_HANDLER(index)
+#define I2C_STM32_IRQ_HANDLER_DECL(index)
+#define I2C_STM32_IRQ_HANDLER_FUNCTION(index)
+#define I2C_STM32_IRQ_HANDLER(index)
 #endif /* CONFIG_I2C_STM32_INTERRUPT */
 
 #endif /* ZEPHYR_DRIVERS_I2C_I2C_LL_STM32_H_ */

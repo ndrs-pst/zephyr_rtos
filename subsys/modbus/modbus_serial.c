@@ -13,7 +13,7 @@
  *
  *      Copyright 2003-2020 Silicon Laboratories Inc. www.silabs.com
  *
- *                   SPDX-License-Identifier: APACHE-2.0
+ *                   SPDX-License-Identifier: Apache-2.0
  *
  * This software is subject to an open source license and is distributed by
  *  Silicon Laboratories Inc. pursuant to the terms of the Apache License,
@@ -48,20 +48,33 @@ static void modbus_serial_tx_off(struct modbus_context const* ctx) {
     }
 }
 
-static void modbus_serial_rx_on(struct modbus_context const* ctx) {
+static void modbus_serial_rx_fifo_drain(struct modbus_context* ctx) {
+    struct modbus_serial_config* cfg = ctx->cfg;
+    uint8_t buf[8];
+    int n;
+
+    do {
+        n = uart_fifo_read(cfg->dev, buf, sizeof(buf));
+    } while (n == sizeof(buf));
+}
+
+static void modbus_serial_rx_on(struct modbus_context* ctx) {
     struct modbus_serial_config const* cfg = ctx->cfg;
 
     if (cfg->re != NULL) {
         gpio_pin_set_dt(cfg->re, 1);
     }
 
+    atomic_set_bit(&ctx->state, MODBUS_STATE_RX_ENABLED);
     uart_irq_rx_enable(cfg->dev);
 }
 
-static void modbus_serial_rx_off(struct modbus_context const* ctx) {
+static void modbus_serial_rx_off(struct modbus_context* ctx) {
     struct modbus_serial_config const* cfg = ctx->cfg;
 
     uart_irq_rx_disable(cfg->dev);
+    atomic_clear_bit(&ctx->state, MODBUS_STATE_RX_ENABLED);
+
     if (cfg->re != NULL) {
         gpio_pin_set_dt(cfg->re, 0);
     }
@@ -292,6 +305,11 @@ static void rtu_tx_adu(struct modbus_context* ctx) {
 static void cb_handler_rx(struct modbus_context* ctx) {
     struct modbus_serial_config* cfg = ctx->cfg;
 
+    if (!atomic_test_bit(&ctx->state, MODBUS_STATE_RX_ENABLED)) {
+        modbus_serial_rx_fifo_drain(ctx);
+        return;
+    }
+
     if ((ctx->mode == MODBUS_MODE_ASCII) &&
         IS_ENABLED(CONFIG_MODBUS_ASCII_MODE)) {
         uint8_t c;
@@ -358,6 +376,7 @@ static void cb_handler_tx(struct modbus_context* ctx) {
         /* Disable transmission */
         cfg->uart_buf_ptr = &cfg->uart_buf[0];
         modbus_serial_tx_off(ctx);
+        modbus_serial_rx_fifo_drain(ctx);
         modbus_serial_rx_on(ctx);
     }
 }
@@ -472,11 +491,11 @@ static inline int configure_uart(struct modbus_context const* ctx,
     return (0);
 }
 
-void modbus_serial_rx_disable(struct modbus_context const* ctx) {
+void modbus_serial_rx_disable(struct modbus_context* ctx) {
     modbus_serial_rx_off(ctx);
 }
 
-void modbus_serial_rx_enable(struct modbus_context const* ctx) {
+void modbus_serial_rx_enable(struct modbus_context* ctx) {
     modbus_serial_rx_on(ctx);
 }
 
@@ -493,6 +512,7 @@ int modbus_serial_rx_adu(struct modbus_context* ctx) {
             if (!IS_ENABLED(CONFIG_MODBUS_ASCII_MODE)) {
                 return (-ENOTSUP);
             }
+
             rc = modbus_ascii_rx_adu(ctx);
             break;
 

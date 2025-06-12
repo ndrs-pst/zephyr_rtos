@@ -97,6 +97,9 @@ Devicetree
   superfamily. Therefore, any dts files for boards that use Series 2 SoCs will need to change their
   include from ``#include <silabs/some_soc.dtsi>`` to ``#include <silabs/xg2[1-9]/some_soc.dtsi>``.
 
+* The :c:macro:`DT_ENUM_HAS_VALUE` and :c:macro:`DT_INST_ENUM_HAS_VALUE` macros are now
+  checking all values, when used on an array, not just the first one.
+
 DAI
 ===
 
@@ -188,6 +191,12 @@ Ethernet
   :c:enumerator:`ETHERNET_LINK_10BASE`, :c:enumerator:`ETHERNET_LINK_100BASE`,
   :c:enumerator:`ETHERNET_LINK_1000BASE`, :c:enumerator:`ETHERNET_LINK_2500BASE` and
   :c:enumerator:`ETHERNET_LINK_5000BASE` respectively (:github:`87194`).
+
+* ``ETHERNET_CONFIG_TYPE_LINK``, ``ETHERNET_CONFIG_TYPE_DUPLEX``, ``ETHERNET_CONFIG_TYPE_AUTO_NEG``
+  and the related ``NET_REQUEST_ETHERNET_SET_LINK``, ``NET_REQUEST_ETHERNET_SET_DUPLEX``,
+  ``NET_REQUEST_ETHERNET_SET_AUTO_NEGOTIATION`` have been removed. :c:func:`phy_configure_link`
+  together with :c:func:`net_eth_get_phy` should be used instead to configure the link
+  (:github:`90652`).
 
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================

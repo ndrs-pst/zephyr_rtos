@@ -1280,41 +1280,6 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 		;
 }
 
-static int eth_stm32_hal_get_config(const struct device *dev, enum ethernet_config_type type,
-				    struct ethernet_config *config)
-{
-	struct eth_stm32_hal_dev_data *ctx = dev->data;
-
-	switch (type) {
-	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
-		memcpy(config->mac_address.addr, ctx->mac_addr,
-		       sizeof(config->mac_address.addr));
-		return 0;
-#if defined(CONFIG_NET_PROMISCUOUS_MODE)
-	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
-		ETH_HandleTypeDef *heth = &dev_data->heth;
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
-		ETH_MACFilterConfigTypeDef MACFilterConf;
-
-		HAL_ETH_GetMACFilterConfig(heth, &MACFilterConf);
-
-		config->promisc_mode = (MACFilterConf.PromiscuousMode == ENABLE);
-#else
-		if (heth->Instance->MACFFR & ETH_MACFFR_PM) {
-			config->promisc_mode = true;
-		} else {
-			config->promisc_mode = false;
-		}
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
-		return 0;
-#endif /* CONFIG_NET_PROMISCUOUS_MODE */
-	default:
-		break;
-	}
-
-	return -ENOTSUP;
-}
-
 static int eth_stm32_hal_set_config(const struct device *dev,
 				    enum ethernet_config_type type,
 				    const struct ethernet_config *config)
@@ -1402,7 +1367,6 @@ static const struct ethernet_api eth_stm32_api = {
 
 	.get_capabilities = eth_stm32_hal_get_capabilities,
 	.set_config = eth_stm32_hal_set_config,
-	.get_config = eth_stm32_hal_get_config,
 	.get_phy = eth_stm32_hal_get_phy,
 #if defined(CONFIG_NET_DSA_DEPRECATED)
 	.send = dsa_tx,

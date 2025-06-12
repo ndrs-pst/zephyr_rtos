@@ -200,7 +200,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 1f169d927e367eb1e161972e9504da5aa1f10c42
+      revision: 6e39d4f2b078afaebdb84875089486152fcacb9c
       path: modules/hal/nordic
       groups:
         - hal
@@ -210,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 0575edec4c4d2a9c31e50974024e0ace9514f7a3
+      revision: dcb80803ee9d528c600d012aa4ac6515bbd8fb3d
       path: modules/hal/nxp
       groups:
         - hal
@@ -302,7 +302,7 @@ manifest:
       revision: 88deb45109317473ac5706e97a6b8bbeb524aab1
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: cb85b35217e76a048276b63bca19e8ce7baeee08
+      revision: b03edc8e6282a963cd312cd0b409eb5ce263ea75
       path: modules/lib/gui/lvgl
     - name: mbedtls
       revision: 5f889934359deccf421554c7045a8381ef75298f
