@@ -158,6 +158,13 @@ int dns_sd_handle_service_type_enum(const struct dns_sd_rec *service,
 	const struct net_in_addr *addr4, const struct net_in6_addr *addr6,
 	uint8_t *buf, uint16_t buf_size);
 
+/**
+ * @brief Check if DNS-SD record is a valid one.
+ *
+ * @param rec the record to check
+ */
+bool dns_sd_rec_is_valid(const struct dns_sd_rec *rec);
+
 #ifdef __cplusplus
 };
 #endif
