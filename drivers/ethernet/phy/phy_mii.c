@@ -38,10 +38,10 @@ struct phy_mii_dev_data {
 	struct k_sem sem;
 #if ANY_DYNAMIC_LINK
 	struct k_work_delayable monitor_work;
-	struct k_work_delayable autoneg_work;
 	bool gigabit_supported;
 	bool restart_autoneg;
-	uint32_t autoneg_timeout;
+	bool autoneg_in_progress;
+	k_timepoint_t autoneg_timeout;
 #endif
 };
 
@@ -213,7 +213,7 @@ static int update_link_state(const struct device *dev)
 	data->restart_autoneg = false;
 
 	/* We have to wait for the auto-negotiation process to complete */
-	data->autoneg_timeout = CONFIG_PHY_AUTONEG_TIMEOUT_MS / MII_AUTONEG_POLL_INTERVAL_MS;
+	data->autoneg_timeout = sys_timepoint_calc(K_MSEC(CONFIG_PHY_AUTONEG_TIMEOUT_MS));
 	return -EINPROGRESS;
 }
 
@@ -245,7 +245,7 @@ static int check_autonegotiation_completion(const struct device *dev)
 	}
 
 	if (!(bmsr_reg & MII_BMSR_AUTONEG_COMPLETE)) {
-		if (data->autoneg_timeout-- == 0U) {
+		if (sys_timepoint_expired(data->autoneg_timeout)) {
 			LOG_DBG("PHY (%d) auto-negotiate timedout", cfg->phy_addr);
 			return -ETIMEDOUT;
 		}
@@ -310,65 +310,27 @@ static void monitor_work_handler(struct k_work *work)
 	const struct device *dev = data->dev;
 	int rc;
 
-	if (k_sem_take(&data->sem, K_NO_WAIT) != 0) {
-		/* Try again soon */
-		k_work_reschedule(&data->monitor_work,
-				  K_MSEC(MII_AUTONEG_POLL_INTERVAL_MS));
-		return;
+	if (k_sem_take(&data->sem, K_NO_WAIT) == 0) {
+		if (data->autoneg_in_progress) {
+			rc = check_autonegotiation_completion(dev);
+		} else {
+			/* If autonegotiation is not in progress, just update the link state */
+			rc = update_link_state(dev);
+		}
+
+		data->autoneg_in_progress = (rc == -EINPROGRESS);
+
+		k_sem_give(&data->sem);
+
+		/* If link state has changed and a callback is set, invoke callback */
+		if (rc == 0) {
+			invoke_link_cb(dev);
+		}
 	}
 
-	rc = update_link_state(dev);
-
-	k_sem_give(&data->sem);
-
-	/* If link state has changed and a callback is set, invoke callback */
-	if (rc == 0) {
-		invoke_link_cb(dev);
-	}
-
-	if (rc == -EINPROGRESS) {
-		/* Check for autonegotiation completion */
-		k_work_reschedule(&data->autoneg_work,
-				  K_MSEC(MII_AUTONEG_POLL_INTERVAL_MS));
-	} else {
-		/* Submit delayed work */
-		k_work_reschedule(&data->monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
-	}
-}
-
-static void autoneg_work_handler(struct k_work *work)
-{
-	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	struct phy_mii_dev_data *const data =
-		CONTAINER_OF(dwork, struct phy_mii_dev_data, autoneg_work);
-	const struct device *dev = data->dev;
-	int rc;
-
-	if (k_sem_take(&data->sem, K_NO_WAIT) != 0) {
-		/* Try again soon */
-		k_work_reschedule(&data->autoneg_work,
-				  K_MSEC(MII_AUTONEG_POLL_INTERVAL_MS));
-		return;
-	}
-
-	rc = check_autonegotiation_completion(dev);
-
-	k_sem_give(&data->sem);
-
-	/* If link state has changed and a callback is set, invoke callback */
-	if (rc == 0) {
-		invoke_link_cb(dev);
-	}
-
-	if (rc == -EINPROGRESS) {
-		/* Check again soon */
-		k_work_reschedule(&data->autoneg_work,
-				  K_MSEC(MII_AUTONEG_POLL_INTERVAL_MS));
-	} else {
-		/* Schedule the next monitoring call */
-		k_work_reschedule(&data->monitor_work,
-				  K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
-	}
+	k_work_reschedule(&data->monitor_work, data->autoneg_in_progress
+						       ? K_MSEC(MII_AUTONEG_POLL_INTERVAL_MS)
+						       : K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
 }
 
 static int phy_mii_read(const struct device *dev, uint16_t reg_addr,
@@ -490,7 +452,6 @@ static int phy_mii_cfg_link(const struct device *dev,
 	}
 
 	if (data->restart_autoneg && data->state.is_up) {
-		k_work_cancel_delayable(&data->autoneg_work);
 		k_work_reschedule(&data->monitor_work, K_NO_WAIT);
 	}
 
@@ -609,7 +570,6 @@ static int phy_mii_initialize_dynamic_link(const struct device *dev)
 	data->gigabit_supported = is_gigabit_supported(dev);
 
 	k_work_init_delayable(&data->monitor_work, monitor_work_handler);
-	k_work_init_delayable(&data->autoneg_work, autoneg_work_handler);
 
 	/* Advertise default speeds */
 	phy_mii_cfg_link(dev, cfg->default_speeds);
