@@ -482,18 +482,24 @@ static void esp_dns_work(struct k_work* work) {
     struct dns_resolve_context* dnsctx;
     struct net_sockaddr_in* addrs = data->dns_addresses;
     const struct net_sockaddr* dns_servers[ESP_MAX_DNS + 1] = {};
+    int interfaces[ESP_MAX_DNS];
     size_t i;
     int err;
+    int ifindex;
+
+    ifindex = net_if_get_by_ifindex(data->net_iface);
 
     for (i = 0; i < ESP_MAX_DNS; i++) {
         if (!addrs[i].sin_addr.s_addr_be) {
             break;
         }
         dns_servers[i] = (struct net_sockaddr*)&addrs[i];
+        interfaces[i] = ifindex;
     }
 
     dnsctx = dns_resolve_get_default();
-    err = dns_resolve_reconfigure(dnsctx, NULL, dns_servers);
+    err = dns_resolve_reconfigure_with_interfaces(dnsctx, NULL, dns_servers,
+                                                  interfaces);
     if (err) {
         LOG_ERR("Could not set DNS servers: %d", err);
     }
@@ -1131,10 +1137,12 @@ static void esp_mgmt_connect_work(struct k_work* work) {        /* ESP_AT_STA_SE
         net_if_dormant_on(dev->net_iface);
         if (esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
             esp_flags_clear(dev, EDF_STA_CONNECTED);
-            wifi_mgmt_raise_disconnect_result_event(dev->net_iface, 0);
+            wifi_mgmt_raise_disconnect_result_event(dev->net_iface,
+                                                    0);
         }
         else {
-            wifi_mgmt_raise_connect_result_event(dev->net_iface, ret);
+            wifi_mgmt_raise_connect_result_event(dev->net_iface,
+                                                 ret);
         }
     }
     else if (!esp_flags_are_set(dev, EDF_STA_CONNECTED)) {

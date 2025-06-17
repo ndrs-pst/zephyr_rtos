@@ -31,7 +31,11 @@
         "WARNING: A print request was detected on not active shell backend.\n"
 #define SHELL_MSG_TOO_MANY_ARGS     "Too many arguments in the command.\n"
 #define SHELL_INIT_OPTION_PRINTER   (NULL)
-#define SHELL_TX_MTX_TIMEOUT_MS     50
+#if (CONFIG_SHELL_TX_TIMEOUT_MS == 0)
+#define SHELL_TX_MTX_TIMEOUT        K_FOREVER
+#else
+#define SHELL_TX_MTX_TIMEOUT        K_MSEC(CONFIG_SHELL_TX_TIMEOUT_MS)
+#endif
 
 #define SHELL_THREAD_PRIORITY \
     COND_CODE_1(CONFIG_SHELL_THREAD_PRIORITY_OVERRIDE, \
@@ -1349,7 +1353,7 @@ void shell_thread(void* shell_handle, void* arg_log_backend,
                      K_FOREVER);
 
         if (err != 0) {
-            if (k_mutex_lock(&ctx->wr_mtx, K_MSEC(SHELL_TX_MTX_TIMEOUT_MS)) != 0) {
+            if (k_mutex_lock(&ctx->wr_mtx, SHELL_TX_MTX_TIMEOUT) != 0) {
                 return;
             }
             z_shell_fprintf(sh, SHELL_ERROR,
@@ -1440,7 +1444,7 @@ int shell_start(const struct shell* sh) {
         z_shell_log_backend_enable(sh->log_backend, (void*)sh, sh->ctx->log_level);
     }
 
-    if (k_mutex_lock(&sh->ctx->wr_mtx, K_MSEC(SHELL_TX_MTX_TIMEOUT_MS)) != 0) {
+    if (k_mutex_lock(&sh->ctx->wr_mtx, SHELL_TX_MTX_TIMEOUT) != 0) {
         return (-EBUSY);
     }
 
@@ -1544,7 +1548,7 @@ void shell_vfprintf(const struct shell* sh, enum shell_vt100_color color,
         return;
     }
 
-    if (k_mutex_lock(&ctx->wr_mtx, K_MSEC(SHELL_TX_MTX_TIMEOUT_MS)) != 0) {
+    if (k_mutex_lock(&ctx->wr_mtx, SHELL_TX_MTX_TIMEOUT) != 0) {
         return;
     }
 
@@ -1678,7 +1682,7 @@ int shell_prompt_change(const struct shell* sh, char const* prompt) {
 
     size_t prompt_length = z_shell_strlen(prompt);
 
-    if (k_mutex_lock(&sh->ctx->wr_mtx, K_MSEC(SHELL_TX_MTX_TIMEOUT_MS)) != 0) {
+    if (k_mutex_lock(&sh->ctx->wr_mtx, SHELL_TX_MTX_TIMEOUT) != 0) {
         return (-EBUSY);
     }
 
@@ -1700,7 +1704,7 @@ int shell_prompt_change(const struct shell* sh, char const* prompt) {
 }
 
 void shell_help(const struct shell* sh) {
-    if (k_mutex_lock(&sh->ctx->wr_mtx, K_MSEC(SHELL_TX_MTX_TIMEOUT_MS)) != 0) {
+    if (k_mutex_lock(&sh->ctx->wr_mtx, SHELL_TX_MTX_TIMEOUT) != 0) {
         return;
     }
     shell_internal_help_print(sh);
@@ -1735,7 +1739,7 @@ int shell_execute_cmd(const struct shell* sh, char const* cmd) {
     ctx->cmd_buff_len = cmd_len;
     ctx->cmd_buff_pos = cmd_len;
 
-    if (k_mutex_lock(&ctx->wr_mtx, K_MSEC(SHELL_TX_MTX_TIMEOUT_MS)) != 0) {
+    if (k_mutex_lock(&ctx->wr_mtx, SHELL_TX_MTX_TIMEOUT) != 0) {
         return (-ENOEXEC);
     }
     ret_val = execute(sh);

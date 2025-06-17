@@ -100,6 +100,11 @@ Devicetree
 * The :c:macro:`DT_ENUM_HAS_VALUE` and :c:macro:`DT_INST_ENUM_HAS_VALUE` macros are now
   checking all values, when used on an array, not just the first one.
 
+* Property names in devicetree and bindings use hyphens(``-``) as separators, and replacing
+  all previously used underscores(``_``). For local code, you can migrate property names in
+  bindings to use hyphens by running the ``scripts/migrate_bindings_style.py`` script.
+
+
 DAI
 ===
 
@@ -197,6 +202,9 @@ Ethernet
   ``NET_REQUEST_ETHERNET_SET_AUTO_NEGOTIATION`` have been removed. :c:func:`phy_configure_link`
   together with :c:func:`net_eth_get_phy` should be used instead to configure the link
   (:github:`90652`).
+
+* :c:func:`phy_configure_link` got a ``flags`` parameter. Set it to ``0`` to preserve the old
+  behavior (:github:`91354`).
 
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
@@ -632,6 +640,17 @@ hawkBit
 * When :kconfig:option:`CONFIG_HAWKBIT_CUSTOM_DEVICE_ID` is enabled, device_id will no longer
   be prepended with :kconfig:option:`CONFIG_BOARD`. It is the user's responsibility to write a
   callback that prepends the board name if needed.
+
+State Machine Framework
+=======================
+
+* :c:func:`smf_set_handled` has been removed.
+* State run actions now return an :c:enum:`smf_state_result` value instead of void. and the return
+  code determines if the event is propagated to parent run actions or has been handled. A run action
+  that handles the event completely should return :c:enum:`SMF_EVENT_HANDLED`, and run actions that
+  propagate handling to parent states should return :c:enum:`SMF_EVENT_PROPAGATE`.
+* Flat state machines ignore the return value; returning :c:enum:`SMF_EVENT_HANDLED`
+  would be the most technically accurate response.
 
 Modules
 *******

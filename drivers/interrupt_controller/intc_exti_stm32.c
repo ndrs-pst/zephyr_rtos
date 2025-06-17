@@ -2,6 +2,7 @@
  * Copyright (c) 2016 Open-RnD Sp. z o.o.
  * Copyright (c) 2017 RnDity Sp. z o.o.
  * Copyright (c) 2019-23 Linaro Limited
+ * Copyright (C) 2025 Savoir-faire Linux, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,7 +36,7 @@ struct stm32_exti_range {
     uint8_t len;
 };
 
-#define NUM_EXTI_LINES DT_PROP(DT_NODELABEL(exti), num_lines)
+#define NUM_EXTI_LINES DT_PROP(EXTI_NODE, num_lines)
 
 #if defined(_MSC_VER)   /* #CUSTOM@NDRS */
 static IRQn_Type exti_irq_table[NUM_EXTI_LINES];
@@ -63,7 +64,8 @@ static inline uint32_t stm32_exti_linenum_to_src_cfg_line(gpio_pin_t linenum) {
     #if defined(CONFIG_SOC_SERIES_STM32L0X) || \
         defined(CONFIG_SOC_SERIES_STM32F0X)
     return ((linenum % 4 * 4) << 16) | (linenum / 4);
-    #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
+    #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti) || \
+          defined(CONFIG_SOC_SERIES_STM32MP2X)
     return ((linenum & 0x3) << (16 + 3)) | (linenum >> 2);
     #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7rs_exti)
     /* Gives the LL_SBS_EXTI_LINEn corresponding to the line number */
@@ -84,6 +86,9 @@ static inline int stm32_exti_is_pending(stm32_gpio_irq_line_t line) {
             LL_EXTI_IsActiveFallingFlag_0_31(line));
     #elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
     return LL_C2_EXTI_IsActiveFlag_0_31(line);
+    #elif defined(CONFIG_SOC_SERIES_STM32MP2X)
+    return LL_EXTI_IsActiveRisingFlag_0_31(EXTI2, line) ||
+           LL_EXTI_IsActiveFallingFlag_0_31(EXTI2, line);
     #else
     return LL_EXTI_IsActiveFlag_0_31(line);
     #endif
@@ -100,6 +105,9 @@ static inline void stm32_exti_clear_pending(stm32_gpio_irq_line_t line) {
     LL_EXTI_ClearFallingFlag_0_31(line);
     #elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
     LL_C2_EXTI_ClearFlag_0_31(line);
+    #elif defined(CONFIG_SOC_SERIES_STM32MP2X)
+    LL_EXTI_ClearRisingFlag_0_31(EXTI2, line);
+    LL_EXTI_ClearFallingFlag_0_31(EXTI2, line);
     #else
     LL_EXTI_ClearFlag_0_31(line);
     #endif
@@ -217,7 +225,7 @@ static void stm32_fill_irq_table(int8_t start, int8_t len, int32_t irqn) {
 static int stm32_exti_init(const struct device* dev) {
     ARG_UNUSED(dev);
 
-    DT_FOREACH_PROP_ELEM(DT_NODELABEL(exti),
+    DT_FOREACH_PROP_ELEM(EXTI_NODE,
                          interrupt_names,
                          STM32_EXTI_INIT_LINE_RANGE);
 
@@ -264,6 +272,8 @@ void stm32_gpio_intc_enable_line(stm32_gpio_irq_line_t line) {
     /* Enable requested line interrupt */
     #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
     LL_C2_EXTI_EnableIT_0_31(line);
+    #elif defined(CONFIG_SOC_SERIES_STM32MP2X)
+    LL_C2_EXTI_EnableIT_0_31(EXTI2, line);
     #else
     LL_EXTI_EnableIT_0_31(line);
     #endif
@@ -275,6 +285,8 @@ void stm32_gpio_intc_enable_line(stm32_gpio_irq_line_t line) {
 void stm32_gpio_intc_disable_line(stm32_gpio_irq_line_t line) {
     #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
     LL_C2_EXTI_DisableIT_0_31(line);
+    #elif defined(CONFIG_SOC_SERIES_STM32MP2X)
+    LL_C2_EXTI_DisableIT_0_31(EXTI2, line);
     #else
     LL_EXTI_DisableIT_0_31(line);
     #endif
@@ -284,6 +296,28 @@ void stm32_gpio_intc_select_line_trigger(stm32_gpio_irq_line_t line, uint32_t tr
     z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
     switch (trg) {
+        #if defined(CONFIG_SOC_SERIES_STM32MP2X)
+        case STM32_GPIO_IRQ_TRIG_NONE :
+            LL_EXTI_DisableRisingTrig_0_31(EXTI2, line);
+            LL_EXTI_DisableFallingTrig_0_31(EXTI2, line);
+            break;
+
+        case STM32_GPIO_IRQ_TRIG_RISING :
+            LL_EXTI_EnableRisingTrig_0_31(EXTI2, line);
+            LL_EXTI_DisableFallingTrig_0_31(EXTI2, line);
+            break;
+
+        case STM32_GPIO_IRQ_TRIG_FALLING :
+            LL_EXTI_EnableFallingTrig_0_31(EXTI2, line);
+            LL_EXTI_DisableRisingTrig_0_31(EXTI2, line);
+            break;
+
+        case STM32_GPIO_IRQ_TRIG_BOTH :
+            LL_EXTI_EnableRisingTrig_0_31(EXTI2, line);
+            LL_EXTI_EnableFallingTrig_0_31(EXTI2, line);
+            break;
+
+        #else /* CONFIG_SOC_SERIES_STM32MP2X */
         case STM32_GPIO_IRQ_TRIG_NONE :
             LL_EXTI_DisableRisingTrig_0_31(line);
             LL_EXTI_DisableFallingTrig_0_31(line);
@@ -303,6 +337,7 @@ void stm32_gpio_intc_select_line_trigger(stm32_gpio_irq_line_t line, uint32_t tr
             LL_EXTI_EnableRisingTrig_0_31(line);
             LL_EXTI_EnableFallingTrig_0_31(line);
             break;
+        #endif /* CONFIG_SOC_SERIES_STM32MP2X */
 
         default :
             __ASSERT_NO_MSG(0);
@@ -364,6 +399,8 @@ void stm32_exti_set_line_src_port(gpio_pin_t line, uint32_t port) {
     LL_EXTI_SetEXTISource(port, ll_line);
     #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7rs_exti)
     LL_SBS_SetEXTISource(port, ll_line);
+    #elif defined(CONFIG_SOC_SERIES_STM32MP2X)
+    LL_EXTI_SetEXTISource(EXTI2, port, ll_line);
     #else
     LL_SYSCFG_SetEXTISource(port, ll_line);
     #endif
@@ -380,6 +417,8 @@ uint32_t stm32_exti_get_line_src_port(gpio_pin_t line) {
     port = LL_EXTI_GetEXTISource(ll_line);
     #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7rs_exti)
     port = LL_SBS_GetEXTISource(ll_line);
+    #elif defined(CONFIG_SOC_SERIES_STM32MP2X)
+    port = LL_EXTI_GetEXTISource(EXTI2, ll_line);
     #else
     port = LL_SYSCFG_GetEXTISource(ll_line);
     #endif

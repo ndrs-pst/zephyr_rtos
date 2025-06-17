@@ -677,7 +677,6 @@ static int esp32_wifi_scan(const struct device* dev,
     }
 
     ret = esp_wifi_scan_start(&scan_config, false);
-
     if (ret != ESP_OK) {
         LOG_ERR("Failed to start Wi-Fi scanning");
         return (-EAGAIN);
@@ -831,18 +830,20 @@ static int esp32_wifi_status(const struct device* dev, struct wifi_iface_status*
     }
 
     strncpy(status->ssid, data->status.ssid, WIFI_SSID_MAX_LEN);
-    status->ssid_len  = strnlen(data->status.ssid, WIFI_SSID_MAX_LEN);
-    status->ssid[status->ssid_len] = '\0';
+    /* Ensure the result is NUL terminated */
+    status->ssid[WIFI_SSID_MAX_LEN - 1] = '\0';
+    /* We know it is NUL terminated, so we can use strlen */
+    status->ssid_len  = strlen(data->status.ssid);
     status->band      = WIFI_FREQ_BAND_2_4_GHZ;
     status->link_mode = WIFI_LINK_MODE_UNKNOWN;
     status->mfp       = WIFI_MFP_DISABLE;
 
     if (esp_wifi_get_mode(&mode) == ESP_OK) {
         #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
-        if (mode == ESP32_WIFI_MODE_APSTA && data == &esp32_data) {
+        if ((mode == ESP32_WIFI_MODE_APSTA) && (data == &esp32_data)) {
             mode = ESP32_WIFI_MODE_STA;
         }
-        else if (mode == ESP32_WIFI_MODE_APSTA && data == &esp32_ap_sta_data) {
+        else if ((mode == ESP32_WIFI_MODE_APSTA) && (data == &esp32_ap_sta_data)) {
             mode = ESP32_WIFI_MODE_AP;
         }
         #endif

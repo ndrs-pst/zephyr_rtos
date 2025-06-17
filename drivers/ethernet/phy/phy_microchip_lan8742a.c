@@ -281,8 +281,8 @@ static int phy_mc_lan8742a_reset(struct device const* dev) {
     return (ret);
 }
 
-static int phy_mc_lan8742a_cfg_link(const struct device* dev,
-                                    enum phy_link_speed speeds) {
+static int phy_mc_lan8742a_cfg_link(const struct device* dev, enum phy_link_speed speeds,
+				                    enum phy_cfg_link_flag flags) {
     struct mc_lan8742a_config const* cfg = dev->config;
     struct mc_lan8742a_data* ctx = dev->data;
     struct phy_link_state state;
@@ -354,10 +354,15 @@ static int phy_mc_lan8742a_cfg_link(const struct device* dev,
     }
 
     /* (re)do autonegotiation */
-    ret = phy_mc_lan8742a_autonegotiate(dev);
-    if ((ret != 0) && (ret != -ENETDOWN)) {
-        LOG_ERR("Error in autonegotiation");
-        goto done;
+    if ((flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) != 0) {
+	    /* pass */
+    }
+    else {
+	    ret = phy_mc_lan8742a_autonegotiate(dev);
+	    if ((ret != 0) && (ret != -ENETDOWN)) {
+		    LOG_ERR("Error in autonegotiation");
+		    goto done;
+	    }
     }
 
     /* Get link status */

@@ -290,7 +290,7 @@ static int eth_stm32_phy_reset_and_configure(const struct device *phy)
 	if (ret == 0) {
 		/* Configure the PHY */
 		ret = phy_configure_link(phy, (LINK_HALF_10BASE | LINK_FULL_10BASE |
-					       LINK_HALF_100BASE | LINK_FULL_100BASE));
+					             LINK_HALF_100BASE | LINK_FULL_100BASE), 0);
 	}
 
 	return ret;

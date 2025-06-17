@@ -660,8 +660,9 @@ static inline int64_t sign_extend_64(uint64_t value, uint8_t index)
  * truncated (by setting the NULL terminator) earlier by other means, that
  * the string ends with a properly formatted UTF-8 character (1-4 bytes).
  *
- * @htmlonly
  * Example:
+ *
+ * @code{.c}
  *      char test_str[] = "€€€";
  *      char trunc_utf8[8];
  *
@@ -671,7 +672,7 @@ static inline int64_t sign_extend_64(uint64_t value, uint8_t index)
  *      printf("Bad      : %s\n", trunc_utf8); // €€�
  *      utf8_trunc(trunc_utf8);
  *      printf("Truncated: %s\n", trunc_utf8); // €€
- * @endhtmlonly
+ * @endcode
  *
  * @param utf8_str NULL-terminated string
  *

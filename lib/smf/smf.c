@@ -154,7 +154,12 @@ static bool smf_execute_ancestor_run_actions(struct smf_ctx* ctx) {
         ctx->executing = tmp_state;
         /* Execute parent run action */
         if (tmp_state->run) {
-            tmp_state->run(ctx);
+            enum smf_state_result rc = tmp_state->run(ctx);
+
+            if (rc == SMF_EVENT_HANDLED) {
+                ctx->internal |= SMF_HANDLED;
+            }
+
             /* No need to continue if terminate was set */
             if ((ctx->internal & SMF_TERMINATE) != 0) {
                 return (true);
@@ -183,8 +188,7 @@ static bool smf_execute_all_exit_actions(struct smf_ctx* const ctx,
                                          struct smf_state const* topmost) {
 
     for (const struct smf_state* to_execute = ctx->current;
-         ((to_execute != NULL) && (to_execute != topmost));
-         to_execute = to_execute->parent) {
+         ((to_execute != NULL) && (to_execute != topmost)); to_execute = to_execute->parent) {
         if (to_execute->exit) {
             to_execute->exit(ctx);
 
@@ -359,12 +363,8 @@ void smf_set_state(struct smf_ctx* const ctx, const struct smf_state* new_state)
 }
 
 void smf_set_terminate(struct smf_ctx* ctx, int32_t val) {
-    ctx->internal     |= SMF_TERMINATE;
-    ctx->terminate_val  = val;
-}
-
-void smf_set_handled(struct smf_ctx* ctx) {
-    ctx->internal |= SMF_HANDLED;
+    ctx->internal |= SMF_TERMINATE;
+    ctx->terminate_val = val;
 }
 
 int32_t smf_run_state(struct smf_ctx* const ctx) {
@@ -380,15 +380,20 @@ int32_t smf_run_state(struct smf_ctx* const ctx) {
 
     #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
     ctx->executing = ctx->current;
-    #endif
-
     if (ctx->current->run) {
-        ctx->current->run(ctx);
+        enum smf_state_result rc = ctx->current->run(ctx);
+
+        if (rc == SMF_EVENT_HANDLED) {
+            ctx->internal |= SMF_HANDLED;
+        }
     }
 
-    #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
-    if (smf_execute_ancestor_run_actions(ctx) == true) {
+    if (smf_execute_ancestor_run_actions(ctx)) {
         return (ctx->terminate_val);
+    }
+    #else
+    if (ctx->current->run) {
+        ctx->current->run(ctx);
     }
     #endif
 
