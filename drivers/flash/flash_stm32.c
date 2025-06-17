@@ -111,7 +111,8 @@ static void flash_stm32_flush_caches(struct device const* dev,
                                      off_t offset, size_t len) {
     #if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F3X) || \
         defined(CONFIG_SOC_SERIES_STM32G0X) || defined(CONFIG_SOC_SERIES_STM32L5X) || \
-        defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32H5X)
+        defined(CONFIG_SOC_SERIES_STM32U3X) || defined(CONFIG_SOC_SERIES_STM32U5X) || \
+        defined(CONFIG_SOC_SERIES_STM32H5X)
     ARG_UNUSED(dev);
     ARG_UNUSED(offset);
     ARG_UNUSED(len);
