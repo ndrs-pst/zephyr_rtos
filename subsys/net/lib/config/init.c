@@ -98,7 +98,7 @@ static void print_dhcpv4_info(struct net_if* iface) {
 static struct net_mgmt_event_callback mgmt4_cb;
 
 static void ipv4_addr_add_handler(struct net_mgmt_event_callback* cb,
-                                  uint32_t mgmt_event,
+                                  uint64_t mgmt_event,
                                   struct net_if* iface) {
     if (mgmt_event == NET_EVENT_IPV4_ADDR_ADD) {
         print_dhcpv4_info(iface);
@@ -238,7 +238,7 @@ static struct net_mgmt_event_callback mgmt6_cb;
 static struct net_in6_addr laddr;
 
 static void ipv6_event_handler(struct net_mgmt_event_callback* cb,
-                               uint32_t mgmt_event, struct net_if* iface) {
+                               uint64_t mgmt_event, struct net_if* iface) {
     struct net_if_ipv6* ipv6 = iface->config.ip.ipv6;
     int i;
 
@@ -302,7 +302,7 @@ static void ipv6_event_handler(struct net_mgmt_event_callback* cb,
 
 static void setup_ipv6(struct net_if* iface, uint32_t flags) {
     struct net_if_addr* ifaddr;
-    uint32_t            mask = NET_EVENT_IPV6_DAD_SUCCEED;
+    uint64_t mask = NET_EVENT_IPV6_DAD_SUCCEED;
 
     if (sizeof(CONFIG_NET_CONFIG_MY_IPV6_ADDR) == 1) {
         /* Empty address, skip setting ANY address in this case */
@@ -322,20 +322,10 @@ static void setup_ipv6(struct net_if* iface, uint32_t flags) {
     net_mgmt_init_event_callback(&mgmt6_cb, ipv6_event_handler, mask);
     net_mgmt_add_event_callback(&mgmt6_cb);
 
-    /*
-     * check for CMD_ADDR_ADD bit here, NET_EVENT_IPV6_ADDR_ADD is
-     * a combination of _NET_EVENT_IPV6_BASE | NET_EVENT_IPV6_CMD_ADDR_ADD
-     * so it will always return != NET_EVENT_IPV6_CMD_ADDR_ADD if any other
-     * event is set (for instance NET_EVENT_IPV6_ROUTER_ADD)
-     */
-    if ((mask & NET_EVENT_IPV6_CMD_ADDR_ADD) ==
-        NET_EVENT_IPV6_CMD_ADDR_ADD) {
-        ifaddr = net_if_ipv6_addr_add(iface, &laddr,
-                                      NET_ADDR_MANUAL, 0);
-        if (!ifaddr) {
-            NET_ERR("Cannot add %s to interface",
-                    CONFIG_NET_CONFIG_MY_IPV6_ADDR);
-        }
+    ifaddr = net_if_ipv6_addr_add(iface, &laddr, NET_ADDR_MANUAL, 0);
+    if (!ifaddr) {
+        NET_ERR("Cannot add %s to interface",
+            CONFIG_NET_CONFIG_MY_IPV6_ADDR);
     }
 
 exit :
@@ -355,7 +345,7 @@ exit :
 
 #if defined(CONFIG_NET_NATIVE)
 static void iface_up_handler(struct net_mgmt_event_callback* cb,
-                             uint32_t mgmt_event, struct net_if* iface) {
+                             uint64_t mgmt_event, struct net_if* iface) {
     if (mgmt_event == NET_EVENT_IF_UP) {
         NET_INFO("Interface %d (%p) coming up",
                  net_if_get_by_iface(iface), iface);

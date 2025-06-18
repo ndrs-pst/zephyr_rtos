@@ -1733,7 +1733,7 @@ static int modem_cellular_pm_action(const struct device* dev, enum pm_device_act
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static void net_mgmt_event_handler(struct net_mgmt_event_callback* cb, uint32_t mgmt_event,
+static void net_mgmt_event_handler(struct net_mgmt_event_callback* cb, uint64_t mgmt_event,
                                    struct net_if* iface) {
     struct modem_cellular_data* data =
         CONTAINER_OF(cb, struct modem_cellular_data, net_mgmt_event_callback);
