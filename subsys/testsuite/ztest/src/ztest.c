@@ -606,6 +606,7 @@ void ztest_test_pass(void)
 		if (cur_phase == TEST_PHASE_BEFORE) {
 			test_finalize();
 		}
+		break;
 	}
 }
 EXPORT_SYMBOL(ztest_test_pass);
