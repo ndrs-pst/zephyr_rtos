@@ -536,7 +536,11 @@ static int sreq_get_desc_cfg(struct usbd_context *const uds_ctx,
 #define USBD_SN_ASCII7_LENGTH (CONFIG_USBD_HWINFO_DEVID_LENGTH * 2)
 
 /* Generate valid USB device serial number from hwid */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS MSVC does not support the C99 static array syntax in function parameters */
+static ssize_t get_sn_from_hwid(uint8_t sn[USBD_SN_ASCII7_LENGTH])
+#else
 static ssize_t get_sn_from_hwid(uint8_t sn[static USBD_SN_ASCII7_LENGTH])
+#endif
 {
 	static const char hex[] = "0123456789ABCDEF";
 	uint8_t hwid[USBD_SN_ASCII7_LENGTH / 2U];
