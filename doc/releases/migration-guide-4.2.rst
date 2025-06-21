@@ -610,8 +610,9 @@ SPI
 * The binding file for :dtcompatible:`andestech,atcspi200` has been renamed to have a name
   matching the compatible string.
 
-xSPI
-====
+
+oSPI/xSPI
+=========
 
 * On STM32 devices, external memories device tree descriptions for size and address are now split
   in two separate properties to comply with specification recommendations.
@@ -620,7 +621,7 @@ xSPI
   is changed to ``reg = <0>;`` ``size = <DT_SIZE_M(512)>; / 512 Mbits */``.
 
   Note that the property gives the actual size of the memory device in bits.
-  Previous mapping address information is now described in xspi node at SoC dtsi level.
+  Previous mapping address information is now described in xspi or ospi nodes at SoC dtsi level.
 
 Video
 =====
@@ -647,6 +648,11 @@ Video
   ``set_stream``
   ``video_stream_start``
   ``video_stream_stop``
+
+* ``video_format.pitch`` has been updated to be set explicitly by the driver, a task formerly
+  required by the application. This update enables the application to correctly allocate a buffer
+  size on a per driver basis. Existing applications will not be broken by this change but can be
+  simplified as performed in the sample in the commit ``33dcbe37cfd3593e8c6e9cfd218dd31fdd533598``.
 
 Audio
 =====
@@ -700,3 +706,5 @@ Architectures
   :kconfig:option:`CONFIG_ARCH_HAS_VECTOR_TABLE_RELOCATION` and
   :kconfig:option:`CONFIG_ROMSTART_RELOCATION_ROM` to support relocation
   of vector table in RAM.
+* Renamed :kconfig:option:`CONFIG_DEBUG_INFO` to :kconfig:option:`CONFIG_X86_DEBUG_INFO` to
+  better reflect its purpose. This option is now only available for x86 architecture.
