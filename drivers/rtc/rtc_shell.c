@@ -41,27 +41,27 @@ static char const* consume_date(char const* s, struct tm* tm_time) {
     char day[2 + 1];
 
     s = consume_chars(s, year, 4);
-    if (!s) {
+    if (s == NULL) {
         return (NULL);
     }
 
     s = consume_char(s, '-');
-    if (!s) {
+    if (s == NULL) {
         return (NULL);
     }
 
     s = consume_chars(s, month, 2);
-    if (!s) {
+    if (s == NULL) {
         return (NULL);
     }
 
     s = consume_char(s, '-');
-    if (!s) {
+    if (s == NULL) {
         return (NULL);
     }
 
     s = consume_chars(s, day, 2);
-    if (!s) {
+    if (s == NULL) {
         return (NULL);
     }
 
@@ -78,27 +78,27 @@ static char const* consume_time(char const* s, struct tm* tm_time) {
     char second[2 + 1];
 
     s = consume_chars(s, hour, 2);
-    if (!s) {
+    if (s == NULL) {
         return (NULL);
     }
 
     s = consume_char(s, ':');
-    if (!s) {
+    if (s == NULL) {
         return (NULL);
     }
 
     s = consume_chars(s, minute, 2);
-    if (!s) {
+    if (s == NULL) {
         return (NULL);
     }
 
     s = consume_char(s, ':');
-    if (!s) {
+    if (s == NULL) {
         return (NULL);
     }
 
     s = consume_chars(s, second, 2);
-    if (!s) {
+    if (s == NULL) {
         return (NULL);
     }
 
@@ -113,28 +113,28 @@ static char* strptime(char const* s, char const* format, struct tm* tm_time) {
     /* Reduced implementation of strptime -
      * accepting only the 3 different format strings
      */
-    if (!strcmp(format, format_iso8601)) {
+    if (strcmp(format, format_iso8601) == 0) {
         s = consume_date(s, tm_time);
-        if (!s) {
+        if (s == NULL) {
             return (NULL);
         }
 
         s = consume_char(s, 'T');
-        if (!s) {
+        if (s == NULL) {
             return (NULL);
         }
 
         s = consume_time(s, tm_time);
-        if (!s) {
+        if (s == NULL) {
             return (NULL);
         }
 
         return ((char*)s);
     }
-    else if (!strcmp(format, format_time)) {
+    else if (strcmp(format, format_time) == 0) {
         return (char*)consume_time(s, tm_time);
     }
-    else if (!strcmp(format, format_date)) {
+    else if (strcmp(format, format_date) == 0) {
         return (char*)consume_date(s, tm_time);
     }
     else {
@@ -154,7 +154,7 @@ static int cmd_set(const struct shell* sh, size_t argc, char** argv) {
     argv++;
 
     struct rtc_time rtctime = {0};
-    struct tm*      tm_time = rtc_time_to_tm(&rtctime);
+    struct tm* tm_time = rtc_time_to_tm(&rtctime);
 
     (void) rtc_get_time(dev, &rtctime);
 
@@ -172,7 +172,7 @@ static int cmd_set(const struct shell* sh, size_t argc, char** argv) {
 
     char* parseRes = strptime(argv[1], format, tm_time);
 
-    if (!parseRes || *parseRes != '\0') {
+    if ((parseRes == NULL) || (*parseRes != '\0')) {
         shell_error(sh, "Error in argument format");
         return (-EINVAL);
     }
