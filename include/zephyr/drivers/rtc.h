@@ -409,11 +409,8 @@ static inline int z_impl_rtc_alarm_is_pending(const struct device* dev, uint16_t
  * @return -ENOTSUP if API is not supported by hardware
  * @return -errno code if failure
  */
-__syscall int rtc_alarm_set_callback(const struct device* dev, uint16_t id,
-                                     rtc_alarm_callback callback, void* user_data);
-
-static inline int z_impl_rtc_alarm_set_callback(const struct device* dev, uint16_t id,
-                                                rtc_alarm_callback callback, void* user_data) {
+static inline int rtc_alarm_set_callback(const struct device* dev, uint16_t id,
+                                         rtc_alarm_callback callback, void* user_data) {
     if (DEVICE_API_GET(rtc, dev)->alarm_set_callback == NULL) {
         return (-ENOSYS);
     }
@@ -451,11 +448,8 @@ static inline int z_impl_rtc_alarm_set_callback(const struct device* dev, uint16
  * @return -ENOTSUP if API is not supported by hardware
  * @return -errno code if failure
  */
-__syscall int rtc_update_set_callback(const struct device* dev, rtc_update_callback callback,
-                                      void* user_data);
-
-static inline int z_impl_rtc_update_set_callback(const struct device* dev,
-                                                 rtc_update_callback callback, void* user_data) {
+static inline int rtc_update_set_callback(const struct device* dev,
+                                          rtc_update_callback callback, void* user_data) {
     if (DEVICE_API_GET(rtc, dev)->update_set_callback == NULL) {
         return (-ENOSYS);
     }
@@ -552,11 +546,10 @@ static inline struct tm* rtc_time_to_tm(struct rtc_time* timeptr) {
  *
  * @return The required calibration in parts per billion
  */
-static inline int32_t rtc_calibration_from_frequency(uint32_t frequency)
-{
-	__ASSERT_NO_MSG(frequency > 0);
+static inline int32_t rtc_calibration_from_frequency(uint32_t frequency) {
+    __ASSERT_NO_MSG(frequency > 0);
 
-	return (int32_t)((1000000000000000000LL / frequency) - 1000000000);
+    return (int32_t)((1000000000000000000LL / frequency) - 1000000000);
 }
 
 /**

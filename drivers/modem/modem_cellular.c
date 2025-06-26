@@ -2242,6 +2242,12 @@ MODEM_CHAT_SCRIPT_DEFINE(u_blox_lara_r6_set_baudrate_chat_script,
  * which works well
  */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_lara_r6_init_chat_script_cmds,
+                              /* U-blox LARA-R6 LWM2M client is enabled by default. Not only causes
+                               * this the modem to connect to U-blox's server on its own, it also
+                               * for some reason causes the modem to reply "Destination
+                               * unreachable" to DNS answers from DNS requests that we send
+                               */
+                              MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+ULWM2M=1", allow_match),
                               MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
                               MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
                               MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG=1", ok_match),
@@ -2250,6 +2256,18 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_lara_r6_init_chat_script_cmds,
                               MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG?", ok_match),
                               MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match),
                               MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGREG?", ok_match),
+                              #if CONFIG_MODEM_CELLULAR_RAT_4G
+                              MODEM_CHAT_SCRIPT_CMD_RESP("AT+URAT=3", ok_match),
+                              #elif CONFIG_MODEM_CELLULAR_RAT_4G_3G
+                              MODEM_CHAT_SCRIPT_CMD_RESP("AT+URAT=3,2", ok_match),
+                              #elif CONFIG_MODEM_CELLULAR_RAT_4G_3G_2G
+                              MODEM_CHAT_SCRIPT_CMD_RESP("AT+URAT=3,2,0", ok_match),
+                              #endif
+                              #if CONFIG_MODEM_CELLULAR_CLEAR_FORBIDDEN
+                              MODEM_CHAT_SCRIPT_CMD_RESP("AT+CRSM=214,28539,0,0,12,"
+                                                         "\"FFFFFFFFFFFFFFFFFFFFFFFF\"",
+                                                         ok_match),
+                              #endif
                               MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGSN", imei_match),
                               MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
                               MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match),
@@ -2614,7 +2632,6 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
                                    &quectel_eg25_g_init_chat_script,    \
                                    &quectel_eg25_g_dial_chat_script,    \
                                    &quectel_eg25_g_periodic_chat_script, NULL)
-
 
 #define MODEM_CELLULAR_DEVICE_QUECTEL_EG800Q(inst)                      \
     MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64); \
