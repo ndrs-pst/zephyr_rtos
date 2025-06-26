@@ -103,6 +103,9 @@ extern "C" {
  * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define LOG_WRN_ONCE(...)
+#else
 #define LOG_WRN_ONCE(...)					\
 	do {							\
 		static uint8_t __warned;			\
@@ -111,6 +114,7 @@ extern "C" {
 			__warned = 1;				\
 		}						\
 	} while (0)
+#endif
 
 /**
  * @brief Unconditionally print raw log message.
