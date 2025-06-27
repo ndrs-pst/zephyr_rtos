@@ -612,9 +612,9 @@ static inline void i2c_xfer_stats(const struct device* dev, struct i2c_msg* msgs
  * and calls the given init_fn
  */
 #define Z_I2C_INIT_FN(dev_id, init_fn)      \
-    static inline int UTIL_CAT(dev_id, _init)(const struct device* dev) {       \
+    static inline int UTIL_CAT(dev_id, _init)(struct device const* dev) { \
         struct i2c_device_state* state =    \
-                CONTAINER_OF(dev->state, struct i2c_device_state, devstate);    \
+                CONTAINER_OF(dev->state, struct i2c_device_state, devstate); \
         stats_init(&state->stats.s_hdr, STATS_SIZE_32, 4,   \
                    STATS_NAME_INIT_PARMS(i2c));             \
         stats_register(dev->name, &(state->stats.s_hdr));   \
@@ -628,7 +628,7 @@ static inline void i2c_xfer_stats(const struct device* dev, struct i2c_msg* msgs
 /** @endcond */
 
 /**
- * @brief Like DEVICE_DT_DEFINE() with I2C specifics.
+ * @brief Like DEVICE_DT_DEINIT_DEFINE() with I2C specifics.
  *
  * @details Defines a device which implements the I2C API. May
  * generate a custom device_state container struct and init_fn
@@ -637,6 +637,8 @@ static inline void i2c_xfer_stats(const struct device* dev, struct i2c_msg* msgs
  * @param node_id The devicetree node identifier.
  *
  * @param init_fn Name of the init function of the driver. Can be `NULL`.
+ *
+ * @param deinit_fn Name of the deinit function of the driver. Can be `NULL`.
  *
  * @param pm PM device resources reference (NULL if device does not use PM).
  *
@@ -654,15 +656,15 @@ static inline void i2c_xfer_stats(const struct device* dev, struct i2c_msg* msgs
  * @param api Provides an initial pointer to the API function struct
  * used by the driver. Can be NULL.
  */
-#define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, \
-                             prio, api, ...)                    \
+#define I2C_DEVICE_DT_DEINIT_DEFINE(node_id, init_fn, deinit_fn, pm, \
+                                    data, config, level, prio, api, ...) \
     Z_I2C_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));     \
     Z_I2C_INIT_FN(Z_DEVICE_DT_DEV_ID(node_id), init_fn)         \
     Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),       \
                     DEVICE_DT_NAME(node_id),                    \
-                    &UTIL_CAT(Z_DEVICE_DT_DEV_ID(node_id), _init),  \
-                    NULL, Z_DEVICE_DT_FLAGS(node_id), pm, data, \
-                    config,	level, prio, api,                   \
+                    &UTIL_CAT(Z_DEVICE_DT_DEV_ID(node_id), _init), \
+                    deinit_fn, Z_DEVICE_DT_FLAGS(node_id), pm, data, \
+                    config, level, prio, api,                   \
                     &(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)).devstate), \
                     __VA_ARGS__)
 
@@ -675,12 +677,32 @@ static inline void i2c_xfer_stats(const struct device* dev, struct i2c_msg* msgs
     ARG_UNUSED(num_msgs);
 }
 
-#define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, \
-                             prio, api, ...)                            \
-    DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,         \
-                     prio, api, __VA_ARGS__)
+#define I2C_DEVICE_DT_DEINIT_DEFINE(node_id, init_fn, deinit_fn, pm, \
+                                    data, config, level, prio, api, ...) \
+    DEVICE_DT_DEINIT_DEFINE(node_id, init_fn, deinit_fn, pm, data, \
+                            config, level, prio, api, __VA_ARGS__)
 
 #endif /* CONFIG_I2C_STATS */
+
+/**
+ * @brief Like I2C_DEVICE_DT_DEINIT_DEFINE() but without deinit_fn
+ */
+#define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, \
+                             prio, api, ...)                    \
+    I2C_DEVICE_DT_DEINIT_DEFINE(node_id, init_fn, NULL, pm, data, \
+                                config, level, prio, api,       \
+                                __VA_ARGS__)
+
+/**
+ * @brief Like I2C_DEVICE_DT_DEINIT_DEFINE() for an instance of a DT_DRV_COMPAT compatible
+ *
+ * @param inst instance number. This is replaced by
+ * <tt>DT_DRV_COMPAT(inst)</tt> in the call to I2C_DEVICE_DT_DEINIT_DEFINE().
+ *
+ * @param ... other parameters as expected by I2C_DEVICE_DT_DEINIT_DEFINE().
+ */
+#define I2C_DEVICE_DT_INST_DEINIT_DEFINE(inst, ...)        \
+    I2C_DEVICE_DT_DEINIT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
  * @brief Like I2C_DEVICE_DT_DEFINE() for an instance of a DT_DRV_COMPAT compatible
@@ -692,7 +714,6 @@ static inline void i2c_xfer_stats(const struct device* dev, struct i2c_msg* msgs
  */
 #define I2C_DEVICE_DT_INST_DEFINE(inst, ...)        \
     I2C_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
-
 
 /**
  * @brief Configure operation of a host controller.
@@ -727,10 +748,9 @@ static inline int z_impl_i2c_configure(const struct device* dev,
  *
  * @return a value from i2c_configure()
  */
-static inline int i2c_configure_dt(const struct i2c_dt_spec *spec,
-						uint32_t dev_config)
-{
-	return i2c_configure(spec->bus, dev_config);
+static inline int i2c_configure_dt(struct i2c_dt_spec const* spec,
+                                   uint32_t dev_config) {
+    return i2c_configure(spec->bus, dev_config);
 }
 
 /**
@@ -1087,11 +1107,10 @@ extern const struct rtio_iodev_api i2c_iodev_api;
  * @retval true if the I2C bus is ready for use.
  * @retval false if the I2C bus is not ready for use.
  */
-static inline bool i2c_is_ready_iodev(const struct rtio_iodev *i2c_iodev)
-{
-	struct i2c_dt_spec *spec = (struct i2c_dt_spec *)i2c_iodev->data;
+static inline bool i2c_is_ready_iodev(struct rtio_iodev const* i2c_iodev) {
+    struct i2c_dt_spec* spec = (struct i2c_dt_spec*)i2c_iodev->data;
 
-	return i2c_is_ready_dt(spec);
+    return i2c_is_ready_dt(spec);
 }
 
 /**
@@ -1121,8 +1140,8 @@ struct rtio_sqe* i2c_rtio_copy(struct rtio* r,
  * @retval sqe Last submission in the queue added
  * @retval NULL Not enough memory in the context to copy the requests
  */
-struct rtio_sqe *i2c_rtio_copy_reg_write_byte(struct rtio *r, struct rtio_iodev *iodev,
-					      uint8_t reg_addr, uint8_t data);
+struct rtio_sqe* i2c_rtio_copy_reg_write_byte(struct rtio* r, struct rtio_iodev* iodev,
+                                              uint8_t reg_addr, uint8_t data);
 
 /**
  * @brief acquire and configure a i2c burst read transmission
@@ -1136,8 +1155,8 @@ struct rtio_sqe *i2c_rtio_copy_reg_write_byte(struct rtio *r, struct rtio_iodev 
  * @retval sqe Last submission in the queue added
  * @retval NULL Not enough memory in the context to copy the requests
  */
-struct rtio_sqe *i2c_rtio_copy_reg_burst_read(struct rtio *r, struct rtio_iodev *iodev,
-					      uint8_t start_addr, void *buf, size_t num_bytes);
+struct rtio_sqe* i2c_rtio_copy_reg_burst_read(struct rtio* r, struct rtio_iodev* iodev,
+                                              uint8_t start_addr, void* buf, size_t num_bytes);
 
 #endif /* CONFIG_I2C_RTIO */
 
@@ -1313,15 +1332,15 @@ static inline int z_impl_i2c_target_driver_unregister(const struct device* dev) 
 static inline int i2c_write(const struct device* dev, uint8_t const* buf,
                             uint32_t num_bytes, uint16_t addr) {
     struct i2c_msg msg;
-    int ret;
+    int rc;
 
     msg.buf   = (uint8_t*)buf;
     msg.len   = num_bytes;
     msg.flags = (I2C_MSG_WRITE | I2C_MSG_STOP);
 
-    ret = i2c_transfer(dev, &msg, 1, addr);
+    rc = i2c_transfer(dev, &msg, 1, addr);
 
-    return (ret);
+    return (rc);
 }
 
 /**
@@ -1339,11 +1358,11 @@ static inline int i2c_write(const struct device* dev, uint8_t const* buf,
  */
 static inline int i2c_write_dt(const struct i2c_dt_spec* spec,
                                uint8_t const* buf, uint32_t num_bytes) {
-    int ret;
+    int rc;
 
-    ret = i2c_write(spec->bus, buf, num_bytes, spec->addr);
+    rc = i2c_write(spec->bus, buf, num_bytes, spec->addr);
 
-    return (ret);
+    return (rc);
 }
 
 /**
@@ -1363,15 +1382,15 @@ static inline int i2c_write_dt(const struct i2c_dt_spec* spec,
 static inline int i2c_read(const struct device* dev, uint8_t* buf,
                            uint32_t num_bytes, uint16_t addr) {
     struct i2c_msg msg;
-    int ret;
+    int rc;
 
     msg.buf   = buf;
     msg.len   = num_bytes;
     msg.flags = (I2C_MSG_READ | I2C_MSG_STOP);
 
-    ret = i2c_transfer(dev, &msg, 1, addr);
+    rc = i2c_transfer(dev, &msg, 1, addr);
 
-    return (ret);
+    return (rc);
 }
 
 /**
@@ -1389,11 +1408,11 @@ static inline int i2c_read(const struct device* dev, uint8_t* buf,
  */
 static inline int i2c_read_dt(const struct i2c_dt_spec* spec,
                               uint8_t* buf, uint32_t num_bytes) {
-    int ret;
+    int rc;
 
-    ret = i2c_read(spec->bus, buf, num_bytes, spec->addr);
+    rc = i2c_read(spec->bus, buf, num_bytes, spec->addr);
 
-    return (ret);
+    return (rc);
 }
 
 /**
@@ -1418,6 +1437,7 @@ static inline int i2c_write_read(const struct device* dev, uint16_t addr,
                                  void const* write_buf, size_t num_write,
                                  void* read_buf, size_t num_read) {
     struct i2c_msg msg[2];
+    int rc;
 
     msg[0].buf   = (uint8_t*)write_buf;
     msg[0].len   = num_write;
@@ -1427,7 +1447,9 @@ static inline int i2c_write_read(const struct device* dev, uint16_t addr,
     msg[1].len   = num_read;
     msg[1].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
 
-    return i2c_transfer(dev, msg, 2, addr);
+    rc = i2c_transfer(dev, msg, 2, addr);
+
+    return (rc);
 }
 
 /**
@@ -1532,6 +1554,7 @@ static inline int i2c_burst_write(const struct device* dev,
                                   uint8_t const* buf,
                                   uint32_t num_bytes) {
     struct i2c_msg msg[2];
+    int rc;
 
     msg[0].buf   = &start_addr;
     msg[0].len   = 1U;
@@ -1541,7 +1564,9 @@ static inline int i2c_burst_write(const struct device* dev,
     msg[1].len   = num_bytes;
     msg[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 
-    return i2c_transfer(dev, msg, 2, dev_addr);
+    rc = i2c_transfer(dev, msg, 2, dev_addr);
+
+    return (rc);
 }
 
 /**
@@ -1629,8 +1654,11 @@ static inline int i2c_reg_write_byte(const struct device* dev,
                                      uint16_t dev_addr,
                                      uint8_t reg_addr, uint8_t value) {
     uint8_t tx_buf[2] = {reg_addr, value};
+    int rc;
 
-    return i2c_write(dev, tx_buf, 2, dev_addr);
+    rc = i2c_write(dev, tx_buf, 2, dev_addr);
+
+    return (rc);
 }
 
 /**
@@ -1688,7 +1716,9 @@ static inline int i2c_reg_update_byte(const struct device* dev,
         return (0);
     }
 
-    return i2c_reg_write_byte(dev, dev_addr, reg_addr, new_value);
+    rc = i2c_reg_write_byte(dev, dev_addr, reg_addr, new_value);
+
+    return (rc);
 }
 
 /**

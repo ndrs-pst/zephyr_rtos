@@ -47,8 +47,8 @@ The following CVEs are addressed by this release:
   <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-03-1/>`_
 * :cve:`2025-27810` `Potential authentication bypass in TLS handshake
   <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-03-2/>`_
-
-* :cve:`2025-2962` Under embargo until 2025-06-07
+* :cve:`2025-2962` `Infinite loop in dns_copy_qname
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-2qp5-c2vq-g2ww>`_
 
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
@@ -149,6 +149,8 @@ New APIs and options
 * I2C
 
   * :c:func:`i2c_configure_dt`.
+  * :c:macro:`I2C_DEVICE_DT_DEINIT_DEFINE`
+  * :c:macro:`I2C_DEVICE_DT_INST_DEINIT_DEFINE`
 
 ..
   Link to new APIs here, in a group if you think it's necessary, no need to get
@@ -283,6 +285,10 @@ New APIs and options
     * :kconfig:option:`CONFIG_DEBUG_COREDUMP_THREAD_STACK_TOP`, enabled by default for ARM Cortex M when :kconfig:option:`CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_MIN` is selected.
     * :kconfig:option:`CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY`
     * :kconfig:option:`CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY_SIZE`
+
+* UpdateHub
+
+  * :c:func:`updatehub_report_error`
 
 * Other
 
