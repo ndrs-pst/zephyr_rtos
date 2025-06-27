@@ -574,6 +574,15 @@ static void spi_stm32_complete(const struct device* dev, int status) {
     if (!(data->ctx.config->operation & SPI_HOLD_ON_CS)) {
         ll_func_disable_spi(spi);
     }
+    else {
+        #if defined(CONFIG_SPI_STM32_INTERRUPT) && defined(CONFIG_SOC_SERIES_STM32H7X)
+        /* On H7, with SPI still enabled, the ISR is always called, even if the interrupt
+         * enable register is cleared.
+         * As a workaround, disable the IRQ at NVIC level.
+         */
+        irq_disable(cfg->irq_line);
+        #endif /* CONFIG_SPI_STM32_INTERRUPT && CONFIG_SOC_SERIES_STM32H7X */
+    }
 
     #ifdef CONFIG_SPI_STM32_INTERRUPT
     spi_context_complete(&data->ctx, dev, status);
@@ -858,7 +867,7 @@ __maybe_unused static void /**/spi_stpm3x_isr(const struct device* dev) {
     struct spi_context* ctx = &data->ctx;
     uint32_t event;
 
-    event = stpm3x_hal_spi_irq_hndl_asynch(cfg->spi, data, cfg->irq);
+    event = stpm3x_hal_spi_irq_hndl_asynch(cfg->spi, data, cfg->irq_line);
     if (ctx->callback && (event & SPI_EVENT_ALL)) {
         ctx->callback(dev, (event & SPI_EVENT_ALL), ctx->callback_data);
     }
@@ -1256,6 +1265,11 @@ static int transceive(const struct device* dev,
     }
     #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
+    #if defined(CONFIG_SPI_STM32_INTERRUPT) && defined(CONFIG_SOC_SERIES_STM32H7X)
+    /* Make sure IRQ is disabled to avoid any spurious IRQ to happen */
+    irq_disable(cfg->irq_line);
+    #endif  /* CONFIG_SPI_STM32_INTERRUPT && CONFIG_SOC_SERIES_STM32H7X */
+
     LL_SPI_Enable(spi);
 
     #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
@@ -1298,6 +1312,10 @@ static int transceive(const struct device* dev,
     }
 
     ll_func_enable_int_tx_empty(spi);
+
+    #if defined(CONFIG_SPI_STM32_INTERRUPT) && defined(CONFIG_SOC_SERIES_STM32H7X)
+    irq_enable(cfg->irq_line);
+    #endif  /* CONFIG_SPI_STM32_INTERRUPT && CONFIG_SOC_SERIES_STM32H7X */
 
     do {
         ret = spi_context_wait_for_completion(&data->ctx);
@@ -1360,7 +1378,7 @@ int spi_stpm3x_transceive_dt(struct spi_dt_spec const* spec,
     SPI_TypeDef* spi = cfg->spi;
 
     // Register the thunking handler
-    IRQn_Type irq_n = cfg->irq;
+    IRQn_Type irq_n = cfg->irq_line;
 
     // Enable the interrupt
     NVIC_DisableIRQ(irq_n);
@@ -1942,20 +1960,19 @@ static int spi_stm32_pm_action(const struct device* dev,
     static void spi_stm32_irq_config_func_##id(const struct device* dev)
 
 #define STM32_SPI_IRQ_HANDLER_FUNC(id)      \
-    .irq_config = spi_stm32_irq_config_func_##id,
+    .irq_config = spi_stm32_irq_config_func_##id, \
+    .irq_line = DT_INST_IRQN(id),
 
 #define STM32_SPI_IRQ_HANDLER(id)           \
-    static void spi_stm32_irq_config_func_##id(const struct device* dev) {  \
+    static void spi_stm32_irq_config_func_##id(const struct device* dev) { \
         STM32_SPI_IRQ_CONNECT(id);          \
         irq_enable(DT_INST_IRQN(id));       \
     }
 
-#define STM32_SPI_IRQ_NUM(id)   .irq = DT_INST_IRQN(id),
 #else
 #define STM32_SPI_IRQ_CONNECT(id)
 #define STM32_SPI_IRQ_HANDLER_DECL(id)
 #define STM32_SPI_IRQ_HANDLER_FUNC(id)
-#define STM32_SPI_IRQ_HANDLER(id)
 #define STM32_SPI_IRQ_NUM(id)
 #endif /* CONFIG_SPI_STM32_INTERRUPT */
 
@@ -2025,7 +2042,6 @@ static int spi_stm32_pm_action(const struct device* dev,
                                         overrun_character,      \
                                         SPI_STM32_TX_NOP)),     \
         STM32_SPI_IRQ_HANDLER_FUNC(id)                          \
-        STM32_SPI_IRQ_NUM(id)                                   \
         IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz),  \
             (.use_subghzspi_nss =                                   \
                 DT_INST_PROP_OR(id, use_subghzspi_nss, false), ))   \

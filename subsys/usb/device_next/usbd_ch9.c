@@ -558,7 +558,7 @@ static ssize_t get_sn_from_hwid(uint8_t sn[static USBD_SN_ASCII7_LENGTH])
 		return hwid_len;
 	}
 
-	for (ssize_t i = 0; i < MIN(hwid_len, sizeof(hwid)); i++) {
+	for (ssize_t i = 0; i < (ssize_t)MIN(hwid_len, sizeof(hwid)); i++) {
 		sn[i * 2] = hex[hwid[i] >> 4];
 		sn[i * 2 + 1] = hex[hwid[i] & 0xF];
 	}
