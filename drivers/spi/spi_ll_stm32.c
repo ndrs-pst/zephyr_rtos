@@ -1973,7 +1973,7 @@ static int spi_stm32_pm_action(const struct device* dev,
 #define STM32_SPI_IRQ_CONNECT(id)
 #define STM32_SPI_IRQ_HANDLER_DECL(id)
 #define STM32_SPI_IRQ_HANDLER_FUNC(id)
-#define STM32_SPI_IRQ_NUM(id)
+#define STM32_SPI_IRQ_HANDLER(id)
 #endif /* CONFIG_SPI_STM32_INTERRUPT */
 
 #define SPI_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)    \

@@ -494,6 +494,8 @@ static char const* gpio_device_name(struct device const* dev) {
 }
 
 static void device_name_get(size_t idx, struct shell_static_entry* entry) {
+    const struct device *dev = gpio_list[idx].dev;
+
     if (idx >= ARRAY_SIZE(gpio_list)) {
         entry->syntax = NULL;
         return;
