@@ -1294,8 +1294,8 @@ static int tcp_header_add(struct tcp* conn, struct net_pkt* pkt, uint8_t flags,
 
     memset(th, 0, sizeof(struct tcphdr));
 
-    UNALIGNED_PUT(conn->src.sin.sin_port, &th->th_sport);
-    UNALIGNED_PUT(conn->dst.sin.sin_port, &th->th_dport);
+    UNALIGNED_PUT(conn->src.sin.sin_port, UNALIGNED_MEMBER_ADDR(th, th_sport));
+    UNALIGNED_PUT(conn->dst.sin.sin_port, UNALIGNED_MEMBER_ADDR(th, th_dport));
     th->th_off = 5;
 
     if (conn->send_options.mss_found) {
@@ -1303,11 +1303,11 @@ static int tcp_header_add(struct tcp* conn, struct net_pkt* pkt, uint8_t flags,
     }
 
     UNALIGNED_PUT(flags, &th->th_flags);
-    UNALIGNED_PUT(net_htons(conn->recv_win), &th->th_win);
-    UNALIGNED_PUT(net_htonl(seq), &th->th_seq);
+    UNALIGNED_PUT(net_htons(conn->recv_win), UNALIGNED_MEMBER_ADDR(th, th_win));
+    UNALIGNED_PUT(net_htonl(seq), UNALIGNED_MEMBER_ADDR(th, th_seq));
 
     if (ACK & flags) {
-        UNALIGNED_PUT(net_htonl(conn->ack), &th->th_ack);
+        UNALIGNED_PUT(net_htonl(conn->ack), UNALIGNED_MEMBER_ADDR(th, th_ack));
     }
 
     return net_pkt_set_data(pkt, &tcp_access);
@@ -1463,13 +1463,13 @@ void net_tcp_reply_rst(struct net_pkt* pkt) {
 
     memset(th_rst, 0, sizeof(struct tcphdr));
 
-    UNALIGNED_PUT(th_pkt->th_dport, &th_rst->th_sport);
-    UNALIGNED_PUT(th_pkt->th_sport, &th_rst->th_dport);
+    UNALIGNED_PUT(th_pkt->th_dport, UNALIGNED_MEMBER_ADDR(th_rst, th_sport));
+    UNALIGNED_PUT(th_pkt->th_sport, UNALIGNED_MEMBER_ADDR(th_rst, th_dport));
     th_rst->th_off = 5;
 
     if (th_flags(th_pkt) & ACK) {
         UNALIGNED_PUT(RST, &th_rst->th_flags);
-        UNALIGNED_PUT(th_pkt->th_ack, &th_rst->th_seq);
+        UNALIGNED_PUT(th_pkt->th_ack, UNALIGNED_MEMBER_ADDR(th_rst, th_seq));
     }
     else {
         uint32_t ack = net_ntohl(th_pkt->th_seq) + tcp_data_len(pkt);
@@ -1479,7 +1479,7 @@ void net_tcp_reply_rst(struct net_pkt* pkt) {
         }
 
         UNALIGNED_PUT(RST | ACK, &th_rst->th_flags);
-        UNALIGNED_PUT(net_htonl(ack), &th_rst->th_ack);
+        UNALIGNED_PUT(net_htonl(ack), UNALIGNED_MEMBER_ADDR(th_rst, th_ack));
     }
 
     ret = net_pkt_set_data(rst, &tcp_access_rst);
