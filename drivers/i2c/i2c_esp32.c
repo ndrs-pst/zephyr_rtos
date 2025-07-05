@@ -452,7 +452,7 @@ static int IRAM_ATTR i2c_esp32_master_read(const struct device* dev, struct i2c_
     struct i2c_esp32_data* data = (struct i2c_esp32_data* const)(dev)->data;
     uint32_t msg_len = msg->len;
     uint8_t* msg_buf = msg->buf;
-    uint8_t  rd_filled;
+    uint8_t rd_filled;
     int ret;
 
     data->status = I2C_STATUS_READ;
@@ -507,14 +507,12 @@ static int IRAM_ATTR i2c_esp32_read_msg(const struct device* dev,
         i2c_esp32_master_start(dev);
         ret = i2c_esp32_write_addr(dev, addr);
         if (ret < 0) {
-            LOG_ERR("I2C transfer error: %d", ret);
             return (ret);
         }
     }
 
     ret = i2c_esp32_master_read(dev, msg);
     if (ret < 0) {
-        LOG_ERR("I2C transfer error: %d", ret);
         return (ret);
     }
 
@@ -522,7 +520,6 @@ static int IRAM_ATTR i2c_esp32_read_msg(const struct device* dev,
         i2c_esp32_master_stop(dev);
         ret = i2c_esp32_transmit(dev);
         if (ret < 0) {
-            LOG_ERR("I2C transfer error: %d", ret);
             return (ret);
         }
     }
@@ -532,7 +529,7 @@ static int IRAM_ATTR i2c_esp32_read_msg(const struct device* dev,
 
 static int IRAM_ATTR i2c_esp32_master_write(const struct device* dev, struct i2c_msg* msg) {
     struct i2c_esp32_data* data = (struct i2c_esp32_data* const )(dev)->data;
-    uint8_t  wr_filled;
+    uint8_t wr_filled;
     uint32_t msg_len = msg->len;
     uint8_t* msg_buf = msg->buf;
     int ret;
@@ -578,14 +575,12 @@ static int IRAM_ATTR i2c_esp32_write_msg(const struct device* dev,
         i2c_esp32_master_start(dev);
         ret = i2c_esp32_write_addr(dev, addr);
         if (ret < 0) {
-            LOG_ERR("I2C transfer error: %d", ret);
             return (ret);
         }
     }
 
     ret = i2c_esp32_master_write(dev, msg);
     if (ret < 0) {
-        LOG_ERR("I2C transfer error: %d", ret);
         return (ret);
     }
 
@@ -593,7 +588,6 @@ static int IRAM_ATTR i2c_esp32_write_msg(const struct device* dev,
         i2c_esp32_master_stop(dev);
         ret = i2c_esp32_transmit(dev);
         if (ret < 0) {
-            LOG_ERR("I2C transfer error: %d", ret);
             return (ret);
         }
     }
