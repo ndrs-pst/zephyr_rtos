@@ -230,7 +230,7 @@ static int rtc_stm32_stop(const struct device* dev) {
 #if !defined(COUNTER_NO_DATE)
 tick_t rtc_stm32_read(const struct device* dev) {
     struct tm now = {0};
-    time_t   ts;
+    time_t ts;
     uint32_t rtc_date, rtc_time;
     tick_t ticks;
     #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
@@ -275,7 +275,7 @@ tick_t rtc_stm32_read(const struct device* dev) {
 
     __ASSERT((sizeof(time_t) == 8), "unexpected time_t definition");
 
-    ticks = ts * counter_get_frequency(dev);
+    ticks = (tick_t)(ts * counter_get_frequency(dev));
     #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
     /* The RTC counts up, except for the subsecond register which counts
      * down starting from the sync prescaler value. Add already counted

@@ -2523,10 +2523,12 @@ static void zephyr_gtest_spi_stm32_reg_init(struct uart_stm32_config* cfg) {
         }
         #endif
 
+        #if defined(USART6_BASE)
         case USART6_BASE : {
             cfg->usart = (USART_TypeDef*)ut_mcu_usart6_ptr;
             break;
         }
+        #endif
 
         #if defined(UART7_BASE)
         case UART7_BASE : {
