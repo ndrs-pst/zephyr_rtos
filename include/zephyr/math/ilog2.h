@@ -19,6 +19,13 @@
  */
 
 /**
+ * @defgroup math_ilog2 Math Ilog2 Functions
+ * @ingroup utilities
+ * @brief Integer log2 utilities for mathematical operations
+ * @{
+ */
+
+/**
  *
  * @brief Calculate the floor of log2 for compile time constant
  *
@@ -103,5 +110,9 @@
 		find_msb_set(n) - 1			\
 	)
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_MATH_ILOG2_H_ */
