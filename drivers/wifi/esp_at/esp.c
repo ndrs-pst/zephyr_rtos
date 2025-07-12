@@ -487,7 +487,7 @@ static void esp_dns_work(struct k_work* work) {
     int err;
     int ifindex;
 
-    ifindex = net_if_get_by_ifindex(data->net_iface);
+    ifindex = net_if_get_by_iface(data->net_iface);
 
     for (i = 0; i < ESP_MAX_DNS; i++) {
         if (!addrs[i].sin_addr.s_addr_be) {

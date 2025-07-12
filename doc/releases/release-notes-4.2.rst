@@ -33,6 +33,20 @@ We are pleased to announce the release of Zephyr version 4.2.0.
 
 Major enhancements with this release include:
 
+- Initial support for the **Renesas RX** 32-bit architecture has been added, including a QEMU-based
+  :zephyr:board:`board target <qemu_rx>`.
+
+- The USB device stack now supports **USB Video Class** (UVC).
+
+- The networking stack now includes full support for the **MQTT 5.0** protocol.
+
+- Zbus graduates to stable status with the release of API version v1.0.0.
+
+- **Bluetooth Classic** stack now supports **Hands-Free Profile** (HFP) for both Audio Gateway (AG)
+  and Hands-Free (HF) roles.
+
+- **96 new boards** have been added since the last release.
+
 An overview of the changes required or recommended when migrating your application from Zephyr
 v4.1.0 to Zephyr v4.2.0 can be found in the separate :ref:`migration guide<migration_4.2>`.
 
@@ -213,39 +227,67 @@ New APIs and options
     * Remove query of the classic bonding information from :c:func:`bt_foreach_bond`, and add
       :c:func:`bt_br_foreach_bond`.
 
+* Build system
+
+  * Sysbuild
+
+    * Firmware loader image setup/selection support added to sysbuild when using
+      :kconfig:option:`SB_CONFIG_MCUBOOT_MODE_FIRMWARE_UPDATER` via
+      ``SB_CONFIG_FIRMWARE_LOADER`` e.g. :kconfig:option:`SB_CONFIG_FIRMWARE_LOADER_IMAGE_SMP_SVR`
+      for selecting :zephyr:code-sample:`smp-svr`.
+    * Single app RAM load support added to sysbuild using
+      :kconfig:option:`SB_CONFIG_MCUBOOT_MODE_SINGLE_APP_RAM_LOAD`.
+
 * Display
 
   * :c:func:`display_clear`
 
+* Management
+
+  * MCUmgr
+
+    * Firmware loader support added to image mgmt group using
+      :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER`.
+    * Optional boot mode (using retention boot mode) added to OS group reset command using
+      :kconfig:option:`CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE`.
+
 * Networking:
+
+  * CoAP
+
+    * :c:macro:`COAPS_SERVICE_DEFINE`
+
+  * DHCPv4
+
+    * :kconfig:option:`CONFIG_NET_DHCPV4_INIT_REBOOT`
+
+  * DNS
+
+    * :c:func:`dns_resolve_service`
+    * :c:func:`dns_resolve_reconfigure_with_interfaces`
+
+  * HTTP
+
+    * :kconfig:option:`CONFIG_HTTP_SERVER_COMPRESSION`
 
   * IPv4
 
     * :kconfig:option:`CONFIG_NET_IPV4_MTU`
 
+  * LwM2M
+
+    * :kconfig:option:`CONFIG_LWM2M_SERVER_BOOTSTRAP_ON_FAIL`
+    * Implemented Greater Than, Less Than and Step observe attributes handling
+      (see :kconfig:option:`CONFIG_LWM2M_MAX_NOTIFIED_NUMERICAL_RES_TRACKED`).
+
+  * Misc
+
+    * :c:func:`net_if_oper_state_change_time`
+
   * MQTT
 
     * :kconfig:option:`CONFIG_MQTT_VERSION_5_0`
-
-  * Wi-Fi
-
-    * :kconfig:option:`CONFIG_WIFI_USAGE_MODE`
-    * Added a new section to the Wi-Fi Management documentation (``doc/connectivity/networking/api/wifi.rst``) with step-by-step instructions for generating test certificates for Wi-Fi using FreeRADIUS scripts. This helps users reproduce the process for their own test environments.
-    * Changed the hostap IPC mechanism from socketpair to k_fifo. Depending on the enabled Wi-Fi configuration options, this can save up to 6-8 kB memory when using native Wi-Fi stack.
-
-* Power management
-
-    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_USE_SYSTEM_WQ`
-    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ`
-    * :kconfig:option:`CONFIG_PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ`
-    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_STACK_SIZE`
-    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_PRIO`
-    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_INIT_PRIO`
-    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_ASYNC`
-
-  * Sockets
-
-    * :kconfig:option:`CONFIG_NET_SOCKETS_INET_RAW`
+    * :c:member:`mqtt_transport.if_name`
 
   * OpenThread
 
@@ -256,10 +298,46 @@ New APIs and options
     * :kconfig:option:`CONFIG_OPENTHREAD_SYS_INIT`
     * :kconfig:option:`CONFIG_OPENTHREAD_SYS_INIT_PRIORITY`
 
+  * SNTP
+
+    * :c:func:`sntp_init_async`
+    * :c:func:`sntp_send_async`
+    * :c:func:`sntp_read_async`
+    * :c:func:`sntp_close_async`
+
+  * Sockets
+
+    * :kconfig:option:`CONFIG_NET_SOCKETS_INET_RAW`
+    * :c:func:`socket_offload_dns_enable`
+    * Added a new documentation page for :ref:`socket_service_interface` library.
+    * New socket options:
+
+      * :c:macro:`IP_MULTICAST_LOOP`
+      * :c:macro:`IPV6_MULTICAST_LOOP`
+      * :c:macro:`TLS_CERT_VERIFY_RESULT`
+      * :c:macro:`TLS_CERT_VERIFY_RESULT`
+
+  * Wi-Fi
+
+    * :kconfig:option:`CONFIG_WIFI_USAGE_MODE`
+    * Added a new section to the Wi-Fi Management documentation (``doc/connectivity/networking/api/wifi.rst``) with step-by-step instructions for generating test certificates for Wi-Fi using FreeRADIUS scripts. This helps users reproduce the process for their own test environments.
+    * Changed the hostap IPC mechanism from socketpair to k_fifo. Depending on the enabled Wi-Fi configuration options, this can save up to 6-8 kB memory when using native Wi-Fi stack.
+
   * zperf
 
     * :kconfig:option:`CONFIG_ZPERF_SESSION_PER_THREAD`
     * :c:member:`zperf_upload_params.data_loader`
+    * :kconfig:option:`CONFIG_NET_ZPERF_SERVER`
+
+* Power management
+
+    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_USE_SYSTEM_WQ`
+    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ`
+    * :kconfig:option:`CONFIG_PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ`
+    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_STACK_SIZE`
+    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_PRIO`
+    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_INIT_PRIO`
+    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_ASYNC`
 
 * Sensor
 
