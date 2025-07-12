@@ -1680,7 +1680,6 @@ static int uart_stm32_async_rx_enable(const struct device* dev,
 
     ret = dma_config(data->dma_rx.dma_dev, data->dma_rx.dma_channel,
                      &data->dma_rx.dma_cfg);
-
     if (ret != 0) {
         LOG_ERR("UART ERR: RX DMA config failed!");
         return (-EINVAL);

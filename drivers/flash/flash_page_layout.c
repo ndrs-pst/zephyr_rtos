@@ -22,18 +22,20 @@ static int flash_get_page_info(const struct device* dev,
 
     while (layout_size--) {
         info->size = layout->pages_size;
-        if (offs == 0) {
-            index_jmp = (index - info->index);
-        }
-        else {
-            index_jmp = (offs - info->start_offset) / info->size;
-        }
+        if (info->size > 0) {
+            if (offs == 0) {
+                index_jmp = (index - info->index);
+            }
+            else {
+                index_jmp = (offs - info->start_offset) / info->size;
+            }
 
-        index_jmp = MIN(index_jmp, layout->pages_count);
-        info->start_offset += (index_jmp * info->size);
-        info->index += index_jmp;
-        if (index_jmp < layout->pages_count) {
-            return (0);
+            index_jmp = MIN(index_jmp, layout->pages_count);
+            info->start_offset += (index_jmp * info->size);
+            info->index += index_jmp;
+            if (index_jmp < layout->pages_count) {
+                return (0);
+            }
         }
 
         layout++;
