@@ -132,8 +132,8 @@ typedef int16_t device_handle_t;
 
 #if defined(CONFIG_LLEXT_EXPORT_DEV_IDS_BY_HASH)
 /* Export device identifiers by hash */
-#define Z_DEVICE_EXPORT(node_id)                           \
-    EXPORT_SYMBOL_NAMED(DEVICE_DT_NAME_GET(node_id),               \
+#define Z_DEVICE_EXPORT(node_id)                                \
+    EXPORT_SYMBOL_NAMED(DEVICE_DT_NAME_GET(node_id),            \
                 DEVICE_NAME_GET(Z_DEVICE_DT_HASH(node_id)))
 #elif defined(CONFIG_LLEXT_EXPORT_DEVICES)
 /* Export device identifiers using the builtin name */
@@ -1296,6 +1296,7 @@ device_get_dt_nodelabels(const struct device* dev) {
     static const Z_DECL_ALIGN(struct init_entry) __used __noasan Z_INIT_ENTRY_SECTION( \
         level, prio, Z_DEVICE_INIT_SUB_PRIO(node_id))                   \
         Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                  \
+            .init_fn = NULL,                                            \
             .dev = (struct device const*)&DEVICE_NAME_GET(dev_id),      \
         }
 
