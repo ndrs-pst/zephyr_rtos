@@ -341,8 +341,8 @@ struct bt_dev_br {
 /* State tracking for the local Bluetooth controller */
 struct bt_dev {
 	/* Local Identity Address(es) */
-	bt_addr_le_t            id_addr[CONFIG_BT_ID_MAX];
-	uint8_t                    id_count;
+	bt_addr_le_t id_addr[CONFIG_BT_ID_MAX];
+	uint8_t id_count;
 
 	struct bt_conn_le_create_param create_param;
 

@@ -422,7 +422,7 @@ static int ssd16xx_write(const struct device *dev, const uint16_t x,
 		config->profiles[SSD16XX_PROFILE_PARTIAL] != NULL;
 	const bool partial_refresh = !data->blanking_on && have_partial_refresh;
 	const size_t buf_len = MIN(desc->buf_size,
-				   desc->height * desc->width / 8);
+				   (desc->height * desc->width) / 8U);
 	int err;
 
 	if (buf == NULL || buf_len == 0U) {
@@ -498,7 +498,7 @@ int ssd16xx_read_ram(const struct device *dev, enum ssd16xx_ram ram_type,
 {
 	const struct ssd16xx_data *data = dev->data;
 	const size_t buf_len = MIN(desc->buf_size,
-				   desc->height * desc->width / 8);
+				   (desc->height * desc->width) / 8U);
 	int err;
 	uint8_t ram_ctrl;
 
@@ -1017,8 +1017,13 @@ static struct ssd16xx_quirks quirks_solomon_ssd1681 = {
 			.len = sizeof(softstart_##n),			\
 		},
 
+#if defined(_MSC_VER) /* #CUSTOM@NDRS VS202x doesn't support {} so assign zero value instead */
+#define SSD16XX_MAKE_ARRAY_OPT(n, p)					\
+	static uint8_t data_ ## n ## _ ## p[] = DT_PROP_OR(n, p, {0})
+#else
 #define SSD16XX_MAKE_ARRAY_OPT(n, p)					\
 	static uint8_t data_ ## n ## _ ## p[] = DT_PROP_OR(n, p, {})
+#endif
 
 #define SSD16XX_ASSIGN_ARRAY(n, p)					\
 	{								\

@@ -60,7 +60,7 @@ static int post_status_stage(struct usbd_context *const uds_ctx)
 	int ret = 0;
 
 	if (setup->bRequest == USB_SREQ_SET_ADDRESS) {
-		ret = udc_set_address(uds_ctx->dev, setup->wValue);
+		ret = udc_set_address(uds_ctx->dev, (uint8_t)setup->wValue);
 		if (ret) {
 			LOG_ERR("Failed to set device address 0x%x", setup->wValue);
 		}
@@ -105,7 +105,7 @@ static int sreq_set_address(struct usbd_context *const uds_ctx)
 	if (caps.addr_before_status) {
 		int ret;
 
-		ret = udc_set_address(uds_ctx->dev, setup->wValue);
+		ret = udc_set_address(uds_ctx->dev, (uint8_t)setup->wValue);
 		if (ret) {
 			LOG_ERR("Failed to set device address 0x%x", setup->wValue);
 			return ret;
@@ -148,7 +148,7 @@ static int sreq_set_configuration(struct usbd_context *const uds_ctx)
 		return 0;
 	}
 
-	if (setup->wValue && !usbd_config_exist(uds_ctx, speed, setup->wValue)) {
+	if (setup->wValue && !usbd_config_exist(uds_ctx, speed, (uint8_t)setup->wValue)) {
 		errno = -EPERM;
 		return 0;
 	}
@@ -158,7 +158,7 @@ static int sreq_set_configuration(struct usbd_context *const uds_ctx)
 		return 0;
 	}
 
-	ret = usbd_config_set(uds_ctx, setup->wValue);
+	ret = usbd_config_set(uds_ctx, (uint8_t)setup->wValue);
 	if (ret) {
 		LOG_ERR("Failed to set configuration %u, %d",
 			setup->wValue, ret);
@@ -205,7 +205,7 @@ static int sreq_set_interface(struct usbd_context *const uds_ctx)
 		return 0;
 	}
 
-	ret = usbd_interface_set(uds_ctx, setup->wIndex, setup->wValue);
+	ret = usbd_interface_set(uds_ctx, (uint8_t)setup->wIndex, (uint8_t)setup->wValue);
 	if (ret == -ENOENT) {
 		LOG_INF("Interface or alternate does not exist");
 		errno = ret;
@@ -227,8 +227,8 @@ static void sreq_feature_halt_notify(struct usbd_context *const uds_ctx,
 
 static int sreq_clear_feature(struct usbd_context *const uds_ctx)
 {
-	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
-	uint8_t ep = setup->wIndex;
+	const struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
+	uint8_t ep = (uint8_t)setup->wIndex;
 	int ret = 0;
 
 	/* Not specified if wLength is non-zero, treat as error */
@@ -304,7 +304,7 @@ static int set_feature_test_mode(struct usbd_context *const uds_ctx)
 static int sreq_set_feature(struct usbd_context *const uds_ctx)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
-	uint8_t ep = setup->wIndex;
+	uint8_t ep = (uint8_t)setup->wIndex;
 	int ret = 0;
 
 	/* Not specified if wLength is non-zero, treat as error */
@@ -398,7 +398,7 @@ static int sreq_get_status(struct usbd_context *const uds_ctx,
 			   struct net_buf *const buf)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
-	uint8_t ep = setup->wIndex;
+	uint8_t ep = (uint8_t)setup->wIndex;
 	uint16_t response = 0;
 
 	if (setup->wLength != sizeof(response)) {
@@ -518,7 +518,7 @@ static int sreq_get_desc_cfg(struct usbd_context *const uds_ctx,
 		}
 
 		while (*dhp != NULL && (*dhp)->bLength != 0) {
-			len = MIN(net_buf_tailroom(buf), (*dhp)->bLength);
+			len = (uint16_t)MIN(net_buf_tailroom(buf), (*dhp)->bLength);
 			net_buf_add_mem(buf, *dhp, len);
 			dhp++;
 		}
@@ -536,7 +536,11 @@ static int sreq_get_desc_cfg(struct usbd_context *const uds_ctx,
 #define USBD_SN_ASCII7_LENGTH (CONFIG_USBD_HWINFO_DEVID_LENGTH * 2)
 
 /* Generate valid USB device serial number from hwid */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS MSVC does not support the C99 static array syntax in function parameters */
+static ssize_t get_sn_from_hwid(uint8_t sn[USBD_SN_ASCII7_LENGTH])
+#else
 static ssize_t get_sn_from_hwid(uint8_t sn[static USBD_SN_ASCII7_LENGTH])
+#endif
 {
 	static const char hex[] = "0123456789ABCDEF";
 	uint8_t hwid[USBD_SN_ASCII7_LENGTH / 2U];
@@ -554,7 +558,7 @@ static ssize_t get_sn_from_hwid(uint8_t sn[static USBD_SN_ASCII7_LENGTH])
 		return hwid_len;
 	}
 
-	for (ssize_t i = 0; i < MIN(hwid_len, sizeof(hwid)); i++) {
+	for (ssize_t i = 0; i < (ssize_t)MIN(hwid_len, sizeof(hwid)); i++) {
 		sn[i * 2] = hex[hwid[i] >> 4];
 		sn[i * 2 + 1] = hex[hwid[i] & 0xF];
 	}
@@ -593,7 +597,7 @@ static void string_ascii7_to_utf16le(struct usbd_desc_node *const dn,
 	LOG_DBG("wLength %u, bLength %u, tailroom %u",
 		wLength, head.bLength, net_buf_tailroom(buf));
 
-	len = MIN(net_buf_tailroom(buf), MIN(head.bLength,  wLength));
+	len = MIN(net_buf_tailroom(buf), (size_t)MIN(head.bLength,  wLength));
 
 	/* Add bLength and bDescriptorType */
 	net_buf_add_mem(buf, &head, MIN(len, sizeof(head)));
@@ -770,7 +774,7 @@ static int sreq_get_desc_bos(struct usbd_context *const uds_ctx,
 	}
 
 	desc_fill_bos_root(uds_ctx, &bos);
-	len = MIN(net_buf_tailroom(buf), MIN(setup->wLength, bos.wTotalLength));
+	len = MIN(net_buf_tailroom(buf), (size_t)MIN(setup->wLength, bos.wTotalLength));
 
 	LOG_DBG("wLength %u, bLength %u, wTotalLength %u, tailroom %u",
 		setup->wLength, bos.bLength, bos.wTotalLength, net_buf_tailroom(buf));
@@ -897,7 +901,7 @@ static int sreq_get_interface(struct usbd_context *const uds_ctx,
 		return 0;
 	}
 
-	if (usbd_get_alt_value(uds_ctx, setup->wIndex, &cur_alt)) {
+	if (usbd_get_alt_value(uds_ctx, (uint8_t)setup->wIndex, &cur_alt)) {
 		errno = -ENOTSUP;
 		return 0;
 	}
@@ -990,10 +994,10 @@ static int nonstd_request(struct usbd_context *const uds_ctx,
 
 	switch (setup->RequestType.recipient) {
 	case USB_REQTYPE_RECIPIENT_ENDPOINT:
-		c_nd = usbd_class_get_by_ep(uds_ctx, setup->wIndex);
+		c_nd = usbd_class_get_by_ep(uds_ctx, (uint8_t)setup->wIndex);
 		break;
 	case USB_REQTYPE_RECIPIENT_INTERFACE:
-		c_nd = usbd_class_get_by_iface(uds_ctx, setup->wIndex);
+		c_nd = usbd_class_get_by_iface(uds_ctx, (uint8_t)setup->wIndex);
 		break;
 	case USB_REQTYPE_RECIPIENT_DEVICE:
 		c_nd = usbd_class_get_by_req(uds_ctx, setup->bRequest);

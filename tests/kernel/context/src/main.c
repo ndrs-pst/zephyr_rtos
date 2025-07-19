@@ -845,7 +845,7 @@ static void busy_wait_thread(void *mseconds, void *arg2, void *arg3)
 
 	k_busy_wait(usecs);
 
-	int key = arch_irq_lock();
+	unsigned int key = arch_irq_lock();
 
 	k_busy_wait(usecs);
 	arch_irq_unlock(key);

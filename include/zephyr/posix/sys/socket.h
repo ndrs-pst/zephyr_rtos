@@ -27,21 +27,21 @@ struct linger {
 	int  l_linger;
 };
 
-int accept(int sock, struct sockaddr *addr, socklen_t *addrlen);
-int bind(int sock, const struct sockaddr *addr, socklen_t addrlen);
-int connect(int sock, const struct sockaddr *addr, socklen_t addrlen);
-int getpeername(int sock, struct sockaddr *addr, socklen_t *addrlen);
-int getsockname(int sock, struct sockaddr *addr, socklen_t *addrlen);
+int accept(int sock, struct net_sockaddr *addr, socklen_t *addrlen);
+int bind(int sock, const struct net_sockaddr *addr, socklen_t addrlen);
+int connect(int sock, const struct net_sockaddr *addr, socklen_t addrlen);
+int getpeername(int sock, struct net_sockaddr *addr, socklen_t *addrlen);
+int getsockname(int sock, struct net_sockaddr *addr, socklen_t *addrlen);
 int getsockopt(int sock, int level, int optname, void *optval, socklen_t *optlen);
 int listen(int sock, int backlog);
 ssize_t recv(int sock, void *buf, size_t max_len, int flags);
-ssize_t recvfrom(int sock, void *buf, size_t max_len, int flags, struct sockaddr *src_addr,
-		 socklen_t *addrlen);
+ssize_t recvfrom(int sock, void *buf, size_t max_len, int flags, struct net_sockaddr *src_addr,
+                 socklen_t *addrlen);
 ssize_t recvmsg(int sock, struct msghdr *msg, int flags);
 ssize_t send(int sock, const void *buf, size_t len, int flags);
 ssize_t sendmsg(int sock, const struct msghdr *message, int flags);
-ssize_t sendto(int sock, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr,
-	       socklen_t addrlen);
+ssize_t sendto(int sock, const void *buf, size_t len, int flags, const struct net_sockaddr *dest_addr,
+               socklen_t addrlen);
 int setsockopt(int sock, int level, int optname, const void *optval, socklen_t optlen);
 int shutdown(int sock, int how);
 int sockatmark(int s);

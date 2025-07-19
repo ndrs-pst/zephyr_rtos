@@ -149,7 +149,7 @@ int gnss_nmea0183_snprintk(char *str, size_t size, const char *fmt, ...)
 
 	len = pos + GNSS_NMEA0183_MESSAGE_CHECKSUM_SIZE;
 
-	if ((size - 1) < len) {
+	if (((int)size - 1) < len) {
 		return -ENOMEM;
 	}
 
@@ -570,7 +570,7 @@ static int parse_gsv_svs(struct gnss_satellite *satellites, const struct gsv_sv_
 			return -EINVAL;
 		}
 
-		satellites[i].prn = (uint16_t)i32;
+		satellites[i].prn = (uint8_t)i32;
 
 		/* Parse elevation */
 		if ((gnss_parse_atoi(svs[i].elevation, 10, &i32) < 0) ||
@@ -600,7 +600,7 @@ static int parse_gsv_svs(struct gnss_satellite *satellites, const struct gsv_sv_
 			return -EINVAL;
 		}
 
-		satellites[i].snr = (uint16_t)i32;
+		satellites[i].snr = (uint8_t)i32;
 		satellites[i].is_tracked = true;
 	}
 

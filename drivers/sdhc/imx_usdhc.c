@@ -575,7 +575,7 @@ static int imx_usdhc_execute_tuning(const struct device *dev)
 	 * adjustable tuning window
 	 */
 	USDHC_SetStandardTuningCounter(base, IMX_USDHC_STANDARD_TUNING_COUNTER);
-	/* Reenable standard tuning */
+	/* Re-enable standard tuning */
 	USDHC_EnableStandardTuning(base, IMX_USDHC_STANDARD_TUNING_START, IMX_USDHC_TUNING_STEP,
 				   true);
 
@@ -1103,7 +1103,7 @@ static DEVICE_API(sdhc, usdhc_api) = {
 	static struct usdhc_data usdhc_##n##_data = {.card_present = false,                        \
 						     IMX_USDHC_DMA_BUFFER_INIT(n)};                \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &imx_usdhc_init, NULL, &usdhc_##n##_data, &usdhc_##n##_config,    \
+	DEVICE_DT_INST_DEFINE(n, imx_usdhc_init, NULL, &usdhc_##n##_data, &usdhc_##n##_config,     \
 			      POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY, &usdhc_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IMX_USDHC_INIT)

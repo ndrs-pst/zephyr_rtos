@@ -325,7 +325,7 @@ static void tc_tx_handler(void *p1, void *p2, void *p3)
 #endif
 	struct net_pkt *pkt;
 
-	while (1) {
+	while (true) {
 		pkt = k_fifo_get(fifo, K_FOREVER);
 		if (pkt == NULL) {
 			continue;
@@ -351,7 +351,7 @@ void net_tc_tx_init(void)
 #else
 	int i;
 
-	BUILD_ASSERT(NET_TC_TX_COUNT >= 0);
+	BUILD_ASSERT(NET_TC_TX_COUNT >= 0, "NET_TC_TX_COUNT >= 0 error !!!");
 
 #if defined(CONFIG_NET_STATISTICS)
 	net_if_foreach(net_tc_tx_stats_priority_setup, NULL);
@@ -419,7 +419,7 @@ void net_tc_rx_init(void)
 #else
 	int i;
 
-	BUILD_ASSERT(NET_TC_RX_COUNT >= 0);
+	BUILD_ASSERT(NET_TC_RX_COUNT >= 0, "NET_TC_RX_COUNT >= 0 error !!!");
 
 #if defined(CONFIG_NET_STATISTICS)
 	net_if_foreach(net_tc_rx_stats_priority_setup, NULL);

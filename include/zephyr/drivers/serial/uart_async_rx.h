@@ -29,7 +29,11 @@ struct uart_async_rx_buf {
 	uint8_t completed:1;
 
 	/* Location which is passed to the UART driver. */
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	uint8_t buffer[1];
+	#else
 	uint8_t buffer[];
+	#endif
 };
 
 /** @brief UART asynchronous RX helper structure. */

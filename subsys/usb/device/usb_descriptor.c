@@ -399,7 +399,7 @@ static void usb_desc_update_mps0(struct usb_device_descriptor *const desc)
 		__ASSERT(ret == 0, "Failed to find valid bMaxPacketSize0");
 	}
 
-	desc->bMaxPacketSize0 = ep_cfg.ep_mps;
+	desc->bMaxPacketSize0 = (uint8_t)ep_cfg.ep_mps;
 	LOG_DBG("Set bMaxPacketSize0 %u", desc->bMaxPacketSize0);
 }
 

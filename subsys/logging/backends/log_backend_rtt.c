@@ -330,7 +330,7 @@ static int format_set(const struct log_backend *const backend, uint32_t log_type
 	return 0;
 }
 
-const struct log_backend_api log_backend_rtt_api = {
+static const struct log_backend_api log_backend_rtt_api = {
 	.process = process,
 	.panic = panic,
 	.init = log_backend_rtt_init,

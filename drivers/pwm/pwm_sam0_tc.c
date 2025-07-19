@@ -28,10 +28,8 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 
-/* clang-format off */
-
 /* Static configuration */
-struct pwm_sam0_config {
+struct pwm_sam0_tc_config {
 	Tc *regs;
 	const struct pinctrl_dev_config *pcfg;
 	uint8_t channels;
@@ -51,17 +49,19 @@ static void wait_synchronization(Tc *regs, uint8_t counter_size)
 {
 	if (COUNTER_8BITS == counter_size) {
 		while (regs->COUNT8.SYNCBUSY.reg != 0) {
+			/* pass */
 		}
 	} else {
 		while (regs->COUNT16.SYNCBUSY.reg != 0) {
+			/* pass */
 		}
 	}
 }
 
-static int pwm_sam0_get_cycles_per_sec(const struct device *dev,
-							uint32_t channel, uint64_t *cycles)
+static int pwm_sam0_tc_get_cycles_per_sec(const struct device *dev,
+					  uint32_t channel, uint64_t *cycles)
 {
-	const struct pwm_sam0_config *const cfg = dev->config;
+	const struct pwm_sam0_tc_config *const cfg = dev->config;
 
 	if (channel >= cfg->channels) {
 		return -EINVAL;
@@ -72,10 +72,11 @@ static int pwm_sam0_get_cycles_per_sec(const struct device *dev,
 	return 0;
 }
 
-static int pwm_sam0_set_cycles(const struct device *dev, uint32_t channel, uint32_t period_cycles,
-			       uint32_t pulse_cycles, pwm_flags_t flags)
+static int pwm_sam0_tc_set_cycles(const struct device *dev, uint32_t channel,
+				  uint32_t period_cycles, uint32_t pulse_cycles,
+				  pwm_flags_t flags)
 {
-	const struct pwm_sam0_config *const cfg = dev->config;
+	const struct pwm_sam0_tc_config *const cfg = dev->config;
 	Tc *regs = cfg->regs;
 	uint8_t counter_size = cfg->counter_size;
 	uint32_t top = 1 << counter_size;
@@ -86,6 +87,7 @@ static int pwm_sam0_set_cycles(const struct device *dev, uint32_t channel, uint3
 	if (channel >= cfg->channels) {
 		return -EINVAL;
 	}
+
 	if (period_cycles >= top || pulse_cycles >= top) {
 		return -EINVAL;
 	}
@@ -127,9 +129,9 @@ static int pwm_sam0_set_cycles(const struct device *dev, uint32_t channel, uint3
 	return 0;
 }
 
-static int pwm_sam0_init(const struct device *dev)
+static int pwm_sam0_tc_init(const struct device *dev)
 {
-	const struct pwm_sam0_config *const cfg = dev->config;
+	const struct pwm_sam0_tc_config *const cfg = dev->config;
 	uint8_t counter_size = cfg->counter_size;
 	Tc *regs = cfg->regs;
 	int retval;
@@ -177,18 +179,17 @@ static int pwm_sam0_init(const struct device *dev)
 	return 0;
 }
 
-static DEVICE_API(pwm, pwm_sam0_driver_api) = {
-	.set_cycles = pwm_sam0_set_cycles,
-	.get_cycles_per_sec = pwm_sam0_get_cycles_per_sec,
+static DEVICE_API(pwm, pwm_sam0_tc_driver_api) = {
+	.set_cycles = pwm_sam0_tc_set_cycles,
+	.get_cycles_per_sec = pwm_sam0_tc_get_cycles_per_sec,
 };
 
 #define ASSIGNED_CLOCKS_CELL_BY_NAME						\
 	ATMEL_SAM0_DT_INST_ASSIGNED_CLOCKS_CELL_BY_NAME
 
-#define PWM_SAM0_INIT(inst)							\
+#define PWM_SAM0_TC_INIT(inst)							\
 	PINCTRL_DT_INST_DEFINE(inst);						\
-										\
-	static const struct pwm_sam0_config pwm_sam0_config_##inst = {		\
+	static const struct pwm_sam0_tc_config pwm_sam0_tc_config_##inst = {	\
 		.regs = (Tc *)DT_INST_REG_ADDR(inst),				\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
 		.channels = DT_INST_PROP(inst, channels),			\
@@ -203,11 +204,9 @@ static DEVICE_API(pwm, pwm_sam0_driver_api) = {
 		.mclk_mask = ATMEL_SAM0_DT_INST_MCLK_PM_PERIPH_MASK(inst, bit),	\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(inst, &pwm_sam0_init, NULL,			\
-			      NULL, &pwm_sam0_config_##inst,			\
+	DEVICE_DT_INST_DEFINE(inst, &pwm_sam0_tc_init, NULL,			\
+			      NULL, &pwm_sam0_tc_config_##inst,			\
 			      POST_KERNEL, CONFIG_PWM_TC_INIT_PRIORITY,		\
-			      &pwm_sam0_driver_api);
+			      &pwm_sam0_tc_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(PWM_SAM0_INIT)
-
-/* clang-format on */
+DT_INST_FOREACH_STATUS_OKAY(PWM_SAM0_TC_INIT)

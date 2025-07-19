@@ -535,7 +535,7 @@ void sys_trace_k_event_init(struct k_event *event);
 /* Do not try to include network headers as it just leads to inclusion
  * nightmare, just declare couple of structs that are needed.
  */
-struct sockaddr;
+struct net_sockaddr;
 struct msghdr;
 struct zvfs_pollfd;
 
@@ -544,23 +544,23 @@ void sys_trace_socket_close_enter(int sock);
 void sys_trace_socket_close_exit(int sock, int ret);
 void sys_trace_socket_shutdown_enter(int sock, int how);
 void sys_trace_socket_shutdown_exit(int sock, int ret);
-void sys_trace_socket_bind_enter(int sock, const struct sockaddr *addr, size_t addrlen);
+void sys_trace_socket_bind_enter(int sock, const struct net_sockaddr *addr, size_t addrlen);
 void sys_trace_socket_bind_exit(int sock, int ret);
-void sys_trace_socket_connect_enter(int sock, const struct sockaddr *addr, size_t addrlen);
+void sys_trace_socket_connect_enter(int sock, const struct net_sockaddr *addr, size_t addrlen);
 void sys_trace_socket_connect_exit(int sock, int ret);
 void sys_trace_socket_listen_enter(int sock, int backlog);
 void sys_trace_socket_listen_exit(int sock, int ret);
 void sys_trace_socket_accept_enter(int sock);
-void sys_trace_socket_accept_exit(int sock, const struct sockaddr *addr, const size_t *addrlen,
+void sys_trace_socket_accept_exit(int sock, const struct net_sockaddr *addr, const size_t *addrlen,
 				  int ret);
-void sys_trace_socket_sendto_enter(int sock, int len, int flags, const struct sockaddr *dest_addr,
+void sys_trace_socket_sendto_enter(int sock, int len, int flags, const struct net_sockaddr *dest_addr,
 				   size_t addrlen);
 void sys_trace_socket_sendto_exit(int sock, int ret);
 void sys_trace_socket_sendmsg_enter(int sock, const struct msghdr *msg, int flags);
 void sys_trace_socket_sendmsg_exit(int sock, int ret);
-void sys_trace_socket_recvfrom_enter(int sock, int max_len, int flags, struct sockaddr *addr,
+void sys_trace_socket_recvfrom_enter(int sock, int max_len, int flags, struct net_sockaddr *addr,
 				     size_t *addrlen);
-void sys_trace_socket_recvfrom_exit(int sock, const struct sockaddr *src_addr,
+void sys_trace_socket_recvfrom_exit(int sock, const struct net_sockaddr *src_addr,
 				    const size_t *addrlen, int ret);
 void sys_trace_socket_recvmsg_enter(int sock, const struct msghdr *msg, int flags);
 void sys_trace_socket_recvmsg_exit(int sock, const struct msghdr *msg, int ret);
@@ -577,10 +577,10 @@ void sys_trace_socket_setsockopt_enter(int sock, int level, int optname, const v
 				       size_t optlen);
 void sys_trace_socket_setsockopt_exit(int sock, int ret);
 void sys_trace_socket_getpeername_enter(int sock);
-void sys_trace_socket_getpeername_exit(int sock,  struct sockaddr *addr, const size_t *addrlen,
+void sys_trace_socket_getpeername_exit(int sock,  struct net_sockaddr *addr, const size_t *addrlen,
 				       int ret);
 void sys_trace_socket_getsockname_enter(int sock);
-void sys_trace_socket_getsockname_exit(int sock, const struct sockaddr *addr, const size_t *addrlen,
+void sys_trace_socket_getsockname_exit(int sock, const struct net_sockaddr *addr, const size_t *addrlen,
 				       int ret);
 void sys_trace_socket_socketpair_enter(int family, int type, int proto, int *sv);
 void sys_trace_socket_socketpair_exit(int sock_A, int sock_B, int ret);

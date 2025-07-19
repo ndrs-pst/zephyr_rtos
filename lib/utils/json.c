@@ -653,7 +653,7 @@ static int decode_int8(const struct json_token *token, int8_t *num)
 		return -EINVAL;
 	}
 
-	*num = num_i32;
+	*num = (int8_t)num_i32;
 
 	return 0;
 }
@@ -673,7 +673,7 @@ static int decode_uint8(const struct json_token *token, uint8_t *num)
 		return -EINVAL;
 	}
 
-	*num = num_u32;
+	*num = (uint8_t)num_u32;
 
 	return 0;
 }
@@ -693,7 +693,7 @@ static int decode_int16(const struct json_token *token, int16_t *num)
 		return -EINVAL;
 	}
 
-	*num = num_i32;
+	*num = (int16_t)num_i32;
 
 	return 0;
 }
@@ -713,7 +713,7 @@ static int decode_uint16(const struct json_token *token, uint16_t *num)
 		return -EINVAL;
 	}
 
-	*num = num_u32;
+	*num = (uint16_t)num_u32;
 
 	return 0;
 }
@@ -989,7 +989,7 @@ static int arr_parse(struct json_obj *obj,
 	void *value = val;
 	size_t *elements = (size_t *)((char *)value + elem_descr->offset);
 	ptrdiff_t elem_size;
-	void *last_elem;
+	const void *last_elem;
 	struct json_token tok;
 
 	/* For nested arrays, skip parent descriptor to get elements */
@@ -1103,8 +1103,8 @@ static int64_t obj_parse(struct json_obj *obj, const struct json_obj_descr *desc
 			}
 
 			/* Store the decoded value */
-			ret = decode_value(obj, &descr[i], &kv.value,
-					   decode_field, val);
+			ret = (int)decode_value(obj, &descr[i], &kv.value,
+						decode_field, val);
 			if (ret < 0) {
 				return ret;
 			}
@@ -1139,7 +1139,8 @@ int64_t json_obj_parse(char *payload, size_t len,
 		return ret;
 	}
 
-	return obj_parse(&obj, descr, descr_len, val);
+	ret = obj_parse(&obj, descr, descr_len, val);
+	return ret;
 }
 
 int json_arr_parse(char *payload, size_t len,
@@ -1155,8 +1156,9 @@ int json_arr_parse(char *payload, size_t len,
 
 	void *ptr = (char *)val + descr->offset;
 
-	return arr_parse(&arr, descr->array.element_descr,
-			 descr->array.n_elements, ptr, val);
+	ret = arr_parse(&arr, descr->array.element_descr,
+			descr->array.n_elements, ptr, val);
+	return ret;
 }
 
 
@@ -1169,6 +1171,7 @@ int json_arr_separate_parse_object(struct json_obj *json, const struct json_obj_
 			  size_t descr_len, void *val)
 {
 	struct json_token tok;
+	int ret;
 
 	if (!lexer_next(&json->lex, &tok)) {
 		return -EINVAL;
@@ -1186,7 +1189,8 @@ int json_arr_separate_parse_object(struct json_obj *json, const struct json_obj_
 		return -EINVAL;
 	}
 
-	return obj_parse(json, descr, descr_len, val);
+	ret = (int)obj_parse(json, descr, descr_len, val);
+	return ret;
 }
 
 static char escape_as(char chr)
@@ -1215,14 +1219,13 @@ static int json_escape_internal(const char *str,
 				json_append_bytes_t append_bytes,
 				void *data)
 {
-	const char *cur;
 	int ret = 0;
 
 	if (str == NULL) {
 		return ret;
 	}
 
-	for (cur = str; ret == 0 && *cur; cur++) {
+	for (const char *cur = str; ret == 0 && *cur; cur++) {
 		char escaped = escape_as(*cur);
 
 		if (escaped) {
@@ -1240,9 +1243,8 @@ static int json_escape_internal(const char *str,
 size_t json_calc_escaped_len(const char *str, size_t len)
 {
 	size_t escaped_len = len;
-	size_t pos;
 
-	for (pos = 0; pos < len; pos++) {
+	for (size_t pos = 0; pos < len; pos++) {
 		if (escape_as(str[pos])) {
 			escaped_len++;
 		}
@@ -1253,7 +1255,7 @@ size_t json_calc_escaped_len(const char *str, size_t len)
 
 ssize_t json_escape(char *str, size_t *len, size_t buf_size)
 {
-	char *next; /* Points after next character to escape. */
+	const char *next; /* Points after next character to escape. */
 	char *dest; /* Points after next place to write escaped character. */
 	size_t escaped_len = json_calc_escaped_len(str, *len);
 
@@ -1306,7 +1308,6 @@ static int arr_encode(const struct json_obj_descr *elem_descr,
 	 * containing the number of elements.
 	 */
 	size_t n_elem = *(size_t *)((char *)val + elem_descr->offset);
-	size_t i;
 	int ret;
 
 	ret = append_bytes("[", 1, data);
@@ -1321,7 +1322,7 @@ static int arr_encode(const struct json_obj_descr *elem_descr,
 
 	elem_size = get_elem_size(elem_descr);
 
-	for (i = 0; i < n_elem; i++) {
+	for (size_t i = 0; i < n_elem; i++) {
 		/*
 		 * Though "field" points at the next element in the
 		 * array which we need to encode, the value in
@@ -1652,6 +1653,8 @@ static int encode(const struct json_obj_descr *descr, const void *val,
 		return opaque_string_encode(ptr, append_bytes, data);
 	case JSON_TOK_ENCODED_OBJ:
 		return encoded_obj_encode(ptr, append_bytes, data);
+	case JSON_TOK_NULL: /* #CUSTOM@NDRS */
+		return append_bytes("null", 4, data);
 	default:
 		return -EINVAL;
 	}

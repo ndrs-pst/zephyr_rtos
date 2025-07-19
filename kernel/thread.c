@@ -215,7 +215,7 @@ int z_impl_k_thread_name_copy(k_tid_t thread, char *buf, size_t size)
 
 static size_t copy_bytes(char *dest, size_t dest_size, const char *src, size_t src_size)
 {
-	size_t  bytes_to_copy;
+	size_t bytes_to_copy;
 
 	bytes_to_copy = MIN(dest_size, src_size);
 	memcpy(dest, src, bytes_to_copy);
@@ -225,9 +225,9 @@ static size_t copy_bytes(char *dest, size_t dest_size, const char *src, size_t s
 
 const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size)
 {
-	size_t      off = 0;
-	uint8_t     bit;
-	uint8_t     thread_state = thread_id->base.thread_state;
+	size_t off = 0;
+	uint8_t bit;
+	uint8_t thread_state = thread_id->base.thread_state;
 #define SS_ENT(s) { Z_STATE_STR_##s, _THREAD_##s, sizeof(Z_STATE_STR_##s) - 1 }
 	static const struct {
 		const char *str;
@@ -256,10 +256,8 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size)
 	 * been processed. If more than one thread_state bit is set, then
 	 * separate the descriptive strings with a '+'.
 	 */
-
-
 	for (unsigned int index = 0; thread_state != 0; index++) {
-		bit = state_string[index].bit;
+		bit = (uint8_t)state_string[index].bit;
 		if ((thread_state & bit) == 0) {
 			continue;
 		}
@@ -383,8 +381,10 @@ static size_t random_offset(size_t stack_size)
 static char *setup_thread_stack(struct k_thread *new_thread,
 				k_thread_stack_t *stack, size_t stack_size)
 {
-	size_t stack_obj_size, stack_buf_size;
-	char *stack_ptr, *stack_buf_start;
+	size_t stack_obj_size;
+	size_t stack_buf_size;
+	char *stack_ptr;
+	char *stack_buf_start;
 	size_t delta = 0;
 
 #ifdef CONFIG_USERSPACE
@@ -468,7 +468,7 @@ static char *setup_thread_stack(struct k_thread *new_thread,
 	 */
 	*((uint32_t *)stack_buf_start) = STACK_SENTINEL;
 #endif /* CONFIG_STACK_SENTINEL */
-#ifdef CONFIG_THREAD_LOCAL_STORAGE
+#if defined(CONFIG_THREAD_LOCAL_STORAGE) && !defined(_MSC_VER) /* #CUSTOM@NDRS */
 	/* TLS is always last within the stack buffer */
 	delta += arch_tls_stack_setup(new_thread, stack_ptr);
 #endif /* CONFIG_THREAD_LOCAL_STORAGE */
@@ -506,13 +506,12 @@ static char *setup_thread_stack(struct k_thread *new_thread,
  * K_THREAD_STACK_SIZEOF(stack), or the size value passed to the instance
  * of K_THREAD_STACK_DEFINE() which defined 'stack'.
  */
-char *z_setup_new_thread(struct k_thread *new_thread,
-			 k_thread_stack_t *stack, size_t stack_size,
-			 k_thread_entry_t entry,
-			 void *p1, void *p2, void *p3,
-			 int prio, uint32_t options, const char *name)
-{
-	char *stack_ptr;
+char* z_setup_new_thread(struct k_thread* new_thread,
+                         k_thread_stack_t* stack, size_t stack_size,
+                         k_thread_entry_t entry,
+                         void* p1, void* p2, void* p3,
+                         int prio, uint32_t options, const char* name) {
+    char* stack_ptr;
 
 	Z_ASSERT_VALID_PRIO(prio, entry);
 
@@ -945,53 +944,59 @@ void z_thread_mark_switched_out(void)
 #endif /* CONFIG_INSTRUMENT_THREAD_SWITCHING */
 
 int k_thread_runtime_stats_get(k_tid_t thread,
-			       k_thread_runtime_stats_t *stats)
-{
-	if ((thread == NULL) || (stats == NULL)) {
-		return -EINVAL;
-	}
+                               k_thread_runtime_stats_t* stats) {
+    if ((thread == NULL) || (stats == NULL)) {
+        return (-EINVAL);
+    }
 
-#ifdef CONFIG_SCHED_THREAD_USAGE
-	z_sched_thread_usage(thread, stats);
-#else
-	*stats = (k_thread_runtime_stats_t) {};
-#endif /* CONFIG_SCHED_THREAD_USAGE */
+    #ifdef CONFIG_SCHED_THREAD_USAGE
+    z_sched_thread_usage(thread, stats);
+    #else
+    #if defined(_MSC_VER) /* #CUSTOM@NDRS */
+    *stats = (k_thread_runtime_stats_t){0};
+    #else
+    *stats = (k_thread_runtime_stats_t){};
+    #endif
+    #endif /* CONFIG_SCHED_THREAD_USAGE */
 
-	return 0;
+    return (0);
 }
 
-int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats)
-{
-#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
-	k_thread_runtime_stats_t  tmp_stats;
-#endif /* CONFIG_SCHED_THREAD_USAGE_ALL */
+int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t* stats) {
+    #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+    k_thread_runtime_stats_t  tmp_stats;
+    #endif /* CONFIG_SCHED_THREAD_USAGE_ALL */
 
-	if (stats == NULL) {
-		return -EINVAL;
-	}
+    if (stats == NULL) {
+        return (-EINVAL);
+    }
 
-	*stats = (k_thread_runtime_stats_t) {};
+    #if defined(_MSC_VER) /* #CUSTOM@NDRS */
+    *stats = (k_thread_runtime_stats_t){0};
+    #else
+    *stats = (k_thread_runtime_stats_t){ };
+    #endif
 
-#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
-	/* Retrieve the usage stats for each core and amalgamate them. */
+    #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+    /* Retrieve the usage stats for each core and amalgamate them. */
 
-	unsigned int num_cpus = arch_num_cpus();
+    unsigned int num_cpus = arch_num_cpus();
 
-	for (uint8_t i = 0; i < num_cpus; i++) {
-		z_sched_cpu_usage(i, &tmp_stats);
+    for (uint8_t i = 0; i < num_cpus; i++) {
+        z_sched_cpu_usage(i, &tmp_stats);
 
-		stats->execution_cycles += tmp_stats.execution_cycles;
-		stats->total_cycles     += tmp_stats.total_cycles;
-#ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
-		stats->current_cycles   += tmp_stats.current_cycles;
-		stats->peak_cycles      += tmp_stats.peak_cycles;
-		stats->average_cycles   += tmp_stats.average_cycles;
-#endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
-		stats->idle_cycles      += tmp_stats.idle_cycles;
-	}
-#endif /* CONFIG_SCHED_THREAD_USAGE_ALL */
+        stats->execution_cycles += tmp_stats.execution_cycles;
+        stats->total_cycles     += tmp_stats.total_cycles;
+        #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
+        stats->current_cycles   += tmp_stats.current_cycles;
+        stats->peak_cycles      += tmp_stats.peak_cycles;
+        stats->average_cycles   += tmp_stats.average_cycles;
+        #endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
+        stats->idle_cycles      += tmp_stats.idle_cycles;
+    }
+    #endif /* CONFIG_SCHED_THREAD_USAGE_ALL */
 
-	return 0;
+    return (0);
 }
 
 int k_thread_runtime_stats_cpu_get(int cpu, k_thread_runtime_stats_t *stats)

@@ -73,7 +73,11 @@ struct bt_keys {
 	uint8_t id;
 	bt_addr_le_t addr;
 	uint8_t state;
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 	uint8_t storage_start[0] __aligned(sizeof(void *));
+#else
+	uint8_t rsv[3];
+#endif
 	uint8_t enc_size;
 	uint8_t flags;
 	uint16_t keys;
@@ -91,7 +95,11 @@ struct bt_keys {
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 };
 
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 #define BT_KEYS_STORAGE_LEN (sizeof(struct bt_keys) - offsetof(struct bt_keys, storage_start))
+#else
+#define BT_KEYS_STORAGE_LEN (sizeof(struct bt_keys) - 12U)
+#endif
 
 /** Clears all keys.
  *
@@ -217,15 +225,24 @@ enum {
 
 struct bt_keys_link_key {
 	bt_addr_t addr;
-	uint8_t storage_start[0] __aligned(sizeof(void *));
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
+	uint8_t storage_start[0]  __aligned(sizeof(void *));
+#else
+	uint8_t rsv[2];
+#endif
 	uint8_t flags;
 	uint8_t val[16];
 #if (defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST))
 	uint32_t aging_counter;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 };
-#define BT_KEYS_LINK_KEY_STORAGE_LEN                                                               \
+
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define BT_KEYS_LINK_KEY_STORAGE_LEN \
 	(sizeof(struct bt_keys_link_key) - offsetof(struct bt_keys_link_key, storage_start))
+#else
+#define BT_KEYS_LINK_KEY_STORAGE_LEN     (sizeof(struct bt_keys_link_key) - 8U)
+#endif
 
 struct bt_keys_link_key *bt_keys_get_link_key(const bt_addr_t *addr);
 struct bt_keys_link_key *bt_keys_find_link_key(const bt_addr_t *addr);

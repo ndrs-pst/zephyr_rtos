@@ -82,7 +82,7 @@ static int gpio_ra_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 	if (config->vbatt_pins[0] != 0xFF) {
 		uint32_t clear = 0;
 
-		for (int i = 0; config->vbatt_pins[i] != '\0'; i++) {
+		for (int i = 0; config->vbatt_pins[i] != 0; i++) {
 			if (config->vbatt_pins[i] == pin) {
 				WRITE_BIT(clear, i, 1);
 			}
@@ -117,11 +117,11 @@ static int gpio_ra_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 		WRITE_BIT(pfs_cfg, R_PFS_PORT_PIN_PmnPFS_PDR_Pos, 1);
 	}
 
-	if ((flags & GPIO_LINE_OPEN_DRAIN) != 0) {
+	if ((flags & GPIO_LINE_OPEN_DRAIN) != 0U) {
 		WRITE_BIT(pfs_cfg, R_PFS_PORT_PIN_PmnPFS_NCODR_Pos, 1);
 	}
 
-	if ((flags & GPIO_PULL_UP) != 0) {
+	if ((flags & GPIO_PULL_UP) != 0U) {
 		WRITE_BIT(pfs_cfg, R_PFS_PORT_PIN_PmnPFS_PCR_Pos, 1);
 	}
 
@@ -213,7 +213,7 @@ static int gpio_ra_port_get_raw(const struct device *dev, uint32_t *value)
 	const struct gpio_ra_config *config = dev->config;
 	R_PORT0_Type *port = config->port;
 
-	*value = port->PIDR;
+	*value = (port->PIDR & config->common.port_pin_mask);
 
 	return 0;
 }
@@ -234,7 +234,8 @@ static int gpio_ra_port_set_bits_raw(const struct device *dev, gpio_port_pins_t 
 	const struct gpio_ra_config *config = dev->config;
 	R_PORT0_Type *port = config->port;
 
-	port->PODR = (port->PODR | pins);
+	/* POSR: Output set register */
+	port->POSR = (uint16_t)(pins & config->common.port_pin_mask);
 
 	return 0;
 }
@@ -244,7 +245,8 @@ static int gpio_ra_port_clear_bits_raw(const struct device *dev, gpio_port_pins_
 	const struct gpio_ra_config *config = dev->config;
 	R_PORT0_Type *port = config->port;
 
-	port->PODR = (port->PODR & ~pins);
+	/* PORR: Output reset register */
+	port->PORR = (uint16_t)(pins & config->common.port_pin_mask);
 
 	return 0;
 }

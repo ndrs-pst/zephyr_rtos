@@ -175,20 +175,20 @@ static bool start_coap_client(void)
 	memset(&hints, 0, sizeof(hints));
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		hints.ai_family = AF_INET6;
-		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_family = NET_AF_INET6;
+		hints.ai_socktype = NET_SOCK_STREAM;
 	} else if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		hints.ai_family = AF_INET;
-		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_family = NET_AF_INET;
+		hints.ai_socktype = NET_SOCK_STREAM;
 	}
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
 	int verify = TLS_PEER_VERIFY_REQUIRED;
 	sec_tag_t sec_list[] = { CA_CERTIFICATE_TAG };
-	int protocol = IPPROTO_DTLS_1_2;
+	int protocol = NET_IPPROTO_DTLS_1_2;
 	char port[] = "5684";
 #else
-	int protocol = IPPROTO_UDP;
+	int protocol = NET_IPPROTO_UDP;
 	char port[] = "5683";
 #endif
 

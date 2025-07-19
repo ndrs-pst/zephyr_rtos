@@ -20,12 +20,12 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv)
 	const struct device *const wdt = NULL;
 #endif
 
-	shell_fprintf(sh, SHELL_INFO, "Init task watchdog ...\n");
+	shell_info(sh, "Init task watchdog ...");
 
 	int ret = task_wdt_init(wdt);
 
 	if (ret < 0) {
-		shell_fprintf(sh, SHELL_ERROR, "Failed to init task watchdog: %d\n", ret);
+		shell_error(sh, "Failed to init task watchdog: %d", ret);
 		return ret;
 	}
 
@@ -35,27 +35,27 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv)
 static int cmd_add(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc != 2) {
-		shell_fprintf(sh, SHELL_ERROR, "Invalid number of arguments\n");
+		shell_error(sh, "Invalid number of arguments");
 		return -EINVAL;
 	}
 
-	shell_fprintf(sh, SHELL_INFO, "Add task watchdog channel\n");
+	shell_info(sh, "Add task watchdog channel");
 
 	uint32_t period = atoi(argv[1]) * MSEC_PER_SEC;
 
 	int ret = task_wdt_add(period, NULL, NULL);
 
 	if (ret < 0) {
-		shell_fprintf(sh, SHELL_ERROR, "Failed to add task watchdog channel: %d\n", ret);
+		shell_error(sh, "Failed to add task watchdog channel: %d", ret);
 		return ret;
 	}
 
-	shell_fprintf(sh, SHELL_INFO, "Task watchdog channel: %d\n", ret);
+	shell_info(sh, "Task watchdog channel: %d", ret);
 
-	shell_fprintf(sh, SHELL_NORMAL,
-		      "Use \"task_wdt feed %d\" to feed this channel\n"
-		      "and \"task_wdt del %d\" to delete this channel\n",
-		      ret, ret);
+	shell_print(sh,
+		    "Use \"task_wdt feed %d\" to feed this channel\n"
+		    "and \"task_wdt del %d\" to delete this channel",
+		    ret, ret);
 
 	return 0;
 }
@@ -63,16 +63,16 @@ static int cmd_add(const struct shell *sh, size_t argc, char **argv)
 static int cmd_feed(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc != 2) {
-		shell_fprintf(sh, SHELL_ERROR, "Invalid number of arguments\n");
+		shell_error(sh, "Invalid number of arguments");
 		return -EINVAL;
 	}
 
-	shell_fprintf(sh, SHELL_INFO, "Feed task watchdog channel %s\n", argv[1]);
+	shell_info(sh, "Feed task watchdog channel %s", argv[1]);
 
 	int ret = task_wdt_feed(atoi(argv[1]));
 
 	if (ret < 0) {
-		shell_fprintf(sh, SHELL_ERROR, "Failed to add task watchdog channel: %d\n", ret);
+		shell_error(sh, "Failed to add task watchdog channel: %d", ret);
 		return ret;
 	}
 
@@ -82,16 +82,16 @@ static int cmd_feed(const struct shell *sh, size_t argc, char **argv)
 static int cmd_del(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc != 2) {
-		shell_fprintf(sh, SHELL_ERROR, "Invalid number of arguments\n");
+		shell_error(sh, "Invalid number of arguments");
 		return -EINVAL;
 	}
 
-	shell_fprintf(sh, SHELL_INFO, "Delete task watchdog channel %s\n", argv[1]);
+	shell_info(sh, "Delete task watchdog channel %s", argv[1]);
 
 	int ret = task_wdt_delete(atoi(argv[1]));
 
 	if (ret < 0) {
-		shell_fprintf(sh, SHELL_ERROR, "Failed to delete task watchdog channel: %d\n", ret);
+		shell_error(sh, "Failed to delete task watchdog channel: %d", ret);
 		return ret;
 	}
 

@@ -349,19 +349,20 @@ struct bt_hci_rp_mesh_get_opts {
 #define BT_HCI_OC_MESH_SET_SCAN_FILTER         0x01
 struct bt_hci_mesh_pattern {
 	uint8_t pattern_len;
-	uint8_t pattern[0];
+	uint8_t pattern[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 struct bt_hci_cp_mesh_set_scan_filter {
-	uint8_t      scan_filter;
-	uint8_t      filter_dup;
-	uint8_t      num_patterns;
-	struct    bt_hci_mesh_pattern patterns[0];
+	uint8_t scan_filter;
+	uint8_t filter_dup;
+	uint8_t num_patterns;
+	struct  bt_hci_mesh_pattern patterns[BT_ZERO_LEN_ARRAY];
 } __packed;
+
 struct bt_hci_rp_mesh_set_scan_filter {
-	uint8_t      status;
-	uint8_t      opcode;
-	uint8_t      scan_filter;
+	uint8_t status;
+	uint8_t opcode;
+	uint8_t scan_filter;
 } __packed;
 
 #define BT_HCI_OC_MESH_ADVERTISE               0x02
@@ -437,21 +438,21 @@ struct bt_hci_evt_mesh {
 
 #define BT_HCI_EVT_MESH_ADV_COMPLETE           0x00
 struct bt_hci_evt_mesh_adv_complete {
-	uint8_t         adv_slot;
+	uint8_t adv_slot;
 } __packed;
 
 #define BT_HCI_EVT_MESH_SCANNING_REPORT        0x01
 struct bt_hci_evt_mesh_scan_report {
 	bt_addr_le_t addr;
-	uint8_t         chan;
-	int8_t         rssi;
-	uint32_t        instant;
-	uint8_t         data_len;
-	uint8_t         data[0];
+	uint8_t  chan;
+	int8_t   rssi;
+	uint32_t instant;
+	uint8_t  data_len;
+	uint8_t  data[BT_ZERO_LEN_ARRAY];
 } __packed;
 struct bt_hci_evt_mesh_scanning_report {
 	uint8_t num_reports;
-	struct bt_hci_evt_mesh_scan_report reports[0];
+	struct bt_hci_evt_mesh_scan_report reports[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 struct net_buf *hci_vs_err_stack_frame(unsigned int reason, const struct arch_esf *esf);

@@ -314,15 +314,15 @@ struct zsock_addrinfo {
 	struct zsock_addrinfo *ai_next; /**< Pointer to next address entry */
 	int ai_flags;             /**< Additional options */
 	int ai_family;            /**< Address family of the returned addresses */
-	int ai_socktype;          /**< Socket type, for example SOCK_STREAM or SOCK_DGRAM */
+	int ai_socktype;          /**< Socket type, for example NET_SOCK_STREAM or SOCK_DGRAM */
 	int ai_protocol;          /**< Protocol for addresses, 0 means any protocol */
 	int ai_eflags;            /**< Extended flags for special usage */
 	socklen_t ai_addrlen;     /**< Length of the socket address */
-	struct sockaddr *ai_addr; /**< Pointer to the address */
+	struct net_sockaddr *ai_addr; /**< Pointer to the address */
 	char *ai_canonname;       /**< Optional official name of the host */
 
 /** @cond INTERNAL_HIDDEN */
-	struct sockaddr _ai_addr;
+	struct net_sockaddr _ai_addr;
 	char _ai_canonname[DNS_MAX_NAME_SIZE + 1];
 /** @endcond */
 };
@@ -428,7 +428,7 @@ __syscall int zsock_shutdown(int sock, int how);
  * This function is also exposed as `bind()`
  * if @kconfig{CONFIG_POSIX_API} is defined.
  */
-__syscall int zsock_bind(int sock, const struct sockaddr *addr,
+__syscall int zsock_bind(int sock, const struct net_sockaddr *addr,
 			 socklen_t addrlen);
 
 /**
@@ -441,7 +441,7 @@ __syscall int zsock_bind(int sock, const struct sockaddr *addr,
  * This function is also exposed as `connect()`
  * if @kconfig{CONFIG_POSIX_API} is defined.
  */
-__syscall int zsock_connect(int sock, const struct sockaddr *addr,
+__syscall int zsock_connect(int sock, const struct net_sockaddr *addr,
 			    socklen_t addrlen);
 
 /**
@@ -466,7 +466,7 @@ __syscall int zsock_listen(int sock, int backlog);
  * This function is also exposed as `accept()`
  * if @kconfig{CONFIG_POSIX_API} is defined.
  */
-__syscall int zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen);
+__syscall int zsock_accept(int sock, struct net_sockaddr *addr, socklen_t *addrlen);
 
 /**
  * @brief Send data to an arbitrary network address
@@ -479,7 +479,7 @@ __syscall int zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen);
  * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 __syscall ssize_t zsock_sendto(int sock, const void *buf, size_t len,
-			       int flags, const struct sockaddr *dest_addr,
+			       int flags, const struct net_sockaddr *dest_addr,
 			       socklen_t addrlen);
 
 /**
@@ -522,7 +522,7 @@ __syscall ssize_t zsock_sendmsg(int sock, const struct msghdr *msg,
  * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 __syscall ssize_t zsock_recvfrom(int sock, void *buf, size_t max_len,
-				 int flags, struct sockaddr *src_addr,
+				 int flags, struct net_sockaddr *src_addr,
 				 socklen_t *addrlen);
 
 /**
@@ -601,7 +601,7 @@ static inline int zsock_fcntl_wrapper(int sock, int cmd, ...)
  * if @kconfig{CONFIG_POSIX_API} is defined (in which case
  * it may conflict with generic POSIX `ioctl()` function).
  */
-__syscall int zsock_ioctl_impl(int sock, unsigned long request, va_list ap);
+__syscall int zsock_ioctl_impl(int sock, unsigned long request, va_list args);
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -631,6 +631,7 @@ static inline int zsock_ioctl_wrapper(int sock, unsigned long request, ...)
  * This function is also exposed as `poll()`
  * if @kconfig{CONFIG_POSIX_API} is defined (in which case
  * it may conflict with generic POSIX `poll()` function).
+ * @see z_impl_zsock_poll() in `subsys/net/lib/sockets/sockets.c`
  */
 static inline int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 {
@@ -679,7 +680,7 @@ __syscall int zsock_setsockopt(int sock, int level, int optname,
  * This function is also exposed as `getpeername()`
  * if @kconfig{CONFIG_POSIX_API} is defined.
  */
-__syscall int zsock_getpeername(int sock, struct sockaddr *addr,
+__syscall int zsock_getpeername(int sock, struct net_sockaddr *addr,
 				socklen_t *addrlen);
 
 /**
@@ -692,7 +693,7 @@ __syscall int zsock_getpeername(int sock, struct sockaddr *addr,
  * This function is also exposed as `getsockname()`
  * if @kconfig{CONFIG_POSIX_API} is defined.
  */
-__syscall int zsock_getsockname(int sock, struct sockaddr *addr,
+__syscall int zsock_getsockname(int sock, struct net_sockaddr *addr,
 				socklen_t *addrlen);
 
 /**
@@ -837,7 +838,7 @@ const char *zsock_gai_strerror(int errcode);
  * This function is also exposed as `getnameinfo()`
  * if @kconfig{CONFIG_POSIX_API} is defined.
  */
-int zsock_getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
+int zsock_getnameinfo(const struct net_sockaddr *addr, socklen_t addrlen,
 		      char *host, socklen_t hostlen,
 		      char *serv, socklen_t servlen, int flags);
 
@@ -863,74 +864,74 @@ struct ifreq {
  * @{
  */
 /** Socket-level option */
-#define SOL_SOCKET 1
+#define NET_SOL_SOCKET 1
 
 /* Socket options for SOL_SOCKET level */
 
 /** Recording debugging information (ignored, for compatibility) */
-#define SO_DEBUG 1
+#define NET_SO_DEBUG 1
 /** address reuse */
-#define SO_REUSEADDR 2
+#define NET_SO_REUSEADDR 2
 /** Type of the socket */
-#define SO_TYPE 3
+#define NET_SO_TYPE 3
 /** Async error */
-#define SO_ERROR 4
+#define NET_SO_ERROR 4
 /** Bypass normal routing and send directly to host (ignored, for compatibility) */
-#define SO_DONTROUTE 5
+#define NET_SO_DONTROUTE 5
 /** Transmission of broadcast messages is supported (ignored, for compatibility) */
-#define SO_BROADCAST 6
+#define NET_SO_BROADCAST 6
 
 /** Size of socket send buffer */
-#define SO_SNDBUF 7
+#define NET_SO_SNDBUF 7
 /** Size of socket recv buffer */
-#define SO_RCVBUF 8
+#define NET_SO_RCVBUF 8
 
 /** Enable sending keep-alive messages on connections */
-#define SO_KEEPALIVE 9
+#define NET_SO_KEEPALIVE 9
 /** Place out-of-band data into receive stream (ignored, for compatibility) */
-#define SO_OOBINLINE 10
+#define NET_SO_OOBINLINE 10
 /** Socket priority */
-#define SO_PRIORITY 12
+#define NET_SO_PRIORITY 12
 /** Socket lingers on close (ignored, for compatibility) */
-#define SO_LINGER 13
+#define NET_SO_LINGER 13
 /** Allow multiple sockets to reuse a single port */
-#define SO_REUSEPORT 15
+#define NET_SO_REUSEPORT 15
 
 /** Receive low watermark (ignored, for compatibility) */
-#define SO_RCVLOWAT 18
+#define NET_SO_RCVLOWAT 18
 /** Send low watermark (ignored, for compatibility) */
-#define SO_SNDLOWAT 19
+#define NET_SO_SNDLOWAT 19
 
 /**
  * Receive timeout
  * Applies to receive functions like recv(), but not to connect()
  */
-#define SO_RCVTIMEO 20
+#define NET_SO_RCVTIMEO 20
 /** Send timeout */
-#define SO_SNDTIMEO 21
+#define NET_SO_SNDTIMEO 21
 
 /** Bind a socket to an interface */
-#define SO_BINDTODEVICE	25
+#define NET_SO_BINDTODEVICE 25
 
 /** Socket accepts incoming connections (ignored, for compatibility) */
-#define SO_ACCEPTCONN 30
+#define NET_SO_ACCEPTCONN 30
 
 /** Timestamp TX RX or both packets. Supports multiple timestamp sources. */
-#define SO_TIMESTAMPING 37
+#define NET_SO_TIMESTAMPING 37
 
 /** Protocol used with the socket */
-#define SO_PROTOCOL 38
+#define NET_SO_PROTOCOL 38
 
 /** Domain used with SOCKET */
-#define SO_DOMAIN 39
+#define NET_SO_DOMAIN 39
 
 /** Enable SOCKS5 for Socket */
-#define SO_SOCKS5 60
+#define NET_SO_SOCKS5 60
 
 /** Socket TX time (when the data should be sent) */
-#define SO_TXTIME 61
+#define NET_SO_TXTIME 61
 /** Socket TX time (same as SO_TXTIME) */
-#define SCM_TXTIME SO_TXTIME
+#define NET_SCM_TXTIME NET_SO_TXTIME
 
 /** Timestamp generation flags */
 
@@ -950,15 +951,15 @@ struct ifreq {
  * @name TCP level options (IPPROTO_TCP)
  * @{
  */
-/* Socket options for IPPROTO_TCP level */
+/* Socket options for NET_IPPROTO_TCP level */
 /** Disable TCP buffering (ignored, for compatibility) */
-#define TCP_NODELAY 1
+#define NET_TCP_NODELAY 1
 /** Start keepalives after this period (seconds) */
-#define TCP_KEEPIDLE 2
+#define NET_TCP_KEEPIDLE 2
 /** Interval between keepalives (seconds) */
-#define TCP_KEEPINTVL 3
+#define NET_TCP_KEEPINTVL 3
 /** Number of keepalives before dropping connection */
-#define TCP_KEEPCNT 4
+#define NET_TCP_KEEPCNT 4
 
 /** @} */
 
@@ -966,18 +967,18 @@ struct ifreq {
  * @name IPv4 level options (IPPROTO_IP)
  * @{
  */
-/* Socket options for IPPROTO_IP level */
+/* Socket options for NET_IPPROTO_IP level */
 /** Set or receive the Type-Of-Service value for an outgoing packet. */
-#define IP_TOS 1
+#define NET_IP_TOS 1
 
 /** Set or receive the Time-To-Live value for an outgoing packet. */
-#define IP_TTL 2
+#define NET_IP_TTL 2
 
 /** Pass an IP_PKTINFO ancillary message that contains a
  *  pktinfo structure that supplies some information about the
  *  incoming packet.
  */
-#define IP_PKTINFO 8
+#define NET_IP_PKTINFO 8
 
 /**
  * @brief Incoming IPv4 packet information.
@@ -987,46 +988,55 @@ struct ifreq {
  */
 struct in_pktinfo {
 	unsigned int   ipi_ifindex;  /**< Network interface index */
-	struct in_addr ipi_spec_dst; /**< Local address */
-	struct in_addr ipi_addr;     /**< Header Destination address */
+	struct net_in_addr ipi_spec_dst; /**< Local address */
+	struct net_in_addr ipi_addr;     /**< Header Destination address */
 };
 
 /** Retrieve the current known path MTU of the current socket. Returns an
  *  integer. IP_MTU is valid only for getsockopt and can be employed only when
  *  the socket has been connected.
  */
-#define IP_MTU 14
+#define NET_IP_MTU 14
 
 /** Set IPv4 multicast datagram network interface. */
-#define IP_MULTICAST_IF 32
+#define NET_IP_MULTICAST_IF 32
 /** Set IPv4 multicast TTL value. */
-#define IP_MULTICAST_TTL 33
+#define NET_IP_MULTICAST_TTL 33
 /** Set IPv4 multicast loop value. */
-#define IP_MULTICAST_LOOP 34
+#define NET_IP_MULTICAST_LOOP 34
 /** Join IPv4 multicast group. */
-#define IP_ADD_MEMBERSHIP 35
+#define NET_IP_ADD_MEMBERSHIP 35
 /** Leave IPv4 multicast group. */
-#define IP_DROP_MEMBERSHIP 36
+#define NET_IP_DROP_MEMBERSHIP 36
+
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define IP_MTU              NET_IP_MTU
+#define IP_MULTICAST_IF     NET_IP_MULTICAST_IF
+#define IP_MULTICAST_TTL    NET_IP_MULTICAST_TTL
+#define IP_MULTICAST_LOOP   NET_IP_MULTICAST_LOOP
+#define IP_ADD_MEMBERSHIP   NET_IP_ADD_MEMBERSHIP
+#define IP_DROP_MEMBERSHIP  NET_IP_DROP_MEMBERSHIP
+#endif
 
 /**
  * @brief Struct used when joining or leaving a IPv4 multicast group.
  */
-struct ip_mreqn {
-	struct in_addr imr_multiaddr; /**< IP multicast group address */
-	struct in_addr imr_address;   /**< IP address of local interface */
-	int            imr_ifindex;   /**< Network interface index */
+struct net_ip_mreqn {
+	struct net_in_addr imr_multiaddr; /**< IP multicast group address */
+	struct net_in_addr imr_address;   /**< IP address of local interface */
+	int imr_ifindex;                  /**< Network interface index */
 };
 
 /**
  * @brief Struct used when setting a IPv4 multicast network interface.
  */
-struct ip_mreq  {
-	struct in_addr imr_multiaddr;   /**< IP multicast group address */
-	struct in_addr imr_interface;   /**< IP address of local interface */
+struct net_ip_mreq  {
+	struct net_in_addr imr_multiaddr; /**< IP multicast group address */
+	struct net_in_addr imr_interface; /**< IP address of local interface */
 };
 
 /** Clamp down the global port range for a given socket */
-#define IP_LOCAL_PORT_RANGE 51
+#define NET_IP_LOCAL_PORT_RANGE 51
 
 /** @} */
 
@@ -1034,7 +1044,7 @@ struct ip_mreq  {
  * @name IPv6 level options (IPPROTO_IPV6)
  * @{
  */
-/* Socket options for IPPROTO_IPV6 level */
+/* Socket options for NET_IPPROTO_IPV6 level */
 /** Set the unicast hop limit for the socket. */
 #define IPV6_UNICAST_HOPS	16
 
@@ -1062,9 +1072,9 @@ struct ip_mreq  {
 /**
  * @brief Struct used when joining or leaving a IPv6 multicast group.
  */
-struct ipv6_mreq {
+struct net_ipv6_mreq {
 	/** IPv6 multicast address of group */
-	struct in6_addr ipv6mr_multiaddr;
+	struct net_in6_addr ipv6mr_multiaddr;
 
 	/** Network interface index of the local IPv6 address */
 	int ipv6mr_ifindex;
@@ -1113,8 +1123,8 @@ struct ipv6_mreq {
  * Used as ancillary data when calling recvmsg() and IPV6_RECVPKTINFO socket
  * option is set.
  */
-struct in6_pktinfo {
-	struct in6_addr ipi6_addr;    /**< Destination IPv6 address */
+struct net_in6_pktinfo {
+	struct net_in6_addr ipi6_addr;    /**< Destination IPv6 address */
 	unsigned int    ipi6_ifindex; /**< Receive interface index */
 };
 
@@ -1127,7 +1137,7 @@ struct in6_pktinfo {
  * @{
  */
 /** listen: The maximum backlog queue length */
-#define SOMAXCONN 128
+#define NET_SOMAXCONN 128
 /** @} */
 
 /**
@@ -1220,24 +1230,24 @@ struct net_socket_register {
 struct socket_op_vtable {
 	struct fd_op_vtable fd_vtable;
 	int (*shutdown)(void *obj, int how);
-	int (*bind)(void *obj, const struct sockaddr *addr, socklen_t addrlen);
-	int (*connect)(void *obj, const struct sockaddr *addr,
+	int (*bind)(void *obj, const struct net_sockaddr *addr, socklen_t addrlen);
+	int (*connect)(void *obj, const struct net_sockaddr *addr,
 		       socklen_t addrlen);
 	int (*listen)(void *obj, int backlog);
-	int (*accept)(void *obj, struct sockaddr *addr, socklen_t *addrlen);
+	int (*accept)(void *obj, struct net_sockaddr *addr, socklen_t *addrlen);
 	ssize_t (*sendto)(void *obj, const void *buf, size_t len, int flags,
-			  const struct sockaddr *dest_addr, socklen_t addrlen);
+			  const struct net_sockaddr *dest_addr, socklen_t addrlen);
 	ssize_t (*recvfrom)(void *obj, void *buf, size_t max_len, int flags,
-			    struct sockaddr *src_addr, socklen_t *addrlen);
+			    struct net_sockaddr *src_addr, socklen_t *addrlen);
 	int (*getsockopt)(void *obj, int level, int optname,
 			  void *optval, socklen_t *optlen);
 	int (*setsockopt)(void *obj, int level, int optname,
 			  const void *optval, socklen_t optlen);
 	ssize_t (*sendmsg)(void *obj, const struct msghdr *msg, int flags);
 	ssize_t (*recvmsg)(void *obj, struct msghdr *msg, int flags);
-	int (*getpeername)(void *obj, struct sockaddr *addr,
+	int (*getpeername)(void *obj, struct net_sockaddr *addr,
 			   socklen_t *addrlen);
-	int (*getsockname)(void *obj, struct sockaddr *addr,
+	int (*getsockname)(void *obj, struct net_sockaddr *addr,
 			   socklen_t *addrlen);
 };
 

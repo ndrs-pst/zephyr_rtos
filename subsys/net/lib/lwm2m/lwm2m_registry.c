@@ -90,9 +90,13 @@ static sys_slist_t engine_obj_list;
 static sys_slist_t engine_obj_inst_list;
 
 /* Resource wrappers */
-sys_slist_t *lwm2m_engine_obj_list(void) { return &engine_obj_list; }
+sys_slist_t* lwm2m_engine_obj_list(void) {
+	return &engine_obj_list;
+}
 
-sys_slist_t *lwm2m_engine_obj_inst_list(void) { return &engine_obj_inst_list; }
+sys_slist_t* lwm2m_engine_obj_inst_list(void) {
+	return &engine_obj_inst_list;
+}
 
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
 static void lwm2m_engine_cache_write(const struct lwm2m_engine_obj_field *obj_field,
@@ -142,10 +146,8 @@ struct lwm2m_engine_obj *get_engine_obj(int obj_id)
 
 struct lwm2m_engine_obj_field *lwm2m_get_engine_obj_field(struct lwm2m_engine_obj *obj, int res_id)
 {
-	int i;
-
-	if (obj && obj->fields && obj->field_count > 0) {
-		for (i = 0; i < obj->field_count; i++) {
+	if (obj && obj->fields && (obj->field_count > 0)) {
+		for (int i = 0; i < obj->field_count; i++) {
 			if (obj->fields[i].res_id == res_id) {
 				return &obj->fields[i];
 			}
@@ -192,7 +194,8 @@ struct lwm2m_engine_obj_inst *get_engine_obj_inst(int obj_id, int obj_inst_id)
 	struct lwm2m_engine_obj_inst *obj_inst;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_inst_list, obj_inst, node) {
-		if (obj_inst->obj->obj_id == obj_id && obj_inst->obj_inst_id == obj_inst_id) {
+		if ((obj_inst->obj->obj_id == obj_id) &&
+		    (obj_inst->obj_inst_id == obj_inst_id)) {
 			return obj_inst;
 		}
 	}
@@ -205,8 +208,9 @@ struct lwm2m_engine_obj_inst *next_engine_obj_inst(int obj_id, int obj_inst_id)
 	struct lwm2m_engine_obj_inst *obj_inst, *next = NULL;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_inst_list, obj_inst, node) {
-		if (obj_inst->obj->obj_id == obj_id && obj_inst->obj_inst_id > obj_inst_id &&
-		    (!next || next->obj_inst_id > obj_inst->obj_inst_id)) {
+		if ((obj_inst->obj->obj_id == obj_id) &&
+		    (obj_inst->obj_inst_id > obj_inst_id) &&
+		    (!next || (next->obj_inst_id > obj_inst->obj_inst_id))) {
 			next = obj_inst;
 		}
 	}
@@ -217,10 +221,10 @@ struct lwm2m_engine_obj_inst *next_engine_obj_inst(int obj_id, int obj_inst_id)
 int lwm2m_create_obj_inst(uint16_t obj_id, uint16_t obj_inst_id,
 			  struct lwm2m_engine_obj_inst **obj_inst)
 {
-	k_mutex_lock(&registry_lock, K_FOREVER);
 	struct lwm2m_engine_obj *obj;
 	int ret;
 
+	k_mutex_lock(&registry_lock, K_FOREVER);
 	*obj_inst = NULL;
 	obj = get_engine_obj(obj_id);
 	if (!obj) {
@@ -266,17 +270,18 @@ int lwm2m_create_obj_inst(uint16_t obj_id, uint16_t obj_inst_id,
 			return ret;
 		}
 	}
+
 	k_mutex_unlock(&registry_lock);
 	return 0;
 }
 
 int lwm2m_delete_obj_inst(uint16_t obj_id, uint16_t obj_inst_id)
 {
-	k_mutex_lock(&registry_lock, K_FOREVER);
-	int i, ret = 0;
+	int ret = 0;
 	struct lwm2m_engine_obj *obj;
 	struct lwm2m_engine_obj_inst *obj_inst;
 
+	k_mutex_lock(&registry_lock, K_FOREVER);
 	obj = get_engine_obj(obj_id);
 	if (!obj) {
 		k_mutex_unlock(&registry_lock);
@@ -305,14 +310,15 @@ int lwm2m_delete_obj_inst(uint16_t obj_id, uint16_t obj_inst_id)
 	}
 
 	/* reset obj_inst and res_inst data structure */
-	for (i = 0; i < obj_inst->resource_count; i++) {
+	for (int i = 0; i < obj_inst->resource_count; i++) {
 		clear_attrs(LWM2M_PATH_LEVEL_RESOURCE, &obj_inst->resources[i]);
-		(void)memset(obj_inst->resources + i, 0, sizeof(struct lwm2m_engine_res));
+		(void) memset(obj_inst->resources + i, 0, sizeof(struct lwm2m_engine_res));
 	}
 
 	clear_attrs(LWM2M_PATH_LEVEL_OBJECT_INST, obj_inst);
-	(void)memset(obj_inst, 0, sizeof(struct lwm2m_engine_obj_inst));
+	(void) memset(obj_inst, 0, sizeof(struct lwm2m_engine_obj_inst));
 	k_mutex_unlock(&registry_lock);
+
 	return ret;
 }
 
@@ -494,11 +500,13 @@ int lwm2m_set_res_buf(const struct lwm2m_obj_path *path, void *buffer_ptr, uint1
 
 static bool lwm2m_validate_time_resource_lenghts(uint16_t resource_length, uint16_t buf_length)
 {
-	if (resource_length != sizeof(time_t) && resource_length != sizeof(uint32_t)) {
+	if ((resource_length != sizeof(time_t)) &&
+	    (resource_length != sizeof(uint32_t))) {
 		return false;
 	}
 
-	if (buf_length != sizeof(time_t) && buf_length != sizeof(uint32_t)) {
+	if ((buf_length != sizeof(time_t)) &&
+	    (buf_length != sizeof(uint32_t))) {
 		return false;
 	}
 
@@ -540,9 +548,9 @@ static int lwm2m_engine_set(const struct lwm2m_obj_path *path, const void *value
 	struct lwm2m_engine_obj_field *obj_field;
 	struct lwm2m_engine_res *res = NULL;
 	struct lwm2m_engine_res_inst *res_inst = NULL;
-	void *data_ptr = NULL;
-	size_t max_data_len = 0;
-	int ret = 0;
+	void *data_ptr;
+	size_t max_data_len;
+	int ret;
 	bool changed = false;
 
 	if (path->level < LWM2M_PATH_LEVEL_RESOURCE) {
@@ -600,7 +608,8 @@ static int lwm2m_engine_set(const struct lwm2m_obj_path *path, const void *value
 		return ret;
 	}
 
-	if (memcmp(data_ptr, value, len) != 0 || res_inst->data_len != len) {
+	if ((memcmp(data_ptr, value, len) != 0) ||
+	    (res_inst->data_len != len)) {
 		changed = true;
 	}
 
@@ -626,22 +635,22 @@ static int lwm2m_engine_set(const struct lwm2m_obj_path *path, const void *value
 	case LWM2M_RES_TYPE_STRING:
 		if (len) {
 			strncpy(data_ptr, value, len - 1);
-			((char *)data_ptr)[len - 1] = '\0';
+			((char*)data_ptr)[len - 1] = '\0';
 		} else {
-			((char *)data_ptr)[0] = '\0';
+			((char*)data_ptr)[0] = '\0';
 		}
 		break;
 
 	case LWM2M_RES_TYPE_U32:
-		*((uint32_t *)data_ptr) = *(uint32_t *)value;
+		*((uint32_t*)data_ptr) = *(uint32_t*)value;
 		break;
 
 	case LWM2M_RES_TYPE_U16:
-		*((uint16_t *)data_ptr) = *(uint16_t *)value;
+		*((uint16_t*)data_ptr) = *(uint16_t*)value;
 		break;
 
 	case LWM2M_RES_TYPE_U8:
-		*((uint8_t *)data_ptr) = *(uint8_t *)value;
+		*((uint8_t*)data_ptr) = *(uint8_t*)value;
 		break;
 
 	case LWM2M_RES_TYPE_TIME:
@@ -654,49 +663,49 @@ static int lwm2m_engine_set(const struct lwm2m_obj_path *path, const void *value
 
 		if (max_data_len == sizeof(time_t)) {
 			if (len == sizeof(time_t)) {
-				*((time_t *)data_ptr) = *(time_t *)value;
+				*((time_t*)data_ptr) = *(time_t*)value;
 			} else {
-				*((time_t *)data_ptr) = (time_t) *((uint32_t *)value);
+				*((time_t*)data_ptr) = (time_t)*((uint32_t*)value);
 			}
 		} else {
 			LOG_WRN("Converting time to 32bit may cause integer overflow on resource "
 				"[%u/%u/%u/%u:%u]", path->obj_id, path->obj_inst_id, path->res_id,
 				path->res_inst_id, path->level);
 			if (len == sizeof(uint32_t)) {
-				*((uint32_t *)data_ptr) = *(uint32_t *)value;
+				*((uint32_t*)data_ptr) = *(uint32_t*)value;
 			} else {
-				*((uint32_t *)data_ptr) = (uint32_t) *((time_t *)value);
+				*((uint32_t*)data_ptr) = (uint32_t)*((time_t*)value);
 			}
 		}
 
 		break;
 
 	case LWM2M_RES_TYPE_S64:
-		*((int64_t *)data_ptr) = *(int64_t *)value;
+	*((int64_t*)data_ptr) = *(int64_t*)value;
 		break;
 
 	case LWM2M_RES_TYPE_S32:
-		*((int32_t *)data_ptr) = *(int32_t *)value;
+	*((int32_t*)data_ptr) = *(int32_t*)value;
 		break;
 
 	case LWM2M_RES_TYPE_S16:
-		*((int16_t *)data_ptr) = *(int16_t *)value;
+	*((int16_t*)data_ptr) = *(int16_t*)value;
 		break;
 
 	case LWM2M_RES_TYPE_S8:
-		*((int8_t *)data_ptr) = *(int8_t *)value;
+	*((int8_t*)data_ptr) = *(int8_t*)value;
 		break;
 
 	case LWM2M_RES_TYPE_BOOL:
-		*((bool *)data_ptr) = *(bool *)value;
+	*((bool*)data_ptr) = *(bool*)value;
 		break;
 
 	case LWM2M_RES_TYPE_FLOAT:
-		*(double *)data_ptr = *(double *)value;
+	*(double*)data_ptr = *(double*)value;
 		break;
 
 	case LWM2M_RES_TYPE_OBJLNK:
-		*((struct lwm2m_objlnk *)data_ptr) = *(struct lwm2m_objlnk *)value;
+	*((struct lwm2m_objlnk*)data_ptr) = *(struct lwm2m_objlnk*)value;
 		break;
 
 	default:

@@ -98,11 +98,19 @@ struct bt_uuid_128 {
  *               Can be combined with @ref BT_UUID_128_ENCODE to initialize a
  *               UUID from the readable form of UUIDs.
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define BT_UUID_INIT_128(...)		\
+{					\
+	{ BT_UUID_TYPE_128 },		\
+	{ __VA_ARGS__ }			\
+}
+#else
 #define BT_UUID_INIT_128(value...)	\
 {					\
 	.uuid = { BT_UUID_TYPE_128 },	\
 	.val = { value },		\
 }
+#endif
 
 /** @brief Helper to declare a 16-bit UUID inline.
  *
@@ -130,8 +138,13 @@ struct bt_uuid_128 {
  *
  *  @return Pointer to a generic UUID.
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define BT_UUID_DECLARE_128(...) \
+	((const struct bt_uuid *) ((const struct bt_uuid_128[]) {BT_UUID_INIT_128(__VA_ARGS__)}))
+#else
 #define BT_UUID_DECLARE_128(value...) \
 	((const struct bt_uuid *) ((const struct bt_uuid_128[]) {BT_UUID_INIT_128(value)}))
+#endif
 
 /** Helper macro to access the 16-bit UUID from a generic UUID. */
 #define BT_UUID_16(__u) CONTAINER_OF(__u, struct bt_uuid_16, uuid)

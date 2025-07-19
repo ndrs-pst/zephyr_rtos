@@ -334,7 +334,7 @@ static void handle_msg_data_out(struct udc_stm32_data *priv, uint8_t epnum, uint
 
 	if (ep == USB_CONTROL_EP_OUT) {
 		if (udc_ctrl_stage_is_status_out(dev)) {
-			udc_ctrl_update_stage(dev, buf);
+			udc_ctrl_update_stage(dev, buf);        /* USBD_PACKET_SEQ04 */
 			udc_ctrl_submit_status(dev, buf);
 		} else {
 			udc_ctrl_update_stage(dev, buf);
@@ -433,11 +433,11 @@ static void handle_msg_setup(struct udc_stm32_data *priv)
 		return;
 	}
 
-	udc_ep_buf_set_setup(buf);
+	udc_ep_buf_set_setup(buf);                              /* USBD_PACKET_SEQ00 */
 	memcpy(buf->data, setup, 8);
 	net_buf_add(buf, 8);
 
-	udc_ctrl_update_stage(dev, buf);
+	udc_ctrl_update_stage(dev, buf);                        /* USBD_PACKET_SEQ01 */
 
 	if (!buf->len) {
 		return;
@@ -445,7 +445,7 @@ static void handle_msg_setup(struct udc_stm32_data *priv)
 
 	if ((setup->bmRequestType == 0) && (setup->bRequest == USB_SREQ_SET_ADDRESS)) {
 		/* HAL requires we set the address before submitting status */
-		HAL_PCD_SetAddress(&priv->pcd, setup->wValue);
+		HAL_PCD_SetAddress(&priv->pcd, (uint8_t)setup->wValue);
 	}
 
 	if (udc_ctrl_stage_is_data_out(dev)) {
@@ -924,7 +924,7 @@ static enum udc_bus_speed udc_stm32_device_speed(const struct device *dev)
 	return UDC_BUS_UNKNOWN;
 }
 
-static const struct udc_api udc_stm32_api = {
+static struct udc_api const udc_stm32_api = {
 	.lock = udc_stm32_lock,
 	.unlock = udc_stm32_unlock,
 	.init = udc_stm32_init,
@@ -980,7 +980,7 @@ static struct udc_data udc0_data = {
 	.priv = &udc0_priv,
 };
 
-static const struct udc_stm32_config udc0_cfg  = {
+static struct udc_stm32_config const udc0_cfg  = {
 	.num_endpoints = USB_NUM_BIDIR_ENDPOINTS,
 	.dram_size = USB_RAM_SIZE,
 	.pma_offset = USB_BTABLE_SIZE,
@@ -997,8 +997,8 @@ static void priv_pcd_prepare(const struct device *dev)
 	memset(&priv->pcd, 0, sizeof(priv->pcd));
 
 	/* Default values */
-	priv->pcd.Init.dev_endpoints = cfg->num_endpoints;
-	priv->pcd.Init.ep0_mps = cfg->ep0_mps;
+	priv->pcd.Init.dev_endpoints = (uint8_t)cfg->num_endpoints;
+	priv->pcd.Init.ep0_mps = (uint8_t)cfg->ep0_mps;
 	priv->pcd.Init.speed = UTIL_CAT(UDC_STM32_, DT_INST_STRING_UPPER_TOKEN(0, maximum_speed));
 
 	/* Per controller/Phy values */
@@ -1019,7 +1019,7 @@ static void priv_pcd_prepare(const struct device *dev)
 #endif /* USB_OTG_HS_EMB_PHY */
 }
 
-static const struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
+static struct stm32_pclken const pclken[] = STM32_DT_INST_CLOCKS(0);
 
 static int priv_clock_enable(void)
 {
@@ -1317,7 +1317,7 @@ static int udc_stm32_driver_init0(const struct device *dev)
 	}
 #endif
 
-	/*cd
+	/*
 	 * Required for at least STM32L4 devices as they electrically
 	 * isolate USB features from VDDUSB. It must be enabled before
 	 * USB can function. Refer to section 5.1.3 in DM00083560 or
@@ -1332,7 +1332,7 @@ static int udc_stm32_driver_init0(const struct device *dev)
 		LL_PWR_EnableVddUSB();
 		LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_PWR);
 	}
-	#else
+#else
 	LL_PWR_EnableVddUSB();
 #endif /* defined(LL_APB1_GRP1_PERIPH_PWR) */
 #endif /* PWR_CR2_USV */

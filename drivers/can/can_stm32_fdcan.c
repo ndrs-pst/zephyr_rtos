@@ -181,23 +181,14 @@ static inline uint16_t can_stm32fd_remap_reg(uint16_t reg)
 
 	switch (reg) {
 	case CAN_MCAN_SIDFC:
-		__fallthrough;
 	case CAN_MCAN_XIDFC:
-		__fallthrough;
 	case CAN_MCAN_NDAT1:
-		__fallthrough;
 	case CAN_MCAN_NDAT2:
-		__fallthrough;
 	case CAN_MCAN_RXF0C:
-		__fallthrough;
 	case CAN_MCAN_RXBC:
-		__fallthrough;
 	case CAN_MCAN_RXF1C:
-		__fallthrough;
 	case CAN_MCAN_RXESC:
-		__fallthrough;
 	case CAN_MCAN_TXESC:
-		__fallthrough;
 	case CAN_MCAN_TXEFC:
 		__ASSERT_NO_MSG(false);
 		remap = CAN_STM32FD_REGISTER_UNSUPPORTED;
@@ -248,7 +239,7 @@ static inline uint16_t can_stm32fd_remap_reg(uint16_t reg)
 		/* No register address remap needed */
 		remap = reg;
 		break;
-	};
+	}
 
 	return remap;
 }
@@ -259,6 +250,7 @@ static int can_stm32fd_read_reg(const struct device *dev, uint16_t reg, uint32_t
 	const struct can_stm32fd_config *stm32fd_config = mcan_config->custom;
 	uint16_t remap;
 	uint32_t bits;
+	uint32_t tmp;
 	int err;
 
 	remap = can_stm32fd_remap_reg(reg);
@@ -271,48 +263,49 @@ static int can_stm32fd_read_reg(const struct device *dev, uint16_t reg, uint32_t
 		return err;
 	}
 
-	*val = 0U;
+	tmp = 0U;
 
 	switch (reg) {
 	case CAN_MCAN_IR:
-		__fallthrough;
 	case CAN_MCAN_IE:
 		/* Remap IR/IE bits, ignoring unsupported bits */
 		/* Group 1 map bits 23-16 (stm32fd) to 29-22 (mcan) */
-		*val |= ((bits & GENMASK(23, 16)) << 6);
+		tmp |= ((bits & GENMASK(23, 16)) << 6);
 
 		/* Group 2 map bits 15-11 (stm32fd) to 18-14 (mcan) */
-		*val |= ((bits & GENMASK(15, 11)) << 3);
+		tmp |= ((bits & GENMASK(15, 11)) << 3);
 
 		/* Group 3 map bits 10-4 (stm32fd) to 12-6 (mcan) */
-		*val |= ((bits & GENMASK(10, 4)) << 2);
+		tmp |= ((bits & GENMASK(10, 4)) << 2);
 
 		/* Group 4 map bits 3-1 (stm32fd) to 4-2 (mcan) */
-		*val |= ((bits & GENMASK(3, 1)) << 1);
+		tmp |= ((bits & GENMASK(3, 1)) << 1);
 
-		/* Group 5 map bits 0 (mcan) to 0 (stm32fd) */
-		*val |= ((bits & GENMASK(0, 0)) << 0);
+		/* Group 5 map bits 0 (stm32fd) to 0 (mcan) */
+		tmp |= ((bits & GENMASK(0, 0)) << 0);
 		break;
 	case CAN_MCAN_ILS:
 		/* Only remap ILS groups used in can_mcan.c */
 		if ((bits & CAN_STM32FD_ILS_RXFIFO1) != 0U) {
-			*val |= CAN_MCAN_ILS_RF1LL | CAN_MCAN_ILS_RF1FL | CAN_MCAN_ILS_RF1NL;
+			tmp |= CAN_MCAN_ILS_RF1LL | CAN_MCAN_ILS_RF1FL | CAN_MCAN_ILS_RF1NL;
 		}
 
 		if ((bits & CAN_STM32FD_ILS_RXFIFO0) != 0U) {
-			*val |= CAN_MCAN_ILS_RF0LL | CAN_MCAN_ILS_RF0FL | CAN_MCAN_ILS_RF0NL;
+			tmp |= CAN_MCAN_ILS_RF0LL | CAN_MCAN_ILS_RF0FL | CAN_MCAN_ILS_RF0NL;
 		}
 		break;
 	case CAN_MCAN_GFC:
 		/* Map fields from RXGFC excluding STM32 FDCAN LSS and LSE fields */
-		*val = bits & (CAN_MCAN_GFC_ANFS | CAN_MCAN_GFC_ANFE |
-		       CAN_MCAN_GFC_RRFS | CAN_MCAN_GFC_RRFE);
+		tmp = bits & (CAN_MCAN_GFC_ANFS | CAN_MCAN_GFC_ANFE |
+		      CAN_MCAN_GFC_RRFS | CAN_MCAN_GFC_RRFE);
 		break;
 	default:
 		/* No field remap needed */
-		*val = bits;
+		tmp = bits;
 		break;
-	};
+	}
+
+	*val = tmp;
 
 	return 0;
 }
@@ -331,7 +324,6 @@ static int can_stm32fd_write_reg(const struct device *dev, uint16_t reg, uint32_
 
 	switch (reg) {
 	case CAN_MCAN_IR:
-		__fallthrough;
 	case CAN_MCAN_IE:
 		/* Remap IR/IE bits, ignoring unsupported bits */
 		/* Group 1 map bits 29-22 (mcan) to 23-16 (stm32fd) */
@@ -370,7 +362,7 @@ static int can_stm32fd_write_reg(const struct device *dev, uint16_t reg, uint32_
 		/* No field remap needed */
 		bits = val;
 		break;
-	};
+	}
 
 	return can_mcan_sys_write_reg(stm32fd_config->base, remap, bits);
 }
@@ -600,7 +592,7 @@ static void config_can_##inst##_irq(void)                                      \
 	static const struct stm32_pclken can_stm32fd_pclken_##inst[] =	\
 					STM32_DT_INST_CLOCKS(inst);	\
 									\
-	static const struct can_stm32fd_config can_stm32fd_cfg_##inst = { \
+	static struct can_stm32fd_config DT_CONST can_stm32fd_cfg_##inst = { \
 		.base = CAN_MCAN_DT_INST_MCAN_ADDR(inst),		\
 		.mram = CAN_MCAN_DT_INST_MRAM_ADDR(inst),		\
 		.pclken = can_stm32fd_pclken_##inst,			\
@@ -633,3 +625,18 @@ CAN_STM32FD_DATA_INST(inst)             \
 CAN_STM32FD_DEVICE_INST(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_STM32FD_INST)
+
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+void zephyr_gtest_can_stm32(void) {
+	can_stm32fd_cfg_0.base = (mm_reg_t)ut_mcu_fdcan1_ptr;
+	can_stm32fd_cfg_0.mram = (mem_addr_t)ut_mcu_fdcan1_mram_ptr;
+
+	#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(fdcan2))
+	can_stm32fd_cfg_1.base = (mm_reg_t)ut_mcu_fdcan2_ptr;
+	can_stm32fd_cfg_1.mram = (mem_addr_t)ut_mcu_fdcan2_mram_ptr;
+	#endif
+}
+
+#endif

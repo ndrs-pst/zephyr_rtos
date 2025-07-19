@@ -32,6 +32,9 @@ void stm32_backup_domain_enable_access(void)
 	if (refcount == 0U) {
 		ENABLE_BKUP_ACCESS();
 		while (!IS_ENABLED_BKUP_ACCESS()) {
+			if (IS_ENABLED(__GTEST)) { /* #CUSTOM@NDRS */
+				break;
+			}
 		}
 	}
 	refcount++;

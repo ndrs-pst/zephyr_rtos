@@ -158,7 +158,7 @@ int sdio_read_blocks_fifo(struct sdio_func *func, uint32_t reg, uint8_t *data,
 /**
  * @brief Write blocks to SDIO fifo
  *
- * Writes blocks from SDIO register, treating it as a fifo. Writes will
+ * Writes blocks to SDIO register, treating it as a fifo. Writes will
  * all be done to same address.
  * @param func: function to write to
  * @param reg: register address of fifo

@@ -38,9 +38,7 @@ void z_log_msg_finalize(struct log_msg *msg, const void *source,
 	}
 
 	if (data) {
-		uint8_t *d = msg->data + desc.package_len;
-
-		memcpy(d, data, desc.data_len);
+		memcpy(&msg->data[desc.package_len], data, desc.data_len);
 	}
 
 	msg->hdr.desc = desc;
@@ -150,11 +148,11 @@ void z_impl_z_log_msg_simple_create_0(const void *source, uint32_t level, const 
 				__aligned(sizeof(uint32_t));
 			uint32_t *p32 = (uint32_t *)package;
 
-			*p32++ = (uint32_t)(uintptr_t)hdr.raw;
-			*p32++ = (uint32_t)(uintptr_t)fmt;
+			p32[0] = (uint32_t)(uintptr_t)hdr.raw;
+			p32[1] = (uint32_t)(uintptr_t)fmt;
 			if (IS_ENABLED(CONFIG_LOG_MSG_APPEND_RO_STRING_LOC)) {
 				/* fmt string located at index 1 */
-				*(uint8_t *)p32 = 1;
+				*(uint8_t *)&p32[2] = 1;
 			}
 
 			struct log_msg_desc desc = {
@@ -199,12 +197,12 @@ void z_impl_z_log_msg_simple_create_1(const void *source, uint32_t level,
 				__aligned(sizeof(uint32_t));
 			uint32_t *p32 = (uint32_t *)package;
 
-			*p32++ = (uint32_t)(uintptr_t)hdr.raw;
-			*p32++ = (uint32_t)(uintptr_t)fmt;
-			*p32++ = arg;
+			p32[0] = (uint32_t)(uintptr_t)hdr.raw;
+			p32[1] = (uint32_t)(uintptr_t)fmt;
+			p32[2] = arg;
 			if (IS_ENABLED(CONFIG_LOG_MSG_APPEND_RO_STRING_LOC)) {
 				/* fmt string located at index 1 */
-				*(uint8_t *)p32 = 1;
+				*(uint8_t *)&p32[3] = 1;
 			}
 
 			struct log_msg_desc desc = {
@@ -249,13 +247,13 @@ void z_impl_z_log_msg_simple_create_2(const void *source, uint32_t level,
 				__aligned(sizeof(uint32_t));
 			uint32_t *p32 = (uint32_t *)package;
 
-			*p32++ = (uint32_t)(uintptr_t)hdr.raw;
-			*p32++ = (uint32_t)(uintptr_t)fmt;
-			*p32++ = arg0;
-			*p32++ = arg1;
+			p32[0] = (uint32_t)(uintptr_t)hdr.raw;
+			p32[1] = (uint32_t)(uintptr_t)fmt;
+			p32[2] = arg0;
+			p32[3] = arg1;
 			if (IS_ENABLED(CONFIG_LOG_MSG_APPEND_RO_STRING_LOC)) {
 				/* fmt string located at index 1 */
-				*(uint8_t *)p32 = 1;
+				*(uint8_t *)&p32[4] = 1;
 			}
 
 			struct log_msg_desc desc = {

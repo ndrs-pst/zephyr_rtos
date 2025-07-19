@@ -49,7 +49,11 @@
 #define alloca __builtin_alloca
 #endif
 #else
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+/* pass */
+#else
 #include <alloca.h>
+#endif
 #endif
 
 /**

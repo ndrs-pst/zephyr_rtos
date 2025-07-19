@@ -169,13 +169,13 @@ static uint8_t ad_stream_read(struct ad_stream *stream, uint8_t *buf, uint8_t bu
 		} else {
 			const size_t remaining_data_len =
 					current_ltv->data_len - stream->current_ltv_offset + 2;
-			const size_t size_to_copy = MIN(buf_len - read_len, remaining_data_len);
+			const size_t size_to_copy = MIN((size_t)(buf_len - read_len), remaining_data_len);
 
 			(void)memcpy(&buf[read_len],
 				&current_ltv->data[stream->current_ltv_offset - 2],
 				size_to_copy);
-			stream->current_ltv_offset += size_to_copy;
-			read_len += size_to_copy;
+			stream->current_ltv_offset += (uint16_t)size_to_copy;
+			read_len += (uint8_t)size_to_copy;
 		}
 	}
 
@@ -533,11 +533,11 @@ static int set_data_add_complete(uint8_t *set_data, uint8_t set_data_len_max,
 				len = shortened_len;
 			}
 
-			set_data[set_data_len++] = len + 1;
+			set_data[set_data_len++] = (uint8_t)len + 1;
 			set_data[set_data_len++] = type;
 
 			memcpy(&set_data[set_data_len], data[j].data, len);
-			set_data_len += len;
+			set_data_len += (uint8_t)len;
 		}
 	}
 
@@ -583,7 +583,7 @@ static int hci_set_adv_ext_complete(struct bt_le_ext_adv *adv, uint16_t hci_op,
 		total_data_len = BT_GAP_ADV_MAX_ADV_DATA_LEN;
 	}
 
-	cmd_size = sizeof(*set_data) + total_data_len;
+	cmd_size = BT_HCI_CP_LE_SET_EXT_ADV_DATA_SZ + total_data_len;
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
@@ -593,7 +593,7 @@ static int hci_set_adv_ext_complete(struct bt_le_ext_adv *adv, uint16_t hci_op,
 	set_data = net_buf_add(buf, cmd_size);
 	(void)memset(set_data, 0, cmd_size);
 
-	err = set_data_add_complete(set_data->data, total_data_len,
+	err = set_data_add_complete(set_data->data, (uint8_t)total_data_len,
 				    ad, ad_len, &set_data->len);
 	if (err) {
 		net_buf_unref(buf);
@@ -623,7 +623,7 @@ static int hci_set_adv_ext_fragmented(struct bt_le_ext_adv *adv, uint16_t hci_op
 		struct bt_hci_cp_le_set_ext_adv_data *set_data;
 		struct net_buf *buf;
 		const size_t data_len = MIN(BT_HCI_LE_EXT_ADV_FRAG_MAX_LEN, stream.remaining_size);
-		const size_t cmd_size = sizeof(*set_data) + data_len;
+		const size_t cmd_size = BT_HCI_CP_LE_SET_EXT_ADV_DATA_SZ + data_len;
 
 		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
@@ -634,7 +634,7 @@ static int hci_set_adv_ext_fragmented(struct bt_le_ext_adv *adv, uint16_t hci_op
 
 		set_data->handle = adv->handle;
 		set_data->frag_pref = BT_HCI_LE_EXT_ADV_FRAG_ENABLED;
-		set_data->len = ad_stream_read(&stream, set_data->data, data_len);
+		set_data->len = ad_stream_read(&stream, set_data->data, (uint8_t)data_len);
 
 		if (is_first_iteration && ad_stream_is_empty(&stream)) {
 			set_data->op = BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA;
@@ -736,7 +736,7 @@ static int hci_set_per_adv_data(const struct bt_le_ext_adv *adv,
 		struct bt_hci_cp_le_set_per_adv_data *set_data;
 		struct net_buf *buf;
 		const size_t data_len = MIN(BT_HCI_LE_PER_ADV_FRAG_MAX_LEN, stream.remaining_size);
-		const size_t cmd_size = sizeof(*set_data) + data_len;
+		const size_t cmd_size = BT_HCI_CP_LE_SET_PER_ADV_DATA_SZ + data_len;
 
 		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
@@ -824,7 +824,7 @@ static int le_adv_update(struct bt_le_ext_adv *adv,
 
 		data = (struct bt_data)BT_DATA(
 			BT_DATA_NAME_COMPLETE,
-			name, strlen(name));
+			name, (uint8_t)strlen(name));
 	}
 
 	if (!(ext_adv && scannable)) {
@@ -2054,7 +2054,7 @@ int bt_le_per_adv_set_subevent_data(const struct bt_le_ext_adv *adv, uint8_t num
 	}
 
 	for (size_t i = 0; i < num_subevents; i++) {
-		cmd_length += sizeof(struct bt_hci_cp_le_set_pawr_subevent_data_element);
+		cmd_length += BT_HCI_CP_LE_SET_PAWR_SUBEVENT_DATA_ELEMENT_SZ;
 		cmd_length += params[i].data->len;
 	}
 
@@ -2067,12 +2067,12 @@ int bt_le_per_adv_set_subevent_data(const struct bt_le_ext_adv *adv, uint8_t num
 		return -ENOBUFS;
 	}
 
-	cp = net_buf_add(buf, sizeof(*cp));
+	cp = net_buf_add(buf, BT_HCI_CP_LE_SET_PAWR_SUBEVENT_DATA_SZ);
 	cp->adv_handle = adv->handle;
 	cp->num_subevents = num_subevents;
 
 	for (size_t i = 0; i < num_subevents; i++) {
-		element = net_buf_add(buf, sizeof(*element));
+		element = net_buf_add(buf, BT_HCI_CP_LE_SET_PAWR_SUBEVENT_DATA_ELEMENT_SZ);
 		element->subevent = params[i].subevent;
 		element->response_slot_start = params[i].response_slot_start;
 		element->response_slot_count = params[i].response_slot_count;
@@ -2187,13 +2187,13 @@ void bt_hci_le_per_adv_response_report(struct net_buf *buf)
 	struct bt_le_per_adv_response_info info;
 	struct net_buf_simple data;
 
-	if (buf->len < sizeof(struct bt_hci_evt_le_per_adv_response_report)) {
+	if (buf->len < BT_HCI_EVT_LE_PER_ADV_RESPONSE_REPORT_SZ) {
 		LOG_ERR("Invalid response report");
 
 		return;
 	}
 
-	evt = net_buf_pull_mem(buf, sizeof(struct bt_hci_evt_le_per_adv_response_report));
+	evt = net_buf_pull_mem(buf, BT_HCI_EVT_LE_PER_ADV_RESPONSE_REPORT_SZ);
 	adv = bt_hci_adv_lookup_handle(evt->adv_handle);
 	if (!adv) {
 		LOG_ERR("Unknown advertising handle %d", evt->adv_handle);
@@ -2205,13 +2205,13 @@ void bt_hci_le_per_adv_response_report(struct net_buf *buf)
 	info.tx_status = evt->tx_status;
 
 	for (uint8_t i = 0; i < evt->num_responses; i++) {
-		if (buf->len < sizeof(struct bt_hci_evt_le_per_adv_response)) {
+		if (buf->len < BT_HCI_EVT_LE_PER_ADV_RESPONSE_SZ) {
 			LOG_ERR("Invalid response report");
 
 			return;
 		}
 
-		response = net_buf_pull_mem(buf, sizeof(struct bt_hci_evt_le_per_adv_response));
+		response = net_buf_pull_mem(buf, BT_HCI_EVT_LE_PER_ADV_RESPONSE_SZ);
 		info.tx_power = response->tx_power;
 		info.rssi = response->rssi;
 		info.cte_type = bt_get_df_cte_type(response->cte_type);

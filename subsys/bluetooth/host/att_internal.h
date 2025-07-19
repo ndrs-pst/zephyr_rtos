@@ -40,7 +40,7 @@
 #define BT_ATT_BUF_SIZE MAX(BT_LOCAL_ATT_MTU_UATT, BT_LOCAL_ATT_MTU_EATT)
 
 struct bt_att_hdr {
-	uint8_t  code;
+	uint8_t code;
 } __packed;
 
 #define BT_ATT_OP_ERROR_RSP			0x01
@@ -83,18 +83,20 @@ struct bt_att_info_128 {
 
 /* Find Information Response */
 #define BT_ATT_OP_FIND_INFO_RSP			0x05
+#define BT_ATT_FIND_INFO_RSP_SZ			1
 struct bt_att_find_info_rsp {
-	uint8_t  format;
-	uint8_t  info[0];
+	uint8_t format;
+	uint8_t info[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 /* Find By Type Value Request */
 #define BT_ATT_OP_FIND_TYPE_REQ			0x06
+#define BT_ATT_FIND_TYPE_REQ_SZ			6
 struct bt_att_find_type_req {
 	uint16_t start_handle;
 	uint16_t end_handle;
 	uint16_t type;
-	uint8_t  value[0];
+	uint8_t  value[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 struct bt_att_handle_group {
@@ -105,27 +107,30 @@ struct bt_att_handle_group {
 /* Find By Type Value Response */
 #define BT_ATT_OP_FIND_TYPE_RSP			0x07
 struct bt_att_find_type_rsp {
-	struct bt_att_handle_group list[0];
+	struct bt_att_handle_group list[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 /* Read By Type Request */
 #define BT_ATT_OP_READ_TYPE_REQ			0x08
+#define BT_ATT_READ_TYPE_REQ_SZ			4
 struct bt_att_read_type_req {
 	uint16_t start_handle;
 	uint16_t end_handle;
-	uint8_t  uuid[0];
+	uint8_t  uuid[BT_ZERO_LEN_ARRAY];
 } __packed;
 
+#define BT_ATT_DATA_SZ				2
 struct bt_att_data {
 	uint16_t handle;
-	uint8_t  value[0];
+	uint8_t  value[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 /* Read By Type Response */
 #define BT_ATT_OP_READ_TYPE_RSP			0x09
+#define BT_ATT_READ_TYPE_RSP_SZ			1
 struct bt_att_read_type_rsp {
-	uint8_t  len;
-	struct bt_att_data data[0];
+	uint8_t len;
+	struct bt_att_data data[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 /* Read Request */
@@ -137,7 +142,7 @@ struct bt_att_read_req {
 /* Read Response */
 #define BT_ATT_OP_READ_RSP			0x0b
 struct bt_att_read_rsp {
-	uint8_t  value[0];
+	uint8_t value[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 /* Read Blob Request */
@@ -150,7 +155,7 @@ struct bt_att_read_blob_req {
 /* Read Blob Response */
 #define BT_ATT_OP_READ_BLOB_RSP			0x0d
 struct bt_att_read_blob_rsp {
-	uint8_t  value[0];
+	uint8_t value[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 /* Read Multiple Request */
@@ -158,41 +163,45 @@ struct bt_att_read_blob_rsp {
 
 #define BT_ATT_OP_READ_MULT_REQ			0x0e
 struct bt_att_read_mult_req {
-	uint16_t handles[0];
+	uint16_t handles[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 /* Read Multiple Response */
 #define BT_ATT_OP_READ_MULT_RSP			0x0f
 struct bt_att_read_mult_rsp {
-	uint8_t  value[0];
+	uint8_t value[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 /* Read by Group Type Request */
 #define BT_ATT_OP_READ_GROUP_REQ		0x10
+#define BT_ATT_READ_GROUP_REQ_SZ		4
 struct bt_att_read_group_req {
 	uint16_t start_handle;
 	uint16_t end_handle;
-	uint8_t  uuid[0];
+	uint8_t  uuid[BT_ZERO_LEN_ARRAY];
 } __packed;
 
+#define BT_ATT_GROUP_DATA_SZ			4
 struct bt_att_group_data {
 	uint16_t start_handle;
 	uint16_t end_handle;
-	uint8_t  value[0];
+	uint8_t  value[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 /* Read by Group Type Response */
 #define BT_ATT_OP_READ_GROUP_RSP		0x11
+#define BT_ATT_READ_GROUP_RSP_SZ		1
 struct bt_att_read_group_rsp {
-	uint8_t  len;
-	struct bt_att_group_data data[0];
+	uint8_t len;
+	struct bt_att_group_data data[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 /* Write Request */
 #define BT_ATT_OP_WRITE_REQ			0x12
+#define BT_ATT_WRITE_REQ_SZ			2
 struct bt_att_write_req {
 	uint16_t handle;
-	uint8_t  value[0];
+	uint8_t  value[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 /* Write Response */
@@ -200,18 +209,20 @@ struct bt_att_write_req {
 
 /* Prepare Write Request */
 #define BT_ATT_OP_PREPARE_WRITE_REQ		0x16
+#define BT_ATT_PREPARE_WRITE_REQ_SZ		4
 struct bt_att_prepare_write_req {
 	uint16_t handle;
 	uint16_t offset;
-	uint8_t  value[0];
+	uint8_t  value[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 /* Prepare Write Respond */
 #define BT_ATT_OP_PREPARE_WRITE_RSP		0x17
+#define BT_ATT_PREPARE_WRITE_RSP_SZ		4
 struct bt_att_prepare_write_rsp {
 	uint16_t handle;
 	uint16_t offset;
-	uint8_t  value[0];
+	uint8_t  value[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 /* Execute Write Request */
@@ -220,7 +231,7 @@ struct bt_att_prepare_write_rsp {
 
 #define BT_ATT_OP_EXEC_WRITE_REQ		0x18
 struct bt_att_exec_write_req {
-	uint8_t  flags;
+	uint8_t flags;
 } __packed;
 
 /* Execute Write Response */
@@ -228,57 +239,63 @@ struct bt_att_exec_write_req {
 
 /* Handle Value Notification */
 #define BT_ATT_OP_NOTIFY			0x1b
+#define BT_ATT_NOTIFY_SZ			2
 struct bt_att_notify {
 	uint16_t handle;
-	uint8_t  value[0];
+	uint8_t  value[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 /* Handle Value Indication */
 #define BT_ATT_OP_INDICATE			0x1d
+#define BT_ATT_INDICATE_SZ			2
 struct bt_att_indicate {
 	uint16_t handle;
-	uint8_t  value[0];
+	uint8_t  value[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 /* Handle Value Confirm */
 #define BT_ATT_OP_CONFIRM			0x1e
 
 struct bt_att_signature {
-	uint8_t  value[12];
+	uint8_t value[12];
 } __packed;
 
 #define BT_ATT_OP_READ_MULT_VL_REQ		0x20
 struct bt_att_read_mult_vl_req {
-	uint16_t handles[0];
+	uint16_t handles[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 /* Read Multiple Response */
 #define BT_ATT_OP_READ_MULT_VL_RSP		0x21
+#define BT_ATT_READ_MULT_VL_RSP_SZ		2
 struct bt_att_read_mult_vl_rsp {
 	uint16_t len;
-	uint8_t  value[0];
+	uint8_t  value[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 /* Handle Multiple Value Notification */
 #define BT_ATT_OP_NOTIFY_MULT			0x23
+#define BT_ATT_NOTIFY_MULT_SZ			4
 struct bt_att_notify_mult {
 	uint16_t handle;
 	uint16_t len;
-	uint8_t  value[0];
+	uint8_t  value[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 /* Write Command */
 #define BT_ATT_OP_WRITE_CMD			0x52
+#define BT_ATT_WRITE_CMD_SZ			2
 struct bt_att_write_cmd {
 	uint16_t handle;
-	uint8_t  value[0];
+	uint8_t  value[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 /* Signed Write Command */
 #define BT_ATT_OP_SIGNED_WRITE_CMD		0xd2
+#define BT_ATT_SIGNED_WRITE_CMD_SZ		2
 struct bt_att_signed_write_cmd {
 	uint16_t handle;
-	uint8_t  value[0];
+	uint8_t  value[BT_ZERO_LEN_ARRAY];
 } __packed;
 
 typedef void (*bt_att_func_t)(struct bt_conn *conn, int err,

@@ -121,9 +121,11 @@ static int wait(struct shell_mqtt *sh, int timeout)
 static int get_mqtt_broker_addrinfo(struct shell_mqtt *sh)
 {
 	int rc;
-	struct zsock_addrinfo hints = { .ai_family = AF_INET,
-					.ai_socktype = SOCK_STREAM,
-					.ai_protocol = 0 };
+	struct zsock_addrinfo hints = {
+		.ai_family = NET_AF_INET,
+		.ai_socktype = NET_SOCK_STREAM,
+		.ai_protocol = 0
+	};
 
 	if (sh->haddr != NULL) {
 		zsock_freeaddrinfo(sh->haddr);
@@ -174,9 +176,9 @@ static void sh_mqtt_close_and_cleanup(struct shell_mqtt *sh)
 
 static void broker_init(struct shell_mqtt *sh)
 {
-	struct sockaddr_in *broker4 = (struct sockaddr_in *)&sh->broker;
+	struct net_sockaddr_in *broker4 = (struct net_sockaddr_in *)&sh->broker;
 
-	broker4->sin_family = AF_INET;
+	broker4->sin_family = NET_AF_INET;
 	broker4->sin_port = htons(CONFIG_SHELL_MQTT_SERVER_PORT);
 
 	net_ipaddr_copy(&broker4->sin_addr, &net_sin(sh->haddr->ai_addr)->sin_addr);
@@ -291,12 +293,18 @@ static void sh_mqtt_subscribe_handler(struct k_work *work)
 	struct shell_mqtt *sh = sh_mqtt;
 
 	/* Subscribe config information */
-	struct mqtt_topic subs_topic = { .topic = { .utf8 = sh->sub_topic,
-						    .size = strlen(sh->sub_topic) },
-					 .qos = MQTT_QOS_1_AT_LEAST_ONCE };
-	const struct mqtt_subscription_list subs_list = { .list = &subs_topic,
-							  .list_count = 1U,
-							  .message_id = 1U };
+	struct mqtt_topic subs_topic = {
+		.topic = {
+			.utf8 = sh->sub_topic,
+			.size = strlen(sh->sub_topic)
+		},
+		.qos = MQTT_QOS_1_AT_LEAST_ONCE
+	};
+	const struct mqtt_subscription_list subs_list = {
+		.list = &subs_topic,
+		.list_count = 1U,
+		.message_id = 1U
+	};
 	int rc;
 
 	if (sh->network_state != SHELL_MQTT_NETWORK_CONNECTED) {
@@ -601,6 +609,7 @@ static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt
 			payload_left -= size;
 			/* Tells the shell that we have new data for it */
 			sh->shell_handler(SHELL_TRANSPORT_EVT_RX_RDY, sh->shell_context);
+
 			/* Arbitrary sleep for the shell to do its thing */
 			(void)k_msleep(100);
 		}
@@ -613,6 +622,7 @@ static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt
 				(void)ring_buf_put(&sh->rx_rb, "\r\n", sizeof("\r\n"));
 				break;
 			}
+
 			/* Arbitrary sleep for the shell to do its thing */
 			(void)k_msleep(100);
 		}
@@ -640,11 +650,11 @@ static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt
 	}
 }
 
-static int init(const struct shell_transport *transport, const void *config,
-		shell_transport_handler_t evt_handler, void *context)
+static int shell_mqtt_init(const struct shell_transport *transport, const void *config,
+			   shell_transport_handler_t evt_handler, void *context)
 {
-	sh_mqtt = (struct shell_mqtt *)transport->ctx;
-	struct shell_mqtt *sh = sh_mqtt;
+	struct shell_mqtt *sh = (struct shell_mqtt *)transport->ctx;
+	sh_mqtt = sh;
 
 	(void)memset(sh, 0, sizeof(struct shell_mqtt));
 
@@ -695,7 +705,7 @@ static int init(const struct shell_transport *transport, const void *config,
 	return 0;
 }
 
-static int uninit(const struct shell_transport *transport)
+static int shell_mqtt_uninit(const struct shell_transport *transport)
 {
 	ARG_UNUSED(transport);
 	struct shell_mqtt *sh = sh_mqtt;
@@ -708,7 +718,7 @@ static int uninit(const struct shell_transport *transport)
 	return 0;
 }
 
-static int enable(const struct shell_transport *transport, bool blocking)
+static int shell_mqtt_enable(const struct shell_transport *transport, bool blocking)
 {
 	ARG_UNUSED(transport);
 	ARG_UNUSED(blocking);
@@ -726,8 +736,8 @@ static int enable(const struct shell_transport *transport, bool blocking)
 	return 0;
 }
 
-static int write_data(const struct shell_transport *transport, const void *data, size_t length,
-		      size_t *cnt)
+static int shell_mqtt_write(const struct shell_transport *transport, const void *data,
+			    size_t length, size_t *cnt)
 {
 	ARG_UNUSED(transport);
 	struct shell_mqtt *sh = sh_mqtt;
@@ -787,8 +797,8 @@ out:
 	return rc;
 }
 
-static int read_data(const struct shell_transport *transport, void *data, size_t length,
-		     size_t *cnt)
+static int shell_mqtt_read(const struct shell_transport *transport, void *data, size_t length,
+			   size_t *cnt)
 {
 	ARG_UNUSED(transport);
 	struct shell_mqtt *sh = sh_mqtt;
@@ -814,19 +824,22 @@ static int read_data(const struct shell_transport *transport, void *data, size_t
 	return 0;
 }
 
-const struct shell_transport_api shell_mqtt_transport_api = { .init = init,
-							      .uninit = uninit,
-							      .enable = enable,
-							      .write = write_data,
-							      .read = read_data };
+const struct shell_transport_api shell_mqtt_transport_api = {
+	.init   = shell_mqtt_init,
+	.uninit = shell_mqtt_uninit,
+	.enable = shell_mqtt_enable,
+	.write  = shell_mqtt_write,
+	.read   = shell_mqtt_read
+};
 
 static int enable_shell_mqtt(void)
 {
-
 	bool log_backend = CONFIG_SHELL_MQTT_INIT_LOG_LEVEL > 0;
-	uint32_t level = (CONFIG_SHELL_MQTT_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?
-				       CONFIG_LOG_MAX_LEVEL :
-				       CONFIG_SHELL_MQTT_INIT_LOG_LEVEL;
+	uint32_t level = (CONFIG_SHELL_MQTT_INIT_LOG_LEVEL > LOG_LEVEL_DBG)
+				 ? CONFIG_LOG_MAX_LEVEL
+				 : CONFIG_SHELL_MQTT_INIT_LOG_LEVEL;
+	int rc;
+
 	static const struct shell_backend_config_flags cfg_flags = {
 		.insert_mode = 0,
 		.echo = 0,
@@ -836,7 +849,9 @@ static int enable_shell_mqtt(void)
 		.use_vt100 = 0,
 	};
 
-	return shell_init(&shell_mqtt, NULL, cfg_flags, log_backend, level);
+	rc = shell_init(&shell_mqtt, NULL, cfg_flags, log_backend, level);
+
+	return rc;
 }
 
 /* Function is used for testing purposes */

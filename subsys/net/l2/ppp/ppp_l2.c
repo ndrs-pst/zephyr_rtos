@@ -33,9 +33,11 @@ static K_FIFO_DEFINE(tx_queue);
 
 static void tx_handler(void *p1, void *p2, void *p3);
 
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 static K_THREAD_DEFINE(tx_handler_thread, CONFIG_NET_L2_PPP_TX_STACK_SIZE,
 		       tx_handler, NULL, NULL, NULL,
 		       THREAD_PRIORITY, 0, 0);
+#endif
 
 static const struct ppp_protocol_handler *ppp_lcp;
 
@@ -186,13 +188,13 @@ static int ppp_send(struct net_if *iface, struct net_pkt *pkt)
 	 * L2 proto type to packet family.
 	 */
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
-	    net_pkt_family(pkt) == AF_PACKET) {
+	    net_pkt_family(pkt) == NET_AF_PACKET) {
 		switch (net_pkt_ll_proto_type(pkt)) {
 		case ETH_P_IP:
-			net_pkt_set_family(pkt, AF_INET);
+			net_pkt_set_family(pkt, NET_AF_INET);
 			break;
 		case ETH_P_IPV6:
-			net_pkt_set_family(pkt, AF_INET6);
+			net_pkt_set_family(pkt, NET_AF_INET6);
 			break;
 		default:
 			return -EPROTONOSUPPORT;

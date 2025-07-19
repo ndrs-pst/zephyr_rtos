@@ -73,7 +73,7 @@ static int backend_ipc_service_init(struct log_multidomain_backend *backend_remo
 	return err;
 }
 
-struct log_multidomain_backend_transport_api log_backend_ipc_service_transport_api = {
+static const struct log_multidomain_backend_transport_api log_backend_ipc_service_transport_api = {
 	.init = backend_ipc_service_init,
 	.send = backend_ipc_service_send
 };

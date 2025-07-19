@@ -106,7 +106,7 @@ static int lldp_send(struct ethernet_lldp *lldp)
 		len += sizeof(uint16_t);
 	}
 
-	pkt = net_pkt_alloc_with_buffer(lldp->iface, len, AF_UNSPEC, 0,
+	pkt = net_pkt_alloc_with_buffer(lldp->iface, len, NET_AF_UNSPEC, 0,
 					BUF_ALLOC_TIMEOUT);
 	if (!pkt) {
 		ret = -ENOMEM;

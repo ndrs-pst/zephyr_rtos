@@ -19,8 +19,6 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(i2c_sam0, CONFIG_I2C_LOG_LEVEL);
 
-/* clang-format off */
-
 #include "i2c-priv.h"
 
 #ifndef SERCOM_I2CM_CTRLA_MODE_I2C_MASTER
@@ -32,6 +30,8 @@ LOG_MODULE_REGISTER(i2c_sam0, CONFIG_I2C_LOG_LEVEL);
 #else
 #define I2C_TRANSFER_TIMEOUT_MSEC K_FOREVER
 #endif
+
+/* #CUSTOM@NDRS : Use GCLK1 as clock source instead of GCLK0 */
 
 struct i2c_sam0_dev_config {
 	SercomI2cm *regs;
@@ -567,7 +567,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 		wait_synchronization(i2c);
 
 		/* 5 is the nominal 100ns rise time from the app notes */
-		baud = (SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / 100000U - 5U - 10U) / 2U;
+		baud = (SOC_ATMEL_SAM0_GCLK1_FREQ_HZ / 100000U - 5U - 10U) / 2U;
 		if (baud > 255U || baud < 1U) {
 			return -ERANGE;
 		}
@@ -584,7 +584,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 		wait_synchronization(i2c);
 
 		/* 5 is the nominal 100ns rise time from the app notes */
-		baud = (SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / 400000U - 5U - 10U) / 2U;
+		baud = (SOC_ATMEL_SAM0_GCLK1_FREQ_HZ / 400000U - 5U - 10U) / 2U;
 		if (baud > 255U || baud < 1U) {
 			return -ERANGE;
 		}
@@ -604,7 +604,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 		wait_synchronization(i2c);
 
 		/* 5 is the nominal 100ns rise time from the app notes */
-		baud = (SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / 1000000U - 5U - 10U);
+		baud = (SOC_ATMEL_SAM0_GCLK1_FREQ_HZ / 1000000U - 5U - 10U);
 
 		/* 2:1 low:high ratio */
 		baud_high = baud;
@@ -635,7 +635,7 @@ static int i2c_sam0_set_apply_bitrate(const struct device *dev,
 		i2c->CTRLA.reg = CTRLA;
 		wait_synchronization(i2c);
 
-		baud = (SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / 3400000U) - 2U;
+		baud = (SOC_ATMEL_SAM0_GCLK1_FREQ_HZ / 3400000U) - 2U;
 
 		/* 2:1 low:high ratio */
 		baud_high = baud;
@@ -858,5 +858,3 @@ static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {	\
 	I2C_SAM0_IRQ_HANDLER(n)
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_SAM0_DEVICE)
-
-/* clang-format on */

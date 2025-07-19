@@ -117,7 +117,7 @@ manifest:
       groups:
         - babblesim
     - name: cmsis
-      revision: 512cc7e895e8491696b61f7ba8066b4a182569b8
+      revision: 2a3de69609190ac4af673dc2b3e460e9ce158c6b
       path: modules/hal/cmsis
       groups:
         - hal
@@ -129,7 +129,7 @@ manifest:
       path: modules/lib/cmsis-nn
     - name: cmsis_6
       repo-path: CMSIS_6
-      revision: 06d952b6713a2ca41c9224a62075e4059402a151
+      revision: 967333d89b23fd14454c384e8b29c3733b259299
       path: modules/hal/cmsis_6
       groups:
         - hal
@@ -139,7 +139,7 @@ manifest:
       groups:
         - tools
     - name: fatfs
-      revision: 16245c7c41d2b79e74984f49b5202551786b8a9b
+      revision: c531b6f68ae912e3080d1e8d7b1332bf338ff5e8
       path: modules/fs/fatfs
       groups:
         - fs
@@ -159,7 +159,7 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: ca7e4c6920f44b9d677ed5995ffa169f18a54cdf
+      revision: e1b3a6b6f71cfccbb774a7b172330eb4ddfe168d
       path: modules/hal/atmel
       groups:
         - hal
@@ -245,7 +245,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 1e753266ddfb4b07a8a0b1ec566e9637ea45d5ef
+      revision: dd0eaedb0a1ebd98a2161615335e0874e634b3a8
       path: modules/hal/stm32
       groups:
         - hal
@@ -297,9 +297,9 @@ manifest:
       path: modules/fs/littlefs
       groups:
         - fs
-      revision: 8f5ca347843363882619d8f96c00d8dbd88a8e79
+      revision: 32fa5540b5dacb1622664713acefcb46445f01e6
     - name: loramac-node
-      revision: fb00b383072518c918e2258b0916c996f2d4eebe
+      revision: 88deb45109317473ac5706e97a6b8bbeb524aab1
       path: modules/lib/loramac-node
     - name: lvgl
       revision: b03edc8e6282a963cd312cd0b409eb5ce263ea75
@@ -310,7 +310,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 4eba8087fa606db801455f14d185255bc8c49467
+      revision: 0c4288f0eae952e4326ce913818ba8c8f4d4ac14
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -368,11 +368,20 @@ manifest:
       revision: 54abc109c9c0adfd53c70077744c14e454f04f4a
       path: modules/lib/uoscore-uedhoc
     - name: zcbor
-      revision: 9b07780aca6fb21f82a241ba386ad9b379809337
+      revision: 44c47c4be2721ca1a7099f9bc1bb1d90bdb90048
       path: modules/lib/zcbor
   # zephyr-keep-sorted-stop
+    - name: thingset
+      path: modules/lib/thingset
+      revision: 84c603f181928dd057989a3b305cb46f14ac2644
+    - name: thingset-node-c
+      path: modules/lib/thingset-node-c
+      revision: 2ed57596d363053178aa6104dcd062be3f2b92ce
+    - name: FlashDB
+      path: modules/lib/flashdb
+      revision: eac65043a7b3abaddaa7db82268d5ba8fd8176b9
 
   self:
-    path: zephyr
+    path: zephyr_rtos
     west-commands: scripts/west-commands.yml
     import: submanifests

@@ -98,6 +98,7 @@ static int char_out(int c, void *ctx_p)
 	return _char_out(c);
 }
 
+#if !defined(_MSC_VER)
 void vprintk(const char *fmt, va_list ap)
 {
 	if (IS_ENABLED(CONFIG_LOG_PRINTK)) {
@@ -158,6 +159,7 @@ void z_impl_k_str_out(char *c, size_t n)
 	k_spin_unlock(&lock, key);
 #endif
 }
+#endif
 
 #ifdef CONFIG_USERSPACE
 static inline void z_vrfy_k_str_out(char *c, size_t n)
@@ -188,7 +190,7 @@ static inline void z_vrfy_k_str_out(char *c, size_t n)
  *
  * @param fmt formatted string to output
  */
-
+#if !defined(_MSC_VER)
 void printk(const char *fmt, ...)
 {
 	va_list ap;
@@ -200,6 +202,7 @@ void printk(const char *fmt, ...)
 	va_end(ap);
 }
 EXPORT_SYMBOL(printk);
+#endif
 #endif /* defined(CONFIG_PRINTK) */
 
 #ifndef CONFIG_PICOLIBC

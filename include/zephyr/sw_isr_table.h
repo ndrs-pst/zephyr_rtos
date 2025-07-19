@@ -72,7 +72,7 @@ struct _irq_parent_entry {
  * @return `CONFIG_2ND_LVL_ISR_TBL_OFFSET` if second level aggregator,
  * `CONFIG_3RD_LVL_ISR_TBL_OFFSET` if third level aggregator
  */
-#define Z_SW_ISR_TBL_KCONFIG_BY_ALVL(l) CONCAT(CONFIG_, CONCAT(Z_STR_L, l), _LVL_ISR_TBL_OFFSET)
+#define Z_SW_ISR_TBL_KCONFIG_BY_ALVL(l) Z_CONCAT(CONFIG_, Z_CONCAT(Z_STR_L, l), _LVL_ISR_TBL_OFFSET)
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -163,10 +163,21 @@ struct _isr_list {
 struct _isr_list_sname {
 	/** IRQ line number */
 	int32_t irq;
+
 	/** Flags for this IRQ, see ISR_FLAG_* definitions */
 	int32_t flags;
+
 	/** The section name */
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	/* This is a workaround for MSVC which does not allow zero-sized
+	 * arrays. The size of the array is 1.
+	 * This change will effect production code in C when using sizeof()
+	 * so it will be used only in MSVC.
+	 */
+	const char sname[1];
+	#else
 	const char sname[];
+	#endif
 };
 
 #ifdef CONFIG_SHARED_INTERRUPTS
@@ -282,7 +293,7 @@ struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 #define Z_ISR_DECLARE(irq, flags, func, param) \
 	static Z_DECL_ALIGN(struct _isr_list) Z_GENERIC_SECTION(.intList) \
 		__used _MK_ISR_NAME(func, __COUNTER__) = \
-			{irq, flags, (void *)&func, (const void *)param}
+			{irq, flags, (void *)&func, (const void*)param}
 
 /* The version of the Z_ISR_DECLARE that should be used for direct ISR declaration.
  * It is here for the API match the version with CONFIG_ISR_TABLES_LOCAL_DECLARATION enabled.

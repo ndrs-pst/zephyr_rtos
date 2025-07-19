@@ -979,7 +979,7 @@ void udc_ctrl_update_stage(const struct device *dev,
 		 "0x%02x is not a control endpoint", bi->ep);
 
 	if (bi->setup && bi->ep == USB_CONTROL_EP_OUT) {
-		uint16_t length  = udc_data_stage_length(buf);
+		uint16_t length = udc_data_stage_length(buf);
 
 		if (data->stage != CTRL_PIPE_STAGE_SETUP) {
 			LOG_INF("Sequence %u not completed", data->stage);
@@ -998,7 +998,7 @@ void udc_ctrl_update_stage(const struct device *dev,
 			data->stage = CTRL_PIPE_STAGE_SETUP;
 		}
 
-		data->setup = buf;
+		data->setup = buf;                              /* USBD_PACKET_SEQ02 */
 
 		/*
 		 * Setup Stage has been completed (setup packet received),
@@ -1025,7 +1025,7 @@ void udc_ctrl_update_stage(const struct device *dev,
 			 * complete sequence: s->out->status
 			 */
 			LOG_DBG("s->(out)");
-			next_stage = CTRL_PIPE_STAGE_DATA_OUT;
+			next_stage = CTRL_PIPE_STAGE_DATA_OUT;  /* USBD_PACKET_SEQ03 */
 		}
 
 	} else if (bi->ep == USB_CONTROL_EP_OUT) {
@@ -1034,7 +1034,7 @@ void udc_ctrl_update_stage(const struct device *dev,
 			 * Next sequence is Status Stage if request is okay,
 			 * (IN ZLP status to host)
 			 */
-			next_stage = CTRL_PIPE_STAGE_STATUS_IN;
+			next_stage = CTRL_PIPE_STAGE_STATUS_IN; /* USBD_PACKET_SEQ05 */
 		} else if (data->stage == CTRL_PIPE_STAGE_STATUS_OUT) {
 			/*
 			 * End of a sequence: s->in->status,

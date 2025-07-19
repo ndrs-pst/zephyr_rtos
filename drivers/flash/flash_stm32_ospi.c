@@ -2032,7 +2032,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 		LOG_DBG("Unexpected flash size: %u", flash_size);
 	}
 
-	LOG_DBG("%s: %u MiBy flash", dev->name, (uint32_t)(flash_size >> 20));
+	LOG_DBG("%s: %u MiB flash", dev->name, (uint32_t)(flash_size >> 20));
 
 	/* Copy over the erase types, preserving their order.  (The
 	 * Sector Map Parameter table references them by index.)
@@ -2692,7 +2692,7 @@ static struct flash_stm32_ospi_data flash_stm32_ospi_dev_data = {
 	OSPI_DMA_CHANNEL(STM32_OSPI_NODE, tx_rx)
 };
 
-DEVICE_DT_INST_DEFINE(0, &flash_stm32_ospi_init, NULL,
+DEVICE_DT_INST_DEFINE(0, flash_stm32_ospi_init, NULL,
 		      &flash_stm32_ospi_dev_data, &flash_stm32_ospi_cfg,
 		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		      &flash_stm32_ospi_driver_api);

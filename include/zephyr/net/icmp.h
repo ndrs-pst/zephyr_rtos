@@ -73,7 +73,7 @@ typedef int (*net_icmp_handler_t)(struct net_icmp_ctx *ctx,
  */
 typedef int (*net_icmp_offload_ping_handler_t)(struct net_icmp_ctx *ctx,
 					       struct net_if *iface,
-					       struct sockaddr *dst,
+					       struct net_sockaddr *dst,
 					       struct net_icmp_ping_params *params,
 					       void *user_data);
 
@@ -187,7 +187,7 @@ int net_icmp_cleanup_ctx(struct net_icmp_ctx *ctx);
  */
 int net_icmp_send_echo_request(struct net_icmp_ctx *ctx,
 			       struct net_if *iface,
-			       struct sockaddr *dst,
+			       struct net_sockaddr *dst,
 			       struct net_icmp_ping_params *params,
 			       void *user_data);
 
@@ -211,7 +211,7 @@ int net_icmp_send_echo_request(struct net_icmp_ctx *ctx,
  */
 int net_icmp_send_echo_request_no_wait(struct net_icmp_ctx *ctx,
 				       struct net_if *iface,
-				       struct sockaddr *dst,
+				       struct net_sockaddr *dst,
 				       struct net_icmp_ping_params *params,
 				       void *user_data);
 

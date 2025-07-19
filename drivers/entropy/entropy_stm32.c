@@ -65,7 +65,12 @@ struct rng_pool {
 	uint8_t last;
 	uint8_t mask;
 	uint8_t threshold;
+
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	uint8_t buffer[0];
+	#else
 	FLEXIBLE_ARRAY_DECLARE(uint8_t, buffer);
+	#endif
 };
 
 #define RNG_POOL_DEFINE(name, len) uint8_t name[sizeof(struct rng_pool) + (len)]

@@ -32,17 +32,17 @@ static void sntp_pkt_dump(struct sntp_pkt *pkt)
 	NET_DBG("stratum:         %x", pkt->stratum);
 	NET_DBG("poll:            %x", pkt->poll);
 	NET_DBG("precision:       %x", pkt->precision);
-	NET_DBG("root_delay:      %x", ntohl(pkt->root_delay));
-	NET_DBG("root_dispersion: %x", ntohl(pkt->root_dispersion));
-	NET_DBG("ref_id:          %x", ntohl(pkt->ref_id));
-	NET_DBG("ref_tm_s:        %x", ntohl(pkt->ref_tm_s));
-	NET_DBG("ref_tm_f:        %x", ntohl(pkt->ref_tm_f));
-	NET_DBG("orig_tm_s:       %x", ntohl(pkt->orig_tm_s));
-	NET_DBG("orig_tm_f:       %x", ntohl(pkt->orig_tm_f));
-	NET_DBG("rx_tm_s:         %x", ntohl(pkt->rx_tm_s));
-	NET_DBG("rx_tm_f:         %x", ntohl(pkt->rx_tm_f));
-	NET_DBG("tx_tm_s:         %x", ntohl(pkt->tx_tm_s));
-	NET_DBG("tx_tm_f:         %x", ntohl(pkt->tx_tm_f));
+	NET_DBG("root_delay:      %x", net_ntohl(pkt->root_delay));
+	NET_DBG("root_dispersion: %x", net_ntohl(pkt->root_dispersion));
+	NET_DBG("ref_id:          %x", net_ntohl(pkt->ref_id));
+	NET_DBG("ref_tm_s:        %x", net_ntohl(pkt->ref_tm_s));
+	NET_DBG("ref_tm_f:        %x", net_ntohl(pkt->ref_tm_f));
+	NET_DBG("orig_tm_s:       %x", net_ntohl(pkt->orig_tm_s));
+	NET_DBG("orig_tm_f:       %x", net_ntohl(pkt->orig_tm_f));
+	NET_DBG("rx_tm_s:         %x", net_ntohl(pkt->rx_tm_s));
+	NET_DBG("rx_tm_f:         %x", net_ntohl(pkt->rx_tm_f));
+	NET_DBG("tx_tm_s:         %x", net_ntohl(pkt->tx_tm_s));
+	NET_DBG("tx_tm_f:         %x", net_ntohl(pkt->tx_tm_f));
 }
 
 #if defined(CONFIG_SNTP_UNCERTAINTY)
@@ -61,15 +61,15 @@ static int64_t q32_32_s_to_ll_us(uint32_t t_s, uint32_t t_f)
 static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *expected_orig_ts,
 			      struct sntp_time *res)
 {
-	struct sntp_pkt *pkt = (struct sntp_pkt *)data;
+	struct sntp_pkt *pkt = (struct sntp_pkt*)data;
 	uint32_t ts;
 
 	sntp_pkt_dump(pkt);
 
-	if (ntohl(pkt->orig_tm_s) != expected_orig_ts->seconds ||
-	    ntohl(pkt->orig_tm_f) != expected_orig_ts->fraction) {
+	if (net_ntohl(pkt->orig_tm_s) != expected_orig_ts->seconds ||
+	    net_ntohl(pkt->orig_tm_f) != expected_orig_ts->fraction) {
 		NET_DBG("Mismatch originate timestamp: %d.%09d, expect: %llu.%09u",
-			ntohl(pkt->orig_tm_s), ntohl(pkt->orig_tm_f), expected_orig_ts->seconds,
+			net_ntohl(pkt->orig_tm_s), net_ntohl(pkt->orig_tm_f), expected_orig_ts->seconds,
 			expected_orig_ts->fraction);
 		return -ERANGE;
 	}
@@ -88,7 +88,7 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 		return -EBUSY;
 	}
 
-	if (ntohl(pkt->tx_tm_s) == 0 && ntohl(pkt->tx_tm_f) == 0) {
+	if (net_ntohl(pkt->tx_tm_s) == 0 && net_ntohl(pkt->tx_tm_f) == 0) {
 		NET_DBG("zero transmit timestamp");
 		return -EINVAL;
 	}
@@ -99,8 +99,8 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 	int64_t orig_ts_us =
 		q32_32_s_to_ll_us(expected_orig_ts->seconds, expected_orig_ts->fraction);
 
-	int64_t rx_ts_us = q32_32_s_to_ll_us(ntohl(pkt->rx_tm_s), ntohl(pkt->rx_tm_f));
-	int64_t tx_ts_us = q32_32_s_to_ll_us(ntohl(pkt->tx_tm_s), ntohl(pkt->tx_tm_f));
+	int64_t rx_ts_us = q32_32_s_to_ll_us(net_ntohl(pkt->rx_tm_s), net_ntohl(pkt->rx_tm_f));
+	int64_t tx_ts_us = q32_32_s_to_ll_us(net_ntohl(pkt->tx_tm_s), net_ntohl(pkt->tx_tm_f));
 
 	if (rx_ts_us > tx_ts_us || orig_ts_us > dest_ts_us) {
 		NET_DBG("Invalid timestamps from SNTP server");
@@ -109,8 +109,8 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 
 	int64_t d_us = (dest_ts_us - orig_ts_us) - (tx_ts_us - rx_ts_us);
 	int64_t clk_offset_us = ((rx_ts_us - orig_ts_us) + (tx_ts_us - dest_ts_us)) / 2;
-	int64_t root_dispersion_us = q16_16_s_to_ll_us(ntohl(pkt->root_dispersion));
-	int64_t root_delay_us = q16_16_s_to_ll_us(ntohl(pkt->root_delay));
+	int64_t root_dispersion_us = q16_16_s_to_ll_us(net_ntohl(pkt->root_dispersion));
+	int64_t root_delay_us = q16_16_s_to_ll_us(net_ntohl(pkt->root_delay));
 	uint32_t precision_us;
 
 	if (pkt->precision <= 0) {
@@ -127,10 +127,10 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 	res->fraction = (res->uptime_us + clk_offset_us) % USEC_PER_SEC;
 	res->uncertainty_us = (d_us + root_delay_us + precision_us) / 2 + root_dispersion_us;
 #else
-	res->fraction = ntohl(pkt->tx_tm_f);
-	res->seconds = ntohl(pkt->tx_tm_s);
+	res->fraction = net_ntohl(pkt->tx_tm_f);
+	res->seconds = net_ntohl(pkt->tx_tm_s);
 #endif
-	ts = ntohl(pkt->tx_tm_s);
+	ts = net_ntohl(pkt->tx_tm_s);
 
 	/* Check if most significant bit is set */
 	if (ts & 0x80000000) {
@@ -152,7 +152,7 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 	return 0;
 }
 
-int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len)
+int sntp_init(struct sntp_ctx *ctx, const struct net_sockaddr *addr, socklen_t addr_len)
 {
 	int ret;
 
@@ -162,7 +162,7 @@ int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len)
 
 	memset(ctx, 0, sizeof(struct sntp_ctx));
 
-	ctx->sock.fd = zsock_socket(addr->sa_family, SOCK_DGRAM, IPPROTO_UDP);
+	ctx->sock.fd = zsock_socket(addr->sa_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	if (ctx->sock.fd < 0) {
 		NET_ERR("Failed to create UDP socket %d", errno);
 		return -errno;
@@ -185,7 +185,7 @@ int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len)
 static int sntp_query_send(struct sntp_ctx *ctx)
 {
 	struct sntp_pkt tx_pkt = { 0 };
-	int64_t ts_us = 0;
+	int64_t ts_us;
 
 	/* prepare request pkt */
 	tx_pkt.li = 0;
@@ -194,10 +194,10 @@ static int sntp_query_send(struct sntp_ctx *ctx)
 	ts_us = k_ticks_to_us_near64(k_uptime_ticks());
 	ctx->expected_orig_ts.seconds = ts_us / USEC_PER_SEC;
 	ctx->expected_orig_ts.fraction = (ts_us % USEC_PER_SEC) * (UINT32_MAX / USEC_PER_SEC);
-	tx_pkt.tx_tm_s = htonl(ctx->expected_orig_ts.seconds);
-	tx_pkt.tx_tm_f = htonl(ctx->expected_orig_ts.fraction);
+	tx_pkt.tx_tm_s = net_htonl(ctx->expected_orig_ts.seconds);
+	tx_pkt.tx_tm_f = net_htonl(ctx->expected_orig_ts.fraction);
 
-	return zsock_send(ctx->sock.fd, (uint8_t *)&tx_pkt, sizeof(tx_pkt), 0);
+	return zsock_send(ctx->sock.fd, (uint8_t*)&tx_pkt, sizeof(tx_pkt), 0);
 }
 
 int sntp_query(struct sntp_ctx *ctx, uint32_t timeout, struct sntp_time *ts)
@@ -234,7 +234,7 @@ int sntp_recv_response(struct sntp_ctx *ctx, uint32_t timeout,
 		return -ETIMEDOUT;
 	}
 
-	rcvd = zsock_recv(ctx->sock.fd, (uint8_t *)&buf, sizeof(buf), 0);
+	rcvd = zsock_recv(ctx->sock.fd, (uint8_t*)&buf, sizeof(buf), 0);
 	if (rcvd < 0) {
 		return -errno;
 	}
@@ -243,7 +243,7 @@ int sntp_recv_response(struct sntp_ctx *ctx, uint32_t timeout,
 		return -EMSGSIZE;
 	}
 
-	status = parse_response((uint8_t *)&buf, sizeof(buf),
+	status = parse_response((uint8_t*)&buf, sizeof(buf),
 				&ctx->expected_orig_ts,
 				ts);
 	return status;
@@ -258,7 +258,7 @@ void sntp_close(struct sntp_ctx *ctx)
 
 #ifdef CONFIG_NET_SOCKETS_SERVICE
 
-int sntp_init_async(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len,
+int sntp_init_async(struct sntp_ctx *ctx, struct net_sockaddr *addr, socklen_t addr_len,
 		    const struct net_socket_service_desc *service)
 {
 	int ret;
@@ -301,10 +301,10 @@ int sntp_send_async(struct sntp_ctx *ctx)
 int sntp_read_async(struct net_socket_service_event *event, struct sntp_time *ts)
 {
 	struct sntp_ctx *ctx = event->user_data;
-	struct sntp_pkt buf = {0};
+	struct sntp_pkt buf;
 	int rcvd;
 
-	rcvd = zsock_recv(ctx->sock.fd, (uint8_t *)&buf, sizeof(buf), 0);
+	rcvd = zsock_recv(ctx->sock.fd, (uint8_t*)&buf, sizeof(buf), 0);
 	if (rcvd < 0) {
 		return -errno;
 	}
@@ -313,7 +313,9 @@ int sntp_read_async(struct net_socket_service_event *event, struct sntp_time *ts
 		return -EMSGSIZE;
 	}
 
-	return parse_response((uint8_t *)&buf, sizeof(buf), &ctx->expected_orig_ts, ts);
+	rcvd = parse_response((uint8_t*)&buf, sizeof(buf), &ctx->expected_orig_ts, ts);
+
+	return rcvd;
 }
 
 void sntp_close_async(const struct net_socket_service_desc *service)
@@ -321,7 +323,7 @@ void sntp_close_async(const struct net_socket_service_desc *service)
 	struct sntp_ctx *ctx = service->pev->user_data;
 	/* Detach socket from socket service */
 	net_socket_service_unregister(service);
-	/* CLose the socket */
+	/* Close the socket */
 	if (ctx) {
 		(void)zsock_close(ctx->sock.fd);
 	}

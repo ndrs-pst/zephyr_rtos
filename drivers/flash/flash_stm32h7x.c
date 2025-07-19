@@ -64,6 +64,9 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #define NUMBER_OF_BANKS             1
 #endif
 
+#define FLASH_NDWORDS	(FLASH_NB_32BITWORD_IN_FLASHWORD / 2)
+#define FLASH_NBYTES	(FLASH_NB_32BITWORD_IN_FLASHWORD * 4)
+
 struct flash_stm32_sector_t {
 	int sector_index;
 	int bank;
@@ -322,7 +325,7 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset, uint32_t le
 		 * start before bank2 and end beyond bank1 at the same time.
 		 * Locations beyond bank2 are caught by flash_stm32_range_exists
 		 */
-		if ((offset < BANK2_OFFSET) && (offset + len > REAL_FLASH_SIZE_KB / 2)) {
+		if ((offset < BANK2_OFFSET) && ((offset + len) > (REAL_FLASH_SIZE_KB / 2))) {
 			LOG_ERR("Range ovelaps flash bank discontinuity");
 			return false;
 		}
@@ -469,7 +472,7 @@ static struct flash_stm32_sector_t get_sector(const struct device *dev, off_t of
 	/* Check whether bank1/2 are swapped */
 	bank_swap = (READ_BIT(FLASH->OPTCR, FLASH_OPTCR_SWAP_BANK) == FLASH_OPTCR_SWAP_BANK);
 	sector.sector_index = offset / FLASH_SECTOR_SIZE;
-	if ((temp_offset < (REAL_FLASH_SIZE_KB / 2)) && !bank_swap) {
+	if ((temp_offset < (off_t)(REAL_FLASH_SIZE_KB / 2)) && !bank_swap) {
 		sector.bank = 1;
 		sector.cr = &regs->CR1;
 		sector.sr = &regs->SR1;
@@ -478,7 +481,7 @@ static struct flash_stm32_sector_t get_sector(const struct device *dev, off_t of
 		sector.bank = 1;
 		sector.cr = &regs->CR2;
 		sector.sr = &regs->SR2;
-	} else if ((temp_offset < (REAL_FLASH_SIZE_KB / 2)) && bank_swap) {
+	} else if ((temp_offset < (off_t)(REAL_FLASH_SIZE_KB / 2)) && bank_swap) {
 		sector.bank = 2;
 		sector.cr = &regs->CR1;
 		sector.sr = &regs->SR1;
@@ -631,13 +634,11 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset, const
 			    unsigned int len)
 {
 	int rc = 0;
-	int i, j;
-	const uint8_t ndwords = FLASH_NB_32BITWORD_IN_FLASHWORD / 2;
-	const uint8_t nbytes = FLASH_NB_32BITWORD_IN_FLASHWORD * 4;
-	uint8_t unaligned_datas[nbytes];
+	unsigned int i;
+	uint8_t unaligned_datas[FLASH_NBYTES];
 
-	for (i = 0; i < len && i + nbytes <= len; i += nbytes, offset += nbytes) {
-		rc = write_ndwords(dev, offset, (const uint64_t *)data + (i >> 3), ndwords);
+	for (i = 0; (i < len) && ((i + FLASH_NBYTES) <= len); i += FLASH_NBYTES, offset += FLASH_NBYTES) {
+		rc = write_ndwords(dev, offset, (const uint64_t *)data + (i >> 3), FLASH_NDWORDS);
 		if (rc < 0) {
 			return rc;
 		}
@@ -648,10 +649,10 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset, const
 	 */
 	if (i < len) {
 		memset(unaligned_datas, 0xff, sizeof(unaligned_datas));
-		for (j = 0; j < len - i; ++j) {
-			unaligned_datas[j] = ((uint8_t *)data)[i + j];
+		for (unsigned int j = 0; j < len - i; ++j) {
+			unaligned_datas[j] = ((uint8_t*)data)[i + j];
 		}
-		rc = write_ndwords(dev, offset, (const uint64_t *)unaligned_datas, ndwords);
+		rc = write_ndwords(dev, offset, (const uint64_t *)unaligned_datas, FLASH_NDWORDS);
 		if (rc < 0) {
 			return rc;
 		}

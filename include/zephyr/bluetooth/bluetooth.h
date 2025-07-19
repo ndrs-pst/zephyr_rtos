@@ -563,9 +563,11 @@ struct bt_data {
  * @param _type Type of advertising data field
  * @param _bytes Variable number of single-byte parameters
  */
+#if !defined(_MSC_VER)  /* #CUSTOM@NDRS */
 #define BT_DATA_BYTES(_type, _bytes...) \
 	BT_DATA(_type, ((uint8_t []) { _bytes }), \
 		sizeof((uint8_t []) { _bytes }))
+#endif
 
 /**
  * @brief Get the total size (in octets) of a given set of @ref bt_data
@@ -685,28 +687,6 @@ enum bt_le_adv_opt {
 	BT_LE_ADV_OPT_NONE = 0,
 
 	/**
-	 * @brief Advertise as connectable.
-	 *
-	 * @deprecated Use @ref BT_LE_ADV_OPT_CONN instead.
-	 *
-	 * Advertise as connectable. If not connectable then the type of
-	 * advertising is determined by providing scan response data.
-	 * The advertiser address is determined by the type of advertising
-	 * and/or enabling privacy @kconfig{CONFIG_BT_PRIVACY}.
-	 *
-	 * Starting connectable advertising preallocates a connection
-	 * object. If this fails, the API returns @c -ENOMEM.
-	 *
-	 * When an advertiser set results in a connection creation, the
-	 * controller automatically disables that advertising set.
-	 *
-	 * If the advertising set was started with @ref bt_le_adv_start
-	 * without @ref BT_LE_ADV_OPT_ONE_TIME, the host will attempt to
-	 * resume the advertiser under some conditions.
-	 */
-	BT_LE_ADV_OPT_CONNECTABLE __deprecated = BIT(0),
-
-	/**
 	 * @internal
 	 *
 	 * Internal access to the deprecated value to maintain the
@@ -717,24 +697,6 @@ enum bt_le_adv_opt {
 	 * symbol.
 	 */
 	_BT_LE_ADV_OPT_CONNECTABLE = BIT(0),
-
-	/**
-	 * @brief Advertise one time.
-	 *
-	 * @deprecated Use @ref BT_LE_ADV_OPT_CONN instead.
-	 *
-	 * Don't try to resume connectable advertising after a connection.
-	 * This option is only meaningful when used together with
-	 * BT_LE_ADV_OPT_CONNECTABLE. If set the advertising will be stopped
-	 * when @ref bt_le_adv_stop is called or when an incoming (peripheral)
-	 * connection happens. If this option is not set the stack will
-	 * take care of keeping advertising enabled even as connections
-	 * occur.
-	 * If Advertising directed or the advertiser was started with
-	 * @ref bt_le_ext_adv_start then this behavior is the default behavior
-	 * and this flag has no effect.
-	 */
-	BT_LE_ADV_OPT_ONE_TIME __deprecated = BIT(1),
 
 	/**
 	 * @internal

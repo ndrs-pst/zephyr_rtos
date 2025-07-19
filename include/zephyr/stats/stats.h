@@ -58,10 +58,19 @@
 extern "C" {
 #endif
 
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#pragma pack(push, 1)
+struct stats_name_map {
+	uint16_t snm_off;
+	const char* snm_name;
+};
+#pragma pack(pop)
+#else
 struct stats_name_map {
 	uint16_t snm_off;
 	const char *snm_name;
 } __attribute__((packed));
+#endif
 
 struct stats_hdr {
 	const char *s_name;

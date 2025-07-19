@@ -147,7 +147,7 @@ COND_CODE_0(CONFIG_LOG_TAG_MAX_LEN, (),
 	(BUILD_ASSERT(sizeof(CONFIG_LOG_TAG_DEFAULT) <= CONFIG_LOG_TAG_MAX_LEN + 1,
 		      "Default string longer than tag capacity")));
 
-static char tag[CONFIG_LOG_TAG_MAX_LEN + 1] =
+static char log_core_tag[CONFIG_LOG_TAG_MAX_LEN + 1] =
 	COND_CODE_0(CONFIG_LOG_TAG_MAX_LEN, ({}), (CONFIG_LOG_TAG_DEFAULT));
 
 static void msg_process(union log_msg_generic *msg);
@@ -867,24 +867,24 @@ void z_log_msg_enqueue(const struct log_link *link, const void *data, size_t len
 
 const char *z_log_get_tag(void)
 {
-	return CONFIG_LOG_TAG_MAX_LEN > 0 ? tag : NULL;
+	return CONFIG_LOG_TAG_MAX_LEN > 0 ? log_core_tag : NULL;
 }
 
-int log_set_tag(const char *str)
+int log_set_tag(const char *tag)
 {
 #if CONFIG_LOG_TAG_MAX_LEN > 0
-	if (str == NULL) {
+	if (tag == NULL) {
 		return -EINVAL;
 	}
 
-	size_t len = strlen(str);
+	size_t len = strlen(tag);
 	size_t cpy_len = MIN(len, CONFIG_LOG_TAG_MAX_LEN);
 
-	memcpy(tag, str, cpy_len);
-	tag[cpy_len] = '\0';
+	memcpy(log_core_tag, tag, cpy_len);
+	log_core_tag[cpy_len] = '\0';
 
 	if (cpy_len < len) {
-		tag[cpy_len - 1] = '~';
+		log_core_tag[cpy_len - 1] = '~';
 		return -ENOMEM;
 	}
 

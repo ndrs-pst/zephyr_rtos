@@ -18,12 +18,12 @@ int z_impl_w1_read_block(const struct device *dev, uint8_t *buffer, size_t len)
 	if (api->read_block != NULL) {
 		return api->read_block(dev, buffer, len);
 	}
-	for (int i = 0; i < len; ++i) {
+	for (size_t i = 0U; i < len; ++i) {
 		ret = w1_read_byte(dev);
 		if (ret < 0) {
 			return ret;
 		}
-		buffer[i] = ret;
+		buffer[i] = (uint8_t)ret;
 	}
 
 	return 0;
@@ -38,7 +38,7 @@ int z_impl_w1_write_block(const struct device *dev, const uint8_t *buffer,
 	if (api->write_block != NULL) {
 		return api->write_block(dev, buffer, len);
 	}
-	for (int i = 0; i < len; ++i) {
+	for (size_t i = 0U; i < len; ++i) {
 		ret = w1_write_byte(dev, buffer[i]);
 		if (ret < 0) {
 			return ret;

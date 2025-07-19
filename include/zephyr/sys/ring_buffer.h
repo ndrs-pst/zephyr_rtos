@@ -39,7 +39,11 @@ typedef uint16_t ring_buf_idx_t;
 
 #define RING_BUFFER_SIZE_ASSERT_MSG "Size too big"
 
-struct ring_buf_index { ring_buf_idx_t head, tail, base; };
+struct ring_buf_index {
+    ring_buf_idx_t head;
+    ring_buf_idx_t tail;
+    ring_buf_idx_t base;
+};
 
 /** @endcond */
 
@@ -47,39 +51,37 @@ struct ring_buf_index { ring_buf_idx_t head, tail, base; };
  * @brief A structure to represent a ring buffer
  */
 struct ring_buf {
-	/** @cond INTERNAL_HIDDEN */
-	uint8_t *buffer;
-	struct ring_buf_index put;
-	struct ring_buf_index get;
-	uint32_t size;
-	/** @endcond */
+    /** @cond INTERNAL_HIDDEN */
+    uint8_t* buffer;
+    struct ring_buf_index put;
+    struct ring_buf_index get;
+    uint32_t size;
+    /** @endcond */
 };
 
 /** @cond INTERNAL_HIDDEN */
 
-uint32_t ring_buf_area_claim(struct ring_buf *buf, struct ring_buf_index *ring,
-			     uint8_t **data, uint32_t size);
-int ring_buf_area_finish(struct ring_buf *buf, struct ring_buf_index *ring,
-			 uint32_t size);
+uint32_t ring_buf_area_claim(struct ring_buf* buf, struct ring_buf_index* ring,
+                             uint8_t** data, uint32_t size);
+int ring_buf_area_finish(struct ring_buf* buf, struct ring_buf_index* ring,
+                         uint32_t size);
 
 /**
  * @brief Function to force ring_buf internal states to given value
  *
  * Any value other than 0 makes sense only in validation testing context.
  */
-static inline void ring_buf_internal_reset(struct ring_buf *buf, ring_buf_idx_t value)
-{
-	buf->put.head = buf->put.tail = buf->put.base = value;
-	buf->get.head = buf->get.tail = buf->get.base = value;
+static inline void ring_buf_internal_reset(struct ring_buf* buf, ring_buf_idx_t value) {
+    buf->put.head = buf->put.tail = buf->put.base = value;
+    buf->get.head = buf->get.tail = buf->get.base = value;
 }
 
 /** @endcond */
 
-#define RING_BUF_INIT(buf, size8)	\
-{					\
-	.buffer = buf,			\
-	.size = size8,			\
-}
+#define RING_BUF_INIT(buf, size8) { \
+        .buffer = buf,              \
+        .size   = size8,            \
+    }
 
 /**
  * @brief Define and initialize a ring buffer for byte data.
@@ -96,10 +98,10 @@ static inline void ring_buf_internal_reset(struct ring_buf *buf, ring_buf_idx_t 
  * @param size8 Size of ring buffer (in bytes).
  */
 #define RING_BUF_DECLARE(name, size8) \
-	BUILD_ASSERT(size8 <= RING_BUFFER_MAX_SIZE,\
-		RING_BUFFER_SIZE_ASSERT_MSG); \
-	static uint8_t __noinit _ring_buffer_data_##name[size8]; \
-	struct ring_buf name = RING_BUF_INIT(_ring_buffer_data_##name, size8)
+    BUILD_ASSERT(size8 <= RING_BUFFER_MAX_SIZE,\
+        RING_BUFFER_SIZE_ASSERT_MSG); \
+    static uint8_t __noinit _ring_buffer_data_##name[size8]; \
+    struct ring_buf name = RING_BUF_INIT(_ring_buffer_data_##name, size8)
 
 /**
  * @brief Define and initialize an "item based" ring buffer.
@@ -117,13 +119,13 @@ static inline void ring_buf_internal_reset(struct ring_buf *buf, ring_buf_idx_t 
  * @param size32 Size of ring buffer (in 32-bit words).
  */
 #define RING_BUF_ITEM_DECLARE(name, size32) \
-	BUILD_ASSERT((size32) <= RING_BUFFER_MAX_SIZE / 4, \
-		RING_BUFFER_SIZE_ASSERT_MSG); \
-	static uint32_t __noinit _ring_buffer_data_##name[size32]; \
-	struct ring_buf name = { \
-		.buffer = (uint8_t *) _ring_buffer_data_##name, \
-		.size = 4 * (size32) \
-	}
+    BUILD_ASSERT((size32) <= RING_BUFFER_MAX_SIZE / 4, \
+        RING_BUFFER_SIZE_ASSERT_MSG); \
+    static uint32_t __noinit _ring_buffer_data_##name[size32]; \
+    struct ring_buf name = { \
+        .buffer = (uint8_t*)_ring_buffer_data_##name, \
+        .size   = (4UL * (size32)) \
+    }
 
 /**
  * @brief Define and initialize an "item based" ring buffer.
@@ -135,7 +137,7 @@ static inline void ring_buf_internal_reset(struct ring_buf *buf, ring_buf_idx_t 
  * @param size32 Size of ring buffer (in 32-bit words).
  */
 #define RING_BUF_ITEM_DECLARE_SIZE(name, size32) \
-	RING_BUF_ITEM_DECLARE(name, size32)
+    RING_BUF_ITEM_DECLARE(name, size32)
 
 /**
  * @brief Define and initialize a power-of-2 sized "item based" ring buffer.
@@ -148,7 +150,7 @@ static inline void ring_buf_internal_reset(struct ring_buf *buf, ring_buf_idx_t 
  * @param pow Ring buffer size exponent.
  */
 #define RING_BUF_ITEM_DECLARE_POW2(name, pow) \
-	RING_BUF_ITEM_DECLARE(name, BIT(pow))
+    RING_BUF_ITEM_DECLARE(name, BIT(pow))
 
 /**
  * @brief Compute the ring buffer size in 32-bit needed to store an element
@@ -170,15 +172,14 @@ static inline void ring_buf_internal_reset(struct ring_buf *buf, ring_buf_idx_t 
  * @param size Ring buffer size (in bytes).
  * @param data Ring buffer data area (uint8_t data[size]).
  */
-static inline void ring_buf_init(struct ring_buf *buf,
-				 uint32_t size,
-				 uint8_t *data)
-{
-	__ASSERT(size <= RING_BUFFER_MAX_SIZE, RING_BUFFER_SIZE_ASSERT_MSG);
+static inline void ring_buf_init(struct ring_buf* buf,
+                                 uint32_t size,
+                                 uint8_t* data) {
+    __ASSERT(size <= RING_BUFFER_MAX_SIZE, RING_BUFFER_SIZE_ASSERT_MSG);
 
-	buf->size = size;
-	buf->buffer = data;
-	ring_buf_internal_reset(buf, 0);
+    buf->size   = size;
+    buf->buffer = data;
+    ring_buf_internal_reset(buf, 0);
 }
 
 /**
@@ -194,12 +195,11 @@ static inline void ring_buf_init(struct ring_buf *buf,
  * @param size Ring buffer size (in 32-bit words)
  * @param data Ring buffer data area (uint32_t data[size]).
  */
-static inline void ring_buf_item_init(struct ring_buf *buf,
-				      uint32_t size,
-				      uint32_t *data)
-{
-	__ASSERT(size <= RING_BUFFER_MAX_SIZE / 4, RING_BUFFER_SIZE_ASSERT_MSG);
-	ring_buf_init(buf, 4 * size, (uint8_t *)data);
+static inline void ring_buf_item_init(struct ring_buf* buf,
+                                      uint32_t size,
+                                      uint32_t* data) {
+    __ASSERT(size <= RING_BUFFER_MAX_SIZE / 4, RING_BUFFER_SIZE_ASSERT_MSG);
+    ring_buf_init(buf, (4UL * size), (uint8_t*)data);
 }
 
 /**
@@ -209,9 +209,8 @@ static inline void ring_buf_item_init(struct ring_buf *buf,
  *
  * @return true if the ring buffer is empty, or false if not.
  */
-static inline bool ring_buf_is_empty(const struct ring_buf *buf)
-{
-	return buf->get.head == buf->put.tail;
+static inline bool ring_buf_is_empty(struct ring_buf const* buf) {
+    return (buf->get.head == buf->put.tail);
 }
 
 /**
@@ -219,9 +218,8 @@ static inline bool ring_buf_is_empty(const struct ring_buf *buf)
  *
  * @param buf Address of ring buffer.
  */
-static inline void ring_buf_reset(struct ring_buf *buf)
-{
-	ring_buf_internal_reset(buf, 0);
+static inline void ring_buf_reset(struct ring_buf* buf) {
+    ring_buf_internal_reset(buf, 0);
 }
 
 /**
@@ -231,11 +229,10 @@ static inline void ring_buf_reset(struct ring_buf *buf)
  *
  * @return Ring buffer free space (in bytes).
  */
-static inline uint32_t ring_buf_space_get(const struct ring_buf *buf)
-{
-	ring_buf_idx_t allocated = buf->put.head - buf->get.tail;
+static inline uint32_t ring_buf_space_get(struct ring_buf const* buf) {
+    ring_buf_idx_t allocated = buf->put.head - buf->get.tail;
 
-	return buf->size - allocated;
+    return (buf->size - allocated);
 }
 
 /**
@@ -245,9 +242,8 @@ static inline uint32_t ring_buf_space_get(const struct ring_buf *buf)
  *
  * @return Ring buffer free space (in 32-bit words).
  */
-static inline uint32_t ring_buf_item_space_get(const struct ring_buf *buf)
-{
-	return ring_buf_space_get(buf) / 4;
+static inline uint32_t ring_buf_item_space_get(struct ring_buf const* buf) {
+    return (ring_buf_space_get(buf) / 4UL);
 }
 
 /**
@@ -257,9 +253,8 @@ static inline uint32_t ring_buf_item_space_get(const struct ring_buf *buf)
  *
  * @return Ring buffer capacity (in bytes).
  */
-static inline uint32_t ring_buf_capacity_get(const struct ring_buf *buf)
-{
-	return buf->size;
+static inline uint32_t ring_buf_capacity_get(struct ring_buf const* buf) {
+    return (buf->size);
 }
 
 /**
@@ -269,11 +264,10 @@ static inline uint32_t ring_buf_capacity_get(const struct ring_buf *buf)
  *
  * @return Ring buffer data size (in bytes).
  */
-static inline uint32_t ring_buf_size_get(const struct ring_buf *buf)
-{
-	ring_buf_idx_t available = buf->put.tail - buf->get.head;
+static inline uint32_t ring_buf_size_get(struct ring_buf const* buf) {
+    ring_buf_idx_t available = buf->put.tail - buf->get.head;
 
-	return available;
+    return (available);
 }
 
 /**
@@ -294,19 +288,18 @@ static inline uint32_t ring_buf_size_get(const struct ring_buf *buf)
  *
  * @param[in]  buf  Address of ring buffer.
  * @param[out] data Pointer to the address. It is set to a location within
- *		    ring buffer.
+ *             ring buffer.
  * @param[in]  size Requested allocation size (in bytes).
  *
  * @return Size of allocated buffer which can be smaller than requested if
- *	   there is not enough free space or buffer wraps.
+ * there is not enough free space or buffer wraps.
  */
-static inline uint32_t ring_buf_put_claim(struct ring_buf *buf,
-					  uint8_t **data,
-					  uint32_t size)
-{
-	uint32_t space = ring_buf_space_get(buf);
-	return ring_buf_area_claim(buf, &buf->put, data,
-				   MIN(size, space));
+static inline uint32_t ring_buf_put_claim(struct ring_buf* buf,
+                                          uint8_t** data,
+                                          uint32_t size) {
+    uint32_t space = ring_buf_space_get(buf);
+    return ring_buf_area_claim(buf, &buf->put, data,
+                               MIN(size, space));
 }
 
 /**
@@ -331,9 +324,8 @@ static inline uint32_t ring_buf_put_claim(struct ring_buf *buf,
  * @retval 0 Successful operation.
  * @retval -EINVAL Provided @a size exceeds free space in the ring buffer.
  */
-static inline int ring_buf_put_finish(struct ring_buf *buf, uint32_t size)
-{
-	return ring_buf_area_finish(buf, &buf->put, size);
+static inline int ring_buf_put_finish(struct ring_buf* buf, uint32_t size) {
+    return ring_buf_area_finish(buf, &buf->put, size);
 }
 
 /**
@@ -356,7 +348,7 @@ static inline int ring_buf_put_finish(struct ring_buf *buf, uint32_t size)
  *
  * @retval Number of bytes written.
  */
-uint32_t ring_buf_put(struct ring_buf *buf, const uint8_t *data, uint32_t size);
+uint32_t ring_buf_put(struct ring_buf* buf, uint8_t const* data, uint32_t size);
 
 /**
  * @brief Get address of a valid data in a ring buffer.
@@ -376,19 +368,18 @@ uint32_t ring_buf_put(struct ring_buf *buf, const uint8_t *data, uint32_t size);
  *
  * @param[in]  buf  Address of ring buffer.
  * @param[out] data Pointer to the address. It is set to a location within
- *		    ring buffer.
+ *             ring buffer.
  * @param[in]  size Requested size (in bytes).
  *
  * @return Number of valid bytes in the provided buffer which can be smaller
- *	   than requested if there is not enough free space or buffer wraps.
+ * than requested if there is not enough free space or buffer wraps.
  */
-static inline uint32_t ring_buf_get_claim(struct ring_buf *buf,
-					  uint8_t **data,
-					  uint32_t size)
-{
-	uint32_t buf_size = ring_buf_size_get(buf);
-	return ring_buf_area_claim(buf, &buf->get, data,
-				   MIN(size, buf_size));
+static inline uint32_t ring_buf_get_claim(struct ring_buf* buf,
+                                          uint8_t** data,
+                                          uint32_t size) {
+    uint32_t buf_size = ring_buf_size_get(buf);
+    return ring_buf_area_claim(buf, &buf->get, data,
+                               MIN(size, buf_size));
 }
 
 /**
@@ -413,9 +404,8 @@ static inline uint32_t ring_buf_get_claim(struct ring_buf *buf,
  * @retval 0 Successful operation.
  * @retval -EINVAL Provided @a size exceeds valid bytes in the ring buffer.
  */
-static inline int ring_buf_get_finish(struct ring_buf *buf, uint32_t size)
-{
-	return ring_buf_area_finish(buf, &buf->get, size);
+static inline int ring_buf_get_finish(struct ring_buf* buf, uint32_t size) {
+    return ring_buf_area_finish(buf, &buf->get, size);
 }
 
 /**
@@ -429,7 +419,7 @@ static inline int ring_buf_get_finish(struct ring_buf *buf, uint32_t size)
  * being preempted or by using a mutex to govern reads to the ring buffer.
  *
  * @warning
- * Ring buffer instance should not mix byte access and  item mode
+ * Ring buffer instance should not mix byte access and item mode
  * (calls prefixed with ring_buf_item_).
  *
  * @param buf  Address of ring buffer.
@@ -438,7 +428,7 @@ static inline int ring_buf_get_finish(struct ring_buf *buf, uint32_t size)
  *
  * @retval Number of bytes written to the output buffer.
  */
-uint32_t ring_buf_get(struct ring_buf *buf, uint8_t *data, uint32_t size);
+uint32_t ring_buf_get(struct ring_buf* buf, uint8_t* data, uint32_t size);
 
 /**
  * @brief Peek at data from a ring buffer.
@@ -466,7 +456,7 @@ uint32_t ring_buf_get(struct ring_buf *buf, uint8_t *data, uint32_t size);
  *
  * @retval Number of bytes written to the output buffer.
  */
-uint32_t ring_buf_peek(struct ring_buf *buf, uint8_t *data, uint32_t size);
+uint32_t ring_buf_peek(struct ring_buf* buf, uint8_t* data, uint32_t size);
 
 /**
  * @brief Write a data item to a ring buffer.
@@ -489,8 +479,8 @@ uint32_t ring_buf_peek(struct ring_buf *buf, uint8_t *data, uint32_t size);
  * @retval 0 Data item was written.
  * @retval -EMSGSIZE Ring buffer has insufficient free space.
  */
-int ring_buf_item_put(struct ring_buf *buf, uint16_t type, uint8_t value,
-		      uint32_t *data, uint8_t size32);
+int ring_buf_item_put(struct ring_buf* buf, uint16_t type, uint8_t value,
+                      uint32_t* data, uint8_t size32);
 
 /**
  * @brief Read a data item from a ring buffer.
@@ -516,8 +506,8 @@ int ring_buf_item_put(struct ring_buf *buf, uint16_t type, uint8_t value,
  * @retval -EMSGSIZE Data area @a data is too small; @a size32 now contains
  *         the number of 32-bit words needed.
  */
-int ring_buf_item_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
-		      uint32_t *data, uint8_t *size32);
+int ring_buf_item_get(struct ring_buf* buf, uint16_t* type, uint8_t* value,
+                      uint32_t* data, uint8_t* size32);
 
 /**
  * @}

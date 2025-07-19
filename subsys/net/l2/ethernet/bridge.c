@@ -382,7 +382,7 @@ static enum net_verdict bridge_iface_process(struct net_if *iface,
 				send_pkt = net_pkt_ref(pkt);
 			}
 
-			net_pkt_set_family(send_pkt, AF_UNSPEC);
+			net_pkt_set_family(send_pkt, NET_AF_UNSPEC);
 			net_pkt_set_iface(send_pkt, ctx->eth_iface[i]);
 			net_if_queue_tx(ctx->eth_iface[i], send_pkt);
 

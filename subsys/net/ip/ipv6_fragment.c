@@ -158,8 +158,8 @@ static struct net_ipv6_reassembly *reassembly_get(uint32_t id,
 }
 
 static bool reassembly_cancel(uint32_t id,
-			      struct in6_addr *src,
-			      struct in6_addr *dst)
+			      struct net_in6_addr *src,
+			      struct net_in6_addr *dst)
 {
 	int i, j;
 
@@ -736,13 +736,13 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 		net_pkt_skip(pkt, last_hdr_off);
 
 		switch (next_hdr) {
-		case IPPROTO_ICMPV6:
+		case NET_IPPROTO_ICMPV6:
 			ret = net_icmpv6_finalize(pkt, true);
 			break;
-		case IPPROTO_TCP:
+		case NET_IPPROTO_TCP:
 			ret = net_tcp_finalize(pkt, true);
 			break;
-		case IPPROTO_UDP:
+		case NET_IPPROTO_UDP:
 			ret = net_udp_finalize(pkt, true);
 			break;
 		default:

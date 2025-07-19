@@ -360,7 +360,7 @@ struct closure {
 } __packed;
 
 #if defined(CONFIG_BT_CONN_TX_USER_DATA_SIZE)
-BUILD_ASSERT(sizeof(struct closure) <= CONFIG_BT_CONN_TX_USER_DATA_SIZE);
+BUILD_ASSERT(sizeof(struct closure) <= CONFIG_BT_CONN_TX_USER_DATA_SIZE, "build assert");
 #endif
 
 static inline void make_closure(void *storage, void *cb, void *data)

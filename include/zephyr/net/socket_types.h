@@ -25,22 +25,30 @@
 
 #ifdef CONFIG_NEWLIB_LIBC
 
+#if defined(_MSC_VER)   /* #CUSTOM@NDRS */
+typedef int32_t suseconds_t;
+#else
 #include <newlib.h>
+#endif
 
 #ifdef __NEWLIB__
 #include <sys/_timeval.h>
 #else /* __NEWLIB__ */
 #include <sys/types.h>
+#if !defined(_MSC_VER)  /* #CUSTOM@NDRS */
 /* workaround for older Newlib 2.x, as it lacks sys/_timeval.h */
 struct timeval {
 	time_t tv_sec;
 	suseconds_t tv_usec;
 };
+#endif
 #endif /* __NEWLIB__ */
 
 #else /* CONFIG_NEWLIB_LIBC */
 
-#if defined(CONFIG_ARCH_POSIX) && defined(CONFIG_EXTERNAL_LIBC)
+#if defined(_MSC_VER)   /* #CUSTOM@NDRS */
+typedef int32_t suseconds_t;
+#elif defined(CONFIG_ARCH_POSIX) && defined(CONFIG_EXTERNAL_LIBC)
 #include <bits/types/struct_timeval.h>
 #else
 #include <sys/_timeval.h>
@@ -52,7 +60,11 @@ struct timeval {
 extern "C" {
 #endif
 
-#define zsock_timeval timeval
+/* @see struct timeval */
+struct zsock_timeval {
+	time_t tv_sec;
+	suseconds_t tv_usec;
+};
 
 #ifdef __cplusplus
 }

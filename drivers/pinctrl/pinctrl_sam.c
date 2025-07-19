@@ -50,10 +50,10 @@ static const struct atmel_sam_pmc_config sam_port_clocks[] = {
 #endif
 };
 
-static void pinctrl_configure_pin(pinctrl_soc_pin_t pin)
-{
+static void pinctrl_configure_pin(pinctrl_soc_pin_t pin) {
 	struct soc_gpio_pin soc_pin;
-	uint8_t  port_idx, port_func;
+    uint8_t port_idx;
+    uint8_t port_func;
 
 	port_idx = SAM_PINMUX_PORT_GET(pin);
 	__ASSERT_NO_MSG(port_idx < ARRAY_SIZE(sam_port_addrs));
@@ -65,25 +65,23 @@ static void pinctrl_configure_pin(pinctrl_soc_pin_t pin)
 	soc_pin.regs = (Pio *) sam_port_addrs[port_idx];
 #endif
 	soc_pin.periph_id = sam_port_clocks[port_idx].peripheral_id;
-	soc_pin.mask = 1 << SAM_PINMUX_PIN_GET(pin);
-	soc_pin.flags = SAM_PINCTRL_FLAGS_GET(pin) << SOC_GPIO_FLAGS_POS;
+    soc_pin.mask      = (1 << SAM_PINMUX_PIN_GET(pin));
+    soc_pin.flags     = (SAM_PINCTRL_FLAGS_GET(pin) << SOC_GPIO_FLAGS_POS);
 
 	if (port_func == SAM_PINMUX_FUNC_periph) {
-		soc_pin.flags |= (SAM_PINMUX_PERIPH_GET(pin)
-				  << SOC_GPIO_FUNC_POS);
+        soc_pin.flags |= (SAM_PINMUX_PERIPH_GET(pin) << SOC_GPIO_FUNC_POS);
 	}
 
 	soc_gpio_configure(&soc_pin);
 }
 
-int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
-			   uintptr_t reg)
-{
+int pinctrl_configure_pins(const pinctrl_soc_pin_t* pins,
+                           uint8_t pin_cnt, uintptr_t reg) {
 	ARG_UNUSED(reg);
 
 	for (uint8_t i = 0U; i < pin_cnt; i++) {
 		pinctrl_configure_pin(*pins++);
 	}
 
-	return 0;
+    return (0);
 }

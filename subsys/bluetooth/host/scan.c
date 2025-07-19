@@ -257,7 +257,7 @@ static int start_le_scan_ext(struct bt_le_scan_param *scan_param)
 		return -ENOBUFS;
 	}
 
-	set_param = net_buf_add(buf, sizeof(*set_param));
+	set_param = net_buf_add(buf, BT_HCI_CP_LE_SET_EXT_SCAN_PARAM_SZ);
 	set_param->own_addr_type = own_addr_type;
 	set_param->phys = 0;
 	set_param->filter_policy = scan_param->options & BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST
@@ -832,12 +832,12 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 			break;
 		}
 
-		if (buf->len < sizeof(*evt)) {
+		if (buf->len < BT_HCI_EVT_LE_EXT_ADVERTISING_INFO_SZ) {
 			LOG_ERR("Unexpected end of buffer");
 			break;
 		}
 
-		evt = net_buf_pull_mem(buf, sizeof(*evt));
+		evt = net_buf_pull_mem(buf, BT_HCI_EVT_LE_EXT_ADVERTISING_INFO_SZ);
 		evt_type = sys_le16_to_cpu(evt->evt_type);
 		data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS(evt_type);
 		is_report_complete = data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE;
@@ -1054,19 +1054,21 @@ static void bt_hci_le_per_adv_report_common(struct net_buf *buf)
 {
 #if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
 	struct bt_hci_evt_le_per_advertising_report_v2 *evt;
+#define BT_HCI_LE_PARC_EVT_SZ   BT_HCI_EVT_LE_PER_ADVERTISING_REPORT_V2_SZ
 #else
 	struct bt_hci_evt_le_per_advertising_report *evt;
+#define BT_HCI_LE_PARC_EVT_SZ   BT_HCI_EVT_LE_PER_ADVERTISING_REPORT_SZ
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC_RSP) */
 
 	struct bt_le_per_adv_sync *per_adv_sync;
 	struct bt_le_per_adv_sync_recv_info info;
 
-	if (buf->len < sizeof(*evt)) {
+	if (buf->len < BT_HCI_LE_PARC_EVT_SZ) {
 		LOG_ERR("Unexpected end of buffer");
 		return;
 	}
 
-	evt = net_buf_pull_mem(buf, sizeof(*evt));
+	evt = net_buf_pull_mem(buf, BT_HCI_LE_PARC_EVT_SZ);
 
 	per_adv_sync = bt_hci_per_adv_sync_lookup_handle(sys_le16_to_cpu(evt->handle));
 
@@ -1360,8 +1362,8 @@ int bt_le_per_adv_sync_subevent(struct bt_le_per_adv_sync *per_adv_sync,
 		return -ENOBUFS;
 	}
 
-	cp = net_buf_add(buf, sizeof(*cp));
-	(void)memset(cp, 0, sizeof(*cp));
+	cp = net_buf_add(buf, BT_HCI_CP_LE_SET_PAWR_SYNC_SUBEVENT_SZ);
+	(void)memset(cp, 0, BT_HCI_CP_LE_SET_PAWR_SYNC_SUBEVENT_SZ);
 	cp->sync_handle = sys_cpu_to_le16(per_adv_sync->handle);
 	cp->periodic_adv_properties = sys_cpu_to_le16(params->properties);
 	cp->num_subevents = params->num_subevents;
@@ -1398,8 +1400,8 @@ int bt_le_per_adv_set_response_data(struct bt_le_per_adv_sync *per_adv_sync,
 		return -ENOBUFS;
 	}
 
-	cp = net_buf_add(buf, sizeof(*cp));
-	(void)memset(cp, 0, sizeof(*cp));
+	cp = net_buf_add(buf, BT_HCI_CP_LE_SET_PAWR_RESPONSE_DATA_SZ);
+	(void)memset(cp, 0, BT_HCI_CP_LE_SET_PAWR_RESPONSE_DATA_SZ);
 	cp->sync_handle = sys_cpu_to_le16(per_adv_sync->handle);
 	cp->request_event = sys_cpu_to_le16(param->request_event);
 	cp->request_subevent = param->request_subevent;
@@ -1686,12 +1688,12 @@ void bt_hci_le_adv_report(struct net_buf *buf)
 			break;
 		}
 
-		if (buf->len < sizeof(*evt)) {
+		if (buf->len < BT_HCI_EVT_LE_ADVERTISING_INFO_SZ) {
 			LOG_ERR("Unexpected end of buffer");
 			break;
 		}
 
-		evt = net_buf_pull_mem(buf, sizeof(*evt));
+		evt = net_buf_pull_mem(buf, BT_HCI_EVT_LE_ADVERTISING_INFO_SZ);
 
 		if (buf->len < evt->length + sizeof(adv_info.rssi)) {
 			LOG_ERR("Unexpected end of buffer");

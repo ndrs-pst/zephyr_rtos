@@ -234,7 +234,7 @@ static int init_configuration(struct usbd_context *const uds_ctx,
 	}
 
 	/* Update wTotalLength and bNumInterfaces of configuration descriptor */
-	sys_put_le16(sizeof(struct usb_cfg_descriptor) + cfg_len,
+	sys_put_le16((uint16_t)(sizeof(struct usb_cfg_descriptor) + cfg_len),
 		     (uint8_t *)&cfg_desc->wTotalLength);
 	cfg_desc->bNumInterfaces = nif;
 

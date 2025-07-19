@@ -188,13 +188,15 @@ static int backend_ready(const struct log_backend *const backend)
 	return -EACCES;
 }
 
-const struct log_backend_api log_backend_ble_api = {.process = process,
-						    .dropped = NULL,
-						    .panic = panic,
-						    .init = init_ble,
-						    .is_ready = backend_ready,
-						    .format_set = format_set,
-						    .notify = NULL};
+static const struct log_backend_api log_backend_ble_api = {
+	.process = process,
+	.dropped = NULL,
+	.panic = panic,
+	.init = init_ble,
+	.is_ready = backend_ready,
+	.format_set = format_set,
+	.notify = NULL,
+};
 
 LOG_BACKEND_DEFINE(log_backend_ble, log_backend_ble_api, true);
 

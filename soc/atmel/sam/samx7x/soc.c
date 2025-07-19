@@ -31,107 +31,105 @@ LOG_MODULE_REGISTER(soc);
  * Setup Slow, Main, PLLA, Processor and Master clocks during the device boot.
  * It is assumed that the relevant registers are at their reset value.
  */
-static ALWAYS_INLINE void clock_init(void)
-{
-	/* Switch the main clock to the internal OSC with 12MHz */
-	soc_pmc_switch_mainck_to_fastrc(SOC_PMC_FAST_RC_FREQ_12MHZ);
+static ALWAYS_INLINE void clock_init(void) {
+    /* Switch the main clock to the internal OSC with 12MHz */
+    soc_pmc_switch_mainck_to_fastrc(SOC_PMC_FAST_RC_FREQ_12MHZ);
 
-	/* Switch MCK (Master Clock) to the main clock */
-	soc_pmc_mck_set_source(SOC_PMC_MCK_SRC_MAIN_CLK);
+    /* Switch MCK (Master Clock) to the main clock */
+    soc_pmc_mck_set_source(SOC_PMC_MCK_SRC_MAIN_CLK);
 
-	EFC->EEFC_FMR = EEFC_FMR_FWS(0) | EEFC_FMR_CLOE;
+    EFC->EEFC_FMR = EEFC_FMR_FWS(0) | EEFC_FMR_CLOE;
 
-	soc_pmc_enable_clock_failure_detector();
+    soc_pmc_enable_clock_failure_detector();
 
-	if (IS_ENABLED(CONFIG_SOC_ATMEL_SAM_EXT_SLCK)) {
-		soc_supc_slow_clock_select_crystal_osc();
-	}
+    if (IS_ENABLED(CONFIG_SOC_ATMEL_SAM_EXT_SLCK)) {
+        soc_supc_slow_clock_select_crystal_osc();
+    }
 
-	if (IS_ENABLED(CONFIG_SOC_ATMEL_SAM_EXT_MAINCK)) {
-		/*
-		 * Setup main external crystal oscillator.
-		 */
+    if (IS_ENABLED(CONFIG_SOC_ATMEL_SAM_EXT_MAINCK)) {
+        /*
+         * Setup main external crystal oscillator.
+         */
 
-		/* We select maximum setup time.
-		 * While start up time could be shortened
-		 * this optimization is not deemed
-		 * critical now.
-		 */
-		bool bypass = IS_ENABLED(CONFIG_SOC_ATMEL_SAM_EXT_MAINCK_BYPASS);
+        /* We select maximum setup time.
+         * While start up time could be shortened
+         * this optimization is not deemed
+         * critical now.
+         */
+        bool bypass = IS_ENABLED(CONFIG_SOC_ATMEL_SAM_EXT_MAINCK_BYPASS);
 
-		soc_pmc_switch_mainck_to_xtal(bypass, 0xff);
-	}
+        soc_pmc_switch_mainck_to_xtal(bypass, 0xFF);
+    }
 
-	/*
-	 * Set FWS (Flash Wait State) value before increasing Master Clock
-	 * (MCK) frequency.
-	 * TODO: set FWS based on the actual MCK frequency and VDDIO value
-	 * rather than maximum supported 150 MHz at standard VDDIO=2.7V
-	 */
-	EFC->EEFC_FMR = EEFC_FMR_FWS(5) | EEFC_FMR_CLOE;
+    /*
+     * Set FWS (Flash Wait State) value before increasing Master Clock
+     * (MCK) frequency.
+     * TODO: set FWS based on the actual MCK frequency and VDDIO value
+     * rather than maximum supported 150 MHz at standard VDDIO=2.7V
+     */
+    EFC->EEFC_FMR = EEFC_FMR_FWS(5) | EEFC_FMR_CLOE;
 
-	/*
-	 * Setup PLLA
-	 */
+    /*
+     * Setup PLLA
+     */
 
-	/*
-	 * PLL clock = Main * (MULA + 1) / DIVA
-	 *
-	 * By default, MULA == 24, DIVA == 1.
-	 * With main crystal running at 12 MHz,
-	 * PLL = 12 * (24 + 1) / 1 = 300 MHz
-	 *
-	 * With Processor Clock prescaler at 1
-	 * Processor Clock (HCLK)=300 MHz.
-	 */
-	soc_pmc_enable_pllack(CONFIG_SOC_ATMEL_SAM_PLLA_MULA, 0x3Fu,
-			      CONFIG_SOC_ATMEL_SAM_PLLA_DIVA);
+    /*
+     * PLL clock = Main * (MULA + 1) / DIVA
+     *
+     * By default, MULA == 24, DIVA == 1.
+     * With main crystal running at 12 MHz,
+     * PLL = 12 * (24 + 1) / 1 = 300 MHz
+     *
+     * With Processor Clock prescaler at 1
+     * Processor Clock (HCLK)=300 MHz.
+     */
+    soc_pmc_enable_pllack(CONFIG_SOC_ATMEL_SAM_PLLA_MULA, 0x3FU,
+                          CONFIG_SOC_ATMEL_SAM_PLLA_DIVA);
 
-	soc_pmc_enable_upllck(0x3Fu);
+    soc_pmc_enable_upllck(0x3Fu);
 
-	/*
-	 * Final setup of the Master Clock
-	 */
+    /*
+     * Final setup of the Master Clock
+     */
 
-	/* Setting PLLA as MCK, first prescaler, then divider and source last */
-	soc_pmc_mck_set_prescaler(1);
-	soc_pmc_mck_set_divider(CONFIG_SOC_ATMEL_SAM_MDIV);
-	soc_pmc_mck_set_source(SOC_PMC_MCK_SRC_PLLA_CLK);
+    /* Setting PLLA as MCK, first prescaler, then divider and source last */
+    soc_pmc_mck_set_prescaler(1);
+    soc_pmc_mck_set_divider(CONFIG_SOC_ATMEL_SAM_MDIV);
+    soc_pmc_mck_set_source(SOC_PMC_MCK_SRC_PLLA_CLK);
 
-	/* Disable internal fast RC if we have an external crystal oscillator */
-	if (IS_ENABLED(CONFIG_SOC_ATMEL_SAM_EXT_MAINCK)) {
-		soc_pmc_osc_disable_fastrc();
-	}
+    /* Disable internal fast RC if we have an external crystal oscillator */
+    if (IS_ENABLED(CONFIG_SOC_ATMEL_SAM_EXT_MAINCK)) {
+        soc_pmc_osc_disable_fastrc();
+    }
 }
 
-void soc_reset_hook(void)
-{
-	if (IS_ENABLED(CONFIG_SOC_ATMEL_SAM_WAIT_MODE)) {
-		/*
-		 * Instruct CPU to enter Wait mode instead of Sleep mode to
-		 * keep Processor Clock (HCLK) and thus be able to debug
-		 * CPU using JTAG.
-		 */
-		soc_pmc_enable_waitmode();
-	}
+void soc_reset_hook(void) {
+    if (IS_ENABLED(CONFIG_SOC_ATMEL_SAM_WAIT_MODE)) {
+        /*
+         * Instruct CPU to enter Wait mode instead of Sleep mode to
+         * keep Processor Clock (HCLK) and thus be able to debug
+         * CPU using JTAG.
+         */
+        soc_pmc_enable_waitmode();
+    }
 
-	/*
-	 * DTCM is enabled by default at reset, therefore we have to disable
-	 * it first to get the caches into a state where then the
-	 * sys_cache*-functions can enable them, if requested by the
-	 * configuration.
-	 */
-	SCB_InvalidateDCache();
-	SCB_DisableDCache();
+    /*
+     * DTCM is enabled by default at reset, therefore we have to disable
+     * it first to get the caches into a state where then the
+     * sys_cache*-functions can enable them, if requested by the
+     * configuration.
+     */
+    SCB_InvalidateDCache();
+    SCB_DisableDCache();
 
-	/*
-	 * Enable the caches only if configured to do so.
-	 */
-	sys_cache_instr_enable();
-	sys_cache_data_enable();
+    /*
+     * Enable the caches only if configured to do so.
+     */
+    sys_cache_instr_enable();
+    sys_cache_data_enable();
 
-	/* Setup system clocks */
-	clock_init();
+    /* Setup system clocks */
+    clock_init();
 }
 
 extern void atmel_samx7x_config(void);
@@ -140,13 +138,12 @@ extern void atmel_samx7x_config(void);
  *
  * This needs to be run at the very beginning.
  */
-void soc_early_init_hook(void)
-{
-	/* Check that the CHIP CIDR matches the HAL one */
-	if (CHIPID->CHIPID_CIDR != CHIP_CIDR) {
-		LOG_WRN("CIDR mismatch: chip = 0x%08x vs HAL = 0x%08x",
-			(uint32_t)CHIPID->CHIPID_CIDR, (uint32_t)CHIP_CIDR);
-	}
+void soc_early_init_hook(void) {
+    /* Check that the CHIP CIDR matches the HAL one */
+    if (CHIPID->CHIPID_CIDR != CHIP_CIDR) {
+        LOG_WRN("CIDR mismatch: chip = 0x%08x vs HAL = 0x%08x",
+                (uint32_t)CHIPID->CHIPID_CIDR, (uint32_t)CHIP_CIDR);
+    }
 
-	atmel_samx7x_config();
+    atmel_samx7x_config();
 }

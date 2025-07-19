@@ -7,9 +7,9 @@
 #ifndef ZEPHYR_INCLUDE_TRACING_SYSCALL_H_
 #define ZEPHYR_INCLUDE_TRACING_SYSCALL_H_
 
-#if defined CONFIG_SEGGER_SYSTEMVIEW
+#if (defined(CONFIG_SEGGER_SYSTEMVIEW) && !defined(_MSC_VER)) /* #CUSTOM@NDRS */
 #include "tracing_sysview_syscall.h"
-#elif defined CONFIG_TRACING_TEST
+#elif defined(CONFIG_TRACING_TEST)
 #include "tracing_test_syscall.h"
 #else
 

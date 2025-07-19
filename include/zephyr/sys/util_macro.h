@@ -102,18 +102,18 @@ extern "C" {
 #define IS_BIT_SET(value, bit) ((((value) >> (bit)) & (0x1)) != 0)
 
 /** @brief Extract the Least Significant Bit from @p value. */
-#define LSB_GET(value) ((value) & -(value))
+#define LSB_GET(value) ((value) & ~(value - 1UL))               /* #CUSTOM@NDRS */
 
 /**
  * @brief Extract a bitfield element from @p value corresponding to
- *	  the field mask @p mask.
+ *    the field mask @p mask.
  */
 #define FIELD_GET(mask, value)  (((value) & (mask)) / LSB_GET(mask))
 
 /**
  * @brief Prepare a bitfield element using @p value with @p mask representing
- *	  its field position and width. The result should be combined
- *	  with other fields using a logical OR.
+ *    its field position and width. The result should be combined
+ *    with other fields using a logical OR.
  */
 #define FIELD_PREP(mask, value) (((value) * LSB_GET(mask)) & (mask))
 

@@ -630,12 +630,12 @@ void bt_hci_le_cs_subevent_result(struct net_buf *buf)
 	struct net_buf_simple step_data_buf;
 	struct net_buf *reassembly_buf = NULL;
 
-	if (buf->len < sizeof(*evt)) {
+	if (buf->len < BT_HCI_EVT_LE_CS_SUBEVENT_RESULT_SZ) {
 		LOG_ERR("Unexpected end of buffer");
 		return;
 	}
 
-	evt = net_buf_pull_mem(buf, sizeof(*evt));
+	evt = net_buf_pull_mem(buf, BT_HCI_EVT_LE_CS_SUBEVENT_RESULT_SZ);
 	uint16_t conn_handle = sys_le16_to_cpu(evt->conn_handle);
 
 #if defined(CONFIG_BT_CHANNEL_SOUNDING_TEST)
@@ -738,12 +738,12 @@ void bt_hci_le_cs_subevent_result_continue(struct net_buf *buf)
 	struct net_buf *reassembly_buf = NULL;
 	uint16_t conn_handle;
 
-	if (buf->len < sizeof(*evt)) {
+	if (buf->len < BT_HCI_EVT_LE_CS_SUBEVENT_RESULT_CONTINUE_SZ) {
 		LOG_ERR("Unexpected end of buffer");
 		return;
 	}
 
-	evt = net_buf_pull_mem(buf, sizeof(*evt));
+	evt = net_buf_pull_mem(buf, BT_HCI_EVT_LE_CS_SUBEVENT_RESULT_CONTINUE_SZ);
 	conn_handle = sys_le16_to_cpu(evt->conn_handle);
 
 #if defined(CONFIG_BT_CHANNEL_SOUNDING_TEST)

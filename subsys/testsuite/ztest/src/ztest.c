@@ -27,6 +27,8 @@ static bool failed_expectation;
 #include <zephyr/shell/shell.h>
 #endif
 
+#include <stdlib.h>
+
 #ifdef CONFIG_ZTEST_SHUFFLE
 #include <time.h>
 #include <zephyr/random/random.h>
@@ -1189,7 +1191,7 @@ void __weak test_main(void)
 }
 
 #ifndef KERNEL
-int main(void)
+int ztest_main(void)    /* #CUSTOM@NDRS */
 {
 	z_init_mock();
 	test_main();
@@ -1253,11 +1255,12 @@ static int cmd_runall(const struct shell *sh, size_t argc, char **argv)
 static int cmd_shuffle(const struct shell *sh, size_t argc, char **argv)
 {
 
-	struct getopt_state *state;
+	struct z_getopt_state *state;
 	int opt;
-	static struct option long_options[] = {{"suite_iter", required_argument, 0, 's'},
-					       {"case_iter", required_argument, 0, 'c'},
-					       {0, 0, 0, 0}};
+	static const struct z_option long_options[] = {
+		{"suite_iter", required_argument, 0, 's'},
+		{"case_iter", required_argument, 0, 'c'},
+		{0, 0, 0, 0}};
 	int opt_index = 0;
 	int val;
 	int opt_num = 0;
@@ -1265,8 +1268,8 @@ static int cmd_shuffle(const struct shell *sh, size_t argc, char **argv)
 	int suite_iter = 1;
 	int case_iter = 1;
 
-	while ((opt = getopt_long(argc, argv, "s:c:", long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+	while ((opt = z_getopt_long(argc, argv, "s:c:", long_options, &opt_index)) != -1) {
+		state = z_getopt_state_get();
 		switch (opt) {
 		case 's':
 			val = atoi(state->optarg);
@@ -1301,9 +1304,10 @@ static int cmd_shuffle(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_run_suite(const struct shell *sh, size_t argc, char **argv)
 {
-	struct getopt_state *state;
+	struct z_getopt_state *state;
 	int opt;
-	static struct option long_options[] = {{"repeat_iter", required_argument, NULL, 'r'},
+	static const struct z_option long_options[] = {
+		{"repeat_iter", required_argument, NULL, 'r'},
 		{NULL, 0, NULL, 0}};
 	int opt_index = 0;
 	int val;
@@ -1311,8 +1315,8 @@ static int cmd_run_suite(const struct shell *sh, size_t argc, char **argv)
 	void *param = NULL;
 	int repeat_iter = 1;
 
-	while ((opt = getopt_long(argc, argv, "r:p:", long_options, &opt_index)) != -1) {
-		state = getopt_state_get();
+	while ((opt = z_getopt_long(argc, argv, "r:p:", long_options, &opt_index)) != -1) {
+		state = z_getopt_state_get();
 		switch (opt) {
 		case 'r':
 			val = atoi(state->optarg);
@@ -1427,8 +1431,7 @@ static void testsuite_list_get(size_t idx, struct shell_static_entry *entry)
 SHELL_CMD_REGISTER(ztest, &sub_ztest_cmds, "Ztest commands", NULL);
 #endif /* CONFIG_ZTEST_SHELL */
 
-int main(void)
-{
+int ztest_main(void) /* #CUSTOM@NDRS */ {
 #ifdef CONFIG_USERSPACE
 	/* Partition containing globals tagged with ZTEST_DMEM and ZTEST_BMEM
 	 * macros. Any variables that user code may reference need to be

@@ -19,16 +19,16 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_mqtt_sn, CONFIG_MQTT_SN_LOG_LEVEL);
 
-static char *get_ip_str(const struct sockaddr *sa, char *s, size_t maxlen)
+static char *get_ip_str(const struct net_sockaddr *sa, char *s, size_t maxlen)
 {
 	switch (sa->sa_family) {
-	case AF_INET:
-		zsock_inet_ntop(AF_INET, &(((struct sockaddr_in *)sa)->sin_addr),
+	case NET_AF_INET:
+		zsock_inet_ntop(NET_AF_INET, &(((struct net_sockaddr_in *)sa)->sin_addr),
 				s, maxlen);
 		break;
 
-	case AF_INET6:
-		zsock_inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)sa)->sin6_addr),
+	case NET_AF_INET6:
+		zsock_inet_ntop(NET_AF_INET6, &(((struct net_sockaddr_in6 *)sa)->sin6_addr),
 				s, maxlen);
 		break;
 
@@ -49,7 +49,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 	int optval;
 	struct net_if *iface;
 
-	udp->sock = zsock_socket(udp->bcaddr.sa_family, SOCK_DGRAM, 0);
+	udp->sock = zsock_socket(udp->bcaddr.sa_family, NET_SOCK_DGRAM, 0);
 	if (udp->sock < 0) {
 		return errno;
 	}
@@ -66,7 +66,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 		char ip[30], *out;
 		uint16_t port;
 
-		out = get_ip_str((struct sockaddr *)&udp->bcaddr, ip, sizeof(ip));
+		out = get_ip_str((struct net_sockaddr *)&udp->bcaddr, ip, sizeof(ip));
 		switch (udp->bcaddr.sa_family) {
 		case AF_INET:
 			port = ntohs(((struct sockaddr_in *)&udp->bcaddr)->sin_port);
@@ -84,17 +84,17 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 	}
 
 	switch (udp->bcaddr.sa_family) {
-	case AF_INET:
+	case NET_AF_INET:
 		if (IS_ENABLED(CONFIG_NET_IPV4)) {
-			addrm.sa_family = AF_INET;
+			addrm.sa_family = NET_AF_INET;
 			((struct sockaddr_in *)&addrm)->sin_port =
 				((struct sockaddr_in *)&udp->bcaddr)->sin_port;
-			((struct sockaddr_in *)&addrm)->sin_addr.s_addr = INADDR_ANY;
+			((struct sockaddr_in *)&addrm)->sin_addr.s_addr = NET_INADDR_ANY;
 		}
 		break;
-	case AF_INET6:
+	case NET_AF_INET6:
 		if (IS_ENABLED(CONFIG_NET_IPV6)) {
-			addrm.sa_family = AF_INET6;
+			addrm.sa_family = NET_AF_INET6;
 			((struct sockaddr_in6 *)&addrm)->sin6_port =
 				((struct sockaddr_in6 *)&udp->bcaddr)->sin6_port;
 			memcpy(&((struct sockaddr_in6 *)&addrm)->sin6_addr, &in6addr_any,
@@ -113,10 +113,10 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 	}
 
 	memcpy(&mreqn.imr_multiaddr, &udp->bcaddr.data[2], sizeof(udp->bcaddr.data) - 2);
-	if (udp->bcaddr.sa_family == AF_INET && IS_ENABLED(CONFIG_NET_IPV4)) {
+	if (udp->bcaddr.sa_family == NET_AF_INET && IS_ENABLED(CONFIG_NET_IPV4)) {
 		iface = net_if_ipv4_select_src_iface(
 			&((struct sockaddr_in *)&udp->bcaddr)->sin_addr);
-	} else if (udp->bcaddr.sa_family == AF_INET6 && IS_ENABLED(CONFIG_NET_IPV6)) {
+	} else if (udp->bcaddr.sa_family == NET_AF_INET6 && IS_ENABLED(CONFIG_NET_IPV6)) {
 		iface = net_if_ipv6_select_src_iface(&((struct sockaddr_in6 *)&addrm)->sin6_addr);
 	} else {
 		LOG_ERR("Unknown AF");
@@ -235,7 +235,7 @@ static int tp_udp_poll(struct mqtt_sn_client *client)
 	return pollfd.revents & ZSOCK_POLLIN;
 }
 
-int mqtt_sn_transport_udp_init(struct mqtt_sn_transport_udp *udp, struct sockaddr *bcaddr,
+int mqtt_sn_transport_udp_init(struct mqtt_sn_transport_udp *udp, struct net_sockaddr *bcaddr,
 			       socklen_t addrlen)
 {
 	if (!udp || !bcaddr || !addrlen) {

@@ -101,7 +101,7 @@ static int write(uint8_t *data, size_t length, void *ctx)
 	return length;
 }
 
-const struct log_backend_api log_backend_spinel_api = {
+static const struct log_backend_api log_backend_spinel_api = {
 	.process = process,
 	.panic = panic,
 	.init = log_backend_spinel_init,

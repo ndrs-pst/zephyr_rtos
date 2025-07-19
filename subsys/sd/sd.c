@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(sd, CONFIG_SD_LOG_LEVEL);
 static inline int sd_idle(struct sd_card *card)
 {
 	struct sdhc_command cmd;
+	int ret;
 
 	/* Reset card with CMD0 */
 	cmd.opcode = SD_GO_IDLE_STATE;
@@ -29,7 +30,10 @@ static inline int sd_idle(struct sd_card *card)
 	cmd.response_type = (SD_RSP_TYPE_NONE | SD_SPI_RSP_TYPE_R1);
 	cmd.retries = CONFIG_SD_CMD_RETRIES;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
-	return sdhc_request(card->sdhc, &cmd, NULL);
+
+	ret = sdhc_request(card->sdhc, &cmd, NULL);
+
+	return ret;
 }
 
 /*
@@ -45,7 +49,7 @@ static int sd_send_interface_condition(struct sd_card *card)
 	uint32_t resp;
 
 	/* Reset card with CMD0 */
-	ret = sd_idle(card);
+	ret = sd_idle(card);                                    /* SD_INIT_SEQ09 */
 	if (ret) {
 		LOG_ERR("Card error on CMD0");
 		return ret;
@@ -57,17 +61,19 @@ static int sd_send_interface_condition(struct sd_card *card)
 	cmd.response_type = (SD_RSP_TYPE_R7 | SD_SPI_RSP_TYPE_R7);
 	cmd.retries = CONFIG_SD_CMD_RETRIES;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
-	ret = sdhc_request(card->sdhc, &cmd, NULL);
+	ret = sdhc_request(card->sdhc, &cmd, NULL);             /* SD_INIT_SEQ10 */
 	if (ret) {
 		LOG_DBG("SD CMD8 failed with error %d", ret);
 		/* Retry */
 		return SD_RETRY;
 	}
+
 	if (card->host_props.is_spi) {
 		resp = cmd.response[1];
 	} else {
 		resp = cmd.response[0];
 	}
+
 	if ((resp & 0xFF) != SD_IF_COND_CHECK) {
 		LOG_DBG("Legacy card detected, no CMD8 support");
 		/* Retry probe */
@@ -79,6 +85,7 @@ static int sd_send_interface_condition(struct sd_card *card)
 	}
 	LOG_DBG("Found SDHC with CMD8 support");
 	card->flags |= SD_SDHC_FLAG;
+
 	return 0;
 }
 
@@ -106,16 +113,19 @@ static int sd_common_init(struct sd_card *card)
 	ret = sd_retry(sd_send_interface_condition, card, CONFIG_SD_RETRY_COUNT);
 	if (ret == -ETIMEDOUT) {
 		LOG_INF("Card does not support CMD8, assuming legacy card");
-		return sd_idle(card);
+		ret = sd_idle(card);
+		return ret;
 	} else if (ret) {
 		LOG_ERR("Card error on CMD8");
 		return ret;
 	}
+
 	if (card->host_props.is_spi &&
 		IS_ENABLED(CONFIG_SDHC_SUPPORTS_SPI_MODE)) {
 		/* Enable CRC for spi commands using CMD59 */
 		ret = sd_enable_crc(card);
 	}
+
 	return ret;
 }
 
@@ -129,7 +139,6 @@ static int sd_init_io(struct sd_card *card)
 	bus_io->clock = 0;
 	/* SPI requires SDHC PUSH PULL, and open drain buses use more power */
 	bus_io->bus_mode = SDHC_BUSMODE_PUSHPULL;
-	bus_io->power_mode = SDHC_POWER_ON;
 	bus_io->bus_width = SDHC_BUS_WIDTH1BIT;
 	/* Cards start with legacy timing and Maximum voltage Host controller support */
 	bus_io->timing = SDHC_TIMING_LEGACY;
@@ -151,14 +160,14 @@ static int sd_init_io(struct sd_card *card)
 	/* Toggle power to card to reset it */
 	LOG_DBG("Resetting power to card");
 	bus_io->power_mode = SDHC_POWER_OFF;
-	ret = sdhc_set_io(card->sdhc, bus_io);
+	ret = sdhc_set_io(card->sdhc, bus_io);                  /* SD_INIT_SEQ04 */
 	if (ret) {
 		LOG_ERR("Could not %s card power via SDHC", "disable");
 		return ret;
 	}
 	sd_delay(card->host_props.power_delay);
 	bus_io->power_mode = SDHC_POWER_ON;
-	ret = sdhc_set_io(card->sdhc, bus_io);
+	ret = sdhc_set_io(card->sdhc, bus_io);                  /* SD_INIT_SEQ05 */
 	if (ret) {
 		LOG_ERR("Could not %s card power via SDHC", "enable");
 		return ret;
@@ -171,7 +180,7 @@ static int sd_init_io(struct sd_card *card)
 	sd_delay(card->host_props.power_delay);
 	/* Start bus clock */
 	bus_io->clock = SDMMC_CLOCK_400KHZ;
-	ret = sdhc_set_io(card->sdhc, bus_io);
+	ret = sdhc_set_io(card->sdhc, bus_io);                  /* SD_INIT_SEQ06 */
 	if (ret) {
 		LOG_ERR("Could not start bus clock");
 		return ret;
@@ -192,27 +201,28 @@ static int sd_command_init(struct sd_card *card)
 	 */
 	sd_delay(1);
 
-
 	/*
 	 * Start card initialization and identification
 	 * flow described in section 3.6 of SD specification
 	 * Common to SDIO and SDMMC. Some eMMC chips break the
 	 * specification and expect something like this too.
 	 */
-	ret = sd_common_init(card);
+	ret = sd_common_init(card);                             /* SD_INIT_SEQ08 */
 	if (ret) {
 		return ret;
 	}
 
 #ifdef CONFIG_SDIO_STACK
 	/* Attempt to initialize SDIO card */
-	if (!sdio_card_init(card)) {
+	ret = sdio_card_init(card);
+	if (ret == 0) {                                         /* SD_INIT_SEQ11 */
 		return 0;
 	}
 #endif /* CONFIG_SDIO_STACK */
 #ifdef CONFIG_SDMMC_STACK
 	/* Attempt to initialize SDMMC card */
-	if (!sdmmc_card_init(card)) {
+	ret = sdmmc_card_init(card);                            /* SD_INIT_SEQ29 */
+	if (ret == 0) {
 		return 0;
 	}
 #endif /* CONFIG_SDMMC_STACK */
@@ -222,7 +232,7 @@ static int sd_command_init(struct sd_card *card)
 		LOG_ERR("Card error on CMD0");
 		return ret;
 	}
-	if (!mmc_card_init(card)) {
+	if (!mmc_card_init(card)) {                             /* SD_INIT_SEQ33 */
 		return 0;
 	}
 #endif /* CONFIG_MMC_STACK */
@@ -231,7 +241,7 @@ static int sd_command_init(struct sd_card *card)
 }
 
 /* Initializes SD/SDIO card */
-int sd_init(const struct device *sdhc_dev, struct sd_card *card)
+int sd_init(const struct device *sdhc_dev, struct sd_card *card)        /* SD_INIT_SEQ00 */
 {
 	int ret;
 
@@ -239,7 +249,7 @@ int sd_init(const struct device *sdhc_dev, struct sd_card *card)
 		return -ENODEV;
 	}
 	card->sdhc = sdhc_dev;
-	ret = sdhc_get_host_props(card->sdhc, &card->host_props);
+	ret = sdhc_get_host_props(card->sdhc, &card->host_props);       /* SD_INIT_SEQ01 */
 	if (ret) {
 		LOG_ERR("SD host controller returned invalid properties");
 		return ret;
@@ -258,7 +268,7 @@ int sd_init(const struct device *sdhc_dev, struct sd_card *card)
 	}
 
 	/* Initialize SDHC IO with defaults */
-	ret = sd_init_io(card);
+	ret = sd_init_io(card);                                 /* SD_INIT_SEQ03 */
 	if (ret) {
 		k_mutex_unlock(&card->lock);
 		return ret;
@@ -275,7 +285,7 @@ int sd_init(const struct device *sdhc_dev, struct sd_card *card)
 	 * If initialization then fails, the sd_init routine will assume the
 	 * card is inaccessible
 	 */
-	ret = sd_command_init(card);
+	ret = sd_command_init(card);                            /* SD_INIT_SEQ07 */
 	if (ret == SD_RESTART) {
 		/* Reset I/O, and retry sd initialization once more */
 		card->status = CARD_ERROR;

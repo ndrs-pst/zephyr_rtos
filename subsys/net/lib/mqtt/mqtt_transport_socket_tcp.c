@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/** @file mqtt_transport_socket_tcp.h
+/** @file mqtt_transport_socket_tcp.c
  *
  * @brief Internal functions to handle transport over TCP socket.
  */
@@ -20,11 +20,11 @@ LOG_MODULE_REGISTER(net_mqtt_sock_tcp, CONFIG_MQTT_LOG_LEVEL);
 
 int mqtt_client_tcp_connect(struct mqtt_client *client)
 {
-	const struct sockaddr *broker = client->broker;
+	const struct net_sockaddr *broker = client->broker;
 	int ret;
 
-	client->transport.tcp.sock = zsock_socket(broker->sa_family, SOCK_STREAM,
-						  IPPROTO_TCP);
+	client->transport.tcp.sock = zsock_socket(broker->sa_family, NET_SOCK_STREAM,
+						  NET_IPPROTO_TCP);
 	if (client->transport.tcp.sock < 0) {
 		return -errno;
 	}
@@ -37,8 +37,8 @@ int mqtt_client_tcp_connect(struct mqtt_client *client)
 		strncpy(ifname.ifr_name, client->transport.if_name,
 			sizeof(ifname.ifr_name) - 1);
 
-		ret = zsock_setsockopt(client->transport.tcp.sock, SOL_SOCKET,
-				       SO_BINDTODEVICE, &ifname,
+		ret = zsock_setsockopt(client->transport.tcp.sock, NET_SOL_SOCKET,
+				       NET_SO_BINDTODEVICE, &ifname,
 				       sizeof(struct ifreq));
 		if (ret < 0) {
 			NET_ERR("Failed to bind ot interface %s error (%d)",
@@ -61,10 +61,10 @@ int mqtt_client_tcp_connect(struct mqtt_client *client)
 	}
 #endif
 
-	size_t peer_addr_size = sizeof(struct sockaddr_in6);
+	size_t peer_addr_size = sizeof(struct net_sockaddr_in6);
 
-	if (broker->sa_family == AF_INET) {
-		peer_addr_size = sizeof(struct sockaddr_in);
+	if (broker->sa_family == NET_AF_INET) {
+		peer_addr_size = sizeof(struct net_sockaddr_in);
 	}
 
 	ret = zsock_connect(client->transport.tcp.sock, client->broker,
@@ -104,7 +104,8 @@ int mqtt_client_tcp_write_msg(struct mqtt_client *client,
 			      const struct msghdr *message)
 
 {
-	int ret, i;
+	int ret;
+	size_t i;
 	size_t offset = 0;
 	size_t total_len = 0;
 
@@ -125,7 +126,7 @@ int mqtt_client_tcp_write_msg(struct mqtt_client *client,
 
 		/* Update msghdr for the next iteration. */
 		for (i = 0; i < message->msg_iovlen; i++) {
-			if (ret < message->msg_iov[i].iov_len) {
+			if (ret < (int)message->msg_iov[i].iov_len) {
 				message->msg_iov[i].iov_len -= ret;
 				message->msg_iov[i].iov_base =
 					(uint8_t *)message->msg_iov[i].iov_base + ret;

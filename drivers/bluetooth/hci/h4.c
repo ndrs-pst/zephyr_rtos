@@ -35,19 +35,19 @@ LOG_MODULE_REGISTER(bt_driver);
 struct h4_data {
 	struct {
 		struct net_buf *buf;
-		struct k_fifo   fifo;
+		struct k_fifo fifo;
 
-		struct k_sem    ready;
+		struct k_sem ready;
 
-		uint16_t        remaining;
-		uint16_t        discard;
+		uint16_t remaining;
+		uint16_t discard;
 
-		bool            have_hdr;
-		bool            discardable;
+		bool have_hdr;
+		bool discardable;
 
-		uint8_t         hdr_len;
+		uint8_t hdr_len;
 
-		uint8_t         type;
+		uint8_t type;
 		union {
 			struct bt_hci_evt_hdr evt;
 			struct bt_hci_acl_hdr acl;
@@ -57,9 +57,9 @@ struct h4_data {
 	} rx;
 
 	struct {
-		uint8_t         type;
+		uint8_t type;
 		struct net_buf *buf;
-		struct k_fifo   fifo;
+		struct k_fifo fifo;
 	} tx;
 
 	bt_hci_recv_t recv;
@@ -87,16 +87,16 @@ static inline void h4_get_type(const struct device *dev)
 	switch (h4->rx.type) {
 	case BT_HCI_H4_EVT:
 		h4->rx.remaining = sizeof(h4->rx.evt);
-		h4->rx.hdr_len = h4->rx.remaining;
+		h4->rx.hdr_len = (uint8_t)h4->rx.remaining;
 		break;
 	case BT_HCI_H4_ACL:
 		h4->rx.remaining = sizeof(h4->rx.acl);
-		h4->rx.hdr_len = h4->rx.remaining;
+		h4->rx.hdr_len = (uint8_t)h4->rx.remaining;
 		break;
 	case BT_HCI_H4_ISO:
 		if (IS_ENABLED(CONFIG_BT_ISO)) {
 			h4->rx.remaining = sizeof(h4->rx.iso);
-			h4->rx.hdr_len = h4->rx.remaining;
+			h4->rx.hdr_len = (uint8_t)h4->rx.remaining;
 			break;
 		}
 		__fallthrough;
@@ -225,7 +225,7 @@ static struct net_buf *get_rx(struct h4_data *h4, k_timeout_t timeout)
 	return NULL;
 }
 
-static void rx_thread(void *p1, void *p2, void *p3)
+static void h4_rx_thread(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
 	const struct h4_config *cfg = dev->config;
@@ -237,7 +237,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 	LOG_DBG("started");
 
-	while (1) {
+	while (true) {
 		LOG_DBG("rx.buf %p", h4->rx.buf);
 
 		/* We can only do the allocation if we know the initial
@@ -451,7 +451,7 @@ static inline void process_rx(const struct device *dev)
 		h4->rx.buf ? h4->rx.buf->len : 0);
 
 	if (h4->rx.discard) {
-		h4->rx.discard -= h4_discard(cfg->uart, h4->rx.discard);
+		h4->rx.discard -= (uint16_t)h4_discard(cfg->uart, h4->rx.discard);
 		return;
 	}
 
@@ -464,7 +464,7 @@ static inline void process_rx(const struct device *dev)
 
 static void bt_uart_isr(const struct device *uart, void *user_data)
 {
-	struct device *dev = user_data;
+	struct device const *dev = user_data;
 
 	while (uart_irq_update(uart) && uart_irq_is_pending(uart)) {
 		if (uart_irq_tx_ready(uart)) {
@@ -525,7 +525,7 @@ static int h4_open(const struct device *dev, bt_hci_recv_t recv)
 
 	tid = k_thread_create(cfg->rx_thread, cfg->rx_thread_stack,
 			      cfg->rx_thread_stack_size,
-			      rx_thread, (void *)dev, NULL, NULL,
+			      h4_rx_thread, (void *)dev, NULL, NULL,
 			      K_PRIO_COOP(CONFIG_BT_RX_PRIO),
 			      0, K_NO_WAIT);
 	k_thread_name_set(tid, "bt_rx_thread");
@@ -584,7 +584,7 @@ static int h4_setup(const struct device *dev, const struct bt_hci_setup_params *
 }
 #endif
 
-static DEVICE_API(bt_hci, h4_driver_api) = {
+static DEVICE_API(bt_hci, h4_driver_api) = { /* @see bt_hci_driver_api */
 	.open = h4_open,
 	.send = h4_send,
 	.close = h4_close,

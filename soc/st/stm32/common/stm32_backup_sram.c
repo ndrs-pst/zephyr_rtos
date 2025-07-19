@@ -17,46 +17,48 @@
 LOG_MODULE_REGISTER(stm32_backup_sram, CONFIG_SOC_LOG_LEVEL);
 
 struct stm32_backup_sram_config {
-	struct stm32_pclken pclken;
+    struct stm32_pclken pclken;
 };
 
-static int stm32_backup_sram_init(const struct device *dev)
-{
-	const struct stm32_backup_sram_config *config = dev->config;
+static int stm32_backup_sram_init(const struct device* dev) {
+    const struct stm32_backup_sram_config* config = dev->config;
 
-	int ret;
+    int ret;
 
-	/* enable clock for subsystem */
-	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+    /* enable clock for subsystem */
+    const struct device* const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	if (!device_is_ready(clk)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
+    if (!device_is_ready(clk)) {
+        LOG_ERR("clock control device not ready");
+        return (-ENODEV);
+    }
 
-	ret = clock_control_on(clk, (clock_control_subsys_t)&config->pclken);
-	if (ret < 0) {
-		LOG_ERR("Could not initialize backup SRAM clock (%d)", ret);
-		return ret;
-	}
+    ret = clock_control_on(clk, (clock_control_subsys_t)&config->pclken);
+    if (ret < 0) {
+        LOG_ERR("Could not initialize backup SRAM clock (%d)", ret);
+        return (ret);
+    }
 
-	/* Add a refcount to backup domain access and never remove it */
-	stm32_backup_domain_enable_access();
+    /* Add a refcount to backup domain access and never remove it */
+    stm32_backup_domain_enable_access();
 
-	/* enable backup sram regulator (required to retain backup SRAM content
-	 * while in standby or VBAT modes).
-	 */
-	LL_PWR_EnableBkUpRegulator();
-	while (!LL_PWR_IsEnabledBkUpRegulator()) {
-	}
+    /* enable backup sram regulator (required to retain backup SRAM content
+     * while in standby or VBAT modes).
+     */
+    LL_PWR_EnableBkUpRegulator();
+    while (!LL_PWR_IsEnabledBkUpRegulator()) {
+        /* pass */
+    }
 
-	return 0;
+    return (0);
 }
 
 static const struct stm32_backup_sram_config config = {
-	.pclken = { .bus = DT_INST_CLOCKS_CELL(0, bus),
-		    .enr = DT_INST_CLOCKS_CELL(0, bits) },
+    .pclken = {
+        .bus = DT_INST_CLOCKS_CELL(0, bus),
+        .enr = DT_INST_CLOCKS_CELL(0, bits)
+    },
 };
 
 DEVICE_DT_INST_DEFINE(0, stm32_backup_sram_init, NULL, NULL, &config,
-		      POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY, NULL);
+                      POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY, NULL);

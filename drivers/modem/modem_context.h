@@ -81,7 +81,7 @@ struct modem_context {
  *
  * @retval 0 if ok, < 0 if error.
  */
-int modem_context_sprint_ip_addr(const struct sockaddr *addr, char *buf, size_t buf_size);
+int modem_context_sprint_ip_addr(const struct net_sockaddr *addr, char *buf, size_t buf_size);
 
 /**
  * @brief  Get port from IP address
@@ -91,7 +91,7 @@ int modem_context_sprint_ip_addr(const struct sockaddr *addr, char *buf, size_t 
  *
  * @retval 0 if ok, < 0 if error.
  */
-int modem_context_get_addr_port(const struct sockaddr *addr, uint16_t *port);
+int modem_context_get_addr_port(const struct net_sockaddr *addr, uint16_t *port);
 
 /**
  * @brief  Gets modem context by id.

@@ -52,7 +52,7 @@ static void __process_received(struct net_context *context,
 	k_fifo_put(&socket->fifo, pkt);
 }
 
-static int eswifi_socket_connect(void *obj, const struct sockaddr *addr,
+static int eswifi_socket_connect(void *obj, const struct net_sockaddr *addr,
 				 socklen_t addrlen)
 {
 	intptr_t sock = OBJ_TO_SD(obj);
@@ -64,7 +64,7 @@ static int eswifi_socket_connect(void *obj, const struct sockaddr *addr,
 		return -EINVAL;
 	}
 
-	if (addr->sa_family != AF_INET) {
+	if (addr->sa_family != NET_AF_INET) {
 		LOG_ERR("Only AF_INET is supported!");
 		return -EPFNOSUPPORT;
 	}
@@ -106,15 +106,15 @@ static int eswifi_socket_listen(void *obj, int backlog)
 	return ret;
 }
 
-void __eswifi_socket_accept_cb(struct net_context *context, struct sockaddr *addr,
+void __eswifi_socket_accept_cb(struct net_context *context, struct net_sockaddr *addr,
 			       size_t len, int val, void *data)
 {
-	struct sockaddr *addr_target = data;
+	struct net_sockaddr *addr_target = data;
 
 	memcpy(addr_target, addr, len);
 }
 
-static int __eswifi_socket_accept(void *obj, struct sockaddr *addr,
+static int __eswifi_socket_accept(void *obj, struct net_sockaddr *addr,
 				  socklen_t *addrlen)
 {
 	intptr_t sock = OBJ_TO_SD(obj);
@@ -135,14 +135,14 @@ static int __eswifi_socket_accept(void *obj, struct sockaddr *addr,
 	k_sem_reset(&socket->accept_sem);
 	eswifi_unlock(eswifi);
 
-	*addrlen = sizeof(struct sockaddr_in);
+	*addrlen = sizeof(struct net_sockaddr_in);
 
 	k_sem_take(&socket->accept_sem, K_FOREVER);
 
 	return 0;
 }
 
-static int eswifi_socket_accept(void *obj, struct sockaddr *addr,
+static int eswifi_socket_accept(void *obj, struct net_sockaddr *addr,
 				socklen_t *addrlen)
 {
 	int fd = zvfs_reserve_fd();
@@ -306,7 +306,7 @@ static ssize_t eswifi_socket_send(void *obj, const void *buf, size_t len,
 }
 
 static ssize_t eswifi_socket_sendto(void *obj, const void *buf, size_t len,
-				    int flags, const struct sockaddr *to,
+				    int flags, const struct net_sockaddr *to,
 				    socklen_t tolen)
 {
 	if (to != NULL) {
@@ -322,7 +322,8 @@ static ssize_t eswifi_socket_recv(void *obj, void *buf, size_t max_len,
 {
 	intptr_t sock = OBJ_TO_SD(obj);
 	struct eswifi_off_socket *socket;
-	int len = 0, ret = 0;
+	int len = 0;
+	int ret;
 	struct net_pkt *pkt;
 
 	if ((max_len == 0) || (buf == NULL) ||
@@ -342,7 +343,6 @@ static ssize_t eswifi_socket_recv(void *obj, void *buf, size_t max_len,
 	if (ret < 0) {
 		LOG_ERR("Rescheduling socket read error");
 		errno = -ret;
-		len = -1;
 	}
 
 	if (flags & ZSOCK_MSG_DONTWAIT) {
@@ -363,7 +363,7 @@ static ssize_t eswifi_socket_recv(void *obj, void *buf, size_t max_len,
 
 skip_wait:
 	len = net_pkt_remaining_data(pkt);
-	if (len > max_len) {
+	if (len > (int)max_len) {
 		len = max_len;
 		socket->prev_pkt_rem = pkt;
 	} else {
@@ -387,7 +387,7 @@ done:
 }
 
 static ssize_t eswifi_socket_recvfrom(void *obj, void *buf, size_t len,
-				      int flags, struct sockaddr *from,
+				      int flags, struct net_sockaddr *from,
 				      socklen_t *fromlen)
 {
 	if (fromlen != NULL) {
@@ -538,7 +538,7 @@ done:
 	return 1;
 }
 
-static int eswifi_socket_bind(void *obj, const struct sockaddr *addr,
+static int eswifi_socket_bind(void *obj, const struct net_sockaddr *addr,
 			      socklen_t addrlen)
 {
 	intptr_t sock = OBJ_TO_SD(obj);
@@ -563,12 +563,12 @@ static bool eswifi_socket_is_supported(int family, int type, int proto)
 	enum eswifi_transport_type eswifi_socket_type;
 	int err;
 
-	if (family != AF_INET) {
+	if (family != NET_AF_INET) {
 		return false;
 	}
 
-	if (type != SOCK_DGRAM &&
-	    type != SOCK_STREAM) {
+	if (type != NET_SOCK_DGRAM &&
+	    type != NET_SOCK_STREAM) {
 		return false;
 	}
 
@@ -657,7 +657,7 @@ static const struct socket_op_vtable eswifi_socket_fd_op_vtable = {
 };
 
 #ifdef CONFIG_NET_SOCKETS_OFFLOAD
-NET_SOCKET_OFFLOAD_REGISTER(eswifi, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, AF_UNSPEC,
+NET_SOCKET_OFFLOAD_REGISTER(eswifi, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, NET_AF_UNSPEC,
 			    eswifi_socket_is_supported, eswifi_socket_create);
 #endif
 
@@ -665,7 +665,7 @@ static int eswifi_off_getaddrinfo(const char *node, const char *service,
 				  const struct zsock_addrinfo *hints,
 				  struct zsock_addrinfo **res)
 {
-	struct sockaddr_in *ai_addr;
+	struct net_sockaddr_in *ai_addr;
 	struct zsock_addrinfo *ai;
 	unsigned long port = 0;
 	char *rsp;
@@ -686,7 +686,7 @@ static int eswifi_off_getaddrinfo(const char *node, const char *service,
 		return DNS_EAI_NONAME;
 	}
 
-	if (hints && hints->ai_family != AF_INET) {
+	if (hints && hints->ai_family != NET_AF_INET) {
 		return DNS_EAI_FAIL;
 	}
 
@@ -716,14 +716,14 @@ static int eswifi_off_getaddrinfo(const char *node, const char *service,
 		goto done_unlock;
 	}
 
-	ai->ai_family = AF_INET;
-	ai->ai_socktype = hints ? hints->ai_socktype : SOCK_STREAM;
-	ai->ai_protocol = ai->ai_socktype == SOCK_STREAM ? IPPROTO_TCP : IPPROTO_UDP;
+	ai->ai_family = NET_AF_INET;
+	ai->ai_socktype = hints ? hints->ai_socktype : NET_SOCK_STREAM;
+	ai->ai_protocol = ai->ai_socktype == NET_SOCK_STREAM ? NET_IPPROTO_TCP : NET_IPPROTO_UDP;
 
 	ai_addr->sin_family = ai->ai_family;
-	ai_addr->sin_port = htons(port);
+	ai_addr->sin_port = net_htons(port);
 
-	if (!net_ipaddr_parse(rsp, strlen(rsp), (struct sockaddr *)ai_addr)) {
+	if (!net_ipaddr_parse(rsp, strlen(rsp), (struct net_sockaddr *)ai_addr)) {
 		free(ai_addr);
 		free(*res);
 		err = DNS_EAI_FAIL;
@@ -731,7 +731,7 @@ static int eswifi_off_getaddrinfo(const char *node, const char *service,
 	}
 
 	ai->ai_addrlen = sizeof(*ai_addr);
-	ai->ai_addr = (struct sockaddr *)ai_addr;
+	ai->ai_addr = (struct net_sockaddr *)ai_addr;
 	err = 0;
 
 done_unlock:

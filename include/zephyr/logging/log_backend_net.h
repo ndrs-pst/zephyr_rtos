@@ -40,7 +40,7 @@ bool log_backend_net_set_addr(const char *addr);
  *
  * @return True if address could be set, false otherwise.
  */
-bool log_backend_net_set_ip(const struct sockaddr *addr);
+bool log_backend_net_set_ip(const struct net_sockaddr *addr);
 
 /**
  * @brief update the hostname

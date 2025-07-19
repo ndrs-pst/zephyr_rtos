@@ -14,7 +14,7 @@
 LOG_MODULE_REGISTER(modem_at_shell, CONFIG_MODEM_LOG_LEVEL);
 
 #define AT_SHELL_MODEM_NODE DT_ALIAS(modem)
-#define AT_SHELL_PIPELINK_NAME _CONCAT(user_pipe_, CONFIG_MODEM_AT_SHELL_USER_PIPE)
+#define AT_SHELL_PIPELINK_NAME Z_CONCAT(user_pipe_, CONFIG_MODEM_AT_SHELL_USER_PIPE)
 
 #define AT_SHELL_STATE_ATTACHED_BIT       0
 #define AT_SHELL_STATE_SCRIPT_RUNNING_BIT 1
@@ -85,7 +85,7 @@ MODEM_CHAT_SCRIPT_DEFINE(
 	CONFIG_MODEM_AT_SHELL_RESPONSE_TIMEOUT_S
 );
 
-static void at_shell_pipe_callback(struct modem_pipe *pipe,
+static void at_shell_pipe_callback(struct modem_pipe const* pipe,
 				   enum modem_pipe_event event,
 				   void *user_data)
 {

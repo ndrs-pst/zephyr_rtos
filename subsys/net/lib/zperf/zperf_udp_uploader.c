@@ -278,11 +278,11 @@ static int udp_upload(int sock, int port,
 	end_time = k_uptime_ticks();
 	usecs64 = param->unix_offset_us + k_ticks_to_us_floor64(end_time - start_time);
 
-	if (param->peer_addr.sa_family == AF_INET) {
+	if (param->peer_addr.sa_family == NET_AF_INET) {
 		if (net_ipv4_is_addr_mcast(&net_sin(&param->peer_addr)->sin_addr)) {
 			is_mcast_pkt = true;
 		}
-	} else if (param->peer_addr.sa_family == AF_INET6) {
+	} else if (param->peer_addr.sa_family == NET_AF_INET6) {
 		if (net_ipv6_is_addr_mcast(&net_sin6(&param->peer_addr)->sin6_addr)) {
 			is_mcast_pkt = true;
 		}
@@ -315,10 +315,10 @@ int zperf_udp_upload(const struct zperf_upload_params *param,
 		return -EINVAL;
 	}
 
-	if (param->peer_addr.sa_family == AF_INET) {
-		port = ntohs(net_sin(&param->peer_addr)->sin_port);
-	} else if (param->peer_addr.sa_family == AF_INET6) {
-		port = ntohs(net_sin6(&param->peer_addr)->sin6_port);
+	if (param->peer_addr.sa_family == NET_AF_INET) {
+		port = net_ntohs(net_sin(&param->peer_addr)->sin_port);
+	} else if (param->peer_addr.sa_family == NET_AF_INET6) {
+		port = net_ntohs(net_sin6(&param->peer_addr)->sin6_port);
 	} else {
 		NET_ERR("Invalid address family (%d)",
 			param->peer_addr.sa_family);
@@ -326,7 +326,7 @@ int zperf_udp_upload(const struct zperf_upload_params *param,
 	}
 
 	sock = zperf_prepare_upload_sock(&param->peer_addr, param->options.tos,
-					 param->options.priority, 0, IPPROTO_UDP);
+					 param->options.priority, 0, NET_IPPROTO_UDP);
 	if (sock < 0) {
 		return sock;
 	}

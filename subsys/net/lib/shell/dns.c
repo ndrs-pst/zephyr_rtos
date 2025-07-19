@@ -31,15 +31,15 @@ static void dns_result_cb(enum dns_resolve_status status,
 #define MAX_STR_LEN CONFIG_DNS_RESOLVER_MAX_NAME_LEN
 		char str[MAX_STR_LEN + 1];
 
-		if (info->ai_family == AF_INET) {
-			net_addr_ntop(AF_INET,
+		if (info->ai_family == NET_AF_INET) {
+			net_addr_ntop(NET_AF_INET,
 				      &net_sin(&info->ai_addr)->sin_addr,
 				      str, NET_IPV4_ADDR_LEN);
-		} else if (info->ai_family == AF_INET6) {
-			net_addr_ntop(AF_INET6,
+		} else if (info->ai_family == NET_AF_INET6) {
+			net_addr_ntop(NET_AF_INET6,
 				      &net_sin6(&info->ai_addr)->sin6_addr,
 				      str, NET_IPV6_ADDR_LEN);
-		} else if (info->ai_family == AF_LOCAL) {
+		} else if (info->ai_family == NET_AF_LOCAL) {
 			/* service discovery */
 			memset(str, 0, MAX_STR_LEN);
 			memcpy(str, info->ai_canonname,
@@ -104,7 +104,7 @@ static void print_dns_info(const struct shell *sh,
 			   net_sprint_ipv4_addr(
 				   &net_sin(&ctx->servers[i].dns_server)->
 				   sin_addr),
-			   ntohs(net_sin(&ctx->servers[i].dns_server)->sin_port),
+			   net_ntohs(net_sin(&ctx->servers[i].dns_server)->sin_port),
 			   printable_iface(iface_name, " via ", ""),
 			   printable_iface(iface_name, iface_name, ""),
 			   ctx->servers[i].source != DNS_SOURCE_UNKNOWN ? " (" : "",
@@ -112,12 +112,12 @@ static void print_dns_info(const struct shell *sh,
 					dns_get_source_str(ctx->servers[i].source) : "",
 			   ctx->servers[i].source != DNS_SOURCE_UNKNOWN ? ")" : "");
 
-		} else if (ctx->servers[i].dns_server.sa_family == AF_INET6) {
+		} else if (ctx->servers[i].dns_server.sa_family == NET_AF_INET6) {
 			PR("\t[%s]:%u%s%s%s%s%s\n",
 			   net_sprint_ipv6_addr(
 				   &net_sin6(&ctx->servers[i].dns_server)->
 				   sin6_addr),
-			   ntohs(net_sin6(&ctx->servers[i].dns_server)->sin6_port),
+			   net_ntohs(net_sin6(&ctx->servers[i].dns_server)->sin6_port),
 			   printable_iface(iface_name, " via ", ""),
 			   printable_iface(iface_name, iface_name, ""),
 			   ctx->servers[i].source != DNS_SOURCE_UNKNOWN ? " (" : "",

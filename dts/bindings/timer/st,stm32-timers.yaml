@@ -46,3 +46,7 @@ properties:
                                                down.
 
       If absent, then STM32_TIM_COUNTERMODE_UP is used (reset state).
+
+  bsp-hal-tmr-isr:
+    type: boolean
+    description: Use BSP specific 'bsp_hal_tmr_isr' interrupt service routine

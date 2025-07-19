@@ -268,7 +268,7 @@ static const struct can_mcan_ops can_stm32h7_ops = {
 	static const struct stm32_pclken can_stm32h7_pclken_##n[] =	    \
 					STM32_DT_INST_CLOCKS(n);	    \
 									    \
-	static const struct can_stm32h7_config can_stm32h7_cfg_##n = {	    \
+	static struct can_stm32h7_config DT_CONST can_stm32h7_cfg_##n = {   \
 		.base = CAN_MCAN_DT_INST_MCAN_ADDR(n),			    \
 		.mrba = CAN_MCAN_DT_INST_MRBA(n),			    \
 		.mram = CAN_MCAN_DT_INST_MRAM_ADDR(n),			    \

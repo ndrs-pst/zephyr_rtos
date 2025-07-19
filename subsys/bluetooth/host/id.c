@@ -289,7 +289,7 @@ static void le_rpa_invalidate(void)
 		if (bt_dev.id_count == 0) {
 			return;
 		}
-		bool rpa_expired_data[bt_dev.id_count];
+		bool rpa_expired_data[CONFIG_BT_ID_MAX];
 		for (uint8_t i = 0; i < bt_dev.id_count; i++) {
 			rpa_expired_data[i] = true;
 		}

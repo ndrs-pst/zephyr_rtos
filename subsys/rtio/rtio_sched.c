@@ -17,7 +17,7 @@
 
 #include "rtio_sched.h"
 
-static void rtio_sched_alarm_expired(struct _timeout *t)
+static void rtio_sched_alarm_expired(struct _timeout const* t)
 {
 	struct rtio_sqe *sqe = CONTAINER_OF(t, struct rtio_sqe, delay.to);
 	struct rtio_iodev_sqe *iodev_sqe = CONTAINER_OF(sqe, struct rtio_iodev_sqe, sqe);

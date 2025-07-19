@@ -47,8 +47,12 @@ static const char *const colors[] = {
 	IS_ENABLED(CONFIG_LOG_DBG_COLOR_BLUE) ? LOG_COLOR_CODE_BLUE : NULL,   /* dbg */
 };
 
-static uint32_t freq;
-static log_timestamp_t timestamp_div;
+struct log_output_context {
+	uint32_t timestamp_freq;
+	log_timestamp_t timestamp_div;
+};
+
+static struct log_output_context log_output_context;
 
 /* The RFC 5424 allows very flexible mapping and suggest the value 0 being the
  * highest severity and 7 to be the lowest (debugging level) severity.
@@ -130,7 +134,7 @@ static int print_formatted(const struct log_output *output,
 			   const char *fmt, ...)
 {
 	va_list args;
-	int length = 0;
+	int length;
 
 	va_start(args, fmt);
 	length = cbvprintf(out_func, (void *)output, fmt, args);
@@ -148,7 +152,7 @@ static int timestamp_print(const struct log_output *output,
 		(flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) |
 		IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP) |
 		IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP);
-
+	uint32_t freq = log_output_context.timestamp_freq;
 
 	if (!format) {
 #ifndef CONFIG_LOG_TIMESTAMP_64BIT
@@ -166,7 +170,7 @@ static int timestamp_print(const struct log_output *output,
 		uint32_t ms;
 		uint32_t us;
 
-		timestamp /= timestamp_div;
+		timestamp /= log_output_context.timestamp_div;
 		total_seconds = timestamp / freq;
 
 		remainder = timestamp % freq;
@@ -336,7 +340,7 @@ static int ids_print(const struct log_output *output,
 static void newline_print(const struct log_output *ctx, uint32_t flags)
 {
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
-	    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
+	    ((flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) != 0U)) {
 		return;
 	}
 
@@ -591,7 +595,7 @@ static uint32_t prefix_print(const struct log_output *output,
 	const char *tag = IS_ENABLED(CONFIG_LOG) ? z_log_get_tag() : NULL;
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
-	    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
+	    ((flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) != 0U)) {
 		/* TODO: As there is no way to figure out the
 		 * facility at this point, use a pre-defined value.
 		 * Change this to use the real facility of the
@@ -616,7 +620,7 @@ static uint32_t prefix_print(const struct log_output *output,
 	}
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
-	    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
+	    ((flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) != 0U)) {
 		length += syslog_print(output, level_on, func_on, &thread_on, domain,
 				       source_off ? NULL : source, tid, level, length);
 	} else {
@@ -719,21 +723,23 @@ void log_output_dropped_process(const struct log_output *output, uint32_t cnt)
 
 void log_output_timestamp_freq_set(uint32_t frequency)
 {
-	timestamp_div = 1U;
+	log_timestamp_t div = 1U;
+
 	/* There is no point to have frequency higher than 1MHz (ns are not
 	 * printed) and too high frequency leads to overflows in calculations.
 	 */
 	while (frequency > 1000000) {
 		frequency /= 2U;
-		timestamp_div *= 2U;
+		div *= 2U;
 	}
 
-	freq = frequency;
+	log_output_context.timestamp_div = div;
+	log_output_context.timestamp_freq = frequency;
 }
 
 uint64_t log_output_timestamp_to_us(log_timestamp_t timestamp)
 {
-	timestamp /= timestamp_div;
+	timestamp /= log_output_context.timestamp_div;
 
-	return ((uint64_t) timestamp * 1000000U) / freq;
+	return ((uint64_t) timestamp * 1000000U) / log_output_context.timestamp_freq;
 }

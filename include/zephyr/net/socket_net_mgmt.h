@@ -73,7 +73,7 @@ extern "C" {
  * address of this net_mgmt socket. The application is responsible for picking
  * a unique integer value to fill in nm_pid.
  */
-struct sockaddr_nm {
+struct net_sockaddr_nm {
 	/** AF_NET_MGMT address family. */
 	sa_family_t nm_family;
 

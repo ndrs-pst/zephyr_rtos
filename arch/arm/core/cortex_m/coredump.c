@@ -44,7 +44,7 @@ static struct arm_arch_block arch_blk;
 
 void arch_coredump_info_dump(const struct arch_esf *esf)
 {
-	struct coredump_arch_hdr_t hdr = {
+	static const struct coredump_arch_hdr_t hdr = {
 		.id = COREDUMP_ARCH_HDR_ID,
 		.hdr_version = ARCH_HDR_VER,
 		.num_bytes = sizeof(arch_blk),

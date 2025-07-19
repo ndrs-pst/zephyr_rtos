@@ -15,24 +15,27 @@
 extern "C" {
 #endif
 
-static inline uint32_t i2c_map_dt_bitrate(uint32_t bitrate)
-{
-	switch (bitrate) {
-	case I2C_BITRATE_STANDARD:
-		return I2C_SPEED_STANDARD << I2C_SPEED_SHIFT;
-	case I2C_BITRATE_FAST:
-		return I2C_SPEED_FAST << I2C_SPEED_SHIFT;
-	case I2C_BITRATE_FAST_PLUS:
-		return I2C_SPEED_FAST_PLUS << I2C_SPEED_SHIFT;
-	case I2C_BITRATE_HIGH:
-		return I2C_SPEED_HIGH << I2C_SPEED_SHIFT;
-	case I2C_BITRATE_ULTRA:
-		return I2C_SPEED_ULTRA << I2C_SPEED_SHIFT;
-	}
+static inline uint32_t i2c_map_dt_bitrate(uint32_t bitrate) {
+    switch (bitrate) {
+        case I2C_BITRATE_STANDARD :
+            return (I2C_SPEED_STANDARD << I2C_SPEED_SHIFT);
 
-	LOG_ERR("Invalid I2C bit rate value");
+        case I2C_BITRATE_FAST :
+            return (I2C_SPEED_FAST << I2C_SPEED_SHIFT);
 
-	return 0;
+        case I2C_BITRATE_FAST_PLUS :
+            return (I2C_SPEED_FAST_PLUS << I2C_SPEED_SHIFT);
+
+        case I2C_BITRATE_HIGH :
+            return (I2C_SPEED_HIGH  << I2C_SPEED_SHIFT);
+
+        case I2C_BITRATE_ULTRA :
+            return (I2C_SPEED_ULTRA << I2C_SPEED_SHIFT);
+    }
+
+    LOG_ERR("Invalid I2C bit rate value");
+
+    return (0);
 }
 
 #ifdef __cplusplus

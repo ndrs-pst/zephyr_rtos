@@ -45,11 +45,11 @@ LOG_MODULE_REGISTER(getopt);
 #define	BADARG	((int)':')
 #define	EMSG	""
 
-void getopt_init(void)
+void z_getopt_init(void)
 {
-	struct getopt_state *state;
+	struct z_getopt_state *state;
 
-	state = getopt_state_get();
+	state = z_getopt_state_get();
 
 	state->opterr = 1;
 	state->optind = 1;
@@ -64,24 +64,24 @@ void getopt_init(void)
 	state->nonopt_end = -1; /* first option after non options (for permute) */
 #endif
 
-	opterr = 1;
-	optind = 1;
-	optopt = 0;
-	optreset = 0;
-	optarg = NULL;
+	z_opterr = 1;
+	z_optind = 1;
+	z_optopt = 0;
+	z_optreset = 0;
+	z_optarg = NULL;
 }
 
 /*
  * getopt --
  *	Parse argc/argv argument vector.
  */
-int getopt(int nargc, char *const nargv[], const char *ostr)
+int z_getopt(int nargc, char *const nargv[], const char *ostr)
 {
-	struct getopt_state *state;
+	struct z_getopt_state *state;
 	char *oli; /* option letter list index */
 
 	/* get getopt state of the current thread */
-	state = getopt_state_get();
+	state = z_getopt_state_get();
 
 	if (state->optreset || *state->place == 0) { /* update scanning pointer */
 		state->optreset = 0;

@@ -261,7 +261,7 @@ struct coap_resource;
  */
 typedef int (*coap_method_t)(struct coap_resource *resource,
 			     struct coap_packet *request,
-			     struct sockaddr *addr, socklen_t addr_len);
+			     struct net_sockaddr *addr, socklen_t addr_len);
 
 /**
  * @typedef coap_notify_t
@@ -299,7 +299,7 @@ struct coap_observer {
 	/** Observer list node */
 	sys_snode_t list;
 	/** Observer connection end point information */
-	struct sockaddr addr;
+	struct net_sockaddr addr;
 	/** Observer token */
 	uint8_t token[8];
 	/** Extended token length */
@@ -349,7 +349,7 @@ struct coap_option {
  */
 typedef int (*coap_reply_t)(const struct coap_packet *response,
 			    struct coap_reply *reply,
-			    const struct sockaddr *from);
+			    const struct net_sockaddr *from);
 
 /**
  * @brief CoAP transmission parameters.
@@ -374,7 +374,7 @@ struct coap_transmission_parameters {
  * @brief Represents a request awaiting for an acknowledgment (ACK).
  */
 struct coap_pending {
-	struct sockaddr addr; /**< Remote address */
+	struct net_sockaddr addr; /**< Remote address */
 	int64_t t0;           /**< Time when the request was sent */
 	uint32_t timeout;     /**< Timeout in ms */
 	uint16_t id;          /**< Message id */
@@ -706,7 +706,7 @@ int coap_handle_request_len(struct coap_packet *cpkt,
 			    size_t resources_len,
 			    struct coap_option *options,
 			    uint8_t opt_num,
-			    struct sockaddr *addr, socklen_t addr_len);
+			    struct net_sockaddr *addr, socklen_t addr_len);
 
 /**
  * @brief When a request is received, call the appropriate methods of
@@ -728,7 +728,7 @@ int coap_handle_request(struct coap_packet *cpkt,
 			struct coap_resource *resources,
 			struct coap_option *options,
 			uint8_t opt_num,
-			struct sockaddr *addr, socklen_t addr_len);
+			struct net_sockaddr *addr, socklen_t addr_len);
 
 /**
  * Represents the size of each block that will be transferred using
@@ -995,7 +995,7 @@ size_t coap_next_block(const struct coap_packet *cpkt,
  */
 void coap_observer_init(struct coap_observer *observer,
 			const struct coap_packet *request,
-			const struct sockaddr *addr);
+			const struct net_sockaddr *addr);
 
 /**
  * @brief After the observer is initialized, associate the observer
@@ -1036,7 +1036,7 @@ bool coap_remove_observer(struct coap_resource *resource,
  */
 struct coap_observer *coap_find_observer(
 	struct coap_observer *observers, size_t len,
-	const struct sockaddr *addr,
+	const struct net_sockaddr *addr,
 	const uint8_t *token, uint8_t token_len);
 
 /**
@@ -1054,7 +1054,7 @@ struct coap_observer *coap_find_observer(
  */
 struct coap_observer *coap_find_observer_by_addr(
 	struct coap_observer *observers, size_t len,
-	const struct sockaddr *addr);
+	const struct net_sockaddr *addr);
 
 /**
  * @brief Returns the observer that has token @a token.
@@ -1113,7 +1113,7 @@ void coap_reply_init(struct coap_reply *reply,
  */
 int coap_pending_init(struct coap_pending *pending,
 		      const struct coap_packet *request,
-		      const struct sockaddr *addr,
+		      const struct net_sockaddr *addr,
 		      const struct coap_transmission_parameters *params);
 
 /**
@@ -1173,7 +1173,7 @@ struct coap_pending *coap_pending_received(
  */
 struct coap_reply *coap_response_received(
 	const struct coap_packet *response,
-	const struct sockaddr *from,
+	const struct net_sockaddr *from,
 	struct coap_reply *replies, size_t len);
 
 /**

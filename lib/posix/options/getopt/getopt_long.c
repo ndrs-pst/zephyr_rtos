@@ -78,11 +78,13 @@ LOG_MODULE_DECLARE(getopt);
 #define W_PREFIX	2
 #endif
 
-static int getopt_internal(struct getopt_state *, int, char * const *,
-			   const char *, const struct option *, int *, int);
-static int parse_long_options(struct getopt_state *, char * const *,
-			      const char *, const struct option *, int *, int,
-			      int);
+static int z_getopt_internal(struct z_getopt_state *state, int nargc, char * const *nargv,
+			     const char *options, const struct z_option *long_options,
+			     int *idx, int flags);
+static int parse_long_options(struct z_getopt_state *state, char * const *nargv,
+			      const char *options, const struct z_option *long_options,
+			      int *idx, int short_too, int flags);
+
 static int gcd(int, int);
 static void permute_args(int, int, int, char *const *);
 
@@ -162,12 +164,12 @@ permute_args(int panonopt_start, int panonopt_end, int opt_end,
 
 /*
  * parse_long_options --
- *	Parse long options in argc/argv argument vector.
+ * Parse long options in argc/argv argument vector.
  * Returns -1 if short_too is set and the option does not match long_options.
  */
 static int
-parse_long_options(struct getopt_state *state, char * const *nargv,
-		   const char *options,	const struct option *long_options,
+parse_long_options(struct z_getopt_state *state, char * const *nargv,
+		   const char *options, const struct z_option *long_options,
 		   int *idx, int short_too, int flags)
 {
 	char *current_argv, *has_equal;
@@ -339,13 +341,13 @@ parse_long_options(struct getopt_state *state, char * const *nargv,
 }
 
 /*
- * getopt_internal --
- *	Parse argc/argv argument vector.  Called by user level routines.
+ * z_getopt_internal --
+ * Parse argc/argv argument vector.  Called by user level routines.
  */
 static int
-getopt_internal(struct getopt_state *state, int nargc, char * const *nargv,
-		const char *options, const struct option *long_options,
-		int *idx, int flags)
+z_getopt_internal(struct z_getopt_state *state, int nargc, char * const *nargv,
+		  const char *options, const struct z_option *long_options,
+		  int *idx, int flags)
 {
 	char *oli;				/* option letter list index */
 	int optchar, short_too;
@@ -582,21 +584,21 @@ start:
 
 /*
  * getopt_long --
- *	Parse argc/argv argument vector.
+ * Parse argc/argv argument vector.
  */
 int
-getopt_long(int nargc, char *const *nargv,
-	    const char *options, const struct option *long_options,
-	    int *idx)
+z_getopt_long(int nargc, char *const *nargv,
+	      const char *options, const struct z_option *long_options,
+	      int *idx)
 {
-	struct getopt_state *state;
+	struct z_getopt_state *state;
 	int ret;
 
 	/* Get state of the current thread */
-	state = getopt_state_get();
+	state = z_getopt_state_get();
 
-	ret = getopt_internal(state, nargc, nargv, options, long_options, idx,
-			      FLAG_PERMUTE);
+	ret = z_getopt_internal(state, nargc, nargv, options, long_options, idx,
+				FLAG_PERMUTE);
 
 	z_getopt_global_state_update(state);
 
@@ -605,21 +607,21 @@ getopt_long(int nargc, char *const *nargv,
 
 /*
  * getopt_long_only --
- *	Parse argc/argv argument vector.
+ * Parse argc/argv argument vector.
  */
 int
-getopt_long_only(int nargc, char *const *nargv,
-		 const char *options, const struct option *long_options,
-		 int *idx)
+z_getopt_long_only(int nargc, char *const *nargv,
+		   const char *options, const struct z_option *long_options,
+		   int *idx)
 {
-	struct getopt_state *state;
+	struct z_getopt_state *state;
 	int ret;
 
 	/* Get state of the current thread */
-	state = getopt_state_get();
+	state = z_getopt_state_get();
 
-	ret = getopt_internal(state, nargc, nargv, options, long_options, idx,
-			      FLAG_PERMUTE|FLAG_LONGONLY);
+	ret = z_getopt_internal(state, nargc, nargv, options, long_options, idx,
+				FLAG_PERMUTE|FLAG_LONGONLY);
 
 	z_getopt_global_state_update(state);
 

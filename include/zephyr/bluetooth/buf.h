@@ -172,11 +172,13 @@ BUILD_ASSERT(BT_BUF_ACL_RX_COUNT <= BT_BUF_ACL_RX_COUNT_MAX,
 #define BT_BUF_RX_SIZE (MAX(MAX(BT_BUF_ACL_RX_SIZE, BT_BUF_EVT_RX_SIZE), \
 			    BT_BUF_ISO_RX_SIZE))
 
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 /* Controller can generate up to CONFIG_BT_BUF_ACL_TX_COUNT number of unique HCI Number of Completed
  * Packets events.
  */
 BUILD_ASSERT(CONFIG_BT_BUF_EVT_RX_COUNT > CONFIG_BT_BUF_ACL_TX_COUNT,
 	     "Increase Event RX buffer count to be greater than ACL TX buffer count");
+#endif
 
 /** Buffer count needed for HCI ACL or HCI ISO plus Event RX buffers */
 #define BT_BUF_RX_COUNT (CONFIG_BT_BUF_EVT_RX_COUNT + \

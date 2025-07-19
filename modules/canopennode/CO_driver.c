@@ -166,12 +166,9 @@ static void canopen_tx_retry(struct k_work *item)
 			if (err == -EAGAIN) {
 				break;
 			} else if (err != 0) {
-				LOG_ERR("failed to send CAN frame (err %d)",
-					err);
-				CO_errorReport(CANmodule->em,
-					       CO_EM_GENERIC_SOFTWARE_ERROR,
+				LOG_ERR("failed to send CAN frame (err %d)", err);
+				CO_errorReport(CANmodule->em, CO_EM_GENERIC_SOFTWARE_ERROR,
 					       CO_EMC_COMMUNICATION, 0);
-
 			}
 
 			buffer->bufferFull = false;
@@ -232,11 +229,13 @@ CO_ReturnError_t CO_CANmodule_init(CO_CANmodule_t *CANmodule,
 
 		if (rxSize > max_filters) {
 			LOG_ERR("insufficient number of concurrent CAN RX filters"
-				" (needs %d, %d available)", rxSize, max_filters);
+				" (needs %d, %d available)",
+				rxSize, max_filters);
 			return CO_ERROR_OUT_OF_MEMORY;
 		} else if (rxSize < max_filters) {
 			LOG_DBG("excessive number of concurrent CAN RX filters enabled"
-				" (needs %d, %d available)", rxSize, max_filters);
+				" (needs %d, %d available)",
+				rxSize, max_filters);
 		}
 	}
 
@@ -302,9 +301,8 @@ uint16_t CO_CANrxMsg_readIdent(const CO_CANrxMsg_t *rxMsg)
 }
 
 CO_ReturnError_t CO_CANrxBufferInit(CO_CANmodule_t *CANmodule, uint16_t index,
-				uint16_t ident, uint16_t mask, bool_t rtr,
-				void *object,
-				CO_CANrxBufferCallback_t pFunct)
+				    uint16_t ident, uint16_t mask, bool_t rtr,
+				    void *object, CO_CANrxBufferCallback_t pFunct)
 {
 	struct can_filter filter;
 	CO_CANrx_t *buffer;
@@ -369,7 +367,7 @@ CO_CANtx_t *CO_CANtxBufferInit(CO_CANmodule_t *CANmodule, uint16_t index,
 	}
 
 	if (index >= CANmodule->tx_size) {
-		LOG_ERR("failed to initialize CAN rx buffer, illegal argument");
+		LOG_ERR("failed to initialize CAN tx buffer, illegal argument");
 		CO_errorReport(CANmodule->em, CO_EM_GENERIC_SOFTWARE_ERROR,
 			       CO_EMC_SOFTWARE_INTERNAL, 0);
 		return NULL;
@@ -382,7 +380,7 @@ CO_CANtx_t *CO_CANtxBufferInit(CO_CANmodule_t *CANmodule, uint16_t index,
 	buffer->bufferFull = false;
 	buffer->syncFlag = syncFlag;
 
-	return buffer;
+	return (buffer);
 }
 
 CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer)
@@ -470,7 +468,7 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule)
 	 * TODO: Zephyr lacks an API for reading the rx mailbox
 	 * overflow counter.
 	 */
-	rx_overflows  = 0;
+	rx_overflows = 0;
 
 	err = can_get_state(CANmodule->dev, &state, &err_cnt);
 	if (err != 0) {
@@ -478,8 +476,7 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule)
 		return;
 	}
 
-	errors = ((uint32_t)err_cnt.tx_err_cnt << 16) |
-		 ((uint32_t)err_cnt.rx_err_cnt << 8) |
+	errors = ((uint32_t)err_cnt.tx_err_cnt << 16) | ((uint32_t)err_cnt.rx_err_cnt << 8) |
 		 rx_overflows;
 
 	if (errors != CANmodule->errors) {
@@ -487,51 +484,42 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule)
 
 		if (state == CAN_STATE_BUS_OFF) {
 			/* Bus off */
-			CO_errorReport(em, CO_EM_CAN_TX_BUS_OFF,
-				       CO_EMC_BUS_OFF_RECOVERED, errors);
+			CO_errorReport(em, CO_EM_CAN_TX_BUS_OFF, CO_EMC_BUS_OFF_RECOVERED, errors);
 		} else {
 			/* Bus not off */
 			CO_errorReset(em, CO_EM_CAN_TX_BUS_OFF, errors);
 
-			if ((err_cnt.rx_err_cnt >= 96U) ||
-			    (err_cnt.tx_err_cnt >= 96U)) {
+			if ((err_cnt.rx_err_cnt >= 96U) || (err_cnt.tx_err_cnt >= 96U)) {
 				/* Bus warning */
-				CO_errorReport(em, CO_EM_CAN_BUS_WARNING,
-					       CO_EMC_NO_ERROR, errors);
+				CO_errorReport(em, CO_EM_CAN_BUS_WARNING, CO_EMC_NO_ERROR, errors);
 			} else {
 				/* Bus not warning */
-				CO_errorReset(em, CO_EM_CAN_BUS_WARNING,
-					      errors);
+				CO_errorReset(em, CO_EM_CAN_BUS_WARNING, errors);
 			}
 
 			if (err_cnt.rx_err_cnt >= 128U) {
 				/* Bus rx passive */
-				CO_errorReport(em, CO_EM_CAN_RX_BUS_PASSIVE,
-					       CO_EMC_CAN_PASSIVE, errors);
+				CO_errorReport(em, CO_EM_CAN_RX_BUS_PASSIVE, CO_EMC_CAN_PASSIVE,
+					       errors);
 			} else {
 				/* Bus not rx passive */
-				CO_errorReset(em, CO_EM_CAN_RX_BUS_PASSIVE,
-					      errors);
+				CO_errorReset(em, CO_EM_CAN_RX_BUS_PASSIVE, errors);
 			}
 
-			if (err_cnt.tx_err_cnt >= 128U &&
-			    !CANmodule->first_tx_msg) {
+			if ((err_cnt.tx_err_cnt >= 128U) && !CANmodule->first_tx_msg) {
 				/* Bus tx passive */
-				CO_errorReport(em, CO_EM_CAN_TX_BUS_PASSIVE,
-					       CO_EMC_CAN_PASSIVE, errors);
+				CO_errorReport(em, CO_EM_CAN_TX_BUS_PASSIVE, CO_EMC_CAN_PASSIVE,
+					       errors);
 			} else if (CO_isError(em, CO_EM_CAN_TX_BUS_PASSIVE)) {
 				/* Bus not tx passive */
-				CO_errorReset(em, CO_EM_CAN_TX_BUS_PASSIVE,
-					      errors);
-				CO_errorReset(em, CO_EM_CAN_TX_OVERFLOW,
-					      errors);
+				CO_errorReset(em, CO_EM_CAN_TX_BUS_PASSIVE, errors);
+				CO_errorReset(em, CO_EM_CAN_TX_OVERFLOW, errors);
 			}
 		}
 
 		/* This code can be activated if we can read the overflows*/
 		if (false && rx_overflows != 0U) {
-			CO_errorReport(em, CO_EM_CAN_RXB_OVERFLOW,
-				       CO_EMC_CAN_OVERRUN, errors);
+			CO_errorReport(em, CO_EM_CAN_RXB_OVERFLOW, CO_EMC_CAN_OVERRUN, errors);
 		}
 	}
 }

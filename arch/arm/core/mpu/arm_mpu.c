@@ -129,6 +129,11 @@ static int mpu_configure_regions_from_dt(uint8_t *reg_index)
 			region_conf = _BUILD_REGION_CONF(region[idx], REGION_FLASH_ATTR);
 			break;
 #endif
+#ifdef REGION_DEVICE_ATTR /* #CUSTOM@NDRS */
+		case DT_MEM_ARM_MPU_DEVICE:
+			region_conf = _BUILD_REGION_CONF(region[idx], REGION_DEVICE_ATTR);
+			break;
+#endif
 #ifdef REGION_PPB_ATTR
 		case DT_MEM_ARM_MPU_PPB:
 			region_conf = _BUILD_REGION_CONF(region[idx], REGION_PPB_ATTR);

@@ -1189,15 +1189,15 @@ static void read_codecs_v2(struct net_buf *buf, struct net_buf **evt)
 
 	/* read standard codec information */
 	num_std_codecs = hci_vendor_read_std_codecs(&std_codec_info);
-	std_codecs_bytes = sizeof(struct bt_hci_std_codecs_v2) +
+	std_codecs_bytes = BT_HCI_STD_CODECS_V2_SZ +
 		num_std_codecs * sizeof(struct bt_hci_std_codec_info_v2);
 	/* read vendor-specific codec information */
 	num_vs_codecs = hci_vendor_read_vs_codecs(&vs_codec_info);
-	vs_codecs_bytes = sizeof(struct bt_hci_vs_codecs_v2) +
+	vs_codecs_bytes = BT_HCI_VS_CODECS_V2_SZ +
 		num_vs_codecs *	sizeof(struct bt_hci_vs_codec_info_v2);
 
 	/* allocate response packet */
-	rp = hci_cmd_complete(evt, sizeof(*rp) +
+	rp = hci_cmd_complete(evt, BT_HCI_RP_READ_CODESC_V2_SZ +
 			      std_codecs_bytes +
 			      vs_codecs_bytes);
 	rp->status = 0x00;
@@ -1275,7 +1275,7 @@ static void read_codec_capabilities(struct net_buf *buf, struct net_buf **evt)
 						    &capabilities);
 
 	/* allocate response packet */
-	rp = hci_cmd_complete(evt, sizeof(*rp) + capabilities_bytes);
+	rp = hci_cmd_complete(evt, BT_HCI_RP_READ_CODEC_CAPABILITIES_SZ + capabilities_bytes);
 	rp->status = status;
 
 	/* copy codec capabilities information */
@@ -2075,7 +2075,7 @@ static void le_set_cig_parameters(struct net_buf *buf, struct net_buf **evt)
 					       params->c_rtn, params->p_rtn);
 	}
 
-	rp = hci_cmd_complete(evt, sizeof(*rp) + cis_count * sizeof(uint16_t));
+	rp = hci_cmd_complete(evt, BT_HCI_RP_LE_SET_CIG_PARAMS_SZ + cis_count * sizeof(uint16_t));
 	rp->cig_id = cig_id;
 
 	/* Only apply parameters if all went well */
@@ -2147,7 +2147,7 @@ static void le_set_cig_params_test(struct net_buf *buf, struct net_buf **evt)
 						    params->p_bn);
 	}
 
-	rp = hci_cmd_complete(evt, sizeof(*rp) + cis_count * sizeof(uint16_t));
+	rp = hci_cmd_complete(evt, BT_HCI_RP_LE_SET_CIG_PARAMS_TEST_SZ + cis_count * sizeof(uint16_t));
 	rp->cig_id = cig_id;
 
 	/* Only apply parameters if all went well */
@@ -3066,7 +3066,7 @@ static void le_df_connectionless_iq_report(struct pdu_data *pdu_rx,
 	}
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_CONNECTIONLESS_IQ_REPORT,
-		       (sizeof(*sep) +
+		       (BT_HCI_EVT_LE_CONNECTIONLESS_IQ_REPORT_SZ +
 			(samples_cnt * sizeof(struct bt_hci_le_iq_sample))));
 
 	rssi = RSSI_DBM_TO_DECI_DBM(iq_report->rx.rx_ftr.rssi);
@@ -3198,7 +3198,8 @@ static void le_df_connection_iq_report(struct node_rx_pdu *node_rx, struct net_b
 	}
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_CONNECTION_IQ_REPORT,
-		       (sizeof(*sep) + (samples_cnt * sizeof(struct bt_hci_le_iq_sample))));
+		       (BT_HCI_EVT_LE_CONNECTION_IQ_REPORT_SZ +
+			(samples_cnt * sizeof(struct bt_hci_le_iq_sample))));
 
 	rssi = RSSI_DBM_TO_DECI_DBM(iq_report->rx.rx_ftr.rssi);
 
@@ -3413,7 +3414,7 @@ static void le_tx_test_v4(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_tx_test_v4 *cmd = (void *)buf->data;
 	struct bt_hci_cp_le_tx_test_v4_tx_power *tx_power = (void *)(buf->data +
-			sizeof(struct bt_hci_cp_le_tx_test_v4) + cmd->switch_pattern_len);
+			BT_HCI_CP_LE_TX_TEST_V4_SZ + cmd->switch_pattern_len);
 	uint8_t status;
 
 	status = ll_test_tx(cmd->tx_ch, cmd->test_data_len, cmd->pkt_payload, cmd->phy,
@@ -6504,10 +6505,10 @@ static inline void le_dir_adv_report(struct pdu_adv *adv, struct net_buf *buf,
 #endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 */
 
 	drp = meta_evt(buf, BT_HCI_EVT_LE_DIRECT_ADV_REPORT,
-		       sizeof(*drp) + sizeof(*dir_info));
+		       BT_HCI_EVT_LE_DIRECT_ADV_REPORT_SZ + sizeof(*dir_info));
 
 	drp->num_reports = 1U;
-	dir_info = (void *)(((uint8_t *)drp) + sizeof(*drp));
+	dir_info = (void *)(((uint8_t *)drp) + BT_HCI_EVT_LE_DIRECT_ADV_REPORT_SZ);
 
 	/* Directed Advertising */
 	dir_info->evt_type = BT_HCI_ADV_DIRECT_IND;
@@ -6662,13 +6663,13 @@ static void le_advertising_report(struct pdu_data *pdu_data,
 	} else {
 		data_len = 0U;
 	}
-	info_len = sizeof(struct bt_hci_evt_le_advertising_info) + data_len +
+	info_len = BT_HCI_EVT_LE_ADVERTISING_INFO_SZ + data_len +
 		   sizeof(*prssi);
 	sep = meta_evt(buf, BT_HCI_EVT_LE_ADVERTISING_REPORT,
-		       sizeof(*sep) + info_len);
+		       BT_HCI_EVT_LE_ADVERTISING_REPORT_SZ + info_len);
 
 	sep->num_reports = 1U;
-	adv_info = (void *)(((uint8_t *)sep) + sizeof(*sep));
+	adv_info = (void *)(((uint8_t *)sep) + BT_HCI_EVT_LE_ADVERTISING_REPORT_SZ);
 
 	adv_info->evt_type = c_adv_type[adv->type];
 
@@ -6767,13 +6768,13 @@ static void le_ext_adv_legacy_report(struct pdu_data *pdu_data,
 		data_len = 0U;
 	}
 
-	info_len = sizeof(struct bt_hci_evt_le_ext_advertising_info) +
+	info_len = BT_HCI_EVT_LE_EXT_ADVERTISING_INFO_SZ +
 		   data_len;
 	sep = meta_evt(buf, BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT,
-		       sizeof(*sep) + info_len);
+		       BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT_SZ + info_len);
 
 	sep->num_reports = 1U;
-	adv_info = (void *)(((uint8_t *)sep) + sizeof(*sep));
+	adv_info = (void *)(((uint8_t *)sep) + BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT_SZ);
 
 	adv_info->evt_type = sys_cpu_to_le16((uint16_t)evt_type_lookup[adv->type]);
 
@@ -6958,13 +6959,13 @@ static void ext_adv_info_fill(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
 	struct bt_hci_evt_le_ext_advertising_report *sep;
 	uint8_t info_len;
 
-	info_len = sizeof(struct bt_hci_evt_le_ext_advertising_info) +
+	info_len = BT_HCI_EVT_LE_EXT_ADVERTISING_INFO_SZ +
 		   data_len;
 	sep = meta_evt(buf, BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT,
-		       sizeof(*sep) + info_len);
+		       BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT_SZ + info_len);
 
 	sep->num_reports = 1U;
-	adv_info = (void *)(((uint8_t *)sep) + sizeof(*sep));
+	adv_info = (void *)(((uint8_t *)sep) + BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT_SZ);
 
 	adv_info->evt_type = sys_cpu_to_le16((uint16_t)evt_type);
 
@@ -7530,8 +7531,8 @@ no_ext_hdr:
 	evt_buf = buf;
 	data_len_max = CONFIG_BT_BUF_EVT_RX_SIZE -
 		       sizeof(struct bt_hci_evt_le_meta_event) -
-		       sizeof(struct bt_hci_evt_le_ext_advertising_report) -
-		       sizeof(struct bt_hci_evt_le_ext_advertising_info);
+		       BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT_SZ -
+		       BT_HCI_EVT_LE_EXT_ADVERTISING_INFO_SZ;
 
 	/* If PDU data length less than total data length or PDU data length
 	 * greater than maximum HCI event data length, then fragment.
@@ -7756,7 +7757,7 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 
 		sep = meta_evt(buf,
 			       BT_HCI_EVT_LE_PER_ADVERTISING_REPORT,
-			       sizeof(*sep));
+			       BT_HCI_EVT_LE_PER_ADVERTISING_REPORT_SZ);
 
 		sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
 		sep->tx_power = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
@@ -7894,7 +7895,7 @@ no_ext_hdr:
 
 	data_len_max = CONFIG_BT_BUF_EVT_RX_SIZE -
 		       sizeof(struct bt_hci_evt_le_meta_event) -
-		       sizeof(struct bt_hci_evt_le_per_advertising_report);
+		       BT_HCI_EVT_LE_PER_ADVERTISING_REPORT_SZ;
 
 	evt_buf = buf;
 
@@ -7929,7 +7930,7 @@ no_ext_hdr:
 			/* Start constructing periodic advertising report */
 			sep = meta_evt(evt_buf,
 				       BT_HCI_EVT_LE_PER_ADVERTISING_REPORT,
-				       sizeof(*sep) + data_len_frag);
+				       BT_HCI_EVT_LE_PER_ADVERTISING_REPORT_SZ + data_len_frag);
 
 			sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
 			sep->tx_power = tx_pwr;
@@ -8078,7 +8079,7 @@ static void le_big_sync_established(struct pdu_data *pdu,
 	sync_iso = node_rx->rx_ftr.param;
 	lll = &sync_iso->lll;
 
-	evt_size = sizeof(*sep) + (lll->stream_count * sizeof(uint16_t));
+	evt_size = BT_HCI_EVT_LE_BIG_SYNC_ESTABLISHED_SZ + (lll->stream_count * sizeof(uint16_t));
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_BIG_SYNC_ESTABLISHED, evt_size);
 	sep->big_handle = (uint8_t)node_rx->hdr.handle;
@@ -8198,7 +8199,7 @@ static void le_big_complete(struct pdu_data *pdu_data,
 	adv_iso = node_rx->rx_ftr.param;
 	lll = &adv_iso->lll;
 
-	evt_size = sizeof(*sep) + (lll->num_bis * sizeof(uint16_t));
+	evt_size = BT_HCI_EVT_LE_BIG_COMPLETE_SZ + (lll->num_bis * sizeof(uint16_t));
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_BIG_COMPLETE, evt_size);
 

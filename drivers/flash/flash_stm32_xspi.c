@@ -6,7 +6,7 @@
 
 /*
  * **************************************************************************
- * xSPI flash controller driver for stm32 serie with xSPI periherals
+ * xSPI flash controller driver for stm32 series with xSPI peripherals
  * This driver is based on the stm32Cube HAL XSPI driver
  * with one xspi DTS NODE
  * **************************************************************************
@@ -2258,7 +2258,7 @@ static int flash_stm32_xspi_init(const struct device *dev)
 	const uint8_t decl_nph = 2;
 	union {
 		/* We only process BFP so use one parameter block */
-		uint8_t raw[JESD216_SFDP_SIZE(decl_nph)];
+		uint8_t raw[JESD216_SFDP_SIZE(2)];
 		struct jesd216_sfdp_header sfdp;
 	} u;
 	const struct jesd216_sfdp_header *hp = &u.sfdp;
@@ -2500,7 +2500,7 @@ static void flash_stm32_xspi_irq_config_func(const struct device *dev)
 	irq_enable(DT_IRQN(STM32_XSPI_NODE));
 }
 
-DEVICE_DT_INST_DEFINE(0, &flash_stm32_xspi_init, NULL,
+DEVICE_DT_INST_DEFINE(0, flash_stm32_xspi_init, NULL,
 		      &flash_stm32_xspi_dev_data, &flash_stm32_xspi_cfg,
 		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		      &flash_stm32_xspi_driver_api);

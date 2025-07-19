@@ -1367,7 +1367,7 @@ static int outs(cbprintf_cb __out,
 	return (int)count;
 }
 
-int z_cbvprintf_impl(cbprintf_cb __out, void *ctx, const char *fp,
+int z_cbvprintf_impl(cbprintf_cb __out, void *ctx, const char *fmt,
 		     va_list ap, uint32_t flags)
 {
 	char buf[CONVERTED_BUFLEN];
@@ -1405,10 +1405,10 @@ int z_cbvprintf_impl(cbprintf_cb __out, void *ctx, const char *fp,
 	count += rc; \
 } while (false)
 
-	while (*fp != 0) {
-		if (*fp != '%') {
-			OUTC(*fp);
-			++fp;
+	while (*fmt != 0) {
+		if (*fmt != '%') {
+			OUTC(*fmt);
+			++fmt;
 			continue;
 		}
 
@@ -1425,14 +1425,14 @@ int z_cbvprintf_impl(cbprintf_cb __out, void *ctx, const char *fp,
 		};
 		struct conversion *const conv = &state.conv;
 		union argument_value *const value = &state.value;
-		const char *sp = fp;
+		const char *sp = fmt;
 		int width = -1;
 		int precision = -1;
 		const char *bps = NULL;
 		const char *bpe = buf + sizeof(buf);
 		char sign = 0;
 
-		fp = extract_conversion(conv, sp);
+		fmt = extract_conversion(conv, sp);
 
 		if (conv->specifier_cat != SPECIFIER_INVALID) {
 			if (IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS)
@@ -1608,7 +1608,7 @@ int z_cbvprintf_impl(cbprintf_cb __out, void *ctx, const char *fp,
 		 * specification and move on.
 		 */
 		if (conv->invalid || conv->unsupported) {
-			OUTS(sp, fp);
+			OUTS(sp, fmt);
 			continue;
 		}
 

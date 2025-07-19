@@ -313,7 +313,7 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 
 		if (ftr & ADIN2111_OA_DATA_FTR_EV) {
 			pkt = net_pkt_rx_alloc_with_buffer(iface, CONFIG_ETH_ADIN2111_BUFFER_SIZE,
-							   AF_UNSPEC, 0,
+							   NET_AF_UNSPEC, 0,
 							   K_MSEC(CONFIG_ETH_ADIN2111_TIMEOUT));
 			if (!pkt) {
 				LOG_ERR("OA RX: cannot allcate packet space, skipping.");
@@ -604,7 +604,7 @@ static int adin2111_read_fifo(const struct device *dev, const uint16_t port_idx)
 	/* remove CRC32 and pass to the stack */
 	fsize_real = fsize - sizeof(uint32_t);
 
-	pkt = net_pkt_rx_alloc_with_buffer(iface, fsize_real, AF_UNSPEC, 0,
+	pkt = net_pkt_rx_alloc_with_buffer(iface, fsize_real, NET_AF_UNSPEC, 0,
 					   K_MSEC(CONFIG_ETH_ADIN2111_TIMEOUT));
 	if (!pkt) {
 		eth_stats_update_errors_rx(iface);

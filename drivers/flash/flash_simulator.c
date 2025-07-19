@@ -423,7 +423,9 @@ static int flash_mock_init(const struct device *dev)
 #else
 static int flash_mock_init(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	dev->state->initialized = true;
+	dev->state->init_res = 0;
+
 	memset(mock_flash, FLASH_SIMULATOR_ERASE_VALUE, ARRAY_SIZE(mock_flash));
 	return 0;
 }
@@ -437,6 +439,12 @@ static int flash_init(const struct device *dev)
 			   "flash_sim_thresholds");
 	return flash_mock_init(dev);
 }
+
+#if (__GTEST == 1U)
+int flash_simulator_init(const struct device *dev) {
+	return flash_init(dev);
+}
+#endif
 
 DEVICE_DT_INST_DEFINE(0, flash_init, NULL,
 		    NULL, NULL, POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,

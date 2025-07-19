@@ -1196,7 +1196,7 @@ struct i3c_driver_config {
 };
 
 #if defined(CONFIG_CPP)
-BUILD_ASSERT(sizeof(struct i3c_driver_config) >= 1);
+BUILD_ASSERT((sizeof(struct i3c_driver_config) >= 1), "sizeof error!");
 #endif
 
 /**

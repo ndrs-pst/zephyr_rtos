@@ -46,7 +46,7 @@ const struct net_eth_addr *net_eth_broadcast_addr(void)
 	return &broadcast_eth_addr;
 }
 
-void net_eth_ipv4_mcast_to_mac_addr(const struct in_addr *ipv4_addr,
+void net_eth_ipv4_mcast_to_mac_addr(const struct net_in_addr *ipv4_addr,
 				    struct net_eth_addr *mac_addr)
 {
 	/* RFC 1112 6.4. Extensions to an Ethernet Local Network Module
@@ -65,7 +65,7 @@ void net_eth_ipv4_mcast_to_mac_addr(const struct in_addr *ipv4_addr,
 	mac_addr->addr[3] &= 0x7f;
 }
 
-void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
+void net_eth_ipv6_mcast_to_mac_addr(const struct net_in6_addr *ipv6_addr,
 				    struct net_eth_addr *mac_addr)
 {
 	/* RFC 2464 7. Address Mapping -- Multicast
@@ -137,10 +137,10 @@ static inline void ethernet_update_length(struct net_if *iface,
 	 * frame size of 60 bytes. In that case, we need to get rid of it.
 	 */
 
-	if (net_pkt_family(pkt) == AF_INET) {
-		len = ntohs(NET_IPV4_HDR(pkt)->len);
-	} else if (net_pkt_family(pkt) == AF_INET6) {
-		len = ntohs(NET_IPV6_HDR(pkt)->len) + NET_IPV6H_LEN;
+	if (net_pkt_family(pkt) == NET_AF_INET) {
+		len = net_ntohs(NET_IPV4_HDR(pkt)->len);
+	} else if (net_pkt_family(pkt) == NET_AF_INET6) {
+		len = net_ntohs(NET_IPV6_HDR(pkt)->len) + NET_IPV6H_LEN;
 	} else {
 		return;
 	}
@@ -233,12 +233,12 @@ static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_add
 
 	switch (addr->family) {
 #if defined(CONFIG_NET_IPV4)
-	case AF_INET:
+	case NET_AF_INET:
 		net_eth_ipv4_mcast_to_mac_addr(&addr->in_addr, &cfg.filter.mac_address);
 		break;
 #endif /* CONFIG_NET_IPV4 */
 #if defined(CONFIG_NET_IPV6)
-	case AF_INET6:
+	case NET_AF_INET6:
 		net_eth_ipv6_mcast_to_mac_addr(&addr->in6_addr, &cfg.filter.mac_address);
 		break;
 #endif /* CONFIG_NET_IPV6 */
@@ -294,7 +294,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		(void)net_if_queue_tx(bridge, out_pkt);
 	}
 
-	type = ntohs(hdr->type);
+	type = net_ntohs(hdr->type);
 
 	if (IS_ENABLED(CONFIG_NET_VLAN) && type == NET_ETH_PTYPE_VLAN) {
 		if (net_eth_is_vlan_enabled(ctx, iface) &&
@@ -303,8 +303,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 				(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
 			struct net_if *vlan_iface;
 
-			net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
-			type = ntohs(hdr_vlan->type);
+			net_pkt_set_vlan_tci(pkt, net_ntohs(hdr_vlan->vlan.tci));
+			type = net_ntohs(hdr_vlan->type);
 			hdr_len = sizeof(struct net_eth_vlan_hdr);
 			is_vlan_pkt = true;
 
@@ -408,7 +408,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 
 	if (!handled) {
 		if (IS_ENABLED(CONFIG_NET_ETHERNET_FORWARD_UNRECOGNISED_ETHERTYPE)) {
-			net_pkt_set_family(pkt, AF_UNSPEC);
+			net_pkt_set_family(pkt, NET_AF_UNSPEC);
 		} else {
 			NET_DBG("Unknown hdr type 0x%04x iface %d (%p)", type,
 				net_if_get_by_iface(iface), iface);
@@ -443,9 +443,9 @@ static enum net_verdict ethernet_ip_recv(struct net_if *iface,
 			return NET_DROP;
 		}
 
-		net_pkt_set_family(pkt, AF_INET);
+		net_pkt_set_family(pkt, NET_AF_INET);
 	} else if (ptype == NET_ETH_PTYPE_IPV6) {
-		net_pkt_set_family(pkt, AF_INET6);
+		net_pkt_set_family(pkt, NET_AF_INET6);
 	} else {
 		return NET_DROP;
 	}
@@ -477,11 +477,11 @@ static inline bool ethernet_ipv4_dst_is_broadcast_or_mcast(struct net_pkt *pkt)
 static bool ethernet_fill_in_dst_on_ipv4_mcast(struct net_pkt *pkt,
 					       struct net_eth_addr *dst)
 {
-	if (net_pkt_family(pkt) == AF_INET &&
+	if ((net_pkt_family(pkt) == NET_AF_INET) &&
 	    net_ipv4_is_addr_mcast_raw(NET_IPV4_HDR(pkt)->dst)) {
 		/* Multicast address */
 		net_eth_ipv4_mcast_to_mac_addr(
-			(struct in_addr *)NET_IPV4_HDR(pkt)->dst, dst);
+			(struct net_in_addr *)NET_IPV4_HDR(pkt)->dst, dst);
 
 		return true;
 	}
@@ -508,7 +508,7 @@ static int ethernet_ll_prepare_on_ipv4(struct net_if *iface,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_ARP)) {
-		return net_arp_prepare(pkt, (struct in_addr *)NET_IPV4_HDR(pkt)->dst, NULL, out);
+		return net_arp_prepare(pkt, (struct net_in_addr *)NET_IPV4_HDR(pkt)->dst, NULL, out);
 	}
 
 	return NET_ARP_COMPLETE;
@@ -523,7 +523,7 @@ static int ethernet_ll_prepare_on_ipv4(struct net_if *iface,
 static bool ethernet_fill_in_dst_on_ipv6_mcast(struct net_pkt *pkt,
 					       struct net_eth_addr *dst)
 {
-	if (net_pkt_family(pkt) == AF_INET6 &&
+	if ((net_pkt_family(pkt) == NET_AF_INET6) &&
 	    net_ipv6_is_addr_mcast_raw(NET_IPV6_HDR(pkt)->dst)) {
 		memcpy(dst, (uint8_t *)multicast_eth_addr.addr,
 		       sizeof(struct net_eth_addr) - 4);
@@ -615,7 +615,7 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 
 		hdr_vlan = (struct net_eth_vlan_hdr *)(hdr_frag->data);
 
-		if (ptype == htons(NET_ETH_PTYPE_ARP) ||
+		if (ptype == net_htons(NET_ETH_PTYPE_ARP) ||
 		    (!ethernet_fill_in_dst_on_ipv4_mcast(pkt, &hdr_vlan->dst) &&
 		     !ethernet_fill_in_dst_on_ipv6_mcast(pkt, &hdr_vlan->dst))) {
 			memcpy(&hdr_vlan->dst, net_pkt_lladdr_dst(pkt)->addr,
@@ -626,10 +626,10 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 		       sizeof(struct net_eth_addr));
 
 		hdr_vlan->type = ptype;
-		hdr_vlan->vlan.tpid = htons(NET_ETH_PTYPE_VLAN);
-		hdr_vlan->vlan.tci = htons(net_pkt_vlan_tci(pkt));
+		hdr_vlan->vlan.tpid = net_htons(NET_ETH_PTYPE_VLAN);
+		hdr_vlan->vlan.tci = net_htons(net_pkt_vlan_tci(pkt));
 
-		print_vlan_ll_addrs(pkt, ntohs(hdr_vlan->type),
+		print_vlan_ll_addrs(pkt, net_ntohs(hdr_vlan->type),
 				    net_pkt_vlan_tci(pkt),
 				    hdr_len,
 				    &hdr_vlan->src, &hdr_vlan->dst, false);
@@ -641,7 +641,7 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 			net_buf_add(hdr_frag, hdr_len);
 		}
 
-		if (ptype == htons(NET_ETH_PTYPE_ARP) ||
+		if (ptype == net_htons(NET_ETH_PTYPE_ARP) ||
 		    (!ethernet_fill_in_dst_on_ipv4_mcast(pkt, &hdr->dst) &&
 		     !ethernet_fill_in_dst_on_ipv6_mcast(pkt, &hdr->dst))) {
 			memcpy(&hdr->dst, net_pkt_lladdr_dst(pkt)->addr,
@@ -653,7 +653,7 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 
 		hdr->type = ptype;
 
-		print_ll_addrs(pkt, ntohs(hdr->type),
+		print_ll_addrs(pkt, net_ntohs(hdr->type),
 			       hdr_len, &hdr->src, &hdr->dst);
 	}
 
@@ -686,7 +686,7 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	const struct ethernet_api *api = net_if_get_device(iface)->api;
 	struct ethernet_context *ctx = net_if_l2_data(iface);
-	uint16_t ptype = htons(net_pkt_ll_proto_type(pkt));
+	uint16_t ptype = net_htons(net_pkt_ll_proto_type(pkt));
 	struct net_pkt *orig_pkt = pkt;
 	int ret;
 
@@ -708,7 +708,7 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 		goto send;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET &&
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == NET_AF_INET &&
 	    net_pkt_ll_proto_type(pkt) == NET_ETH_PTYPE_IP) {
 		if (!net_pkt_ipv4_acd(pkt)) {
 			struct net_pkt *arp;
@@ -726,7 +726,7 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 					arp, pkt, net_if_get_by_iface(iface), iface);
 				net_pkt_unref(pkt);
 				pkt = arp;
-				ptype = htons(net_pkt_ll_proto_type(pkt));
+				ptype = net_htons(net_pkt_ll_proto_type(pkt));
 			} else if (ret == NET_ARP_PKT_QUEUED) {
 				/* Original pkt got queued, pending resolution
 				 * of an ongoing ARP request.
@@ -741,10 +741,10 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 			}
 		}
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
-		   net_pkt_family(pkt) == AF_PACKET) {
+		   net_pkt_family(pkt) == NET_AF_PACKET) {
 		struct net_context *context = net_pkt_context(pkt);
 
-		if (!(context && net_context_get_type(context) == SOCK_DGRAM)) {
+		if (!(context && net_context_get_type(context) == NET_SOCK_DGRAM)) {
 			/* Raw packet, just send it */
 			goto send;
 		}
@@ -816,14 +816,14 @@ error:
 	return ret;
 
 arp_error:
-	if (IS_ENABLED(CONFIG_NET_ARP) && ptype == htons(NET_ETH_PTYPE_ARP)) {
+	if (IS_ENABLED(CONFIG_NET_ARP) && ptype == net_htons(NET_ETH_PTYPE_ARP)) {
 		/* Original packet was added to ARP's pending Q, so, to avoid it
 		 * being freed, take a reference, the reference is dropped when we
 		 * clear the pending Q in ARP and then it will be freed by net_if.
 		 */
 		net_pkt_ref(orig_pkt);
 		if (net_arp_clear_pending(
-			    iface, (struct in_addr *)NET_IPV4_HDR(pkt)->dst)) {
+			    iface, (struct net_in_addr *)NET_IPV4_HDR(pkt)->dst)) {
 			NET_DBG("Could not find pending ARP entry");
 		}
 		/* Free the ARP request */

@@ -15,8 +15,8 @@
 #include <stdbool.h>
 #include <priority_q.h>
 
-BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
-	     >= K_HIGHEST_APPLICATION_THREAD_PRIO);
+BUILD_ASSERT((K_LOWEST_APPLICATION_THREAD_PRIO >= K_HIGHEST_APPLICATION_THREAD_PRIO),
+             "K_LOWEST_APPLICATION_THREAD_PRIO >= K_HIGHEST_APPLICATION_THREAD_PRIO");
 
 #ifdef CONFIG_MULTITHREADING
 #define Z_VALID_PRIO(prio, entry_point)				     \
@@ -64,7 +64,7 @@ bool z_thread_prio_set(struct k_thread *thread, int prio);
 void *z_get_next_switch_handle(void *interrupted);
 
 void z_time_slice(void);
-void z_reset_time_slice(struct k_thread *curr);
+void z_reset_time_slice(struct k_thread *thread);
 void z_sched_ipi(void);
 void z_sched_start(struct k_thread *thread);
 void z_ready_thread(struct k_thread *thread);
@@ -320,7 +320,7 @@ void z_sched_usage_start(struct k_thread *thread);
 /**
  * @brief Retrieves CPU cycle usage data for specified core
  */
-void z_sched_cpu_usage(uint8_t core_id, struct k_thread_runtime_stats *stats);
+void z_sched_cpu_usage(uint8_t cpu_id, struct k_thread_runtime_stats *stats);
 
 /**
  * @brief Retrieves thread cycle usage data for specified thread

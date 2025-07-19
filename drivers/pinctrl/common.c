@@ -6,19 +6,18 @@
 
 #include <zephyr/drivers/pinctrl.h>
 
-int pinctrl_lookup_state(const struct pinctrl_dev_config *config, uint8_t id,
-			 const struct pinctrl_state **state)
-{
-	*state = &config->states[0];
-	while (*state < &config->states[config->state_cnt]) {
-		if (id == (*state)->id) {
-			return 0;
-		}
+int pinctrl_lookup_state(const struct pinctrl_dev_config* config, uint8_t id, const struct pinctrl_state** state) {
+    *state = &config->states[0];
 
-		(*state)++;
-	}
+    while (*state < &config->states[config->state_cnt]) {
+        if (id == (*state)->id) {
+            return 0;
+        }
 
-	return -ENOENT;
+        (*state)++;
+    }
+
+    return -ENOENT;
 }
 
 #ifdef CONFIG_PINCTRL_DYNAMIC

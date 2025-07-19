@@ -304,6 +304,21 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		}, \
 	}
 
+/** #CUSTOM@NDRS direct cast .element_descr instead of using Z_JSON_ELEMENT_DESCR */
+#define JSON_OBJ_DESCR_ARRAY_WITH_TYPE(struct_, field_name_, max_len_, \
+				       len_field_, elem_descr_) \
+	{ \
+		.field_name = (#field_name_), \
+		.align_shift = Z_ALIGN_SHIFT(struct_), \
+		.field_name_len = sizeof(#field_name_) - 1, \
+		.type = JSON_TOK_ARRAY_START, \
+		.offset = offsetof(struct_, field_name_), \
+		.array = { \
+			.element_descr = (elem_descr_), \
+			.n_elements = (max_len_), \
+		}, \
+	}
+
 /**
  * @brief Helper macro to declare a descriptor for an array of objects
  *

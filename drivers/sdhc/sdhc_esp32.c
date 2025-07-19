@@ -1401,7 +1401,7 @@ static DEVICE_API(sdhc, sdhc_api) = {
 	.set_io = sdhc_esp32_set_io,
 	.get_card_present = sdhc_esp32_get_card_present,
 	.card_busy = sdhc_esp32_card_busy,
-	.get_host_props = sdhc_esp32_get_host_props,
+	.get_host_props = sdhc_esp32_get_host_props
 };
 
 #define SDHC_ESP32_INIT(n)                                                                         \
@@ -1457,7 +1457,7 @@ static DEVICE_API(sdhc, sdhc_api) = {
 		.timing = SDHC_TIMING_LEGACY,                                                      \
 		.s_host_ctx = {.event_queue = &sdhc##n##_queue}};                                  \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &sdhc_esp32_init, NULL, &sdhc_esp32_##n##_data,                   \
+	DEVICE_DT_INST_DEFINE(n, sdhc_esp32_init, NULL, &sdhc_esp32_##n##_data,                    \
 			      &sdhc_esp32_##n##_config, POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY,    \
 			      &sdhc_api);
 

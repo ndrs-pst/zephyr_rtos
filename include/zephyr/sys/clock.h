@@ -63,7 +63,7 @@ typedef uint32_t k_ticks_t;
  * equality with the `K_TIMEOUT_EQ()` macro.
  */
 typedef struct {
-	k_ticks_t ticks;
+    k_ticks_t ticks;
 } k_timeout_t;
 
 /**
@@ -80,19 +80,19 @@ typedef struct {
 #define K_TIMEOUT_EQ(a, b) ((a).ticks == (b).ticks)
 
 /** number of nanoseconds per microsecond */
-#define NSEC_PER_USEC 1000U
+#define NSEC_PER_USEC           1000U
 
 /** number of nanoseconds per millisecond */
-#define NSEC_PER_MSEC 1000000U
+#define NSEC_PER_MSEC           1000000U
 
 /** number of microseconds per millisecond */
-#define USEC_PER_MSEC 1000U
+#define USEC_PER_MSEC           1000U
 
 /** number of milliseconds per second */
-#define MSEC_PER_SEC 1000U
+#define MSEC_PER_SEC            1000U
 
 /** number of seconds per minute */
-#define SEC_PER_MIN 60U
+#define SEC_PER_MIN             60U
 
 /** number of seconds per hour */
 #define SEC_PER_HOUR 3600U
@@ -101,10 +101,10 @@ typedef struct {
 #define SEC_PER_DAY 86400U
 
 /** number of minutes per hour */
-#define MIN_PER_HOUR 60U
+#define MIN_PER_HOUR            60U
 
 /** number of hours per day */
-#define HOUR_PER_DAY 24U
+#define HOUR_PER_DAY            24U
 
 /** number of microseconds per second */
 #define USEC_PER_SEC ((USEC_PER_MSEC) * (MSEC_PER_SEC))
@@ -115,15 +115,29 @@ typedef struct {
 /** @} */
 
 /** @cond INTERNAL_HIDDEN */
+/* #CUSTOM@NDRS, use _MSVC_LANG (C++) to distinguish between C++ and C */
+#if defined(_MSVC_LANG)
 #define Z_TIMEOUT_NO_WAIT_INIT {0}
-#define Z_TIMEOUT_NO_WAIT      ((k_timeout_t)Z_TIMEOUT_NO_WAIT_INIT)
+#define Z_TIMEOUT_NO_WAIT  ( k_timeout_t Z_TIMEOUT_NO_WAIT_INIT)
 #if defined(__cplusplus) && ((__cplusplus - 0) < 202002L)
-#define Z_TIMEOUT_TICKS_INIT(t) {(t)}
+#define Z_TIMEOUT_TICKS_INIT(t) { (t) }
+#define Z_TIMEOUT_TICKS(t) (k_timeout_t { (t) })
 #else
-#define Z_TIMEOUT_TICKS_INIT(t) {.ticks = (t)}
+#define Z_TIMEOUT_TICKS_INIT(t) { .ticks = (t) }
+#define Z_TIMEOUT_TICKS(t) (k_timeout_t { .ticks = (t) })
 #endif
-#define Z_TIMEOUT_TICKS(t) ((k_timeout_t)Z_TIMEOUT_TICKS_INIT(t))
-#define Z_FOREVER          Z_TIMEOUT_TICKS(K_TICKS_FOREVER)
+#else
+#define Z_TIMEOUT_NO_WAIT_INIT {0}
+#define Z_TIMEOUT_NO_WAIT ((k_timeout_t) Z_TIMEOUT_NO_WAIT_INIT)
+#if defined(__cplusplus) && ((__cplusplus - 0) < 202002L)
+#define Z_TIMEOUT_TICKS_INIT(t) { (t) }
+#else
+#define Z_TIMEOUT_TICKS_INIT(t) { .ticks = (t) }
+#endif
+#define Z_TIMEOUT_TICKS(t) ((k_timeout_t) Z_TIMEOUT_TICKS_INIT(t))
+#endif
+
+#define Z_FOREVER Z_TIMEOUT_TICKS(K_TICKS_FOREVER)
 
 #ifdef CONFIG_TIMEOUT_64BIT
 #define Z_TIMEOUT_MS(t)       Z_TIMEOUT_TICKS((k_ticks_t)k_ms_to_ticks_ceil64(MAX(t, 0)))
@@ -158,9 +172,9 @@ typedef struct {
  * considerd an absolute timeouts (so !Z_IS_TIMEOUT_RELATIVE() does not
  * necessarily mean it is an absolute timeout if ticks == -1);
  */
-#define Z_IS_TIMEOUT_RELATIVE(timeout) (((timeout).ticks) >= 0)
+#define Z_IS_TIMEOUT_RELATIVE(timeout)  (((timeout).ticks) >= 0)
 #else
-#define Z_IS_TIMEOUT_RELATIVE(timeout) true
+#define Z_IS_TIMEOUT_RELATIVE(timeout)  true
 #endif
 
 /* added tick needed to account for tick in progress */
@@ -170,9 +184,9 @@ typedef struct {
 
 #ifndef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 #if defined(CONFIG_SYS_CLOCK_EXISTS)
-#if CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 0
+#if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 0)
 #error "SYS_CLOCK_HW_CYCLES_PER_SEC must be non-zero!"
-#endif /* CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 0 */
+#endif /* (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 0) */
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
 #endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
 
@@ -190,9 +204,9 @@ typedef struct {
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 
-#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) ||                                        \
-	(MSEC_PER_SEC % CONFIG_SYS_CLOCK_TICKS_PER_SEC) ||                                         \
-	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC % CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) || \
+    (MSEC_PER_SEC % CONFIG_SYS_CLOCK_TICKS_PER_SEC)      || \
+    (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC % CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 #define _NEED_PRECISE_TICK_MS_CONVERSION
 #endif
 
@@ -240,7 +254,7 @@ int64_t sys_clock_tick_get(void);
  * @see sys_timepoint_expired()
  */
 typedef struct {
-	uint64_t tick;
+    uint64_t tick;
 } k_timepoint_t;
 
 /**
@@ -286,12 +300,12 @@ k_timeout_t sys_timepoint_timeout(k_timepoint_t timepoint);
  * @return zero if both timepoints are the same. Negative value if timepoint @a a is before
  * timepoint @a b, positive otherwise.
  */
-static inline int sys_timepoint_cmp(k_timepoint_t a, k_timepoint_t b)
-{
-	if (a.tick == b.tick) {
-		return 0;
-	}
-	return a.tick < b.tick ? -1 : 1;
+static inline int sys_timepoint_cmp(k_timepoint_t a, k_timepoint_t b) {
+    if (a.tick == b.tick) {
+        return 0;
+    }
+
+    return a.tick < b.tick ? -1 : 1;
 }
 
 #else
@@ -302,28 +316,25 @@ static inline int sys_timepoint_cmp(k_timepoint_t a, k_timepoint_t b)
  * K_NO_WAIT. Anything else will translate back to K_FOREVER.
  */
 typedef struct {
-	bool wait;
+    bool wait;
 } k_timepoint_t;
 
-static inline k_timepoint_t sys_timepoint_calc(k_timeout_t timeout)
-{
-	k_timepoint_t timepoint;
+static inline k_timepoint_t sys_timepoint_calc(k_timeout_t timeout) {
+    k_timepoint_t timepoint;
 
-	timepoint.wait = !K_TIMEOUT_EQ(timeout, Z_TIMEOUT_NO_WAIT);
-	return timepoint;
+    timepoint.wait = !K_TIMEOUT_EQ(timeout, Z_TIMEOUT_NO_WAIT);
+    return timepoint;
 }
 
-static inline k_timeout_t sys_timepoint_timeout(k_timepoint_t timepoint)
-{
-	return timepoint.wait ? Z_FOREVER : Z_TIMEOUT_NO_WAIT;
+static inline k_timeout_t sys_timepoint_timeout(k_timepoint_t timepoint) {
+    return timepoint.wait ? Z_FOREVER : Z_TIMEOUT_NO_WAIT;
 }
 
-static inline int sys_timepoint_cmp(k_timepoint_t a, k_timepoint_t b)
-{
-	if (a.wait == b.wait) {
-		return 0;
-	}
-	return b.wait ? -1 : 1;
+static inline int sys_timepoint_cmp(k_timepoint_t a, k_timepoint_t b) {
+    if (a.wait == b.wait) {
+        return 0;
+    }
+    return b.wait ? -1 : 1;
 }
 
 #endif
@@ -336,9 +347,8 @@ static inline int sys_timepoint_cmp(k_timepoint_t a, k_timepoint_t b)
  *
  * @see sys_timepoint_calc()
  */
-static inline bool sys_timepoint_expired(k_timepoint_t timepoint)
-{
-	return K_TIMEOUT_EQ(sys_timepoint_timeout(timepoint), Z_TIMEOUT_NO_WAIT);
+static inline bool sys_timepoint_expired(k_timepoint_t timepoint) {
+    return K_TIMEOUT_EQ(sys_timepoint_timeout(timepoint), Z_TIMEOUT_NO_WAIT);
 }
 
 /** @} */

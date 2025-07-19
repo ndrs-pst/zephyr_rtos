@@ -19,16 +19,23 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mdio_stm32_hal, CONFIG_MDIO_LOG_LEVEL);
 
+/* #CUSTOM@NDRS */
+#define DEVICE_STM32_GET_ETH_HNDL(dev)         (ETH_HandleTypeDef*)(&(((struct mdio_stm32_dev_data*)(dev)->data)->heth))
+
 #define DT_DRV_COMPAT st_stm32_mdio
 
 #define ADIN1100_REG_VALUE_MASK		GENMASK(15, 0)
 
-struct mdio_stm32_data {
-	struct k_sem sem;
-	ETH_HandleTypeDef heth;
+struct ETH_HandlePrivTypeDef {
+    ETH_TypeDef* Instance;                  /*!< Register base address       */
 };
 
-struct mdio_stm32_config {
+struct mdio_stm32_dev_data {
+	struct ETH_HandlePrivTypeDef heth;
+	struct k_sem sem;
+};
+
+struct mdio_stm32_dev_config {
 	const struct pinctrl_dev_config *pincfg;
 	struct stm32_pclken pclken;
 };
@@ -36,8 +43,8 @@ struct mdio_stm32_config {
 static int mdio_stm32_read(const struct device *dev, uint8_t prtad,
 			   uint8_t regad, uint16_t *data)
 {
-	struct mdio_stm32_data *const dev_data = dev->data;
-	ETH_HandleTypeDef *heth = &dev_data->heth;
+	struct mdio_stm32_dev_data *const dev_data = dev->data;
+	ETH_HandleTypeDef* heth = DEVICE_STM32_GET_ETH_HNDL(dev);
 	uint32_t read;
 	int ret;
 
@@ -65,8 +72,8 @@ static int mdio_stm32_read(const struct device *dev, uint8_t prtad,
 static int mdio_stm32_write(const struct device *dev, uint8_t prtad,
 			    uint8_t regad, uint16_t data)
 {
-	struct mdio_stm32_data *const dev_data = dev->data;
-	ETH_HandleTypeDef *heth = &dev_data->heth;
+	struct mdio_stm32_dev_data *const dev_data = dev->data;
+	ETH_HandleTypeDef* heth = DEVICE_STM32_GET_ETH_HNDL(dev);
 	int ret;
 
 	k_sem_take(&dev_data->sem, K_FOREVER);
@@ -138,9 +145,9 @@ static void eth_set_mdio_clock_range_for_hal_v1(ETH_HandleTypeDef *heth)
 
 static int mdio_stm32_init(const struct device *dev)
 {
-	struct mdio_stm32_data *const dev_data = dev->data;
-	const struct mdio_stm32_config *const config = dev->config;
-	ETH_HandleTypeDef *heth = &dev_data->heth;
+	struct mdio_stm32_dev_data *const dev_data = dev->data;
+	const struct mdio_stm32_dev_config *const config = dev->config;
+	ETH_HandleTypeDef* heth = DEVICE_STM32_GET_ETH_HNDL(dev);
 	int ret;
 
 	/* enable clock */
@@ -179,16 +186,29 @@ static DEVICE_API(mdio, mdio_stm32_api) = {
 #define MDIO_STM32_HAL_DEVICE(inst)                                                                \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
                                                                                                    \
-	static struct mdio_stm32_data mdio_stm32_data_##inst = {                                   \
+	static struct mdio_stm32_dev_data mdio_stm32_dev_data_##inst = {                           \
 		.heth = {.Instance = (ETH_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(inst))},            \
 	};                                                                                         \
-	static struct mdio_stm32_config mdio_stm32_config_##inst = {                               \
+	static struct mdio_stm32_dev_config mdio_stm32_dev_config_##inst = {                       \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
 		.pclken = {.bus = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(inst), stm_eth, bus),      \
 			   .enr = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(inst), stm_eth, bits)},    \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &mdio_stm32_init, NULL, &mdio_stm32_data_##inst,               \
-			      &mdio_stm32_config_##inst, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,   \
+	DEVICE_DT_INST_DEFINE(inst, mdio_stm32_init, NULL, &mdio_stm32_dev_data_##inst,            \
+			      &mdio_stm32_dev_config_##inst, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,   \
 			      &mdio_stm32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MDIO_STM32_HAL_DEVICE)
+
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+void zephyr_gtest_mdio_stm32(void) {
+    mdio_stm32_dev_data_0.heth.Instance = (ETH_TypeDef*)ut_mcu_eth_ptr;
+}
+
+void zephyr_gtest_mdio_stm32_init(const struct device* dev) {
+    mdio_stm32_init(dev);
+}
+
+#endif

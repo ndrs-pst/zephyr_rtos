@@ -13,6 +13,7 @@
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/fs_sys.h>
 
+#include <zephyr/logging/log.h>
 #define LFS_LOG_REGISTER
 #include <lfs_util.h>
 
@@ -33,7 +34,7 @@
 
 /* note: one of the next options have to be enabled, at least */
 BUILD_ASSERT(IS_ENABLED(CONFIG_FS_LITTLEFS_BLK_DEV) ||
-	     IS_ENABLED(CONFIG_FS_LITTLEFS_FMP_DEV));
+	     IS_ENABLED(CONFIG_FS_LITTLEFS_FMP_DEV), "build assert !!!");
 
 struct lfs_file_data {
 	struct lfs_file file;
@@ -59,7 +60,7 @@ K_MEM_SLAB_DEFINE_STATIC(lfs_dir_pool, sizeof(struct lfs_dir),
 #define FC_HEAP_PER_ALLOC_OVERHEAD CONFIG_FS_LITTLEFS_HEAP_PER_ALLOC_OVERHEAD_SIZE
 
 #if (CONFIG_FS_LITTLEFS_FC_HEAP_SIZE - 0) <= 0
-BUILD_ASSERT((CONFIG_FS_LITTLEFS_HEAP_PER_ALLOC_OVERHEAD_SIZE % 8) == 0);
+BUILD_ASSERT(((CONFIG_FS_LITTLEFS_HEAP_PER_ALLOC_OVERHEAD_SIZE % 8) == 0), "build assert !!!");
 /* Auto-generate heap size from cache size and number of files */
 #undef CONFIG_FS_LITTLEFS_FC_HEAP_SIZE
 #define CONFIG_FS_LITTLEFS_FC_HEAP_SIZE						\
@@ -396,7 +397,7 @@ static ssize_t littlefs_write(struct fs_file_t *fp, const void *ptr, size_t len)
 
 BUILD_ASSERT((FS_SEEK_SET == LFS_SEEK_SET)
 	     && (FS_SEEK_CUR == LFS_SEEK_CUR)
-	     && (FS_SEEK_END == LFS_SEEK_END));
+	     && (FS_SEEK_END == LFS_SEEK_END), "build assert !!!");
 
 static int littlefs_seek(struct fs_file_t *fp, off_t off, int whence)
 {
@@ -655,7 +656,7 @@ static int littlefs_flash_init(struct fs_littlefs *fs, void *dev_id)
 	int ret;
 
 	/* Open flash area */
-	ret = flash_area_open(area_id, fap);
+	ret = flash_area_open((uint8_t)area_id, fap);
 	if ((ret < 0) || (*fap == NULL)) {
 		LOG_ERR("can't open flash area %d, err %d", area_id, ret);
 		return -ENODEV;
@@ -709,15 +710,15 @@ static int littlefs_init_backend(struct fs_littlefs *fs, void *dev_id, int flags
 
 static int littlefs_init_cfg(struct fs_littlefs *fs, int flags)
 {
-	BUILD_ASSERT(CONFIG_FS_LITTLEFS_READ_SIZE > 0);
-	BUILD_ASSERT(CONFIG_FS_LITTLEFS_PROG_SIZE > 0);
-	BUILD_ASSERT(CONFIG_FS_LITTLEFS_CACHE_SIZE > 0);
-	BUILD_ASSERT(CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE > 0);
-	BUILD_ASSERT((CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE % 8) == 0);
+	BUILD_ASSERT(CONFIG_FS_LITTLEFS_READ_SIZE > 0, "build assert !!!");
+	BUILD_ASSERT(CONFIG_FS_LITTLEFS_PROG_SIZE > 0, "build assert !!!");
+	BUILD_ASSERT(CONFIG_FS_LITTLEFS_CACHE_SIZE > 0, "build assert !!!");
+	BUILD_ASSERT(CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE > 0, "build assert !!!");
+	BUILD_ASSERT((CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE % 8) == 0, "build assert !!!");
 	BUILD_ASSERT((CONFIG_FS_LITTLEFS_CACHE_SIZE
-		      % CONFIG_FS_LITTLEFS_READ_SIZE) == 0);
+		      % CONFIG_FS_LITTLEFS_READ_SIZE) == 0, "build assert !!!");
 	BUILD_ASSERT((CONFIG_FS_LITTLEFS_CACHE_SIZE
-		      % CONFIG_FS_LITTLEFS_PROG_SIZE) == 0);
+		      % CONFIG_FS_LITTLEFS_PROG_SIZE) == 0, "build assert !!!");
 
 	struct lfs_config *lcp = &fs->cfg;
 
@@ -1128,23 +1129,50 @@ static void mount_init(struct fs_mount_t *mp)
 	}
 }
 
-static int littlefs_init(void)
+#if (__GTEST == 0U)
+static
+#endif
+int littlefs_init(void)
 {
+	int rc;
+	#if (__GTEST == 0U)
 	static struct fs_mount_t *partitions[] = {
 		DT_INST_FOREACH_STATUS_OKAY(REFERENCE_MOUNT)
 	};
+	#endif
 
-	int rc = fs_register(FS_LITTLEFS, &littlefs_fs);
-
+	rc = fs_register(FS_LITTLEFS, &littlefs_fs);
 	if (rc == 0) {
+		#if (__GTEST == 0U)
 		struct fs_mount_t **mpi = partitions;
 
 		while (mpi < (partitions + ARRAY_SIZE(partitions))) {
 			mount_init(*mpi++);
 		}
+		#endif
 	}
 
 	return rc;
 }
+
+#if (__GTEST == 1U)
+int ut_littlefs_init_mem_slab(void) {
+	int rc;
+
+	rc = k_mem_slab_init(&file_data_pool, _k_mem_slab_buf_file_data_pool,
+						 sizeof(struct lfs_file_data), CONFIG_FS_LITTLEFS_NUM_FILES);
+	if (rc == 0) {
+		rc = k_mem_slab_init(&lfs_dir_pool, _k_mem_slab_buf_lfs_dir_pool,
+							 sizeof(struct lfs_dir), CONFIG_FS_LITTLEFS_NUM_DIRS);
+	}
+
+	if (rc == 0) {
+		k_heap_init(&file_cache_heap, kheap_file_cache_heap,
+					sizeof(kheap_file_cache_heap));
+	}
+
+	return (rc);
+}
+#endif
 
 SYS_INIT(littlefs_init, POST_KERNEL, CONFIG_FILE_SYSTEM_INIT_PRIORITY);

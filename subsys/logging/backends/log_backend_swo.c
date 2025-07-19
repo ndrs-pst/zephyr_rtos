@@ -136,7 +136,7 @@ static void dropped(const struct log_backend *const backend, uint32_t cnt)
 	log_backend_std_dropped(&log_output_swo, cnt);
 }
 
-const struct log_backend_api log_backend_swo_api = {
+static const struct log_backend_api log_backend_swo_api = {
 	.process = log_backend_swo_process,
 	.panic = log_backend_swo_panic,
 	.init = log_backend_swo_init,

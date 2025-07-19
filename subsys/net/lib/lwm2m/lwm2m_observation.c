@@ -69,8 +69,11 @@ static struct observe_node observe_node_data[CONFIG_LWM2M_ENGINE_MAX_OBSERVER];
 struct lwm2m_ctx **lwm2m_sock_ctx(void);
 
 int lwm2m_sock_nfds(void);
+
 /* Resource wrappers */
-sys_slist_t *lwm2m_obs_obj_path_list(void) { return &obs_obj_path_list; }
+sys_slist_t* lwm2m_obs_obj_path_list(void) {
+	return &obs_obj_path_list;
+}
 
 struct notification_attrs {
 	/* use to determine which value is set */
@@ -285,7 +288,7 @@ void clear_attrs(uint8_t level, void *ref)
 
 	for (i = 0; i < CONFIG_LWM2M_NUM_ATTR; i++) {
 		if (ref == write_attr_pool[i].ref) {
-			(void)memset(&write_attr_pool[i], 0, sizeof(write_attr_pool[i]));
+			(void) memset(&write_attr_pool[i], 0, sizeof(write_attr_pool[i]));
 		}
 	}
 
@@ -872,7 +875,7 @@ static int engine_add_observer(struct lwm2m_message *msg, const uint8_t *token, 
 	struct notification_attrs attrs;
 	struct lwm2m_obj_path_list obs_path_list_buf;
 	sys_slist_t lwm2m_path_list;
-	sys_snode_t *prev_node = NULL;
+	sys_snode_t *prev_node;
 	int ret;
 
 	if (!msg || !msg->ctx) {
@@ -959,7 +962,7 @@ static int engine_add_composite_observer(struct lwm2m_message *msg, const uint8_
 	struct lwm2m_obj_path_list lwm2m_path_list_buf[CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE];
 	sys_slist_t lwm2m_path_list;
 	sys_slist_t lwm2m_path_free_list;
-	sys_snode_t *prev_node = NULL;
+	sys_snode_t *prev_node;
 	int ret;
 
 	if (!msg || !msg->ctx) {
@@ -1033,7 +1036,7 @@ void remove_observer_from_list(struct lwm2m_ctx *ctx, sys_snode_t *prev_node,
 int engine_remove_observer_by_token(struct lwm2m_ctx *ctx, const uint8_t *token, uint8_t tkl)
 {
 	struct observe_node *obs;
-	sys_snode_t *prev_node = NULL;
+	sys_snode_t *prev_node;
 
 	if (!token || (tkl == 0U || tkl > MAX_TOKEN_LEN)) {
 		LOG_ERR("token(%p) and token length(%u) must be valid.", token, tkl);
@@ -1056,7 +1059,7 @@ static int engine_remove_composite_observer(struct lwm2m_message *msg, const uin
 					    uint8_t tkl, uint16_t format)
 {
 	struct observe_node *obs;
-	sys_snode_t *prev_node = NULL;
+	sys_snode_t *prev_node;
 	struct lwm2m_obj_path_list lwm2m_path_list_buf[CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE];
 	sys_slist_t lwm2m_path_list;
 	sys_slist_t lwm2m_path_free_list;
@@ -1123,7 +1126,7 @@ static int engine_remove_observer_by_path(struct lwm2m_ctx *ctx, struct lwm2m_ob
 	struct observe_node *obs;
 	struct lwm2m_obj_path_list obs_path_list_buf;
 	sys_slist_t lwm2m_path_list;
-	sys_snode_t *prev_node = NULL;
+	sys_snode_t *prev_node;
 
 	/* Create 1 entry linked list for message path */
 	memcpy(&obs_path_list_buf.path, path, sizeof(struct lwm2m_obj_path));
@@ -1147,11 +1150,10 @@ void engine_remove_observer_by_id(uint16_t obj_id, int32_t obj_inst_id)
 {
 	struct observe_node *obs, *tmp;
 	sys_snode_t *prev_node = NULL;
-	int i;
 	struct lwm2m_ctx **sock_ctx = lwm2m_sock_ctx();
 
 	/* remove observer instances accordingly */
-	for (i = 0; i < lwm2m_sock_nfds(); ++i) {
+	for (int i = 0; i < lwm2m_sock_nfds(); ++i) {
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sock_ctx[i]->observer, obs, tmp, node) {
 			engine_observe_single_path_id_remove(sock_ctx[i], obs, obj_id, obj_inst_id);
 

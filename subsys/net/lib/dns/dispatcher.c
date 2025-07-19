@@ -133,23 +133,23 @@ static int recv_data(struct net_socket_service_event *pev)
 
 	k_mutex_lock(&dispatcher->lock, K_FOREVER);
 
-	(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
-			       SO_DOMAIN, &family, &optlen);
+	(void)zsock_getsockopt(pev->event.fd, NET_SOL_SOCKET,
+			       NET_SO_DOMAIN, &family, &optlen);
 
 	if ((pev->event.revents & ZSOCK_POLLERR) ||
 	    (pev->event.revents & ZSOCK_POLLNVAL)) {
-		(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
-				       SO_ERROR, &sock_error, &optlen);
+		(void)zsock_getsockopt(pev->event.fd, NET_SOL_SOCKET,
+				       NET_SO_ERROR, &sock_error, &optlen);
 		if (sock_error > 0) {
 			NET_ERR("Receiver IPv%d socket error (%d)",
-				family == AF_INET ? 4 : 6, sock_error);
+				family == NET_AF_INET ? 4 : 6, sock_error);
 			ret = DNS_EAI_SYSTEM;
 		}
 
 		goto unlock;
 	}
 
-	addrlen = (family == AF_INET) ? sizeof(struct sockaddr_in) :
+	addrlen = (family == NET_AF_INET) ? sizeof(struct sockaddr_in) :
 		sizeof(struct sockaddr_in6);
 
 	dns_data = net_buf_alloc(&dns_msg_pool, dispatcher->buf_timeout);
@@ -164,7 +164,7 @@ static int recv_data(struct net_socket_service_event *pev)
 	if (ret < 0) {
 		ret = -errno;
 		NET_ERR("recv failed on IPv%d socket (%d)",
-			family == AF_INET ? 4 : 6, -ret);
+			family == NET_AF_INET ? 4 : 6, -ret);
 		goto free_buf;
 	}
 
@@ -281,10 +281,10 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 
 	ctx->buf_timeout = DNS_BUF_TIMEOUT;
 
-	if (ctx->local_addr.sa_family == AF_INET) {
-		addrlen = sizeof(struct sockaddr_in);
+	if (ctx->local_addr.sa_family == NET_AF_INET) {
+		addrlen = sizeof(struct net_sockaddr_in);
 	} else {
-		addrlen = sizeof(struct sockaddr_in6);
+		addrlen = sizeof(struct net_sockaddr_in6);
 	}
 
 	/* Bind and then register a socket service with this combo */

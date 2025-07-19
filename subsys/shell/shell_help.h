@@ -19,7 +19,7 @@ void z_shell_help_cmd_print(const struct shell *sh,
 
 /* Function is printing subcommands and help string. */
 void z_shell_help_subcmd_print(const struct shell *sh,
-			       const struct shell_static_entry *cmd,
+			       const struct shell_static_entry *parent,
 			       const char *description);
 
 /* Function returns true if str == -h or --help */
