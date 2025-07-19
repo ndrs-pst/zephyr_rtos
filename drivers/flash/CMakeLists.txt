@@ -24,6 +24,7 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE flash_handlers.c)
 # zephyr-keep-sorted-stop
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_FLASH_ADI_MAX32_SPIXF flash_max32_spixf_nor.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_AMBIQ flash_ambiq.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_ANDES_QSPI flash_andes_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_CAD_QSPI_NOR flash_cadence_qspi_nor.c flash_cadence_qspi_nor_ll.c)
@@ -76,8 +77,6 @@ if(CONFIG_FLASH_SIMULATOR)
   zephyr_library_sources(flash_simulator.c)
   if(CONFIG_NATIVE_LIBRARY)
     target_sources(native_simulator INTERFACE flash_simulator_native.c)
-  elseif(CONFIG_ARCH_POSIX)
-    zephyr_library_sources(flash_simulator_native.c)
   endif()
 endif()
 

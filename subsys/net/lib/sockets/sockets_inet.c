@@ -2083,6 +2083,8 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 			break;
 
+			break;
+
 		case IPV6_MULTICAST_HOPS:
 			ret = net_context_get_option(ctx,
 						     NET_OPT_MCAST_HOP_LIMIT,

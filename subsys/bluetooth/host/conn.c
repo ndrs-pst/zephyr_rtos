@@ -1813,6 +1813,25 @@ void bt_conn_connected(struct bt_conn *conn)
 	notify_connected(conn);
 }
 
+#if defined(CONFIG_BT_CLASSIC)
+void bt_conn_role_changed(struct bt_conn *conn, uint8_t status)
+{
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->role_changed) {
+			callback->role_changed(conn, status);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->role_changed) {
+			cb->role_changed(conn, status);
+		}
+	}
+}
+#endif
+
 static int conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
 	int err;
@@ -3500,6 +3519,21 @@ int bt_conn_le_phy_update(struct bt_conn *conn,
 
 	return bt_le_set_phy(conn, all_phys, param->pref_tx_phy,
 			     param->pref_rx_phy, phy_opts);
+}
+
+int bt_conn_le_set_default_phy(uint8_t pref_tx_phy, uint8_t pref_rx_phy)
+{
+	uint8_t all_phys = 0U;
+
+	if (pref_tx_phy == BT_GAP_LE_PHY_NONE) {
+		all_phys |= BT_HCI_LE_PHY_TX_ANY;
+	}
+
+	if (pref_rx_phy == BT_GAP_LE_PHY_NONE) {
+		all_phys |= BT_HCI_LE_PHY_RX_ANY;
+	}
+
+	return bt_le_set_default_phy(all_phys, pref_tx_phy, pref_rx_phy);
 }
 #endif
 
