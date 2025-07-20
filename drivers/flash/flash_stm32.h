@@ -19,7 +19,12 @@
 #endif
 
 /* Get the base address of the flash from the DTS node */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+static uint32_t flash_stm32_sim[DT_REG_SIZE(DT_INST(0, st_stm32_nv_flash)) / sizeof(uint32_t)];
+#define FLASH_STM32_BASE_ADDRESS ((uintptr_t)&flash_stm32_sim[0])
+#else
 #define FLASH_STM32_BASE_ADDRESS DT_REG_ADDR(DT_INST(0, st_stm32_nv_flash))
+#endif
 
 struct flash_stm32_priv {
 	FLASH_TypeDef *regs;
@@ -72,7 +77,12 @@ struct flash_stm32_priv {
 #endif
 
 #define FLASH_STM32_PRIV(dev) ((struct flash_stm32_priv *)((dev)->data))
+
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define FLASH_STM32_REGS(dev) ((FLASH_TypeDef*)ut_mcu_flash_r_ptr)
+#else
 #define FLASH_STM32_REGS(dev) (FLASH_STM32_PRIV(dev)->regs)
+#endif
 
 /* Redefinitions of flags and masks to harmonize stm32 series: */
 #if defined(CONFIG_SOC_SERIES_STM32U5X)

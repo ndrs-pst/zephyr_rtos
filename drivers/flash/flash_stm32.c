@@ -56,11 +56,14 @@ bool __weak flash_stm32_valid_range(struct device const* dev, off_t offset,
 
     return flash_stm32_range_exists(dev, offset, len);
 }
-#endif
 
 int __weak flash_stm32_check_configuration(void) {
     return (0);
+
 }
+#else 
+extern int flash_stm32_check_configuration(void);
+#endif
 
 
 #if !defined(CONFIG_SOC_SERIES_STM32WBX)
@@ -417,7 +420,7 @@ static int stm32_flash_init(struct device const* dev) {
      * For F2, F4, F7 series, this is not applicable.
      */
     #if DT_INST_NODE_HAS_PROP(0, clocks)
-    struct flash_stm32_priv*   p   = FLASH_STM32_PRIV(dev);
+    struct flash_stm32_priv* p = FLASH_STM32_PRIV(dev);
     struct device const* const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
     /*

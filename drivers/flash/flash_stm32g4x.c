@@ -243,9 +243,9 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 			    const void *data, unsigned int len)
 {
-	int i, rc = 0;
+	int rc = 0;
 
-	for (i = 0; i < len; i += 8, offset += 8) {
+	for (unsigned int i = 0; i < len; i += 8, offset += 8) {
 		rc = write_dword(dev, offset, UNALIGNED_GET((const uint64_t *) data + (i >> 3)));
 		if (rc < 0) {
 			return rc;
@@ -380,7 +380,7 @@ void flash_stm32_page_layout(const struct device *dev,
 }
 
 /* Override weak function */
-int  flash_stm32_check_configuration(void)
+int flash_stm32_check_configuration(void)
 {
 #if defined(FLASH_STM32_DBANK)
 	if (READ_BIT(FLASH->OPTR, FLASH_STM32_DBANK) == 0U) {
