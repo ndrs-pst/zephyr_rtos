@@ -291,37 +291,37 @@ class CheckPatch(ComplianceTest):
             cmd = [checkpatch]
 
         cmd.extend(['--mailback', '--no-tree', '-'])
-        diff = subprocess.Popen(('git', 'diff', '--no-ext-diff', COMMIT_RANGE),
+        with subprocess.Popen(('git', 'diff', '--no-ext-diff', COMMIT_RANGE),
                                 stdout=subprocess.PIPE,
-                                cwd=GIT_TOP)
-        try:
-            subprocess.run(cmd,
-                           check=True,
-                           stdin=diff.stdout,
-                           stdout=subprocess.PIPE,
-                           stderr=subprocess.STDOUT,
-                           shell=False, cwd=GIT_TOP)
+                                cwd=GIT_TOP) as diff:
+            try:
+                subprocess.run(cmd,
+                               check=True,
+                               stdin=diff.stdout,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.STDOUT,
+                               shell=False, cwd=GIT_TOP)
 
-        except subprocess.CalledProcessError as ex:
-            output = ex.output.decode("utf-8")
-            regex = r'^\s*\S+:(\d+):\s*(ERROR|WARNING):(.+?):(.+)(?:\n|\r\n?)+' \
-                    r'^\s*#(\d+):\s*FILE:\s*(.+):(\d+):'
+            except subprocess.CalledProcessError as ex:
+                output = ex.output.decode("utf-8")
+                regex = r'^\s*\S+:(\d+):\s*(ERROR|WARNING):(.+?):(.+)(?:\n|\r\n?)+' \
+                        r'^\s*#(\d+):\s*FILE:\s*(.+):(\d+):'
 
-            matches = re.findall(regex, output, re.MULTILINE)
+                matches = re.findall(regex, output, re.MULTILINE)
 
-            # add a guard here for excessive number of errors, do not try and
-            # process each one of them and instead push this as one failure.
-            if len(matches) > 500:
-                self.failure(output)
-                return
+                # add a guard here for excessive number of errors, do not try and
+                # process each one of them and instead push this as one failure.
+                if len(matches) > 500:
+                    self.failure(output)
+                    return
 
-            for m in matches:
-                self.fmtd_failure(m[1].lower(), m[2], m[5], m[6], col=None,
-                        desc=m[3])
+                for m in matches:
+                    self.fmtd_failure(m[1].lower(), m[2], m[5], m[6], col=None,
+                            desc=m[3])
 
-            # If the regex has not matched add the whole output as a failure
-            if len(matches) == 0:
-                self.failure(output)
+                # If the regex has not matched add the whole output as a failure
+                if len(matches) == 0:
+                    self.failure(output)
 
 
 class BoardYmlCheck(ComplianceTest):
@@ -1816,7 +1816,7 @@ class KeepSorted(ComplianceTest):
 
     MARKER = "zephyr-keep-sorted"
 
-    def block_check_sorted(self, block_data, regex):
+    def block_check_sorted(self, block_data, *, regex, strip, fold):
         def _test_indent(txt: str):
             return txt.startswith((" ", "\t"))
 
@@ -1839,9 +1839,13 @@ class KeepSorted(ComplianceTest):
                 if _test_indent(line):
                     continue
 
-                # Fold back indented lines after the current one
-                for cont in takewhile(_test_indent, lines[idx + 1:]):
-                    line += cont.strip()
+                if strip is not None:
+                    line = line.strip(strip)
+
+                if fold:
+                    # Fold back indented lines after the current one
+                    for cont in takewhile(_test_indent, lines[idx + 1:]):
+                        line += cont.strip()
 
             if line < last:
                 return idx
@@ -1862,8 +1866,12 @@ class KeepSorted(ComplianceTest):
         start_marker = f"{self.MARKER}-start"
         stop_marker = f"{self.MARKER}-stop"
         regex_marker = r"re\((.+)\)"
+        strip_marker = r"strip\((.+)\)"
+        nofold_marker = "nofold"
         start_line = 0
         regex = None
+        strip = None
+        fold = True
 
         for line_num, line in enumerate(fp.readlines(), start=1):
             if start_marker in line:
@@ -1878,6 +1886,11 @@ class KeepSorted(ComplianceTest):
                 # Test for a regex block
                 match = re.search(regex_marker, line)
                 regex = match.group(1) if match else None
+
+                match = re.search(strip_marker, line)
+                strip = match.group(1) if match else None
+
+                fold = nofold_marker not in line
             elif stop_marker in line:
                 if not in_block:
                     desc = f"{stop_marker} without {start_marker}"
@@ -1885,7 +1898,7 @@ class KeepSorted(ComplianceTest):
                                      desc=desc)
                 in_block = False
 
-                idx = self.block_check_sorted(block_data, regex)
+                idx = self.block_check_sorted(block_data, regex=regex, strip=strip, fold=fold)
                 if idx >= 0:
                     desc = f"sorted block has out-of-order line at {start_line + idx}"
                     self.fmtd_failure("error", "KeepSorted", file, line_num,

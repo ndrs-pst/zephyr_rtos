@@ -735,7 +735,7 @@ static inline bool net_ipv6_is_addr_loopback_raw(uint8_t const* addr) {
  *
  * @return True if address is a loopback address, False otherwise.
  */
-static inline bool net_ipv6_is_addr_loopback(struct net_in6_addr* addr) {
+static inline bool net_ipv6_is_addr_loopback(struct net_in6_addr const* addr) {
     return net_ipv6_is_addr_loopback_raw(addr->s6_addr);
 }
 
