@@ -1665,7 +1665,7 @@ static int tcp_pkt_trim_data(struct tcp* conn, struct net_pkt* pkt, size_t data_
 
     /* Adjust TCP seqnum */
     th = th_get(pkt);
-    UNALIGNED_PUT(net_htonl(th_seq(th) + trim_len), &th->th_seq);
+    UNALIGNED_PUT(net_htonl(th_seq(th) + trim_len), UNALIGNED_MEMBER_ADDR(th, th_seq));
 
 out :
     if (new_pkt != NULL) {
@@ -3399,8 +3399,10 @@ static enum net_verdict tcp_in(struct tcp* conn, struct net_pkt* pkt) {
 
             if (th_seq(th) == conn->ack) {
                 if (len > 0) {
+                    bool psh;
+
 data_recv :
-                    bool psh = FL(&fl, &, PSH);
+                    psh = FL(&fl, &, PSH);
 
                     verdict = tcp_data_received(conn, pkt, &len, psh);
                     if (verdict == NET_OK) {
