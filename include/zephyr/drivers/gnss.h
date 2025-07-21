@@ -35,10 +35,13 @@ extern "C" {
 enum gnss_pps_mode {
     /** PPS output disabled */
     GNSS_PPS_MODE_DISABLED = 0,
+
     /** PPS output always enabled */
     GNSS_PPS_MODE_ENABLED = 1,
+
     /** PPS output enabled from first lock */
     GNSS_PPS_MODE_ENABLED_AFTER_LOCK = 2,
+
     /** PPS output enabled while locked */
     GNSS_PPS_MODE_ENABLED_WHILE_LOCKED = 3
 };
@@ -53,10 +56,13 @@ typedef int (*gnss_get_fix_rate_t)(const struct device* dev, uint32_t* fix_inter
 enum gnss_navigation_mode {
     /** Dynamics have no impact on tracking */
     GNSS_NAVIGATION_MODE_ZERO_DYNAMICS = 0,
+
     /** Low dynamics have higher impact on tracking */
     GNSS_NAVIGATION_MODE_LOW_DYNAMICS = 1,
+
     /** Low and high dynamics have equal impact on tracking */
     GNSS_NAVIGATION_MODE_BALANCED_DYNAMICS = 2,
+
     /** High dynamics have higher impact on tracking */
     GNSS_NAVIGATION_MODE_HIGH_DYNAMICS = 3
 };
@@ -73,18 +79,25 @@ typedef int (*gnss_get_navigation_mode_t)(const struct device* dev,
 enum gnss_system {
     /** Global Positioning System (GPS) */
     GNSS_SYSTEM_GPS = BIT(0),
+
     /** GLObal NAvigation Satellite System (GLONASS) */
     GNSS_SYSTEM_GLONASS = BIT(1),
+
     /** Galileo */
     GNSS_SYSTEM_GALILEO = BIT(2),
+
     /** BeiDou Navigation Satellite System */
     GNSS_SYSTEM_BEIDOU = BIT(3),
+
     /** Quasi-Zenith Satellite System (QZSS) */
     GNSS_SYSTEM_QZSS = BIT(4),
+
     /** Indian Regional Navigation Satellite System (IRNSS) */
     GNSS_SYSTEM_IRNSS = BIT(5),
+
     /** Satellite-Based Augmentation System (SBAS) */
     GNSS_SYSTEM_SBAS = BIT(6),
+
     /** Indoor Messaging System (IMES) */
     GNSS_SYSTEM_IMES = BIT(7)
 };
@@ -108,10 +121,13 @@ typedef int (*gnss_get_latest_timepulse_t)(const struct device *dev, k_ticks_t *
 enum gnss_fix_status {
     /** No GNSS fix acquired */
     GNSS_FIX_STATUS_NO_FIX = 0,
+
     /** GNSS fix acquired */
     GNSS_FIX_STATUS_GNSS_FIX = 1,
+
     /** Differential GNSS fix acquired */
     GNSS_FIX_STATUS_DGNSS_FIX = 2,
+
     /** Estimated fix acquired */
     GNSS_FIX_STATUS_ESTIMATED_FIX = 3,
 };
@@ -156,14 +172,19 @@ struct gnss_info {
 struct gnss_time {
     /** Hour [0, 23] */
     uint8_t hour;
+
     /** Minute [0, 59] */
     uint8_t minute;
+
     /** Millisecond [0, 60999] */
     uint16_t millisecond;
+
     /** Day of month [1, 31] */
     uint8_t month_day;
+
     /** Month [1, 12] */
     uint8_t month;
+
     /** Year [0, 99] */
     uint8_t century_year;
 };
@@ -177,7 +198,7 @@ __subsystem struct gnss_driver_api {
     gnss_set_enabled_systems_t   set_enabled_systems;
     gnss_get_enabled_systems_t   get_enabled_systems;
     gnss_get_supported_systems_t get_supported_systems;
-	gnss_get_latest_timepulse_t get_latest_timepulse;
+    gnss_get_latest_timepulse_t  get_latest_timepulse;
 };
 
 /** GNSS data structure */
@@ -205,16 +226,24 @@ struct gnss_data_callback {
 struct gnss_satellite {
     /** Pseudo-random noise sequence */
     uint8_t prn;
+
     /** Signal-to-noise ratio in dB */
     uint8_t snr;
+
     /** Elevation in degrees [0, 90] */
     uint8_t elevation;
+
     /** Azimuth relative to True North in degrees [0, 359] */
     uint16_t azimuth;
+
     /** System of satellite */
     enum gnss_system system;
+
     /** True if satellite is being tracked */
     uint8_t is_tracked : 1;
+
+    /** True if satellite tracking has RTK corrections */
+    uint8_t is_corrected : 1;
 };
 
 /** Template for GNSS satellites callback */
@@ -399,16 +428,15 @@ static inline int z_impl_gnss_get_supported_systems(const struct device* dev,
  */
 __syscall int gnss_get_latest_timepulse(const struct device *dev, k_ticks_t *timestamp);
 
-static inline int z_impl_gnss_get_latest_timepulse(const struct device *dev,
-						    k_ticks_t *timestamp)
-{
-	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
+static inline int z_impl_gnss_get_latest_timepulse(const struct device* dev,
+                                                   k_ticks_t* timestamp) {
+    const struct gnss_driver_api* api = (const struct gnss_driver_api*)dev->api;
 
-	if (api->get_latest_timepulse == NULL) {
-		return -ENOSYS;
-	}
+    if (api->get_latest_timepulse == NULL) {
+        return (-ENOSYS);
+    }
 
-	return api->get_latest_timepulse(dev, timestamp);
+    return api->get_latest_timepulse(dev, timestamp);
 }
 
 /**
