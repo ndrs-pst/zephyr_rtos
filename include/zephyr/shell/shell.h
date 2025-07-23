@@ -200,7 +200,7 @@ const struct device *shell_device_get_binding(const char *name);
  * @retval -EINVAL Argument validation failed.
  * @retval -ENOEXEC Command not executed.
  */
-typedef int (*shell_cmd_handler)(const struct shell* sh,
+typedef int (*shell_cmd_handler)(struct shell const* sh,
                                  size_t argc, char** argv);
 
 /**
@@ -216,7 +216,7 @@ typedef int (*shell_cmd_handler)(const struct shell* sh,
  * @retval -EINVAL Argument validation failed.
  * @retval -ENOEXEC Command not executed.
  */
-typedef int (*shell_dict_cmd_handler)(const struct shell* sh, size_t argc,
+typedef int (*shell_dict_cmd_handler)(struct shell const* sh, size_t argc,
                                       char** argv, void* data);
 
 /* When entries are added to the memory section a padding is applied for
@@ -277,8 +277,7 @@ struct shell_cmd_help {
  * @param help Pointer to help string or structured help.
  * @return true if help is structured, false otherwise.
  */
-static inline bool shell_help_is_structured(const char *help)
-{
+static inline bool shell_help_is_structured(const char* help) {
     const struct shell_cmd_help *structured = (const struct shell_cmd_help *)help;
 
     return ((structured != NULL) && IS_PTR_ALIGNED(structured, struct shell_cmd_help) &&
@@ -360,7 +359,7 @@ static inline bool shell_help_is_structured(const char *help)
  *                      exists and equals 1.
  * @param[in] syntax    Command syntax (for example: history).
  * @param[in] subcmd    Pointer to a subcommands array.
- * @param[in] help      Pointer to a command help string (use @ref SHELL_HELP for structured help)
+ * @param[in] help      Pointer to a command help string (use @ref SHELL_HELP for structured help).
  * @param[in] handler   Pointer to a function handler.
  * @param[in] mandatory Number of mandatory arguments including command name.
  * @param[in] optional  Number of optional arguments.
@@ -649,7 +648,7 @@ static inline bool shell_help_is_structured(const char *help)
 #define Z_SHELL_CMD_DICT_HANDLER_CREATE(_data, _handler)            \
     static int UTIL_CAT(UTIL_CAT(cmd_dict_, UTIL_CAT(_handler, _)), \
                         GET_ARG_N(1, __DEBRACKET _data))(           \
-    const struct shell* sh, size_t argc, char** argv)               \
+    struct shell const* sh, size_t argc, char** argv)               \
     {                                                               \
         return _handler(sh, argc, argv,                             \
                         (void*)GET_ARG_N(2, __DEBRACKET _data));    \
@@ -733,7 +732,7 @@ enum shell_transport_evt {
 typedef void (*shell_transport_handler_t)(enum shell_transport_evt evt,
                                           void* context);
 
-typedef void (*shell_uninit_cb_t)(const struct shell* sh, int res);
+typedef void (*shell_uninit_cb_t)(struct shell const* sh, int res);
 
 /** @brief Bypass callback.
  *
@@ -741,7 +740,7 @@ typedef void (*shell_uninit_cb_t)(const struct shell* sh, int res);
  * @param data  Raw data from transport.
  * @param len   Data length.
  */
-typedef void (*shell_bypass_cb_t)(const struct shell* sh,
+typedef void (*shell_bypass_cb_t)(struct shell const* sh,
                                   uint8_t* data,
                                   size_t len);
 
@@ -907,11 +906,10 @@ union shell_backend_ctx {
 };
 
 enum shell_signal {
-    SHELL_SIGNAL_RXRDY,
-    SHELL_SIGNAL_LOG_MSG,
-    SHELL_SIGNAL_KILL,
-    SHELL_SIGNAL_TXDONE, /* TXDONE must be last one before SHELL_SIGNALS */
-    SHELL_SIGNALS
+    SHELL_SIGNAL_RXRDY   = BIT(0),
+    SHELL_SIGNAL_LOG_MSG = BIT(1),
+    SHELL_SIGNAL_KILL    = BIT(2),
+    SHELL_SIGNAL_TXDONE  = BIT(3),
 };
 
 /**
@@ -969,12 +967,7 @@ struct shell_ctx {
     volatile union shell_backend_cfg cfg;
     volatile union shell_backend_ctx ctx;
 
-    struct k_poll_signal signals[SHELL_SIGNALS];
-
-    /** Events that should be used only internally by shell thread.
-     * Event for SHELL_SIGNAL_TXDONE is initialized but unused.
-     */
-    struct k_poll_event events[SHELL_SIGNALS];
+    struct k_event signal_event;
 
     struct k_mutex wr_mtx;
     k_tid_t tid;
@@ -1032,8 +1025,7 @@ extern void z_shell_print_stream(void const* user_ctx, char const* data,
  * @param[in] _log_backend Pointer to the log backend instance.
  * @param[in] _shell_flag    Shell output newline sequence.
  */
-#define Z_SHELL_DEFINE(_name, _prompt, _transport_iface,                \
-    _out_buf, _log_backend, _shell_flag)                                \
+#define Z_SHELL_DEFINE(_name, _prompt, _transport_iface, _out_buf, _log_backend, _shell_flag) \
     static const struct shell _name;                                    \
     static struct shell_ctx UTIL_CAT(_name, _ctx);                      \
     Z_SHELL_HISTORY_DEFINE(_name##_history, CONFIG_SHELL_HISTORY_BUFFER); \
@@ -1047,8 +1039,7 @@ extern void z_shell_print_stream(void const* user_ctx, char const* data,
         .default_prompt = _prompt,                                      \
         .iface = _transport_iface,                                      \
         .ctx = &UTIL_CAT(_name, _ctx),                                  \
-        .history = IS_ENABLED(CONFIG_SHELL_HISTORY) ?                   \
-                        &_name##_history : NULL,                        \
+        .history = IS_ENABLED(CONFIG_SHELL_HISTORY) ? &_name##_history : NULL, \
         .shell_flag = _shell_flag,                                      \
         .fprintf_ctx = &_name##_fprintf,                                \
         .stats = Z_SHELL_STATS_PTR(_name),                              \
@@ -1090,7 +1081,7 @@ extern void z_shell_print_stream(void const* user_ctx, char const* data,
  *
  * @return Standard error code.
  */
-int shell_init(const struct shell* sh, void const* transport_config,
+int shell_init(struct shell const* sh, void const* transport_config,
                struct shell_backend_config_flags cfg_flags,
                bool log_backend, uint32_t init_log_level);
 
@@ -1100,7 +1091,7 @@ int shell_init(const struct shell* sh, void const* transport_config,
  * @param sh Pointer to shell instance.
  * @param cb Callback called when uninitialization is completed.
  */
-void shell_uninit(const struct shell* sh, shell_uninit_cb_t cb);
+void shell_uninit(struct shell const* sh, shell_uninit_cb_t cb);
 
 /**
  * @brief Function for starting shell processing.
@@ -1109,7 +1100,7 @@ void shell_uninit(const struct shell* sh, shell_uninit_cb_t cb);
  *
  * @return Standard error code.
  */
-int shell_start(const struct shell* sh);
+int shell_start(struct shell const* sh);
 
 /**
  * @brief Function for stopping shell processing.
@@ -1118,7 +1109,7 @@ int shell_start(const struct shell* sh);
  *
  * @return Standard error code.
  */
-int shell_stop(const struct shell* sh);
+int shell_stop(struct shell const* sh);
 
 /**
  * @brief Terminal default text color for shell_fprintf function.
@@ -1173,7 +1164,7 @@ void __printf_like(3, 4) shell_fprintf_impl(struct shell const* sh, enum shell_v
  * @param[in] fmt   Format string.
  * @param[in] args  List of parameters to print.
  */
-void shell_vfprintf(const struct shell* sh, enum shell_vt100_color color,
+void shell_vfprintf(struct shell const* sh, enum shell_vt100_color color,
                     char const* fmt, va_list args);
 
 /**
@@ -1191,7 +1182,7 @@ void shell_vfprintf(const struct shell* sh, enum shell_vt100_color color,
  * @param[in] data   Pointer to data.
  * @param[in] len    Length of data.
  */
-void shell_hexdump_line(const struct shell* sh, unsigned int offset,
+void shell_hexdump_line(struct shell const* sh, unsigned int offset,
                         uint8_t const* data, size_t len);
 
 /**
@@ -1201,7 +1192,7 @@ void shell_hexdump_line(const struct shell* sh, unsigned int offset,
  * @param[in] data Pointer to data.
  * @param[in] len  Length of data.
  */
-void shell_hexdump(const struct shell* sh, uint8_t const* data, size_t len);
+void shell_hexdump(struct shell const* sh, uint8_t const* data, size_t len);
 
 /**
  * @brief Print info message to the shell.
@@ -1261,7 +1252,7 @@ void __printf_like(2, 3) shell_fprintf_error(struct shell const* sh, char const*
  *
  * @param[in] sh Pointer to the shell instance.
  */
-void shell_process(const struct shell* sh);
+void shell_process(struct shell const* sh);
 
 /**
  * @brief Change displayed shell prompt.
@@ -1272,7 +1263,7 @@ void shell_process(const struct shell* sh);
  * @return 0       Success.
  * @return -EINVAL Pointer to new prompt is not correct.
  */
-int shell_prompt_change(const struct shell* sh, char const* prompt);
+int shell_prompt_change(struct shell const* sh, char const* prompt);
 
 /**
  * @brief Prints the current command help.
@@ -1282,7 +1273,7 @@ int shell_prompt_change(const struct shell* sh, char const* prompt);
  *
  * @param[in] sh      Pointer to the shell instance.
  */
-void shell_help(const struct shell* sh);
+void shell_help(struct shell const* sh);
 
 /** @brief Command's help has been printed */
 #define SHELL_CMD_HELP_PRINTED (1)
@@ -1304,7 +1295,7 @@ void shell_help(const struct shell* sh);
  *
  * @return Result of the execution
  */
-int shell_execute_cmd(const struct shell* sh, char const* cmd);
+int shell_execute_cmd(struct shell const* sh, char const* cmd);
 
 /** @brief Set root command for all shell instances.
  *
@@ -1327,7 +1318,7 @@ int shell_set_root_cmd(char const* cmd);
  * @param[in] sh     Pointer to the shell instance.
  * @param[in] bypass Bypass callback or null to disable.
  */
-void shell_set_bypass(const struct shell* sh, shell_bypass_cb_t bypass);
+void shell_set_bypass(struct shell const* sh, shell_bypass_cb_t bypass);
 
 /** @brief Get shell readiness to execute commands.
  *
@@ -1336,7 +1327,7 @@ void shell_set_bypass(const struct shell* sh, shell_bypass_cb_t bypass);
  * @retval true  Shell backend is ready to execute commands.
  * @retval false Shell backend is not initialized or not started.
  */
-bool shell_ready(const struct shell* sh);
+bool shell_ready(struct shell const* sh);
 
 /**
  * @brief Allow application to control text insert mode.
@@ -1348,7 +1339,7 @@ bool shell_ready(const struct shell* sh);
  * @retval 0 or 1: previous value
  * @retval -EINVAL if shell is NULL.
  */
-int shell_insert_mode_set(const struct shell* sh, bool val);
+int shell_insert_mode_set(struct shell const* sh, bool val);
 
 /**
  * @brief Allow application to control whether terminal output uses colored
@@ -1361,7 +1352,7 @@ int shell_insert_mode_set(const struct shell* sh, bool val);
  * @retval 0 or 1: previous value
  * @retval -EINVAL if shell is NULL.
  */
-int shell_use_colors_set(const struct shell* sh, bool val);
+int shell_use_colors_set(struct shell const* sh, bool val);
 
 /**
  * @brief Allow application to control whether terminal is using vt100 commands.
@@ -1373,7 +1364,7 @@ int shell_use_colors_set(const struct shell* sh, bool val);
  * @retval 0 or 1: previous value
  * @retval -EINVAL if shell is NULL.
  */
-int shell_use_vt100_set(const struct shell* sh, bool val);
+int shell_use_vt100_set(struct shell const* sh, bool val);
 
 /**
  * @brief Allow application to control whether user input is echoed back.
@@ -1385,7 +1376,7 @@ int shell_use_vt100_set(const struct shell* sh, bool val);
  * @retval 0 or 1: previous value
  * @retval -EINVAL if shell is NULL.
  */
-int shell_echo_set(const struct shell* sh, bool val);
+int shell_echo_set(struct shell const* sh, bool val);
 
 /**
  * @brief Allow application to control whether user input is obscured with
@@ -1398,7 +1389,7 @@ int shell_echo_set(const struct shell* sh, bool val);
  * @retval 0 or 1: previous value.
  * @retval -EINVAL if shell is NULL.
  */
-int shell_obscure_set(const struct shell* sh, bool val);
+int shell_obscure_set(struct shell const* sh, bool val);
 
 /**
  * @brief Allow application to control whether the delete key backspaces or
@@ -1411,7 +1402,7 @@ int shell_obscure_set(const struct shell* sh, bool val);
  * @retval 0 or 1: previous value
  * @retval -EINVAL if shell is NULL.
  */
-int shell_mode_delete_set(const struct shell* sh, bool val);
+int shell_mode_delete_set(struct shell const* sh, bool val);
 
 /**
  * @brief Retrieve return value of most recently executed shell command.
@@ -1420,7 +1411,7 @@ int shell_mode_delete_set(const struct shell* sh, bool val);
  *
  * @retval return value of previous command
  */
-int shell_get_return_value(const struct shell* sh);
+int shell_get_return_value(struct shell const* sh);
 
 /**
  * @}

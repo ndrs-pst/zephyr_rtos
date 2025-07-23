@@ -9,10 +9,10 @@
 
 #define CMD_CURSOR_LEN 8
 
-void z_shell_op_cursor_vert_move(const struct shell* sh, int32_t delta) {
+void z_shell_op_cursor_vert_move(struct shell const* sh, int32_t delta) {
     char dir;
 
-    dir = delta > 0 ? 'A' : 'B';
+    dir = (delta > 0) ? 'A' : 'B';
     if (delta == 0) {
         return;
     }
@@ -24,10 +24,10 @@ void z_shell_op_cursor_vert_move(const struct shell* sh, int32_t delta) {
     Z_SHELL_VT100_CMD(sh, "\e[%d%c", delta, dir);
 }
 
-void z_shell_op_cursor_horiz_move(const struct shell* sh, int32_t delta) {
+void z_shell_op_cursor_horiz_move(struct shell const* sh, int32_t delta) {
     char dir;
 
-    dir = delta > 0 ? 'C' : 'D';
+    dir = (delta > 0) ? 'C' : 'D';
     if (delta == 0) {
         return;
     }
@@ -42,7 +42,7 @@ void z_shell_op_cursor_horiz_move(const struct shell* sh, int32_t delta) {
 /* Function returns true if command length is equal to multiplicity of terminal
  * width.
  */
-static inline bool full_line_cmd(const struct shell* sh) {
+static inline bool full_line_cmd(struct shell const* sh) {
     size_t line_length = sh->ctx->cmd_buff_len + z_shell_strlen(sh->ctx->prompt);
 
     if (line_length == 0) {
@@ -53,7 +53,7 @@ static inline bool full_line_cmd(const struct shell* sh) {
 }
 
 /* Function returns true if cursor is at beginning of an empty line. */
-bool z_shell_cursor_in_empty_line(const struct shell* sh) {
+bool z_shell_cursor_in_empty_line(struct shell const* sh) {
     // Calculate the total length of the input and prompt, considering if echo is enabled
     size_t total_length = (sh->ctx->cmd_buff_pos * sh->ctx->cfg.flags.echo) + z_shell_strlen(sh->ctx->prompt);
 
@@ -63,13 +63,13 @@ bool z_shell_cursor_in_empty_line(const struct shell* sh) {
     return (is_in_empty_line);
 }
 
-void z_shell_op_cond_next_line(const struct shell* sh) {
+void z_shell_op_cond_next_line(struct shell const* sh) {
     if (z_shell_cursor_in_empty_line(sh) || full_line_cmd(sh)) {
         z_cursor_next_line_move(sh);
     }
 }
 
-void z_shell_op_cursor_position_synchronize(const struct shell* sh) {
+void z_shell_op_cursor_position_synchronize(struct shell const* sh) {
     struct shell_multiline_cons* cons = &sh->ctx->vt100_ctx.cons;
     bool last_line;
 
@@ -93,7 +93,7 @@ void z_shell_op_cursor_position_synchronize(const struct shell* sh) {
     }
 }
 
-void z_shell_op_cursor_move(const struct shell* sh, int16_t val) {
+void z_shell_op_cursor_move(struct shell const* sh, int16_t val) {
     struct shell_multiline_cons* cons = &sh->ctx->vt100_ctx.cons;
     uint16_t new_pos = (sh->ctx->cmd_buff_pos + val);
     int32_t row_span;
@@ -143,7 +143,7 @@ static uint16_t shift_calc(char const* str, uint16_t pos, uint16_t len, int16_t 
     return ret;
 }
 
-void z_shell_op_cursor_word_move(const struct shell* sh, int16_t val) {
+void z_shell_op_cursor_word_move(struct shell const* sh, int16_t val) {
     int16_t shift;
     int16_t sign;
 
@@ -163,7 +163,7 @@ void z_shell_op_cursor_word_move(const struct shell* sh, int16_t val) {
     }
 }
 
-void z_shell_op_word_remove(const struct shell* sh) {
+void z_shell_op_word_remove(struct shell const* sh) {
     /* Line must not be empty and cursor must not be at 0 to continue. */
     if ((sh->ctx->cmd_buff_len == 0) ||
         (sh->ctx->cmd_buff_pos == 0)) {
@@ -202,27 +202,27 @@ void z_shell_op_word_remove(const struct shell* sh) {
     z_cursor_restore(sh);
 }
 
-void z_shell_op_cursor_home_move(const struct shell* sh) {
+void z_shell_op_cursor_home_move(struct shell const* sh) {
     z_shell_op_cursor_move(sh, -sh->ctx->cmd_buff_pos);
 }
 
-void z_shell_op_cursor_end_move(const struct shell* sh) {
+void z_shell_op_cursor_end_move(struct shell const* sh) {
     z_shell_op_cursor_move(sh, sh->ctx->cmd_buff_len - sh->ctx->cmd_buff_pos);
 }
 
-void z_shell_op_left_arrow(const struct shell* sh) {
+void z_shell_op_left_arrow(struct shell const* sh) {
     if (sh->ctx->cmd_buff_pos > 0) {
         z_shell_op_cursor_move(sh, -1);
     }
 }
 
-void z_shell_op_right_arrow(const struct shell* sh) {
+void z_shell_op_right_arrow(struct shell const* sh) {
     if (sh->ctx->cmd_buff_pos < sh->ctx->cmd_buff_len) {
         z_shell_op_cursor_move(sh, 1);
     }
 }
 
-static void reprint_from_cursor(const struct shell* sh, uint16_t diff,
+static void reprint_from_cursor(struct shell const* sh, uint16_t diff,
                                 bool data_removed) {
     /* Clear eos is needed only when newly printed command is shorter than
      * previously printed command. This can happen when delete or backspace
@@ -279,7 +279,7 @@ static void reprint_from_cursor(const struct shell* sh, uint16_t diff,
     z_shell_op_cursor_move(sh, -diff);
 }
 
-static void data_insert(const struct shell* sh, char const* data, uint16_t len) {
+static void data_insert(struct shell const* sh, char const* data, uint16_t len) {
     uint16_t after    = sh->ctx->cmd_buff_len - sh->ctx->cmd_buff_pos;
     char*    curr_pos = &sh->ctx->cmd_buff[sh->ctx->cmd_buff_pos];
 
@@ -300,7 +300,7 @@ static void data_insert(const struct shell* sh, char const* data, uint16_t len) 
     reprint_from_cursor(sh, after, false);
 }
 
-static void char_replace(const struct shell* sh, char data) {
+static void char_replace(struct shell const* sh, char data) {
     sh->ctx->cmd_buff[sh->ctx->cmd_buff_pos++] = data;
 
     if (!z_flag_echo_get(sh)) {
@@ -316,7 +316,7 @@ static void char_replace(const struct shell* sh, char data) {
     }
 }
 
-void z_shell_op_char_insert(const struct shell* sh, char data) {
+void z_shell_op_char_insert(struct shell const* sh, char data) {
     if (z_flag_insert_mode_get(sh) &&
         (sh->ctx->cmd_buff_len != sh->ctx->cmd_buff_pos)) {
         char_replace(sh, data);
@@ -326,7 +326,7 @@ void z_shell_op_char_insert(const struct shell* sh, char data) {
     }
 }
 
-void z_shell_op_char_backspace(const struct shell* sh) {
+void z_shell_op_char_backspace(struct shell const* sh) {
     if ((sh->ctx->cmd_buff_len == 0) ||
         (sh->ctx->cmd_buff_pos == 0)) {
         return;
@@ -336,7 +336,7 @@ void z_shell_op_char_backspace(const struct shell* sh) {
     z_shell_op_char_delete(sh);
 }
 
-void z_shell_op_char_delete(const struct shell* sh) {
+void z_shell_op_char_delete(struct shell const* sh) {
     uint16_t diff = sh->ctx->cmd_buff_len - sh->ctx->cmd_buff_pos;
     char*    str  = &sh->ctx->cmd_buff[sh->ctx->cmd_buff_pos];
 
@@ -349,20 +349,20 @@ void z_shell_op_char_delete(const struct shell* sh) {
     reprint_from_cursor(sh, --diff, true);
 }
 
-void z_shell_op_delete_from_cursor(const struct shell* sh) {
+void z_shell_op_delete_from_cursor(struct shell const* sh) {
     sh->ctx->cmd_buff_len                    = sh->ctx->cmd_buff_pos;
     sh->ctx->cmd_buff[sh->ctx->cmd_buff_pos] = '\0';
 
     z_clear_eos(sh);
 }
 
-void z_shell_op_completion_insert(const struct shell* sh,
+void z_shell_op_completion_insert(struct shell const* sh,
                                   char const* compl,
                                   uint16_t compl_len) {
     data_insert(sh, compl, compl_len);
 }
 
-void z_shell_cmd_line_erase(const struct shell* sh) {
+void z_shell_cmd_line_erase(struct shell const* sh) {
     z_shell_multiline_data_calc(&sh->ctx->vt100_ctx.cons,
                                 sh->ctx->cmd_buff_pos,
                                 sh->ctx->cmd_buff_len);
@@ -373,11 +373,11 @@ void z_shell_cmd_line_erase(const struct shell* sh) {
     z_clear_eos(sh);
 }
 
-static void print_prompt(const struct shell* sh) {
+static void print_prompt(struct shell const* sh) {
     z_shell_fprintf(sh, SHELL_INFO, "%s", sh->ctx->prompt);
 }
 
-void z_shell_print_cmd(const struct shell* sh) {
+void z_shell_print_cmd(struct shell const* sh) {
     int  beg_offset = 0;
     int  end_offset = 0;
     int  cmd_width  = z_shell_strlen(sh->ctx->cmd_buff);
@@ -403,7 +403,7 @@ void z_shell_print_cmd(const struct shell* sh) {
     }
 }
 
-void z_shell_print_prompt_and_cmd(const struct shell* sh) {
+void z_shell_print_prompt_and_cmd(struct shell const* sh) {
     print_prompt(sh);
 
     if (z_flag_echo_get(sh)) {
@@ -412,17 +412,11 @@ void z_shell_print_prompt_and_cmd(const struct shell* sh) {
     }
 }
 
-static void shell_pend_on_txdone(const struct shell* sh) {
+static void shell_pend_on_txdone(struct shell const* sh) {
     if (IS_ENABLED(CONFIG_MULTITHREADING) &&
         (sh->ctx->state < SHELL_STATE_PANIC_MODE_ACTIVE)) {
-        struct k_poll_event event;
-
-        k_poll_event_init(&event,
-                          K_POLL_TYPE_SIGNAL,
-                          K_POLL_MODE_NOTIFY_ONLY,
-                          &sh->ctx->signals[SHELL_SIGNAL_TXDONE]);
-        k_poll(&event, 1, K_FOREVER);
-        k_poll_signal_reset(&sh->ctx->signals[SHELL_SIGNAL_TXDONE]);
+        k_event_wait(&sh->ctx->signal_event, SHELL_SIGNAL_TXDONE, false, K_FOREVER);
+        k_event_clear(&sh->ctx->signal_event, SHELL_SIGNAL_TXDONE);
     }
     else {
         /* Blocking wait in case of bare metal. */
@@ -432,7 +426,7 @@ static void shell_pend_on_txdone(const struct shell* sh) {
     }
 }
 
-void z_shell_write(const struct shell* sh, void const* data,
+void z_shell_write(struct shell const* sh, void const* data,
                    size_t length) {
     __ASSERT_NO_MSG(sh && data);
 
@@ -457,10 +451,10 @@ void z_shell_write(const struct shell* sh, void const* data,
 
 /* Function shall be only used by the fprintf module. */
 void z_shell_print_stream(void const* user_ctx, char const* data, size_t len) {
-    z_shell_write((const struct shell*)user_ctx, data, len);
+    z_shell_write((struct shell const*)user_ctx, data, len);
 }
 
-static void vt100_bgcolor_set(const struct shell* sh,
+static void vt100_bgcolor_set(struct shell const* sh,
                               enum shell_vt100_color bgcolor) {
     if (!IS_ENABLED(CONFIG_SHELL_VT100_COLORS)) {
         return;
@@ -479,7 +473,7 @@ static void vt100_bgcolor_set(const struct shell* sh,
     Z_SHELL_VT100_CMD(sh, "\e[403%dm", bgcolor);
 }
 
-void z_shell_vt100_color_set(const struct shell* sh,
+void z_shell_vt100_color_set(struct shell const* sh,
                              enum shell_vt100_color color) {
     if (!IS_ENABLED(CONFIG_SHELL_VT100_COLORS)) {
         return;
@@ -503,7 +497,7 @@ void z_shell_vt100_color_set(const struct shell* sh,
     }
 }
 
-void z_shell_vt100_colors_restore(const struct shell* sh,
+void z_shell_vt100_colors_restore(struct shell const* sh,
                                   const struct shell_vt100_colors* color) {
     if (!IS_ENABLED(CONFIG_SHELL_VT100_COLORS)) {
         return;
@@ -513,7 +507,7 @@ void z_shell_vt100_colors_restore(const struct shell* sh,
     vt100_bgcolor_set(sh, color->bgcol);
 }
 
-void z_shell_vfprintf(const struct shell* sh, enum shell_vt100_color color,
+void z_shell_vfprintf(struct shell const* sh, enum shell_vt100_color color,
                       char const* fmt, va_list args) {
     if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS) &&
         z_flag_use_colors_get(sh) &&
@@ -532,7 +526,7 @@ void z_shell_vfprintf(const struct shell* sh, enum shell_vt100_color color,
     }
 }
 
-void z_shell_fprintf(const struct shell* sh,
+void z_shell_fprintf(struct shell const* sh,
                      enum shell_vt100_color color,
                      char const* fmt, ...) {
     __ASSERT_NO_MSG(sh);
@@ -549,16 +543,15 @@ void z_shell_fprintf(const struct shell* sh,
     va_end(args);
 }
 
-void z_shell_backend_rx_buffer_flush(const struct shell *sh)
-{
-	__ASSERT_NO_MSG(sh);
+void z_shell_backend_rx_buffer_flush(const struct shell *sh) {
+    __ASSERT_NO_MSG(sh);
 
-	int32_t max_iterations = 1000;
-	uint8_t buf[64];
-	size_t count = 0;
-	int err;
+    int32_t max_iterations = 1000;
+    uint8_t buf[64];
+    size_t count = 0;
+    int err;
 
-	do {
-		err = sh->iface->api->read(sh->iface, buf, sizeof(buf), &count);
-	} while (count != 0 && err == 0 && --max_iterations > 0);
+    do {
+        err = sh->iface->api->read(sh->iface, buf, sizeof(buf), &count);
+    } while (count != 0 && err == 0 && --max_iterations > 0);
 }

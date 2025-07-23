@@ -1170,18 +1170,16 @@ static void state_collect(const struct shell* sh) {
 }
 
 static void transport_evt_handler(enum shell_transport_evt evt_type, void* ctx) {
-    struct shell* sh = ctx;
-    struct k_poll_signal* signal;
+    struct shell* sh = (struct shell*)ctx;
+    enum shell_signal sig = (evt_type == SHELL_TRANSPORT_EVT_RX_RDY)
+                            ? SHELL_SIGNAL_RXRDY
+                            : SHELL_SIGNAL_TXDONE;
 
-    signal = (evt_type == SHELL_TRANSPORT_EVT_RX_RDY) ? &sh->ctx->signals[SHELL_SIGNAL_RXRDY]
-                                                      : &sh->ctx->signals[SHELL_SIGNAL_TXDONE];
-    k_poll_signal_raise(signal, 0);
+    k_event_post(&sh->ctx->signal_event, sig);
 }
 
 static void shell_log_process(const struct shell* sh) {
     bool processed = false;
-    int  signaled  = 0;
-    int  result;
 
     do {
         if (!IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
@@ -1190,9 +1188,6 @@ static void shell_log_process(const struct shell* sh) {
             processed = z_shell_log_backend_process(
                             sh->log_backend);
         }
-
-        struct k_poll_signal* signal =
-                        &sh->ctx->signals[SHELL_SIGNAL_RXRDY];
 
         z_shell_print_prompt_and_cmd(sh);
 
@@ -1203,9 +1198,7 @@ static void shell_log_process(const struct shell* sh) {
             k_sleep(K_MSEC(15));
         }
 
-        k_poll_signal_check(signal, &signaled, &result);
-
-    } while (processed && !signaled);
+    } while (processed && !k_event_test(&sh->ctx->signal_event, SHELL_SIGNAL_RXRDY));
 }
 
 static int instance_init(const struct shell* sh,
@@ -1222,15 +1215,8 @@ static int instance_init(const struct shell* sh,
 
     history_init(sh);
 
-    k_mutex_init(&ctx->wr_mtx);
-
-    for (int i = 0; i < SHELL_SIGNALS; i++) {
-        k_poll_signal_init(&ctx->signals[i]);
-        k_poll_event_init(&ctx->events[i],
-                          K_POLL_TYPE_SIGNAL,
-                          K_POLL_MODE_NOTIFY_ONLY,
-                          &ctx->signals[i]);
-    }
+    k_event_init(&sh->ctx->signal_event);
+    k_mutex_init(&sh->ctx->wr_mtx);
 
     if (IS_ENABLED(CONFIG_SHELL_STATS)) {
         sh->stats->log_lost_cnt = 0;
@@ -1297,18 +1283,14 @@ static int instance_uninit(const struct shell* sh) {
 typedef void (*shell_signal_handler_t)(const struct shell* sh);
 
 static void shell_signal_handle(const struct shell* sh,
-                                enum shell_signal sig_idx,
+                                enum shell_signal sig,
                                 shell_signal_handler_t handler) {
-    struct k_poll_signal* sig = &sh->ctx->signals[sig_idx];
-    int set;
-    int res;
-
-    k_poll_signal_check(sig, &set, &res);
-
-    if (set) {
-        k_poll_signal_reset(sig);
-        handler(sh);
+    if (!k_event_test(&sh->ctx->signal_event, sig)) {
+        return;
     }
+
+    k_event_clear(&sh->ctx->signal_event, sig);
+    handler(sh);
 }
 
 static void kill_handler(const struct shell* sh) {
@@ -1348,19 +1330,10 @@ void shell_thread(void* shell_handle, void* arg_log_backend,
     }
 
     while (true) {
-        /* waiting for all signals except SHELL_SIGNAL_TXDONE */
-        err = k_poll(ctx->events, SHELL_SIGNAL_TXDONE,
+        k_event_wait(&ctx->signal_event,
+                     (SHELL_SIGNAL_RXRDY | SHELL_SIGNAL_LOG_MSG | SHELL_SIGNAL_KILL),
+                     false,
                      K_FOREVER);
-
-        if (err != 0) {
-            if (k_mutex_lock(&ctx->wr_mtx, SHELL_TX_MTX_TIMEOUT) != 0) {
-                return;
-            }
-            z_shell_fprintf(sh, SHELL_ERROR,
-                            "Shell thread error: %d", err);
-            k_mutex_unlock(&ctx->wr_mtx);
-            return;
-        }
 
         k_mutex_lock(&ctx->wr_mtx, K_FOREVER);
 
@@ -1411,13 +1384,7 @@ void shell_uninit(const struct shell* sh, shell_uninit_cb_t cb) {
     __ASSERT_NO_MSG(sh);
 
     if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-        struct k_poll_signal* signal =
-                        &sh->ctx->signals[SHELL_SIGNAL_KILL];
-
-        sh->ctx->uninit_cb = cb;
-        /* signal kill message */
-        (void) k_poll_signal_raise(signal, 0);
-
+        k_event_post(&sh->ctx->signal_event, SHELL_SIGNAL_KILL);
         return;
     }
 
@@ -1457,7 +1424,6 @@ int shell_start(const struct shell* sh) {
      */
     z_cursor_next_line_move(sh);
     state_set(sh, SHELL_STATE_ACTIVE);
-
 
     /*
      * If the shell is stopped with the shell_stop function, its backend remains active
