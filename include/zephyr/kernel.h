@@ -3348,7 +3348,7 @@ struct k_sem {
     /**
      * @cond INTERNAL_HIDDEN
      */
-    _wait_q_t    wait_q;
+    _wait_q_t wait_q;
     unsigned int count;
     unsigned int limit;
 
@@ -4717,20 +4717,28 @@ int k_work_poll_cancel(struct k_work_poll* work);
 struct /**/k_msgq {
     /** Message queue wait queue */
     _wait_q_t wait_q;
+
     /** Lock */
     struct k_spinlock lock;
+
     /** Message size */
     size_t msg_size;
+
     /** Maximal number of messages */
     uint32_t max_msgs;
+
     /** Start of message buffer */
     char* buffer_start;
+
     /** End of message buffer */
     char* buffer_end;
+
     /** Read pointer */
     char* read_ptr;
+
     /** Write pointer */
     char* write_ptr;
+
     /** Number of used messages */
     uint32_t used_msgs;
 
@@ -4777,8 +4785,10 @@ struct /**/k_msgq {
 struct k_msgq_attrs {
     /** Message Size */
     size_t msg_size;
+
     /** Maximal number of messages */
     uint32_t max_msgs;
+
     /** Used messages */
     uint32_t used_msgs;
 };
