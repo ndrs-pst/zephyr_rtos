@@ -2056,7 +2056,7 @@ static int mixed_arr_parse(struct json_obj *arr,
 			break;
 		}
 
-		ret = decode_mixed_value(arr, &descr[elem_idx], &tok, field_ptr, val);
+		ret = (int)decode_mixed_value(arr, &descr[elem_idx], &tok, field_ptr, val);
 		if (ret < 0) {
 			return ret;
 		}

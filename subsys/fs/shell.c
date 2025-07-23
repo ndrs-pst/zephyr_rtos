@@ -243,7 +243,7 @@ static int cmd_trunc(const struct shell* sh, size_t argc, char** argv) {
 }
 
 static int cmd_mkdir(const struct shell* sh, size_t argc, char** argv) {
-    int  err;
+    int err;
     char path[MAX_PATH_LEN];
 
     create_abs_path(argv[1], path, sizeof(path));
@@ -258,7 +258,7 @@ static int cmd_mkdir(const struct shell* sh, size_t argc, char** argv) {
 }
 
 static int cmd_rm(const struct shell* sh, size_t argc, char** argv) {
-    int  err;
+    int err;
     char path[MAX_PATH_LEN];
 
     create_abs_path(argv[1], path, sizeof(path));
