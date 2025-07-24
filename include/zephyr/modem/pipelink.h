@@ -76,7 +76,7 @@ void modem_pipelink_attach(struct modem_pipelink *link,
  * @retval true if pipe is connected
  * @retval false if pipe is not connected
  */
-bool modem_pipelink_is_connected(struct modem_pipelink const* link);
+bool modem_pipelink_is_connected(struct modem_pipelink *link);
 
 /**
  * @brief Get pipe from pipelink

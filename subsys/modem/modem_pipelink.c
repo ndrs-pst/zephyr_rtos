@@ -25,12 +25,14 @@ void modem_pipelink_attach(struct modem_pipelink *link,
 	}
 }
 
-bool modem_pipelink_is_connected(struct modem_pipelink const* link) {
-    bool connected;
+bool modem_pipelink_is_connected(struct modem_pipelink* link) {
+	bool connected = false;
 
-    connected = link->connected;
+	K_SPINLOCK(&link->spinlock) {
+		connected = link->connected;
+	}
 
-    return connected;
+	return connected;
 }
 
 struct modem_pipe *modem_pipelink_get_pipe(struct modem_pipelink *link)

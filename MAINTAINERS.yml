@@ -5307,6 +5307,9 @@ West:
 "West project: hal_nuvoton":
   status: maintained
   maintainers:
+    - cyliangtw
+    - ccli8
+  collaborators:
     - ssekar15
   files:
     - modules/Kconfig.nuvoton
@@ -5773,13 +5776,6 @@ West:
     - "area: Serialization"
   tests:
     - thrift
-
-"West project: tinycrypt":
-  status: odd fixes
-  files:
-    - modules/Kconfig.tinycrypt
-  labels:
-    - "area: Crypto / RNG"
 
 "West project: trusted-firmware-a":
   status: maintained

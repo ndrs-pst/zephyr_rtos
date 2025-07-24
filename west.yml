@@ -331,7 +331,7 @@ manifest:
       revision: 6e5961223f81aa2707c555db138819a5c1b7942c
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: 5f59c2336c69f28ae83f93812a1d726f9fceabfe
+      revision: 00801cbaf83600ba9e39b010928401e817a93fdc
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: c30a6d8b92fcebdb797fc1a7698e8729e250f637
@@ -352,11 +352,6 @@ manifest:
       path: modules/debug/segger
       groups:
         - debug
-    - name: tinycrypt
-      revision: 1012a3ebee18c15ede5efc8332ee2fc37817670f
-      path: modules/crypto/tinycrypt
-      groups:
-        - crypto
     - name: trusted-firmware-a
       revision: 713ffbf96c5bcbdeab757423f10f73eb304eff07
       path: modules/tee/tf-a/trusted-firmware-a
