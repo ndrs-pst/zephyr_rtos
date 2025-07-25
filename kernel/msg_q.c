@@ -126,7 +126,8 @@ int k_msgq_cleanup(struct k_msgq* msgq) {
     return (0);
 }
 
-int z_impl_k_msgq_put(struct k_msgq* msgq, void const* data, k_timeout_t timeout) {
+static inline int put_msg_in_queue(struct k_msgq* msgq, void const* data,
+                                   k_timeout_t timeout, bool put_at_back) {
     __ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
 
     struct k_thread* pending_thread;
@@ -136,7 +137,12 @@ int z_impl_k_msgq_put(struct k_msgq* msgq, void const* data, k_timeout_t timeout
 
     key = k_spin_lock(&msgq->lock);
 
-    SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, put, msgq, timeout);
+    if (put_at_back) {
+        SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, put, msgq, timeout);
+    }
+    else {
+        SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, put_front, msgq, timeout);
+    }
 
     if (msgq->used_msgs < msgq->max_msgs) {
         /* message queue isn't full */
@@ -151,14 +157,34 @@ int z_impl_k_msgq_put(struct k_msgq* msgq, void const* data, k_timeout_t timeout
             z_ready_thread(pending_thread);
         }
         else {
-            /* put message in queue */
             __ASSERT_NO_MSG((msgq->write_ptr >= msgq->buffer_start) &&
                             (msgq->write_ptr < msgq->buffer_end));
-            (void) memcpy(msgq->write_ptr, (char*)data, msgq->msg_size);
-            msgq->write_ptr += msgq->msg_size;
-            if (msgq->write_ptr == msgq->buffer_end) {
-                msgq->write_ptr = msgq->buffer_start;
+
+            if (put_at_back) {
+                /*
+                 * to write a message to the back of the queue,
+                 * copy the message and increment write_ptr
+                 */
+                (void)memcpy(msgq->write_ptr, (char *)data, msgq->msg_size);
+                msgq->write_ptr += msgq->msg_size;
+                if (msgq->write_ptr == msgq->buffer_end) {
+                    msgq->write_ptr = msgq->buffer_start;
+                }
             }
+            else {
+                /*
+                 * to write a message to the head of the queue,
+                 * first decrement the read pointer (to open
+                 * space at the front of the queue) then copy
+                 * the message to the newly created space.
+                 */
+                if (msgq->read_ptr == msgq->buffer_start) {
+                    msgq->read_ptr = msgq->buffer_end;
+                }
+                msgq->read_ptr -= msgq->msg_size;
+                (void)memcpy(msgq->read_ptr, (char *)data, msgq->msg_size);
+            }
+
             msgq->used_msgs++;
             resched = handle_poll_events(msgq);
         }
@@ -169,17 +195,34 @@ int z_impl_k_msgq_put(struct k_msgq* msgq, void const* data, k_timeout_t timeout
         result = -ENOMSG;
     }
     else {
-        SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_msgq, put, msgq, timeout);
+        if (put_at_back) {
+            SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_msgq, put, msgq, timeout);
+        }
+        else {
+            SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_msgq, put_front, msgq, timeout);
+        }
 
         /* wait for put message success, failure, or timeout */
         _current->base.swap_data = (void*)data;
 
         result = z_pend_curr(&msgq->lock, key, &msgq->wait_q, timeout);
-        SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put, msgq, timeout, result);
+
+        if (put_at_back) {
+            SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put, msgq, timeout, result);
+        }
+        else {
+            SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put_front, msgq, timeout, result);
+        }
+
         return (result);
     }
 
-    SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put, msgq, timeout, result);
+    if (put_at_back) {
+        SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put, msgq, timeout, result);
+    }
+    else {
+        SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put_front, msgq, timeout, result);
+    }
 
     if (resched) {
         z_reschedule(&msgq->lock, key);
@@ -191,6 +234,14 @@ int z_impl_k_msgq_put(struct k_msgq* msgq, void const* data, k_timeout_t timeout
     return (result);
 }
 
+int z_impl_k_msgq_put(struct k_msgq* msgq, void const* data, k_timeout_t timeout) {
+    return put_msg_in_queue(msgq, data, timeout, true);
+}
+
+int z_impl_k_msgq_put_front(struct k_msgq* msgq, void const* data, k_timeout_t timeout) {
+    return put_msg_in_queue(msgq, data, timeout, false);
+}
+
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_k_msgq_put(struct k_msgq* msgq, void const* data,
                                     k_timeout_t timeout) {
@@ -200,6 +251,15 @@ static inline int z_vrfy_k_msgq_put(struct k_msgq* msgq, void const* data,
     return z_impl_k_msgq_put(msgq, data, timeout);
 }
 #include <zephyr/syscalls/k_msgq_put_mrsh.c>
+
+static inline int z_vrfy_k_msgq_put_front(struct k_msgq* msgq, void const* data,
+                                          k_timeout_t timeout) {
+    K_OOPS(K_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
+    K_OOPS(K_SYSCALL_MEMORY_READ(data, msgq->msg_size));
+
+    return z_impl_k_msgq_put_front(msgq, data, timeout);
+}
+#include <zephyr/syscalls/k_msgq_put_front_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 void z_impl_k_msgq_get_attrs(struct k_msgq* msgq, struct k_msgq_attrs* attrs) {

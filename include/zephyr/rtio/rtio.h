@@ -1288,6 +1288,10 @@ static inline void rtio_cqe_submit(struct rtio* r, int result, void* userdata, u
         cqe->userdata = userdata;
         cqe->flags    = flags;
         rtio_cqe_produce(r, cqe);
+
+        #ifdef CONFIG_RTIO_CONSUME_SEM
+        k_sem_give(r->consume_sem);
+        #endif
     }
 
     /* atomic_t isn't guaranteed to wrap correctly as it could be signed, so
@@ -1309,11 +1313,7 @@ static inline void rtio_cqe_submit(struct rtio* r, int result, void* userdata, u
         }
     }
     #endif
-    #ifdef CONFIG_RTIO_CONSUME_SEM
-    k_sem_give(r->consume_sem);
-    #endif
-
-    #endif
+    #endif /* _MSC_VER */
 }
 
 #define __RTIO_MEMPOOL_GET_NUM_BLKS(num_bytes, blk_size) (((num_bytes) + (blk_size)-1) / (blk_size))
