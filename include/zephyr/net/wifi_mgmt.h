@@ -67,72 +67,108 @@ extern "C" {
 enum net_request_wifi_cmd {
     /** Scan for Wi-Fi networks */
     NET_REQUEST_WIFI_CMD_SCAN = 1,
+
     /** Connect to a Wi-Fi network */
     NET_REQUEST_WIFI_CMD_CONNECT,
+
     /** Disconnect from a Wi-Fi network */
     NET_REQUEST_WIFI_CMD_DISCONNECT,
+
     /** Enable AP mode */
     NET_REQUEST_WIFI_CMD_AP_ENABLE,
+
     /** Disable AP mode */
     NET_REQUEST_WIFI_CMD_AP_DISABLE,
+
     /** Set AP RTS threshold */
     NET_REQUEST_WIFI_CMD_AP_RTS_THRESHOLD,
+
     /** Get interface status */
     NET_REQUEST_WIFI_CMD_IFACE_STATUS,
+
     /** Set or get 11k status */
     NET_REQUEST_WIFI_CMD_11K_CONFIG,
+
     /** Send 11k neighbor request */
     NET_REQUEST_WIFI_CMD_11K_NEIGHBOR_REQUEST,
+
     /** Set power save status */
     NET_REQUEST_WIFI_CMD_PS,
+
     /** Setup or teardown TWT flow */
     NET_REQUEST_WIFI_CMD_TWT,
+
     /** Setup BTWT flow */
     NET_REQUEST_WIFI_CMD_BTWT,
+
     /** Get power save config */
     NET_REQUEST_WIFI_CMD_PS_CONFIG,
+
     /** Set or get regulatory domain */
     NET_REQUEST_WIFI_CMD_REG_DOMAIN,
+
     /** Set or get Mode of operation */
     NET_REQUEST_WIFI_CMD_MODE,
+
     /** Set or get packet filter setting for current mode */
     NET_REQUEST_WIFI_CMD_PACKET_FILTER,
+
     /** Set or get Wi-Fi channel for Monitor or TX-Injection mode */
     NET_REQUEST_WIFI_CMD_CHANNEL,
+
     /** Disconnect a STA from AP */
     NET_REQUEST_WIFI_CMD_AP_STA_DISCONNECT,
+
     /** Get Wi-Fi driver and Firmware versions */
     NET_REQUEST_WIFI_CMD_VERSION,
+
     /** Get Wi-Fi latest connection parameters */
     NET_REQUEST_WIFI_CMD_CONN_PARAMS,
+
     /** Set RTS threshold */
     NET_REQUEST_WIFI_CMD_RTS_THRESHOLD,
+
     /** Configure AP parameter */
     NET_REQUEST_WIFI_CMD_AP_CONFIG_PARAM,
+
     /** DPP actions */
     NET_REQUEST_WIFI_CMD_DPP,
+
     /** BSS transition management query */
     NET_REQUEST_WIFI_CMD_BTM_QUERY,
+
     /** Flush PMKSA cache entries */
     NET_REQUEST_WIFI_CMD_PMKSA_FLUSH,
+
     /** Set enterprise mode credential */
     NET_REQUEST_WIFI_CMD_ENTERPRISE_CREDS,
+
     /** Get RTS threshold */
     NET_REQUEST_WIFI_CMD_RTS_THRESHOLD_CONFIG,
+
     /** WPS config */
     NET_REQUEST_WIFI_CMD_WPS_CONFIG,
+
     #ifdef CONFIG_WIFI_CREDENTIALS_CONNECT_STORED
     /** Connect to APs stored using wifi_credentials library. */
     NET_REQUEST_WIFI_CMD_CONNECT_STORED,
     #endif
+
     /** Start roaming */
     NET_REQUEST_WIFI_CMD_START_ROAMING,
+
     /** Neighbor report complete */
     NET_REQUEST_WIFI_CMD_NEIGHBOR_REP_COMPLETE,
+
     /** Specific scan */
     NET_REQUEST_WIFI_CMD_CANDIDATE_SCAN,
+
     /** AP WPS config */
     NET_REQUEST_WIFI_CMD_AP_WPS_CONFIG,
+
+    /** Configure BSS maximum idle period */
+    NET_REQUEST_WIFI_CMD_BSS_MAX_IDLE_PERIOD,
+
     /** @cond INTERNAL_HIDDEN */
     NET_REQUEST_WIFI_CMD_MAX
     /** @endcond */
@@ -316,6 +352,11 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_START_ROAMING);
     (NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_NEIGHBOR_REP_COMPLETE)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_NEIGHBOR_REP_COMPLETE);
+
+#define NET_REQUEST_WIFI_BSS_MAX_IDLE_PERIOD        \
+    (NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_BSS_MAX_IDLE_PERIOD)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BSS_MAX_IDLE_PERIOD);
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -861,7 +902,7 @@ struct wifi_iface_status {
     bool twt_capable;
 
     /** The current 802.11 PHY TX data rate (in Mbps) */
-    int current_phy_tx_rate;
+    float current_phy_tx_rate;
 };
 
 /** @brief Wi-Fi power save parameters */
@@ -1879,6 +1920,16 @@ struct wifi_mgmt_ops {
      * @return 0 if ok, < 0 if error
      */
     int (*start_11r_roaming)(const struct device* dev);
+
+    /** Set BSS max idle period
+     *
+     * @param dev Pointer to the device structure for the driver instance.
+     * @param BSS max idle period value
+     *
+     * @return 0 if ok, < 0 if error
+     */
+    int (*set_bss_max_idle_period)(const struct device* dev,
+                                   unsigned short bss_max_idle_period);
 };
 
 /** Wi-Fi management offload API */

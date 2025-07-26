@@ -177,7 +177,7 @@ static int power_up_check(const struct device *dev)
 
 	if (rslt == BMP5_OK) {
 		/* Check if nvm_rdy status = 1 and nvm_err status = 0 to proceed */
-		if ((nvm_status & BMP5_INT_NVM_RDY) && (!(nvm_status & BMP5_INT_NVM_ERR))) {
+		if ((nvm_status & BMP5_INT_NVM_RDY) != 0 && (nvm_status & BMP5_INT_NVM_ERR) == 0) {
 			rslt = BMP5_OK;
 		} else {
 			rslt = -EFAULT;
@@ -221,7 +221,7 @@ static int validate_chip_id(struct bmp581_data *drv)
 		return -EINVAL;
 	}
 
-	if ((drv->chip_id == BMP5_CHIP_ID_PRIM) || (drv->chip_id == BMP5_CHIP_ID_SEC)) {
+	if (drv->chip_id == BMP5_CHIP_ID_PRIM || drv->chip_id == BMP5_CHIP_ID_SEC) {
 		rslt = BMP5_OK;
 	} else {
 		drv->chip_id = 0;
@@ -375,7 +375,7 @@ static int soft_reset(const struct device *dev)
 		k_usleep(BMP5_DELAY_US_SOFT_RESET);
 		ret = get_interrupt_status(&int_status, dev);
 		if (ret == BMP5_OK) {
-			if (int_status & BMP5_INT_ASSERTED_POR_SOFTRESET_COMPLETE) {
+			if ((int_status & BMP5_INT_ASSERTED_POR_SOFTRESET_COMPLETE) != 0) {
 				ret = BMP5_OK;
 			} else {
 				ret = -EFAULT;
@@ -457,7 +457,7 @@ static int set_iir_config(const struct sensor_value *iir, const struct device *d
 	struct bmp581_config *conf = (struct bmp581_config *)dev->config;
 	int ret = BMP5_OK;
 
-	CHECKIF((iir == NULL) | (dev == NULL)) {
+	CHECKIF(iir == NULL || dev == NULL) {
 		return -EINVAL;
 	}
 
@@ -550,10 +550,15 @@ static int bmp581_init(const struct device *dev)
 	drv->chip_id = 0;
 	memset(&drv->last_sample, 0, sizeof(drv->last_sample));
 
-	soft_reset(dev);
+	ret = soft_reset(dev);
+	if (ret != BMP5_OK) {
+		LOG_ERR("Failed to perform soft-reset: %d", ret);
+		return ret;
+	}
 
 	ret = bmp581_reg_read_rtio(&conf->bus, BMP5_REG_CHIP_ID, &drv->chip_id, 1);
 	if (ret != BMP5_OK) {
+		LOG_ERR("Failed to read chip ID: %d", ret);
 		return ret;
 	}
 
@@ -630,7 +635,7 @@ static void bmp581_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 	const struct bmp581_config *conf = dev->config;
 
 	err = rtio_sqe_rx_buf(iodev_sqe, min_buf_len, min_buf_len, &buf, &buf_len);
-	CHECKIF((err < 0) || (buf_len < min_buf_len) || !buf) {
+	CHECKIF(err < 0 || buf_len < min_buf_len || !buf) {
 		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;
@@ -702,7 +707,14 @@ static DEVICE_API(sensor, bmp581_driver_api) = {
 
 #define BMP581_INIT(i)                                                                             \
                                                                                                    \
-	RTIO_DEFINE(bmp581_rtio_ctx_##i, 8, 8);                                                    \
+	BUILD_ASSERT(COND_CODE_1(DT_INST_NODE_HAS_PROP(i, fifo_watermark),                         \
+				 (DT_INST_PROP(i, fifo_watermark) > 0 &&                           \
+				  DT_INST_PROP(i, fifo_watermark) < 16),                           \
+				 (true)),                                                          \
+		     "fifo-watermark must be between 1 and 15. Please set it in "                  \
+		     "the device-tree node properties");                                           \
+                                                                                                   \
+	RTIO_DEFINE(bmp581_rtio_ctx_##i, 16, 16);                                                  \
 	I2C_DT_IODEV_DEFINE(bmp581_bus_##i, DT_DRV_INST(i));                                       \
                                                                                                    \
 	static struct bmp581_data bmp581_data_##i = {                                              \
@@ -714,6 +726,9 @@ static DEVICE_API(sensor, bmp581_driver_api) = {
 			.iir_t = DT_INST_PROP(i, temp_iir),                                        \
 			.iir_p = DT_INST_PROP(i, press_iir),                                       \
 			.power_mode = DT_INST_PROP(i, power_mode),                                 \
+		},                                                                                 \
+		.stream = {                                                                        \
+			.fifo_thres = DT_INST_PROP_OR(i, fifo_watermark, 0),                       \
 		},                                                                                 \
 	};                                                                                         \
                                                                                                    \
