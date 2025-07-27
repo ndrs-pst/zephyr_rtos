@@ -817,6 +817,19 @@ GPIO_DEVICE_INIT_STM32_IF_OKAY(q, Q);
 #if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
+#define STM32_GPIO_CFG_REG_INIT(id) \
+    zephyr_gtest_gpio_stm32_sub(DEVICE_DT_GET(DT_DRV_INST(id)));
+
+void zephyr_gtest_gpio_stm32_sub(struct device const* dev) {
+    int rc;
+
+    rc = dev->ops.init(dev);
+    if (rc == 0) {
+        dev->state->initialized = true;
+        dev->state->init_res = 0U;
+    }
+}
+
 void zephyr_gtest_gpio_stm32(void) {
     gpio_stm32_cfg_a.base = (uint32_t*)ut_mcu_gpio_a_ptr;
     gpio_stm32_cfg_b.base = (uint32_t*)ut_mcu_gpio_b_ptr;
@@ -828,6 +841,8 @@ void zephyr_gtest_gpio_stm32(void) {
     #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpiog))
     gpio_stm32_cfg_g.base = (uint32_t*)ut_mcu_gpio_g_ptr;
     #endif
+
+    DT_INST_FOREACH_STATUS_OKAY(STM32_GPIO_CFG_REG_INIT)
 }
 
 #endif

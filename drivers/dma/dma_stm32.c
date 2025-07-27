@@ -719,7 +719,7 @@ static DEVICE_API(dma, dma_funcs) = {
 static struct dma_stm32_stream              \
     dma_stm32_streams_##index[DMA_STM32_##index##_STREAM_COUNT];    \
                                                                     \
-const struct dma_stm32_config dma_stm32_config_##index = {          \
+struct dma_stm32_config DT_CONST dma_stm32_config_##index = {       \
     .pclken = {                                                     \
         .bus = DT_INST_CLOCKS_CELL(index, bus),                     \
         .enr = DT_INST_CLOCKS_CELL(index, bits)                     \
@@ -881,3 +881,48 @@ static void dma_stm32_config_irq_1(const struct device* dev) {
 DMA_STM32_INIT_DEV(1);
 
 #endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(1)) */
+
+#if (__GTEST == 1U) /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+#define STM32_DMA_CFG_REG_INIT(id) \
+    zephyr_gtest_dma_stm32_reg_init(DEVICE_DT_GET(DT_DRV_INST(id)), &dma_stm32_data_##id, \
+                                    &dma_stm32_config_##id);
+
+static void zephyr_gtest_dma_stm32_reg_init(const struct device* dev, struct dma_stm32_data* data,
+                                            struct dma_stm32_config* cfg) {
+    uintptr_t base_addr = (uintptr_t)cfg->base;
+    int rc = 0;
+
+    switch (base_addr) {
+        case DMA1_BASE: {
+            static DMA_TypeDef ut_mcu_dma1;
+            cfg->base = &ut_mcu_dma1;
+            break;
+        }
+
+        case DMA2_BASE: {
+            static DMA_TypeDef ut_mcu_dma2;
+            cfg->base = &ut_mcu_dma2;
+            break;
+        }
+
+        default: {
+            rc = -1;
+            break;
+        }
+    }
+
+    if (rc == 0) {
+        rc = dev->ops.init(dev);
+        if (rc == 0) {
+            dev->state->initialized = true;
+            dev->state->init_res = 0U;
+        }
+    }
+}
+
+void zephyr_gtest_dma_stm32(void) {
+    DT_INST_FOREACH_STATUS_OKAY(STM32_DMA_CFG_REG_INIT)
+}
+#endif

@@ -285,10 +285,11 @@ static int stm32_clock_control_on(const struct device* dev, clock_control_subsys
 
     sys_set_bits(rcc_dt_reg_addr + pclken->bus,
                  pclken->enr);
+
     /* Delay after enabling the clock, to allow it to become active.
      * See (for example) RM0440 7.2.17
      */
-    temp = sys_read32(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
+    temp = sys_read32(rcc_dt_reg_addr + pclken->bus);
     UNUSED(temp);
 
     return (0);
@@ -991,3 +992,19 @@ DEVICE_DT_DEFINE(DT_NODELABEL(rcc),
                  PRE_KERNEL_1,
                  CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
                  &stm32_clock_control_api);
+
+#if (__GTEST == 1U) /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+void zephyr_gtest_clock_stm32(void) {
+    struct device const* dev;
+    int rc;
+
+    dev = DEVICE_DT_GET(DT_NODELABEL(rcc));
+    rc = dev->ops.init(dev);
+    if (rc == 0) {
+        dev->state->initialized = true;
+        dev->state->init_res = 0U;
+    }
+}
+#endif

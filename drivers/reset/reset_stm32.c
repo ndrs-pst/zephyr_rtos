@@ -70,9 +70,22 @@ static DEVICE_API(reset, reset_stm32_driver_api) = {
 	.line_toggle = reset_stm32_line_toggle,
 };
 
-static const struct reset_stm32_config reset_stm32_config = {
+static struct reset_stm32_config DT_CONST reset_stm32_config = {
 	.base = DT_REG_ADDR(DT_INST_PARENT(0)),
 };
 
 DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &reset_stm32_config, PRE_KERNEL_1,
 		      CONFIG_RESET_INIT_PRIORITY, &reset_stm32_driver_api);
+
+#if (__GTEST == 1U) /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+void zephyr_gtest_reset_stm32(void) {
+    struct device const* dev;
+
+    reset_stm32_config.base = (uintptr_t)ut_mcu_rcc_ptr;
+    dev = DEVICE_DT_GET(DT_NODELABEL(rctl));
+    dev->state->initialized = true;
+    dev->state->init_res = 0U;
+}
+#endif

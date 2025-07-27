@@ -49,7 +49,7 @@ struct dmamux_stm32_config {
 #if DT_INST_NODE_HAS_PROP(0, clocks)
 	struct stm32_pclken pclken;
 #endif
-	uint32_t base;
+	uintptr_t base;
 	uint8_t channel_nb;	/* total nb of channels */
 	uint8_t gen_nb;	/* total nb of Request generator */
 	uint8_t req_nb;	/* total nb of Peripheral Request inputs */
@@ -108,7 +108,12 @@ const struct dmamux_stm32_dma_fops *get_dma_fops(const struct dmamux_stm32_confi
 #endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dmamux2)) */
 
 	__ASSERT(false, "Unknown dma base address %x", dev_config->base);
+
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	return &dmamux1;
+	#else
 	return (void *)0;
+	#endif
 }
 
 int dmamux_stm32_configure(const struct device *dev, uint32_t id,
@@ -117,6 +122,7 @@ int dmamux_stm32_configure(const struct device *dev, uint32_t id,
 	/* device is the dmamux, id is the dmamux channel from 0 */
 	const struct dmamux_stm32_config *dev_config = dev->config;
 	const struct dmamux_stm32_dma_fops *dma_device = get_dma_fops(dev_config);
+	int ret;
 
 	/*
 	 * request line ID for this mux channel is stored
@@ -146,8 +152,9 @@ int dmamux_stm32_configure(const struct device *dev, uint32_t id,
 	 * This dmamux channel 'id' is now used for this peripheral request
 	 * It gives this mux request ID to the dma through the config.dma_slot
 	 */
-	if (dma_device->configure(dev_config->mux_channels[id].dev_dma,
-			dev_config->mux_channels[id].dma_id, config) != 0) {
+	ret = dma_device->configure(dev_config->mux_channels[id].dev_dma,
+				    dev_config->mux_channels[id].dma_id, config);
+	if (ret != 0) {
 		LOG_ERR("cannot configure the dmamux.");
 		return -EINVAL;
 	}
@@ -377,7 +384,7 @@ static const struct dmamux_stm32_channel				\
 		DMAMUX_CHANNELS_INIT(index, DT_INST_PROP(index, dma_channels))\
 	};								       \
 									\
-const struct dmamux_stm32_config dmamux_stm32_config_##index = {	\
+struct dmamux_stm32_config DT_CONST dmamux_stm32_config_##index = {	\
 	DMAMUX_CLOCK_INIT(index)					\
 	.base = DT_INST_REG_ADDR(index),				\
 	.channel_nb = DT_INST_PROP(index, dma_channels),		\
@@ -402,3 +409,34 @@ DT_INST_FOREACH_STATUS_OKAY(DMAMUX_INIT)
  */
 BUILD_ASSERT(CONFIG_DMAMUX_STM32_INIT_PRIORITY >= CONFIG_DMA_INIT_PRIORITY,
 	     "CONFIG_DMAMUX_STM32_INIT_PRIORITY must be higher than CONFIG_DMA_INIT_PRIORITY");
+
+#if (__GTEST == 1U) /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+#define STM32_DMAMUX_CFG_REG_INIT(id) \
+    zephyr_gtest_dmamux_stm32_reg_init(DEVICE_DT_GET(DT_DRV_INST(id)), &dmamux_stm32_data_##id, \
+                                       &dmamux_stm32_config_##id);
+
+static void zephyr_gtest_dmamux_stm32_reg_init(const struct device* dev, struct dmamux_stm32_data* data,
+                                               struct dmamux_stm32_config* cfg) {
+    uintptr_t base_addr = (uintptr_t)cfg->base;
+    int rc = 0;
+
+    if (base_addr == DMAMUX1_BASE) {
+        static DMAMUX_Channel_TypeDef ut_mcu_dmamux1;
+        cfg->base = (uintptr_t)&ut_mcu_dmamux1;
+    }
+
+    if (rc == 0) {
+        rc = dev->ops.init(dev);
+        if (rc == 0) {
+            dev->state->initialized = true;
+            dev->state->init_res = 0U;
+        }
+    }
+}
+
+void zephyr_gtest_dmamux_stm32(void) {
+    DT_INST_FOREACH_STATUS_OKAY(STM32_DMAMUX_CFG_REG_INIT)
+}
+#endif

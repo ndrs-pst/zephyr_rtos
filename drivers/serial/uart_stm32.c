@@ -2118,14 +2118,18 @@ static int uart_stm32_registers_configure(const struct device* dev) {
     #ifdef USART_ISR_TEACK
     /* Wait until TEACK flag is set */
     while (!(LL_USART_IsActiveFlag_TEACK(usart))) {
-        /* pass */
+        if (IS_ENABLED(__GTEST)) {
+            break;
+        }
     }
     #endif /* !USART_ISR_TEACK */
 
     #ifdef USART_ISR_REACK
     /* Wait until REACK flag is set */
     while (!(LL_USART_IsActiveFlag_REACK(usart))) {
-        /* pass */
+        if (IS_ENABLED(__GTEST)) {
+            break;
+        }
     }
     #endif /* !USART_ISR_REACK */
 
@@ -2486,10 +2490,13 @@ DT_INST_FOREACH_STATUS_OKAY(STM32_UART_INIT)
 #if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
-#define STM32_UART_CFG_REG_INIT(id)       \
-    zephyr_gtest_spi_stm32_reg_init(&uart_stm32_cfg_##id);
+#define STM32_UART_CFG_REG_INIT(id) \
+    zephyr_gtest_spi_stm32_reg_init(DEVICE_DT_GET(DT_DRV_INST(id)), \
+                                    &uart_stm32_data_##id, &uart_stm32_cfg_##id);
 
-static void zephyr_gtest_spi_stm32_reg_init(struct uart_stm32_config* cfg) {
+static void zephyr_gtest_spi_stm32_reg_init(const struct device* dev,
+                                            struct uart_stm32_data* data,
+                                            struct uart_stm32_config* cfg) {
     uintptr_t base_addr = (uintptr_t)cfg->usart;
 
     switch (base_addr) {
@@ -2552,11 +2559,11 @@ static void zephyr_gtest_spi_stm32_reg_init(struct uart_stm32_config* cfg) {
             break;
         }
     }
+
+    uart_stm32_init(dev);
 }
 
 void zephyr_gtest_uart_stm32(void) {
     DT_INST_FOREACH_STATUS_OKAY(STM32_UART_CFG_REG_INIT)
 }
-
 #endif
-
