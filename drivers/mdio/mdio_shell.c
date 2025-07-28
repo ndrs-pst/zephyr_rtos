@@ -34,8 +34,13 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
-static int parse_device_arg(const struct shell *sh, char **argv, const struct device **dev)
+static int parse_device_arg(const struct shell *sh, size_t argc,
+			    char **argv, const struct device **dev)
 {
+	if (argc < 2) {
+		shell_error(sh, "not enough arguments");
+		return -EINVAL;
+	}
 	*dev = shell_device_get_binding(argv[1]);
 	if (!*dev) {
 		shell_error(sh, "device %s not found", argv[1]);
@@ -57,12 +62,12 @@ static int cmd_mdio_scan(const struct shell *sh, size_t argc, char **argv)
 	uint16_t reg_addr;
 	int ret;
 
-	ret = parse_device_arg(sh, argv, &dev);
+	ret = parse_device_arg(sh, argc, argv, &dev);
 	if (ret < 0) {
 		return ret;
 	}
 
-	if (argc >= 2) {
+	if (argc >= 3) {
 		reg_addr = strtol(argv[2], NULL, 16);
 	} else {
 		reg_addr = 0;
@@ -100,7 +105,7 @@ static int cmd_mdio_write(const struct shell *sh, size_t argc, char **argv)
 	uint16_t port_addr;
 	int ret;
 
-	ret = parse_device_arg(sh, argv, &dev);
+	ret = parse_device_arg(sh, argc, argv, &dev);
 	if (ret < 0) {
 		return ret;
 	}
@@ -132,7 +137,7 @@ static int cmd_mdio_read(const struct shell *sh, size_t argc, char **argv)
 	uint16_t port_addr;
 	int ret;
 
-	ret = parse_device_arg(sh, argv, &dev);
+	ret = parse_device_arg(sh, argc, argv, &dev);
 	if (ret < 0) {
 		return ret;
 	}
@@ -166,7 +171,7 @@ static int cmd_mdio_write_45(const struct shell *sh, size_t argc, char **argv)
 	uint8_t port_addr;
 	int ret;
 
-	ret = parse_device_arg(sh, argv, &dev);
+	ret = parse_device_arg(sh, argc, argv, &dev);
 	if (ret < 0) {
 		return ret;
 	}
@@ -200,7 +205,7 @@ static int cmd_mdio_read_c45(const struct shell *sh, size_t argc, char **argv)
 	uint8_t port_addr;
 	int ret;
 
-	ret = parse_device_arg(sh, argv, &dev);
+	ret = parse_device_arg(sh, argc, argv, &dev);
 	if (ret < 0) {
 		return ret;
 	}
@@ -228,7 +233,7 @@ static int cmd_mdio_read_c45(const struct shell *sh, size_t argc, char **argv)
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_mdio_cmds,
 	SHELL_CMD_ARG(scan, &dsub_device_name,
 		"Scan MDIO bus for devices: scan <device> [<reg_addr>]",
-		cmd_mdio_scan, 1, 1),
+		cmd_mdio_scan, 2, 1),
 	SHELL_CMD_ARG(read, &dsub_device_name,
 		"Read from MDIO device: read <device> <phy_addr> <reg_addr>",
 		cmd_mdio_read, 4, 0),
