@@ -5,7 +5,7 @@ description: Microchip LAN8742A Ethernet PHY device
 
 compatible: "microchip,lan8742a"
 
-include: ethernet-phy.yaml
+include: ethernet-phy-common.yaml
 
 properties:
   mc,reset-gpio:
@@ -34,3 +34,6 @@ properties:
       - "#int"
       - "#pme"
       - "link-speed"
+  default-speeds:
+    default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",
+              "100BASE Full-Duplex"]

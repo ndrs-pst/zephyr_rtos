@@ -19,6 +19,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
+#include "phy_mii.h"
+
 #define PHY_MC_LAN8742A_OMSO_REG                0x16
 #define PHY_MC_LAN8742A_OMSO_FACTORY_MODE_MASK  BIT(15)
 #define PHY_MC_LAN8742A_OMSO_NAND_TREE_MASK     BIT(5)
@@ -31,6 +33,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 struct mc_lan8742a_config {
     uint8_t addr;
     struct device const* mdio_dev;
+    enum phy_link_speed default_speeds;
 
     #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_reset_gpio)
     struct gpio_dt_spec reset_gpio;
@@ -282,12 +285,16 @@ static int phy_mc_lan8742a_reset(struct device const* dev) {
 }
 
 static int phy_mc_lan8742a_cfg_link(const struct device* dev, enum phy_link_speed speeds,
-				                    enum phy_cfg_link_flag flags) {
+                                    enum phy_cfg_link_flag flags) {
     struct mc_lan8742a_config const* cfg = dev->config;
     struct mc_lan8742a_data* ctx = dev->data;
     struct phy_link_state state;
     int ret;
-    uint32_t anar;
+
+    if ((flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) != 0) {
+        LOG_ERR("Disabling auto-negotiation is not supported by this driver");
+        return (-ENOTSUP);
+    }
 
     ret = k_mutex_lock(&ctx->mutex, K_FOREVER);
     if (ret != 0) {
@@ -310,59 +317,17 @@ static int phy_mc_lan8742a_cfg_link(const struct device* dev, enum phy_link_spee
         goto done;
     }
 
-    /* Read ANAR register to write back */
-    ret = phy_mc_lan8742a_read(dev, MII_ANAR, &anar);
-    if (ret != 0) {
-        LOG_ERR("Error reading phy (%d) advertising register", cfg->addr);
-        goto done;
-    }
-
-    /* Setup advertising register */
-    if (speeds & LINK_FULL_100BASE) {
-        anar |= MII_ADVERTISE_100_FULL;
-    }
-    else {
-        anar &= ~MII_ADVERTISE_100_FULL;
-    }
-
-    if (speeds & LINK_HALF_100BASE) {
-        anar |= MII_ADVERTISE_100_HALF;
-    }
-    else {
-        anar &= ~MII_ADVERTISE_100_HALF;
-    }
-
-    if (speeds & LINK_FULL_10BASE) {
-        anar |= MII_ADVERTISE_10_FULL;
-    }
-    else {
-        anar &= ~MII_ADVERTISE_10_FULL;
-    }
-
-    if (speeds & LINK_HALF_10BASE) {
-        anar |= MII_ADVERTISE_10_HALF;
-    }
-    else {
-        anar &= ~MII_ADVERTISE_10_HALF;
-    }
-
-    /* Write capabilities to advertising register */
-    ret = phy_mc_lan8742a_write(dev, MII_ANAR, anar);
-    if (ret != 0) {
-        LOG_ERR("Error writing phy (%d) advertising register", cfg->addr);
+    ret = phy_mii_set_anar_reg(dev, speeds);
+    if ((ret < 0) && (ret != -EALREADY)) {
+        LOG_ERR("Error setting ANAR register for phy (%d)", cfg->addr);
         goto done;
     }
 
     /* (re)do autonegotiation */
-    if ((flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) != 0) {
-	    /* pass */
-    }
-    else {
-	    ret = phy_mc_lan8742a_autonegotiate(dev);
-	    if ((ret != 0) && (ret != -ENETDOWN)) {
-		    LOG_ERR("Error in autonegotiation");
-		    goto done;
-	    }
+    ret = phy_mc_lan8742a_autonegotiate(dev);
+    if ((ret != 0) && (ret != -ENETDOWN)) {
+        LOG_ERR("Error in autonegotiation");
+        goto done;
     }
 
     /* Get link status */
@@ -474,6 +439,9 @@ skip_int_gpio :
     k_work_init_delayable(&ctx->phy_monitor_work,
                           phy_mc_lan8742a_monitor_work_handler);
 
+    /* Advertise default speeds */
+    phy_mc_lan8742a_cfg_link(dev, cfg->default_speeds, 0);
+
     return (0);
 }
 
@@ -503,6 +471,7 @@ static DEVICE_API(ethphy, mc_lan8742a_phy_api) = {
     static const struct mc_lan8742a_config mc_lan8742a_##n##_config = { \
         .addr      = DT_INST_REG_ADDR(n),                               \
         .mdio_dev  = DEVICE_DT_GET(DT_INST_PARENT(n)),                  \
+        .default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),          \
         RESET_GPIO(n)                                                   \
         INTERRUPT_GPIO(n)                                               \
     };                                                                  \
