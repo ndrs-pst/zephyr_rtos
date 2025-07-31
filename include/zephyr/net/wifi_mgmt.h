@@ -1824,6 +1824,13 @@ struct wifi_mgmt_ops {
      */
     int (*btm_query)(const struct device* dev, uint8_t reason);
 
+    /** Check if ap support Neighbor Report or not.
+     * @param dev Pointer to the device structure for the driver instance.
+     *
+     * @return true if support, false if not support
+     */
+    bool (*bss_support_neighbor_rep)(const struct device* dev);
+
     /** Judge ap whether support the capability
      *
      * @param dev Pointer to the device structure for the driver instance.

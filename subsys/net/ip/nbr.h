@@ -79,7 +79,7 @@ struct net_nbr {
 	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
 	uint8_t __nbr[1] __net_nbr_align;
 	#else
-	uint8_t __nbr[0] __net_nbr_align;
+	uint8_t __nbr[] __net_nbr_align;
 	#endif
 };
 

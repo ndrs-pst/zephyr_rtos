@@ -53,7 +53,7 @@ extern "C" {
 #define ESHUTDOWN                       110         /* Can't send after socket shutdown */
 #define BT_ZERO_LEN_ARRAY               1
 #else
-#define BT_ZERO_LEN_ARRAY               0
+#define BT_ZERO_LEN_ARRAY
 #endif
 
 #if defined(_MSC_VER) /* #CUSTOM@NDRS */

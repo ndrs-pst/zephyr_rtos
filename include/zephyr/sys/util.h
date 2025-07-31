@@ -146,11 +146,18 @@ extern "C" {
  * It is specially useful for cases where flexible arrays are
  * used in unions or are not the last element in the struct.
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define FLEXIBLE_ARRAY_DECLARE(type, name) \
+	struct { \
+		type name[]; \
+	}
+#else
 #define FLEXIBLE_ARRAY_DECLARE(type, name) \
 	struct { \
 		struct { } __unused_##name; \
 		type name[]; \
 	}
+#endif
 
 /**
  * @brief Whether @p ptr is an element of @p array
