@@ -187,8 +187,13 @@ void bt_hci_cmd_state_set_init(struct net_buf *buf,
  * command complete or command status.
  */
 #define CMD_BUF_SIZE MAX(BT_BUF_EVT_RX_SIZE, BT_BUF_CMD_TX_SIZE)
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
 NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, BT_BUF_CMD_TX_COUNT, CMD_BUF_SIZE,
-                          BT_ZERO_LEN_ARRAY, NULL);
+			  BT_ZERO_LEN_ARRAY, NULL);
+#else
+NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, BT_BUF_CMD_TX_COUNT, CMD_BUF_SIZE,
+			  0, NULL);
+#endif
 
 struct event_handler {
 	uint8_t event;
