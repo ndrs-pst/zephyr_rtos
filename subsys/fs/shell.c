@@ -17,6 +17,10 @@
 #include <inttypes.h>
 #include <limits.h>
 
+#if !defined(CONFIG_SDHC_BUFFER_ALIGNMENT) /* #CUSTOM@NDRS */
+#define CONFIG_SDHC_BUFFER_ALIGNMENT        4
+#endif
+
 #ifdef CONFIG_FILE_SYSTEM_SHELL_MOUNT_COMMAND
 /* FAT */
 #ifdef CONFIG_FAT_FILESYSTEM_ELM
