@@ -34,6 +34,7 @@ LOG_MODULE_REGISTER(counter_timer_stm32, CONFIG_COUNTER_LOG_LEVEL);
        (IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_1) ? 1U : \
         0))))
 
+/* #CUSTOM@NDRS */
 #if defined(CONFIG_APP_USE_STM32_TMR_ISR_CUSTOM)
 extern void bsp_hal_tmr_isr(void);
 #endif
@@ -46,8 +47,8 @@ static void (*const set_timer_compare[TIMER_MAX_CH])(TIM_TypeDef* TIMx,
 };
 
 /** Channel to compare get function mapping. */
-    #if !defined(CONFIG_SOC_SERIES_STM32MP1X)
-    static uint32_t(*const get_timer_compare[TIMER_MAX_CH])(TIM_TypeDef const* TIMx) = {
+#if !defined(CONFIG_SOC_SERIES_STM32MP1X)
+static uint32_t(*const get_timer_compare[TIMER_MAX_CH])(TIM_TypeDef const* TIMx) = {
     LL_TIM_OC_GetCompareCH1, LL_TIM_OC_GetCompareCH2,
     LL_TIM_OC_GetCompareCH3, LL_TIM_OC_GetCompareCH4,
 };
@@ -57,6 +58,7 @@ static uint32_t (*const get_timer_compare[TIMER_MAX_CH])(TIM_TypeDef const* TIMx
     LL_TIM_OC_GetCompareCH3, LL_TIM_OC_GetCompareCH4
 };
 #endif
+
 /** Channel to interrupt enable function mapping. */
 static void (*const enable_it[TIMER_MAX_CH])(TIM_TypeDef* TIMx) = {
     LL_TIM_EnableIT_CC1, LL_TIM_EnableIT_CC2,
@@ -520,9 +522,9 @@ static int counter_stm32_init_timer(const struct device* dev) {
 }
 
 static uint32_t counter_stm32_get_guard_period(const struct device* dev, uint32_t flags) {
-    ARG_UNUSED(flags);
-
     struct counter_stm32_data const* data = dev->data;
+
+    ARG_UNUSED(flags);
 
     return (data->guard_period);
 }
@@ -634,12 +636,21 @@ void counter_stm32_irq_handler(const struct device* dev) {
 /** TIMx instance from DT */
 #define TIM(idx) ((TIM_TypeDef*)DT_REG_ADDR(TIMER(idx)))
 
-#define IRQ_CONNECT_AND_ENABLE_BY_NAME(index, name)             \
+/* #CUSTOM@NDRS : IRQ_DIRECT_CONNECT `bsp_hal_tmr_isr` as a custom IRQ
+ * via CONFIG_APP_USE_STM32_TMR_ISR_CUSTOM
+ */
+#define IRQ_CONNECT_AND_ENABLE_BY_NAME(idx, name)               \
 {                                                               \
-    IRQ_CONNECT(DT_IRQ_BY_NAME(TIMER(index), name, irq),        \
-                DT_IRQ_BY_NAME(TIMER(index), name, priority),   \
-                counter_stm32_irq_handler, DEVICE_DT_INST_GET(index), 0); \
-    irq_enable(DT_IRQ_BY_NAME(TIMER(index), name, irq));        \
+    COND_CODE_1(DT_PROP(TIMER(idx), bsp_hal_tmr_isr),           \
+        (IRQ_DIRECT_CONNECT(DT_IRQ_BY_NAME(TIMER(idx), name, irq), \
+                            DT_IRQ_BY_NAME(TIMER(idx), name, priority), \
+                            bsp_hal_tmr_isr, 0)),               \
+        (IRQ_CONNECT(DT_IRQ_BY_NAME(TIMER(idx), name, irq),     \
+                     DT_IRQ_BY_NAME(TIMER(idx), name, priority),\
+                     counter_stm32_irq_handler,                 \
+                     DEVICE_DT_INST_GET(idx), 0))               \
+    )                                                           \
+    irq_enable(DT_IRQ_BY_NAME(TIMER(idx), name, irq));          \
 }
 
 #define COUNTER_DEVICE_INIT(idx)                                \
