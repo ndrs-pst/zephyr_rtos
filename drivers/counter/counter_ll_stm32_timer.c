@@ -634,17 +634,13 @@ void counter_stm32_irq_handler(const struct device* dev) {
 /** TIMx instance from DT */
 #define TIM(idx) ((TIM_TypeDef*)DT_REG_ADDR(TIMER(idx)))
 
-#define STM32_COUNTER_IRQ_CONNECT(idx)              \
-    COND_CODE_1(DT_PROP(TIMER(idx), bsp_hal_tmr_isr),       \
-        (IRQ_DIRECT_CONNECT(DT_IRQN(TIMER(idx)),    \
-                            DT_IRQ(TIMER(idx), priority),   \
-                            bsp_hal_tmr_isr, 0)),   \
-        (IRQ_CONNECT(DT_IRQN(TIMER(idx)),           \
-                             DT_IRQ(TIMER(idx), priority),  \
-                             counter_stm32_irq_handler,     \
-                             DEVICE_DT_INST_GET(idx),       \
-                             0))                    \
-    )
+#define IRQ_CONNECT_AND_ENABLE_BY_NAME(index, name)             \
+{                                                               \
+    IRQ_CONNECT(DT_IRQ_BY_NAME(TIMER(index), name, irq),        \
+                DT_IRQ_BY_NAME(TIMER(index), name, priority),   \
+                counter_stm32_irq_handler, DEVICE_DT_INST_GET(index), 0); \
+    irq_enable(DT_IRQ_BY_NAME(TIMER(index), name, irq));        \
+}
 
 #define COUNTER_DEVICE_INIT(idx)                                \
     BUILD_ASSERT(DT_PROP(TIMER(idx), st_prescaler) <= 0xFFFF,   \
@@ -653,11 +649,14 @@ void counter_stm32_irq_handler(const struct device* dev) {
                  "TIMER too many channels");                    \
                                                                 \
     static struct counter_stm32_data counter##idx##_data;       \
-    static struct counter_stm32_ch_data counter##idx##_ch_data[TIMER_MAX_CH];   \
+    static struct counter_stm32_ch_data counter##idx##_ch_data[TIMER_MAX_CH]; \
                                                                 \
-    static void counter_##idx##_stm32_irq_config(const struct device* dev) {    \
-        STM32_COUNTER_IRQ_CONNECT(idx);                         \
-        irq_enable(DT_IRQN(TIMER(idx)));                        \
+    static void counter_##idx##_stm32_irq_config(const struct device* dev) { \
+        COND_CODE_1(DT_IRQ_HAS_NAME(TIMER(idx), cc),            \
+            (IRQ_CONNECT_AND_ENABLE_BY_NAME(idx, cc)),          \
+        (COND_CODE_1(DT_IRQ_HAS_NAME(TIMER(idx), global),       \
+            (IRQ_CONNECT_AND_ENABLE_BY_NAME(idx, global)),      \
+        (BUILD_ASSERT(0, "Timer has no 'cc' or 'global' interrupt!"))))) \
     }                                                           \
                                                                 \
     static struct counter_stm32_config DT_CONST counter##idx##_config = { \
