@@ -1179,3 +1179,19 @@ DEVICE_DT_DEFINE(DT_NODELABEL(rcc),
 		    PRE_KERNEL_1,
 		    CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		    &stm32_clock_control_api);
+
+#if (__GTEST == 1U) /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+void zephyr_gtest_clock_stm32(void) {
+    struct device const* dev;
+    int rc;
+
+    dev = DEVICE_DT_GET(DT_NODELABEL(rcc));
+    rc = dev->ops.init(dev);
+    if (rc == 0) {
+        dev->state->initialized = true;
+        dev->state->init_res = 0U;
+    }
+}
+#endif

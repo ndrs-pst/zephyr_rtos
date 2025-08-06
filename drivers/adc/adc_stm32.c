@@ -565,7 +565,9 @@ static void adc_stm32_calibration_start(const struct device* dev, bool single_en
      * on the ADC control register, for enabling the peripheral for example
      */
     while (LL_ADC_IsCalibrationOnGoing(adc)) {
-        /* pass */
+        if (IS_ENABLED(__GTEST)) {
+            break;
+        }
     }
 }
 
@@ -1682,7 +1684,9 @@ static int adc_stm32_init(const struct device* dev) {
           defined(CONFIG_SOC_SERIES_STM32U5X) || \
           defined(CONFIG_SOC_SERIES_STM32WBAX)
     while (LL_ADC_IsActiveFlag_LDORDY(adc) == 0) {
-        /* pass */
+        if (IS_ENABLED(__GTEST)) {
+            break;
+        }
     }
     #else
     k_busy_wait(LL_ADC_DELAY_INTERNAL_REGUL_STAB_US);
@@ -1693,7 +1697,7 @@ static int adc_stm32_init(const struct device* dev) {
         config->irq_cfg_func();
     }
 
-    #if defined(HAS_CALIBRATION)
+    #if defined(HAS_CALIBRATION) && !defined(_MSC_VER) /* #CUSTOM@NDRS */
     adc_stm32_calibrate(dev);
     LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
     #endif /* HAS_CALIBRATION */
@@ -1975,7 +1979,7 @@ DT_INST_FOREACH_STATUS_OKAY(GENERATE_ISR)
     static const struct stm32_pclken pclken_##index[] =         \
         STM32_DT_INST_CLOCKS(index);                            \
                                                                 \
-    static const struct adc_stm32_cfg adc_stm32_cfg_##index = { \
+    static struct adc_stm32_cfg DT_CONST adc_stm32_cfg_##index = { \
         .base = (ADC_TypeDef*)DT_INST_REG_ADDR(index),          \
         ADC_STM32_IRQ_FUNC(index)                               \
         .pclken = pclken_##index,                               \
@@ -2008,3 +2012,50 @@ DT_INST_FOREACH_STATUS_OKAY(GENERATE_ISR)
                           &api_stm32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_STM32_INIT)
+
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+#define STM32_ADC_CFG_REG_INIT(id) \
+    zephyr_gtest_adc_stm32_reg_init(DEVICE_DT_GET(DT_DRV_INST(id)), \
+                                    &adc_stm32_data_##id, &adc_stm32_cfg_##id);
+
+static void zephyr_gtest_adc_stm32_reg_init(const struct device* dev,
+                                            struct adc_stm32_data* data,
+                                            struct adc_stm32_cfg* cfg) {
+    ARG_UNUSED(data);
+    uintptr_t base_addr = (uintptr_t)cfg->base;
+    int rc;
+
+    switch (base_addr) {
+        case (D2_AHB1PERIPH_BASE + 0x2000UL) : /* ADC1_BASE */ {
+            cfg->base = (ADC_TypeDef*)ut_mcu_adc1_ptr;
+            break;
+        }
+
+        case (D2_AHB1PERIPH_BASE + 0x2100UL) : /* ADC2_BASE */ {
+            cfg->base = (ADC_TypeDef*)ut_mcu_adc2_ptr;
+            break;
+        }
+
+        case (D3_AHB1PERIPH_BASE + 0x6000UL) : /* ADC3_BASE */ {
+            cfg->base = (ADC_TypeDef*)ut_mcu_adc3_ptr;
+            break;
+        }
+
+        default: {
+            return;
+        }
+    }
+
+    rc = dev->ops.init(dev);
+    if (rc == 0) {
+        dev->state->initialized = true;
+        dev->state->init_res = 0U;
+    }
+}
+
+void zephyr_gtest_adc_stm32(void) {
+    DT_INST_FOREACH_STATUS_OKAY(STM32_ADC_CFG_REG_INIT)
+}
+#endif

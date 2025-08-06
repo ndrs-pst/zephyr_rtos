@@ -73,7 +73,9 @@ static inline void adc_enable_tempsensor_channel(ADC_TypeDef *adc)
 	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
 					path | LL_ADC_PATH_INTERNAL_TEMPSENSOR);
 
+	#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 	k_usleep(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
+	#endif
 }
 
 static inline void adc_disable_tempsensor_channel(ADC_TypeDef *adc)
@@ -310,7 +312,7 @@ static struct stm32_temp_data stm32_temp_dev_data = {
 	},
 };
 
-static const struct stm32_temp_config stm32_temp_dev_config = {
+static struct stm32_temp_config DT_CONST stm32_temp_dev_config = {
 #if defined(HAS_CALIBRATION)
 	.ts_cal1_addr = (const void *)DT_INST_PROP(0, ts_cal1_addr),
 	.ts_cal1_temp = DT_INST_PROP(0, ts_cal1_temp),
@@ -335,3 +337,26 @@ SENSOR_DEVICE_DT_INST_DEFINE(0, stm32_temp_init, NULL,
 			     &stm32_temp_driver_api);
 
 #endif /* !DT_NODE_HAS_STATUS_OKAY(DT_INST_IO_CHANNELS_CTLR(0)) */
+
+#if (__GTEST == 1U) /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+static uint16_t ts_cal1_reg = 948;
+static uint16_t ts_cal2_reg = 1203;
+
+void zephyr_gtest_temp_stm32(void) {
+    struct device const* dev;
+    int rc;
+
+    dev = DEVICE_DT_GET(DT_NODELABEL(die_temp));
+    rc = dev->ops.init(dev);
+    if (rc == 0) {
+        struct stm32_temp_config* config = dev->config;
+        config->ts_cal1_addr = &ts_cal1_reg;
+        config->ts_cal2_addr = &ts_cal2_reg;
+
+        dev->state->initialized = true;
+        dev->state->init_res = 0U;
+    }
+}
+#endif

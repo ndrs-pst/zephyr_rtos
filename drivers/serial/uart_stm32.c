@@ -2491,12 +2491,12 @@ DT_INST_FOREACH_STATUS_OKAY(STM32_UART_INIT)
 #include "mcu_reg_stub.h"
 
 #define STM32_UART_CFG_REG_INIT(id) \
-    zephyr_gtest_spi_stm32_reg_init(DEVICE_DT_GET(DT_DRV_INST(id)), \
-                                    &uart_stm32_data_##id, &uart_stm32_cfg_##id);
+    zephyr_gtest_uart_stm32_reg_init(DEVICE_DT_GET(DT_DRV_INST(id)), \
+                                     &uart_stm32_data_##id, &uart_stm32_cfg_##id);
 
-static void zephyr_gtest_spi_stm32_reg_init(const struct device* dev,
-                                            struct uart_stm32_data* data,
-                                            struct uart_stm32_config* cfg) {
+static void zephyr_gtest_uart_stm32_reg_init(const struct device* dev,
+                                             struct uart_stm32_data* data,
+                                             struct uart_stm32_config* cfg) {
     uintptr_t base_addr = (uintptr_t)cfg->usart;
 
     switch (base_addr) {
