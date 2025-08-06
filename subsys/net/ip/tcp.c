@@ -1436,9 +1436,13 @@ void net_tcp_reply_rst(struct net_pkt* pkt) {
 
     /* IP header */
     if (IS_ENABLED(CONFIG_NET_IPV4) && (net_pkt_family(pkt) == NET_AF_INET)) {
-        ret = net_ipv4_create(rst,
-                              (struct net_in_addr*)NET_IPV4_HDR(pkt)->dst,
-                              (struct net_in_addr*)NET_IPV4_HDR(pkt)->src);
+        struct net_in_addr src;
+        struct net_in_addr dst;
+
+        net_ipv4_addr_copy_raw(src.s4_addr, NET_IPV4_HDR(pkt)->src);
+        net_ipv4_addr_copy_raw(dst.s4_addr, NET_IPV4_HDR(pkt)->dst);
+
+        ret = net_ipv4_create(rst, &dst, &src);
     }
     else if (IS_ENABLED(CONFIG_NET_IPV6) && (net_pkt_family(pkt) == NET_AF_INET6)) {
         struct net_in6_addr src;
