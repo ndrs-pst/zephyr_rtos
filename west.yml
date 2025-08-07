@@ -139,7 +139,7 @@ manifest:
       groups:
         - tools
     - name: fatfs
-      revision: c531b6f68ae912e3080d1e8d7b1332bf338ff5e8
+      revision: a1d1ab945ab5da6e62f60142ab170d74b1ba4023
       path: modules/fs/fatfs
       groups:
         - fs
@@ -235,7 +235,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 295caf37909d2ff01688b1c4bd34c9b3584e8333
+      revision: 13343bccf850eb7b6541f6e71a8d2a880209850b
       path: modules/hal/silabs
       groups:
         - hal
@@ -310,7 +310,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 641a6c3aebf7205f98ed36f037a089f90d39d4b0
+      revision: c9c01863638387a03b7d9c56b1932d35aa60f019
       path: bootloader/mcuboot
       groups:
         - bootloader
