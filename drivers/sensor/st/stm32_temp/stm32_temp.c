@@ -351,7 +351,8 @@ void zephyr_gtest_temp_stm32(void) {
     dev = DEVICE_DT_GET(DT_NODELABEL(die_temp));
     rc = dev->ops.init(dev);
     if (rc == 0) {
-        struct stm32_temp_config* config = dev->config;
+		struct stm32_temp_config* config = (struct stm32_temp_config*)dev->config;
+
         config->ts_cal1_addr = &ts_cal1_reg;
         config->ts_cal2_addr = &ts_cal2_reg;
 
