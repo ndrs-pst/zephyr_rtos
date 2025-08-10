@@ -1830,18 +1830,28 @@ static int spi_stm32_pm_action(const struct device* dev,
 
     switch (action) {
         case PM_DEVICE_ACTION_RESUME :
-            /* Configure pins for active mode */
-            err = spi_stm32_pinctrl_apply(dev, PINCTRL_STATE_DEFAULT);
-            if (err < 0) {
-                return (err);
-            }
-
             /* enable clock */
             err = clock_control_on(clk, (clock_control_subsys_t)&config->pclken[0]);
             if (err != 0) {
                 LOG_ERR("Could not enable SPI clock");
                 return (err);
             }
+
+            /* Configure pins for active mode */
+            err = spi_stm32_pinctrl_apply(dev, PINCTRL_STATE_DEFAULT);
+            if (err < 0) {
+                return (err);
+            }
+
+            /* @warning critical part the peripheral keeps always control of all associated GPIOs
+             * When SPI master has to be disabled temporary for a specific configuration reason (e.g. CRC
+             * reset, CPHA or HDDIR change) setting this bit prevents any glitches on the associated
+             * outputs configured at alternate function mode by keeping them forced at state corresponding
+             * the current SPI configuration.
+             */
+            #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+            LL_SPI_EnableGPIOControl(config->spi);              /* #CUSTOM@NDRS */
+            #endif
             break;
 
         case PM_DEVICE_ACTION_SUSPEND :
@@ -1852,11 +1862,13 @@ static int spi_stm32_pm_action(const struct device* dev,
                 return (err);
             }
             /* Configure pins for sleep mode */
-            return spi_stm32_pinctrl_apply(dev, PINCTRL_STATE_SLEEP);
+            err = spi_stm32_pinctrl_apply(dev, PINCTRL_STATE_SLEEP);
+            return (err);
 
         case PM_DEVICE_ACTION_TURN_ON :
             /* Configure pins for sleep mode */
-            return spi_stm32_pinctrl_apply(dev, PINCTRL_STATE_SLEEP);
+            err = spi_stm32_pinctrl_apply(dev, PINCTRL_STATE_SLEEP);
+            return (err);
 
         case PM_DEVICE_ACTION_TURN_OFF :
             break;
@@ -1897,16 +1909,6 @@ static int spi_stm32_init(const struct device* dev) {
     cfg->irq_config(dev);
     #endif /* CONFIG_SPI_STM32_INTERRUPT */
 
-    /* @warning critical part the peripheral keeps always control of all associated GPIOs
-     * When SPI master has to be disabled temporary for a specific configuration reason (e.g. CRC
-     * reset, CPHA or HDDIR change) setting this bit prevents any glitches on the associated 
-     * outputs configured at alternate function mode by keeping them forced at state corresponding
-     * the current SPI configuration.
-     */
-    #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-    LL_SPI_EnableGPIOControl(cfg->spi);                         /* #CUSTOM@NDRS */
-    #endif
-
     #ifdef CONFIG_SPI_STM32_DMA
     if ((data->dma_rx.dma_dev != NULL) &&
         !device_is_ready(data->dma_rx.dma_dev)) {
@@ -1931,7 +1933,8 @@ static int spi_stm32_init(const struct device* dev) {
 
     spi_context_unlock_unconditionally(&data->ctx);
 
-    return pm_device_driver_init(dev, spi_stm32_pm_action);
+    err = pm_device_driver_init(dev, spi_stm32_pm_action);
+    return (err);
 }
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
