@@ -226,7 +226,7 @@ add_dependencies(kernel zephyr_generated_headers)
 set_source_files_properties(
   ${kernel_files}
   PROPERTIES
-  COMPILE_FLAGS ${OPTIMIZE_FOR_SPEED_FLAG}
+  COMPILE_FLAGS ${COMPILER_OPTIMIZE_FOR_SPEED_FLAG}
   )
 
 unset(libkernel)

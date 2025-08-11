@@ -1083,7 +1083,7 @@ static int rtc_stm32_set_time_ext(const struct device* dev, uint8_t const* du) {
 
     k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-    LOG_INF("Setting clock");
+    LOG_DBG("Setting clock");
 
     stm32_backup_domain_enable_access();
 
