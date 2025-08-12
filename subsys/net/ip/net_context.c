@@ -1344,7 +1344,8 @@ int net_context_connect(struct net_context *context,
 {
 	struct net_sockaddr *laddr = NULL;
 	struct net_sockaddr local_addr __unused;
-	uint16_t lport, rport;
+	uint16_t lport;
+	uint16_t rport;
 	int ret;
 
 	NET_ASSERT(addr);
@@ -1359,6 +1360,18 @@ int net_context_connect(struct net_context *context,
 
 	if (!net_context_is_used(context)) {
 		ret = -EBADF;
+		goto unlock;
+	}
+
+	/* As per POSIX, for non-connection-mode sockets:
+	 * "If the sa_family member of address is AF_UNSPEC, the socket's peer
+	 *  address shall be reset.""
+	 */
+	if (IS_ENABLED(CONFIG_NET_UDP) && addr->sa_family == NET_AF_UNSPEC &&
+	    net_context_get_type(context) == NET_SOCK_DGRAM) {
+		context->flags &= ~NET_CONTEXT_REMOTE_ADDR_SET;
+		memset(&context->remote, 0, sizeof(context->remote));
+		ret = 0;
 		goto unlock;
 	}
 

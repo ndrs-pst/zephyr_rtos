@@ -60,12 +60,12 @@ BUILD_ASSERT(FIXED_PARTITION_EXISTS(SLOT4_PARTITION) &&
  */
 static int img_mgmt_flash_check_empty_inner(const struct flash_area* fa) {
     uint32_t data[16];
-    off_t    addr;
-    off_t    end;
-    int      bytes_to_read;
-    int      rc;
-    int      i;
-    uint8_t  erased_val;
+    off_t addr;
+    off_t end;
+    int bytes_to_read;
+    int rc;
+    int i;
+    uint8_t erased_val;
     uint32_t erased_val_32;
 
     assert(fa->fa_size % 4 == 0);
@@ -138,11 +138,11 @@ int img_mgmt_flash_area_id(int slot) {
             fa_id = FIXED_PARTITION_ID(SLOT0_PARTITION);
             break;
 
-        #if !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER)
         case 1 :
             fa_id = FIXED_PARTITION_ID(SLOT1_PARTITION);
             break;
 
+        #if !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER)
         #if FIXED_PARTITION_EXISTS(SLOT2_PARTITION)
         case 2 :
             fa_id = FIXED_PARTITION_ID(SLOT2_PARTITION);

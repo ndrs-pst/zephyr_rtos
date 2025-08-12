@@ -57,6 +57,11 @@ LOG_MODULE_DECLARE(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 #define DIRECT_XIP_BOOT_FOREVER 3
 #endif
 
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER) && \
+    CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER > 1
+#warning "MCUmgr img mgmt only supports 1 image"
+#endif
+
 /**
  * Collects information about the specified image slot.
  */
@@ -115,9 +120,9 @@ uint8_t img_mgmt_state_flags(int query_slot) {
 }
 #else
 uint8_t img_mgmt_state_flags(int query_slot) {
-    uint8_t flags       = 0;
-    int     image       = query_slot / 2; /* We support max 2 images for now */
-    int     active_slot = img_mgmt_active_slot(image);
+    uint8_t flags = 0;
+    int image = (query_slot / 2);           /* We support max 2 images for now */
+    int active_slot = img_mgmt_active_slot(image);
 
     /* In case when MCUboot is configured for DirectXIP slot may only be
      * active or pending. Slot is marked pending only when version in that slot
@@ -129,10 +134,10 @@ uint8_t img_mgmt_state_flags(int query_slot) {
     else {
         struct image_version sver;
         struct image_version aver;
-        int                  rcs = img_mgmt_read_info(query_slot, &sver, NULL, NULL);
-        int                  rca = img_mgmt_read_info(active_slot, &aver, NULL, NULL);
+        int rcs = img_mgmt_read_info(query_slot, &sver, NULL, NULL);
+        int rca = img_mgmt_read_info(active_slot, &aver, NULL, NULL);
 
-        if (rcs == 0 && rca == 0 && img_mgmt_vercmp(&aver, &sver) < 0) {
+        if ((rcs == 0) && (rca == 0) && img_mgmt_vercmp(&aver, &sver) < 0) {
             flags = IMG_MGMT_STATE_F_PENDING | IMG_MGMT_STATE_F_PERMANENT;
         }
     }
@@ -199,7 +204,6 @@ int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type* type) {
 #else
 
 #if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
-
 static int read_directxip_state(int slot) {
     struct boot_swap_state bss;
     int fa_id = img_mgmt_flash_area_id(slot);
@@ -235,6 +239,8 @@ static int read_directxip_state(int slot) {
 }
 #endif /* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) */
 
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) || \
+    defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
 int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type* type) {
     struct image_version aver;
     struct image_version over;
@@ -309,6 +315,9 @@ out :
 
     return (return_slot);
 }
+#endif /* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) || \
+        * defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
+        */
 #endif /* !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) && \
         * !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) && \
         * !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER)
@@ -499,6 +508,7 @@ failed :
 /**
  * Command handler: image state read
  */
+#if !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER)
 int img_mgmt_state_read(struct smp_streamer* ctxt) {
     zcbor_state_t* zse = ctxt->writer->zs;
     uint32_t i;
@@ -557,6 +567,41 @@ int img_mgmt_state_read(struct smp_streamer* ctxt) {
 
     return (ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE);
 }
+#else
+int img_mgmt_state_read(struct smp_streamer* ctxt) {
+    zcbor_state_t* zse = ctxt->writer->zs;
+    uint32_t i;
+    bool ok;
+
+    ok = zcbor_tstr_put_lit(zse, "images") &&
+         zcbor_list_start_encode(zse, 2);
+
+    img_mgmt_take_lock();
+
+    for (i = 0; ok && (i < CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER); i++) {
+        /* _a is active slot, _o is opposite slot */
+        int slot_a = img_mgmt_active_slot(i);
+        int slot_o = img_mgmt_get_opposite_slot(slot_a);
+        int flags_a = REPORT_SLOT_ACTIVE;
+        int flags_o = REPORT_SLOT_CONFIRMED;
+
+        ok = img_mgmt_state_encode_slot(ctxt, slot_o, flags_o) &&
+             img_mgmt_state_encode_slot(ctxt, slot_a, flags_a);
+    }
+
+    /* Ending list encoding for two slots per image */
+    ok = ok && zcbor_list_end_encode(zse, 2);
+    /* splitStatus is always 0 so in frugal list it is not present at all */
+    if (!IS_ENABLED(CONFIG_MCUMGR_GRP_IMG_FRUGAL_LIST) && ok) {
+        ok = zcbor_tstr_put_lit(zse, "splitStatus") &&
+             zcbor_int32_put(zse, 0);
+    }
+
+    img_mgmt_release_lock();
+
+    return (ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE);
+}
+#endif /* !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER) */
 
 static int img_mgmt_set_next_boot_slot_common(int slot, int active_slot, bool confirm) {
     const struct flash_area* fa;
