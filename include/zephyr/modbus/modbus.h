@@ -442,11 +442,11 @@ typedef bool (*modbus_custom_cb_t)(int const iface,
  * @brief Custom function code definition.
  */
 struct modbus_custom_fc {
-    sys_snode_t        node;
+    sys_snode_t node;
     modbus_custom_cb_t cb;
-    void*              user_data;
-    uint8_t            fc;
-    uint8_t            excep_code;
+    void* user_data;
+    uint8_t fc;
+    uint8_t excep_code;
 };
 
 /** @endcond INTERNAL_HIDDEN */

@@ -122,7 +122,7 @@ manifest:
       groups:
         - hal
     - name: cmsis-dsp
-      revision: d80a49b2bb186317dc1db4ac88da49c0ab77e6e7
+      revision: 2c014e93d75c4896df57f072b3f7d5d06e37f254
       path: modules/lib/cmsis-dsp
     - name: cmsis-nn
       revision: e9328d612ea3ea7d0d210d3ac16ea8667c01abdd
@@ -169,7 +169,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 883b9e84c86bab3ffef8572330cdaad8c1b289bc
+      revision: aa5443a4eea6a49d58f808f41bceb5de19678fa6
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -210,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 9b49fb1130209214a95d279b64e1efd5c87ec915
+      revision: 10f1faf465440e48ecad1ab2b5adee8c72f41157
       path: modules/hal/nxp
       groups:
         - hal
@@ -226,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 1372089250bf0d8afc46a7efc3ecf080003ead22
+      revision: ad1ae61b2d5ac065c3277acefdb5782de64ba14f
       groups:
         - hal
     - name: hal_rpi_pico
@@ -293,6 +293,9 @@ manifest:
       path: modules/hal/libmetal
       groups:
         - hal
+    - name: libsbc
+      revision: 8e1beda02acb8972e29e6edbb423f7cafe16e445
+      path: modules/lib/libsbc
     - name: littlefs
       path: modules/fs/littlefs
       groups:
