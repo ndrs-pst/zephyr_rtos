@@ -1406,6 +1406,7 @@ struct sensor_info {
 	}
 
 #define SENSOR_INFO_DEFINE(name, ...)					\
+	MSC_DECLARE_SECTION("._sensor_info.static")			\
 	static const STRUCT_SECTION_ITERABLE(sensor_info, name) =	\
 		SENSOR_INFO_INITIALIZER(__VA_ARGS__)
 

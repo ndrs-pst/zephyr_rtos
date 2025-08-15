@@ -101,6 +101,7 @@ struct net_socket_service_desc {
     static int __z_net_socket_svc_get_idx(_name);   \
     static struct net_socket_service_event __z_net_socket_svc_get_name(_name)[_count];  \
     COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), (), __VA_ARGS__)                       \
+    MSC_DECLARE_SECTION("._net_socket_service_desc.static")                             \
     const STRUCT_SECTION_ITERABLE(net_socket_service_desc, _name) = {                   \
         NET_SOCKET_SERVICE_OWNER                                                        \
         .pev     = __z_net_socket_svc_get_name(_name),                                  \

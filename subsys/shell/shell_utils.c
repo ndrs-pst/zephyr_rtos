@@ -20,6 +20,7 @@ TYPE_SECTION_END_EXTERN(union shell_cmd_entry, shell_subcmds);
  * it is used to detect end of subcommand set that is located before this marker.
  */
 #define Z_SHELL_SUBCMD_END_MARKER_CREATE()                          \
+    MSC_DECLARE_SECTION("._shell_subcmds.static")                   \
     static const TYPE_SECTION_ITERABLE(struct shell_static_entry,   \
                                        z_shell_subcmd_end_marker, shell_subcmds, Z_SHELL_UNDERSCORE(999))
 

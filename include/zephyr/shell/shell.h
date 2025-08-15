@@ -391,6 +391,7 @@ static inline bool shell_help_is_structured(const char* help) {
                                mandatory, optional)                         \
     static const struct shell_static_entry UTIL_CAT(_shell_, syntax) =      \
     SHELL_CMD_ARG(syntax, subcmd, help, handler, mandatory, optional);      \
+    MSC_DECLARE_SECTION("._shell_root_cmds.static")                         \
     static const TYPE_SECTION_ITERABLE(union shell_cmd_entry,               \
             UTIL_CAT(shell_cmd_, syntax), shell_root_cmds,                  \
             UTIL_CAT(shell_cmd_, syntax)                                    \
@@ -511,6 +512,7 @@ static inline bool shell_help_is_structured(const char* help) {
  */
 
 #define SHELL_SUBCMD_SET_CREATE(_name, _parent) \
+    MSC_DECLARE_SECTION("._shell_subcmds.static") \
     static const TYPE_SECTION_ITERABLE(struct shell_static_entry, _name, shell_subcmds, \
                                        Z_SHELL_SUBCMD_SET_SECTION_TAG(_parent))
 
@@ -535,6 +537,7 @@ static inline bool shell_help_is_structured(const char* help) {
  */
 #define SHELL_SUBCMD_COND_ADD(_flag, _parent, _syntax, _subcmd, _help, _handler, \
                               _mand, _opt) \
+    MSC_DECLARE_SECTION("._shell_subcmds.static") \
     COND_CODE_1(_flag, \
         (static const TYPE_SECTION_ITERABLE(struct shell_static_entry, \
                     Z_SHELL_SUBCMD_NAME(__DEBRACKET _parent, _syntax), \
@@ -578,6 +581,7 @@ static inline bool shell_help_is_structured(const char* help) {
  * @param[in] get  Pointer to the function returning dynamic commands array
  */
 #define SHELL_DYNAMIC_CMD_CREATE(name, get)                             \
+    MSC_DECLARE_SECTION("._shell_dynamic_subcmds.static")               \
     static const TYPE_SECTION_ITERABLE(union shell_cmd_entry, name,     \
         shell_dynamic_subcmds, name) =                                  \
     {                                                                   \

@@ -1324,8 +1324,8 @@ device_get_dt_nodelabels(const struct device* dev) {
  */
 #define Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, deinit_fn, flags, pm,   \
                         data, config, level, prio, api, state, ...)             \
+    MSC_DECLARE_SECTION("._device.static")                                      \
     Z_DEVICE_NAME_CHECK(name);                                                  \
-                                                                                \
     IF_ENABLED(CONFIG_DEVICE_DEPS,                                              \
            (Z_DEVICE_DEPS_DEFINE(node_id, dev_id, __VA_ARGS__);))               \
                                                                                 \
@@ -1370,7 +1370,9 @@ DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_DEVICE_DECLARE_INTERNAL)
  * @param _class The device API class.
  * @param _name The API instance name.
  */
-#define DEVICE_API(_class, _name) DT_CONST STRUCT_SECTION_ITERABLE(Z_DEVICE_API_TYPE(_class), _name)
+#define DEVICE_API(_class, _name) \
+    MSC_DECLARE_SECTION("._" #_class "_driver_api.static") \
+    DT_CONST STRUCT_SECTION_ITERABLE(Z_DEVICE_API_TYPE(_class), _name)
 
 /**
  * @brief Expands to the pointer of a device's API for a given class.

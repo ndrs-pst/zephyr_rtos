@@ -221,6 +221,17 @@ do {                        \
 /* Double indirection to ensure section names are expanded before
  * stringification
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define __GENERIC_SECTION(segment) __declspec(allocate(STRINGIFY(segment)))
+#define Z_GENERIC_SECTION(segment) __GENERIC_SECTION(segment)
+
+#define __GENERIC_DOT_SECTION(segment) \
+    __declspec(allocate("." Z_STRINGIFY(segment)))
+#define Z_GENERIC_DOT_SECTION(segment) __GENERIC_DOT_SECTION(segment)
+
+#define ___in_section(a, b, c)  __declspec(allocate(Z_STRINGIFY(.a.b)))
+#define __in_section(a, b, c)   ___in_section(a, b, c)
+#else
 #define __GENERIC_SECTION(segment) __attribute__((section(STRINGIFY(segment))))
 #define Z_GENERIC_SECTION(segment) __GENERIC_SECTION(segment)
 
@@ -233,6 +244,7 @@ do {                        \
                 "." Z_STRINGIFY(b)              \
                 "." Z_STRINGIFY(c))))
 #define __in_section(a, b, c) ___in_section(a, b, c)
+#endif /* defined(_MSC_VER) */
 
 #ifndef __in_section_unique
 #define __in_section_unique(seg) ___in_section(seg, __FILE__, __COUNTER__)
@@ -241,6 +253,12 @@ do {                        \
 #ifndef __in_section_unique_named
 #define __in_section_unique_named(seg, name) \
     ___in_section(seg, __FILE__, name)
+#endif
+
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define MSC_DECLARE_SECTION(section_name)   __pragma(section(section_name, read, write))
+#else
+#define MSC_DECLARE_SECTION(section_name)   // No-op for non-MSVC compilers
 #endif
 
 /* When using XIP, using '__ramfunc' places a function into RAM instead

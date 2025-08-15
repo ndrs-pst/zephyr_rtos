@@ -1212,6 +1212,7 @@ struct net_socket_register {
 #endif
 
 #define _NET_SOCKET_REGISTER(socket_name, prio, _family, _is_supported, _handler, _is_offloaded) \
+	MSC_DECLARE_SECTION("._net_socket_register.static")		\
 	static const STRUCT_SECTION_ITERABLE(net_socket_register,	\
 			NET_SOCKET_GET_NAME(socket_name, prio)) = {	\
 		.family = _family,					\

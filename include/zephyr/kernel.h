@@ -2827,6 +2827,7 @@ static inline void* k_fifo_peek_tail(struct k_fifo* fifo) {
  * @param name Name of the FIFO queue.
  */
 #define K_FIFO_DEFINE(name) \
+    MSC_DECLARE_SECTION("._k_fifo.static") \
     STRUCT_SECTION_ITERABLE(k_fifo, name) = \
         Z_FIFO_INITIALIZER(name)
 
@@ -3185,6 +3186,7 @@ struct k_mutex {
  * @param name Name of the mutex.
  */
 #define K_MUTEX_DEFINE(name) \
+    MSC_DECLARE_SECTION("._k_mutex.static") \
     STRUCT_SECTION_ITERABLE(k_mutex, name) = \
         Z_MUTEX_INITIALIZER(name)
 
@@ -3326,6 +3328,7 @@ __syscall int k_condvar_wait(struct k_condvar* condvar, struct k_mutex* mutex,
  * @param name Name of the condition variable.
  */
 #define K_CONDVAR_DEFINE(name)                                  \
+    MSC_DECLARE_SECTION("._k_condvar.static")                   \
     STRUCT_SECTION_ITERABLE(k_condvar, name) =                  \
         Z_CONDVAR_INITIALIZER(name)
 /**
@@ -3479,6 +3482,7 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem* sem) {
  * @param count_limit Maximum permitted semaphore count.
  */
 #define K_SEM_DEFINE(name, initial_count, count_limit)          \
+    MSC_DECLARE_SECTION("._k_sem.static")                       \
     STRUCT_SECTION_ITERABLE(k_sem, name) =                      \
         Z_SEM_INITIALIZER(name, initial_count, count_limit);    \
     BUILD_ASSERT(((count_limit) != 0) &&                        \
@@ -4814,6 +4818,7 @@ struct k_msgq_attrs {
 #define K_MSGQ_DEFINE(q_name, q_msg_size, q_max_msgs, q_align)      \
     static char __noinit __aligned(q_align)             \
         _k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)];  \
+    MSC_DECLARE_SECTION("._k_msgq.static")              \
     STRUCT_SECTION_ITERABLE(k_msgq, q_name) =           \
         Z_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,\
                            (q_msg_size), (q_max_msgs))
@@ -5615,6 +5620,7 @@ struct k_mem_slab {
                  "slab_align must be a power of 2");            \
     char in_section __aligned(WB_UP(                            \
         slab_align)) _k_mem_slab_buf_##name[(slab_num_blocks) * WB_UP(slab_block_size)]; \
+    MSC_DECLARE_SECTION("._k_mem_slab.static")                  \
     STRUCT_SECTION_ITERABLE(k_mem_slab, name) = Z_MEM_SLAB_INITIALIZER( \
         name, _k_mem_slab_buf_##name, WB_UP(slab_block_size), slab_num_blocks)
 
@@ -5669,6 +5675,7 @@ struct k_mem_slab {
                  "slab_align must be a power of 2");            \
     static char in_section __aligned(WB_UP(                     \
         slab_align)) _k_mem_slab_buf_##name[(slab_num_blocks) * WB_UP(slab_block_size)]; \
+    MSC_DECLARE_SECTION("._k_mem_slab.static")                  \
     static STRUCT_SECTION_ITERABLE(k_mem_slab, name) = Z_MEM_SLAB_INITIALIZER( \
         name, _k_mem_slab_buf_##name, WB_UP(slab_block_size), slab_num_blocks)
 
@@ -5987,6 +5994,7 @@ void k_heap_free(struct k_heap* h, void* mem) __attribute_nonnull(1);
  * @param in_section Section attribute specifier such as Z_GENERIC_SECTION.
  */
 #define Z_HEAP_DEFINE_IN_SECT(name, bytes, in_section)          \
+    MSC_DECLARE_SECTION("._k_heap.static")                      \
     char in_section __aligned(8) /* CHUNK_UNIT */               \
         kheap_##name[MAX(bytes, Z_HEAP_MIN_SIZE)];              \
     STRUCT_SECTION_ITERABLE(k_heap, name) = {                   \

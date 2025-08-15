@@ -1264,6 +1264,7 @@ extern const struct net_buf_data_cb net_buf_fixed_cb;
         .alloc_data = (void*)&net_buf_fixed_##_name,                        \
         .max_alloc_size = _data_size,                                       \
     };                                                                      \
+    MSC_DECLARE_SECTION("._net_buf_pool.static")                            \
     static STRUCT_SECTION_ITERABLE(net_buf_pool, _name) =                   \
         NET_BUF_POOL_INITIALIZER(_name, &net_buf_fixed_alloc_##_name,       \
                                  _net_buf_##_name, _count, _ud_size,        \

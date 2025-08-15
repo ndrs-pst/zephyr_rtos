@@ -291,6 +291,7 @@ struct z_shared_isr_table_entry z_shared_sw_isr_table[];
  * and/or SW ISR tables.
  */
 #define Z_ISR_DECLARE(irq, flags, func, param) \
+	MSC_DECLARE_SECTION(".intList") \
 	static Z_DECL_ALIGN(struct _isr_list) Z_GENERIC_SECTION(.intList) \
 		__used _MK_ISR_NAME(func, __COUNTER__) = \
 			{irq, flags, (void *)&func, (const void*)param}

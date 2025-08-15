@@ -214,6 +214,7 @@ struct net_l3_register {
 #define NET_L3_GET_NAME(l3_name, ptype) __net_l3_register_##l3_name##_##ptype
 
 #define NET_L3_REGISTER(_l2_type, _name, _ptype, _handler)		\
+	MSC_DECLARE_SECTION("._net_l3_register.static")			\
 	static const STRUCT_SECTION_ITERABLE(net_l3_register,		\
 				    NET_L3_GET_NAME(_name, _ptype)) = { \
 		.ptype = _ptype,					\

@@ -171,6 +171,7 @@ struct bt_l2cap_fixed_chan {
 };
 
 #define BT_L2CAP_CHANNEL_DEFINE(_name, _cid, _accept, _destroy)         \
+	MSC_DECLARE_SECTION("._bt_l2cap_fixed_chan.static")             \
 	const STRUCT_SECTION_ITERABLE(bt_l2cap_fixed_chan, _name) = {   \
 				.cid = _cid,                            \
 				.accept = _accept,                      \

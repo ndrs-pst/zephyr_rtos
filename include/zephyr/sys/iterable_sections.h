@@ -39,9 +39,15 @@ extern "C" {
  * @param[in]  secname type name of iterable section.
  * @param[in]  section_postfix postfix to use in section name
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS re-arrange `__in_section` declaration sequence */
+#define TYPE_SECTION_ITERABLE(type, varname, secname, section_postfix) \
+	__in_section(_##secname, static, Z_CONCAT(section_postfix, _)) __used __noasan \
+	Z_DECL_ALIGN(type) varname
+#else
 #define TYPE_SECTION_ITERABLE(type, varname, secname, section_postfix) \
 	Z_DECL_ALIGN(type) varname \
 	__in_section(_##secname, static, Z_CONCAT(section_postfix, _)) __used __noasan
+#endif
 
 /**
  * @brief iterable section start symbol for a generic type

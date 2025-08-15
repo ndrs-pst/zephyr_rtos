@@ -3422,10 +3422,9 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector* collector,
         .mtu     = _mtu,                                        \
         .flags   = {BIT(NET_IF_LOWER_UP)},                      \
     };                                                          \
+    __used __noasan __in_section(_net_if, static, dev_id)       \
     static Z_DECL_ALIGN(struct net_if)                          \
-                        NET_IF_GET_NAME(dev_id, sfx)[_num_configs] \
-                        __used __noasan __in_section(_net_if, static, \
-                                            dev_id) = {         \
+                        NET_IF_GET_NAME(dev_id, sfx)[_num_configs] = { \
         [0] = {                           \
             .if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),      \
             NET_IF_CONFIG_INIT                                  \
@@ -3477,10 +3476,9 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector* collector,
         .l2    = &(NET_L2_GET_NAME(OFFLOADED_NETDEV)),          \
         .flags = {BIT(NET_IF_LOWER_UP)},                        \
     };                                                          \
+    __used __noasan __in_section(_net_if, static, dev_id)       \
     static Z_DECL_ALIGN(struct net_if)                          \
-                        NET_IF_GET_NAME(dev_id, sfx)[NET_IF_MAX_CONFIGS] \
-                        __used __noasan __in_section(_net_if, static,    \
-                                            dev_id) = {         \
+                        NET_IF_GET_NAME(dev_id, sfx)[NET_IF_MAX_CONFIGS] = { \
         [0] = {                                                 \
             .if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),      \
             NET_IF_CONFIG_INIT                                  \
@@ -3503,6 +3501,8 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector* collector,
 #define Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, instance, \
                                    init_fn, pm, data, config, prio, \
                                    api, l2, l2_ctx_type, mtu)   \
+    MSC_DECLARE_SECTION("._net_if_dev.static")                  \
+    MSC_DECLARE_SECTION("._net_if.static")                      \
     Z_DEVICE_STATE_DEFINE(dev_id);                              \
     Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, NULL,       \
                     Z_DEVICE_DT_FLAGS(node_id), pm, data,       \
@@ -3651,6 +3651,8 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector* collector,
 
 #define Z_NET_DEVICE_OFFLOAD_INIT(node_id, dev_id, name, init_fn, pm,   \
                                   data, config, prio, api, mtu)         \
+    MSC_DECLARE_SECTION("._net_if_dev.static")                          \
+    MSC_DECLARE_SECTION("._net_if.static")                              \
     Z_DEVICE_STATE_DEFINE(dev_id);                                      \
     Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, NULL,               \
                     Z_DEVICE_DT_FLAGS(node_id), pm, data,               \
