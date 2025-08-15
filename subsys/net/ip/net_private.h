@@ -83,9 +83,8 @@ extern struct net_if *net_ipip_get_virtual_interface(struct net_if *input_iface)
 #if defined(CONFIG_NET_STATISTICS_VIA_PROMETHEUS)
 extern void net_stats_prometheus_init(struct net_if *iface);
 #else
-static inline void net_stats_prometheus_init(struct net_if *iface)
-{
-	ARG_UNUSED(iface);
+static inline void net_stats_prometheus_init(struct net_if *iface) {
+    ARG_UNUSED(iface);
 }
 #endif /* CONFIG_NET_STATISTICS_VIA_PROMETHEUS */
 
@@ -102,6 +101,7 @@ extern bool net_context_is_reuseaddr_set(struct net_context* context);
 extern bool net_context_is_reuseport_set(struct net_context* context);
 extern bool net_context_is_v6only_set(struct net_context* context);
 extern bool net_context_is_recv_pktinfo_set(struct net_context* context);
+extern bool net_context_is_recv_hoplimit_set(struct net_context* context);
 extern bool net_context_is_timestamping_set(struct net_context* context);
 extern void net_pkt_init(void);
 int net_context_get_local_addr(struct net_context* context,
@@ -127,6 +127,11 @@ static inline bool net_context_is_reuseport_set(struct net_context* context) {
 }
 
 static inline bool net_context_is_recv_pktinfo_set(struct net_context* context) {
+    ARG_UNUSED(context);
+    return (false);
+}
+
+static inline bool net_context_is_recv_hoplimit_set(struct net_context* context) {
     ARG_UNUSED(context);
     return (false);
 }
@@ -162,19 +167,19 @@ static inline void mdns_init_responder(void) { }
 #if defined(CONFIG_DNS_RESOLVER)
 #include <zephyr/net/dns_resolve.h>
 extern int dns_resolve_name_internal(struct dns_resolve_context *ctx,
-				     const char *query,
-				     enum dns_query_type type,
-				     uint16_t *dns_id,
-				     dns_resolve_cb_t cb,
-				     void *user_data,
-				     int32_t timeout,
-				     bool use_cache);
+                                     const char *query,
+                                     enum dns_query_type type,
+                                     uint16_t *dns_id,
+                                     dns_resolve_cb_t cb,
+                                     void *user_data,
+                                     int32_t timeout,
+                                     bool use_cache);
 #include <zephyr/net/socket_service.h>
 extern int dns_resolve_init_with_svc(struct dns_resolve_context *ctx,
-				     const char *servers[],
-				     const struct net_sockaddr *servers_sa[],
-				     const struct net_socket_service_desc *svc,
-				     uint16_t port, int interfaces[]);
+                                     const char *servers[],
+                                     const struct net_sockaddr *servers_sa[],
+                                     const struct net_socket_service_desc *svc,
+                                     uint16_t port, int interfaces[]);
 #endif /* CONFIG_DNS_RESOLVER */
 
 #if defined(CONFIG_NET_TEST)
@@ -261,7 +266,7 @@ struct sock_obj {
 #if defined(CONFIG_NET_IPV6_PE)
 /* This is needed by ipv6_pe.c when privacy extension support is enabled */
 void net_if_ipv6_start_dad(struct net_if *iface,
-			   struct net_if_addr *ifaddr);
+                           struct net_if_addr *ifaddr);
 #endif
 
 #if defined(CONFIG_NET_GPTP)

@@ -271,7 +271,9 @@ static void broadcast_sink_set_ep_state(struct bt_bap_ep *ep, uint8_t state)
 			bt_bap_iso_unbind_ep(ep->iso, ep);
 			stream->ep = NULL;
 			stream->codec_cfg = NULL;
+			stream->group = NULL;
 			ep->stream = NULL;
+			ep->broadcast_sink = NULL;
 		}
 	}
 }
@@ -381,8 +383,6 @@ static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 
 	if (ops != NULL && ops->started != NULL) {
 		ops->started(stream);
-	} else {
-		LOG_WRN("No callback for started set");
 	}
 
 	if (broadcast_sink_is_in_state(sink, BT_BAP_EP_STATE_STREAMING)) {
@@ -430,8 +430,6 @@ static void broadcast_sink_iso_disconnected(struct bt_iso_chan *chan,
 
 	if (ops != NULL && ops->stopped != NULL) {
 		ops->stopped(stream, reason);
-	} else {
-		LOG_WRN("No callback for stopped set");
 	}
 }
 
@@ -1001,6 +999,7 @@ static int bt_bap_broadcast_sink_setup_stream(struct bt_bap_broadcast_sink *sink
 
 	bt_bap_stream_attach(NULL, stream, ep, codec_cfg);
 	stream->qos = &sink->qos_cfg;
+	stream->group = sink;
 
 	return 0;
 }
@@ -1013,6 +1012,7 @@ static void broadcast_sink_cleanup_streams(struct bt_bap_broadcast_sink *sink)
 		if (stream->ep != NULL) {
 			bt_bap_iso_unbind_ep(stream->ep->iso, stream->ep);
 			stream->ep->stream = NULL;
+			stream->ep->broadcast_sink = NULL;
 			stream->ep = NULL;
 		}
 

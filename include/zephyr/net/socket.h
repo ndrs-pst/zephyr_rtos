@@ -9,6 +9,7 @@
  * Copyright (c) 2017-2018 Linaro Limited
  * Copyright (c) 2021 Nordic Semiconductor
  * Copyright (c) 2025 Aerlync Labs Inc.
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -992,6 +993,11 @@ struct in_pktinfo {
 	struct net_in_addr ipi_addr;     /**< Header Destination address */
 };
 
+/** Pass an IP_RECVTTL ancillary message that contains information
+ *  about the time to live of the incoming packet.
+ */
+#define NET_IP_RECVTTL 12
+
 /** Retrieve the current known path MTU of the current socket. Returns an
  *  integer. IP_MTU is valid only for getsockopt and can be employed only when
  *  the socket has been connected.
@@ -1095,6 +1101,17 @@ struct net_ipv6_mreq {
  *  incoming packet. See RFC 3542.
  */
 #define IPV6_RECVPKTINFO 49
+
+/** Option which returns an in6_pktinfo structure in ancillary data */
+#define IPV6_PKTINFO 50
+
+/** Pass an IPV6_RECVHOPLIMIT ancillary message that contains information
+ *  about the hop limit of the incoming packet. See RFC 3542.
+ */
+#define IPV6_RECVHOPLIMIT 51
+
+/** Set or receive the hoplimit value for an outgoing packet. */
+#define IPV6_HOPLIMIT 52
 
 /** RFC5014: Source address selection. */
 #define IPV6_ADDR_PREFERENCES   72
