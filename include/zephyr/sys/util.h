@@ -94,7 +94,7 @@ extern "C" {
     (((~0ULL) - (1ULL << (l)) + 1ULL) & (~0ULL >> (BITS_PER_LONG_LONG - 1ULL - (h))))
 
 /** @brief 0 if @p cond is true-ish; causes a compile error otherwise. */
-#define ZERO_OR_COMPILE_ERROR(cond) ((int)sizeof(char[1 - 2 * !(cond)]) - 1)
+#define ZERO_OR_COMPILE_ERROR(cond) ((int)sizeof(char[1 - (2 * !(cond))]) - 1)
 
 #if (defined(__cplusplus) || defined(_MSC_VER))                 /* #CUSTOM@NDRS */
 
