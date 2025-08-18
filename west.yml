@@ -226,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: c6fc0d018d28f197f6dfacccc762807e68e3d6fb
+      revision: c721e189e972cd0ede9b8e5321bce0be9d7ee8dc
       groups:
         - hal
     - name: hal_rpi_pico
@@ -369,7 +369,7 @@ manifest:
       revision: 54abc109c9c0adfd53c70077744c14e454f04f4a
       path: modules/lib/uoscore-uedhoc
     - name: zcbor
-      revision: 44c47c4be2721ca1a7099f9bc1bb1d90bdb90048
+      revision: 1f622967bd4d19ca2fa50a9ad5d0a9f66ef330ec
       path: modules/lib/zcbor
   # zephyr-keep-sorted-stop
     - name: thingset
