@@ -117,6 +117,8 @@ extern const struct net_buf_data_cb net_buf_dma_cb;
  * @param fdestroy   Optional destroy callback when buffer is freed.
  */
 #define UDC_BUF_POOL_VAR_DEFINE(pname, count, size, ud_size, fdestroy)		\
+	MSC_DECLARE_SECTION("._k_heap.static")					\
+	MSC_DECLARE_SECTION("._net_buf_pool.static")				\
 	_NET_BUF_ARRAY_DEFINE(pname, count, ud_size);				\
 	UDC_K_HEAP_DEFINE(net_buf_mem_pool_##pname, size);			\
 	static const struct net_buf_data_alloc net_buf_data_alloc_##pname = {	\

@@ -226,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: d20c5b895f2eadb16abfcf3e7b3db06bfd0b0b60
+      revision: c6fc0d018d28f197f6dfacccc762807e68e3d6fb
       groups:
         - hal
     - name: hal_rpi_pico
@@ -377,7 +377,7 @@ manifest:
       revision: 84c603f181928dd057989a3b305cb46f14ac2644
     - name: thingset-node-c
       path: modules/lib/thingset-node-c
-      revision: 36775e78d7cc801e485f24234755690a94a5dab4
+      revision: c3b935185fd5e68ff232e78d5ac6a67415f1fce1
     - name: FlashDB
       path: modules/lib/flashdb
       revision: eac65043a7b3abaddaa7db82268d5ba8fd8176b9

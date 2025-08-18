@@ -504,6 +504,7 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 		.bNumConfigurations = 0,				\
 	};								\
 	))								\
+	MSC_DECLARE_SECTION("._usbd_context.static")			\
 	static STRUCT_SECTION_ITERABLE(usbd_context, device_name) = {	\
 		.name = STRINGIFY(device_name),				\
 		.dev = udc_dev,						\
@@ -774,6 +775,8 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
  * @param class_v_reqs Pointer to struct usbd_cctx_vendor_req
  */
 #define USBD_DEFINE_CLASS(class_name, class_api, class_priv, class_v_reqs)	\
+	MSC_DECLARE_SECTION("._usbd_class_fs.static")				\
+	MSC_DECLARE_SECTION("._usbd_class_hs.static")				\
 	static struct usbd_class_data class_name = {				\
 		.name = STRINGIFY(class_name),					\
 		.api = class_api,						\
