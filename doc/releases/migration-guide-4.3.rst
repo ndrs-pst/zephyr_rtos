@@ -31,6 +31,9 @@ Boards
 
 * mimxrt11x0: renamed lpadc1 to lpadc2 and renamed lpadc0 to lpadc1.
 
+* NXP ``frdm_mcxa166`` is renamed to ``frdm_mcxa346``.
+* NXP ``frdm_mcxa276`` is renamed to ``frdm_mcxa266``.
+
 Device Drivers and Devicetree
 *****************************
 
@@ -109,6 +112,15 @@ Other subsystems
 
 .. zephyr-keep-sorted-start re(^\w)
 
+Logging
+=======
+
+* The UART dictionary log parsing script
+  :zephyr_file:`scripts/logging/dictionary/log_parser_uart.py` has been deprecated. Instead, the
+  more generic script of :zephyr_file:`scripts/logging/dictionary/live_log_parser.py` should be
+  used. The new script supports the same functionality (and more), but requires different command
+  line arguments when invoked.
+
 .. zephyr-keep-sorted-stop
 
 Modules
@@ -131,6 +143,9 @@ Silabs
 
 * Fixed name of the :kconfig:option:`CONFIG_SOC_*`. These option contained PART_NUMBER in their
   while they shouldn't.
+
+* The separate ``em3`` power state was removed from Series 2 SoCs. The system automatically
+  transitions to EM2 or EM3 depending on hardware peripheral requests for the oscillators.
 
 Architectures
 *************

@@ -21,6 +21,10 @@
 extern "C" {
 #endif
 
+#if defined(DT_DRV_COMPAT) && !DT_ANY_INST_HAS_PROP_STATUS_OKAY(cs_gpios)
+#define DT_SPI_CTX_HAS_NO_CS_GPIOS 1
+#endif
+
 enum spi_ctx_runtime_op_mode {
     SPI_CTX_RUNTIME_OP_MODE_MASTER = BIT(0),
     SPI_CTX_RUNTIME_OP_MODE_SLAVE  = BIT(1)
@@ -33,8 +37,10 @@ struct spi_context {
     const struct spi_config* owner;
     #endif
 
+    #ifndef DT_SPI_CTX_HAS_NO_CS_GPIOS
     const struct gpio_dt_spec* cs_gpios;
     size_t num_cs_gpios;
+    #endif /* !DT_SPI_CTX_HAS_NO_CS_GPIOS */
 
     #ifdef CONFIG_MULTITHREADING
     struct k_sem lock;
@@ -74,6 +80,7 @@ struct spi_context {
 #define SPI_CONTEXT_INIT_SYNC(_data, _ctx_name)                 \
     ._ctx_name.sync = Z_SEM_INITIALIZER(_data._ctx_name.sync, 0, 1)
 
+#ifndef DT_SPI_CTX_HAS_NO_CS_GPIOS
 #define SPI_CONTEXT_CS_GPIO_SPEC_ELEM(_node_id, _prop, _idx)    \
     GPIO_DT_SPEC_GET_BY_IDX(_node_id, _prop, _idx),
 
@@ -87,13 +94,17 @@ struct spi_context {
                 (SPI_CONTEXT_CS_GPIOS_FOREACH_ELEM(_node_id)), ({0}))   \
     },                                                          \
     ._ctx_name.num_cs_gpios = DT_PROP_LEN_OR(_node_id, cs_gpios, 0),
+#else /* DT_SPI_CTX_HAS_NO_CS_GPIOS */
+#define SPI_CONTEXT_CS_GPIOS_INITIALIZE(...)
+#endif /* DT_SPI_CTX_HAS_NO_CS_GPIOS */
 
 /*
  * Checks if a spi config is the same as the one stored in the spi_context
  * The intention of this function is to be used to check if a driver can skip
  * some reconfiguration for a transfer in a fast code path.
  */
-static inline bool spi_context_configured(struct spi_context* ctx, const struct spi_config* config) {
+static inline bool spi_context_configured(struct spi_context* ctx,
+                                          const struct spi_config* config) {
     return !!(ctx->config == config);
 }
 
@@ -197,7 +208,8 @@ static inline int spi_context_wait_for_completion(struct spi_context* ctx) {
             uint32_t tx_len = spi_context_total_tx_len(ctx);
             uint32_t rx_len = spi_context_total_rx_len(ctx);
 
-            timeout_ms  = (MAX(tx_len, rx_len) * 8UL * 1000UL) / ctx->config->frequency;
+            timeout_ms  = (MAX(tx_len, rx_len) * 8UL * 1000UL) /
+                           ctx->config->frequency;
             timeout_ms += CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE;
 
             timeout = K_MSEC(timeout_ms);
@@ -291,6 +303,13 @@ static inline void spi_context_complete(struct spi_context* ctx,
     #endif /* CONFIG_SPI_ASYNC */
 }
 
+#ifdef DT_SPI_CTX_HAS_NO_CS_GPIOS
+#define spi_context_cs_configure_all(...) 0
+#define spi_context_cs_get_all(...) 0
+#define spi_context_cs_put_all(...) 0
+#define _spi_context_cs_control(...) (void) 0
+#define spi_context_cs_control(...) (void) 0
+#else /* DT_SPI_CTX_HAS_NO_CS_GPIOS */
 /*
  * This function initializes all the chip select GPIOs associated with a spi controller.
  * The context first must be initialized using the SPI_CONTEXT_CS_GPIOS_INITIALIZE macro.
@@ -305,7 +324,8 @@ static inline int spi_context_cs_configure_all(struct spi_context* ctx) {
 
     for (cs_gpio = ctx->cs_gpios; cs_gpio < &ctx->cs_gpios[ctx->num_cs_gpios]; cs_gpio++) {
         if (device_is_ready(cs_gpio->port) == false) {
-            LOG_ERR("CS GPIO port %s pin %d is not ready", cs_gpio->port->name, cs_gpio->pin);
+            LOG_ERR("CS GPIO port %s pin %d is not ready",
+                    cs_gpio->port->name, cs_gpio->pin);
             return (-ENODEV);
         }
 
@@ -386,12 +406,13 @@ static inline void _spi_context_cs_control(struct spi_context* ctx, bool on, boo
 static inline void spi_context_cs_control(struct spi_context* ctx, bool on) {
     _spi_context_cs_control(ctx, on, false);
 }
+#endif /* DT_SPI_CTX_HAS_NO_CS_GPIOS */
 
 /* Forcefully releases the spi context and removes the owner, allowing taking the lock
  * with spi_context_lock without the previous owner releasing the lock.
  * This is usually used to aid in implementation of the spi_release driver API.
  */
-static inline void spi_context_unlock_unconditionally(struct spi_context* ctx) {
+static inline void spi_context_unlock_unconditionally(struct spi_context* ctx __maybe_unused) {
     /* Forcing CS to go to inactive status */
     _spi_context_cs_control(ctx, false, true);
 
@@ -446,12 +467,16 @@ void spi_context_buffers_setup(struct spi_context* ctx,
     LOG_DBG("tx_bufs %p - rx_bufs %p - %u", tx_bufs, rx_bufs, dfs);
 
     ctx->current_tx = tx_bufs ? tx_bufs->buffers : NULL;
-    ctx->tx_count   = ctx->current_tx ? tx_bufs->count : 0;
-    ctx->tx_buf     = (const uint8_t*)spi_context_get_next_buf(&ctx->current_tx, &ctx->tx_count, &ctx->tx_len, dfs);
+    ctx->tx_count = ctx->current_tx ? tx_bufs->count : 0;
+    ctx->tx_buf = (const uint8_t*)
+        spi_context_get_next_buf(&ctx->current_tx, &ctx->tx_count,
+                                 &ctx->tx_len, dfs);
 
     ctx->current_rx = rx_bufs ? rx_bufs->buffers : NULL;
-    ctx->rx_count   = ctx->current_rx ? rx_bufs->count : 0;
-    ctx->rx_buf     = (uint8_t*)spi_context_get_next_buf(&ctx->current_rx, &ctx->rx_count, &ctx->rx_len, dfs);
+    ctx->rx_count = ctx->current_rx ? rx_bufs->count : 0;
+    ctx->rx_buf = (uint8_t*)
+        spi_context_get_next_buf(&ctx->current_rx, &ctx->rx_count,
+                                 &ctx->rx_len, dfs);
 
     ctx->sync_status = 0;
 
@@ -482,7 +507,10 @@ void spi_context_update_tx(struct spi_context* ctx, uint8_t dfs, uint32_t len) {
                 /* Current buffer is done. Get the next one to be processed. */
                 ++ctx->current_tx;
                 --ctx->tx_count;
-                ctx->tx_buf = (const uint8_t*)spi_context_get_next_buf(&ctx->current_tx, &ctx->tx_count, &ctx->tx_len, dfs);
+                ctx->tx_buf = (const uint8_t*)
+                    spi_context_get_next_buf(&ctx->current_tx,
+                                             &ctx->tx_count,
+                                             &ctx->tx_len, dfs);
             }
             else if (ctx->tx_buf != NULL) {
                 ctx->tx_buf += (dfs * len);
@@ -523,12 +551,11 @@ bool spi_context_tx_buf_on(struct spi_context* ctx) {
  */
 static ALWAYS_INLINE
 void spi_context_update_rx(struct spi_context* ctx, uint8_t dfs, uint32_t len) {
-#ifdef CONFIG_SPI_SLAVE
+    #ifdef CONFIG_SPI_SLAVE
     if (spi_context_is_slave(ctx)) {
         ctx->recv_frames += len;
     }
-
-#endif /* CONFIG_SPI_SLAVE */
+    #endif /* CONFIG_SPI_SLAVE */
 
     if (ctx->rx_len > 0U) {
         if (len <= ctx->rx_len) {
@@ -537,9 +564,10 @@ void spi_context_update_rx(struct spi_context* ctx, uint8_t dfs, uint32_t len) {
                 /* Current buffer is done. Get the next one to be processed. */
                 ++ctx->current_rx;
                 --ctx->rx_count;
-                ctx->rx_buf = (uint8_t*)spi_context_get_next_buf(&ctx->current_rx,
-                                                                 &ctx->rx_count,
-                                                                 &ctx->rx_len, dfs);
+                ctx->rx_buf = (uint8_t*)
+                    spi_context_get_next_buf(&ctx->current_rx,
+                                             &ctx->rx_count,
+                                             &ctx->rx_len, dfs);
             }
             else if (ctx->rx_buf != NULL) {
                 ctx->rx_buf += (dfs * len);

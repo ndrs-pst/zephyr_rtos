@@ -290,7 +290,7 @@ DT_INST_FOREACH_STATUS_OKAY_VARGS(DAC_AD56XX_INST_DEFINE, DT_DRV_COMPAT, DAC_AD5
 #define DT_DRV_COMPAT adi_ad5686
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
 static const uint8_t ad5686_channels[] = {
-    1, 2, 4, 8
+    1, 2, 4, 8, 3, 15,
 };
 #define DAC_AD5686_RESOLUTION    16
 #define DAC_AD5686_CHANNELS      ad5686_channels

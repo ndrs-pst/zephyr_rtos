@@ -496,8 +496,8 @@ static int spi_stm32_shift_frames(const struct spi_stm32_config* cfg,
     return spi_stm32_get_err(spi);
 }
 
-static void spi_stm32_cs_control(const struct device* dev, bool on) {
-    struct spi_stm32_data* data = dev->data;
+static void spi_stm32_cs_control(const struct device* dev, bool on __maybe_unused) {
+    __maybe_unused struct spi_stm32_data* data = dev->data;
 
     spi_context_cs_control(&data->ctx, on);
 
