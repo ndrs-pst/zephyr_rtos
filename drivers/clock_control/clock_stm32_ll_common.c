@@ -306,7 +306,7 @@ int enabled_clock(uint32_t src_clk) {
         #endif /* STM32_SRC_PLLSAI2_DIVR */
 
         #if defined(STM32_SRC_PLL2CLK)
-        case STM32_SRC_PLL2CLK:
+        case STM32_SRC_PLL2CLK :
         if (!IS_ENABLED(STM32_PLL2_ENABLED)) {
             r = -ENOTSUP;
         }
@@ -314,12 +314,27 @@ int enabled_clock(uint32_t src_clk) {
         #endif
 
         #if defined(STM32_SRC_PLL3CLK)
-        case STM32_SRC_PLL3CLK:
+        case STM32_SRC_PLL3CLK :
         if (!IS_ENABLED(STM32_PLL3_ENABLED)) {
             r = -ENOTSUP;
         }
         break;
         #endif
+
+        #if defined(STM32_SRC_TIMPCLK1)
+        case STM32_SRC_TIMPCLK1 :
+            break;
+        #endif /* STM32_SRC_TIMPCLK1 */
+
+        #if defined(STM32_SRC_TIMPCLK2)
+        case STM32_SRC_TIMPCLK2 :
+            break;
+        #endif /* STM32_SRC_TIMPCLK2 */
+
+        #if defined(STM32_SRC_TIMPLLCLK)
+        case STM32_SRC_TIMPLLCLK :
+            break;
+        #endif /* STM32_SRC_TIMPLLCLK */
 
         default :
             return (-ENOTSUP);
@@ -424,14 +439,6 @@ static int stm32_clock_control_get_subsys_rate(const struct device* clock,
     uint32_t ahb3_clock = ahb_clock;
     #endif
 
-    #if defined(STM32_SRC_PCLK)
-    if (pclken->bus == STM32_SRC_PCLK) {
-        /* STM32_SRC_PCLK can't be used to request a subsys freq */
-        /* Use STM32_CLOCK_BUS_FOO instead. */
-        return (-ENOTSUP);
-    }
-    #endif
-
     ARG_UNUSED(clock);
 
     switch (pclken->bus) {
@@ -444,31 +451,40 @@ static int stm32_clock_control_get_subsys_rate(const struct device* clock,
         #endif
             *rate = ahb_clock;
             break;
+
         #if defined(STM32_CLOCK_BUS_AHB3)
         case STM32_CLOCK_BUS_AHB3 :
             *rate = ahb3_clock;
             break;
         #endif
+
         case STM32_CLOCK_BUS_APB1 :
         #if defined(STM32_CLOCK_BUS_APB1_2)
         case STM32_CLOCK_BUS_APB1_2 :
         #endif
+        #if defined(STM32_SRC_PCLK)
+        case STM32_SRC_PCLK :
+        #endif
             *rate = apb1_clock;
             break;
+
         #if defined(STM32_CLOCK_BUS_APB2)
         case STM32_CLOCK_BUS_APB2 :
             *rate = apb2_clock;
             break;
         #endif
+
         #if defined(STM32_CLOCK_BUS_APB3)
         case STM32_CLOCK_BUS_APB3 :
             /* STM32WL: AHB3 and APB3 share the same clock and prescaler. */
             *rate = ahb3_clock;
             break;
         #endif
+
         case STM32_SRC_SYSCLK :
             *rate = SystemCoreClock * STM32_CORE_PRESCALER;
             break;
+
         #if defined(STM32_SRC_PLLCLK) & defined(STM32_SYSCLK_SRC_PLL)
         case STM32_SRC_PLLCLK :
             if (get_pllout_frequency() == 0) {
@@ -477,6 +493,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device* clock,
             *rate = get_pllout_frequency();
             break;
         #endif
+
         #if defined(STM32_SRC_PLL_P) & STM32_PLL_P_ENABLED
         case STM32_SRC_PLL_P :
             *rate = get_pll_div_frequency(get_pllsrc_frequency(),
@@ -485,6 +502,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device* clock,
                                           STM32_PLL_P_DIVISOR);
             break;
         #endif
+
         #if defined(STM32_SRC_PLL_Q) & STM32_PLL_Q_ENABLED
         case STM32_SRC_PLL_Q :
             *rate = get_pll_div_frequency(get_pllsrc_frequency(),
@@ -493,6 +511,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device* clock,
                                           STM32_PLL_Q_DIVISOR);
             break;
         #endif
+
         #if defined(STM32_SRC_PLL_R) & STM32_PLL_R_ENABLED
         case STM32_SRC_PLL_R :
             *rate = get_pll_div_frequency(get_pllsrc_frequency(),
@@ -501,6 +520,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device* clock,
                                           STM32_PLL_R_DIVISOR);
             break;
         #endif
+
         #if defined(STM32_SRC_PLLI2S_Q) & STM32_PLLI2S_Q_ENABLED & STM32_PLLI2S_ENABLED
         case STM32_SRC_PLLI2S_Q:
             *rate = get_pll_div_frequency(get_pllsrc_frequency(),
@@ -509,6 +529,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device* clock,
                                           STM32_PLLI2S_Q_DIVISOR);
             break;
         #endif /* STM32_SRC_PLLI2S_Q */
+
         #if defined(STM32_SRC_PLLI2S_R) & STM32_PLLI2S_ENABLED
         case STM32_SRC_PLLI2S_R :
             *rate = get_pll_div_frequency(get_pllsrc_frequency(),
@@ -593,6 +614,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device* clock,
             *rate = STM32_LSI_FREQ;
             break;
         #endif
+
         #if defined(STM32_SRC_HSI)
         case STM32_SRC_HSI :
             #if defined(CONFIG_SOC_SERIES_STM32L0X)
@@ -602,26 +624,59 @@ static int stm32_clock_control_get_subsys_rate(const struct device* clock,
             #endif
             break;
         #endif
+
         #if defined(STM32_SRC_MSI)
         case STM32_SRC_MSI :
             *rate = get_msi_frequency();
             break;
         #endif
+
         #if defined(STM32_SRC_HSE)
         case STM32_SRC_HSE :
             *rate = STM32_HSE_FREQ;
             break;
         #endif
+
         #if defined(STM32_HSI48_ENABLED)
         case STM32_SRC_HSI48 :
             *rate = STM32_HSI48_FREQ;
             break;
         #endif /* STM32_HSI48_ENABLED */
+
         #if defined(STM32_CK48_ENABLED)
         case STM32_SRC_CK48:
             *rate = get_ck48_frequency();
             break;
         #endif /* STM32_CK48_ENABLED */
+
+        #if defined(STM32_SRC_TIMPCLK1)
+        case STM32_SRC_TIMPCLK1:
+            #if STM32_TIMER_PRESCALER && (defined(RCC_DCKCFGR_TIMPRE) || defined(RCC_DCKCFGR1_TIMPRE))
+            *rate = STM32_APB1_PRESCALER <= 4 ? ahb_clock : apb1_clock * 4;
+            #else /* STM32_TIMER_PRESCALER && (RCC_DCKCFGR_TIMPRE || RCC_DCKCFGR1_TIMPRE) */
+            *rate = STM32_APB1_PRESCALER <= 2 ? ahb_clock : apb1_clock * 2;
+            #endif /* STM32_TIMER_PRESCALER && (RCC_DCKCFGR_TIMPRE || RCC_DCKCFGR1_TIMPRE) */
+            break;
+        #endif /* STM32_SRC_TIMPCLK1 */
+
+        #if defined(STM32_SRC_TIMPCLK2)
+        case STM32_SRC_TIMPCLK2:
+            #if STM32_TIMER_PRESCALER && (defined(RCC_DCKCFGR_TIMPRE) || defined(RCC_DCKCFGR1_TIMPRE))
+            *rate = STM32_APB2_PRESCALER <= 4 ? ahb_clock : apb2_clock * 4;
+            #else /* STM32_TIMER_PRESCALER && (RCC_DCKCFGR_TIMPRE || RCC_DCKCFGR1_TIMPRE) */
+            *rate = STM32_APB2_PRESCALER <= 2 ? ahb_clock : apb2_clock * 2;
+            #endif /* STM32_TIMER_PRESCALER && (RCC_DCKCFGR_TIMPRE || RCC_DCKCFGR1_TIMPRE) */
+            break;
+        #endif /* STM32_SRC_TIMPCLK2 */
+
+        #if defined(STM32_SRC_TIMPLLCLK)
+        case STM32_SRC_TIMPLLCLK:
+            *rate = get_pllout_frequency() * 2;
+            if (*rate == 0) {
+                return (-EIO);
+            }
+            break;
+        #endif /* STM32_SRC_TIMPLLCLK */
 
         default :
             return (-ENOTSUP);
@@ -1124,6 +1179,15 @@ int stm32_clock_control_init(const struct device* dev) {
     #endif
     #if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), adc34_prescaler)
     LL_RCC_SetADCClockSource(adc34_prescaler(STM32_ADC34_PRESCALER));
+    #endif
+
+    #if defined(RCC_DCKCFGR_TIMPRE) || defined(RCC_DCKCFGR1_TIMPRE)
+    if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
+        LL_RCC_SetTIMPrescaler(LL_RCC_TIM_PRESCALER_FOUR_TIMES);
+    }
+    else {
+        LL_RCC_SetTIMPrescaler(LL_RCC_TIM_PRESCALER_TWICE);
+    }
     #endif
 
     return (0);

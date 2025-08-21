@@ -120,11 +120,13 @@ static uint32_t get_sysclk_frequency(void) {
 
 /** @brief Verifies clock is part of active clock configuration */
 int enabled_clock(uint32_t src_clk) {
-    if ( (src_clk == STM32_SRC_SYSCLK) ||
-         (src_clk == STM32_SRC_HCLK  ) ||
-         (src_clk == STM32_SRC_PCLK1 ) ||
-         (src_clk == STM32_SRC_PCLK2 ) ||
-         (src_clk == STM32_SRC_PCLK3 ) ||
+    if ( (src_clk == STM32_SRC_SYSCLK)   ||
+         (src_clk == STM32_SRC_HCLK  )   ||
+         (src_clk == STM32_SRC_PCLK1 )   ||
+         (src_clk == STM32_SRC_PCLK2 )   ||
+         (src_clk == STM32_SRC_PCLK3 )   ||
+         (src_clk == STM32_SRC_TIMPCLK1) ||
+         (src_clk == STM32_SRC_TIMPCLK2) ||
         ((src_clk == STM32_SRC_HSE   ) && IS_ENABLED(STM32_HSE_ENABLED   )) ||
         ((src_clk == STM32_SRC_HSI16 ) && IS_ENABLED(STM32_HSI_ENABLED   )) ||
         ((src_clk == STM32_SRC_HSI48 ) && IS_ENABLED(STM32_HSI48_ENABLED )) ||
@@ -196,6 +198,11 @@ static int stm32_clock_control_configure(const struct device* dev,
     if (err < 0) {
         /* Attempt to configure a src clock not available or not valid */
         return (err);
+    }
+
+    if (pclken->enr == NO_SEL) {
+        /* Domain clock is fixed. Nothing to set. Exit */
+        return 0;
     }
 
     sys_clear_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
@@ -365,6 +372,14 @@ static int stm32_clock_control_get_subsys_rate(const struct device* dev,
                                          STM32_PLL3_R_DIVISOR);
             break;
         #endif /* STM32_PLL3_ENABLED */
+
+        case STM32_SRC_TIMPCLK1:
+            *rate = STM32_APB1_PRESCALER <= 2 ? ahb_clock : apb1_clock * 2;
+            break;
+
+        case STM32_SRC_TIMPCLK2:
+            *rate = STM32_APB2_PRESCALER <= 2 ? ahb_clock : apb2_clock * 2;
+            break;
 
         default :
             return (-ENOTSUP);
