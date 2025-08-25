@@ -1629,7 +1629,7 @@ struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 	}
 
 	if (!buf) {
-		LOG_WRN("Unable to allocate buffer within timeout");
+		LOG_DBG("Unable to allocate buffer within timeout");
 		return NULL;
 	}
 
