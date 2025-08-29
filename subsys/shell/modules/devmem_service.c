@@ -48,7 +48,7 @@ static int memory_dump(const struct shell* sh, mem_addr_t phys_addr, size_t size
     uint32_t value;
     size_t data_offset;
     mm_reg_t addr;
-    const size_t vsize = width / BITS_PER_BYTE;
+    size_t const vsize = (width / BITS_PER_BYTE);
     uint8_t hex_data[SHELL_HEXDUMP_BYTES_IN_LINE];
 
     #if defined(CONFIG_MMU) || defined(CONFIG_PCIE)
@@ -174,15 +174,25 @@ static void bypass_cb(const struct shell* sh, uint8_t* recv, size_t len) {
     uint8_t byte;
     struct devmem_service_context* context = &devmem_context;
 
-    if (tail == CHAR_CAN && recv[0] == CHAR_DC1) {
-        escape = true;
-    }
-    else {
-        for (int i = 0; i < (len - 1); i++) {
-            if (recv[i] == CHAR_CAN && recv[i + 1] == CHAR_DC1) {
-                escape = true;
-                break;
-            }
+    for (size_t i = 0; i < len; i++) {
+        if ((tail == CHAR_CAN) && (recv[i] == CHAR_DC1)) {
+            escape = true;
+            tail   = 0;
+            break;
+        }
+        tail = recv[i];
+
+        if (is_ascii(recv[i])) {
+            context->chunk[context->chunk_element] = recv[i];
+            context->chunk_element++;
+        }
+
+        if (context->chunk_element == 2) {
+            byte = (uint8_t)strtoul(context->chunk, NULL, 16);
+            *context->bytes = byte;
+            context->bytes++;
+            context->sum++;
+            context->chunk_element = 0;
         }
     }
 
@@ -208,21 +218,6 @@ static void bypass_cb(const struct shell* sh, uint8_t* recv, size_t len) {
             }
         }
         return;
-    }
-
-    tail = recv[len - 1];
-
-    if (is_ascii(*recv)) {
-        context->chunk[context->chunk_element] = *recv;
-        context->chunk_element++;
-    }
-
-    if (context->chunk_element == 2) {
-        byte = (uint8_t)strtoul(context->chunk, NULL, 16);
-        *context->bytes = byte;
-        context->bytes++;
-        context->sum++;
-        context->chunk_element = 0;
     }
 }
 
@@ -381,10 +376,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_devmem,
                                SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_ARG_REGISTER(devmem, &sub_devmem,
-                   "Read/write physical memory\n"
-                   "Usage:\n"
-                   "Read memory at address with optional width:\n"
-                   "devmem <address> [<width>]\n"
-                   "Write memory at address with mandatory width and value:\n"
-                   "devmem <address> <width> <value>",
-                   cmd_devmem, 2, 2);
+                       "Read/write physical memory\n"
+                       "Usage:\n"
+                       "Read memory at address with optional width:\n"
+                       "devmem <address> [<width>]\n"
+                       "Write memory at address with mandatory width and value:\n"
+                       "devmem <address> <width> <value>",
+                       cmd_devmem, 2, 2);
