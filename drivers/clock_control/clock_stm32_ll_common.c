@@ -331,7 +331,7 @@ int enabled_clock(uint32_t src_clk) {
             break;
         #endif /* STM32_SRC_TIMPCLK2 */
 
-        #if defined(STM32_SRC_TIMPLLCLK)
+        #if defined(STM32_SRC_TIMPLLCLK) && DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pll))
         case STM32_SRC_TIMPLLCLK :
             break;
         #endif /* STM32_SRC_TIMPLLCLK */
