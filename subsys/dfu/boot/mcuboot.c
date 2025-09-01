@@ -98,7 +98,6 @@ struct mcuboot_v1_raw_header {
 uint8_t boot_fetch_active_slot(void) {
     int rc;
     uint8_t slot;
-    uint8_t fa_id;
 
     rc = blinfo_lookup(BLINFO_RUNNING_SLOT, &slot, sizeof(slot));
 
@@ -112,45 +111,38 @@ uint8_t boot_fetch_active_slot(void) {
     /* Map slot number back to flash area ID */
     switch (slot) {
         case 0 :
-            fa_id = FIXED_PARTITION_ID(SLOT0_PARTITION);
-            break;
+            return FIXED_PARTITION_ID(SLOT0_PARTITION);
 
         #if FIXED_PARTITION_EXISTS(SLOT1_PARTITION)
         case 1 :
-            fa_id = FIXED_PARTITION_ID(SLOT1_PARTITION);
-            break;
+            return FIXED_PARTITION_ID(SLOT1_PARTITION);
         #endif
 
         #if FIXED_PARTITION_EXISTS(SLOT2_PARTITION)
         case 2 :
-            fa_id = FIXED_PARTITION_ID(SLOT2_PARTITION);
-            break;
+            return FIXED_PARTITION_ID(SLOT2_PARTITION);
         #endif
 
         #if FIXED_PARTITION_EXISTS(SLOT3_PARTITION)
         case 3 :
-            fa_id = FIXED_PARTITION_ID(SLOT3_PARTITION);
-            break;
+            return FIXED_PARTITION_ID(SLOT3_PARTITION);
         #endif
 
         #if FIXED_PARTITION_EXISTS(SLOT4_PARTITION)
         case 4 :
-            fa_id = FIXED_PARTITION_ID(SLOT4_PARTITION);
-            break;
+            return FIXED_PARTITION_ID(SLOT4_PARTITION);
         #endif
 
         #if FIXED_PARTITION_EXISTS(SLOT5_PARTITION)
         case 5 :
-            fa_id = FIXED_PARTITION_ID(SLOT5_PARTITION);
-            break;
+            return FIXED_PARTITION_ID(SLOT5_PARTITION);
         #endif
 
         default :
-            fa_id = INVALID_SLOT_ID;
             break;
     }
 
-    return (fa_id);
+    return INVALID_SLOT_ID;
 }
 #else /* CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD ||
        * CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT
