@@ -207,7 +207,6 @@ class Handler:
             else:
                 self.instance.reason = self.instance.reason or "Unknown Error"
         elif harness.status != TwisterStatus.NONE:
-            print("got in here with status " + str(harness.status))
             self.instance.status = harness.status
             if harness.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
                 self.instance.reason = harness.reason
@@ -391,7 +390,7 @@ class BinaryHandler(Handler):
             self.returncode = proc.returncode
             if proc.returncode != 0:
                 self.instance.status = TwisterStatus.ERROR
-                self.instance.reason = f"BinaryHandler returned {proc.returncode}"
+                self.instance.reason = f"rc={proc.returncode}"
             self.try_kill_process_by_pid()
 
         self.execution_time = time.time() - start_time
