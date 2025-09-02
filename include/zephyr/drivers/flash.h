@@ -14,9 +14,9 @@
 #define ZEPHYR_INCLUDE_DRIVERS_FLASH_H_
 
 /**
- * @brief FLASH internal Interface
- * @defgroup flash_internal_interface FLASH internal Interface
- * @ingroup io_interfaces
+ * @brief Internal interfaces for flash memory controllers.
+ * @defgroup flash_internal_interface Flash Internal
+ * @ingroup flash_interface
  * @{
  */
 
@@ -43,8 +43,8 @@ struct flash_pages_layout {
  */
 
 /**
- * @brief FLASH Interface
- * @defgroup flash_interface FLASH Interface
+ * @brief Interfaces for flash memory controllers.
+ * @defgroup flash_interface Flash
  * @since 1.2
  * @version 1.0.0
  * @ingroup io_interfaces
@@ -94,7 +94,8 @@ struct flash_parameters {
 #define FLASH_ERASE_C_VAL_BIT       0x04
 #define FLASH_ERASE_UNIFORM_PAGE    0x08
 
-/* @brief Parser for flash_parameters for retrieving erase capabilities
+/**
+ * @brief Parser for flash_parameters for retrieving erase capabilities
  *
  * The functions parses flash_parameters type object and returns combination
  * of erase capabilities of 0 if device does not have any.
@@ -171,8 +172,6 @@ typedef int (*flash_api_write)(const struct device* dev, off_t offset,
 typedef int (*flash_api_erase)(const struct device* dev, off_t offset,
                                size_t size);
 
-typedef const struct flash_parameters* (*flash_api_get_parameters)(const struct device* dev);
-
 /**
  * @brief Get device size in bytes.
  *
@@ -184,6 +183,8 @@ typedef const struct flash_parameters* (*flash_api_get_parameters)(const struct 
  * @return 0 on success, negative errno code on error.
  */
 typedef int (*flash_api_get_size)(const struct device* dev, uint64_t* size);
+
+typedef const struct flash_parameters* (*flash_api_get_parameters)(const struct device* dev);
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 /**
@@ -560,7 +561,7 @@ __syscall int flash_read_jedec_id(const struct device* dev, uint8_t* id);
 
 static inline int z_impl_flash_read_jedec_id(const struct device* dev,
                                              uint8_t* id) {
-    int rv  = -ENOTSUP;
+    int rv = -ENOTSUP;
     const struct flash_driver_api* api =
             (const struct flash_driver_api*)dev->api;
 
