@@ -2177,7 +2177,7 @@ static int uart_stm32_registers_configure(const struct device* dev) {
             break;
         }
     }
-    #endif /* !USART_ISR_TEACK */
+    #endif /* USART_ISR_TEACK */
 
     #ifdef USART_ISR_REACK
     /* Wait until REACK flag is set */
@@ -2186,7 +2186,7 @@ static int uart_stm32_registers_configure(const struct device* dev) {
             break;
         }
     }
-    #endif /* !USART_ISR_REACK */
+    #endif /* USART_ISR_REACK */
 
     return (0);
 }
@@ -2274,21 +2274,35 @@ static int uart_stm32_pm_action(const struct device* dev,
                 return (err);
             }
 
-            /* Enable clock */
-            err = clock_control_on(data->clock,
-                                   (clock_control_subsys_t)&config->pclken[0]);
+            /* Enable bus clock */
+            err = clock_control_on(data->clock, (clock_control_subsys_t)&config->pclken[0]);
             if (err < 0) {
                 LOG_ERR("Could not enable (LP)UART clock");
                 return (err);
             }
 
-            if ((IS_ENABLED(CONFIG_PM_S2RAM)) &&
-                (!LL_USART_IsEnabled(config->usart))) {
+            if (!LL_USART_IsEnabled(config->usart)) {
                 /* When exiting low power mode, check whether UART is enabled.
-                 * If not, it means we are exiting Suspend to RAM mode (STM32
-                 * Standby), and the driver needs to be reinitialized.
+                 * If not, it means the peripheral has been powered down
+                 * by the low-power mode. If suspend-to-RAM is enabled,
+                 * assume the entire SoC has been powered down and do a
+                 * full re-initialization. Otherwise, assume that the
+                 * low-power mode shut down power to the UART but not
+                 * critical peripherals (CPU, GPIO, RCC), which means
+                 * we only have to reconfigure this UART instance.
+                 *
+                 * STOP2 on STM32WLE5 is an example of such low-power mode.
                  */
-                uart_stm32_init(dev);
+                if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+                    err = uart_stm32_init(dev);
+                }
+                else {
+                    err = uart_stm32_registers_configure(dev);
+                }
+
+                if (err < 0) {
+                    return err;
+                }
             }
             break;
 

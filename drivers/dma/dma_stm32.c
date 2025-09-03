@@ -281,10 +281,9 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device* dev,
                                              uint32_t id,
                                              struct dma_config* config) {
     const struct dma_stm32_config* dev_config = dev->config;
-    struct dma_stm32_stream* stream =
-                &dev_config->streams[id - STM32_DMA_STREAM_OFFSET];
     DMA_TypeDef* dma = dev_config->base;
     LL_DMA_InitTypeDef DMA_InitStruct;
+    struct dma_stm32_stream* stream;
     int ret;
 
     LL_DMA_StructInit(&DMA_InitStruct);
@@ -297,6 +296,7 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device* dev,
         return (-EINVAL);
     }
 
+    stream = &dev_config->streams[id];
     if (stream->busy) {
         LOG_ERR("dma stream %d is busy.", id);
         return (-EBUSY);
@@ -616,8 +616,8 @@ DMA_STM32_EXPORT_API int dma_stm32_start(const struct device* dev, uint32_t id) 
 
 DMA_STM32_EXPORT_API int dma_stm32_stop(const struct device* dev, uint32_t id) {
     const struct dma_stm32_config* config = dev->config;
-    struct dma_stm32_stream* stream = &config->streams[id - STM32_DMA_STREAM_OFFSET];
     DMA_TypeDef* dma = config->base;
+    struct dma_stm32_stream* stream;
 
     /* Give channel from index 0 */
     id = (id - STM32_DMA_STREAM_OFFSET);
@@ -626,6 +626,7 @@ DMA_STM32_EXPORT_API int dma_stm32_stop(const struct device* dev, uint32_t id) {
         return (-EINVAL);
     }
 
+    stream = &config->streams[id];
     if (stream->hal_override) {
         stream->busy = false;
         return (0);
@@ -895,19 +896,19 @@ static void zephyr_gtest_dma_stm32_reg_init(const struct device* dev, struct dma
     int rc = 0;
 
     switch (base_addr) {
-        case DMA1_BASE: {
+        case DMA1_BASE : {
             static DMA_TypeDef ut_mcu_dma1;
             cfg->base = &ut_mcu_dma1;
             break;
         }
 
-        case DMA2_BASE: {
+        case DMA2_BASE : {
             static DMA_TypeDef ut_mcu_dma2;
             cfg->base = &ut_mcu_dma2;
             break;
         }
 
-        default: {
+        default : {
             rc = -1;
             break;
         }
