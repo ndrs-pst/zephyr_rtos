@@ -1583,6 +1583,18 @@ Documentation Infrastructure:
   tests:
     - drivers.fpga
 
+"Drivers: Firmware":
+  status: maintained
+  maintainers:
+    - LaurentiuM1234
+  files:
+    - drivers/firmware/
+    - include/zephyr/drivers/firmware/
+    - dts/bindings/firmware/
+    - doc/hardware/arch/arm-scmi.rst
+  labels:
+    - "area: Firmware"
+
 "Drivers: Flash":
   status: maintained
   maintainers:
@@ -4609,11 +4621,11 @@ TDK Sensors:
 TI K3 Platforms:
   status: maintained
   maintainers:
-    - vaishnavachath
+    - glneo
   collaborators:
     - gramsay0
     - dnltz
-    - glneo
+    - vaishnavachath
   files:
     - boards/ti/*am62*/
     - drivers/*/*davinci*
@@ -5588,6 +5600,15 @@ West:
     - modules/littlefs/
   labels:
     - "area: Storage"
+
+"West project: lora-basics-modem":
+  status: maintained
+  maintainers:
+    - JordanYates
+  files:
+    - modules/lora-basics-modem/
+  labels:
+    - "area: LoRa"
 
 "West project: loramac-node":
   status: maintained

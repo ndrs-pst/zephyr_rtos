@@ -133,6 +133,7 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 {
 	struct i2s_stm32_sai_data *dev_data = CONTAINER_OF(hsai, struct i2s_stm32_sai_data, hsai);
 	struct stream *stream = &dev_data->stream;
+	void *mem_block_tmp = stream->mem_block;
 	struct queue_item item;
 	int ret;
 
@@ -154,6 +155,7 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 	if (stream->last_block) {
 		LOG_DBG("TX Stopped ...");
 		stream->state = I2S_STATE_READY;
+		stream->mem_block = NULL;
 		goto exit;
 	}
 
@@ -162,6 +164,7 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 	if (k_msgq_num_used_get(&stream->queue) == 0) {
 		LOG_DBG("Exit TX callback, no more data in the queue");
 		stream->state = I2S_STATE_READY;
+		stream->mem_block = NULL;
 		goto exit;
 	}
 
@@ -183,7 +186,7 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 
 exit:
 	/* Free memory slab & exit */
-	k_mem_slab_free(stream->i2s_cfg.mem_slab, stream->mem_block);
+	k_mem_slab_free(stream->i2s_cfg.mem_slab, mem_block_tmp);
 }
 
 void HAL_SAI_ErrorCallback(SAI_HandleTypeDef *hsai)
@@ -286,9 +289,11 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 	hdma->Instance = __LL_DMA_GET_STREAM_INSTANCE(stream->reg, stream->dma_channel);
 	hdma->Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
-	hdma->Init.MemDataAlignment = DMA_PDATAALIGN_HALFWORD;
+	hdma->Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
 	hdma->Init.Priority = DMA_PRIORITY_HIGH;
 	hdma->Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+	hdma->Init.PeriphInc = DMA_PINC_DISABLE;
+	hdma->Init.MemInc = DMA_MINC_ENABLE;
 #else
 	hdma->Instance = LL_DMA_GET_CHANNEL_INSTANCE(stream->reg, stream->dma_channel);
 	hdma->Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
@@ -307,10 +312,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	if (stream->dma_cfg.channel_direction == (enum dma_channel_direction)MEMORY_TO_PERIPHERAL) {
 		hdma->Init.Direction = DMA_MEMORY_TO_PERIPH;
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-		hdma->Init.PeriphInc = DMA_PINC_DISABLE;
-		hdma->Init.MemInc = DMA_MINC_ENABLE;
-#else
+#if !defined(CONFIG_SOC_SERIES_STM32H7X)
 		hdma->Init.SrcInc = DMA_SINC_INCREMENTED;
 		hdma->Init.DestInc = DMA_DINC_FIXED;
 #endif
@@ -319,10 +321,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	} else {
 		hdma->Init.Direction = DMA_PERIPH_TO_MEMORY;
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-		hdma->Init.PeriphInc = DMA_PINC_ENABLE;
-		hdma->Init.MemInc = DMA_MINC_DISABLE;
-#else
+#if !defined(CONFIG_SOC_SERIES_STM32H7X)
 		hdma->Init.SrcInc = DMA_SINC_FIXED;
 		hdma->Init.DestInc = DMA_DINC_INCREMENTED;
 #endif
