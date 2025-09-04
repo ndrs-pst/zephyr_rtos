@@ -6283,6 +6283,12 @@ static void set_default_name(struct net_if* iface) {
 
         snprintk(name, sizeof(name), "thread%d", thread_count++);
     }
+    else if (IS_ENABLED(CONFIG_NET_VLAN) &&
+             (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL))) {
+        static int vlan_count;
+
+        snprintk(name, sizeof(name), "vlan%d", vlan_count++);
+    }
     else {
         static int net_count;
 
