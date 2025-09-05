@@ -377,9 +377,8 @@ int img_mgmt_find_by_ver(struct image_version* find, uint8_t* hash) {
  * or -1 if not found.
  */
 int img_mgmt_find_by_hash(uint8_t* find, struct image_version* ver) {
-    uint8_t hash[IMAGE_HASH_LEN];
-    int i;
     uint8_t hash[IMAGE_SHA_LEN];
+    int i;
 
     for (i = 0; i < SLOTS_PER_IMAGE * CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER; i++) {
         if (img_mgmt_read_info(i, ver, hash, NULL) != 0) {
