@@ -228,8 +228,10 @@ typedef struct k_thread_runtime_stats {
     uint64_t idle_cycles;
     #endif /* CONFIG_SCHED_THREAD_USAGE_ALL */
 
-    #if (defined(__cplusplus) && !defined(CONFIG_SCHED_THREAD_USAGE) &&                  \
-         !defined(CONFIG_SCHED_THREAD_USAGE_ANALYSIS) && !defined(CONFIG_SCHED_THREAD_USAGE_ALL)) || defined(_MSC_VER) /* #CUSTOM@NDRS */
+    #if (defined(__cplusplus)                         && \
+         !defined(CONFIG_SCHED_THREAD_USAGE)          && \
+         !defined(CONFIG_SCHED_THREAD_USAGE_ANALYSIS) && \
+         !defined(CONFIG_SCHED_THREAD_USAGE_ALL)) || defined(_MSC_VER) /* #CUSTOM@NDRS */
     /* If none of the above Kconfig values are defined, this struct will have a size 0 in C
      * which is not allowed in C++ (it'll have a size 1). To prevent this, we add a 1 byte dummy
      * variable when the struct would otherwise be empty.
@@ -267,7 +269,7 @@ struct k_thread {
     #if defined(CONFIG_EVENTS)
     struct k_thread* next_event_link;
 
-    uint32_t events;
+    uint32_t events; /* dual purpose - wait on and then received */
     uint32_t event_options;
 
     /** true if timeout should not wake the thread */
