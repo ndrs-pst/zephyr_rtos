@@ -13,6 +13,21 @@
 LOG_MODULE_REGISTER(rtio_executor, CONFIG_RTIO_LOG_LEVEL);
 
 /**
+ * @brief Callback which completes an RTIO_AWAIT_OP handled by the executor
+ *
+ * The callback is triggered when the rtio_sqe tied to the RTIO_AWAIT_OP
+ * is signaled by the user.
+ *
+ * @param iodev_sqe Submission to complete
+ * @param userdata Additional data passed along
+ */
+static void rtio_executor_sqe_signaled(struct rtio_iodev_sqe* iodev_sqe, void* userdata) {
+    ARG_UNUSED(userdata);
+
+    rtio_iodev_sqe_ok(iodev_sqe, 0);
+}
+
+/**
  * @brief Executor handled submissions
  */
 static void rtio_executor_op(struct rtio_iodev_sqe* iodev_sqe) {
@@ -26,6 +41,10 @@ static void rtio_executor_op(struct rtio_iodev_sqe* iodev_sqe) {
 
         case RTIO_OP_DELAY :
             rtio_sched_alarm(iodev_sqe, sqe->delay.timeout);
+            break;
+
+        case RTIO_OP_AWAIT :
+            rtio_iodev_sqe_await_signal(iodev_sqe, rtio_executor_sqe_signaled, NULL);
             break;
 
         default :

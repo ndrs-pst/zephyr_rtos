@@ -481,7 +481,7 @@ static inline bool is_src_non_tentative_itself(const uint8_t* src) {
     return (false);
 }
 
-enum net_verdict net_ipv6_input(struct net_pkt* pkt, bool is_loopback) {
+enum net_verdict net_ipv6_input(struct net_pkt* pkt) {
     NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
     NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
     NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
@@ -545,7 +545,7 @@ enum net_verdict net_ipv6_input(struct net_pkt* pkt, bool is_loopback) {
         goto drop;
     }
 
-    if (!is_loopback) {
+    if (!net_pkt_is_loopback(pkt)) {
         if (net_ipv6_is_addr_loopback_raw(hdr->dst) ||
             net_ipv6_is_addr_loopback_raw(hdr->src)) {
             NET_DBG("DROP: ::1 packet");
@@ -613,7 +613,7 @@ enum net_verdict net_ipv6_input(struct net_pkt* pkt, bool is_loopback) {
     }
 
     if (!net_ipv6_is_addr_mcast_raw(hdr->dst)) {
-        if (!net_if_ipv6_addr_lookup_by_iface(pkt_iface, (struct net_in6_addr *)hdr->dst)) {
+        if (!net_if_ipv6_addr_lookup_by_iface_raw(pkt_iface, hdr->dst)) {
             if (ipv6_route_packet(pkt, hdr) == NET_OK) {
                 return (NET_OK);
             }
@@ -639,7 +639,7 @@ enum net_verdict net_ipv6_input(struct net_pkt* pkt, bool is_loopback) {
     }
 
     if ((IS_ENABLED(CONFIG_NET_ROUTING) || IS_ENABLED(CONFIG_NET_ROUTE_MCAST)) &&
-        !is_loopback && is_src_non_tentative_itself(hdr->src)) {
+        !net_pkt_is_loopback(pkt) && is_src_non_tentative_itself(hdr->src)) {
         NET_DBG("DROP: src addr is %s", "mine");
         goto drop;
     }

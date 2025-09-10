@@ -638,7 +638,7 @@ out:
 #endif /* defined(CONFIG_NET_SOCKETS_PACKET) || defined(CONFIG_NET_SOCKETS_INET_RAW) */
 
 #if defined(CONFIG_NET_SOCKETS_PACKET)
-enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto)
+enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto, enum net_sock_type type)
 {
 	bool raw_sock_found = false;
 	bool raw_pkt_continue = false;
@@ -671,7 +671,7 @@ enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto)
 			continue; /* wrong family */
 		}
 
-		if (conn->type == NET_SOCK_DGRAM && !net_pkt_is_l2_processed(pkt)) {
+		if (conn->type == NET_SOCK_DGRAM && type == NET_SOCK_RAW) {
 			/* If DGRAM packet sockets are present, we shall continue
 			 * with this packet regardless the result.
 			 */
@@ -679,7 +679,7 @@ enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto)
 			continue; /* L2 not processed yet */
 		}
 
-		if (conn->type == NET_SOCK_RAW && net_pkt_is_l2_processed(pkt)) {
+		if (conn->type == NET_SOCK_RAW && type != NET_SOCK_RAW) {
 			continue; /* L2 already processed */
 		}
 
@@ -728,10 +728,11 @@ enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto)
 	return NET_CONTINUE;
 }
 #else
-enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto)
+enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto, enum net_sock_type type)
 {
 	ARG_UNUSED(pkt);
 	ARG_UNUSED(proto);
+	ARG_UNUSED(type);
 
 	return NET_CONTINUE;
 }
