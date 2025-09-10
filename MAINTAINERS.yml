@@ -823,6 +823,17 @@ CMSIS-NN integration:
   tests:
     - libraries.cmsis_nn
 
+CRC:
+  status: maintained
+  maintainers:
+    - thenguyenyf
+  files:
+    - include/zephyr/sys/crc.h
+    - subsys/crc/
+    - tests/subsys/crc/
+  labels:
+    - "area: CRC"
+
 Cache:
   status: maintained
   maintainers:
@@ -1258,6 +1269,19 @@ Documentation Infrastructure:
   tests:
     - drivers.can
     - canbus
+
+"Drivers: CRC":
+  status: maintained
+  maintainers:
+    - thenguyenyf
+  files:
+    - drivers/crc/
+    - dts/bindings/crc/
+    - include/zephyr/drivers/crc.h
+    - samples/drivers/crc/
+    - tests/drivers/crc/
+  labels:
+    - "area: CRC"
 
 "Drivers: Charger":
   status: maintained
@@ -4181,6 +4205,7 @@ Renesas RA Platforms:
     - duynguyenxa
     - thaoluonguw
     - thenguyenyf
+    - khoa-nguyen-18
   files:
     - boards/arduino/uno_r4/
     - boards/renesas/*ra*/
@@ -4192,6 +4217,7 @@ Renesas RA Platforms:
     - samples/boards/renesas/
     - tests/boards/renesas/
     - include/zephyr/drivers/misc/renesas_ra_external_interrupt/
+    - include/zephyr/drivers/misc/interconn/renesas_elc/
   labels:
     - "platform: Renesas RA"
   description: >-
@@ -4909,7 +4935,6 @@ Utilities:
     - dcpleung
     - peter-mitsis
   files:
-    - lib/crc/
     - lib/utils/
     - tests/unit/timeutil/
     - tests/unit/time_units/
