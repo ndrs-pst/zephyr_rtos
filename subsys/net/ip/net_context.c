@@ -2339,6 +2339,11 @@ static void set_pkt_txtime(struct net_pkt *pkt, const struct msghdr *msghdr)
 static void set_pkt_hoplimit(struct net_pkt *pkt, const struct msghdr *msg_hdr)
 {
 	struct cmsghdr *cmsg;
+	const struct net_sockaddr_in6 *addr6 = NULL;
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6) && IS_ENABLED(CONFIG_NET_IPV6)) {
+		addr6 = msg_hdr->msg_name;
+	}
 
 	for (cmsg = CMSG_FIRSTHDR(msg_hdr); cmsg != NULL;
 	     cmsg = CMSG_NXTHDR(msg_hdr, cmsg)) {
@@ -2349,12 +2354,23 @@ static void set_pkt_hoplimit(struct net_pkt *pkt, const struct msghdr *msg_hdr)
 				net_pkt_set_ipv6_hop_limit(pkt, *(uint8_t *)NET_CMSG_DATA(cmsg));
 				break;
 			}
-		} else {
-			if (cmsg->cmsg_len == CMSG_LEN(sizeof(int)) &&
-			    cmsg->cmsg_level == NET_IPPROTO_IP &&
-			    cmsg->cmsg_type == NET_IP_TTL) {
-				net_pkt_set_ipv4_ttl(pkt, *(uint8_t *)NET_CMSG_DATA(cmsg));
-				break;
+		} else if (net_pkt_family(pkt) == NET_AF_INET) {
+			if (addr6  == NULL ||
+			    (addr6 != NULL && !net_ipv6_addr_is_v4_mapped(&addr6->sin6_addr))) {
+				if (cmsg->cmsg_len == CMSG_LEN(sizeof(int)) &&
+				    cmsg->cmsg_level == NET_IPPROTO_IP &&
+				    cmsg->cmsg_type == NET_IP_TTL) {
+					net_pkt_set_ipv4_ttl(pkt, *(uint8_t *)NET_CMSG_DATA(cmsg));
+					break;
+				}
+			} else if (addr6 != NULL &&
+				   net_ipv6_addr_is_v4_mapped(&addr6->sin6_addr)) {
+				if (cmsg->cmsg_len == CMSG_LEN(sizeof(int)) &&
+				    cmsg->cmsg_level == NET_IPPROTO_IPV6 &&
+				    cmsg->cmsg_type == IPV6_HOPLIMIT) {
+					net_pkt_set_ipv4_ttl(pkt, *(uint8_t *)NET_CMSG_DATA(cmsg));
+					break;
+				}
 			}
 		}
 	}
@@ -2399,8 +2415,18 @@ static int context_sendto(struct net_context *context,
 	if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6) &&
 	    IS_ENABLED(CONFIG_NET_IPV6) &&
 	    net_context_get_family(context) == NET_AF_INET6 &&
+	    dst_addr != NULL &&
 	    dst_addr->sa_family == NET_AF_INET) {
 		family = NET_AF_INET;
+	} else if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6) &&
+		   IS_ENABLED(CONFIG_NET_IPV6) && msghdr != NULL) {
+		const struct net_sockaddr_in6 *addr6 = msghdr->msg_name;
+
+		if (net_ipv6_addr_is_v4_mapped(&addr6->sin6_addr)) {
+			family = NET_AF_INET;
+		} else {
+			family = net_context_get_family(context);
+		}
 	} else {
 		family = net_context_get_family(context);
 	}
@@ -2487,6 +2513,10 @@ static int context_sendto(struct net_context *context,
 			net_ipaddr_copy(&mapped.sin_addr,
 					(struct net_in_addr *)(&addr6->sin6_addr.s6_addr32[3]));
 			addr4 = &mapped;
+
+			/* For sendmsg(), the dst_addr is NULL so set it here.
+			 */
+			dst_addr = (const struct net_sockaddr *)addr4;
 		}
 
 		if (addrlen < sizeof(struct net_sockaddr_in)) {
