@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include <atmel/samc2x.dtsi>
+#include <atmel/samc2x.dtsi>
 
 /* @see Table 10-3. Interrupt Line Mapping, SAM C21 */
 /* @see Table 16-9. PCHCTRLm Mapping for gclk_periph_ch */
