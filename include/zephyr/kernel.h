@@ -804,7 +804,7 @@ struct _static_thread_data {
                              _k_thread_stack_##name, stack_size,\
                              entry, p1, p2, p3, prio, options,  \
                              delay, name);                  \
-    const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
+    __maybe_unused const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -5090,18 +5090,17 @@ __syscall int k_msgq_put(struct k_msgq* msgq, void const* data, k_timeout_t time
  * pointer is not retained, so the message content will not be modified
  * by this function.
  *
+ * @note k_msgq_put_front() does not block.
+ *
  * @funcprops \isr_ok
  *
  * @param msgq Address of the message queue.
  * @param data Pointer to the message.
- * @param timeout Waiting period to add the message, or one of the special
- *                values K_NO_WAIT and K_FOREVER.
  *
  * @retval 0 Message sent.
  * @retval -ENOMSG Returned without waiting or queue purged.
- * @retval -EAGAIN Waiting period timed out.
  */
-__syscall int k_msgq_put_front(struct k_msgq *msgq, const void *data, k_timeout_t timeout);
+__syscall int k_msgq_put_front(struct k_msgq* msgq, void const* data);
 
 /**
  * @brief Receive a message from a message queue.
