@@ -915,9 +915,6 @@ static inline enum net_if_oper_state net_if_oper_state_set(
         return (NET_IF_OPER_UNKNOWN);
     }
 
-    #if !defined(_MSC_VER) /* #CUSTOM@NDRS */
-    BUILD_ASSERT(((enum net_if_oper_state)(-1) > 0) && (NET_IF_OPER_UNKNOWN == 0));
-    #endif
     if (oper_state <= NET_IF_OPER_UP) {
         iface->if_dev->oper_state = oper_state;
     }
