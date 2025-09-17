@@ -120,8 +120,7 @@ static int sd_common_init(struct sd_card *card)
 		return ret;
 	}
 
-	if (card->host_props.is_spi &&
-		IS_ENABLED(CONFIG_SDHC_SUPPORTS_SPI_MODE)) {
+	if (IS_ENABLED(CONFIG_SDHC_SUPPORTS_SPI_MODE) && card->host_props.is_spi) {
 		/* Enable CRC for spi commands using CMD59 */
 		ret = sd_enable_crc(card);
 	}
@@ -139,6 +138,7 @@ static int sd_init_io(struct sd_card *card)
 	bus_io->clock = 0;
 	/* SPI requires SDHC PUSH PULL, and open drain buses use more power */
 	bus_io->bus_mode = SDHC_BUSMODE_PUSHPULL;
+
 	bus_io->bus_width = SDHC_BUS_WIDTH1BIT;
 	/* Cards start with legacy timing and Maximum voltage Host controller support */
 	bus_io->timing = SDHC_TIMING_LEGACY;

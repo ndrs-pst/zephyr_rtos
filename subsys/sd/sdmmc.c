@@ -395,8 +395,8 @@ static inline void sdmmc_select_bus_speed(struct sd_card* card) {
      * Note that function support is defined using bitfields, but function
      * selection is defined using values 0x0-0xF.
      */
-    if ((card->flags & SD_1800MV_FLAG) && sdmmc_host_uhs(&card->host_props) &&
-        !(card->host_props.is_spi) && IS_ENABLED(CONFIG_SD_UHS_PROTOCOL)) {
+    if (IS_ENABLED(CONFIG_SD_UHS_PROTOCOL) && (card->flags & SD_1800MV_FLAG) &&
+        sdmmc_host_uhs(&card->host_props) && !(card->host_props.is_spi)) {
         /* Select UHS mode timing */
         if (card->host_props.host_caps.sdr104_support &&
             (card->switch_caps.bus_speed & UHS_SDR104_BUS_SPEED)) {
@@ -511,8 +511,8 @@ static int sdmmc_set_bus_speed(struct sd_card* card) {
      * was calculated within sdmmc_read_switch(), we can safely use the
      * minimum between that clock and the host's highest clock supported.
      */
-    if ((card->flags & SD_1800MV_FLAG) && sdmmc_host_uhs(&card->host_props) &&
-        !(card->host_props.is_spi) && IS_ENABLED(CONFIG_SD_UHS_PROTOCOL)) {
+    if (IS_ENABLED(CONFIG_SD_UHS_PROTOCOL) && (card->flags & SD_1800MV_FLAG) &&
+        sdmmc_host_uhs(&card->host_props) && !(card->host_props.is_spi)) {
         /* UHS mode */
         card_clock = MIN(card->host_props.f_max, card->switch_caps.uhs_max_dtr);
         switch (card->card_speed) {
@@ -675,7 +675,7 @@ int sdmmc_card_init(struct sd_card* card) {
     uint32_t ocr_arg = 0U;
 
     /* First send a probing OCR */
-    if (card->host_props.is_spi && IS_ENABLED(CONFIG_SDHC_SUPPORTS_SPI_MODE)) {
+    if (IS_ENABLED(CONFIG_SDHC_SUPPORTS_SPI_MODE) && card->host_props.is_spi) {
         /* Probe SPI card with CMD58*/
         ret = sdmmc_spi_send_ocr(card, ocr_arg);
     }
@@ -728,7 +728,7 @@ int sdmmc_card_init(struct sd_card* card) {
         return (ret);
     }
 
-    if (card->host_props.is_spi && IS_ENABLED(CONFIG_SDHC_SUPPORTS_SPI_MODE)) {
+    if (IS_ENABLED(CONFIG_SDHC_SUPPORTS_SPI_MODE) && card->host_props.is_spi) {
         /* Send second CMD58 to get CCS bit */
         ret = sdmmc_spi_send_ocr(card, ocr_arg);
         if (ret) {
@@ -756,8 +756,8 @@ int sdmmc_card_init(struct sd_card* card) {
      * switch to new signal voltage using "signal voltage switch procedure"
      * described in SD specification
      */
-    if ((card->flags & SD_1800MV_FLAG) && (card->host_props.host_caps.vol_180_support) &&
-        (!card->host_props.is_spi) && IS_ENABLED(CONFIG_SD_UHS_PROTOCOL)) {
+    if (IS_ENABLED(CONFIG_SD_UHS_PROTOCOL) && (card->flags & SD_1800MV_FLAG) &&
+        (card->host_props.host_caps.vol_180_support) && (!card->host_props.is_spi)) {
         ret = sdmmc_switch_voltage(card);
         if (ret) {
             /* Disable host support for 1.8 V */
@@ -779,7 +779,7 @@ int sdmmc_card_init(struct sd_card* card) {
         return (ret);
     }
 
-    if (!card->host_props.is_spi && IS_ENABLED(CONFIG_SDHC_SUPPORTS_NATIVE_MODE)) {
+    if (IS_ENABLED(CONFIG_SDHC_SUPPORTS_NATIVE_MODE) && !card->host_props.is_spi) {
         /*
          * Request new relative card address. This moves the card from
          * identification mode to data transfer mode
@@ -796,7 +796,7 @@ int sdmmc_card_init(struct sd_card* card) {
         return (ret);
     }
 
-    if (!card->host_props.is_spi && IS_ENABLED(CONFIG_SDHC_SUPPORTS_NATIVE_MODE)) {
+    if (IS_ENABLED(CONFIG_SDHC_SUPPORTS_NATIVE_MODE) && !card->host_props.is_spi) {
         /* Move the card to transfer state (with CMD7) to run remaining commands */
         ret = sdmmc_select_card(card);
         if (ret) {
@@ -832,7 +832,7 @@ int sdmmc_card_init(struct sd_card* card) {
     }
 
     /* Read switch capabilities to determine what speeds card supports */
-    if (!card->host_props.is_spi && IS_ENABLED(CONFIG_SDHC_SUPPORTS_NATIVE_MODE)) {
+    if (IS_ENABLED(CONFIG_SDHC_SUPPORTS_NATIVE_MODE) && !card->host_props.is_spi) {
         ret = sdmmc_read_switch(card);                          /* SD_INIT_SEQ32 */
         if (ret) {
             LOG_ERR("Failed to read card functions");
@@ -840,8 +840,8 @@ int sdmmc_card_init(struct sd_card* card) {
         }
     }
 
-    if ((card->flags & SD_1800MV_FLAG) && sdmmc_host_uhs(&card->host_props) &&
-        !(card->host_props.is_spi) && IS_ENABLED(CONFIG_SD_UHS_PROTOCOL)) {
+    if (IS_ENABLED(CONFIG_SD_UHS_PROTOCOL) && (card->flags & SD_1800MV_FLAG) &&
+        sdmmc_host_uhs(&card->host_props) && !(card->host_props.is_spi)) {
         ret = sdmmc_init_uhs(card);
         if (ret) {
             LOG_ERR("UHS card init failed");

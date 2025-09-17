@@ -1610,10 +1610,16 @@ char const* k_thread_state_str(k_tid_t const thread_id, char* buf, size_t buf_si
  */
 
 /**
- * @cond INTERNAL_HIDDEN
+ * @brief Kernel timer structure
+ *
+ * This structure is used to represent a kernel timer.
+ * All the members are internal and should not be accessed directly.
  */
-
 struct k_timer {
+    /**
+     * @cond INTERNAL_HIDDEN
+     */
+
     /*
      * _timeout structure must be first here if we want to use
      * dynamic timer allocation. timeout.node is used in the double-linked
@@ -1644,8 +1650,14 @@ struct k_timer {
     #ifdef CONFIG_OBJ_CORE_TIMER
     struct k_obj_core obj_core;
     #endif
+    /**
+     * INTERNAL_HIDDEN @endcond
+     */
 };
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 #if defined(_MSC_VER)           /* #CUSTOM@NDRS, MSVC seem not support .node = {}
                                  * which is {} (Uniform Initialization)
                                  */
@@ -2410,7 +2422,17 @@ __syscall int k_futex_wake(struct k_futex* futex, bool wake_all);
  * @ingroup event_apis
  */
 
+/**
+ * @brief Kernel Event structure
+ *
+ * This structure is used to represent kernel events. All the members
+ * are internal and should not be accessed directly.
+ */
+
 struct k_event {
+/**
+ * @cond INTERNAL_HIDDEN
+ */
     _wait_q_t wait_q;
     uint32_t  events;
     struct k_spinlock lock;
@@ -2420,7 +2442,15 @@ struct k_event {
     #ifdef CONFIG_OBJ_CORE_EVENT
     struct k_obj_core obj_core;
     #endif
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
 };
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 #define Z_EVENT_INITIALIZER(obj) \
     { \
@@ -2428,6 +2458,9 @@ struct k_event {
     .events = 0, \
     .lock = {}, \
     }
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 /**
  * @brief Initialize an event object
@@ -2583,7 +2616,7 @@ __syscall uint32_t k_event_wait_all(struct k_event* event, uint32_t events,
  * @retval 0 if no matching event was received within the specified time
  */
 __syscall uint32_t k_event_wait_safe(struct k_event *event, uint32_t events,
-				     bool reset, k_timeout_t timeout);
+                                     bool reset, k_timeout_t timeout);
 
 /**
  * @brief Wait for all of the specified events (safe version)
@@ -2605,7 +2638,7 @@ __syscall uint32_t k_event_wait_safe(struct k_event *event, uint32_t events,
  * @retval 0 if all matching events were not received within the specified time
  */
 __syscall uint32_t k_event_wait_all_safe(struct k_event *event, uint32_t events,
-					 bool reset, k_timeout_t timeout);
+                                         bool reset, k_timeout_t timeout);
 
 
 
@@ -3586,20 +3619,26 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem* sem) {
 #if defined(CONFIG_SCHED_IPI_SUPPORTED) || defined(__DOXYGEN__)
 struct k_ipi_work;
 
-/**
- * @cond INTERNAL_HIDDEN
- */
 
 typedef void (*k_ipi_func_t)(struct k_ipi_work *work);
 
+/**
+ * @brief IPI work item structure
+ *
+ * This structure is used to represent an IPI work item.
+ * All the members are internal and should not be accessed directly.
+ */
 struct k_ipi_work {
-	sys_dnode_t        node[CONFIG_MP_MAX_NUM_CPUS];   /* Node in IPI work queue */
-	k_ipi_func_t   func;     /* Function to execute on target CPU */
-	struct k_event event;    /* Event to signal when processed */
-	uint32_t       bitmask;  /* Bitmask of targeted CPUs */
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+    sys_dnode_t    node[CONFIG_MP_MAX_NUM_CPUS];   /* Node in IPI work queue */
+    k_ipi_func_t   func;     /* Function to execute on target CPU */
+    struct k_event event;    /* Event to signal when processed */
+    uint32_t       bitmask;  /* Bitmask of targeted CPUs */
+/** INTERNAL_HIDDEN @endcond */
 };
 
-/** @endcond */
 
 /**
  * @brief Initialize the specified IPI work item
@@ -3608,13 +3647,12 @@ struct k_ipi_work {
  *
  * @param work Pointer to the IPI work item to be initialized
  */
-static inline void k_ipi_work_init(struct k_ipi_work *work)
-{
-	k_event_init(&work->event);
-	for (unsigned int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
-		sys_dnode_init(&work->node[i]);
-	}
-	work->bitmask = 0;
+static inline void k_ipi_work_init(struct k_ipi_work* work) {
+    k_event_init(&work->event);
+    for (unsigned int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
+        sys_dnode_init(&work->node[i]);
+    }
+    work->bitmask = 0;
 }
 
 /**
@@ -3636,7 +3674,7 @@ static inline void k_ipi_work_init(struct k_ipi_work *work)
  * @retval -EBUSY if the specified IPI work item is still being processed
  */
 int k_ipi_work_add(struct k_ipi_work *work, uint32_t cpu_bitmask,
-		   k_ipi_func_t func);
+                   k_ipi_func_t func);
 
 /**
  * @brief Wait until the IPI work item has been processed by all targeted CPUs
