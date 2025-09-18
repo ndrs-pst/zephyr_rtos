@@ -399,6 +399,7 @@ Binary Descriptors:
   maintainers:
     - yonsch
   files:
+    - doc/services/binary_descriptors/
     - subsys/bindesc/
     - include/zephyr/bindesc.h
     - samples/subsys/bindesc/
@@ -1329,6 +1330,7 @@ Documentation Infrastructure:
     - dts/bindings/comparator/
     - include/zephyr/drivers/comparator.h
     - include/zephyr/drivers/comparator/
+    - include/zephyr/dt-bindings/comparator/
     - tests/drivers/build_all/comparator/
     - tests/drivers/comparator/
     - doc/hardware/peripherals/comparator.rst
@@ -1406,6 +1408,7 @@ Documentation Infrastructure:
   files:
     - drivers/dac/
     - include/zephyr/drivers/dac.h
+    - include/zephyr/drivers/dac/
     - dts/bindings/dac/
     - include/zephyr/dt-bindings/dac/
     - tests/drivers/dac/
@@ -1636,6 +1639,7 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - aaronemassey
+    - DBS06
     - teburd
   collaborators:
     - DBS06
@@ -1721,6 +1725,7 @@ Documentation Infrastructure:
     - drivers/haptics/
     - dts/bindings/haptics/
     - include/zephyr/drivers/haptics.h
+    - include/zephyr/drivers/haptics/
     - doc/hardware/peripherals/haptics.rst
     - tests/drivers/build_all/haptics/
     - samples/drivers/haptics/
@@ -1891,6 +1896,7 @@ Documentation Infrastructure:
   status: odd fixes
   files:
     - drivers/memc/
+    - include/zephyr/drivers/memc/
     - samples/drivers/memc/
     - tests/drivers/memc/
     - include/zephyr/dt-bindings/memory-controller/
@@ -1910,6 +1916,7 @@ Documentation Infrastructure:
   files:
     - drivers/mfd/
     - include/zephyr/drivers/mfd/
+    - include/zephyr/dt-bindings/mfd/
     - dts/bindings/mfd/
     - tests/drivers/build_all/mfd/
   labels:
@@ -2411,6 +2418,7 @@ Documentation Infrastructure:
     - drivers/video/
     - include/zephyr/drivers/video.h
     - include/zephyr/drivers/video-controls.h
+    - include/zephyr/dt-bindings/video/
     - doc/hardware/peripherals/video.rst
     - tests/drivers/*/video/
     - dts/bindings/video/
@@ -4967,6 +4975,8 @@ Utilities:
     - tests/unit/list/
     - tests/unit/intmath/
     - tests/unit/pot/
+    - tests/unit/hex/
+    - tests/unit/winstream/
     - tests/lib/onoff/
     - tests/lib/sys_util/
     - tests/lib/sprintf/
@@ -5191,7 +5201,8 @@ West:
   collaborators:
     - tomi-font
     - ithinuel
-  files: []
+  files:
+    - modules/cmsis_6/
   labels:
     - "area: CMSIS_6"
 
@@ -5235,15 +5246,17 @@ West:
   collaborators:
     - PetervdPerk-NXP
     - jgoppert
-  files: []
+  files:
+    - modules/hal_afbr/
   labels:
     - "platform: Broadcom"
 
 "West project: hal_ambiq":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - AlessandroLuo
   collaborators:
     - aaronyegx
-    - AlessandroLuo
     - RichardSWheatley
   files:
     - modules/hal_ambiq/
@@ -5714,6 +5727,7 @@ West:
   maintainers:
     - pdgendt
   files:
+    - doc/services/serialization/nanopb.rst
     - modules/nanopb/
     - samples/modules/nanopb/
     - tests/modules/nanopb/
