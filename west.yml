@@ -235,7 +235,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 65c73800605057890e5685343663bdc284400d0f
+      revision: 5bbf64e7a9a6af9f7219a35c47129569edba1ef9
       path: modules/hal/silabs
       groups:
         - hal
@@ -245,7 +245,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: a34a099e7c989f4413bc95646f149e47d7a4a5f9
+      revision: a841c41a97c5fcaec3c03cee221679c0a97ec055
       path: modules/hal/stm32
       groups:
         - hal

@@ -2820,6 +2820,7 @@ Infineon Platforms:
     - boards/cypress/
     - boards/infineon/
     - drivers/*/*ifx_cat1*
+    - drivers/*/*ifx*
     - drivers/*/*xmc*
     - drivers/sensor/infineon/
     - dts/arm/infineon/
@@ -3882,6 +3883,7 @@ Nuvoton NPCX Platforms:
   files:
     - soc/nuvoton/npcx/
     - boards/nuvoton/npcx*/
+    - boards/nuvoton/npck*/
     - dts/arm/nuvoton/
     - dts/bindings/*/*npcx*
     - drivers/*/*_npcx*.c
