@@ -4206,7 +4206,6 @@ Release Notes:
 Renesas R-Car Platforms:
   status: maintained
   maintainers:
-    - aaillet
     - lorc
   collaborators:
     - xakep-amatop
@@ -4280,10 +4279,9 @@ Renesas SmartBond Platforms:
   status: maintained
   maintainers:
     - ioannis-karachalios
-    - andrzej-kaczmarek
-    - blauret
-  collaborators:
     - ydamigos
+  collaborators:
+    - blauret
   files:
     - boards/renesas/da14*/
     - drivers/*/*smartbond*
@@ -4505,6 +4503,24 @@ Shields:
     - "area: Shields"
   tests:
     - sample.shields
+
+SiFli SF32LB Platforms:
+  status: maintained
+  maintainers:
+    - gmarull
+  collaborators:
+    - cameled
+  files:
+    - boards/sifli/
+    - drivers/*/*sf32lb*
+    - dts/arm/sifli/
+    - dts/bindings/*/*sf32lb*
+    - scripts/west_commands/runners/sftool.py
+    - soc/sifli/
+  labels:
+    - "platform: SF32LB"
+  description: >-
+    SiFli SF32LB SoCs, dts files, related drivers and boards.
 
 Silabs Platforms:
   status: maintained
@@ -5473,6 +5489,17 @@ West:
   labels:
     - "platform: Raspberry Pi Pico"
 
+"West project: hal_sifli":
+  status: maintained
+  maintainers:
+    - gmarull
+  collaborators:
+    - cameled
+  files:
+    - modules/hal_sifli/
+  labels:
+    - "platform: SF32LB"
+
 "West project: hal_silabs":
   status: maintained
   maintainers:
@@ -5824,6 +5851,8 @@ West:
   collaborators:
     - Vge0rge
     - wearyzen
+    - valeriosetti
+    - tomi-font
     - ithinuel
   files: []
   labels:
@@ -5859,6 +5888,8 @@ West:
   collaborators:
     - Vge0rge
     - wearyzen
+    - valeriosetti
+    - tomi-font
     - ithinuel
   files: []
   labels:
@@ -6095,6 +6126,7 @@ nRF Platforms:
   maintainers:
     - anangl
     - masz-nordic
+    - bjarki-andreasen
   collaborators:
     - jaz1-nordic
     - kl-cruz

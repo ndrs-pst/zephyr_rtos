@@ -118,7 +118,6 @@ config PM_DEVICE_POWER_DOMAIN_DYNAMIC_NUM
 
 config PM_DEVICE_RUNTIME
 	bool "Runtime Device Power Management"
-	select EVENTS
 	help
 	  Enable Runtime Power Management to save power. With device runtime PM
 	  enabled, devices can be suspended or resumed based on the device
@@ -131,6 +130,7 @@ config PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ
 
 config PM_DEVICE_RUNTIME_ASYNC
 	bool "Asynchronous device runtime power management"
+	select EVENTS
 	default y
 	help
 	  Use this option to enable support for asynchronous operation
@@ -177,6 +177,15 @@ endif #PM_DEVICE_RUNTIME_USE_DEDICATED_WQ
 endchoice
 
 endif # PM_DEVICE_RUNTIME_ASYNC
+
+config PM_DEVICE_RUNTIME_DEFAULT_ENABLE
+	bool "PM device runtime enable by default"
+	help
+	  Enable PM device runtime by default for all devices when they are
+	  initialized. This option is identical to adding the devicetree
+	  property zephyr,pm-device-runtime-auto to all nodes in the
+	  devicetree.
+
 endif # PM_DEVICE_RUNTIME
 
 config PM_DEVICE_SHELL

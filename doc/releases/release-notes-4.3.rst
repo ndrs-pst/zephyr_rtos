@@ -66,6 +66,8 @@ Deprecated APIs and options
 * :c:enum:`bt_hci_bus` was deprecated as it was not used. :c:macro:`BT_DT_HCI_BUS_GET` should be
   used instead.
 
+* :kconfig:option:`CONFIG_POSIX_READER_WRITER_LOCKS` is deprecated. Use :kconfig:option:`CONFIG_POSIX_RW_LOCKS` instead.
+
 New APIs and options
 ====================
 
@@ -180,6 +182,7 @@ New APIs and options
 * Power management
 
    * :c:func:`pm_device_driver_deinit`
+   * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEFAULT_ENABLE`
 
 * Settings
 
