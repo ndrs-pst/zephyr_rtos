@@ -27,12 +27,12 @@ LOG_MODULE_REGISTER(counter_timer_stm32, CONFIG_COUNTER_LOG_LEVEL);
 #define TIMER_MAX_CH 4U
 
 /** Number of channels for timer by index. */
-#define NUM_CH(timx)                                    \
-    (IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_4) ? 4U :    \
-     (IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_3) ? 3U :   \
-      (IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_2) ? 2U :  \
-       (IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_1) ? 1U : \
-        0))))
+#define NUM_CH(timx)                        \
+    (IS_TIM_CC4_INSTANCE(timx) ? 4U :       \
+     (IS_TIM_CC3_INSTANCE(timx) ? 3U :      \
+      (IS_TIM_CC2_INSTANCE(timx) ? 2U :     \
+       (IS_TIM_CC1_INSTANCE(timx) ? 1U :    \
+        0U))))
 
 /* #CUSTOM@NDRS */
 #if defined(CONFIG_APP_USE_STM32_TMR_ISR_CUSTOM)
@@ -48,7 +48,7 @@ static void (*const set_timer_compare[TIMER_MAX_CH])(TIM_TypeDef* TIMx,
 
 /** Channel to compare get function mapping. */
 #if !defined(CONFIG_SOC_SERIES_STM32MP1X)
-static uint32_t(*const get_timer_compare[TIMER_MAX_CH])(TIM_TypeDef const* TIMx) = {
+static uint32_t (*const get_timer_compare[TIMER_MAX_CH])(TIM_TypeDef const* TIMx) = {
     LL_TIM_OC_GetCompareCH1, LL_TIM_OC_GetCompareCH2,
     LL_TIM_OC_GetCompareCH3, LL_TIM_OC_GetCompareCH4,
 };
@@ -73,8 +73,8 @@ static void (*const disable_it[TIMER_MAX_CH])(TIM_TypeDef* TIMx) = {
 
 #ifdef CONFIG_ASSERT
 /** Channel to interrupt enable check function mapping. */
-    #if !defined(CONFIG_SOC_SERIES_STM32MP1X)
-    static uint32_t(*const check_it_enabled[TIMER_MAX_CH])(TIM_TypeDef const* TIMx) = {
+#if !defined(CONFIG_SOC_SERIES_STM32MP1X)
+static uint32_t (*const check_it_enabled[TIMER_MAX_CH])(TIM_TypeDef const* TIMx) = {
     LL_TIM_IsEnabledIT_CC1, LL_TIM_IsEnabledIT_CC2,
     LL_TIM_IsEnabledIT_CC3, LL_TIM_IsEnabledIT_CC4,
 };
@@ -132,7 +132,7 @@ static int counter_stm32_start(const struct device* dev) {
 
 static int counter_stm32_stop(const struct device* dev) {
     const struct counter_stm32_config* config = dev->config;
-    TIM_TypeDef*                       timer  = config->timer;
+    TIM_TypeDef* timer = config->timer;
 
     /* disable counter */
     LL_TIM_DisableCounter(timer);
@@ -364,7 +364,6 @@ static int counter_stm32_init_timer(const struct device* dev) {
     const struct counter_stm32_config* cfg = dev->config;
     struct counter_stm32_data* data = dev->data;
     TIM_TypeDef* timer = cfg->timer;
-    LL_TIM_InitTypeDef init;
     const struct device* clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
     uint32_t tim_clk;
     int r;
@@ -409,17 +408,27 @@ static int counter_stm32_init_timer(const struct device* dev) {
     cfg->irq_config_func(dev);
 
     /* initialize timer */
-    LL_TIM_StructInit(&init);
+    LL_TIM_SetPrescaler(timer, cfg->prescaler);
+    LL_TIM_SetAutoReload(timer, counter_get_max_top_value(dev));
 
-    init.Prescaler   = (uint16_t)cfg->prescaler;
-    init.CounterMode = LL_TIM_COUNTERMODE_UP;
-    init.Autoreload  = counter_get_max_top_value(dev);
-    init.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
-
-    if (LL_TIM_Init(timer, &init) != SUCCESS) {
-        LOG_ERR("Could not initialize timer");
-        return (-EIO);
+    if (IS_TIM_COUNTER_MODE_SELECT_INSTANCE(timer)) {
+        LL_TIM_SetCounterMode(timer, LL_TIM_COUNTERMODE_UP);
     }
+
+    if (IS_TIM_CLOCK_DIVISION_INSTANCE(timer)) {
+        LL_TIM_SetClockDivision(timer, LL_TIM_CLOCKDIVISION_DIV1);
+    }
+
+    #ifdef IS_TIM_REPETITION_COUNTER_INSTANCE
+    if (IS_TIM_REPETITION_COUNTER_INSTANCE(timer)) {
+        LL_TIM_SetRepetitionCounter(timer, 0U);
+    }
+    #endif
+
+    /* Generate an update event to reload the Prescaler
+     * and the repetition counter value (if applicable) immediately
+     */
+    LL_TIM_GenerateEvent_UPDATE(timer);
 
     return (0);
 }
@@ -655,4 +664,3 @@ void zephyr_gtest_counter_stm32(void) {
 }
 
 #endif
-
