@@ -190,7 +190,7 @@ manifest:
       groups:
         - hal
     - name: hal_intel
-      revision: 0447cd22e74d7ca243653f21cfd6e38c016630c6
+      revision: 82a33b2de29523d9ce572b3d0110a808665cd3ff
       path: modules/hal/intel
       groups:
         - hal
@@ -226,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 6ff5c0662bc9ad4a126be28eab0addcb2454fe69
+      revision: f0b78440ba8f0b4a07cdd657031ac9ec1cc4c126
       groups:
         - hal
     - name: hal_rpi_pico
@@ -240,7 +240,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 5bbf64e7a9a6af9f7219a35c47129569edba1ef9
+      revision: edbd418670ad8c7cad629a09df2ceee0bc23cf6d
       path: modules/hal/silabs
       groups:
         - hal
