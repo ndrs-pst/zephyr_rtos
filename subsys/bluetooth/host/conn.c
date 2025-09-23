@@ -1502,8 +1502,6 @@ void bt_conn_unref(struct bt_conn *conn)
 	enum bt_conn_type conn_type;
 	uint8_t conn_role;
 	uint16_t conn_handle;
-	/* Used only if CONFIG_ASSERT and CONFIG_BT_CONN_TX. */
-	__maybe_unused bool conn_tx_is_pending;
 
 	__ASSERT(conn, "Invalid connection reference");
 
@@ -1518,7 +1516,7 @@ void bt_conn_unref(struct bt_conn *conn)
 	conn_role = conn->role;
 	conn_handle = conn->handle;
 #if CONFIG_BT_CONN_TX && CONFIG_ASSERT
-	conn_tx_is_pending = k_work_is_pending(&conn->tx_complete_work);
+	bool conn_tx_is_pending = k_work_is_pending(&conn->tx_complete_work);
 #endif
 	old = atomic_dec(&conn->ref);
 	conn = NULL;
