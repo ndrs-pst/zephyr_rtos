@@ -1121,19 +1121,21 @@ static inline void async_user_callback(struct uart_stm32_data* data,
 }
 
 static inline void async_evt_rx_rdy(struct uart_stm32_data* data) {
-    LOG_DBG("rx_rdy: (%d %d)", data->dma_rx.offset, data->dma_rx.counter);
+    struct uart_dma_stream* dma_rx = &data->dma_rx;
+
+    LOG_DBG("rx_rdy: (%d %d)", dma_rx->offset, dma_rx->counter);
 
     struct uart_event event = {
         .type           = UART_RX_RDY,
-        .data.rx.buf    = data->dma_rx.buffer,
-        .data.rx.len    = data->dma_rx.counter - data->dma_rx.offset,
-        .data.rx.offset = data->dma_rx.offset
+        .data.rx.buf    = dma_rx->buffer,
+        .data.rx.len    = dma_rx->counter - dma_rx->offset,
+        .data.rx.offset = dma_rx->offset
     };
 
     /* When cyclic DMA is used, buffer positions are not updated - call callback every time*/
-    if (data->dma_rx.dma_cfg.cyclic == 0) {
+    if (dma_rx->dma_cfg.cyclic == 0) {
         /* update the current pos for new data */
-        data->dma_rx.offset = data->dma_rx.counter;
+        dma_rx->offset = dma_rx->counter;
 
         /* send event only for new data */
         if (event.data.rx.len > 0) {
@@ -1160,17 +1162,19 @@ static inline void async_evt_rx_err(struct uart_stm32_data* data, int err_code) 
 }
 
 static inline void async_evt_tx_done(struct uart_stm32_data* data) {
-    LOG_DBG("tx done: %d", data->dma_tx.counter);
+    struct uart_dma_stream* dma_tx = &data->dma_tx;
+
+    LOG_DBG("tx done: %d", dma_tx->counter);
 
     struct uart_event event = {
         .type        = UART_TX_DONE,
-        .data.tx.buf = data->dma_tx.buffer,
-        .data.tx.len = data->dma_tx.counter
+        .data.tx.buf = dma_tx->buffer,
+        .data.tx.len = dma_tx->counter
     };
 
     /* Reset tx buffer */
-    data->dma_tx.buffer_length = 0;
-    data->dma_tx.counter       = 0;
+    dma_tx->buffer_length = 0;
+    dma_tx->counter       = 0;
 
     #ifdef CONFIG_PM
     data->tx_int_stream_on = false;
@@ -1180,20 +1184,22 @@ static inline void async_evt_tx_done(struct uart_stm32_data* data) {
 }
 
 static inline void async_evt_tx_abort(struct uart_stm32_data* data) {
-    LOG_DBG("tx abort: %d", data->dma_tx.counter);
+    struct uart_dma_stream* dma_tx = &data->dma_tx;
+
+    LOG_DBG("tx abort: %d", dma_tx->counter);
 
     struct uart_event event = {
         .type        = UART_TX_ABORTED,
-        .data.tx.buf = data->dma_tx.buffer,
-        .data.tx.len = data->dma_tx.counter
+        .data.tx.buf = dma_tx->buffer,
+        .data.tx.len = dma_tx->counter
     };
 
     /* Reset tx buffer */
-    data->dma_tx.buffer_length = 0;
-    data->dma_tx.counter       = 0;
+    dma_tx->buffer_length = 0;
+    dma_tx->counter       = 0;
 
     #ifdef CONFIG_PM
-    data->tx_int_stream_on = false;
+    dma_tx->int_stream_on = false;
     #endif
 
     async_user_callback(data, &event);
@@ -1228,24 +1234,25 @@ static inline void async_timer_start(struct k_work_delayable* work,
 static void uart_stm32_dma_rx_flush(const struct device *dev, int status) {
     struct dma_status stat;
     struct uart_stm32_data* data = dev->data;
+    struct uart_dma_stream* dma_rx = &data->dma_rx;
 
     size_t rx_rcv_len = 0;
 
     switch (status) {
         case DMA_STATUS_COMPLETE :
             /* fully complete */
-            data->dma_rx.counter = data->dma_rx.buffer_length;
+            dma_rx->counter = dma_rx->buffer_length;
             break;
 
         case DMA_STATUS_BLOCK :
             /* half complete */
-            data->dma_rx.counter = data->dma_rx.buffer_length / 2;
+            dma_rx->counter = dma_rx->buffer_length / 2;
             break;
 
         default : /* likely STM32_ASYNC_STATUS_TIMEOUT */
-            if (dma_get_status(data->dma_rx.dma_dev, data->dma_rx.dma_channel, &stat) == 0) {
-                rx_rcv_len = data->dma_rx.buffer_length - stat.pending_length;
-                data->dma_rx.counter = rx_rcv_len;
+            if (dma_get_status(dma_rx->dma_dev, dma_rx->dma_channel, &stat) == 0) {
+                rx_rcv_len = dma_rx->buffer_length - stat.pending_length;
+                dma_rx->counter = rx_rcv_len;
             }
             break;
     }
@@ -1255,16 +1262,16 @@ static void uart_stm32_dma_rx_flush(const struct device *dev, int status) {
     switch (status) { /* update offset*/
         case DMA_STATUS_COMPLETE :
             /* fully complete */
-            data->dma_rx.offset = 0;
+            dma_rx->offset = 0;
             break;
 
         case DMA_STATUS_BLOCK :
             /* half complete */
-            data->dma_rx.offset = data->dma_rx.buffer_length / 2;
+            dma_rx->offset = dma_rx->buffer_length / 2;
             break;
 
         default : /* likely STM32_ASYNC_STATUS_TIMEOUT */
-            data->dma_rx.offset += rx_rcv_len - data->dma_rx.offset;
+            dma_rx->offset += rx_rcv_len - dma_rx->offset;
             break;
     }
 }
@@ -1454,11 +1461,12 @@ static inline void uart_stm32_dma_rx_disable(const struct device* dev) {
 static int uart_stm32_async_rx_disable(const struct device* dev) {
     USART_TypeDef* usart = DEVICE_STM32_GET_USART(dev);
     struct uart_stm32_data* data = dev->data;
+    struct uart_dma_stream* dma_rx = &data->dma_rx;
     struct uart_event disabled_event = {
         .type = UART_RX_DISABLED
     };
 
-    if (!data->dma_rx.enabled) {
+    if (!dma_rx->enabled) {
         async_user_callback(data, &disabled_event);
         return (-EFAULT);
     }
@@ -1480,9 +1488,9 @@ static int uart_stm32_async_rx_disable(const struct device* dev) {
 
     uart_stm32_dma_rx_disable(dev);
 
-    (void) k_work_cancel_delayable(&data->dma_rx.timeout_work);
+    (void) k_work_cancel_delayable(&dma_rx->timeout_work);
 
-    dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
+    dma_stop(dma_rx->dma_dev, dma_rx->dma_channel);
 
     if (data->rx_next_buffer) {
         struct uart_event rx_next_buf_release_evt = {
@@ -1528,26 +1536,27 @@ void uart_stm32_dma_tx_cb(const struct device* dma_dev, void* user_data,
 static void uart_stm32_dma_replace_buffer(const struct device* dev) {
     USART_TypeDef* usart = DEVICE_STM32_GET_USART(dev);
     struct uart_stm32_data* data = dev->data;
+    struct uart_dma_stream* dma_rx = &data->dma_rx;
 
     /* Replace the buffer and reload the DMA */
     LOG_DBG("Replacing RX buffer: %d", data->rx_next_buffer_len);
 
     /* reload DMA */
-    data->dma_rx.offset               = 0;
-    data->dma_rx.counter              = 0;
-    data->dma_rx.buffer               = data->rx_next_buffer;
-    data->dma_rx.buffer_length        = data->rx_next_buffer_len;
-    data->dma_rx.blk_cfg.block_size   = data->dma_rx.buffer_length;
-    data->dma_rx.blk_cfg.dest_address = (uint32_t)data->dma_rx.buffer;
-    data->rx_next_buffer              = NULL;
-    data->rx_next_buffer_len          = 0;
+    dma_rx->offset               = 0;
+    dma_rx->counter              = 0;
+    dma_rx->buffer               = data->rx_next_buffer;
+    dma_rx->buffer_length        = data->rx_next_buffer_len;
+    dma_rx->blk_cfg.block_size   = dma_rx->buffer_length;
+    dma_rx->blk_cfg.dest_address = (uint32_t)dma_rx->buffer;
+    data->rx_next_buffer         = NULL;
+    data->rx_next_buffer_len     = 0;
 
-    dma_reload(data->dma_rx.dma_dev, data->dma_rx.dma_channel,
-               data->dma_rx.blk_cfg.source_address,
-               data->dma_rx.blk_cfg.dest_address,
-               data->dma_rx.blk_cfg.block_size);
+    dma_reload(dma_rx->dma_dev, dma_rx->dma_channel,
+               dma_rx->blk_cfg.source_address,
+               dma_rx->blk_cfg.dest_address,
+               dma_rx->blk_cfg.block_size);
 
-    dma_start(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
+    dma_start(dma_rx->dma_dev, dma_rx->dma_channel);
 
     LL_USART_ClearFlag_IDLE(usart);
 
@@ -1559,19 +1568,20 @@ void uart_stm32_dma_rx_cb(const struct device* dma_dev, void* user_data,
                           uint32_t channel, int status) {
     const struct device* uart_dev = user_data;
     struct uart_stm32_data* data  = uart_dev->data;
+    struct uart_dma_stream* dma_rx = &data->dma_rx;
 
     if (status < 0) {
         async_evt_rx_err(data, status);
         return;
     }
 
-    (void) k_work_cancel_delayable(&data->dma_rx.timeout_work);
+    (void) k_work_cancel_delayable(&dma_rx->timeout_work);
 
     /* If we are in NORMAL MODE */
-    if (data->dma_rx.dma_cfg.cyclic == 0) {
+    if (dma_rx->dma_cfg.cyclic == 0) {
 
         /* true since this functions occurs when buffer is full */
-        data->dma_rx.counter = data->dma_rx.buffer_length;
+        dma_rx->counter = dma_rx->buffer_length;
         async_evt_rx_rdy(data);
         if (data->rx_next_buffer != NULL) {
             async_evt_rx_buf_release(data);
@@ -1589,7 +1599,7 @@ void uart_stm32_dma_rx_cb(const struct device* dma_dev, void* user_data,
              * called in ISR context. So force the RX timeout
              * to minimum value and let the RX timeout to do the job.
              */
-            k_work_reschedule(&data->dma_rx.timeout_work, K_TICKS(1));
+            k_work_reschedule(&dma_rx->timeout_work, K_TICKS(1));
         }
     }
     else {
@@ -1777,13 +1787,14 @@ static int uart_stm32_async_rx_enable(const struct device* dev,
                                       uint8_t* rx_buf, size_t buf_size, int32_t timeout) {
     USART_TypeDef* usart = DEVICE_STM32_GET_USART(dev);
     struct uart_stm32_data* data = dev->data;
+    struct uart_dma_stream* dma_rx = &data->dma_rx;
     int ret;
 
-    if (data->dma_rx.dma_dev == NULL) {
+    if (dma_rx->dma_dev == NULL) {
         return (-ENODEV);
     }
 
-    if (data->dma_rx.enabled) {
+    if (dma_rx->enabled) {
         LOG_WRN("RX was already enabled");
         return (-EBUSY);
     }
@@ -1793,25 +1804,25 @@ static int uart_stm32_async_rx_enable(const struct device* dev,
         return (-EFAULT);
     }
 
-    data->dma_rx.offset = 0;
-    data->dma_rx.buffer = rx_buf;
-    data->dma_rx.buffer_length = buf_size;
-    data->dma_rx.counter = 0;
-    data->dma_rx.timeout = timeout;
+    dma_rx->offset = 0;
+    dma_rx->buffer = rx_buf;
+    dma_rx->buffer_length = buf_size;
+    dma_rx->counter = 0;
+    dma_rx->timeout = timeout;
 
     /* Disable RX interrupts to let DMA to handle it */
     LL_USART_DisableIT_RXNE(usart);
 
-    data->dma_rx.blk_cfg.block_size   = buf_size;
-    data->dma_rx.blk_cfg.dest_address = (uint32_t)data->dma_rx.buffer;
+    dma_rx->blk_cfg.block_size   = buf_size;
+    dma_rx->blk_cfg.dest_address = (uint32_t)dma_rx->buffer;
 
-    ret = dma_config(data->dma_rx.dma_dev, data->dma_rx.dma_channel, &data->dma_rx.dma_cfg);
+    ret = dma_config(dma_rx->dma_dev, dma_rx->dma_channel, &dma_rx->dma_cfg);
     if (ret != 0) {
         LOG_ERR("UART ERR: RX DMA config failed!");
         return (-EINVAL);
     }
 
-    if (dma_start(data->dma_rx.dma_dev, data->dma_rx.dma_channel)) {
+    if (dma_start(dma_rx->dma_dev, dma_rx->dma_channel)) {
         LOG_ERR("UART ERR: RX DMA start failed!");
         return (-EFAULT);
     }
@@ -1840,23 +1851,24 @@ static int uart_stm32_async_rx_enable(const struct device* dev,
 
 static int uart_stm32_async_tx_abort(const struct device* dev) {
     struct uart_stm32_data* data = dev->data;
-    size_t tx_buffer_length = data->dma_tx.buffer_length;
+    struct uart_dma_stream* dma_tx = &data->dma_tx;
+    size_t tx_buffer_length = dma_tx->buffer_length;
     struct dma_status stat;
 
     if (tx_buffer_length == 0) {
         return (-EFAULT);
     }
 
-    (void) k_work_cancel_delayable(&data->dma_tx.timeout_work);
-    if (!dma_get_status(data->dma_tx.dma_dev,
-                        data->dma_tx.dma_channel, &stat)) {
-        data->dma_tx.counter = tx_buffer_length - stat.pending_length;
+    (void) k_work_cancel_delayable(&dma_tx->timeout_work);
+    if (!dma_get_status(dma_tx->dma_dev,
+                        dma_tx->dma_channel, &stat)) {
+        dma_tx->counter = tx_buffer_length - stat.pending_length;
     }
 
     #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_dma)
-    dma_suspend(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
+    dma_suspend(dma_tx->dma_dev, dma_tx->dma_channel);
     #endif
-    dma_stop(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
+    dma_stop(dma_tx->dma_dev, dma_tx->dma_channel);
     async_evt_tx_abort(data);
 
     return (0);
@@ -1937,17 +1949,19 @@ static int uart_stm32_async_rx_buf_rsp(const struct device* dev, uint8_t* buf,
 static int uart_stm32_async_init(const struct device* dev) {
     USART_TypeDef const* usart = DEVICE_STM32_GET_USART(dev);
     struct uart_stm32_data* data = dev->data;
+    struct uart_dma_stream* dma_tx = &data->dma_tx;
+    struct uart_dma_stream* dma_rx = &data->dma_rx;
 
     data->uart_dev = dev;
 
-    if (data->dma_rx.dma_dev != NULL) {
-        if (!device_is_ready(data->dma_rx.dma_dev)) {
+    if (dma_rx->dma_dev != NULL) {
+        if (!device_is_ready(dma_rx->dma_dev)) {
             return (-ENODEV);
         }
     }
 
-    if (data->dma_tx.dma_dev != NULL) {
-        if (!device_is_ready(data->dma_tx.dma_dev)) {
+    if (dma_tx->dma_dev != NULL) {
+        if (!device_is_ready(dma_tx->dma_dev)) {
             return (-ENODEV);
         }
     }
@@ -1956,91 +1970,91 @@ static int uart_stm32_async_init(const struct device* dev) {
     uart_stm32_dma_rx_disable(dev);
     uart_stm32_dma_tx_disable(dev);
 
-    k_work_init_delayable(&data->dma_rx.timeout_work,
+    k_work_init_delayable(&dma_rx->timeout_work,
                           uart_stm32_async_rx_timeout);
-    k_work_init_delayable(&data->dma_tx.timeout_work,
+    k_work_init_delayable(&dma_tx->timeout_work,
                           uart_stm32_async_tx_timeout);
 
     /* Configure dma rx config */
-    memset(&data->dma_rx.blk_cfg, 0, sizeof(data->dma_rx.blk_cfg));
+    memset(&dma_rx->blk_cfg, 0, sizeof(dma_rx->blk_cfg));
 
     #if defined(CONFIG_SOC_SERIES_STM32F1X) || \
         defined(CONFIG_SOC_SERIES_STM32F2X) || \
         defined(CONFIG_SOC_SERIES_STM32F4X) || \
         defined(CONFIG_SOC_SERIES_STM32L1X)
-    data->dma_rx.blk_cfg.source_address =
-                            LL_USART_DMA_GetRegAddr(usart);
+    dma_rx->blk_cfg.source_address =
+        LL_USART_DMA_GetRegAddr(usart);
     #else
-    data->dma_rx.blk_cfg.source_address =
-                            LL_USART_DMA_GetRegAddr(usart,
-                                                    LL_USART_DMA_REG_DATA_RECEIVE);
+    dma_rx->blk_cfg.source_address =
+        LL_USART_DMA_GetRegAddr(usart,
+                                LL_USART_DMA_REG_DATA_RECEIVE);
     #endif
 
-    data->dma_rx.blk_cfg.dest_address = 0; /* dest not ready */
+    dma_rx->blk_cfg.dest_address = 0; /* dest not ready */
 
-    if (data->dma_rx.src_addr_increment) {
-        data->dma_rx.blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+    if (dma_rx->src_addr_increment) {
+        dma_rx->blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
     }
     else {
-        data->dma_rx.blk_cfg.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+        dma_rx->blk_cfg.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
     }
 
-    if (data->dma_rx.dst_addr_increment) {
-        data->dma_rx.blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+    if (dma_rx->dst_addr_increment) {
+        dma_rx->blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
     }
     else {
-        data->dma_rx.blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+        dma_rx->blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
     }
 
     /* Enable/disable RX circular buffer */
-    data->dma_rx.blk_cfg.source_reload_en  = data->dma_rx.dma_cfg.cyclic;
-    data->dma_rx.blk_cfg.dest_reload_en    = data->dma_rx.dma_cfg.cyclic;
-    data->dma_rx.blk_cfg.fifo_mode_control = (uint16_t)data->dma_rx.fifo_threshold;
+    dma_rx->blk_cfg.source_reload_en  = dma_rx->dma_cfg.cyclic;
+    dma_rx->blk_cfg.dest_reload_en    = dma_rx->dma_cfg.cyclic;
+    dma_rx->blk_cfg.fifo_mode_control = (uint16_t)dma_rx->fifo_threshold;
 
-    data->dma_rx.dma_cfg.head_block = &data->dma_rx.blk_cfg;
-    data->dma_rx.dma_cfg.user_data  = (void*)dev;
-    data->rx_next_buffer            = NULL;
-    data->rx_next_buffer_len        = 0;
+    dma_rx->dma_cfg.head_block = &dma_rx->blk_cfg;
+    dma_rx->dma_cfg.user_data  = (void*)dev;
+    data->rx_next_buffer       = NULL;
+    data->rx_next_buffer_len   = 0;
 
     /* Configure dma tx config */
-    memset(&data->dma_tx.blk_cfg, 0, sizeof(data->dma_tx.blk_cfg));
+    memset(&dma_tx->blk_cfg, 0, sizeof(dma_tx->blk_cfg));
 
     #if defined(CONFIG_SOC_SERIES_STM32F1X) || \
         defined(CONFIG_SOC_SERIES_STM32F2X) || \
         defined(CONFIG_SOC_SERIES_STM32F4X) || \
         defined(CONFIG_SOC_SERIES_STM32L1X)
-    data->dma_tx.blk_cfg.dest_address =
-                    LL_USART_DMA_GetRegAddr(usart);
+    dma_tx->blk_cfg.dest_address =
+        LL_USART_DMA_GetRegAddr(usart);
     #else
-    data->dma_tx.blk_cfg.dest_address =
-                    LL_USART_DMA_GetRegAddr(usart,
-                                            LL_USART_DMA_REG_DATA_TRANSMIT);
+    dma_tx->blk_cfg.dest_address =
+        LL_USART_DMA_GetRegAddr(usart,
+                                LL_USART_DMA_REG_DATA_TRANSMIT);
     #endif
 
-    data->dma_tx.blk_cfg.source_address = 0; /* not ready */
+    dma_tx->blk_cfg.source_address = 0; /* not ready */
 
-    if (data->dma_tx.src_addr_increment) {
-        data->dma_tx.blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+    if (dma_tx->src_addr_increment) {
+        dma_tx->blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
     }
     else {
-        data->dma_tx.blk_cfg.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+        dma_tx->blk_cfg.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
     }
 
-    if (data->dma_tx.dst_addr_increment) {
-        data->dma_tx.blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+    if (dma_tx->dst_addr_increment) {
+        dma_tx->blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
     }
     else {
-        data->dma_tx.blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+        dma_tx->blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
     }
 
     /* Enable/disable TX circular buffer */
-    data->dma_tx.blk_cfg.source_reload_en = data->dma_tx.dma_cfg.cyclic;
-    data->dma_tx.blk_cfg.dest_reload_en   = data->dma_tx.dma_cfg.cyclic;
+    dma_tx->blk_cfg.source_reload_en = dma_tx->dma_cfg.cyclic;
+    dma_tx->blk_cfg.dest_reload_en   = dma_tx->dma_cfg.cyclic;
 
-    data->dma_tx.blk_cfg.fifo_mode_control = data->dma_tx.fifo_threshold;
+    dma_tx->blk_cfg.fifo_mode_control = dma_tx->fifo_threshold;
 
-    data->dma_tx.dma_cfg.head_block = &data->dma_tx.blk_cfg;
-    data->dma_tx.dma_cfg.user_data  = (void*)dev;
+    dma_tx->dma_cfg.head_block = &dma_tx->blk_cfg;
+    dma_tx->dma_cfg.user_data  = (void*)dev;
 
     return (0);
 }
