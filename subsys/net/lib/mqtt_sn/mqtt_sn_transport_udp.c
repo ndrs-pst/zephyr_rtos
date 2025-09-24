@@ -44,8 +44,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 {
 	struct mqtt_sn_transport_udp *udp = UDP_TRANSPORT(transport);
 	int err;
-	struct sockaddr addrm;
-	struct ip_mreqn mreqn;
+	struct net_sockaddr addrm;
 	int optval;
 	struct net_if *iface;
 
@@ -57,29 +56,29 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 	LOG_DBG("Socket %d", udp->sock);
 
 	optval = 1;
-	err = zsock_setsockopt(udp->sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+	err = zsock_setsockopt(udp->sock, NET_SOL_SOCKET, NET_SO_REUSEADDR, &optval, sizeof(optval));
 	if (err < 0) {
 		return errno;
 	}
 
 	if (IS_ENABLED(CONFIG_MQTT_SN_LOG_LEVEL_DBG)) {
 		char ip[30], *out;
-		uint16_t port;
+		uint16_t port = 0;
 
 		out = get_ip_str((struct net_sockaddr *)&udp->bcaddr, ip, sizeof(ip));
 		switch (udp->bcaddr.sa_family) {
-		case AF_INET:
-			port = ntohs(((struct sockaddr_in *)&udp->bcaddr)->sin_port);
+		case NET_AF_INET:
+			port = net_ntohs(((struct net_sockaddr_in *)&udp->bcaddr)->sin_port);
 			break;
-		case AF_INET6:
-			port = ntohs(((struct sockaddr_in6 *)&udp->bcaddr)->sin6_port);
+		case NET_AF_INET6:
+			port = net_ntohs(((struct net_sockaddr_in6 *)&udp->bcaddr)->sin6_port);
 			break;
 		default:
 			break;
 		}
 
 		if (out != NULL) {
-			LOG_DBG("Binding to Brodcast IP %s:%u", out, port);
+			LOG_DBG("Binding to Broadcast IP %s:%u", out, port);
 		}
 	}
 
@@ -87,18 +86,18 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 	case NET_AF_INET:
 		if (IS_ENABLED(CONFIG_NET_IPV4)) {
 			addrm.sa_family = NET_AF_INET;
-			((struct sockaddr_in *)&addrm)->sin_port =
-				((struct sockaddr_in *)&udp->bcaddr)->sin_port;
-			((struct sockaddr_in *)&addrm)->sin_addr.s_addr = NET_INADDR_ANY;
+			((struct net_sockaddr_in *)&addrm)->sin_port =
+				((struct net_sockaddr_in *)&udp->bcaddr)->sin_port;
+			((struct net_sockaddr_in *)&addrm)->sin_addr.s_addr_be = NET_INADDR_ANY;
 		}
 		break;
 	case NET_AF_INET6:
 		if (IS_ENABLED(CONFIG_NET_IPV6)) {
 			addrm.sa_family = NET_AF_INET6;
-			((struct sockaddr_in6 *)&addrm)->sin6_port =
-				((struct sockaddr_in6 *)&udp->bcaddr)->sin6_port;
-			memcpy(&((struct sockaddr_in6 *)&addrm)->sin6_addr, &in6addr_any,
-			       sizeof(struct in6_addr));
+			((struct net_sockaddr_in6 *)&addrm)->sin6_port =
+				((struct net_sockaddr_in6 *)&udp->bcaddr)->sin6_port;
+			memcpy(&((struct net_sockaddr_in6 *)&addrm)->sin6_addr, &in6addr_any,
+			       sizeof(struct net_in6_addr));
 			break;
 		}
 	default:
@@ -112,25 +111,46 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 		return errno;
 	}
 
-	memcpy(&mreqn.imr_multiaddr, &udp->bcaddr.data[2], sizeof(udp->bcaddr.data) - 2);
 	if (udp->bcaddr.sa_family == NET_AF_INET && IS_ENABLED(CONFIG_NET_IPV4)) {
+		struct net_sockaddr_in *bcaddr_in = (struct net_sockaddr_in *)&udp->bcaddr;
+		struct net_ip_mreqn mreqn;
+
 		iface = net_if_ipv4_select_src_iface(
-			&((struct sockaddr_in *)&udp->bcaddr)->sin_addr);
+			&((struct net_sockaddr_in *)&udp->bcaddr)->sin_addr);
+
+		mreqn = (struct net_ip_mreqn) {
+			.imr_multiaddr = bcaddr_in->sin_addr,
+			.imr_ifindex = net_if_get_by_iface(iface),
+		};
+
+		err = zsock_setsockopt(udp->sock, NET_IPPROTO_IP, NET_IP_ADD_MEMBERSHIP, &mreqn,
+				       sizeof(mreqn));
+		if (err < 0) {
+			return errno;
+		}
 	} else if (udp->bcaddr.sa_family == NET_AF_INET6 && IS_ENABLED(CONFIG_NET_IPV6)) {
-		iface = net_if_ipv6_select_src_iface(&((struct sockaddr_in6 *)&addrm)->sin6_addr);
+		struct net_sockaddr_in6 *bcaddr_in6 = (struct net_sockaddr_in6 *)&udp->bcaddr;
+		struct net_ipv6_mreq mreq;
+
+		iface = net_if_ipv6_select_src_iface(&((struct net_sockaddr_in6 *)&addrm)->sin6_addr);
+
+		mreq = (struct net_ipv6_mreq) {
+			.ipv6mr_multiaddr = bcaddr_in6->sin6_addr,
+			.ipv6mr_ifindex = net_if_get_by_iface(iface),
+		};
+
+		err = zsock_setsockopt(udp->sock, NET_IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, &mreq,
+				       sizeof(mreq));
+		if (err < 0) {
+			return errno;
+		}
 	} else {
 		LOG_ERR("Unknown AF");
 		return -EINVAL;
 	}
-	mreqn.imr_ifindex = net_if_get_by_iface(iface);
-
-	err = zsock_setsockopt(udp->sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreqn, sizeof(mreqn));
-	if (err < 0) {
-		return errno;
-	}
 
 	optval = CONFIG_MQTT_SN_LIB_BROADCAST_RADIUS;
-	err = zsock_setsockopt(udp->sock, IPPROTO_IP, IP_MULTICAST_TTL, &optval, sizeof(optval));
+	err = zsock_setsockopt(udp->sock, NET_IPPROTO_IP, NET_IP_MULTICAST_TTL, &optval, sizeof(optval));
 	if (err < 0) {
 		return errno;
 	}
@@ -157,13 +177,13 @@ static int tp_udp_sendto(struct mqtt_sn_client *client, void *buf, size_t sz, co
 		LOG_HEXDUMP_DBG(buf, sz, "Sending Broadcast UDP packet");
 
 		/* Set ttl if requested value does not match existing*/
-		rc = zsock_getsockopt(udp->sock, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, &ttl_len);
+		rc = zsock_getsockopt(udp->sock, NET_IPPROTO_IP, NET_IP_MULTICAST_TTL, &ttl, &ttl_len);
 		if (rc < 0) {
 			return -errno;
 		}
 		if (ttl != addrlen) {
 			ttl = addrlen;
-			rc = zsock_setsockopt(udp->sock, IPPROTO_IP, IP_MULTICAST_TTL, &ttl,
+			rc = zsock_setsockopt(udp->sock, NET_IPPROTO_IP, NET_IP_MULTICAST_TTL, &ttl,
 					      sizeof(ttl));
 			if (rc < 0) {
 				return -errno;
@@ -192,7 +212,7 @@ static ssize_t tp_udp_recvfrom(struct mqtt_sn_client *client, void *buffer, size
 {
 	struct mqtt_sn_transport_udp *udp = UDP_TRANSPORT(client->transport);
 	int rc;
-	struct sockaddr *srcaddr = src_addr;
+	struct net_sockaddr *srcaddr = src_addr;
 
 	rc = zsock_recvfrom(udp->sock, buffer, length, 0, src_addr, addrlen);
 	LOG_DBG("recv %d", rc);
