@@ -23,12 +23,18 @@ family:
   - name: mcxa346
   - name: mcxa266
 - name: mcxw
-  socs:
-  - name: mcxw716c
-  - name: mcxw727c
-    cpuclusters:
-    - name: cpu0
-    - name: cpu1
+  series:
+  - name: mcxw2xx
+    socs:
+    - name: mcxw236
+    - name: mcxw235
+  - name: mcxw7xx
+    socs:
+    - name: mcxw716c
+    - name: mcxw727c
+      cpuclusters:
+      - name: cpu0
+      - name: cpu1
 runners:
   run_once:
     '--erase':
@@ -59,6 +65,8 @@ runners:
         - mcxa266
       - qualifiers:
         - mcxw716c
+      - qualifiers:
+        - mcxw236
     '--reset':
     - run: last
       runners:
@@ -87,3 +95,5 @@ runners:
         - mcxa266
       - qualifiers:
         - mcxw716c
+      - qualifiers:
+        - mcxw236
