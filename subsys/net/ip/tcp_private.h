@@ -332,14 +332,16 @@ struct tcp { /* TCP connection */
     int64_t last_nd_hint_time;
     #endif
 
-    size_t             send_data_total;
-    int                unacked_len;
-    atomic_t           ref_count;
-    atomic_t           backlog;
-    enum tcp_state     state;
+    size_t send_data_total;
+    int unacked_len;
+    atomic_t ref_count;
+    atomic_t backlog;
+    enum tcp_state state;
     enum tcp_data_mode data_mode;
-    uint32_t           seq;
-    uint32_t           ack;
+    uint32_t seq;
+    uint32_t isn;
+    uint32_t isn_peer;
+    uint32_t ack;
 
     #if defined(CONFIG_NET_TCP_KEEPALIVE)
     uint32_t keep_idle;
