@@ -200,7 +200,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 57d9fc59c9ea86465b5cd26f0fe2b9dcc520768b
+      revision: e3bf121f1ba72fb1090ef67d19a702b0d77b9f93
       path: modules/hal/nordic
       groups:
         - hal
@@ -240,7 +240,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: b71ca6e4cb7a2ba9413dcdaf256527a4f0c4167a
+      revision: ae1afd84a2acb0cdca2b691047d81a61ce3f9356
       path: modules/hal/silabs
       groups:
         - hal

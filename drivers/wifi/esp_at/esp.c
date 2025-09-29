@@ -408,7 +408,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_cwlap) {                         /* ESP_AT_STA_SE
 }
 
 /* +CWJAP:(ssid,bssid,channel,rssi) */
-MODEM_CMD_DIRECT_DEFINE(on_cmd_cwjap) {
+MODEM_CMD_DIRECT_DEFINE(on_cmd_cwjap_status) {
     struct esp_data* dev = CONTAINER_OF(data, struct esp_data,
                                         cmd_handler_data);
     struct wifi_iface_status *status = dev->wifi_status;
@@ -474,6 +474,37 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_cwjap) {
     status->rssi    = strtol(rssi, NULL, 10);
 
     return (str - cwjap_buf);
+}
+
+/* +CWJAP:(error) */
+MODEM_CMD_DEFINE(on_cmd_cwjap_connect) {
+    struct esp_data *dev = CONTAINER_OF(data, struct esp_data,
+                                        cmd_handler_data);
+    long errcode = strtol(argv[0], NULL, 10);
+
+    switch (errcode) {
+        case 1 :
+            dev->conn_status = WIFI_STATUS_CONN_TIMEOUT;
+            break;
+
+        case 2 :
+            dev->conn_status = WIFI_STATUS_CONN_WRONG_PASSWORD;
+            break;
+
+        case 3 :
+            dev->conn_status = WIFI_STATUS_CONN_AP_NOT_FOUND;
+            break;
+
+        case 4 :
+            dev->conn_status = WIFI_STATUS_CONN_FAIL;
+            break;
+
+        default :
+            LOG_WRN("Unknown CWJAP error code: %ld", errcode);
+            break;
+    }
+
+    return (0);
 }
 
 static void esp_dns_work(struct k_work* work) {
@@ -1012,7 +1043,7 @@ static void esp_mgmt_iface_status_work(struct k_work* work) {
     struct wifi_iface_status* status = data->wifi_status;
     int ret;
     static const struct modem_cmd cmds[] = {
-        MODEM_CMD_DIRECT("+CWJAP:", on_cmd_cwjap),
+        MODEM_CMD_DIRECT("+CWJAP:", on_cmd_cwjap_status),
     };
 
     ret = esp_cmd_send(data, cmds, ARRAY_SIZE(cmds), "AT+CWJAP?",
@@ -1120,6 +1151,7 @@ static void esp_mgmt_connect_work(struct k_work* work) {        /* ESP_AT_STA_SE
     int ret;
     static const struct modem_cmd cmds[] = {
         MODEM_CMD("FAIL", on_cmd_fail, 0U, ""),
+        MODEM_CMD("+CWJAP:", on_cmd_cwjap_connect, 1U, ""),
     };
 
     dev = CONTAINER_OF(work, struct esp_data, connect_work);
@@ -1128,6 +1160,8 @@ static void esp_mgmt_connect_work(struct k_work* work) {        /* ESP_AT_STA_SE
     if (ret < 0) {
         goto out;
     }
+
+    dev->conn_status = WIFI_STATUS_CONN_FAIL;
 
     ret = esp_cmd_send(dev, cmds, ARRAY_SIZE(cmds), dev->conn_cmd,
                        ESP_CONNECT_TIMEOUT);
@@ -1143,12 +1177,13 @@ static void esp_mgmt_connect_work(struct k_work* work) {        /* ESP_AT_STA_SE
         }
         else {
             wifi_mgmt_raise_connect_result_event(dev->net_iface,
-                                                 ret);
+                                                 dev->conn_status);
         }
     }
     else if (!esp_flags_are_set(dev, EDF_STA_CONNECTED)) {
         esp_flags_set(dev, EDF_STA_CONNECTED);
-        wifi_mgmt_raise_connect_result_event(dev->net_iface, 0);
+        wifi_mgmt_raise_connect_result_event(dev->net_iface,
+                                             WIFI_STATUS_CONN_SUCCESS);
         net_if_dormant_off(dev->net_iface);
     }
 
