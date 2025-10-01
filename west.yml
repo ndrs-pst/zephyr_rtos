@@ -169,7 +169,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 44c5ab74101497697e73c06aab82bab20852f3aa
+      revision: 31fb4c34ff040f56bb11851c9091809c45777550
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -280,7 +280,7 @@ manifest:
       groups:
         - hal
     - name: hal_xtensa
-      revision: b38620c7cc61e349e192ed86a54940a5cd0636b7
+      revision: ba3f1ce6b066c3e40a8e6cad3fba0068ecfcd4ba
       path: modules/hal/xtensa
       groups:
         - hal
