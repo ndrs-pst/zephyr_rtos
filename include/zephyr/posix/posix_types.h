@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #endif
 
-#if !defined(_CLOCK_T_DECLARED) && !defined(__clock_t_defined)
+#if !defined(_CLOCK_T_DECLARED) && !defined(__clock_t_defined) && !defined(_MSC_VER) /* #CUSTOM@NDRS */
 typedef unsigned long clock_t;
 #define _CLOCK_T_DECLARED
 #define __clock_t_defined

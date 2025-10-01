@@ -18,7 +18,7 @@
  *        controllers.
  * @defgroup spi_interface SPI
  * @since 1.0
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup io_interfaces
  * @{
  */
@@ -150,7 +150,7 @@ extern "C" {
  * @param operation A @ref spi_operation_t from which to get the configured word size.
  * @retval The size (in bits) of a spi word for the operation.
  */
-#define SPI_WORD_SIZE_GET(operation)                    \
+#define SPI_WORD_SIZE_GET(operation) \
     (((operation) & SPI_WORD_SIZE_MASK) >> SPI_WORD_SIZE_SHIFT)
 
 /**
@@ -159,7 +159,7 @@ extern "C" {
  * @param word_size The size of a SPI data frame in bits.
  * @retval A bitmask to apply to a @ref spi_operation_t
  */
-#define SPI_WORD_SET(word_size)            \
+#define SPI_WORD_SET(word_size) \
     ((word_size) << SPI_WORD_SIZE_SHIFT)
 
 /** @} */
@@ -248,19 +248,42 @@ extern "C" {
  *
  */
 struct spi_cs_control {
-    /**
-     * GPIO devicetree specification of CS GPIO.
-     * The device pointer can be set to NULL to fully inhibit CS control if
-     * necessary. The GPIO flags GPIO_ACTIVE_LOW/GPIO_ACTIVE_HIGH should be
-     * equivalent to SPI_CS_ACTIVE_HIGH/SPI_CS_ACTIVE_LOW options in struct
-     * spi_config.
-     */
-    struct gpio_dt_spec gpio;
-    /**
-     * Delay in microseconds to wait before starting the
-     * transmission and before releasing the CS line.
-     */
-    uint32_t delay;
+    union {
+        struct {
+            /**
+             * GPIO devicetree specification of CS GPIO.
+             * The device pointer can be set to NULL to fully inhibit CS control if
+             * necessary. The GPIO flags GPIO_ACTIVE_LOW/GPIO_ACTIVE_HIGH should be
+             * equivalent to SPI_CS_ACTIVE_HIGH/SPI_CS_ACTIVE_LOW options in struct
+             * spi_config.
+             */
+            struct gpio_dt_spec gpio;
+
+            /**
+             * Delay in microseconds to wait before starting the
+             * transmission and before releasing the CS line.
+             */
+            uint32_t delay;
+        };
+
+        struct {
+            /**
+             * CS enable lead time, i.e. how long should the CS be asserted
+             * before the first clock. Specified in nanoseconds.
+             */
+            uint32_t setup_ns;
+
+            /**
+             * CS enable lag time, i.e. how long should the CS be asserted
+             * after the last clock, before the CS de-asserts.
+             * Specified in nanoseconds.
+             */
+            uint32_t hold_ns;
+        };
+    };
+
+    /* To keep track of which form of this struct is valid */
+    bool cs_is_gpio;
 };
 
 /**
@@ -301,7 +324,7 @@ struct spi_cs_control {
  * @return #gpio_dt_spec struct corresponding with spi_dev's chip select
  */
 #define SPI_CS_GPIOS_DT_SPEC_GET(spi_dev)           \
-    GPIO_DT_SPEC_GET_BY_IDX_OR(DT_BUS(spi_dev), cs_gpios,   \
+    GPIO_DT_SPEC_GET_BY_IDX_OR(DT_BUS(spi_dev), cs_gpios, \
                                DT_REG_ADDR_RAW(spi_dev), {})
 
 /**
@@ -315,6 +338,25 @@ struct spi_cs_control {
  */
 #define SPI_CS_GPIOS_DT_SPEC_INST_GET(inst) \
     SPI_CS_GPIOS_DT_SPEC_GET(DT_DRV_INST(inst))
+
+/** @cond INTERNAL_HIDDEN */
+#define SPI_CS_CONTROL_MAX_DELAY(node_id)   \
+    MAX(DT_PROP_OR(node_id, spi_cs_setup_delay_ns, 0), \
+    DT_PROP_OR(node_id, spi_cs_hold_delay_ns, 0))
+
+#define SPI_CS_CONTROL_INIT_GPIO(node_id, ...)  \
+    .gpio = SPI_CS_GPIOS_DT_SPEC_GET(node_id),  \
+    .delay = COND_CODE_1(IS_EMPTY(__VA_ARGS__), \
+                         (DIV_ROUND_UP(SPI_CS_CONTROL_MAX_DELAY(node_id), 1000)), \
+                         (__VA_ARGS__))
+
+#define SPI_CS_CONTROL_INIT_NATIVE(node_id)     \
+    .setup_ns = DT_PROP_OR(node_id, spi_cs_setup_delay_ns, 0), \
+    .hold_ns = DT_PROP_OR(node_id, spi_cs_hold_delay_ns, 0),
+
+#define SPI_DEPRECATE_DELAY_WARN \
+    __WARN("Delay parameter in SPI DT macros is deprecated, use DT prop instead")
+/** @endcond */
 
 /**
  * @brief Initialize and get a pointer to a @p spi_cs_control from a
@@ -338,27 +380,34 @@ struct spi_cs_control {
  *
  * @code{.c}
  *     struct spi_cs_control ctrl =
- *             SPI_CS_CONTROL_INIT(DT_NODELABEL(spidev), 2);
+ *             SPI_CS_CONTROL_INIT(DT_NODELABEL(spidev));
  * @endcode
  *
- * This example is equivalent to:
+ * This example is roughly equivalent to:
  *
  * @code{.c}
  *     struct spi_cs_control ctrl = {
- *             .gpio = SPI_CS_GPIOS_DT_SPEC_GET(DT_NODELABEL(spidev)),
- *             .delay = 2,
+ *         .gpio = SPI_CS_GPIOS_DT_SPEC_GET(DT_NODELABEL(spidev)),
+ *         .delay = DT_PROP(node_id, cs_delay_ns) / 1000,
+ *         .cs_is_gpio = true,
  *     };
  * @endcode
  *
+ * For non-gpio CS, the idea is similar but the lead and lag fields of the cs struct
+ * will be populated instead.
+ *
  * @param node_id Devicetree node identifier for a device on a SPI bus
- * @param delay_ The @p delay field to set in the @p spi_cs_control
+ *
  * @return a pointer to the @p spi_cs_control structure
  */
-#define SPI_CS_CONTROL_INIT(node_id, delay_)        \
-    {                           \
-        .gpio = SPI_CS_GPIOS_DT_SPEC_GET(node_id),  \
-        .delay = (delay_),      \
-    }
+#define SPI_CS_CONTROL_INIT(node_id, ...)                               \
+{                                                                       \
+    COND_CODE_0(IS_EMPTY(__VA_ARGS__), (SPI_DEPRECATE_DELAY_WARN), ())  \
+    .cs_is_gpio = DT_SPI_DEV_HAS_CS_GPIOS(node_id),                     \
+    COND_CODE_1(DT_SPI_DEV_HAS_CS_GPIOS(node_id),                       \
+                (SPI_CS_CONTROL_INIT_GPIO(node_id, __VA_ARGS__)),       \
+                (SPI_CS_CONTROL_INIT_NATIVE(node_id)))                  \
+}
 
 /**
  * @brief Get a pointer to a @p spi_cs_control from a devicetree node
@@ -370,11 +419,11 @@ struct spi_cs_control {
  * this macro.
  *
  * @param inst Devicetree node instance number
- * @param delay_ The @p delay field to set in the @p spi_cs_control
+ *
  * @return a pointer to the @p spi_cs_control structure
  */
-#define SPI_CS_CONTROL_INIT_INST(inst, delay_) \
-        SPI_CS_CONTROL_INIT(DT_DRV_INST(inst), delay_)
+#define SPI_CS_CONTROL_INIT_INST(inst) \
+    SPI_CS_CONTROL_INIT(DT_DRV_INST(inst))
 
 /** @} */
 
@@ -398,6 +447,7 @@ typedef uint16_t spi_operation_t;
 struct spi_config {
     /** @brief Bus frequency in Hertz. */
     uint32_t frequency;
+
     /**
      * @brief Operation flags.
      *
@@ -421,14 +471,45 @@ struct spi_config {
      * - 20..31: Reserved for future use.
      */
     spi_operation_t operation;
+
     /** @brief Slave number from 0 to host controller slave limit. */
     uint16_t slave;
+
     /**
      * @brief GPIO chip-select line (optional, must be initialized to zero
      * if not used).
      */
     struct spi_cs_control cs;
+
+    /**
+     * @brief Delay between SPI words on SCK line in nanoseconds, if supported.
+     * Value of zero will attempt to use half of the SCK period.
+     */
+    uint16_t word_delay;
 };
+
+/** @cond INTERNAL_HIDDEN */
+/* converts from the special DT zero value to half of the frequency, for drivers usage mostly */
+static inline uint16_t spi_get_word_delay(const struct spi_config* cfg) {
+    uint32_t freq = cfg->frequency;
+
+    if (cfg->word_delay != 0) {
+        return (cfg->word_delay);
+    }
+
+    if (freq == 0) {
+        return (0);
+    }
+
+    uint64_t period_ns = NSEC_PER_SEC / freq;
+
+    period_ns = MIN(period_ns, UINT16_MAX);
+    period_ns /= 2;
+
+    return (uint16_t)period_ns;
+}
+
+/** @endcond */
 
 /**
  * @brief Structure initializer for spi_config from devicetree
@@ -440,28 +521,29 @@ struct spi_config {
  * @param node_id Devicetree node identifier for the SPI device whose
  *                struct spi_config to create an initializer for
  * @param operation_ the desired @p operation field in the struct spi_config
- * @param delay_ the desired @p delay field in the struct spi_config's
- *               spi_cs_control, if there is one
  */
-#define SPI_CONFIG_DT(node_id, operation_, delay_)  \
-    {                                       \
+#define SPI_CONFIG_DT(node_id, operation_, ...)             \
+    {                                                       \
         .frequency = DT_PROP(node_id, spi_max_frequency),   \
-        .operation = (operation_)    |      \
-            DT_PROP(node_id, duplex) |      \
-            DT_PROP(node_id, frame_format) |\
-            COND_CODE_1(DT_PROP(node_id, spi_cpol), SPI_MODE_CPOL, (0)) |   \
-            COND_CODE_1(DT_PROP(node_id, spi_cpha), SPI_MODE_CPHA, (0)) |   \
-            COND_CODE_1(DT_PROP(node_id, spi_hold_cs), SPI_HOLD_ON_CS, (0)),\
-        .slave = DT_REG_ADDR(node_id),      \
-        .cs = SPI_CS_CONTROL_INIT(node_id, delay_), \
+        .operation = (operation_) |                         \
+                     DT_PROP(node_id, duplex) |             \
+                     DT_PROP(node_id, frame_format) |       \
+                     COND_CODE_1(DT_PROP(node_id, spi_cpol), SPI_MODE_CPOL, (0)) |          \
+                     COND_CODE_1(DT_PROP(node_id, spi_cpha), SPI_MODE_CPHA, (0)) |          \
+                     COND_CODE_1(DT_PROP(node_id, spi_hold_cs), SPI_HOLD_ON_CS, (0)) |      \
+                     COND_CODE_1(DT_PROP(node_id, spi_lsb_first), SPI_TRANSFER_LSB, (0)) |  \
+                     COND_CODE_1(DT_PROP(node_id, spi_cs_high), SPI_CS_ACTIVE_HIGH, (0)),   \
+        .slave      = DT_REG_ADDR(node_id),                 \
+        .cs         = SPI_CS_CONTROL_INIT(node_id, __VA_ARGS__), \
+        .word_delay = DT_PROP(node_id, spi_interframe_delay_ns), \
     }
 
 /**
  * @brief Structure initializer for spi_config from devicetree (without CS)
  */
-#define SPI_CONFIG_WITHOUT_CS_DT(node_id, operation_, delay_)   \
+#define SPI_CONFIG_WITHOUT_CS_DT(node_id, operation_, delay_) \
     {                                       \
-        .frequency = DT_PROP(node_id, spi_max_frequency),       \
+        .frequency = DT_PROP(node_id, spi_max_frequency), \
         .operation = (operation_)    |      \
             DT_PROP(node_id, duplex) |      \
             DT_PROP(node_id, frame_format) |\
@@ -483,15 +565,13 @@ struct spi_config {
  * @brief Structure initializer for spi_config from devicetree instance
  *
  * This is equivalent to
- * <tt>SPI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)</tt>.
+ * <tt>SPI_CONFIG_DT(DT_DRV_INST(inst), operation_)</tt>.
  *
  * @param inst Devicetree instance number
  * @param operation_ the desired @p operation field in the struct spi_config
- * @param delay_ the desired @p delay field in the struct spi_config's
- *               spi_cs_control, if there is one
  */
-#define SPI_CONFIG_DT_INST(inst, operation_, delay_)    \
-    SPI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)
+#define SPI_CONFIG_DT_INST(inst, operation_, ...) \
+    SPI_CONFIG_DT(DT_DRV_INST(inst), operation_, __VA_ARGS__)
 
 /**
  * @brief Complete SPI DT information
@@ -499,6 +579,7 @@ struct spi_config {
 struct spi_dt_spec {
     /** SPI bus */
     struct device const* bus;
+
     /** Slave specific configuration */
     struct spi_config config;
 };
@@ -517,28 +598,24 @@ struct spi_dt_spec {
  * @param node_id Devicetree node identifier for the SPI device whose
  *                struct spi_dt_spec to create an initializer for
  * @param operation_ the desired @p operation field in the struct spi_config
- * @param delay_ the desired @p delay field in the struct spi_config's
- *               spi_cs_control, if there is one
  */
-#define SPI_DT_SPEC_GET(node_id, operation_, delay_)            \
+#define SPI_DT_SPEC_GET(node_id, operation_, ...)               \
     {                                                           \
-        .bus = DEVICE_DT_GET(DT_BUS(node_id)),                  \
-        .config = SPI_CONFIG_DT(node_id, operation_, delay_)    \
+        .bus    = DEVICE_DT_GET(DT_BUS(node_id)),               \
+        .config = SPI_CONFIG_DT(node_id, operation_, __VA_ARGS__), \
     }
 
 /**
  * @brief Structure initializer for spi_dt_spec from devicetree instance
  *
  * This is equivalent to
- * <tt>SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_, delay_)</tt>.
+ * <tt>SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_)</tt>.
  *
  * @param inst Devicetree instance number
  * @param operation_ the desired @p operation field in the struct spi_config
- * @param delay_ the desired @p delay field in the struct spi_config's
- *               spi_cs_control, if there is one
  */
-#define SPI_DT_SPEC_INST_GET(inst, operation_, delay_) \
-    SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_, delay_)
+#define SPI_DT_SPEC_INST_GET(inst, operation_, ...) \
+    SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_, __VA_ARGS__)
 
 /**
  * @brief Value that will never compare true with any valid overrun character
@@ -637,7 +714,7 @@ struct spi_device_state {
 /**
  * @brief Get pointer to SPI statistics structure
  */
-#define Z_SPI_GET_STATS(dev_)               \
+#define Z_SPI_GET_STATS(dev_) \
     CONTAINER_OF(dev_->state, struct spi_device_state, devstate)->stats
 
 /**
@@ -645,7 +722,7 @@ struct spi_device_state {
  *
  * @param dev_ Pointer to the device structure for the driver instance.
  */
-#define SPI_STATS_RX_BYTES_INCN(dev_, n)    \
+#define SPI_STATS_RX_BYTES_INCN(dev_, n) \
     STATS_INCN(Z_SPI_GET_STATS(dev_), rx_bytes, n)
 
 /**
@@ -653,7 +730,7 @@ struct spi_device_state {
  *
  * @param dev_ Pointer to the device structure for the driver instance.
  */
-#define SPI_STATS_TX_BYTES_INCN(dev_, n)    \
+#define SPI_STATS_TX_BYTES_INCN(dev_, n) \
     STATS_INCN(Z_SPI_GET_STATS(dev_), tx_bytes, n)
 
 /**
@@ -663,15 +740,15 @@ struct spi_device_state {
  *
  * @param dev_ Pointer to the device structure for the driver instance.
  */
-#define SPI_STATS_TRANSFER_ERROR_INC(dev_)  \
+#define SPI_STATS_TRANSFER_ERROR_INC(dev_) \
     STATS_INC(Z_SPI_GET_STATS(dev_), transfer_error)
 
 /** @cond INTERNAL_HIDDEN */
 /**
  * @brief Define a statically allocated and section assigned SPI device state
  */
-#define Z_SPI_DEVICE_STATE_DEFINE(dev_id)   \
-    static struct spi_device_state Z_DEVICE_STATE_NAME(dev_id)  \
+#define Z_SPI_DEVICE_STATE_DEFINE(dev_id) \
+    static struct spi_device_state Z_DEVICE_STATE_NAME(dev_id) \
     __attribute__((__section__(".z_devstate")));
 
 /**
@@ -681,9 +758,9 @@ struct spi_device_state {
  * and calls the given init_fn
  */
 #define Z_SPI_INIT_FN(dev_id, init_fn)                          \
-    static inline int UTIL_CAT(dev_id, _init)(const struct device* dev) {   \
+    static inline int UTIL_CAT(dev_id, _init)(const struct device* dev) { \
         struct spi_device_state* state =                        \
-                CONTAINER_OF(dev->state, struct spi_device_state, devstate);   \
+            CONTAINER_OF(dev->state, struct spi_device_state, devstate); \
         stats_init(&state->stats.s_hdr, STATS_SIZE_32, 3,       \
                    STATS_NAME_INIT_PARMS(spi));                 \
         stats_register(dev->name, &(state->stats.s_hdr));       \
@@ -758,11 +835,11 @@ static inline void spi_transceive_stats(const struct device* dev, int error,
                                     config, level, prio, api, ...) \
     Z_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));         \
     Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),       \
-            DEVICE_DT_NAME(node_id), init_fn, deinit_fn,        \
-            Z_DEVICE_DT_FLAGS(node_id), pm, data, config,       \
-            level, prio, api,                                   \
-            &Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)),  \
-            __VA_ARGS__)
+        DEVICE_DT_NAME(node_id), init_fn, deinit_fn,            \
+        Z_DEVICE_DT_FLAGS(node_id), pm, data, config,           \
+        level, prio, api,                                       \
+        &Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)),      \
+        __VA_ARGS__)
 
 /** @} */
 
@@ -794,7 +871,7 @@ static inline void spi_transceive_stats(const struct device* dev, int error,
  *                the driver. Can be NULL.
  */
 #define SPI_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, prio, \
-                             api, ...)                          \
+                             api, ...) \
     SPI_DEVICE_DT_DEINIT_DEFINE(node_id, init_fn, NULL, pm, data, config, \
                                 level, prio, api, __VA_ARGS__)
 
@@ -817,7 +894,7 @@ static inline void spi_transceive_stats(const struct device* dev, int error,
  * set to `DT_DRV_INST(inst)`.
  * @param ... Other parameters as expected by SPI_DEVICE_DT_DEFINE().
  */
-#define SPI_DEVICE_DT_INST_DEFINE(inst, ...)                                       \
+#define SPI_DEVICE_DT_INST_DEFINE(inst, ...) \
     SPI_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
@@ -892,7 +969,7 @@ __subsystem struct spi_driver_api {
  * @return false If CS is controlled by hardware or any other means.
  */
 static inline bool spi_cs_is_gpio(const struct spi_config* config) {
-    return (config->cs.gpio.port != NULL);
+    return (config->cs.cs_is_gpio);
 }
 
 /**
@@ -976,7 +1053,8 @@ static inline int z_impl_spi_transceive(const struct device* dev,
                                         const struct spi_config* config,
                                         const struct spi_buf_set* tx_bufs,
                                         const struct spi_buf_set* rx_bufs) {
-    const struct spi_driver_api* api = (const struct spi_driver_api*)dev->api;
+    const struct spi_driver_api* api =
+        (const struct spi_driver_api*)dev->api;
     int ret;
 
     ret = api->transceive(dev, config, tx_bufs, rx_bufs);
@@ -1172,7 +1250,8 @@ static inline int spi_transceive_cb(const struct device* dev,
                                     const struct spi_buf_set* rx_bufs,
                                     spi_callback_t callback,
                                     void* userdata) {
-    const struct spi_driver_api* api = (const struct spi_driver_api*)dev->api;
+    const struct spi_driver_api* api =
+        (const struct spi_driver_api*)dev->api;
 
     return api->transceive_async(dev, config, tx_bufs, rx_bufs, callback, userdata);
 }
@@ -1220,7 +1299,8 @@ static inline int spi_transceive_signal(const struct device* dev,
                                         const struct spi_buf_set* tx_bufs,
                                         const struct spi_buf_set* rx_bufs,
                                         struct k_poll_signal* sig) {
-    const struct spi_driver_api* api = (const struct spi_driver_api*)dev->api;
+    const struct spi_driver_api* api =
+        (const struct spi_driver_api*)dev->api;
     spi_callback_t cb = (sig == NULL) ? NULL : z_spi_transfer_signal_cb;
 
     return api->transceive_async(dev, config, tx_bufs, rx_bufs, cb, sig);
@@ -1335,11 +1415,10 @@ extern const struct rtio_iodev_api spi_iodev_api;
  * @param name Symbolic name to use for defining the iodev
  * @param node_id Devicetree node identifier
  * @param operation_ SPI operational mode
- * @param delay_ Chip select delay in microseconds
  */
-#define SPI_DT_IODEV_DEFINE(name, node_id, operation_, delay_)  \
-    const struct spi_dt_spec _spi_dt_spec_##name =              \
-        SPI_DT_SPEC_GET(node_id, operation_, delay_);           \
+#define SPI_DT_IODEV_DEFINE(name, node_id, operation_, ...) \
+    const struct spi_dt_spec _spi_dt_spec_##name =          \
+        SPI_DT_SPEC_GET(node_id, operation_, __VA_ARGS__);  \
     RTIO_IODEV_DEFINE(name, &spi_iodev_api, (void*)&_spi_dt_spec_##name)
 
 /**
@@ -1384,7 +1463,8 @@ __syscall int spi_release(const struct device* dev,
 
 static inline int z_impl_spi_release(const struct device* dev,
                                      const struct spi_config* config) {
-    const struct spi_driver_api* api = (const struct spi_driver_api*)dev->api;
+    const struct spi_driver_api* api =
+        (const struct spi_driver_api*)dev->api;
 
     return api->release(dev, config);
 }
