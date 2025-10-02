@@ -376,6 +376,13 @@ struct uart_ns16550_dev_data {
 #endif
 };
 
+uint32_t uart_ns16550_get_port(const struct device *dev)
+{
+	const struct uart_ns16550_dev_config *config = dev->config;
+
+	return config->port;
+}
+
 static inline uint8_t reg_interval(const struct device *dev)
 {
 	const struct uart_ns16550_dev_config *config = dev->config;
