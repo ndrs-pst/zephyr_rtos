@@ -71,9 +71,6 @@ static const struct smf_state* get_lca_of(struct smf_state const* source,
         if (share_parent(dest, ancestor)) {
             return (ancestor);
         }
-        else if (share_parent(dest, ancestor)) {
-            return (ancestor);
-        }
     }
 
     return (NULL);
