@@ -83,15 +83,13 @@ extern "C" {
  * @brief Create a contiguous bitmask starting at bit position @p l
  *        and ending at position @p h.
  */
-#define GENMASK(h, l) \
-    (((~0UL) - (1UL << (l)) + 1UL) & (~0UL >> (BITS_PER_LONG - 1UL - (h))))
+#define GENMASK(h, l) (((~0UL) - (1UL << (l)) + 1) & (~0UL >> (BITS_PER_LONG - 1 - (h))))
 
 /**
  * @brief Create a contiguous 64-bit bitmask starting at bit position @p l
  *        and ending at position @p h.
  */
-#define GENMASK64(h, l) \
-    (((~0ULL) - (1ULL << (l)) + 1ULL) & (~0ULL >> (BITS_PER_LONG_LONG - 1ULL - (h))))
+#define GENMASK64(h, l) (((~0ULL) - (1ULL << (l)) + 1) & (~0ULL >> (BITS_PER_LONG_LONG - 1 - (h))))
 
 /** @brief 0 if @p cond is true-ish; causes a compile error otherwise. */
 #define ZERO_OR_COMPILE_ERROR(cond) ((int)sizeof(char[1 - (2 * !(cond))]) - 1)
@@ -148,15 +146,16 @@ extern "C" {
  */
 #if defined(_MSC_VER) /* #CUSTOM@NDRS */
 #define FLEXIBLE_ARRAY_DECLARE(type, name) \
-	struct { \
-		type name[]; \
-	}
+    struct { \
+        type name[]; \
+    }
 #else
 #define FLEXIBLE_ARRAY_DECLARE(type, name) \
-	struct { \
-		struct { } __unused_##name; \
-		type name[]; \
-	}
+    struct { \
+        struct { \
+        } __unused_##name; \
+        type name[]; \
+    }
 #endif
 
 /**
@@ -235,8 +234,8 @@ extern "C" {
  */
 #define ARRAY_INDEX_FLOOR(_array, _ptr)                         \
     ({                                                          \
-        __ASSERT_NO_MSG(PART_OF_ARRAY(_array, ptr));            \
-        (POINTER_TO_UINT(ptr) - POINTER_TO_UINT(array)) / sizeof((array)[0]); \
+        __ASSERT_NO_MSG(PART_OF_ARRAY(_array, _ptr));           \
+        (POINTER_TO_UINT(_ptr) - POINTER_TO_UINT(_array)) / sizeof((_array)[0]); \
     })
 
 /**
@@ -253,9 +252,9 @@ extern "C" {
  * @param array the array in question
  * @param ptr pointer to an element of @p array
  */
-#define ARRAY_FOR_EACH_PTR(array, ptr)                                                             \
-	for (__typeof__(*(array)) *ptr = (array); (size_t)((ptr) - (array)) < ARRAY_SIZE(array);   \
-	     ++(ptr))
+#define ARRAY_FOR_EACH_PTR(array, ptr) \
+    for (__typeof__(*(array)) *ptr = (array); (size_t)((ptr) - (array)) < ARRAY_SIZE(array); \
+         ++(ptr))
 
 /**
  * @brief Validate if two entities have a compatible type
@@ -303,10 +302,10 @@ extern "C" {
 #define CONTAINER_OF(ptr, type, field) \
     ((type*)(((char*)(ptr)) - offsetof(type, field)))
 #else
-#define CONTAINER_OF(ptr, type, field) \
-    ({  \
+#define CONTAINER_OF(ptr, type, field)      \
+    ({                                      \
         CONTAINER_OF_VALIDATE(ptr, type, field) \
-        ((type*)(((char*)(ptr)) - offsetof(type, field)));  \
+        ((type*)(((char*)(ptr)) - offsetof(type, field))); \
     })
 #endif
 
@@ -331,8 +330,7 @@ extern "C" {
  *
  * @return Concatenated token.
  */
-#define CONCAT(...) \
-	UTIL_CAT(_CONCAT_, NUM_VA_ARGS_LESS_1(__VA_ARGS__))(__VA_ARGS__)
+#define CONCAT(...) UTIL_CAT(_CONCAT_, NUM_VA_ARGS_LESS_1(__VA_ARGS__))(__VA_ARGS__)
 
 /**
  * @brief Check if @p ptr is aligned to @p align alignment
@@ -342,13 +340,14 @@ extern "C" {
 /**
  * @brief Value of @p x rounded up to the next multiple of @p align.
  */
-#define ROUND_UP(x, align)                                      \
-    ((((unsigned long)(x) + ((unsigned long)(align) - 1)) / (unsigned long)(align)) * (unsigned long)(align))
+#define ROUND_UP(x, align) \
+    ((((unsigned long)(x) + ((unsigned long)(align) - 1)) / (unsigned long)(align)) * \
+     (unsigned long)(align))
 
 /**
  * @brief Value of @p x rounded down to the previous multiple of @p align.
  */
-#define ROUND_DOWN(x, align)                                    \
+#define ROUND_DOWN(x, align) \
     (((unsigned long)(x) / (unsigned long)(align)) * (unsigned long)(align))
 
 /** @brief Value of @p x rounded up to the next word boundary. */
@@ -393,35 +392,103 @@ extern "C" {
              ? ((n) - ((d) / 2)) / (d)      \
              : ((n) + ((d) / 2)) / (d))
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+#define Z_INTERNAL_MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define Z_INTERNAL_MIN(a, b) (((a) < (b)) ? (a) : (b))
+
+#define _minmax_unique(op, a, b, ua, ub) ({ \
+        __typeof__(a) ua = (a); \
+        __typeof__(b) ub = (b); \
+        op(ua, ub);             \
+    })
+
+#define _minmax_cnt(op, a, b, cnt) \
+    _minmax_unique(op, a, b, UTIL_CAT(_value_a_, cnt), UTIL_CAT(_value_b_, cnt))
+
+#define _minmax3_unique(op, a, b, c, ua, ub, uc) ({ \
+        __typeof__(a) ua = (a); \
+        __typeof__(b) ub = (b); \
+        __typeof__(c) uc = (c); \
+        op(ua, op(ub, uc));     \
+    })
+
+#define _minmax3_cnt(op, a, b, c, cnt) \
+    _minmax3_unique(op, a, b, c,       \
+            UTIL_CAT(_value_a_, cnt),  \
+            UTIL_CAT(_value_b_, cnt),  \
+            UTIL_CAT(_value_c_, cnt))
+/**
+ * @endcond
+ */
+
 #ifndef MAX
 /**
  * @brief Obtain the maximum of two values.
  *
- * @note Arguments are evaluated twice. Use Z_MAX for a GCC-only, single
- * evaluation version
+ * @note Arguments are evaluated twice. Use @ref max for a single evaluation
+ * version.
  *
  * @param a First value.
  * @param b Second value.
  *
  * @returns Maximum value of @p a and @p b.
  */
-#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define MAX(a, b) Z_INTERNAL_MAX(a, b)
 #endif
+
+#if !defined(__cplusplus) && !defined(_MSC_VER) /* #CUSTOM@NDRS */
+/** @brief Return larger value of two provided expressions.
+ *
+ * Macro ensures that expressions are evaluated only once.
+ *
+ * @note Macro has limited usage compared to the standard macro as it cannot be
+ *     used:
+ *     - to generate constant integer, e.g. __aligned(max(4,5))
+ *     - static variable, e.g. array like static uint8_t array[max(...)];
+ */
+#define max(a, b) _minmax_cnt(Z_INTERNAL_MAX, a, b, __COUNTER__)
+#endif
+
+/** @brief Return larger value of three provided expressions.
+ *
+ * Macro ensures that expressions are evaluated only once. See @ref max for
+ * macro limitations.
+ */
+#define max3(a, b, c) _minmax3_cnt(Z_INTERNAL_MAX, a, b, c, __COUNTER__)
 
 #ifndef MIN
 /**
  * @brief Obtain the minimum of two values.
  *
- * @note Arguments are evaluated twice. Use Z_MIN for a GCC-only, single
- * evaluation version
+ * @note Arguments are evaluated twice. Use @ref min for a single evaluation
+ * version.
  *
  * @param a First value.
  * @param b Second value.
  *
  * @returns Minimum value of @p a and @p b.
  */
-#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define MIN(a, b) Z_INTERNAL_MIN(a, b)
 #endif
+
+#if !defined(__cplusplus) && !defined(_MSC_VER) /* #CUSTOM@NDRS */
+/** @brief Return smaller value of two provided expressions.
+ *
+ * Macro ensures that expressions are evaluated only once. See @ref max for
+ * macro limitations.
+ */
+#define min(a, b) _minmax_cnt(Z_INTERNAL_MIN, a, b, __COUNTER__)
+#endif
+
+/** @brief Return smaller value of three provided expressions.
+ *
+ * Macro ensures that expressions are evaluated only once. See @ref max for
+ * macro limitations.
+ */
+#define min3(a, b, c) _minmax3_cnt(Z_INTERNAL_MIN, a, b, c, __COUNTER__)
+
 
 #ifndef MAX_FROM_LIST
 /**
@@ -539,17 +606,17 @@ extern "C" {
  * @param ... A list of 1 to 10 values to compare.
  * @returns The maximum value among the arguments.
  */
-#define MAX_FROM_LIST(...)                                                                         \
-	Z_GET_MAX_MACRO(__VA_ARGS__, Z_MAX_10, Z_MAX_9, Z_MAX_8, Z_MAX_7, Z_MAX_6, Z_MAX_5,        \
-			Z_MAX_4, Z_MAX_3, Z_MAX_2, Z_MAX_1)(__VA_ARGS__)
+#define MAX_FROM_LIST(...) \
+    Z_GET_MAX_MACRO(__VA_ARGS__, Z_MAX_10, Z_MAX_9, Z_MAX_8, Z_MAX_7, Z_MAX_6, Z_MAX_5, \
+        Z_MAX_4, Z_MAX_3, Z_MAX_2, Z_MAX_1)(__VA_ARGS__)
 #endif
 
 #ifndef CLAMP
 /**
  * @brief Clamp a value to a given range.
  *
- * @note Arguments are evaluated multiple times. Use Z_CLAMP for a GCC-only,
- * single evaluation version.
+ * @note Arguments are evaluated multiple times. Use @ref clamp for a single
+ * evaluation version.
  *
  * @param val Value to be clamped.
  * @param low Lowest allowed value (inclusive).
@@ -557,7 +624,24 @@ extern "C" {
  *
  * @returns Clamped value.
  */
-#define CLAMP(val, low, high) (((val) <= (low)) ? (low) : MIN(val, high))
+#define CLAMP(val, low, high) (((val) <= (low)) ? (low) : Z_INTERNAL_MIN(val, high))
+#endif
+
+#ifndef __cplusplus
+/** @brief Return a value clamped to a given range.
+ *
+ * Macro ensures that expressions are evaluated only once. See @ref max for
+ * macro limitations.
+ */
+#define clamp(val, low, high) ({ \
+        /* random suffix to avoid naming conflict */    \
+        __typeof__(val) _value_val_ = (val);            \
+        __typeof__(low) _value_low_ = (low);            \
+        __typeof__(high) _value_high_ = (high);         \
+        (_value_val_ < _value_low_)  ? _value_low_  :   \
+        (_value_val_ > _value_high_) ? _value_high_ :   \
+                                       _value_val_;     \
+    })
 #endif
 
 /**
@@ -618,9 +702,8 @@ static inline bool is_power_of_two(unsigned int x) {
  * @param p Pointer to check
  * @return true if @p p is equal to ``NULL``, false otherwise
  */
-static ALWAYS_INLINE bool is_null_no_warn(void *p)
-{
-	return p == NULL;
+static ALWAYS_INLINE bool is_null_no_warn(void* p) {
+    return p == NULL;
 }
 
 /**
@@ -773,13 +856,12 @@ uint8_t u8_to_dec(char* buf, uint8_t buflen, uint8_t value);
  * @param value The value to sign expand.
  * @param index 0 based bit index to sign bit (0 to 31)
  */
-static inline int32_t sign_extend(uint32_t value, uint8_t index)
-{
-	__ASSERT_NO_MSG(index <= 31);
+static inline int32_t sign_extend(uint32_t value, uint8_t index) {
+    __ASSERT_NO_MSG(index <= 31);
 
-	uint8_t shift = 31 - index;
+    uint8_t shift = 31 - index;
 
-	return (int32_t)(value << shift) >> shift;
+    return (int32_t)(value << shift) >> shift;
 }
 
 /**
@@ -788,13 +870,12 @@ static inline int32_t sign_extend(uint32_t value, uint8_t index)
  * @param value The value to sign expand.
  * @param index 0 based bit index to sign bit (0 to 63)
  */
-static inline int64_t sign_extend_64(uint64_t value, uint8_t index)
-{
-	__ASSERT_NO_MSG(index <= 63);
+static inline int64_t sign_extend_64(uint64_t value, uint8_t index) {
+    __ASSERT_NO_MSG(index <= 63);
 
-	uint8_t shift = 63 - index;
+    uint8_t shift = 63 - index;
 
-	return (int64_t)(value << shift) >> shift;
+    return (int64_t)(value << shift) >> shift;
 }
 
 #define __z_log2d(x) (32 - __builtin_clz(x) - 1)
@@ -825,7 +906,7 @@ static inline int64_t sign_extend_64(uint64_t value, uint8_t index)
  *
  * @return ceil(log2(x)) when 1 <= x <= max(type(x)), 0 when x < 1
  */
-#define LOG2CEIL(x) ((x) <= 1 ? 0 : __z_log2((x)-1) + 1)
+#define LOG2CEIL(x) ((x) <= 1 ? 0 : __z_log2((x) - 1) + 1)
 
 /**
  * @brief Compute next highest power of two
@@ -854,8 +935,7 @@ static inline int64_t sign_extend_64(uint64_t value, uint8_t index)
  * @return true if pointer overflow detected, false otherwise
  */
 #define Z_DETECT_POINTER_OVERFLOW(addr, buflen) \
-    (((buflen) != 0) &&                         \
-    ((UINTPTR_MAX - (uintptr_t)(addr)) <= ((uintptr_t)((buflen)-1))))
+    (((buflen) != 0) && ((UINTPTR_MAX - (uintptr_t)(addr)) <= ((uintptr_t)((buflen) - 1))))
 
 /**
  * @brief XOR n bytes
@@ -865,11 +945,10 @@ static inline int64_t sign_extend_64(uint64_t value, uint8_t index)
  * @param src2 Second source. Shall be @p len bytes.
  * @param len  Number of bytes to XOR.
  */
-static inline void mem_xor_n(uint8_t *dst, const uint8_t *src1, const uint8_t *src2, size_t len)
-{
-	while (len--) {
-		*dst++ = *src1++ ^ *src2++;
-	}
+static inline void mem_xor_n(uint8_t* dst, const uint8_t* src1, const uint8_t* src2, size_t len) {
+    while (len--) {
+        *dst++ = *src1++ ^ *src2++;
+    }
 }
 
 /**
@@ -879,9 +958,8 @@ static inline void mem_xor_n(uint8_t *dst, const uint8_t *src1, const uint8_t *s
  * @param src1 First source. Shall be 32 bits.
  * @param src2 Second source. Shall be 32 bits.
  */
-static inline void mem_xor_32(uint8_t dst[4], const uint8_t src1[4], const uint8_t src2[4])
-{
-	mem_xor_n(dst, src1, src2, 4U);
+static inline void mem_xor_32(uint8_t dst[4], const uint8_t src1[4], const uint8_t src2[4]) {
+    mem_xor_n(dst, src1, src2, 4U);
 }
 
 /**
@@ -891,9 +969,8 @@ static inline void mem_xor_32(uint8_t dst[4], const uint8_t src1[4], const uint8
  * @param src1 First source. Shall be 128 bits.
  * @param src2 Second source. Shall be 128 bits.
  */
-static inline void mem_xor_128(uint8_t dst[16], const uint8_t src1[16], const uint8_t src2[16])
-{
-	mem_xor_n(dst, src1, src2, 16);
+static inline void mem_xor_128(uint8_t dst[16], const uint8_t src1[16], const uint8_t src2[16]) {
+    mem_xor_n(dst, src1, src2, 16);
 }
 
 /**
@@ -907,9 +984,8 @@ static inline void mem_xor_128(uint8_t dst[16], const uint8_t src1[16], const ui
  * @returns true if the @p n first bytes of @p m1 and @p m2 are the same, else
  * false
  */
-static inline bool util_memeq(const void *m1, const void *m2, size_t n)
-{
-	return memcmp(m1, m2, n) == 0;
+static inline bool util_memeq(const void* m1, const void* m2, size_t n) {
+    return memcmp(m1, m2, n) == 0;
 }
 
 /**
@@ -925,9 +1001,8 @@ static inline bool util_memeq(const void *m1, const void *m2, size_t n)
  * @returns true if both the length of the memory areas and their content are
  * equal else false
  */
-static inline bool util_eq(const void *m1, size_t len1, const void *m2, size_t len2)
-{
-	return len1 == len2 && (m1 == m2 || util_memeq(m1, m2, len1));
+static inline bool util_eq(const void* m1, size_t len1, const void* m2, size_t len2) {
+    return ((len1 == len2) && ((m1 == m2) || util_memeq(m1, m2, len1)));
 }
 
 /**
@@ -936,33 +1011,32 @@ static inline bool util_eq(const void *m1, size_t len1, const void *m2, size_t l
  * @param value The value to count number of bits set of
  * @param len The number of octets in @p value
  */
-static inline size_t sys_count_bits(const void *value, size_t len)
-{
-	size_t cnt = 0U;
-	size_t i = 0U;
+static inline size_t sys_count_bits(const void* value, size_t len) {
+    size_t cnt = 0U;
+    size_t i = 0U;
 
-#ifdef POPCOUNT
-	for (; i < len / sizeof(unsigned int); i++) {
-		unsigned int val;
-		(void)memcpy(&val, (const uint8_t *)value + i * sizeof(unsigned int),
-			     sizeof(unsigned int));
+    #ifdef POPCOUNT
+    for (; i < len / sizeof(unsigned int); i++) {
+        unsigned int val;
+        (void) memcpy(&val, (const uint8_t*)value + i * sizeof(unsigned int),
+                      sizeof(unsigned int));
 
-		cnt += POPCOUNT(val);
-	}
-	i *= sizeof(unsigned int); /* convert to a uint8_t index for the remainder (if any) */
-#endif
+        cnt += POPCOUNT(val);
+    }
+    i *= sizeof(unsigned int); /* convert to a uint8_t index for the remainder (if any) */
+    #endif
 
-	for (; i < len; i++) {
-		uint8_t value_u8 = ((const uint8_t *)value)[i];
+    for (; i < len; i++) {
+        uint8_t value_u8 = ((const uint8_t *)value)[i];
 
-		/* Implements Brian Kernighan’s Algorithm to count bits */
-		while (value_u8) {
-			value_u8 &= (value_u8 - 1);
-			cnt++;
-		}
-	}
+        /* Implements Brian Kernighan’s Algorithm to count bits */
+        while (value_u8) {
+            value_u8 &= (value_u8 - 1);
+            cnt++;
+        }
+    }
 
-	return cnt;
+    return (cnt);
 }
 
 #ifdef __cplusplus
