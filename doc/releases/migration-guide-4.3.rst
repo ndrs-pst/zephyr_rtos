@@ -189,6 +189,11 @@ Networking
   :c:macro:`HTTPS_SERVICE_DEFINE_EMPTY`, :c:macro:`HTTP_SERVICE_DEFINE` and
   :c:macro:`HTTPS_SERVICE_DEFINE`.
 
+* The size of socket address length type :c:type:`socklen_t` has changed. It is now defined to
+  be always 32 bit ``uint32_t`` in order to be aligned with Linux. Previously it was defined as
+  ``size_t`` which meant that the size could be either 32 bit or 64 bit depending on system
+  configuration.
+
 .. zephyr-keep-sorted-start re(^\w)
 
 .. zephyr-keep-sorted-stop
@@ -197,6 +202,8 @@ Modem
 *****
 
 * ``CONFIG_MODEM_AT_SHELL_USER_PIPE`` has been renamed to :kconfig:option:`CONFIG_MODEM_AT_USER_PIPE`.
+* ``CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE`` has been updated to :kconfig:option:`CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE_EXTRA`,
+  which only takes the number of extra bytes desired over the default of (:kconfig:option:`CONFIG_MODEM_CMUX_MTU` + 7).
 
 Display
 *******
@@ -220,6 +227,12 @@ Other subsystems
 ****************
 
 .. zephyr-keep-sorted-start re(^\w)
+
+Cellular
+========
+
+ * :c:enum:`cellular_access_technology` values have been redefined to align with 3GPP TS 27.007.
+ * :c:enum:`cellular_registration_status` values have been extended to align with 3GPP TS 27.007.
 
 Logging
 =======

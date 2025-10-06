@@ -723,7 +723,7 @@ static int set_tcp_keep_cnt(struct tcp* conn, void const* value, size_t len) {
     return (0);
 }
 
-static int get_tcp_keep_alive(struct tcp* conn, void* value, size_t* len) {
+static int get_tcp_keep_alive(struct tcp* conn, void* value, uint32_t* len) {
     if ((conn == NULL) || (value == NULL) || (len == NULL) ||
         (*len != sizeof(int))) {
         return (-EINVAL);
@@ -734,7 +734,7 @@ static int get_tcp_keep_alive(struct tcp* conn, void* value, size_t* len) {
     return (0);
 }
 
-static int get_tcp_keep_idle(struct tcp* conn, void* value, size_t* len) {
+static int get_tcp_keep_idle(struct tcp* conn, void* value, uint32_t* len) {
     if ((conn == NULL) || (value == NULL) || (len == NULL) ||
         (*len != sizeof(int))) {
         return (-EINVAL);
@@ -745,7 +745,7 @@ static int get_tcp_keep_idle(struct tcp* conn, void* value, size_t* len) {
     return (0);
 }
 
-static int get_tcp_keep_intvl(struct tcp* conn, void* value, size_t* len) {
+static int get_tcp_keep_intvl(struct tcp* conn, void* value, uint32_t* len) {
     if ((conn == NULL) || (value == NULL) || (len == NULL) ||
         (*len != sizeof(int))) {
         return (-EINVAL);
@@ -756,7 +756,7 @@ static int get_tcp_keep_intvl(struct tcp* conn, void* value, size_t* len) {
     return (0);
 }
 
-static int get_tcp_keep_cnt(struct tcp* conn, void* value, size_t* len) {
+static int get_tcp_keep_cnt(struct tcp* conn, void* value, uint32_t* len) {
     if ((conn == NULL) || (value == NULL) || (len == NULL) ||
         (*len != sizeof(int))) {
         return (-EINVAL);
@@ -1422,7 +1422,7 @@ static int ip_header_add(struct tcp* conn, struct net_pkt* pkt) {
     return (-EINVAL);
 }
 
-static int set_tcp_nodelay(struct tcp* conn, void const* value, size_t len) {
+static int set_tcp_nodelay(struct tcp* conn, void const* value, uint32_t len) {
     int no_delay_int;
 
     if (len != sizeof(int)) {
@@ -1440,7 +1440,7 @@ static int set_tcp_nodelay(struct tcp* conn, void const* value, size_t len) {
     return (0);
 }
 
-static int get_tcp_nodelay(struct tcp* conn, void* value, size_t* len) {
+static int get_tcp_nodelay(struct tcp* conn, void* value, uint32_t* len) {
     int no_delay_int = (int)conn->tcp_nodelay;
 
     *((int*)value) = no_delay_int;
@@ -4754,7 +4754,7 @@ uint16_t net_tcp_get_mtu(struct net_sockaddr* dst) {
 
 int net_tcp_set_option(struct net_context* context,
                        enum tcp_conn_option option,
-                       void const* value, size_t len) {
+                       void const* value, uint32_t len) {
     int ret = 0;
 
     NET_ASSERT(context);
@@ -4794,7 +4794,7 @@ int net_tcp_set_option(struct net_context* context,
 
 int net_tcp_get_option(struct net_context* context,
                        enum tcp_conn_option option,
-                       void* value, size_t* len) {
+                       void* value, uint32_t* len) {
     int ret = 0;
 
     NET_ASSERT(context);

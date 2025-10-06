@@ -112,8 +112,8 @@ struct modem_cellular_data {
 
     /* CMUX */
     struct modem_cmux cmux;
-    uint8_t cmux_receive_buf[CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE];
-    uint8_t cmux_transmit_buf[CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE];
+    uint8_t cmux_receive_buf[MODEM_CMUX_WORK_BUFFER_SIZE];
+    uint8_t cmux_transmit_buf[MODEM_CMUX_WORK_BUFFER_SIZE];
 
     struct modem_cmux_dlci dlci1;
     struct modem_cmux_dlci dlci2;
@@ -121,9 +121,9 @@ struct modem_cellular_data {
     struct modem_pipe* dlci2_pipe;
     /* Points to dlci2_pipe or NULL. Used for shutdown script if not NULL */
     struct modem_pipe* cmd_pipe;
-    uint8_t dlci1_receive_buf[CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE];
+    uint8_t dlci1_receive_buf[MODEM_CMUX_WORK_BUFFER_SIZE];
     /* DLCI 2 is only used for chat scripts. */
-    uint8_t dlci2_receive_buf[CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE];
+    uint8_t dlci2_receive_buf[MODEM_CMUX_WORK_BUFFER_SIZE];
 
     /* Modem chat */
     struct modem_chat chat;
@@ -1981,23 +1981,33 @@ static int modem_cellular_get_registration_status(const struct device* dev,
                                                   enum cellular_access_technology tech,
                                                   enum cellular_registration_status* status) {
     int ret = 0;
-    struct modem_cellular_data* data = dev->data;
+    struct modem_cellular_data* data = (struct modem_cellular_data*)dev->data;
 
+    /* Techs explicitly not handled as N/A to CREG, CGREG, CEREG:
+     *   CELLULAR_ACCESS_TECHNOLOGY_NR_5G_CN
+     *   CELLULAR_ACCESS_TECHNOLOGY_NG_RAN
+     */
     switch (tech) {
         case CELLULAR_ACCESS_TECHNOLOGY_GSM :
+        case CELLULAR_ACCESS_TECHNOLOGY_GSM_COMPACT :
             *status = data->registration_status_gsm;
             break;
 
-        case CELLULAR_ACCESS_TECHNOLOGY_GPRS :
-        case CELLULAR_ACCESS_TECHNOLOGY_UMTS :
-        case CELLULAR_ACCESS_TECHNOLOGY_EDGE :
+        case CELLULAR_ACCESS_TECHNOLOGY_GSM_EGPRS :
+        case CELLULAR_ACCESS_TECHNOLOGY_EC_GSM_IOT :
+        case CELLULAR_ACCESS_TECHNOLOGY_UTRAN :
+        case CELLULAR_ACCESS_TECHNOLOGY_UTRAN_HSDPA :
+        case CELLULAR_ACCESS_TECHNOLOGY_UTRAN_HSUPA :
+        case CELLULAR_ACCESS_TECHNOLOGY_UTRAN_HSDPA_HSUPA :
             *status = data->registration_status_gprs;
             break;
 
-        case CELLULAR_ACCESS_TECHNOLOGY_LTE :
-        case CELLULAR_ACCESS_TECHNOLOGY_LTE_CAT_M1 :
-        case CELLULAR_ACCESS_TECHNOLOGY_LTE_CAT_M2 :
-        case CELLULAR_ACCESS_TECHNOLOGY_NB_IOT :
+        case CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN :
+        case CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_NB_S1 :
+        case CELLULAR_ACCESS_TECHNOLOGY_E_UTRA_NR_DUAL :
+        case CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_NB_S1_SAT :
+        case CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_WB_S1_SAT :
+        case CELLULAR_ACCESS_TECHNOLOGY_NG_RAN_SAT :
             *status = data->registration_status_lte;
             break;
 

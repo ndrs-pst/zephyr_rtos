@@ -41,7 +41,10 @@ LOG_MODULE_DECLARE(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 BUILD_ASSERT(NET_IPPROTO_IP == 0, "Wildcard IPPROTO_IP must equal 0.");
 #endif
 
-static const struct socket_op_vtable sock_fd_op_vtable;
+BUILD_ASSERT(sizeof(socklen_t) == sizeof(uint32_t),
+	     "socklen_t must be 32-bit wide");
+
+static struct socket_op_vtable const sock_fd_op_vtable;
 
 static void zsock_received_cb(struct net_context *ctx,
 			      struct net_pkt *pkt,
@@ -1710,7 +1713,7 @@ static int ipv4_multicast_if(struct net_context *ctx, const void *optval,
 
 	if (do_get) {
 		struct net_if_addr *ifaddr;
-		size_t len = sizeof(ifindex);
+		uint32_t len = sizeof(ifindex);
 
 		if (optval == NULL || (optlen != sizeof(struct net_in_addr))) {
 			errno = EINVAL;
@@ -1989,7 +1992,8 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_DSCP_ECN)) {
 				ret = net_context_get_option(ctx,
 							     NET_OPT_DSCP_ECN,
-							     optval, optlen);
+							     optval,
+							     optlen);
 				if (ret < 0) {
 					errno  = -ret;
 					return -1;
@@ -3159,7 +3163,7 @@ static int sock_getsockname_vmeth(void *obj, struct net_sockaddr *addr,
 	return zsock_getsockname_ctx(obj, addr, addrlen);
 }
 
-static const struct socket_op_vtable sock_fd_op_vtable = {
+static struct socket_op_vtable const sock_fd_op_vtable = {
 	.fd_vtable = {
 		.read = sock_read_vmeth,
 		.write = sock_write_vmeth,

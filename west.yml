@@ -169,7 +169,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 31fb4c34ff040f56bb11851c9091809c45777550
+      revision: 06d53f4d0607e203ded24245a8ed06b6cfd0c68f
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -240,7 +240,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 764d9153c69178bc851625d5a6a15fde237e626a
+      revision: 37f989015ee6cb178957f8b154fd14f760456b29
       path: modules/hal/silabs
       groups:
         - hal
@@ -359,7 +359,7 @@ manifest:
       path: modules/lib/picolibc
       revision: 560946f26db075c296beea5b39d99e6de43c9010
     - name: segger
-      revision: cf56b1d9c80f81a26e2ac5727c9cf177116a4692
+      revision: 9f08435a79d41133d7046b7c59d1b25929eda450
       path: modules/debug/segger
       groups:
         - debug
