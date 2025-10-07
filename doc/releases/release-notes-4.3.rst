@@ -58,6 +58,7 @@ Removed APIs and options
   PSA Crypto API is now the recommended cryptographic library for Zephyr.
 * The legacy pipe object API was removed. Use the new pipe API instead.
 * ``bt_le_set_auto_conn``
+* ``CONFIG_BT_BUF_ACL_RX_COUNT``
 
 Deprecated APIs and options
 ===========================
@@ -193,7 +194,24 @@ New APIs and options
 
   * :kconfig:option:`CONFIG_MODEM_DEDICATED_WORKQUEUE`
 
+* NVMEM
+
+  * Introduced :ref:`Non-Volatile Memory (NVMEM)<nvmem>` subsystem
+
+    * :kconfig:option:`CONFIG_NVMEM`
+    * :kconfig:option:`CONFIG_NVMEM_EEPROM`
+    * :c:struct:`nvmem_cell`
+    * :c:func:`nvmem_cell_read`
+    * :c:func:`nvmem_cell_write`
+    * :c:func:`nvmem_cell_is_ready`
+    * :c:macro:`NVMEM_CELL_GET_BY_NAME` - and variants
+    * :c:macro:`NVMEM_CELL_GET_BY_IDX` - and variants
+
 * Networking
+
+  * CoAP
+
+    * :c:struct:`coap_client_response_data`
 
   * Sockets
 

@@ -1222,6 +1222,7 @@ Documentation Infrastructure:
     - lyakh
     - lgirdwood
     - kv2019i
+    - TomasBarakNXP
   files:
     - drivers/audio/
     - include/zephyr/audio/
@@ -1787,6 +1788,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - anangl
+  collaborators:
+    - TomasBarakNXP
   files:
     - doc/hardware/peripherals/audio/i2s.rst
     - drivers/i2s/
@@ -2893,6 +2896,19 @@ Input:
     - drivers.input
     - input
 
+Instrumentation Subsystem:
+  status: maintained
+  maintainers:
+    - fkokosinski
+    - tgorochowik
+  files:
+    - include/zephyr/instrumentation/
+    - samples/subsys/instrumentation/
+    - scripts/instrumentation/
+    - subsys/instrumentation/
+  labels:
+    - "area: Instrumentation"
+
 Intel Platforms (Agilex):
   status: maintained
   maintainers:
@@ -3385,6 +3401,24 @@ NEORV32 platform:
   tests:
     - boards.neorv32
 
+NVMEM:
+  status: maintained
+  maintainers:
+    - pdgendt
+  collaborators:
+    - henrikbrixandersen
+  files:
+    - doc/services/nvmem/
+    - dts/bindings/nvmem/
+    - include/zephyr/devicetree/nvmem.h
+    - include/zephyr/nvmem.h
+    - subsys/nvmem/
+    - tests/subsys/nvmem/
+  labels:
+    - "area: NVMEM"
+  tests:
+    - nvmem
+
 NXP Platform Drivers:
   status: maintained
   maintainers:
@@ -3573,6 +3607,7 @@ NXP Platforms (Xtensa):
     - dbaluta
   collaborators:
     - iuliana-prodan
+    - TomasBarakNXP
   files:
     - soc/nxp/imx/*/adsp/
     - soc/nxp/imxrt/*/f1/

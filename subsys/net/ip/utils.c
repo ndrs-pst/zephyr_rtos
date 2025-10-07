@@ -180,43 +180,56 @@ char* z_impl_net_addr_ntop(sa_family_t family, void const* src,
     bool needcolon = false;
     bool mapped = false;
 
-    if (family == NET_AF_INET6) {
-        net_ipv6_addr_copy_raw(addr6.s6_addr, src);
-        w = (uint16_t*)addr6.s6_addr16;
-        len = 8;
+    switch (family) {
+        case NET_AF_INET6 :
+            if (size < INET6_ADDRSTRLEN) {
+                /* POSIX definition is the size - includes nil */
+                return (NULL);
+            }
 
-        if (net_ipv6_addr_is_v4_mapped(&addr6)) {
-            mapped = true;
-        }
+            net_ipv6_addr_copy_raw(addr6.s6_addr, src);
+            w = (uint16_t*)addr6.s6_addr16;
+            len = 8;
 
-        for (i = 0; i < 8; i++) {
-            for (int j = i; j < 8; j++) {
-                if (w[j] != 0) {
-                    break;
+            if (net_ipv6_addr_is_v4_mapped(&addr6)) {
+                mapped = true;
+            }
+
+            for (i = 0; i < 8; i++) {
+                for (int j = i; j < 8; j++) {
+                    if (w[j] != 0) {
+                        break;
+                    }
+
+                    zeros[i]++;
                 }
-
-                zeros[i]++;
             }
-        }
 
-        for (i = 0; i < 8; i++) {
-            if (zeros[i] > longest) {
-                longest = zeros[i];
-                pos = i;
+            for (i = 0; i < 8; i++) {
+                if (zeros[i] > longest) {
+                    longest = zeros[i];
+                    pos = i;
+                }
             }
-        }
 
-        if (longest == 1U) {
-            pos = -1;
-        }
-    }
-    else if (family == NET_AF_INET) {
-        net_ipv4_addr_copy_raw(addr.s4_addr, src);
-        len = 4;
-        delim = '.';
-    }
-    else {
-        return (NULL);
+            if (longest == 1U) {
+                pos = -1;
+            }
+            break;
+
+        case NET_AF_INET :
+            if (size < INET_ADDRSTRLEN) {
+                /* POSIX definition is the size - includes nil */
+                return (NULL);
+            }
+
+            net_ipv4_addr_copy_raw(addr.s4_addr, src);
+            len = 4;
+            delim = '.';
+            break;
+
+        default :
+            return (NULL);
     }
 
 print_mapped :
@@ -288,10 +301,6 @@ print_mapped :
         }
 
         needcolon = true;
-    }
-
-    if (!(ptr - dst)) {
-        return (NULL);
     }
 
     if (family == NET_AF_INET) {
