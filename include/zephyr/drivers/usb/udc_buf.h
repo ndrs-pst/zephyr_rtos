@@ -146,6 +146,7 @@ extern const struct net_buf_data_cb net_buf_dma_cb;
  * @param fdestroy   Optional destroy callback when buffer is freed.
  */
 #define UDC_BUF_POOL_DEFINE(pname, count, size, ud_size, fdestroy)		\
+	MSC_DECLARE_SECTION("._net_buf_pool.static")				\
 	_NET_BUF_ARRAY_DEFINE(pname, count, ud_size);				\
 	BUILD_ASSERT((UDC_BUF_GRANULARITY) % (UDC_BUF_ALIGN) == 0,		\
 		     "Code assumes granurality is multiple of alignment");	\

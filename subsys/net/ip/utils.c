@@ -182,7 +182,7 @@ char* z_impl_net_addr_ntop(sa_family_t family, void const* src,
 
     switch (family) {
         case NET_AF_INET6 :
-            if (size < INET6_ADDRSTRLEN) {
+            if (size < NET_INET6_ADDRSTRLEN) {
                 /* POSIX definition is the size - includes nil */
                 return (NULL);
             }
@@ -218,7 +218,7 @@ char* z_impl_net_addr_ntop(sa_family_t family, void const* src,
             break;
 
         case NET_AF_INET :
-            if (size < INET_ADDRSTRLEN) {
+            if (size < NET_INET_ADDRSTRLEN) {
                 /* POSIX definition is the size - includes nil */
                 return (NULL);
             }

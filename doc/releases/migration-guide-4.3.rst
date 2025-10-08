@@ -61,12 +61,31 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w)
 
+Comparator
+==========
+
+* :dtcompatible:`nordic,nrf-comp` and :dtcompatible:`nordic,nrf-lpcomp` ``psel`` and ``extrefsel``
+  properties type has been changed to integer. The value of these properties is in the range
+  of :c:macro:`NRF_COMP_AIN0` to :c:macro:`NRF_COMP_AIN_VDDH_DIV5`, where :c:macro:`NRF_COMP_AIN0`
+  to :c:macro:`NRF_COMP_AIN7` represent the external inputs AIN0 to AIN7,
+  :c:macro:`NRF_COMP_AIN_VDD_DIV2` represents internal reference VDD/2,
+  and :c:macro:`NRF_COMP_AIN_VDDH_DIV5` represents VDDH/5.
+  The old ``string`` properties type is deprecated.
+
 MFD
 ===
 
 * Driver suppor for AXP2101 has been separated from the AXP192 one. As a consequence the
   kconfig symbol ``MFD_AXP192_AXP2101`` is removed. :kconfig:option:`MFD_AXP192` is now to be
   used for AXP192 device while :kconfig:option:`MFD_AXP2101` for the AXP2101 one.
+
+MISC
+====
+
+* The nrf_etr driver has been migrated to drivers/debug. As a consequence the related Kconfig
+  symbol was renamed from ``NRF_ETR`` to :kconfig:option:`DEBUG_NRF_ETR`, along with the rest of
+  the ``NRF_ETR`` symbols. Also the driver needs to be explicitly enabled via
+  :kconfig:option:`DEBUG_DRIVER` as it is no longer built by default.
 
 PWM
 ===
@@ -245,6 +264,15 @@ Logging
   more generic script of :zephyr_file:`scripts/logging/dictionary/live_log_parser.py` should be
   used. The new script supports the same functionality (and more), but requires different command
   line arguments when invoked.
+
+MCUmgr
+======
+
+* The :ref:`OS mgmt<mcumgr_smp_group_0>` :ref:`mcumgr_os_application_info` command's response for
+  hardware platform has been updated to output the board target instead of the board and board
+  revision, which now includes the SoC and board variant. The old behaviour has been deprecated,
+  but can still be used by enabling
+  :kconfig:option:`CONFIG_MCUMGR_GRP_OS_INFO_HARDWARE_INFO_SHORT_HARDWARE_PLATFORM`.
 
 RTIO
 ====
