@@ -57,18 +57,17 @@
 			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 		};
 
-		/* S32K358 has 768KB SRAM split across multiple regions */
 		sram0_1: sram0_1@20400000 {
 			compatible = "mmio-sram";
 			reg = <0x20400000 DT_SIZE_K(768)>;
 		};
 
 		/*
-		 * S32K358 has 6MB Flash
+		 * S32K358 has 8MB Flash
 		 * Last 48KB is reserved by Secure BAF, application core cannot access it.
 		 */
 		flash0: flash@400000 {
-			reg = <0x00400000 DT_SIZE_K(6096)>;
+			reg = <0x00400000 DT_SIZE_K(8144)>;
 			status = "disabled";
 		};
 
