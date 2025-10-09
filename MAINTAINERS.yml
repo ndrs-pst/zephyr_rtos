@@ -4099,7 +4099,8 @@ PMCI:
     - kehintel
   files:
     - subsys/pmci/
-    - samples/modules/pmci/
+    - samples/subsys/pmci/
+    - include/zephyr/pmci/
   labels:
     - "area: PMCI"
 
@@ -5613,6 +5614,8 @@ West:
     - soburi
     - duynguyenxa
     - thaoluonguw
+    - binhnguyen2434
+    - nhutnguyenkc
   files: []
   labels:
     - "platform: Renesas"

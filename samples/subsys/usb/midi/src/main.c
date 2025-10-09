@@ -45,11 +45,8 @@ INPUT_CALLBACK_DEFINE(NULL, key_press, NULL);
 static const struct ump_endpoint_dt_spec ump_ep_dt =
 	UMP_ENDPOINT_DT_SPEC_GET(USB_MIDI_DT_NODE);
 
-const struct ump_stream_responder_cfg responder_cfg = {
-	.dev = midi,
-	.send = (void (*)(void *, const struct midi_ump)) usbd_midi_send,
-	.ep_spec = &ump_ep_dt,
-};
+const struct ump_stream_responder_cfg responder_cfg =
+	UMP_STREAM_RESPONDER(midi, usbd_midi_send, &ump_ep_dt);
 
 static void on_midi_packet(const struct device *dev, const struct midi_ump ump)
 {
@@ -58,8 +55,8 @@ static void on_midi_packet(const struct device *dev, const struct midi_ump ump)
 	switch (UMP_MT(ump)) {
 	case UMP_MT_MIDI1_CHANNEL_VOICE:
 		/* Only send MIDI1 channel voice messages back to the host */
-		LOG_INF("Send back MIDI1 message %02X %02X %02X", UMP_MIDI_STATUS(ump),
-			UMP_MIDI1_P1(ump), UMP_MIDI1_P2(ump));
+		LOG_INF("Send back MIDI1 message %02lX %02lX %02lX",
+			UMP_MIDI_STATUS(ump), UMP_MIDI1_P1(ump), UMP_MIDI1_P2(ump));
 		usbd_midi_send(dev, ump);
 		break;
 	case UMP_MT_UMP_STREAM:
