@@ -5152,7 +5152,7 @@ static void vs_read_build_info(struct net_buf *buf, struct net_buf **evt)
 
 	const char build_info[] = HCI_VS_BUILD_INFO;
 
-#define BUILD_INFO_EVT_LEN (sizeof(struct bt_hci_evt_hdr) + \
+#define BUILD_INFO_EVT_LEN (BT_HCI_EVT_HDR_SIZE + \
 			    sizeof(struct bt_hci_evt_cmd_complete) + \
 			    sizeof(struct bt_hci_rp_vs_read_build_info) + \
 			    sizeof(build_info))
@@ -7590,7 +7590,7 @@ no_ext_hdr:
 	/* HCI fragment */
 	evt_buf = buf;
 	data_len_max = CONFIG_BT_BUF_EVT_RX_SIZE -
-		       sizeof(struct bt_hci_evt_le_meta_event) -
+		       BT_HCI_EVT_LE_META_EVENT_SZ -
 		       BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT_SZ -
 		       BT_HCI_EVT_LE_EXT_ADVERTISING_INFO_SZ;
 
@@ -7954,7 +7954,7 @@ no_ext_hdr:
 	}
 
 	data_len_max = CONFIG_BT_BUF_EVT_RX_SIZE -
-		       sizeof(struct bt_hci_evt_le_meta_event) -
+		       BT_HCI_EVT_LE_META_EVENT_SZ -
 		       BT_HCI_EVT_LE_PER_ADVERTISING_REPORT_SZ;
 
 	evt_buf = buf;

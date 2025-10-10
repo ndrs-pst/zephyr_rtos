@@ -3057,7 +3057,7 @@ static const struct event_handler normal_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_VENDOR, hci_vendor_event,
 		      sizeof(struct bt_hci_evt_vs)),
 	EVENT_HANDLER(BT_HCI_EVT_LE_META_EVENT, hci_le_meta_event,
-		      sizeof(struct bt_hci_evt_le_meta_event)),
+		      BT_HCI_EVT_LE_META_EVENT_SZ),
 #if defined(CONFIG_BT_CLASSIC)
 	EVENT_HANDLER(BT_HCI_EVT_CONN_REQUEST, bt_hci_conn_req,
 		      sizeof(struct bt_hci_evt_conn_request)),
@@ -4326,7 +4326,7 @@ static const struct event_handler prio_events[] = {
 		      BT_HCI_EVT_NUM_COMPLETED_PACKETS_SZ),
 #endif /* CONFIG_BT_CONN_TX */
 	EVENT_HANDLER(BT_HCI_EVT_LE_META_EVENT, hci_le_meta_prio_event,
-	      sizeof(struct bt_hci_evt_le_meta_event)),
+		      BT_HCI_EVT_LE_META_EVENT_SZ),
 };
 
 static void hci_event_prio(struct net_buf *buf)

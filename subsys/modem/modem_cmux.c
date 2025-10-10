@@ -15,6 +15,12 @@ LOG_MODULE_REGISTER(modem_cmux, CONFIG_MODEM_CMUX_LOG_LEVEL);
 
 #include "modem_workqueue.h"
 
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define MODEM_CMUX_ZERO_LEN_ARRAY       1
+#else
+#define MODEM_CMUX_ZERO_LEN_ARRAY
+#endif
+
 #define MODEM_CMUX_SOF                  (0xF9)
 #define MODEM_CMUX_FCS_POLYNOMIAL       (0xE0)
 #define MODEM_CMUX_FCS_INIT_VALUE       (0xFF)
@@ -76,7 +82,7 @@ struct modem_cmux_command_length {
 struct modem_cmux_command {
     struct modem_cmux_command_type   type;
     struct modem_cmux_command_length length;
-    uint8_t value[];
+    uint8_t value[MODEM_CMUX_ZERO_LEN_ARRAY];
 };
 
 static int modem_cmux_wrap_command(struct modem_cmux_command** command, uint8_t const* data,
