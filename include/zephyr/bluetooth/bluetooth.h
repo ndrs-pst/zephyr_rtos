@@ -694,26 +694,6 @@ enum bt_le_adv_opt {
 	BT_LE_ADV_OPT_NONE = 0,
 
 	/**
-	 * @internal
-	 *
-	 * Internal access to the deprecated value to maintain the
-	 * implementation of the deprecated feature.
-	 *
-	 * At the end of the deprecation period, ABI will change so
-	 * `BT_LE_ADV_OPT_CONN` is just `BIT(0)`, removing the need for this
-	 * symbol.
-	 */
-	_BT_LE_ADV_OPT_CONNECTABLE = BIT(0),
-
-	/**
-	 * @internal
-	 *
-	 * Internal access to the deprecated value to maintain
-	 * the implementation of the deprecated feature.
-	 */
-	_BT_LE_ADV_OPT_ONE_TIME = BIT(1),
-
-	/**
 	 * @brief Connectable advertising
 	 *
 	 * Starting connectable advertising preallocates a connection
@@ -1128,17 +1108,6 @@ struct bt_le_per_adv_param {
 #define BT_LE_ADV_CONN_DIR(_peer) BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONN, 0, 0, _peer)
 
 /**
- * @deprecated This is a convenience macro for @ref
- * BT_LE_ADV_OPT_CONNECTABLE, which is deprecated. Please use
- * @ref BT_LE_ADV_CONN_FAST_1 or @ref BT_LE_ADV_CONN_FAST_2
- * instead.
- */
-#define BT_LE_ADV_CONN                                                                             \
-	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE, BT_GAP_ADV_FAST_INT_MIN_2,                      \
-			BT_GAP_ADV_FAST_INT_MAX_2, NULL)                                           \
-	__DEPRECATED_MACRO
-
-/**
  * @brief GAP recommended connectable advertising parameters user-initiated
  *
  * @details This define sets the recommended default for when an application is likely waiting for
@@ -1182,10 +1151,6 @@ struct bt_le_per_adv_param {
  * - Limited Discoverable Mode
  * - General Discoverable Mode
  *
- * The advertising interval corresponds to what was offered as @ref BT_LE_ADV_CONN in Zephyr 3.6 and
- * earlier, but unlike @ref BT_LE_ADV_CONN, the host does not automatically resume the advertiser
- * after it results in a connection.
- *
  * See Bluetooth Core Specification:
  * - 6.0 Vol 3, Part C, Appendix A "Timers and Constants", T_GAP(adv_fast_interval2)
  * - 6.0 Vol 3, Part C, Section 9.3.11 "Connection Establishment Timing parameters"
@@ -1193,8 +1158,6 @@ struct bt_le_per_adv_param {
 #define BT_LE_ADV_CONN_FAST_2                                                                      \
 	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONN, BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2,  \
 			NULL)
-
-#define BT_LE_ADV_CONN_ONE_TIME BT_LE_ADV_CONN_FAST_2 __DEPRECATED_MACRO
 
 #define BT_LE_ADV_CONN_DIR_LOW_DUTY(_peer)                                                         \
 	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY,                      \
@@ -1631,7 +1594,7 @@ typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
  * The periodic advertising parameters can only be set or updated on an
  * extended advertisement set which is neither scannable, connectable nor
  * anonymous (meaning, the advertising options @ref BT_LE_ADV_OPT_SCANNABLE,
- * @ref BT_LE_ADV_OPT_CONNECTABLE and @ref BT_LE_ADV_OPT_ANONYMOUS cannot be set for @p adv).
+ * @ref BT_LE_ADV_OPT_CONN and @ref BT_LE_ADV_OPT_ANONYMOUS cannot be set for @p adv).
  *
  * @param adv   Advertising set object.
  * @param param Advertising parameters.
@@ -1647,7 +1610,7 @@ int bt_le_per_adv_set_param(struct bt_le_ext_adv *adv,
  * The periodic advertisement data can only be set or updated on an
  * extended advertisement set which is neither scannable, connectable nor
  * anonymous (meaning, the advertising options @ref BT_LE_ADV_OPT_SCANNABLE,
- * @ref BT_LE_ADV_OPT_CONNECTABLE and @ref BT_LE_ADV_OPT_ANONYMOUS cannot be set for @p adv).
+ * @ref BT_LE_ADV_OPT_CONN and @ref BT_LE_ADV_OPT_ANONYMOUS cannot be set for @p adv).
  *
  * @param adv       Advertising set object.
  * @param ad        Advertising data.

@@ -150,6 +150,9 @@ Bluetooth Controller
     * :kconfig:option:`CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP` to
       :kconfig:option:`CONFIG_BT_CTLR_ADV_ADI_IN_SCAN_RSP`
 
+   * :c:func:`bt_ctlr_set_public_addr` is deprecated. To set the public Bluetooth device address,
+     sending a vendor specific HCI command with :c:struct:`bt_hci_cp_vs_write_bd_addr` can be used.
+
 .. zephyr-keep-sorted-start re(^\w)
 
 Bluetooth Audio
@@ -251,6 +254,12 @@ PTP Clock
   ratio adjusting based on nominal frequency. Drivers implementing :c:func:`ptp_clock_rate_adjust`
   should be adjusted to account for the new behavior.
 
+Video
+*****
+
+* The ``min_line_count`` and ``max_line_count`` fields have been removed from :c:struct:`video_caps`.
+  Application should base on the new :c:member:`video_format.size` to allocate buffers.
+
 Other subsystems
 ****************
 
@@ -308,6 +317,9 @@ Shell
   and :kconfig:option:`SHELL_MQTT_TOPIC_TX_ID`. This allows keeping the previous topics for backward
   compatibility.
   (:github:`92677`).
+
+* The :c:func:`shell_set_bypass` now requires a user data pointer to be passed. And accordingly the
+  :c:type:`shell_bypass_cb_t` now has a user data argument.
 
 .. zephyr-keep-sorted-stop
 

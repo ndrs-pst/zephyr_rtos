@@ -278,7 +278,8 @@ static int cmd_flash_shell_test(const struct shell* sh, size_t argc, char* argv[
     size   = strtoul(argv[2], NULL, 16);
     repeat = strtoul(argv[3], NULL, 16);
     if (size > CONFIG_FLASH_SHELL_BUFFER_SIZE) {
-        shell_error(sh, "<size> must be at most 0x%x.", CONFIG_FLASH_SHELL_BUFFER_SIZE);
+        shell_error(sh, "<size> must be at most 0x%x.",
+                    CONFIG_FLASH_SHELL_BUFFER_SIZE);
         return (-EINVAL);
     }
 
@@ -587,15 +588,17 @@ static int set_bypass(const struct shell* sh, shell_bypass_cb_t bypass) {
         shell_print(sh, "Loading...");
     }
 
-    shell_set_bypass(sh, bypass);
+    shell_set_bypass(sh, bypass, NULL);
 
     return (0);
 }
 
-static void bypass_cb(const struct shell* sh, uint8_t* recv, size_t len) {
+static void bypass_cb(const struct shell* sh, uint8_t* recv, size_t len, void* user_data) {
     uint32_t left_to_read = flash_load_total - flash_load_written - flash_load_boff;
     uint32_t to_copy = MIN(len, left_to_read);
     uint32_t copied = 0;
+
+    ARG_UNUSED(user_data);
 
     while (copied < to_copy) {
 

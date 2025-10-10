@@ -49,7 +49,8 @@
 #endif
 
 #define FIXED_PARTITION_IS_RUNNING_APP_PARTITION(label) \
-    (FIXED_PARTITION_OFFSET(label) == CONFIG_FLASH_LOAD_OFFSET)
+    (FIXED_PARTITION_OFFSET(label) <= CONFIG_FLASH_LOAD_OFFSET && \
+     FIXED_PARTITION_OFFSET(label) + FIXED_PARTITION_SIZE(label) > CONFIG_FLASH_LOAD_OFFSET)
 
 BUILD_ASSERT(sizeof(struct image_header) == IMAGE_HEADER_SIZE,
              "struct image_header not required size");
@@ -333,7 +334,7 @@ int img_mgmt_read_info(int image_slot, struct image_version* ver, uint8_t* hash,
 
         data_off += sizeof(tlv);
         if (hash != NULL) {
-			if (data_off + IMAGE_SHA_LEN > data_end) {
+            if (data_off + IMAGE_SHA_LEN > data_end) {
                 return (IMG_MGMT_ERR_TLV_INVALID_SIZE);
             }
 
@@ -688,7 +689,7 @@ static int img_mgmt_upload_good_rsp(struct smp_streamer* ctxt) {
  * @return 0 on success; nonzero on failure.
  */
 static int img_mgmt_upload_log(bool is_first, bool is_last, int status) {
-	uint8_t hash[IMAGE_SHA_LEN];
+    uint8_t hash[IMAGE_SHA_LEN];
     uint8_t const* hashp;
     int rc;
 
