@@ -79,6 +79,17 @@ struct video_format {
 	 * the next row (>=width).
 	 */
 	uint32_t pitch;
+	/**
+	 * @brief size of the buffer in bytes, need to be set by the drivers
+	 *
+	 * For uncompressed formats, this is the size of the raw data buffer in bytes,
+	 * which could be the whole raw image or a portion of the raw image in cases
+	 * the receiver / dma supports it.
+	 *
+	 * For compressed formats, this is the maximum number of bytes required to
+	 * hold a complete compressed frame, estimated for the worst case.
+	 */
+	uint32_t size;
 };
 
 /**
@@ -1767,6 +1778,16 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
  * Both JPEG (single frame) and Motion-JPEG (MJPEG, multiple JPEG frames concatenated)
  */
 #define VIDEO_PIX_FMT_JPEG VIDEO_FOURCC('J', 'P', 'E', 'G')
+
+/**
+ * H264 with start code
+ */
+#define VIDEO_PIX_FMT_H264 VIDEO_FOURCC('H', '2', '6', '4')
+
+/**
+ * H264 without start code
+ */
+#define VIDEO_PIX_FMT_H264_NO_SC VIDEO_FOURCC('A', 'V', 'C', '1')
 
 /**
  * @}

@@ -165,11 +165,11 @@ manifest:
         - hal
     - name: hal_bouffalolab
       path: modules/hal/bouffalolab
-      revision: a2276fb0c6ed0eaa6062aa0790500ab32dcaae9c
+      revision: 9f2ab1b6b4e8f0dce589b56ea908dc47b5c62385
       groups:
         - hal
     - name: hal_espressif
-      revision: 167cd7166041794a06128f61bf83934c15348b1c
+      revision: 6e7cda96b98780bc75544ac06d075a2908868fd9
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:

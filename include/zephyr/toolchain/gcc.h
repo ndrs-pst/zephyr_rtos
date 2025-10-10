@@ -359,6 +359,11 @@ do {                        \
 #endif
 #endif
 
+#ifndef __deprecated_version
+#define __deprecated_version(version) \
+	__attribute__((deprecated("planned removal in v" #version)))
+#endif
+
 #ifndef __attribute_const__
 #if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
 #define __attribute_const__
