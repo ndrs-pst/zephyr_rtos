@@ -134,10 +134,13 @@ static inline struct eth_stm32_tx_context *allocate_tx_context(struct net_pkt *p
 
 void eth_stm32_setup_mac_filter(ETH_HandleTypeDef *heth)
 {
-	__ASSERT_NO_MSG(heth != NULL);
 	ETH_MACFilterConfigTypeDef MACFilterConf;
+	HAL_StatusTypeDef __maybe_unused hal_ret;
 
-	HAL_ETH_GetMACFilterConfig(heth, &MACFilterConf);
+	__ASSERT_NO_MSG(heth != NULL);
+
+	hal_ret = HAL_ETH_GetMACFilterConfig(heth, &MACFilterConf);
+	__ASSERT_NO_MSG(hal_ret == HAL_OK);
 
 	MACFilterConf.HashMulticast =
 		IS_ENABLED(CONFIG_ETH_STM32_MULTICAST_FILTER) ? ENABLE : DISABLE;
@@ -145,7 +148,8 @@ void eth_stm32_setup_mac_filter(ETH_HandleTypeDef *heth)
 		IS_ENABLED(CONFIG_ETH_STM32_MULTICAST_FILTER) ? DISABLE : ENABLE;
 	MACFilterConf.HachOrPerfectFilter = DISABLE;
 
-	HAL_ETH_SetMACFilterConfig(heth, &MACFilterConf);
+	hal_ret = HAL_ETH_SetMACFilterConfig(heth, &MACFilterConf);
+	__ASSERT_NO_MSG(hal_ret == HAL_OK);
 
 	k_sleep(K_MSEC(1));
 }
@@ -183,7 +187,9 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 			    net_pkt_is_tx_timestamping(pkt);
 	if (timestamped_frame) {
 		/* Enable transmit timestamp */
-		HAL_ETH_PTP_InsertTxTimestamp(heth);
+		if (HAL_ETH_PTP_InsertTxTimestamp(heth) != HAL_OK) {
+			return -EIO;
+		}
 	}
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
@@ -250,7 +256,7 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 		}
 
 		/* Check for DMA errors */
-		if (HAL_ETH_GetDMAError(heth)) {
+		if (HAL_ETH_GetDMAError(heth) != 0U) {
 			LOG_ERR("%s: ETH DMA error: dmaerror:%x",
 				__func__,
 				HAL_ETH_GetDMAError(heth));
@@ -259,7 +265,7 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 		}
 
 		/* Check for MAC errors */
-		if (HAL_ETH_GetMACError(heth)) {
+		if (HAL_ETH_GetMACError(heth) != 0U) {
 			LOG_ERR("%s: ETH MAC error: macerror:%x",
 				__func__,
 				HAL_ETH_GetMACError(heth));
@@ -275,7 +281,9 @@ error:
 
 	if (tx_ctx == NULL) {
 		/* The HAL owns the tx context */
-		HAL_ETH_ReleaseTxPacket(heth);
+		if (HAL_ETH_ReleaseTxPacket(heth) != HAL_OK) {
+			return -EIO;
+		}
 	} else {
 		/* We need to release the tx context and its buffers */
 		HAL_ETH_TxFreeCallback((uint32_t *)tx_ctx);
@@ -528,7 +536,12 @@ void eth_stm32_set_mac_config(const struct device *dev, struct phy_link_state *s
 	HAL_StatusTypeDef hal_ret = HAL_OK;
 	ETH_MACConfigTypeDef mac_config = {0};
 
-	HAL_ETH_GetMACConfig(heth, &mac_config);
+	hal_ret = HAL_ETH_GetMACConfig(heth, &mac_config);
+	if (hal_ret != HAL_OK) {
+		LOG_ERR("HAL_ETH_GetMACConfig failed: %d", hal_ret);
+		__ASSERT_NO_MSG(0);
+		return;
+	}
 
 	mac_config.DuplexMode =
 		PHY_LINK_IS_FULL_DUPLEX(state->speed) ? ETH_FULLDUPLEX_MODE : ETH_HALFDUPLEX_MODE;
@@ -540,7 +553,8 @@ void eth_stm32_set_mac_config(const struct device *dev, struct phy_link_state *s
 
 	hal_ret = HAL_ETH_SetMACConfig(heth, &mac_config);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_ETH_SetMACConfig: failed: %d", hal_ret);
+		LOG_ERR("HAL_ETH_SetMACConfig failed: %d", hal_ret);
+		__ASSERT_NO_MSG(0);
 	}
 }
 
@@ -602,11 +616,15 @@ int eth_stm32_hal_set_config(const struct device *dev,
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
 		ETH_MACFilterConfigTypeDef MACFilterConf;
 
-		HAL_ETH_GetMACFilterConfig(heth, &MACFilterConf);
+		if (HAL_ETH_GetMACFilterConfig(heth, &MACFilterConf) != HAL_OK) {
+			return -EIO;
+		}
 
 		MACFilterConf.PromiscuousMode = config->promisc_mode ? ENABLE : DISABLE;
 
-		HAL_ETH_SetMACFilterConfig(heth, &MACFilterConf);
+		if (HAL_ETH_SetMACFilterConfig(heth, &MACFilterConf) != HAL_OK) {
+			return -EIO;
+		}
 		return 0;
 #endif /* CONFIG_NET_PROMISCUOUS_MODE */
 

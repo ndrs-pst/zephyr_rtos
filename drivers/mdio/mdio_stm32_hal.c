@@ -45,8 +45,8 @@ static int mdio_stm32_read(const struct device *dev, uint8_t prtad,
 {
 	struct mdio_stm32_dev_data *const dev_data = dev->data;
 	ETH_HandleTypeDef* heth = DEVICE_STM32_GET_ETH_HNDL(dev);
+	HAL_StatusTypeDef ret;
 	uint32_t read;
-	int ret;
 
 	k_sem_take(&dev_data->sem, K_FOREVER);
 
@@ -66,7 +66,7 @@ static int mdio_stm32_read(const struct device *dev, uint8_t prtad,
 
 	*data = read & ADIN1100_REG_VALUE_MASK;
 
-	return ret;
+	return 0;
 }
 
 static int mdio_stm32_write(const struct device *dev, uint8_t prtad,
@@ -74,7 +74,7 @@ static int mdio_stm32_write(const struct device *dev, uint8_t prtad,
 {
 	struct mdio_stm32_dev_data *const dev_data = dev->data;
 	ETH_HandleTypeDef* heth = DEVICE_STM32_GET_ETH_HNDL(dev);
-	int ret;
+	HAL_StatusTypeDef ret;
 
 	k_sem_take(&dev_data->sem, K_FOREVER);
 
@@ -92,7 +92,7 @@ static int mdio_stm32_write(const struct device *dev, uint8_t prtad,
 		return -EIO;
 	}
 
-	return ret;
+	return 0;
 }
 
 #ifdef CONFIG_ETH_STM32_HAL_API_V1
