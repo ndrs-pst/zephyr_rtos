@@ -3353,6 +3353,7 @@ Microchip SAM Platforms:
   maintainers:
     - nandojve
   collaborators:
+    - ArunMCHP
     - pdgendt
     - stephanosio
   files:
@@ -5539,6 +5540,7 @@ West:
     - AzharMCHP
     - scottwcpg
     - nandojve
+    - NhMchp
   collaborators:
     - VenkatKotakonda
     - albertofloyd

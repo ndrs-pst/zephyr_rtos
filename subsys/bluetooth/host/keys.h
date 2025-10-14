@@ -226,9 +226,10 @@ enum {
 struct bt_keys_link_key {
 	bt_addr_t addr;
 #if !defined(_MSC_VER) /* #CUSTOM@NDRS */
+	uint8_t enc_key_size;
 	uint8_t storage_start[0]  __aligned(sizeof(void *));
 #else
-	uint8_t rsv[2];
+	uint8_t rsv[1];
 #endif
 	uint8_t flags;
 	uint8_t val[16];
@@ -241,7 +242,7 @@ struct bt_keys_link_key {
 #define BT_KEYS_LINK_KEY_STORAGE_LEN \
 	(sizeof(struct bt_keys_link_key) - offsetof(struct bt_keys_link_key, storage_start))
 #else
-#define BT_KEYS_LINK_KEY_STORAGE_LEN     (sizeof(struct bt_keys_link_key) - 8U)
+#define BT_KEYS_LINK_KEY_STORAGE_LEN     (sizeof(struct bt_keys_link_key) - 7U)
 #endif
 
 struct bt_keys_link_key *bt_keys_get_link_key(const bt_addr_t *addr);

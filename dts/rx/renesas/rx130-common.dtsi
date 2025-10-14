@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024 - 2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,6 +55,13 @@
 			interrupt-parent = <&icu>;
 			status = "okay";
 		};
+	};
+
+	dtc: rx-dtc@82400 {
+		compatible = "renesas,rx-dtc";
+		reg = <0x00082400 0x01>;
+		clocks = <&iclk MSTPA 28>;
+		status = "okay";
 	};
 
 	soc {
@@ -545,8 +552,9 @@
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x8A000 0x20>;
 			clocks = <&pclkb MSTPB 31>;
-			status = "disabled";
 			channel = <0>;
+			dtc = <&dtc>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -560,8 +568,9 @@
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x8A020 0x20>;
 			clocks = <&pclkb MSTPB 30>;
-			status = "disabled";
 			channel = <1>;
+			dtc = <&dtc>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -575,8 +584,9 @@
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x8A0A0 0x20>;
 			clocks = <&pclkb MSTPB 26>;
-			status = "disabled";
 			channel = <5>;
+			dtc = <&dtc>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -590,8 +600,9 @@
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x8A0C0 0x20>;
 			clocks = <&pclkb MSTPB 25>;
-			status = "disabled";
 			channel = <6>;
+			dtc = <&dtc>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -605,8 +616,9 @@
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x8A100 0x20>;
 			clocks = <&pclkb MSTPC 27>;
-			status = "disabled";
 			channel = <8>;
+			dtc = <&dtc>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -834,6 +846,15 @@
 			channel-available-mask = <0xffff00ff>;
 			vref-mv = <3300>;
 			channel-count = <24>;
+			status = "disabled";
+		};
+
+		ctsu: ctsu@a0900 {
+			compatible = "renesas,rx-ctsu";
+			reg = < 0x000A0900 0x100 >;
+			clocks = <&pclkb MSTPD 10>;
+			interrupts = <60 1>, <61 1>, <62 1>;
+			interrupt-names = "ctsuwr", "ctsurd", "ctsufn";
 			status = "disabled";
 		};
 

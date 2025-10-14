@@ -45,12 +45,12 @@ BUILD_ASSERT((SHELL_THREAD_PRIORITY >= K_HIGHEST_APPLICATION_THREAD_PRIO) &&
              (SHELL_THREAD_PRIORITY <= K_LOWEST_APPLICATION_THREAD_PRIO),
              "Invalid range for thread priority");
 
-static inline void receive_state_change(const struct shell* sh,
+static inline void receive_state_change(struct shell const* sh,
                                         enum shell_receive_state state) {
     sh->ctx->receive_state = state;
 }
 
-static void cmd_buffer_clear(const struct shell* sh) {
+static void cmd_buffer_clear(struct shell const* sh) {
     struct shell_ctx* ctx = sh->ctx;
 
     ctx->cmd_buff[0]  = '\0'; /* clear command buffer */
@@ -95,7 +95,7 @@ static int cmd_precheck(const struct shell* sh,
     return (0);
 }
 
-static inline void state_set(const struct shell* sh, enum shell_state state) {
+static inline void state_set(struct shell const* sh, enum shell_state state) {
     sh->ctx->state = state;
 
     if ((state == SHELL_STATE_ACTIVE) && !sh->ctx->bypass) {
@@ -142,7 +142,7 @@ static void tab_item_print(const struct shell* sh, char const* option,
 
     columns = (vt100_ctx->cons.terminal_wid - tab_len) / longest_option;
     __ASSERT_NO_MSG(columns != 0);
-    diff    = longest_option - z_shell_strlen(option);
+    diff = longest_option - z_shell_strlen(option);
 
     if (vt100_ctx->printed_cmd++ % columns == 0U) {
         z_shell_fprintf(sh, SHELL_OPTION, "\n%s%s", tab, option);
@@ -152,14 +152,6 @@ static void tab_item_print(const struct shell* sh, char const* option,
     }
 
     z_shell_op_cursor_horiz_move(sh, diff);
-}
-
-static void history_init(const struct shell* sh) {
-    if (!IS_ENABLED(CONFIG_SHELL_HISTORY)) {
-        return;
-    }
-
-    z_shell_history_init(sh->history);
 }
 
 static void history_purge(const struct shell* sh) {
@@ -239,7 +231,7 @@ static void history_handle(const struct shell* sh, bool up) {
     z_shell_op_cond_next_line(sh);
 }
 
-static inline uint16_t completion_space_get(const struct shell* sh) {
+static inline uint16_t completion_space_get(struct shell const* sh) {
     uint16_t space = ((CONFIG_SHELL_CMD_BUFF_SIZE - 1) -
                       sh->ctx->cmd_buff_len);
 
@@ -993,7 +985,6 @@ static void state_collect(const struct shell* sh) {
 
     while (true) {
         shell_bypass_cb_t bypass = ctx->bypass;
-        void* bypass_user_data = sh->ctx->bypass_user_data;
 
         if (bypass) {
             #if defined(CONFIG_SHELL_BACKEND_RTT) && defined(CONFIG_SEGGER_RTT_BUFFER_SIZE_DOWN)
@@ -1006,7 +997,7 @@ static void state_collect(const struct shell* sh) {
                                         sizeof(buf), &count);
             if (count) {
                 z_flag_cmd_ctx_set(sh, true);
-                bypass(sh, buf, count, bypass_user_data);
+                bypass(sh, buf, count);
                 z_flag_cmd_ctx_set(sh, false);
                 /* Check if bypass mode ended. */
                 if (!(volatile shell_bypass_cb_t*)ctx->bypass) {
@@ -1233,10 +1224,8 @@ static int instance_init(const struct shell* sh,
         ctx->selected_cmd = root_cmd_find(CONFIG_SHELL_CMD_ROOT);
     }
 
-    history_init(sh);
-
-    k_event_init(&sh->ctx->signal_event);
-    k_sem_init(&sh->ctx->lock_sem, 1, 1);
+    k_event_init(&ctx->signal_event);
+    k_sem_init(&ctx->lock_sem, 1, 1);
 
     if (IS_ENABLED(CONFIG_SHELL_STATS)) {
         sh->stats->log_lost_cnt = 0;
@@ -1793,11 +1782,10 @@ int shell_mode_delete_set(const struct shell* sh, bool val) {
     return (int)z_flag_mode_delete_set(sh, val);
 }
 
-void shell_set_bypass(const struct shell* sh, shell_bypass_cb_t bypass, void* user_data) {
+void shell_set_bypass(const struct shell* sh, shell_bypass_cb_t bypass) {
     __ASSERT_NO_MSG(sh);
 
     sh->ctx->bypass = bypass;
-    sh->ctx->bypass_user_data = user_data;
 
     if (bypass == NULL) {
         cmd_buffer_clear(sh);
