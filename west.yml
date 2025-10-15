@@ -226,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: e6016c2d3ba376a760d8a8db029ceaba27d8c98a
+      revision: 7cf7ded2e760999b107784466f4baf1fc6cc1525
       groups:
         - hal
     - name: hal_rpi_pico
@@ -321,7 +321,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: e13ef31fc97294e53b1c667d90e3cdfa4af1b6c4
+      revision: 37d9d71d0db8ba3534adcf19e8e2594ff62a848a
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -339,10 +339,10 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 40403f5f2805cca210d2a47c8717d89c4e816cda
+      revision: 26ed181181eed53e400db8f63fa83c566a05d971
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: b822726084f55df19aa6660dc46cf602757e8645
+      revision: e269670cd17fb8ccc4b7004544276bc7d9578496
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: c30a6d8b92fcebdb797fc1a7698e8729e250f637
