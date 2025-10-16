@@ -1265,13 +1265,33 @@ flagged.
         "FOO_LOG_LEVEL",
         "FOO_SETTING_1",
         "FOO_SETTING_2",
-        "GEN_UICR_GENERATE_PERIPHCONF", # Used in specialized build tool, not part of main Kconfig
-        "GEN_UICR_PROTECTEDMEM", # Used in specialized build tool, not part of main Kconfig
-        "GEN_UICR_PROTECTEDMEM_SIZE_BYTES", # Used in specialized build tool, not part of main Kconfig
-        "GEN_UICR_SECONDARY", # Used in specialized build tool, not part of main Kconfig
-        "GEN_UICR_SECONDARY_GENERATE_PERIPHCONF", # Used in specialized build tool, not part of main Kconfig
-        "GEN_UICR_SECONDARY_PROCESSOR_VALUE", # Used in specialized build tool, not part of main Kconfig
-        "GEN_UICR_SECURESTORAGE", # Used in specialized build tool, not part of main Kconfig
+        "GEN_UICR_APPROTECT_APPLICATION_PROTECTED",
+        "GEN_UICR_APPROTECT_CORESIGHT_PROTECTED",
+        "GEN_UICR_APPROTECT_RADIOCORE_PROTECTED",
+        "GEN_UICR_ERASEPROTECT",
+        "GEN_UICR_GENERATE_PERIPHCONF",
+        "GEN_UICR_LOCK",
+        "GEN_UICR_PROTECTEDMEM",
+        "GEN_UICR_PROTECTEDMEM_SIZE_BYTES",
+        "GEN_UICR_SECONDARY",
+        "GEN_UICR_SECONDARY_GENERATE_PERIPHCONF",
+        "GEN_UICR_SECONDARY_PROCESSOR_VALUE",
+        "GEN_UICR_SECONDARY_PROTECTEDMEM",
+        "GEN_UICR_SECONDARY_PROTECTEDMEM_SIZE_BYTES",
+        "GEN_UICR_SECONDARY_TRIGGER",
+        "GEN_UICR_SECONDARY_TRIGGER_APPLICATIONLOCKUP",
+        "GEN_UICR_SECONDARY_TRIGGER_APPLICATIONWDT0",
+        "GEN_UICR_SECONDARY_TRIGGER_APPLICATIONWDT1",
+        "GEN_UICR_SECONDARY_TRIGGER_RADIOCORELOCKUP",
+        "GEN_UICR_SECONDARY_TRIGGER_RADIOCOREWDT0",
+        "GEN_UICR_SECONDARY_TRIGGER_RADIOCOREWDT1",
+        "GEN_UICR_SECONDARY_WDTSTART",
+        "GEN_UICR_SECONDARY_WDTSTART_CRV",
+        "GEN_UICR_SECONDARY_WDTSTART_INSTANCE_CODE",
+        "GEN_UICR_SECURESTORAGE",
+        "GEN_UICR_WDTSTART",
+        "GEN_UICR_WDTSTART_CRV",
+        "GEN_UICR_WDTSTART_INSTANCE_CODE",
         "HEAP_MEM_POOL_ADD_SIZE_", # Used as an option matching prefix
         "HUGETLBFS",          # Linux, in boards/xtensa/intel_adsp_cavs25/doc
         "IAR_BUFFERED_WRITE",

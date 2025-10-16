@@ -8,7 +8,3 @@
 		zephyr,videoenc = &venc;
 	};
 };
-
-&venc {
-	status = "okay";
-};
