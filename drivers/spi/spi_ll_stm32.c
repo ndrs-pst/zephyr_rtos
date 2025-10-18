@@ -1830,6 +1830,7 @@ static int spi_stm32_pinctrl_apply(const struct device* dev, uint8_t id) {
 
 static int spi_stm32_pm_action(const struct device* dev,
                                enum pm_device_action action) {
+    struct spi_stm32_data* data = dev->data;
     const struct spi_stm32_config* config = dev->config;
     const struct device* const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
     int err;
@@ -1858,6 +1859,13 @@ static int spi_stm32_pm_action(const struct device* dev,
             #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
             LL_SPI_EnableGPIOControl(config->spi);              /* #CUSTOM@NDRS */
             #endif
+
+            /* (re-)init SPI context and all CS configuration */
+            err = spi_context_cs_configure_all(&data->ctx);
+            if (err < 0) {
+                return (err);
+            }
+            spi_context_unlock_unconditionally(&data->ctx);
             break;
 
         case PM_DEVICE_ACTION_SUSPEND :
@@ -1932,12 +1940,6 @@ static int spi_stm32_init(const struct device* dev) {
 
     #endif /* CONFIG_SPI_STM32_DMA */
 
-    err = spi_context_cs_configure_all(&data->ctx);
-    if (err < 0) {
-        return (err);
-    }
-
-    spi_context_unlock_unconditionally(&data->ctx);
 
     err = pm_device_driver_init(dev, spi_stm32_pm_action);
     return (err);
