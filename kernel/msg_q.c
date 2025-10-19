@@ -474,13 +474,13 @@ static inline void z_vrfy_k_msgq_purge(struct k_msgq* msgq) {
 }
 #include <zephyr/syscalls/k_msgq_purge_mrsh.c>
 
-static inline uint32_t z_vrfy_k_msgq_num_free_get(struct k_msgq* msgq) {
+static inline uint32_t z_vrfy_k_msgq_num_free_get(struct k_msgq const* msgq) {
     K_OOPS(K_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
     return z_impl_k_msgq_num_free_get(msgq);
 }
 #include <zephyr/syscalls/k_msgq_num_free_get_mrsh.c>
 
-static inline uint32_t z_vrfy_k_msgq_num_used_get(struct k_msgq* msgq) {
+static inline uint32_t z_vrfy_k_msgq_num_used_get(struct k_msgq const* msgq) {
     K_OOPS(K_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
     return z_impl_k_msgq_num_used_get(msgq);
 }
