@@ -452,6 +452,17 @@ static void modem_cmux_on_fcoff_command(struct modem_cmux* cmux) {
     modem_cmux_acknowledge_received_frame(cmux);
 }
 
+static void disconnect(struct modem_cmux* cmux) {
+    LOG_DBG("CMUX disconnected");
+
+    k_work_cancel_delayable(&cmux->disconnect_work);
+    set_state(cmux, MODEM_CMUX_STATE_DISCONNECTED);
+    k_mutex_lock(&cmux->transmit_rb_lock, K_FOREVER);
+    cmux->flow_control_on = false;
+    k_mutex_unlock(&cmux->transmit_rb_lock);
+    modem_cmux_raise_event(cmux, MODEM_CMUX_EVENT_DISCONNECTED);
+}
+
 static void modem_cmux_on_cld_command(struct modem_cmux* cmux, struct modem_cmux_command* command) {
     if (command->type.cr) {
         modem_cmux_acknowledge_received_frame(cmux);
@@ -464,16 +475,12 @@ static void modem_cmux_on_cld_command(struct modem_cmux* cmux, struct modem_cmux
     }
 
     if (cmux->state == MODEM_CMUX_STATE_DISCONNECTING) {
-        k_work_cancel_delayable(&cmux->disconnect_work);
+        disconnect(cmux);
     }
-
-    LOG_DBG("CMUX disconnected");
-    set_state(cmux, MODEM_CMUX_STATE_DISCONNECTED);
-    k_mutex_lock(&cmux->transmit_rb_lock, K_FOREVER);
-    cmux->flow_control_on = false;
-    k_mutex_unlock(&cmux->transmit_rb_lock);
-
-    modem_cmux_raise_event(cmux, MODEM_CMUX_EVENT_DISCONNECTED);
+    else {
+        set_state(cmux, MODEM_CMUX_STATE_DISCONNECTING);
+        k_work_schedule(&cmux->disconnect_work, MODEM_CMUX_T1_TIMEOUT);
+    }
 }
 
 static void modem_cmux_on_control_frame_ua(struct modem_cmux* cmux) {
@@ -541,6 +548,21 @@ static void modem_cmux_on_control_frame_uih(struct modem_cmux* cmux) {
     }
 
     modem_cmux_log_received_command(command);
+
+    if (!command->type.cr) {
+        LOG_DBG("Received response command");
+
+        switch (command->type.value) {
+            case MODEM_CMUX_COMMAND_CLD :
+                modem_cmux_on_cld_command(cmux, command);
+                break;
+
+            default :
+                /* Responses to other commands are ignored */
+                break;
+        }
+        return;
+    }
 
     switch (command->type.value) {
         case MODEM_CMUX_COMMAND_CLD :
@@ -624,8 +646,7 @@ static void modem_cmux_on_control_frame(struct modem_cmux* cmux) {
     modem_cmux_log_received_frame(&cmux->frame);
 
     if (is_connected(cmux) && cmux->frame.cr == cmux->initiator) {
-        LOG_DBG("Received a response frame, dropping");
-        return;
+        LOG_DBG("Received a response frame");
     }
 
     switch (cmux->frame.type) {
@@ -1115,7 +1136,13 @@ static void modem_cmux_disconnect_handler(struct k_work* item) {
     struct modem_cmux_command* command;
     uint8_t data[2];
 
-    set_state(cmux, MODEM_CMUX_STATE_DISCONNECTING);
+    if (cmux->state == MODEM_CMUX_STATE_DISCONNECTING) {
+        disconnect(cmux);
+    }
+    else {
+        set_state(cmux, MODEM_CMUX_STATE_DISCONNECTING);
+        k_work_schedule(&cmux->disconnect_work, MODEM_CMUX_T1_TIMEOUT);
+    }
 
     command = modem_cmux_command_wrap(data);
     command->type.ea      = 1;
