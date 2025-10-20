@@ -226,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 2a4f856526e33b8e52c162e411a196981ff304f6
+      revision: 5ab2c84af5cbdbc2b1f0a41e08b8f311bd4eafa8
       groups:
         - hal
     - name: hal_rpi_pico
@@ -321,7 +321,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 37d9d71d0db8ba3534adcf19e8e2594ff62a848a
+      revision: 3f93226bd3ee2ea0ae69e6533521a0aac99af03d
       path: bootloader/mcuboot
       groups:
         - bootloader
