@@ -130,15 +130,23 @@ static void dma_stm32_irq_handler(const struct device* dev, uint32_t id) {
         stream->dma_callback(dev, stream->user_data, callback_arg, DMA_STATUS_COMPLETE);
     }
     else if (stm32_dma_is_unexpected_irq_happened(dma, id)) {
-        LOG_ERR("Unexpected irq happened.");
+        /* Let HAL DMA handle flags on its own */
+        if (!stream->hal_override) {
+            LOG_ERR("Unexpected irq happened.");
+            stm32_dma_dump_stream_irq(dma, id);
+            stm32_dma_clear_stream_irq(dma, id);
+        }
         stream->dma_callback(dev, stream->user_data,
                              callback_arg, -EIO);
     }
     else {
-        LOG_ERR("Transfer Error.");
-        stream->busy = false;
-        dma_stm32_dump_stream_irq(dev, id);
-        dma_stm32_clear_stream_irq(dev, id);
+        /* Let HAL DMA handle flags on its own */
+        if (!stream->hal_override) {
+            LOG_ERR("Transfer Error.");
+            stream->busy = false;
+            dma_stm32_dump_stream_irq(dev, id);
+            dma_stm32_clear_stream_irq(dev, id);
+        }
         stream->dma_callback(dev, stream->user_data,
                              callback_arg, -EIO);
     }
@@ -762,7 +770,7 @@ DEVICE_DT_INST_DEFINE(index,                                        \
 #else /* CONFIG_DMA_STM32_SHARED_IRQS */
 
 #define DMA_STM32_DEFINE_IRQ_HANDLER(dma, chan)     \
-    static void dma_stm32_irq_##dma##_##chan(const struct device* dev) { \
+static void dma_stm32_irq_##dma##_##chan(const struct device* dev) { \
     dma_stm32_irq_handler(dev, chan);               \
 }
 
