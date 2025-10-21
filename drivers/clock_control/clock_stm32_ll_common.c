@@ -113,14 +113,15 @@ static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler) {
 
 __unused
 static uint32_t get_msi_frequency(void) {
-#if defined(STM32_MSI_ENABLED)
-#if !defined(LL_RCC_MSIRANGESEL_RUN)
+    #if defined(STM32_MSI_ENABLED)
+    #if !defined(LL_RCC_MSIRANGESEL_RUN)
     return __LL_RCC_CALC_MSI_FREQ(LL_RCC_MSI_GetRange());
-#else
+    #else
     return __LL_RCC_CALC_MSI_FREQ(LL_RCC_MSIRANGESEL_RUN,
                                   LL_RCC_MSI_GetRange());
-#endif
-#endif
+    #endif
+    #endif
+
     return (0);
 }
 
@@ -1036,39 +1037,6 @@ static void set_up_fixed_clock_sources(void) {
         #endif
     }
 
-    #if defined(STM32_MSI_ENABLED)
-    if (IS_ENABLED(STM32_MSI_ENABLED)) {
-        /* Set MSI Range */
-        #if defined(RCC_CR_MSIRGSEL)
-        LL_RCC_MSI_EnableRangeSelection();
-        #endif /* RCC_CR_MSIRGSEL */
-
-        #if defined(CONFIG_SOC_SERIES_STM32L0X) || defined(CONFIG_SOC_SERIES_STM32L1X)
-        LL_RCC_MSI_SetRange(STM32_MSI_RANGE << RCC_ICSCR_MSIRANGE_Pos);
-        #else
-        LL_RCC_MSI_SetRange(STM32_MSI_RANGE << RCC_CR_MSIRANGE_Pos);
-        #endif /* CONFIG_SOC_SERIES_STM32L0X || CONFIG_SOC_SERIES_STM32L1X */
-
-        #if STM32_MSI_PLL_MODE
-        /* Enable MSI hardware auto calibration */
-        LL_RCC_MSI_EnablePLLMode();
-        #endif
-
-        LL_RCC_MSI_SetCalibTrimming(0);
-
-        /* Enable MSI if not enabled */
-        if (LL_RCC_MSI_IsReady() != 1) {
-            /* Enable MSI */
-            LL_RCC_MSI_Enable();
-            while (LL_RCC_MSI_IsReady() != 1) {
-                /* Wait for MSI ready */
-                if (IS_ENABLED(__GTEST)) {
-                    break;
-                }
-            }
-        }
-    }
-    #endif /* STM32_MSI_ENABLED */
 
     if (IS_ENABLED(STM32_LSI_ENABLED)) {
         #if defined(CONFIG_SOC_SERIES_STM32WBX)
@@ -1128,6 +1096,40 @@ static void set_up_fixed_clock_sources(void) {
 
         z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
     }
+
+    #if defined(STM32_MSI_ENABLED)
+    if (IS_ENABLED(STM32_MSI_ENABLED)) {
+        /* Set MSI Range */
+        #if defined(RCC_CR_MSIRGSEL)
+        LL_RCC_MSI_EnableRangeSelection();
+        #endif /* RCC_CR_MSIRGSEL */
+
+        #if defined(CONFIG_SOC_SERIES_STM32L0X) || defined(CONFIG_SOC_SERIES_STM32L1X)
+        LL_RCC_MSI_SetRange(STM32_MSI_RANGE << RCC_ICSCR_MSIRANGE_Pos);
+        #else
+        LL_RCC_MSI_SetRange(STM32_MSI_RANGE << RCC_CR_MSIRANGE_Pos);
+        #endif /* CONFIG_SOC_SERIES_STM32L0X || CONFIG_SOC_SERIES_STM32L1X */
+
+        #if STM32_MSI_PLL_MODE
+        /* Enable MSI hardware auto calibration */
+        LL_RCC_MSI_EnablePLLMode();
+        #endif
+
+        LL_RCC_MSI_SetCalibTrimming(0);
+
+        /* Enable MSI if not enabled */
+        if (LL_RCC_MSI_IsReady() != 1) {
+            /* Enable MSI */
+            LL_RCC_MSI_Enable();
+            while (LL_RCC_MSI_IsReady() != 1) {
+                /* Wait for MSI ready */
+                if (IS_ENABLED(__GTEST)) {
+                    break;
+                }
+            }
+        }
+    }
+    #endif /* STM32_MSI_ENABLED */
 
     #if defined(STM32_HSI14_ENABLED)
     /* For all series with HSI 14 clock support */

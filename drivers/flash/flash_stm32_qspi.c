@@ -393,7 +393,7 @@ static int qspi_write_access(struct device const* dev, QSPI_CommandTypeDef* cmd,
                              uint8_t const* data, size_t size) {
     const struct flash_stm32_qspi_config* dev_cfg = dev->config;
     struct flash_stm32_qspi_data* dev_data = dev->data;
-    HAL_StatusTypeDef hal_ret;
+    HAL_StatusTypeDef hal_sts;
 
     ARG_UNUSED(dev_cfg);
 
@@ -403,23 +403,23 @@ static int qspi_write_access(struct device const* dev, QSPI_CommandTypeDef* cmd,
 
     dev_data->cmd_status = 0;
 
-    hal_ret = HAL_QSPI_Command(&dev_data->hqspi, cmd,
+    hal_sts = HAL_QSPI_Command(&dev_data->hqspi, cmd,
                                HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
-    if (hal_ret != HAL_OK) {
-        LOG_ERR("%d: Failed to send QSPI instruction", hal_ret);
+    if (hal_sts != HAL_OK) {
+        LOG_ERR("%d: Failed to send QSPI instruction", hal_sts);
         return (-EIO);
     }
 
     if ((STM32_QSPI_USE_DMA == 1) &&
         (size >= STM32_QSPI_DMA_THRESHOLD)) {
-        hal_ret = HAL_QSPI_Transmit_DMA(&dev_data->hqspi, (uint8_t*)data);
+        hal_sts = HAL_QSPI_Transmit_DMA(&dev_data->hqspi, (uint8_t*)data);
     }
     else {
-        hal_ret = HAL_QSPI_Transmit_IT(&dev_data->hqspi, (uint8_t*)data);
+        hal_sts = HAL_QSPI_Transmit_IT(&dev_data->hqspi, (uint8_t*)data);
     }
 
-    if (hal_ret != HAL_OK) {
-        LOG_ERR("%d: Failed to read data", hal_ret);
+    if (hal_sts != HAL_OK) {
+        LOG_ERR("%d: Failed to read data", hal_sts);
         return (-EIO);
     }
     LOG_DBG("CCR 0x%x", dev_cfg->regs->CCR);
@@ -450,18 +450,18 @@ static int qspi_read_jedec_id(struct device const* dev, uint8_t* id) {
         .NbData          = JESD216_READ_ID_LEN,
     };
 
-    HAL_StatusTypeDef hal_ret;
+    HAL_StatusTypeDef hal_sts;
 
-    hal_ret = HAL_QSPI_Command(&dev_data->hqspi, &cmd,
+    hal_sts = HAL_QSPI_Command(&dev_data->hqspi, &cmd,
                                HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
-    if (hal_ret != HAL_OK) {
-        LOG_ERR("%d: Failed to send QSPI instruction", hal_ret);
+    if (hal_sts != HAL_OK) {
+        LOG_ERR("%d: Failed to send QSPI instruction", hal_sts);
         return (-EIO);
     }
 
-    hal_ret = HAL_QSPI_Receive(&dev_data->hqspi, data, HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
-    if (hal_ret != HAL_OK) {
-        LOG_ERR("%d: Failed to read data", hal_ret);
+    hal_sts = HAL_QSPI_Receive(&dev_data->hqspi, data, HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
+    if (hal_sts != HAL_OK) {
+        LOG_ERR("%d: Failed to read data", hal_sts);
         return (-EIO);
     }
 
@@ -475,20 +475,18 @@ static int qspi_read_jedec_id(struct device const* dev, uint8_t* id) {
 #endif /* CONFIG_FLASH_JESD216_API */
 
 static int qspi_write_unprotect(const struct device* dev) {
-    int ret = 0;
-    static QSPI_CommandTypeDef const cmd_unprotect = {
+    QSPI_CommandTypeDef cmd_unprotect = {
         .Instruction = SPI_NOR_CMD_ULBPR,
         .InstructionMode = QSPI_INSTRUCTION_1_LINE,
     };
+    int ret;
 
-    if (IS_ENABLED(DT_INST_PROP(0, requires_ulbpr))) {
-        ret = qspi_send_cmd(dev, &qspi_cmd_wren);
-        if (ret != 0) {
+    ret = qspi_send_cmd(dev, &qspi_cmd_wren);
+    if (ret != 0) {
             return (ret);
-        }
-
-        ret = qspi_send_cmd(dev, &cmd_unprotect);
     }
+
+    ret = qspi_send_cmd(dev, &cmd_unprotect);
 
     return (ret);
 }
@@ -499,7 +497,7 @@ static int qspi_write_unprotect(const struct device* dev) {
 static int qspi_read_sfdp(struct device const* dev, off_t addr, void* data,
                           size_t size) {
     struct flash_stm32_qspi_data* dev_data = dev->data;
-    HAL_StatusTypeDef hal_ret;
+    HAL_StatusTypeDef hal_sts;
     int ret = 0;
 
     __ASSERT(data != NULL, "null destination");
@@ -530,18 +528,18 @@ static int qspi_read_sfdp(struct device const* dev, off_t addr, void* data,
         .NbData          = size,
     };
 
-    hal_ret = HAL_QSPI_Command(&dev_data->hqspi, &cmd,
+    hal_sts = HAL_QSPI_Command(&dev_data->hqspi, &cmd,
                                HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
-    if (hal_ret != HAL_OK) {
-        LOG_ERR("%d: Failed to send SFDP instruction", hal_ret);
+    if (hal_sts != HAL_OK) {
+        LOG_ERR("%d: Failed to send SFDP instruction", hal_sts);
         ret = -EIO;
         goto end;
     }
 
-    hal_ret = HAL_QSPI_Receive(&dev_data->hqspi, (uint8_t*)data,
+    hal_sts = HAL_QSPI_Receive(&dev_data->hqspi, (uint8_t*)data,
                                HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
-    if (hal_ret != HAL_OK) {
-        LOG_ERR("%d: Failed to read SFDP", hal_ret);
+    if (hal_sts != HAL_OK) {
+        LOG_ERR("%d: Failed to read SFDP", hal_sts);
         ret = -EIO;
         goto end;
     }
@@ -569,7 +567,7 @@ static bool qspi_address_is_valid(struct device const* dev, off_t addr,
 /* Must be called inside qspi_lock_thread(). */
 static int stm32_qspi_set_memory_mapped(const struct device* dev) {
     int ret;
-    HAL_StatusTypeDef hal_ret;
+    HAL_StatusTypeDef hal_sts;
     struct flash_stm32_qspi_data* dev_data = dev->data;
 
     QSPI_CommandTypeDef cmd = {
@@ -592,10 +590,10 @@ static int stm32_qspi_set_memory_mapped(const struct device* dev) {
         .TimeOutActivation = QSPI_TIMEOUT_COUNTER_DISABLE,
     };
 
-    hal_ret = HAL_QSPI_MemoryMapped(&dev_data->hqspi, &cmd, &mem_mapped);
-    if (hal_ret != 0) {
-        LOG_ERR("%d: Failed to enable memory mapped", hal_ret);
-        return -EIO;
+    hal_sts = HAL_QSPI_MemoryMapped(&dev_data->hqspi, &cmd, &mem_mapped);
+    if (hal_sts != 0) {
+        LOG_ERR("%d: Failed to enable memory mapped", hal_sts);
+        return (-EIO);
     }
 
     LOG_DBG("MemoryMap mode enabled");
@@ -610,15 +608,15 @@ static bool stm32_qspi_is_memory_mapped(const struct device* dev) {
 
 static int stm32_qspi_abort(const struct device* dev) {
     struct flash_stm32_qspi_data* dev_data = dev->data;
-    HAL_StatusTypeDef             hal_ret;
+    HAL_StatusTypeDef hal_sts;
 
-    hal_ret = HAL_QSPI_Abort(&dev_data->hqspi);
-    if (hal_ret != HAL_OK) {
-        LOG_ERR("%d: QSPI abort failed", hal_ret);
-        return -EIO;
+    hal_sts = HAL_QSPI_Abort(&dev_data->hqspi);
+    if (hal_sts != HAL_OK) {
+        LOG_ERR("%d: QSPI abort failed", hal_sts);
+        return (-EIO);
     }
 
-    return 0;
+    return (0);
 }
 #endif
 
@@ -1637,7 +1635,9 @@ static int flash_stm32_qspi_init(struct device const* dev) {
     dev_data->hqspi.Init.FlashID = QSPI_FLASH_ID_1;
     #endif /* STM32_QSPI_DOUBLE_FLASH */
 
-    HAL_QSPI_Init(&dev_data->hqspi);
+    if (HAL_QSPI_Init(&dev_data->hqspi) != HAL_OK) {
+        return (-EIO);
+    }
 
     #if DT_NODE_HAS_PROP(DT_NODELABEL(quadspi), flash_id) && \
         defined(QUADSPI_CR_FSEL)
@@ -1647,8 +1647,10 @@ static int flash_stm32_qspi_init(struct device const* dev) {
      */
     uint8_t qspi_flash_id = DT_PROP(DT_NODELABEL(quadspi), flash_id);
 
-    HAL_QSPI_SetFlashID(&dev_data->hqspi,
-                        (qspi_flash_id - 1) << QUADSPI_CR_FSEL_Pos);
+    if (HAL_QSPI_SetFlashID(&dev_data->hqspi,
+                            (qspi_flash_id - 1) << QUADSPI_CR_FSEL_Pos) != HAL_OK) {
+        return (-EIO);
+    }
     #endif
 
     /* Initialize semaphores */
@@ -1729,12 +1731,14 @@ static int flash_stm32_qspi_init(struct device const* dev) {
     }
     #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-    ret = qspi_write_unprotect(dev);
-    if (ret != 0) {
-        LOG_ERR("write unprotect failed: %d", ret);
+    if (IS_ENABLED(DT_INST_PROP(0, requires_ulbpr))) {
+        ret = qspi_write_unprotect(dev);
+        if (ret != 0) {
+            LOG_ERR("write unprotect failed: %d", ret);
         return (-ENODEV);
+        }
+        LOG_DBG("Write Un-protected");
     }
-    LOG_DBG("Write Un-protected");
 
     #ifdef CONFIG_STM32_MEMMAP
     ret = stm32_qspi_set_memory_mapped(dev);
@@ -1819,7 +1823,9 @@ static int flash_stm32_qspi_mdma_init(struct flash_stm32_qspi_data* dev_data) {
 
     /* Initialize DMA HAL */
     __HAL_LINKDMA(&dev_data->hqspi, hmdma, hmdma);
-    HAL_MDMA_Init(&hmdma);
+    if (HAL_MDMA_Init(&hmdma) != HAL_OK) {
+        return (-EIO);
+    }
 
     return (ret);
 }
@@ -1888,7 +1894,11 @@ static int flash_stm32_qspi_dma_init(struct flash_stm32_qspi_data* dev_data) {
 
     /* Initialize DMA HAL */
     __HAL_LINKDMA(&dev_data->hqspi, hdma, hdma);
-    HAL_DMA_Init(&hdma);
+    if (HAL_DMA_Init(&hdma) != HAL_OK) {
+        return (-EIO);
+    }
+
+    return (ret);
 }
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 #else

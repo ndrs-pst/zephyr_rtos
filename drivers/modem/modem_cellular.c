@@ -1376,11 +1376,15 @@ static int modem_cellular_on_carrier_on_state_enter(struct modem_cellular_data* 
 static void modem_cellular_carrier_on_event_handler(struct modem_cellular_data* data,
                                                     enum modem_cellular_event evt) {
     struct modem_cellular_config const* config = data->dev->config;
+    struct cellular_evt_modem_comms_check_result result;
 
     switch (evt) {
         case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS :
         case MODEM_CELLULAR_EVENT_SCRIPT_FAILED :
+            result.success = (evt == MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS);
+
             modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+            modem_cellular_emit_event(data, CELLULAR_EVENT_MODEM_COMMS_CHECK_RESULT, &result);
             break;
 
         case MODEM_CELLULAR_EVENT_TIMEOUT :

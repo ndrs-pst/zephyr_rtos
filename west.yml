@@ -154,7 +154,7 @@ manifest:
       groups:
         - hal
     - name: hal_ambiq
-      revision: 5546a303ac04b7bc728b2c92ff1b1009ea795a22
+      revision: 5efc0228528a8adce5eae0d226fac85d2551eb3b
       path: modules/hal/ambiq
       groups:
         - hal
@@ -231,7 +231,7 @@ manifest:
         - hal
     - name: hal_rpi_pico
       path: modules/hal/rpi_pico
-      revision: b547a36a722af7787e5f55b551fd6ce72dcba5a4
+      revision: 09e957522da60581cf7958b31f8e625d969c69a5
       groups:
         - hal
     - name: hal_sifli
