@@ -855,8 +855,6 @@ CPU Frequency Scaling:
     - seankyer
   files:
     - include/zephyr/cpu_freq/
-    - include/zephyr/cpu_load/
-    - subsys/cpu_load/
     - subsys/cpu_freq/
     - dts/bindings/p_state/
   labels:
@@ -3047,9 +3045,10 @@ JSON Web Token:
     - libraries.encoding.jwt
 
 Kconfig:
-  status: odd fixes
-  collaborators:
+  status: maintained
+  maintainers:
     - tejlmand
+  collaborators:
     - nashif
   files:
     - scripts/kconfig/
@@ -6099,10 +6098,7 @@ West:
     - thrift
 
 "West project: trusted-firmware-a":
-  status: maintained
-  maintainers:
-    - povergoing
-    - sgrrzhf
+  status: odd fixes
   collaborators:
     - wearyzen
     - ithinuel

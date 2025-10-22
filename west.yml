@@ -165,7 +165,7 @@ manifest:
         - hal
     - name: hal_bouffalolab
       path: modules/hal/bouffalolab
-      revision: 9f2ab1b6b4e8f0dce589b56ea908dc47b5c62385
+      revision: 89df8327276755b5935dc4cc2f2f68e27a8dba3d
       groups:
         - hal
     - name: hal_espressif
@@ -226,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 5ab2c84af5cbdbc2b1f0a41e08b8f311bd4eafa8
+      revision: 3ce2bdc7f5cb19b961c015ba561b0cf15f7df3b4
       groups:
         - hal
     - name: hal_rpi_pico
