@@ -258,7 +258,7 @@ static int cmd_load(const struct shell* sh, size_t argc, char** argv) {
 }
 
 static int memory_read(const struct shell* sh, mem_addr_t addr, uint8_t width) {
-    uint64_t value;
+    uint32_t value;
     int err = 0;
 
     switch (width) {
@@ -274,12 +274,6 @@ static int memory_read(const struct shell* sh, mem_addr_t addr, uint8_t width) {
             value = sys_read32(addr);
             break;
 
-        #ifdef CONFIG_64BIT
-        case 64 :
-            value = sys_read64(addr);
-            break;
-        #endif /* CONFIG_64BIT */
-
         default :
             shell_print(sh, "Incorrect data width");
             err = -EINVAL;
@@ -287,7 +281,7 @@ static int memory_read(const struct shell* sh, mem_addr_t addr, uint8_t width) {
     }
 
     if (err == 0) {
-        shell_print(sh, "Read value 0x%llx", value);
+        shell_print(sh, "Read value 0x%x", value);
     }
 
     return (err);
@@ -309,12 +303,6 @@ static int memory_write(const struct shell* sh, mem_addr_t addr, uint8_t width, 
             sys_write32(value, addr);
             break;
 
-        #ifdef CONFIG_64BIT
-        case 64 :
-            sys_write64(value, addr);
-            break;
-        #endif /* CONFIG_64BIT */
-
         default :
             shell_print(sh, "Incorrect data width");
             err = -EINVAL;
@@ -328,7 +316,7 @@ static int memory_write(const struct shell* sh, mem_addr_t addr, uint8_t width, 
 static int cmd_devmem(const struct shell* sh, size_t argc, char** argv) {
     mem_addr_t phys_addr;
     mem_addr_t addr;
-    uint64_t value;
+    uint32_t value;
     uint8_t width;
     char* endptr;
 
@@ -363,13 +351,13 @@ static int cmd_devmem(const struct shell* sh, size_t argc, char** argv) {
      * this value at the address provided
      */
 
-    value = (uint64_t)strtoull(argv[3], &endptr, 16);
+    value = strtoul(argv[3], &endptr, 16);
     if (*endptr != '\0') {
         shell_print(sh, "Invalid value format");
         return (-EINVAL);
     }
 
-    shell_print(sh, "Writing value 0x%llx", value);
+    shell_print(sh, "Writing value 0x%x", value);
 
     return memory_write(sh, addr, width, value);
 }

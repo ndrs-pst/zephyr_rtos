@@ -347,6 +347,11 @@ config USE_RZ_FSP_CMTW
 	help
 	  Enable RZ FSP CMTW driver
 
+config USE_RZ_FSP_SPI
+	bool
+	help
+	  Enable RZ FSP SPI driver
+
 config USE_RZ_FSP_WDT
 	bool
 	help
@@ -420,5 +425,12 @@ config USE_RX_RDP_LVD
 	bool
 	help
 	  Enable RX RDP LVD driver
+
+config USE_RX_RDP_LPC
+	bool
+	default y
+	depends on PM
+	help
+	  Enable RX RDP LPC driver
 
 endif # HAS_RENESAS_RX_RDP

@@ -75,6 +75,16 @@ Boards
 
 * Panasonic ``panb511evb`` is renamed to ``panb611evb``.
 
+* STM32 boards OpenOCD configuration files have been changed to support latest OpenOCD versions
+  (> v0.12.0) in which the HLA/SWD transport has been deprecated (see
+  https://review.openocd.org/c/openocd/+/8523 and commit
+  https://sourceforge.net/p/openocd/code/ci/34ec5536c0ba3315bc5a841244bbf70141ccfbb4/).
+  Issues may be encountered when connecting to an ST-Link adapter running firmware prior
+  v2j24 which do not support the new transport. In this case, the ST-Link firmware should
+  be upgraded or, if not possible, the OpenOCD configuration script should be changed to
+  source "interface/stlink-hla.cfg" and select the "hla_swd" interface explicitly.
+  Backward compatibility with OpenOCD v0.12.0 or older is maintained.
+
 Device Drivers and Devicetree
 *****************************
 
@@ -224,6 +234,15 @@ Bluetooth Mesh
   been removed. The selection of the PSA Crypto provider is now automatically controlled
   by Kconfig :kconfig:option:`CONFIG_PSA_CRYPTO`.
 
+Bluetooth Host
+==============
+
+* :kconfig:option:`CONFIG_BT_FIXED_PASSKEY` has been deprecated. Instead, the application can
+  provide passkeys for pairing using the :c:member:`bt_conn_auth_cb.app_passkey` callback, which is
+  available when :kconfig:option:`CONFIG_BT_APP_PASSKEY` is enabled. The application can return the
+  passkey for pairing, or :c:macro:`BT_PASSKEY_RAND` for the Host to generate a random passkey
+  instead.
+
 Ethernet
 ========
 
@@ -366,6 +385,10 @@ MCUmgr
   revision, which now includes the SoC and board variant. The old behaviour has been deprecated,
   but can still be used by enabling
   :kconfig:option:`CONFIG_MCUMGR_GRP_OS_INFO_HARDWARE_INFO_SHORT_HARDWARE_PLATFORM`.
+
+* Support for legacy Mbed TLS hash crypto is removed and only PSA Crypto API is used.
+  :kconfig:option:`CONFIG_MCUMGR_GRP_FS_HASH_SHA256` automatically enables Mbed TLS and its
+  PSA Crypto implementation if TF-M is not enabled in the build.
 
 RTIO
 ====
