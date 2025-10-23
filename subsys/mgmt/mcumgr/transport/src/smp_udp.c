@@ -266,7 +266,7 @@ static void smp_udp_receive_thread(void* p1, void* p2, void* p3) {
 
     while (true) {
         struct net_sockaddr addr;
-        socklen_t       addr_len = sizeof(addr);
+        socklen_t addr_len = sizeof(addr);
 
         int len = zsock_recvfrom(conf->sock, conf->recv_buffer,
                                  CONFIG_MCUMGR_TRANSPORT_UDP_MTU, 0, &addr, &addr_len);

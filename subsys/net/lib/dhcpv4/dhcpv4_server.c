@@ -1526,7 +1526,7 @@ static void dhcpv4_server_cb(struct net_socket_service_event *evt)
 	}
 
 	ret = zsock_recvfrom(evt->event.fd, recv_buf, sizeof(recv_buf),
-			     ZSOCK_MSG_DONTWAIT, NULL, 0);
+			     ZSOCK_MSG_DONTWAIT, NULL, NULL);
 	if (ret < 0) {
 		if (errno == EAGAIN) {
 			return;

@@ -940,7 +940,7 @@ static int tls_rx(void *ctx, unsigned char *buf, size_t len)
 	ssize_t received;
 
 	received = zsock_recvfrom(tls_ctx->sock, buf, len,
-				  ZSOCK_MSG_DONTWAIT, NULL, 0);
+				  ZSOCK_MSG_DONTWAIT, NULL, NULL);
 	if (received < 0) {
 		if (errno == EAGAIN) {
 			return MBEDTLS_ERR_SSL_WANT_READ;
