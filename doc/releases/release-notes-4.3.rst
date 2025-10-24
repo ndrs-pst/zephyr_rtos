@@ -91,7 +91,7 @@ Deprecated APIs and options
   :c:struct:`bt_hci_cp_vs_write_bd_addr` for setting the public Bluetooth device address.
 
 * :kconfig:option:`CONFIG_JWT_SIGN_RSA_LEGACY` is deprecated. Please switch to the
-  PSA Crypto API based alternative (i.e. :kconfig:option:`CONIFG_JWT_SIGN_RSA_PSA`).
+  PSA Crypto API based alternative (i.e. :kconfig:option:`CONFIG_JWT_SIGN_RSA_PSA`).
 
 * RISCV's :kconfig:option:`CONFIG_EXTRA_EXCEPTION_INFO` is deprecated. Use :kconfig:option:`CONFIG_EXCEPTION_DEBUG` instead.
 
@@ -173,6 +173,10 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_AL_88`
     * :kconfig:option:`CONFIG_SDL_DISPLAY_COLOR_TINT`
+
+* Haptics
+
+  * :kconfig:option:`CONFIG_HAPTICS_SHELL`
 
 * Kernel
 
@@ -326,6 +330,7 @@ New APIs and options
 
   * :c:member:`video_format.size` field
   * :c:func:`video_estimate_fmt_size`
+  * :c:func:`video_transfer_buffer`
 
 .. zephyr-keep-sorted-stop
 

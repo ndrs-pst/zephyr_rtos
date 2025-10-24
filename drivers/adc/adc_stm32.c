@@ -221,8 +221,9 @@ struct adc_stm32_data {
 struct adc_stm32_cfg {
     ADC_TypeDef* base;
     void (*irq_cfg_func)(void);
-    const struct stm32_pclken* pclken;
-    size_t pclk_len;
+    const struct stm32_pclken pclken;
+    const struct stm32_pclken pclken_ker;
+    const struct stm32_pclken pclken_pre;
     uint32_t clk_prescaler;
     const struct pinctrl_dev_config* pcfg;
     uint16_t const sampling_time_table[STM32_NB_SAMPLING_TIME];
@@ -230,6 +231,8 @@ struct adc_stm32_cfg {
     int8_t sequencer_type;
     int8_t oversampler_type;
     int8_t internal_regulator;
+    bool has_pclken_ker :1;
+    bool has_pclken_pre :1;
     bool has_deep_powerdown         :1;
     bool has_channel_preselection   :1;
     bool has_differential_support   :1;
@@ -473,8 +476,7 @@ static void adc_stm32_calibration_delay(const struct device* dev) {
     uint32_t adc_rate;
     uint32_t wait_cycles;
 
-    if (clock_control_get_rate(clk,
-                               (clock_control_subsys_t)&config->pclken[0], &adc_rate) < 0) {
+    if (clock_control_get_rate(clk, (clock_control_subsys_t)&config->pclken, &adc_rate) < 0) {
         LOG_ERR("ADC clock rate get error.");
     }
 
@@ -1496,8 +1498,8 @@ static int adc_stm32h7_setup_boost(const struct adc_stm32_cfg* config, ADC_TypeD
     int presc;
 
     /* Get the input frequency */
-    clk_src = (clock_control_subsys_t)(adc_stm32_is_clk_sync(config) ? &config->pclken[0]
-                                                                     : &config->pclken[1]);
+    clk_src = (clock_control_subsys_t)(adc_stm32_is_clk_sync(config) ? &config->pclken
+                                                                     : &config->pclken_ker);
 
     if (clock_control_get_rate(clk, clk_src, &input_freq) != 0) {
         LOG_ERR("Failed to get ADC clock frequency");
@@ -1538,32 +1540,26 @@ static int adc_stm32h7_setup_boost(const struct adc_stm32_cfg* config, ADC_TypeD
 }
 #endif
 
-/* This symbol takes the value 1 if one of the device instances */
-/* is configured in dts with a domain clock */
-#if STM32_DT_INST_DEV_DOMAIN_CLOCK_SUPPORT
-#define STM32_ADC_DOMAIN_CLOCK_SUPPORT 1
-#else
-#define STM32_ADC_DOMAIN_CLOCK_SUPPORT 0
-#endif
-
 static int adc_stm32_set_clock(const struct device* dev) {
     const struct adc_stm32_cfg* config = dev->config;
     const struct device* const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
     __maybe_unused ADC_TypeDef* adc = config->base;
     int ret = 0;
 
-    if (clock_control_on(clk,
-                         (clock_control_subsys_t)&config->pclken[0]) != 0) {
+    if (clock_control_on(clk, (clock_control_subsys_t)&config->pclken) != 0) {
         return (-EIO);
     }
 
-    if (IS_ENABLED(STM32_ADC_DOMAIN_CLOCK_SUPPORT) && (config->pclk_len > 1)) {
-        /* Enable ADC clock source */
-        if (clock_control_configure(clk,
-                                    (clock_control_subsys_t)&config->pclken[1],
-                                    NULL) != 0) {
-            return (-EIO);
-        }
+    /* Enable ADC clock source if applicable */
+    if (config->has_pclken_ker &&
+        clock_control_configure(clk, (clock_control_subsys_t)&config->pclken_ker, NULL) != 0) {
+        return (-EIO);
+    }
+
+    /* Configure ADC prescaler (at RCC level) if applicable */
+    if (config->has_pclken_pre &&
+        clock_control_configure(clk, (clock_control_subsys_t)&config->pclken_pre, NULL) != 0) {
+        return (-EIO);
     }
 
     #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(st_adc_clock_source)
@@ -1740,7 +1736,7 @@ static int adc_stm32_suspend_setup(const struct device* dev) {
     adc_stm32_disable_analog_supply();
 
     /* Stop device clock. Note: fixed clocks are not handled yet. */
-    err = clock_control_off(clk, (clock_control_subsys_t)&config->pclken[0]);
+    err = clock_control_off(clk, (clock_control_subsys_t)&config->pclken);
     if (err != 0) {
         LOG_ERR("Could not disable ADC clock");
         return (err);
@@ -1811,8 +1807,8 @@ static DEVICE_API(adc, api_stm32_driver_api) = {
     Z_CONCAT(ADC_STM32_CLOCK_PREFIX(x), ADC_STM32_DIV(x))
 
 /* Macro to check if the ADC instance clock setup is correct */
-#define ADC_STM32_CHECK_DT_CLOCK(x)                                                     \
-    BUILD_ASSERT(IS_EQ(ADC_STM32_CLOCK(x), SYNC) || (DT_INST_NUM_CLOCKS(x) > 1),        \
+#define ADC_STM32_CHECK_DT_CLOCK(x) \
+    BUILD_ASSERT(IS_EQ(ADC_STM32_CLOCK(x), SYNC) || DT_INST_CLOCKS_HAS_NAME(x, adc_ker), \
                  "ASYNC clock mode defined without ASYNC clock defined in device tree")
 
 #else /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(st_adc_clock_source) */
@@ -1963,51 +1959,58 @@ DT_INST_FOREACH_STATUS_OKAY(GENERATE_ISR)
 
 #define ADC_STM32_INIT(index)                                   \
                                                                 \
-    ADC_STM32_CHECK_DT_CLOCK(index);                            \
+ADC_STM32_CHECK_DT_CLOCK(index);                                \
                                                                 \
-    PINCTRL_DT_INST_DEFINE(index);                              \
+PINCTRL_DT_INST_DEFINE(index);                                  \
                                                                 \
-    static const struct stm32_pclken pclken_##index[] =         \
-        STM32_DT_INST_CLOCKS(index);                            \
+static struct adc_stm32_cfg DT_CONST adc_stm32_cfg_##index = {  \
+    .base = (ADC_TypeDef*)DT_INST_REG_ADDR(index),              \
+    ADC_STM32_IRQ_FUNC(index)                                   \
+    .pclken = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(index, adcx, bus),   \
+               .enr = DT_INST_CLOCKS_CELL_BY_NAME(index, adcx, bits)}, \
+    COND_CODE_1(DT_INST_CLOCKS_HAS_NAME(index, adc_ker),        \
+    (.pclken_ker = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(index, adc_ker, bus),   \
+                    .enr = DT_INST_CLOCKS_CELL_BY_NAME(index, adc_ker, bits)}, \
+     .has_pclken_ker = true,),                                  \
+    (.has_pclken_ker = false,))                                 \
+    COND_CODE_1(DT_INST_CLOCKS_HAS_NAME(index, adc_pre),        \
+    (.pclken_pre = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(index, adc_pre, bus),   \
+                    .enr = DT_INST_CLOCKS_CELL_BY_NAME(index, adc_pre, bits)}, \
+     .has_pclken_pre = true,),                                  \
+    (.has_pclken_pre = false,))                                 \
+    .clk_prescaler = ADC_STM32_DT_PRESC(index),                 \
+    .pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),              \
+    .differential_channels_used = (ANY_CHILD_NODE_IS_DIFFERENTIAL(index) > 0), \
+    .sequencer_type = CONCAT(SEQUENCER_,                        \
+        DT_INST_STRING_UPPER_TOKEN(index, st_adc_sequencer)),   \
+    .oversampler_type = CONCAT(OVERSAMPLER_,                    \
+        DT_INST_STRING_UPPER_TOKEN(index, st_adc_oversampler)), \
+    .internal_regulator = CONCAT(INTERNAL_REGULATOR_,           \
+        DT_INST_STRING_UPPER_TOKEN(index, st_adc_internal_regulator)),    \
+    .has_deep_powerdown = DT_INST_PROP(index, st_adc_has_deep_powerdown), \
+    .has_channel_preselection = DT_INST_PROP(index, st_adc_has_channel_preselection), \
+    .has_differential_support = DT_INST_PROP(index, st_adc_has_differential_support), \
+    .sampling_time_table = DT_INST_PROP(index, sampling_times), \
+    .num_sampling_time_common_channels =                        \
+        DT_INST_PROP_OR(index, num_sampling_time_common_channels, 0), \
+    .res_table_size = DT_INST_PROP_LEN(index, resolutions),     \
+    .res_table = DT_INST_PROP(index, resolutions),              \
+};                                                              \
                                                                 \
-    static struct adc_stm32_cfg DT_CONST adc_stm32_cfg_##index = { \
-        .base = (ADC_TypeDef*)DT_INST_REG_ADDR(index),          \
-        ADC_STM32_IRQ_FUNC(index)                               \
-        .pclken = pclken_##index,                               \
-        .pclk_len = DT_INST_NUM_CLOCKS(index),                  \
-        .clk_prescaler = ADC_STM32_DT_PRESC(index),             \
-        .pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),          \
-        .differential_channels_used = (ANY_CHILD_NODE_IS_DIFFERENTIAL(index) > 0), \
-        .sequencer_type = CONCAT(SEQUENCER_,                    \
-            DT_INST_STRING_UPPER_TOKEN(index, st_adc_sequencer)), \
-        .oversampler_type = CONCAT(OVERSAMPLER_,                \
-            DT_INST_STRING_UPPER_TOKEN(index, st_adc_oversampler)), \
-        .internal_regulator = CONCAT(INTERNAL_REGULATOR_,       \
-            DT_INST_STRING_UPPER_TOKEN(index, st_adc_internal_regulator)),                  \
-        .has_deep_powerdown = DT_INST_PROP(index, st_adc_has_deep_powerdown),               \
-        .has_channel_preselection = DT_INST_PROP(index, st_adc_has_channel_preselection),   \
-        .has_differential_support = DT_INST_PROP(index, st_adc_has_differential_support),   \
-        .sampling_time_table = DT_INST_PROP(index, sampling_times), \
-        .num_sampling_time_common_channels =                    \
-            DT_INST_PROP_OR(index, num_sampling_time_common_channels, 0), \
-        .res_table_size = DT_INST_PROP_LEN(index, resolutions), \
-        .res_table = DT_INST_PROP(index, resolutions),          \
-    };                                                          \
+static struct adc_stm32_data adc_stm32_data_##index = {         \
+    ADC_CONTEXT_INIT_TIMER(adc_stm32_data_##index, ctx),        \
+    ADC_CONTEXT_INIT_LOCK(adc_stm32_data_##index, ctx),         \
+    ADC_CONTEXT_INIT_SYNC(adc_stm32_data_##index, ctx),         \
+    ADC_DMA_CHANNEL(index, PERIPHERAL, MEMORY)                  \
+};                                                              \
                                                                 \
-    static struct adc_stm32_data adc_stm32_data_##index = {     \
-        ADC_CONTEXT_INIT_TIMER(adc_stm32_data_##index, ctx),    \
-        ADC_CONTEXT_INIT_LOCK(adc_stm32_data_##index, ctx),     \
-        ADC_CONTEXT_INIT_SYNC(adc_stm32_data_##index, ctx),     \
-        ADC_DMA_CHANNEL(index, PERIPHERAL, MEMORY)              \
-    };                                                          \
+PM_DEVICE_DT_INST_DEFINE(index, adc_stm32_pm_action);           \
                                                                 \
-    PM_DEVICE_DT_INST_DEFINE(index, adc_stm32_pm_action);       \
-                                                                \
-    DEVICE_DT_INST_DEFINE(index,                                \
-                          adc_stm32_init, PM_DEVICE_DT_INST_GET(index),     \
-                          &adc_stm32_data_##index, &adc_stm32_cfg_##index,  \
-                          POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,            \
-                          &api_stm32_driver_api);
+DEVICE_DT_INST_DEFINE(index,                                    \
+                      adc_stm32_init, PM_DEVICE_DT_INST_GET(index),    \
+                      &adc_stm32_data_##index, &adc_stm32_cfg_##index, \
+                      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,    \
+                      &api_stm32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_STM32_INIT)
 

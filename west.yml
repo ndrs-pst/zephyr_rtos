@@ -280,7 +280,7 @@ manifest:
       groups:
         - hal
     - name: hal_xtensa
-      revision: ba3f1ce6b066c3e40a8e6cad3fba0068ecfcd4ba
+      revision: 3cc9e3a9360be5c96c956dce84064b85439b6769
       path: modules/hal/xtensa
       groups:
         - hal
@@ -321,7 +321,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 3f93226bd3ee2ea0ae69e6533521a0aac99af03d
+      revision: 9b7755d3d11e31972b4a53ee740e06731c324382
       path: bootloader/mcuboot
       groups:
         - bootloader
