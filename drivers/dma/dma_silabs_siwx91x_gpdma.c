@@ -11,6 +11,8 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include "rsi_gpdma.h"
 #include "rsi_rom_gpdma.h"
 
@@ -59,6 +61,16 @@ struct siwx19x_gpdma_data {
 	struct siwx91x_gpdma_channel_info *chan_info;
 	uint8_t reload_compatible;
 };
+
+static void siwx91x_gpdma_pm_policy_state_lock_get(void)
+{
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+}
+
+static void siwx91x_gpdma_pm_policy_state_lock_put(void)
+{
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+}
 
 static bool siwx91x_gpdma_is_priority_valid(uint32_t channel_priority)
 {
@@ -132,7 +144,7 @@ static int siwx91x_gpdma_desc_config(struct siwx19x_gpdma_data *data,
 				     const struct dma_config *config,
 				     const RSI_GPDMA_DESC_T *xfer_cfg, uint32_t channel)
 {
-	uint16_t max_xfer_size = GPDMA_DESC_MAX_TRANSFER_SIZE - config->source_data_size;
+	int operation_width = config->source_data_size * config->source_burst_length;
 	const struct dma_block_config *block_addr = config->head_block;
 	RSI_GPDMA_DESC_T *cur_desc = NULL;
 	RSI_GPDMA_DESC_T *prev_desc = NULL;
@@ -140,8 +152,14 @@ static int siwx91x_gpdma_desc_config(struct siwx19x_gpdma_data *data,
 	int ret;
 
 	for (int i = 0; i < config->block_count; i++) {
-		if (block_addr->block_size > max_xfer_size) {
-			LOG_ERR("Maximum xfer size should be <= %d\n", max_xfer_size);
+		if (!IS_ALIGNED(block_addr->source_address, config->source_burst_length) ||
+		    !IS_ALIGNED(block_addr->dest_address, config->dest_burst_length) ||
+		    !IS_ALIGNED(block_addr->block_size, operation_width)) {
+			LOG_ERR("Buffer not aligned");
+			goto free_desc;
+		}
+		if (block_addr->block_size >= GPDMA_DESC_MAX_TRANSFER_SIZE) {
+			LOG_ERR("Buffer too large (%d bytes)", block_addr->block_size);
 			goto free_desc;
 		}
 
@@ -215,18 +233,18 @@ static int siwx91x_gpdma_xfer_configure(const struct device *dev, const struct d
 	data->chan_info[channel].xfer_direction = config->channel_direction;
 
 	if (config->dest_data_size != config->source_data_size) {
-		LOG_ERR("Data size mismatch\n");
+		LOG_ERR("Data size mismatch");
 		return -EINVAL;
 	}
 
 	if (config->dest_burst_length != config->source_burst_length) {
-		LOG_ERR("Burst length mismatch\n");
+		LOG_ERR("Burst length mismatch");
 		return -EINVAL;
 	}
 
 	if (config->source_data_size * config->source_burst_length >= GPDMA_MAX_CHANNEL_FIFO_SIZE) {
 		LOG_ERR("FIFO overflow detected: data_size × burst_length = %d >= %d (maximum "
-			"allowed)\n",
+			"allowed)",
 			config->source_data_size * config->source_burst_length,
 			GPDMA_MAX_CHANNEL_FIFO_SIZE);
 		return -EINVAL;
@@ -295,7 +313,7 @@ static int siwx91x_gpdma_configure(const struct device *dev, uint32_t channel,
 	}
 
 	if (!siwx91x_gpdma_is_priority_valid(config->channel_priority)) {
-		LOG_ERR("Invalid priority values: (valid range: 0-3)\n");
+		LOG_ERR("Invalid priority values: (valid range: 0-3)");
 		return -EINVAL;
 	}
 	gpdma_channel_cfg.channelPrio = config->channel_priority;
@@ -346,7 +364,7 @@ static int siwx91x_gpdma_reload(const struct device *dev, uint32_t channel, uint
 	}
 
 	if (size > (GPDMA_DESC_MAX_TRANSFER_SIZE - data_size)) {
-		LOG_ERR("Maximum xfer size should be <= %d\n",
+		LOG_ERR("Maximum xfer size should be <= %d",
 			GPDMA_DESC_MAX_TRANSFER_SIZE - data_size);
 		return -EINVAL;
 	}
@@ -360,13 +378,19 @@ static int siwx91x_gpdma_reload(const struct device *dev, uint32_t channel, uint
 
 static int siwx91x_gpdma_start(const struct device *dev, uint32_t channel)
 {
+	const struct siwx91x_gpdma_config *cfg = dev->config;
 	struct siwx19x_gpdma_data *data = dev->data;
 
 	if (channel >= data->dma_ctx.dma_channels) {
 		return -EINVAL;
 	}
 
+	if (!sys_test_bit((mem_addr_t)&cfg->reg->GLOBAL.DMA_CHNL_ENABLE_REG, channel)) {
+		siwx91x_gpdma_pm_policy_state_lock_get();
+	}
+
 	if (RSI_GPDMA_DMAChannelTrigger(&data->hal_ctx, channel)) {
+		siwx91x_gpdma_pm_policy_state_lock_put();
 		return -EINVAL;
 	}
 
@@ -375,11 +399,16 @@ static int siwx91x_gpdma_start(const struct device *dev, uint32_t channel)
 
 static int siwx91x_gpdma_stop(const struct device *dev, uint32_t channel)
 {
+	const struct siwx91x_gpdma_config *cfg = dev->config;
 	struct siwx19x_gpdma_data *data = dev->data;
 	k_spinlock_key_t key;
 
 	if (channel >= data->dma_ctx.dma_channels) {
 		return -EINVAL;
+	}
+
+	if (sys_test_bit((mem_addr_t)&cfg->reg->GLOBAL.DMA_CHNL_ENABLE_REG, channel)) {
+		siwx91x_gpdma_pm_policy_state_lock_put();
 	}
 
 	if (RSI_GPDMA_AbortChannel(&data->hal_ctx, channel)) {
@@ -428,32 +457,54 @@ bool siwx91x_gpdma_chan_filter(const struct device *dev, int channel, void *filt
 	}
 }
 
-static int siwx91x_gpdma_init(const struct device *dev)
+static int gpdma_siwx91x_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct siwx91x_gpdma_config *cfg = dev->config;
 	struct siwx19x_gpdma_data *data = dev->data;
-	RSI_GPDMA_INIT_T gpdma_init = {
-		.pUserData = NULL,
-		.baseG = (uint32_t)cfg->reg,
-		.baseC = (uint32_t)cfg->channel_reg,
-		.sramBase = (uint32_t)data->desc_pool->buffer,
-	};
-	RSI_GPDMA_HANDLE_T gpdma_handle;
 	int ret;
 
-	ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
-	if (ret) {
-		return ret;
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON: {
+		RSI_GPDMA_INIT_T gpdma_init = {
+			.pUserData = NULL,
+			.baseG = (uint32_t)cfg->reg,
+			.baseC = (uint32_t)cfg->channel_reg,
+			.sramBase = (uint32_t)data->desc_pool->buffer,
+		};
+		RSI_GPDMA_HANDLE_T gpdma_handle;
+
+		ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
+		if (ret < 0 && ret != -EALREADY) {
+			return ret;
+		}
+
+		gpdma_handle = RSI_GPDMA_Init(&data->hal_ctx, &gpdma_init);
+		if (gpdma_handle != &data->hal_ctx) {
+			return -EIO;
+		}
+
+		break;
+	}
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	default:
+		return -ENOTSUP;
 	}
 
-	gpdma_handle = RSI_GPDMA_Init(&data->hal_ctx, &gpdma_init);
-	if (gpdma_handle != &data->hal_ctx) {
-		return -EIO;
-	}
+	return 0;
+}
+
+static int siwx91x_gpdma_init(const struct device *dev)
+{
+	const struct siwx91x_gpdma_config *cfg = dev->config;
 
 	cfg->irq_configure();
 
-	return 0;
+	return pm_device_driver_init(dev, gpdma_siwx91x_pm_action);
 }
 
 static void siwx91x_gpdma_isr(const struct device *dev)
@@ -471,6 +522,7 @@ static void siwx91x_gpdma_isr(const struct device *dev)
 	if (channel_int_status & abort_mask) {
 		RSI_GPDMA_AbortChannel(&data->hal_ctx, channel);
 		cfg->reg->GLOBAL.INTERRUPT_STAT_REG = abort_mask;
+		siwx91x_gpdma_pm_policy_state_lock_put();
 	}
 
 	if (channel_int_status & desc_fetch_mask) {
@@ -491,6 +543,7 @@ static void siwx91x_gpdma_isr(const struct device *dev)
 			data->chan_info[channel].cb(dev, data->chan_info[channel].cb_data, channel,
 						    0);
 		}
+		siwx91x_gpdma_pm_policy_state_lock_put();
 	}
 }
 
@@ -531,8 +584,9 @@ static DEVICE_API(dma, siwx91x_gpdma_api) = {
 		.clock_subsys = (clock_control_subsys_t)DT_INST_PHA(inst, clocks, clkid),          \
 		.irq_configure = siwx91x_gpdma_irq_configure_##inst,                               \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, siwx91x_gpdma_init, NULL, &siwx91x_gpdma_data_##inst,          \
-			      &siwx91x_gpdma_cfg_##inst, POST_KERNEL, CONFIG_DMA_INIT_PRIORITY,    \
-			      &siwx91x_gpdma_api);
+	PM_DEVICE_DT_INST_DEFINE(inst, gpdma_siwx91x_pm_action);                                   \
+	DEVICE_DT_INST_DEFINE(inst, siwx91x_gpdma_init, PM_DEVICE_DT_INST_GET(inst),               \
+			      &siwx91x_gpdma_data_##inst, &siwx91x_gpdma_cfg_##inst, POST_KERNEL,  \
+			      CONFIG_DMA_INIT_PRIORITY, &siwx91x_gpdma_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SIWX91X_GPDMA_INIT)

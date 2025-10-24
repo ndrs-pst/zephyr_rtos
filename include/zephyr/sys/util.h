@@ -448,7 +448,9 @@ extern "C" {
  *     - to generate constant integer, e.g. __aligned(max(4,5))
  *     - static variable, e.g. array like static uint8_t array[max(...)];
  */
-#define max(a, b) _minmax_cnt(Z_INTERNAL_MAX, a, b, __COUNTER__)
+#define z_max(a, b) _minmax_cnt(Z_INTERNAL_MAX, a, b, __COUNTER__)
+#elif defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define z_max(a, b) Z_INTERNAL_MAX(a, b)
 #endif
 
 /** @brief Return larger value of three provided expressions.
@@ -479,7 +481,9 @@ extern "C" {
  * Macro ensures that expressions are evaluated only once. See @ref max for
  * macro limitations.
  */
-#define min(a, b) _minmax_cnt(Z_INTERNAL_MIN, a, b, __COUNTER__)
+#define z_min(a, b) _minmax_cnt(Z_INTERNAL_MIN, a, b, __COUNTER__)
+#elif defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define z_min(a, b) Z_INTERNAL_MIN(a, b)
 #endif
 
 /** @brief Return smaller value of three provided expressions.
@@ -627,13 +631,13 @@ extern "C" {
 #define CLAMP(val, low, high) (((val) <= (low)) ? (low) : Z_INTERNAL_MIN(val, high))
 #endif
 
-#ifndef __cplusplus
+#if !defined(__cplusplus) && !defined(_MSC_VER) /* #CUSTOM@NDRS */
 /** @brief Return a value clamped to a given range.
  *
  * Macro ensures that expressions are evaluated only once. See @ref max for
  * macro limitations.
  */
-#define clamp(val, low, high) ({ \
+#define z_clamp(val, low, high) ({ \
         /* random suffix to avoid naming conflict */    \
         __typeof__(val) _value_val_ = (val);            \
         __typeof__(low) _value_low_ = (low);            \
@@ -642,6 +646,9 @@ extern "C" {
         (_value_val_ > _value_high_) ? _value_high_ :   \
                                        _value_val_;     \
     })
+#elif defined(_MSC_VER) /* #CUSTOM@NDRS */
+/* Fall back to evaluating arguments multiple time due to MSVC limitations */
+#define z_clamp(val, low, high) (((val) <= (low)) ? (low) : Z_INTERNAL_MIN(val, high))
 #endif
 
 /**

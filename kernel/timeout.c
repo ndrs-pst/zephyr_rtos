@@ -77,7 +77,7 @@ static int32_t elapsed(void) {
 }
 
 static int32_t next_timeout(int32_t ticks_elapsed) {
-    struct _timeout* to = first();
+    struct _timeout const* to = first();
     int32_t ret;
 
     if ((to == NULL) ||
@@ -85,7 +85,7 @@ static int32_t next_timeout(int32_t ticks_elapsed) {
         ret = SYS_CLOCK_MAX_WAIT;
     }
     else {
-        ret = (int32_t)MAX(0, (to->dticks - ticks_elapsed));
+        ret = (int32_t)z_max(0, to->dticks - ticks_elapsed);
     }
 
     return (ret);
@@ -119,7 +119,7 @@ k_ticks_t z_add_timeout(struct _timeout* to, _timeout_func_t fn, k_timeout_t tim
         else {
             k_ticks_t dticks = Z_TICK_ABS(timeout.ticks) - curr_tick;
 
-            to->dticks = MAX(1, dticks);
+            to->dticks = z_max(1, dticks);
             ticks = timeout.ticks;
         }
 
@@ -310,7 +310,7 @@ k_timepoint_t sys_timepoint_calc(k_timeout_t timeout) {
         k_ticks_t dt = timeout.ticks;
 
         if (Z_IS_TIMEOUT_RELATIVE(timeout)) {
-            timepoint.tick = sys_clock_tick_get() + MAX(1, dt);
+            timepoint.tick = sys_clock_tick_get() + z_max(1, dt);
         }
         else {
             timepoint.tick = Z_TICK_ABS(dt);

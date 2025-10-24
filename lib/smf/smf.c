@@ -20,8 +20,8 @@ LOG_MODULE_REGISTER(smf);
 #define SMF_HANDLED     BIT(3)
 
 #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
-static bool share_parent(struct smf_state const* test_state,
-                         struct smf_state const* target_state) {
+static bool is_descendant_of(struct smf_state const* test_state,
+                             struct smf_state const* target_state) {
     for (struct smf_state const* state = test_state;
          state != NULL;
          state = state->parent) {
@@ -64,7 +64,7 @@ static const struct smf_state* get_lca_of(struct smf_state const* source,
          ancestor != NULL;
          ancestor = ancestor->parent) {
         /* First common ancestor */
-        if (share_parent(dest, ancestor)) {
+        if (is_descendant_of(dest, ancestor)) {
             return (ancestor);
         }
     }
@@ -285,11 +285,11 @@ void smf_set_state(struct smf_ctx* const ctx, const struct smf_state* new_state)
     #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
     const struct smf_state* topmost;
 
-    if (share_parent(ctx->executing, new_state)) {
+    if (is_descendant_of(ctx->executing, new_state)) {
         /* new state is a parent of where we are now*/
         topmost = new_state;
     }
-    else if (share_parent(new_state, ctx->executing)) {
+    else if (is_descendant_of(new_state, ctx->executing)) {
         /* we are a parent of the new state */
         topmost = ctx->executing;
     }

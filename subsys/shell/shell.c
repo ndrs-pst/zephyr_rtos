@@ -328,7 +328,7 @@ static void find_completion_candidates(const struct shell* sh,
         is_candidate = is_completion_candidate(candidate->syntax,
                                                incompl_cmd, incompl_cmd_len);
         if (is_candidate) {
-            *longest = max(strlen(candidate->syntax), *longest);
+            *longest = z_max(strlen(candidate->syntax), *longest);
             if (*cnt == 0) {
                 *first_idx = idx;
             }

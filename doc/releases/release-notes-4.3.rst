@@ -42,6 +42,8 @@ Security Vulnerability Related
 ******************************
 The following CVEs are addressed by this release:
 
+* :cve:`2025-12035`: Under embargo until 2025-12-13
+
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 
@@ -87,6 +89,9 @@ Deprecated APIs and options
 
 * :c:func:`bt_ctlr_set_public_addr` is deprecated in favor of using
   :c:struct:`bt_hci_cp_vs_write_bd_addr` for setting the public Bluetooth device address.
+
+* :kconfig:option:`CONFIG_JWT_SIGN_RSA_LEGACY` is deprecated. Please switch to the
+  PSA Crypto API based alternative (i.e. :kconfig:option:`CONIFG_JWT_SIGN_RSA_PSA`).
 
 New APIs and options
 ====================
@@ -308,6 +313,12 @@ New APIs and options
 * Toolchain
 
   * :c:macro:`__deprecated_version`
+
+* USB
+
+  * Video
+
+    * :c:func:`uvc_add_format`
 
 * Video
 

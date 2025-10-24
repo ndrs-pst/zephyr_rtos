@@ -169,7 +169,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 78fb21d5bcd88adcc787fff9591da6975c80c5eb
+      revision: 2927aae9bfca44208032ae93f2e61ff819e21feb
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -210,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: e90145f870a77acf4fe15f1b22e121e57528bf9a
+      revision: 0194ce75786f08a20fb6399917b399aee8abd59d
       path: modules/hal/nxp
       groups:
         - hal
@@ -226,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: f6950ff142a5a28950c97d818d5b8ec1d3c85ba5
+      revision: fbe4b815ab838a13d24f1d3fc963846ff18c6b0e
       groups:
         - hal
     - name: hal_rpi_pico
@@ -240,7 +240,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 971c39bee2a1bcd2a31caf78606820059a585157
+      revision: 71dbef43427bf0c6c64ef20be777f6d060524e82
       path: modules/hal/silabs
       groups:
         - hal
@@ -275,7 +275,7 @@ manifest:
       groups:
         - hal
     - name: hal_wurthelektronik
-      revision: e3e2797b224fc48fdef1bc3e5a12a7c73108bba2
+      revision: 7c1297ea071d03289112eb24e789c89c7095c0a2
       path: modules/hal/wurthelektronik
       groups:
         - hal
@@ -316,7 +316,7 @@ manifest:
       revision: b03edc8e6282a963cd312cd0b409eb5ce263ea75
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: 2994b29fcae7e1d7fc6b8f38d9f922032ee90e6e
+      revision: f4c0283ca55fc4085815d4793a26e19f20be2f97
       path: modules/crypto/mbedtls
       groups:
         - crypto
