@@ -139,7 +139,7 @@ manifest:
       groups:
         - tools
     - name: fatfs
-      revision: a1d1ab945ab5da6e62f60142ab170d74b1ba4023
+      revision: 79df0453c1652cae50949f11bde2d2e541159955
       path: modules/fs/fatfs
       groups:
         - fs
@@ -185,7 +185,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 58ce131beba8ad94e58837b7d0f5e31a7894790a
+      revision: f3c571f772209b5970bdd1806da641244b5c4c38
       path: modules/hal/infineon
       groups:
         - hal
@@ -210,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 0194ce75786f08a20fb6399917b399aee8abd59d
+      revision: a2e48bd3879d58f731f3075d8d8e29faaef6cfa4
       path: modules/hal/nxp
       groups:
         - hal
@@ -286,7 +286,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 3ec675be30c25b56cc0e7dbd5bd931a87d32937e
+      revision: ca77ec50a01a09b8bf149160308736b6b5741f12
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
