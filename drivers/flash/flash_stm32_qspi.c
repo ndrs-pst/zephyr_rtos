@@ -719,6 +719,7 @@ static int qspi_read_status_register(struct device const* dev, uint8_t reg_num,
 static int qspi_write_status_register(struct device const* dev, uint8_t reg_num,
                                       struct flash_reg* reg) {
     struct flash_stm32_qspi_data* dev_data = dev->data;
+    enum jesd216_dw15_qer_type qer_type = dev_data->qer_type;
     size_t size;
     struct flash_reg regs[4] = {0};
     struct flash_reg* regs_p;
@@ -735,7 +736,7 @@ static int qspi_write_status_register(struct device const* dev, uint8_t reg_num,
         memcpy(&regs[0], reg, sizeof(struct flash_reg));
         regs_p = &regs[0];
         /* 1 byte write clears SR2, write SR2 as well */
-        if (dev_data->qer_type == JESD216_DW15_QER_S2B1v1) {
+        if (qer_type == JESD216_DW15_QER_S2B1v1) {
             ret = qspi_read_status_register(dev, 2, &regs[1]);
             if (ret < 0) {
                 return (ret);
@@ -749,9 +750,9 @@ static int qspi_write_status_register(struct device const* dev, uint8_t reg_num,
         memcpy(&regs[1], reg, sizeof(struct flash_reg));
         regs_p = &regs[1];
         /* if SR2 write needs SR1 */
-        if ((dev_data->qer_type == JESD216_DW15_QER_VAL_S2B1v1) ||
-            (dev_data->qer_type == JESD216_DW15_QER_VAL_S2B1v4) ||
-            (dev_data->qer_type == JESD216_DW15_QER_VAL_S2B1v5)) {
+        if ((qer_type == JESD216_DW15_QER_VAL_S2B1v1) ||
+            (qer_type == JESD216_DW15_QER_VAL_S2B1v4) ||
+            (qer_type == JESD216_DW15_QER_VAL_S2B1v5)) {
             ret = qspi_read_status_register(dev, 1, &regs[0]);
             if (ret < 0) {
                 return (ret);
@@ -771,7 +772,9 @@ static int qspi_write_status_register(struct device const* dev, uint8_t reg_num,
         return (-EINVAL);
     }
 
-    return qspi_write_access(dev, &cmd, (uint8_t *)regs_p, size);
+    ret = qspi_write_access(dev, &cmd, (uint8_t *)regs_p, size);
+
+    return (ret);
 }
 
 static int qspi_wait_until_ready(struct device const* dev) {
@@ -780,7 +783,7 @@ static int qspi_wait_until_ready(struct device const* dev) {
 
     do {
         ret = qspi_read_status_register(dev, 1, &reg);
-    } while (!ret && !flash_reg_is_clear_for_all(&reg, SPI_NOR_WIP_BIT));
+    } while ((ret == 0) && !flash_reg_is_clear_for_all(&reg, SPI_NOR_WIP_BIT));
 
     return (ret);
 }
@@ -1772,14 +1775,15 @@ static int flash_stm32_qspi_mdma_init(struct flash_stm32_qspi_data* dev_data) {
      * the minimum information to inform the DMA slot will be in used and
      * how to route callbacks.
      */
-    struct dma_config dma_cfg = dev_data->dma.cfg;
+    struct stm32_dma_stream* dma = &dev_data->dma;
+    struct dma_config dma_cfg = dma->cfg;
     static MDMA_HandleTypeDef hmdma;
     bool is_ready;
     int ret;
 
-    is_ready = device_is_ready(dev_data->dma.dev);
+    is_ready = device_is_ready(dma->dev);
     if (is_ready == false) {
-        LOG_ERR("%s device not ready", dev_data->dma.dev->name);
+        LOG_ERR("%s device not ready", dma->dev->name);
         return (-ENODEV);
     }
 
@@ -1787,7 +1791,7 @@ static int flash_stm32_qspi_mdma_init(struct flash_stm32_qspi_data* dev_data) {
     dma_cfg.user_data = &hmdma;
     /* HACK: This field is used to inform driver that it is overridden */
     dma_cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
-    ret = dma_config(dev_data->dma.dev, dev_data->dma.channel, &dma_cfg);
+    ret = dma_config(dma->dev, dma->channel, &dma_cfg);
     if (ret != 0) {
         return (ret);
     }
@@ -1822,7 +1826,7 @@ static int flash_stm32_qspi_mdma_init(struct flash_stm32_qspi_data* dev_data) {
     hmdma.Init.SourceBlockAddressOffset = 0;
     hmdma.Init.DestBlockAddressOffset = 0;
 
-    hmdma.Instance = LL_MDMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg, dev_data->dma.channel);
+    hmdma.Instance = LL_MDMA_GET_CHANNEL_INSTANCE(dma->reg, dma->channel);
 
     /* Initialize DMA HAL */
     __HAL_LINKDMA(&dev_data->hqspi, hmdma, hmdma);
@@ -1855,12 +1859,13 @@ static int flash_stm32_qspi_dma_init(struct flash_stm32_qspi_data* dev_data) {
      * the minimum information to inform the DMA slot will be in used and
      * how to route callbacks.
      */
-    struct dma_config dma_cfg = dev_data->dma.cfg;
+    struct stm32_dma_stream* dma = &dev_data->dma;
+    struct dma_config dma_cfg = dma->cfg;
     static DMA_HandleTypeDef hdma;
     int ret;
 
-    if (!device_is_ready(dev_data->dma.dev)) {
-        LOG_ERR("%s device not ready", dev_data->dma.dev->name);
+    if (!device_is_ready(dma->dev)) {
+        LOG_ERR("%s device not ready", dma->dev->name);
         return (-ENODEV);
     }
 
@@ -1868,7 +1873,7 @@ static int flash_stm32_qspi_dma_init(struct flash_stm32_qspi_data* dev_data) {
     dma_cfg.user_data = &hdma;
     /* HACK: This field is used to inform driver that it is overridden */
     dma_cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
-    ret = dma_config(dev_data->dma.dev, dev_data->dma.channel, &dma_cfg);
+    ret = dma_config(dma->dev, dma->channel, &dma_cfg);
     if (ret != 0) {
         return (ret);
     }
@@ -1887,7 +1892,7 @@ static int flash_stm32_qspi_dma_init(struct flash_stm32_qspi_data* dev_data) {
     hdma.Init.MemInc    = DMA_MINC_ENABLE;
     hdma.Init.Mode      = DMA_NORMAL;
     hdma.Init.Priority  = table_priority[dma_cfg.channel_priority];
-    hdma.Instance       = STM32_DMA_GET_INSTANCE(dev_data->dma.reg, dev_data->dma.channel);
+    hdma.Instance       = STM32_DMA_GET_INSTANCE(dma->reg, dma->channel);
     #ifdef CONFIG_DMA_STM32_V1
     /* TODO: Not tested in this configuration */
     hdma.Init.Channel = dma_cfg.dma_slot;
