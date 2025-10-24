@@ -20,6 +20,7 @@
 #include <zephyr/init.h>
 #include <zephyr/toolchain.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_cache.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
@@ -565,11 +566,12 @@ static void adc_stm32_calibration_start(const struct device* dev, bool single_en
          */
         if ((dev_id != 0x482UL) && (rev_id != 0x2001UL)) {
             adc_stm32_enable(adc);
-            MODIFY_REG(adc->CR, ADC_CR_CALINDEX, 0x9UL << ADC_CR_CALINDEX_Pos);
+            stm32_reg_modify_bits(&adc->CR, ADC_CR_CALINDEX,
+                                  0x9UL << ADC_CR_CALINDEX_Pos);
             __DMB();
-            MODIFY_REG(adc->CALFACT2, 0xFFFFFF00UL, 0x03021100UL);
+            stm32_reg_modify_bits(&adc->CALFACT2, 0xFFFFFF00UL, 0x03021100UL);
             __DMB();
-            SET_BIT(adc->CALFACT, ADC_CALFACT_LATCH_COEF);
+            stm32_reg_set_bits(&adc->CALFACT, ADC_CALFACT_LATCH_COEF);
             adc_stm32_disable(adc);
         }
     }
@@ -864,10 +866,10 @@ static uint8_t get_reg_value(const struct device* dev, uint32_t reg,
 static void set_reg_value(const struct device* dev, uint32_t reg,
                           uint32_t shift, uint32_t mask, uint32_t value) {
     const struct adc_stm32_cfg* config = dev->config;
+    size_t reg32_offset = reg / sizeof(uint32_t);
+    volatile uint32_t* addr = (volatile uint32_t*)config->base + reg32_offset;
 
-    uintptr_t addr = (uintptr_t)config->base + reg;
-
-    MODIFY_REG(*(volatile uint32_t*)addr, (mask << shift), (value << shift));
+    stm32_reg_modify_bits(addr, (mask << shift), (value << shift));
 }
 
 static int set_resolution(const struct device* dev,
@@ -1688,9 +1690,9 @@ static int adc_stm32_init(const struct device* dev) {
     #if ANY_ADC_INTERNAL_REGULATOR_TYPE_IS(INTERNAL_REGULATOR_STARTUP_HW_STATUS)
     if (config->internal_regulator == INTERNAL_REGULATOR_STARTUP_HW_STATUS) {
         while (LL_ADC_IsActiveFlag_LDORDY(adc) == 0) {
-		    if (IS_ENABLED(__GTEST)) {
-			    break;
-		    }
+            if (IS_ENABLED(__GTEST)) {
+                break;
+            }
         }
     }
     #endif /* ANY_ADC_INTERNAL_REGULATOR_TYPE_IS(INTERNAL_REGULATOR_STARTUP_HW_STATUS) */
