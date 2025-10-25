@@ -180,7 +180,7 @@ manifest:
       groups:
         - hal
     - name: hal_gigadevice
-      revision: 2994b7dde8b0b0fa9b9c0ccb13474b6a486cddc3
+      revision: ee0e31302c21b2a465dc303b3ced8c606c2167c8
       path: modules/hal/gigadevice
       groups:
         - hal
@@ -195,7 +195,7 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: ac9c1231020d29aa0285a4e63b66f465b3942eed
+      revision: 89754d87258945ceb1cff8ecee0ddd8852396ae8
       path: modules/hal/microchip
       groups:
         - hal
@@ -334,7 +334,7 @@ manifest:
       revision: 7307ce399b81ddcb3c3a5dc862c52d4754328d38
       path: modules/lib/nanopb
     - name: net-tools
-      revision: 2750d71e28e48865a6fd8a10413f978bb216c59e
+      revision: 64d7acc661ae2772282570f21beab85d02f2f35c
       path: tools/net-tools
       groups:
         - tools
@@ -357,7 +357,7 @@ manifest:
         - debug
     - name: picolibc
       path: modules/lib/picolibc
-      revision: 560946f26db075c296beea5b39d99e6de43c9010
+      revision: ca8b6ebba5226a75545e57a140443168a26ba664
     - name: segger
       revision: 9f08435a79d41133d7046b7c59d1b25929eda450
       path: modules/debug/segger
@@ -369,7 +369,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 62ad723311da2cac938e2ae88bafe9e815b3b248
+      revision: 94691a2ed0d9a2802b3419eaa91958329c36871b
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
