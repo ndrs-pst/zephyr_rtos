@@ -461,9 +461,9 @@ static int dma_mcux_edma_configure_basic(const struct device *dev,
 {
 	edma_handle_t *p_handle = DEV_EDMA_HANDLE(dev, channel);
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
-	struct dma_mcux_channel_transfer_edma_settings *xfer_settings = &data->transfer_settings;
-	struct dma_block_config *block_config = config->head_block;
-	uint32_t hw_channel;
+	struct dma_mcux_channel_transfer_edma_settings const* xfer_settings = &data->transfer_settings;
+	struct dma_block_config const* block_config = config->head_block;
+	uint32_t hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
 	int ret = 0;
 
 	/* block_count shall be 1 */
@@ -491,9 +491,9 @@ static int dma_mcux_edma_configure_basic(const struct device *dev,
 static int dma_mcux_edma_configure_hardware(const struct device *dev, uint32_t channel,
 					     struct dma_config *config)
 {
-	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+	struct call_back const* data = DEV_CHANNEL_DATA(dev, channel);
 	edma_transfer_type_t transfer_type = data->transfer_settings.transfer_type;
-	struct dma_block_config *block_config = config->head_block;
+	struct dma_block_config const* block_config = config->head_block;
 	bool sg_mode = block_config->source_gather_en || block_config->dest_scatter_en;
 	uint32_t hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
 
@@ -545,12 +545,12 @@ static inline int dma_mcux_edma_validate_cfg(const struct device *dev,
 	uint32_t slot = config->dma_slot;
 	edma_transfer_type_t *type = &data->transfer_settings.transfer_type;
 
-	if (slot >= DEV_CFG(dev)->dma_requests) {
+	if (slot >= (uint32_t)DEV_CFG(dev)->dma_requests) {
 		LOG_ERR("source number is out of scope %d", slot);
 		return -ENOTSUP;
 	}
 
-	if (channel >= DEV_CFG(dev)->dma_channels) {
+	if (channel >= (uint32_t)DEV_CFG(dev)->dma_channels) {
 		LOG_ERR("out of DMA channel %d", channel);
 		return -EINVAL;
 	}
@@ -766,8 +766,8 @@ static void dma_mcux_edma_update_hw_tcd(const struct device *dev, uint32_t chann
 {
 	EDMA_HW_TCD_SADDR(dev, channel) = EDMA_MMAP_ADDR(src);
 	EDMA_HW_TCD_DADDR(dev, channel) = EDMA_MMAP_ADDR(dst);
-	EDMA_HW_TCD_BITER(dev, channel) = size;
-	EDMA_HW_TCD_CITER(dev, channel) = size;
+	EDMA_HW_TCD_BITER(dev, channel) = (uint16_t)size;
+	EDMA_HW_TCD_CITER(dev, channel) = (uint16_t)size;
 	EDMA_HW_TCD_CSR(dev, channel) |= DMA_CSR_DREQ(1U);
 }
 
@@ -800,8 +800,8 @@ static int edma_reload_loop(const struct device *dev, uint32_t channel,
 
 	EDMA_TCD_SADDR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) = EDMA_MMAP_ADDR(src);
 	EDMA_TCD_DADDR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) = EDMA_MMAP_ADDR(dst);
-	EDMA_TCD_BITER(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) = size;
-	EDMA_TCD_CITER(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) = size;
+	EDMA_TCD_BITER(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) = (uint16_t)size;
+	EDMA_TCD_CITER(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) = (uint16_t)size;
 	/* Enable automatically stop */
 	EDMA_TCD_CSR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) |= DMA_CSR_DREQ(1U);
 	sw_id = EDMA_TCD_DLAST_SGA(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev)));
@@ -818,7 +818,7 @@ static int edma_reload_loop(const struct device *dev, uint32_t channel,
 	 * minor loop burst completes.
 	 */
 	while (EDMA_HW_TCD_CSR(dev, channel) & EDMA_HW_TCD_CH_ACTIVE_MASK) {
-		;
+		/* pass */
 	}
 
 	/* Identify the current active TCD.  Use DLAST_SGA as the HW ID */
@@ -1140,7 +1140,12 @@ static int dma_mcux_edma_init(const struct device *dev)
 /* no cache means no worries */
 #define EDMA_TCDPOOL_CACHE_ATTR
 #elif defined(CONFIG_DMA_MCUX_USE_DTCM_FOR_DMA_DESCRIPTORS)
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 #define EDMA_TCDPOOL_CACHE_ATTR __dtcm_noinit_section
+#else
+#pragma section(".dtcm_noinit", read, write, nopage)
+#define EDMA_TCDPOOL_CACHE_ATTR __declspec(allocate(".dtcm_noinit"))
+#endif
 #elif defined(CONFIG_NOCACHE_MEMORY)
 #define EDMA_TCDPOOL_CACHE_ATTR __nocache
 #else

@@ -944,7 +944,7 @@ static DEVICE_API(pwm, pwm_nxp_s32_driver_api) = {
 	};											\
 	const eMios_Icu_Ip_ConfigType emios_pwm_##n##_capture_info = {				\
 		.nNumChannels = ARRAY_SIZE(emios_pwm_##n##_capture_init),			\
-		.pChannelsConfig = &emios_pwm_##n##_capture_init,				\
+		.pChannelsConfig = (const eMios_Icu_Ip_ChannelConfigType(*)[])&emios_pwm_##n##_capture_init, \
 	};
 
 #define EMIOS_PWM_PULSE_CAPTURE_GET_CONFIG(n)							\

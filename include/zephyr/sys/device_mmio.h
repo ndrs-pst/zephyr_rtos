@@ -362,8 +362,8 @@ struct z_device_mmio_rom {
  *
  * @param name Member name to use to store within dev_data.
  */
-#ifdef DEVICE_MMIO_IS_IN_RAM
-#define DEVICE_MMIO_NAMED_RAM(name)	mm_reg_t name
+#if defined(DEVICE_MMIO_IS_IN_RAM) || defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define DEVICE_MMIO_NAMED_RAM(name) mm_reg_t name
 #else
 #define DEVICE_MMIO_NAMED_RAM(name)
 #endif /* DEVICE_MMIO_IS_IN_RAM */
