@@ -159,7 +159,7 @@ static int nxp_siul2_gpio_port_set_bits_raw(const struct device* port,
     uint16_t reg_val;
 
     reg_val = GPIO_READ(SIUL2_PGPDO);
-    reg_val |= reverse_bits_16(pins);
+    reg_val |= reverse_bits_16((uint16_t)pins);
     GPIO_WRITE(SIUL2_PGPDO, reg_val);
 
     return (0);
@@ -171,7 +171,7 @@ static int nxp_siul2_gpio_port_clear_bits_raw(const struct device* port,
     uint16_t reg_val;
 
     reg_val = GPIO_READ(SIUL2_PGPDO);
-    reg_val &= ~reverse_bits_16(pins);
+    reg_val &= ~reverse_bits_16((uint16_t)pins);
     GPIO_WRITE(SIUL2_PGPDO, reg_val);
 
     return (0);
@@ -183,7 +183,7 @@ static int nxp_siul2_gpio_port_toggle_bits(const struct device* port,
     uint16_t reg_val;
 
     reg_val = GPIO_READ(SIUL2_PGPDO);
-    reg_val ^= reverse_bits_16(pins);
+    reg_val ^= reverse_bits_16((uint16_t)pins);
     GPIO_WRITE(SIUL2_PGPDO, reg_val);
 
     return (0);
@@ -193,9 +193,7 @@ static int nxp_siul2_gpio_port_toggle_bits(const struct device* port,
 
 static uint8_t nxp_siul2_gpio_pin_to_line(const struct gpio_nxp_siul2_irq_config* irq_cfg,
                                           uint8_t pin) {
-    uint8_t i;
-
-    for (i = 0; i < irq_cfg->map_cnt; i++) {
+    for (size_t i = 0U; i < irq_cfg->map_cnt; i++) {
         if (irq_cfg->map[i].pin == pin) {
             return irq_cfg->map[i].line;
         }
@@ -577,7 +575,7 @@ static DEVICE_API(gpio, gpio_nxp_siul2_driver_api) = {
 #define GPIO_NXP_SIUL2_DEVICE_INIT(n)                                   \
     GPIO_NXP_SIUL2_SET_EIRQ_INFO(n)                                     \
     GPIO_NXP_SIUL2_SET_WKPU_INFO(n)                                     \
-    static const struct gpio_nxp_siul2_config gpio_nxp_siul2_config_##n = { \
+    static struct gpio_nxp_siul2_config DT_CONST gpio_nxp_siul2_config_##n = { \
         .common = {                                                     \
             .port_pin_mask = GPIO_NXP_SIUL2_PORT_PIN_MASK(n),           \
         },                                                              \
@@ -600,3 +598,76 @@ static DEVICE_API(gpio, gpio_nxp_siul2_driver_api) = {
                           &gpio_nxp_siul2_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_NXP_SIUL2_DEVICE_INIT)
+
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+#define S32K3_GPIO_CFG_REG_INIT(id) \
+    zephyr_gtest_gpio_s32k3_sub(DEVICE_DT_GET(DT_DRV_INST(id)));
+
+void zephyr_gtest_gpio_s32k3_sub(struct device const* dev) {
+    int rc;
+
+    rc = dev->ops.init(dev);
+    if (rc == 0) {
+        dev->state->initialized = true;
+        dev->state->init_res = 0U;
+    }
+}
+
+void zephyr_gtest_gpio_s32k3(void) {
+    /* gpioa_l */
+    gpio_nxp_siul2_config_0.gpio_base = (mem_addr_t)ut_mcu_gpioa_l_pgp_ptr;
+    gpio_nxp_siul2_config_0.port_base = (mem_addr_t)ut_mcu_porta_l_mscr_ptr;
+
+    /* gpioa_h */
+    gpio_nxp_siul2_config_1.gpio_base = (mem_addr_t)ut_mcu_gpioa_h_pgp_ptr;
+    gpio_nxp_siul2_config_1.port_base = (mem_addr_t)ut_mcu_porta_h_mscr_ptr;
+
+    /* gpiob_l */
+    gpio_nxp_siul2_config_2.gpio_base = (mem_addr_t)ut_mcu_gpiob_l_pgp_ptr;
+    gpio_nxp_siul2_config_2.port_base = (mem_addr_t)ut_mcu_portb_l_mscr_ptr;
+
+    /* gpiob_h */
+    gpio_nxp_siul2_config_3.gpio_base = (mem_addr_t)ut_mcu_gpiob_h_pgp_ptr;
+    gpio_nxp_siul2_config_3.port_base = (mem_addr_t)ut_mcu_portb_h_mscr_ptr;
+
+    /* gpioc_l */
+    gpio_nxp_siul2_config_4.gpio_base = (mem_addr_t)ut_mcu_gpioc_l_pgp_ptr;
+    gpio_nxp_siul2_config_4.port_base = (mem_addr_t)ut_mcu_portc_l_mscr_ptr;
+
+    /* gpioc_h */
+    gpio_nxp_siul2_config_5.gpio_base = (mem_addr_t)ut_mcu_gpioc_h_pgp_ptr;
+    gpio_nxp_siul2_config_5.port_base = (mem_addr_t)ut_mcu_portc_h_mscr_ptr;
+
+    /* gpiod_l */
+    gpio_nxp_siul2_config_6.gpio_base = (mem_addr_t)ut_mcu_gpiod_l_pgp_ptr;
+    gpio_nxp_siul2_config_6.port_base = (mem_addr_t)ut_mcu_portd_l_mscr_ptr;
+
+    /* gpiod_h */
+    gpio_nxp_siul2_config_7.gpio_base = (mem_addr_t)ut_mcu_gpiod_h_pgp_ptr;
+    gpio_nxp_siul2_config_7.port_base = (mem_addr_t)ut_mcu_portd_h_mscr_ptr;
+
+    /* gpioe_l */
+    gpio_nxp_siul2_config_8.gpio_base = (mem_addr_t)ut_mcu_gpioe_l_pgp_ptr;
+    gpio_nxp_siul2_config_8.port_base = (mem_addr_t)ut_mcu_porte_l_mscr_ptr;
+
+    /* gpioe_h */
+    gpio_nxp_siul2_config_9.gpio_base = (mem_addr_t)ut_mcu_gpioe_h_pgp_ptr;
+    gpio_nxp_siul2_config_9.port_base = (mem_addr_t)ut_mcu_porte_h_mscr_ptr;
+
+    #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpiof_l))
+    gpio_nxp_siul2_config_10.gpio_base = (mem_addr_t)ut_mcu_gpiof_l_pgp_ptr;
+    gpio_nxp_siul2_config_10.port_base = (mem_addr_t)ut_mcu_portf_l_mscr_ptr;
+    #endif
+
+    #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpiof_h))
+    gpio_nxp_siul2_config_11.gpio_base = (mem_addr_t)ut_mcu_gpiof_h_pgp_ptr;
+    gpio_nxp_siul2_config_11.port_base = (mem_addr_t)ut_mcu_portf_h_mscr_ptr;
+    #endif
+
+    DT_INST_FOREACH_STATUS_OKAY(S32K3_GPIO_CFG_REG_INIT)
+}
+
+#endif
+
