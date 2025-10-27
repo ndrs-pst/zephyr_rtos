@@ -1439,7 +1439,7 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 	static void mcux_flexcan_irq_enable_##id(void); \
 	static void mcux_flexcan_irq_disable_##id(void); \
 									\
-	static const struct mcux_flexcan_config mcux_flexcan_config_##id = { \
+	static struct mcux_flexcan_config DT_CONST mcux_flexcan_config_##id = { \
 		DEVICE_MMIO_NAMED_ROM_INIT(flexcan_mmio, DT_DRV_INST(id)),	\
 		.common = CAN_DT_DRIVER_CONFIG_INST_GET(id, 0, FLEXCAN_MAX_BITRATE(id)), \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	\
@@ -1479,3 +1479,59 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(FLEXCAN_DEVICE_INIT_MCUX)
+
+#if (__GTEST == 1U) /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+#define S32K3_CAN_CFG_REG_INIT(id) \
+    zephyr_gtest_can_s32k3_reg_init(DEVICE_DT_GET(DT_DRV_INST(id)), \
+                                    &mcux_flexcan_data_##id, \
+                                    &mcux_flexcan_config_##id);
+
+void zephyr_gtest_can_s32k3_reg_init(const struct device* dev,
+                                     struct mcux_flexcan_data* data,
+                                     struct mcux_flexcan_config* cfg) {
+    mem_addr_t base_addr = cfg->flexcan_mmio.addr;
+    int rc;
+
+    switch (base_addr) {
+        case 0x40304000U : // flexcan0: can@40304000
+            cfg->flexcan_mmio.addr = (mm_reg_t)ut_mcu_flexcan_0_area;
+            break;
+
+        case 0x40308000U : // flexcan1: can@40308000
+            cfg->flexcan_mmio.addr = (mm_reg_t)ut_mcu_flexcan_1_area;
+            break;
+
+        case 0x4030C000U : // flexcan2: can@4030C000
+            cfg->flexcan_mmio.addr = (mm_reg_t)ut_mcu_flexcan_2_area;
+            break;
+
+        case 0x40310000U : // flexcan3: can@40310000
+            cfg->flexcan_mmio.addr = (mm_reg_t)ut_mcu_flexcan_3_area;
+            break;
+
+        case 0x40314000U : // flexcan4: can@40314000
+            cfg->flexcan_mmio.addr = (mm_reg_t)ut_mcu_flexcan_4_area;
+            break;
+
+        case 0x40318000U : // flexcan5: can@40318000
+            cfg->flexcan_mmio.addr = (mm_reg_t)ut_mcu_flexcan_5_area;
+            break;
+
+        default: {
+            break;
+        }
+    }
+
+    rc = dev->ops.init(dev);
+    if (rc == 0) {
+        dev->state->initialized = true;
+        dev->state->init_res = 0U;
+    }
+}
+
+void zephyr_gtest_can_s32k3(void) {
+    DT_INST_FOREACH_STATUS_OKAY(S32K3_CAN_CFG_REG_INIT);
+}
+#endif
