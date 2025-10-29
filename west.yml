@@ -210,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 556d70f2cf5e72925dbd44f9403431432bcc8007
+      revision: 0e022643b36454cbdf9a6514c059fd0721aed0c8
       path: modules/hal/nxp
       groups:
         - hal
@@ -226,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: fbe4b815ab838a13d24f1d3fc963846ff18c6b0e
+      revision: 62136a8ff8a2e644b72f0dc902d33b397991cace
       groups:
         - hal
     - name: hal_rpi_pico

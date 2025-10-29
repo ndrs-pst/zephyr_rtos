@@ -73,7 +73,7 @@ Deprecated APIs and options
 ===========================
 
 * :dtcompatible:`maxim,ds3231` is deprecated in favor of :dtcompatible:`maxim,ds3231-rtc`.
-* Providing a third agument to :c:macro:`SPI_CONFIG_DT`, :c:macro:`SPI_CONFIG_DT_INST`,
+* Providing a third argument to :c:macro:`SPI_CONFIG_DT`, :c:macro:`SPI_CONFIG_DT_INST`,
   :c:macro:`SPI_DT_SPEC_GET`, :c:macro:`SPI_DT_SPEC_INST_GET` is deprecated. Providing a
   second argument to :c:macro:`SPI_CS_CONTROL_INIT` is deprecated. Use new DT properties
   ``spi-cs-setup-delay-ns`` and ``spi-cs-hold-delay-ns`` to specify delay instead.
@@ -178,6 +178,45 @@ New APIs and options
 * Haptics
 
   * :kconfig:option:`CONFIG_HAPTICS_SHELL`
+
+* Instrumentation subsystem
+
+  * Introduced instrumentation subsystem
+
+    * :kconfig:option:`CONFIG_INSTRUMENTATION`
+    * :kconfig:option:`CONFIG_INSTRUMENTATION_MODE_CALLGRAPH`
+    * :kconfig:option:`CONFIG_INSTRUMENTATION_MODE_CALLGRAPH_BUFFER_SIZE`
+    * :kconfig:option:`CONFIG_INSTRUMENTATION_MODE_CALLGRAPH_BUFFER_OVERWRITE`
+    * :kconfig:option:`CONFIG_INSTRUMENTATION_MODE_STATISTICAL`
+    * :kconfig:option:`CONFIG_INSTRUMENTATION_MODE_STATISTICAL_MAX_NUM_FUNC`
+    * :kconfig:option:`CONFIG_INSTRUMENTATION_MODE_STATISTICAL_MAX_CALL_DEPTH`
+    * :kconfig:option:`CONFIG_INSTRUMENTATION_TRIGGER_FUNCTION`
+    * :kconfig:option:`CONFIG_INSTRUMENTATION_STOPPER_FUNCTION`
+    * :kconfig:option:`CONFIG_INSTRUMENTATION_EXCLUDE_FUNCTION_LIST`
+    * :kconfig:option:`CONFIG_INSTRUMENTATION_EXCLUDE_FILE_LIST`
+    * :c:struct:`instr_header`
+    * :c:struct:`instr_event_context`
+    * :c:struct:`instr_record`
+    * :c:func:`instr_tracing_supported`
+    * :c:func:`instr_profiling_supported`
+    * :c:func:`instr_fundamentals_initialized`
+    * :c:func:`instr_init`
+    * :c:func:`instr_initialized`
+    * :c:func:`instr_enabled`
+    * :c:func:`instr_enable`
+    * :c:func:`instr_disable`
+    * :c:func:`instr_turn_on`
+    * :c:func:`instr_turn_off`
+    * :c:func:`instr_turned_on`
+    * :c:func:`instr_trace_enabled`
+    * :c:func:`instr_profile_enabled`
+    * :c:func:`instr_dump_buffer_uart`
+    * :c:func:`instr_dump_deltas_uart`
+    * :c:func:`instr_event_handler`
+    * :c:func:`instr_set_trigger_func`
+    * :c:func:`instr_set_stop_func`
+    * :c:func:`instr_get_trigger_func`
+    * :c:func:`instr_get_stop_func`
 
 * Kernel
 
