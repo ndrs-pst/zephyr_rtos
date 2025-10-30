@@ -2102,7 +2102,6 @@ static DEVICE_API(cellular, modem_cellular_api) = {
     .set_callback = modem_cellular_set_callback,
 };
 
-#ifdef CONFIG_PM_DEVICE
 static int modem_cellular_pm_action(const struct device* dev, enum pm_device_action action) {
     struct modem_cellular_data* data = dev->data;
     int ret;
@@ -2125,7 +2124,6 @@ static int modem_cellular_pm_action(const struct device* dev, enum pm_device_act
 
     return (ret);
 }
-#endif /* CONFIG_PM_DEVICE */
 
 static void net_mgmt_event_handler(struct net_mgmt_event_callback* cb, uint64_t mgmt_event,
                                    struct net_if* iface) {
@@ -2276,13 +2274,7 @@ static int modem_cellular_init(const struct device* dev) {
 
     modem_cellular_init_apn(data);
 
-    #ifndef CONFIG_PM_DEVICE
-    modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_RESUME);
-    #else
-    pm_device_init_suspended(dev);
-    #endif /* CONFIG_PM_DEVICE */
-
-    return (0);
+    return pm_device_driver_init(dev, modem_cellular_pm_action);
 }
 
 /*
