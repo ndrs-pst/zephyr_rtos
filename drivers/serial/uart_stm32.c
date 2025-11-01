@@ -363,8 +363,7 @@ static inline uint32_t uart_stm32_cfg2ll_parity(enum uart_config_parity parity) 
         case UART_CFG_PARITY_EVEN :
             return (LL_USART_PARITY_EVEN);
 
-        case UART_CFG_PARITY_NONE :
-        default :
+        default : /* UART_CFG_PARITY_NONE */
             return (LL_USART_PARITY_NONE);
     }
 }
@@ -1236,7 +1235,7 @@ static inline void async_evt_rx_buf_request(struct uart_stm32_data* data) {
 
 static inline void async_evt_rx_buf_release(struct uart_stm32_data* data) {
     struct uart_event evt = {
-        .type            = UART_RX_BUF_RELEASED,
+        .type = UART_RX_BUF_RELEASED,
         .data.rx_buf.buf = data->dma_rx.buffer,
     };
 
@@ -1925,7 +1924,9 @@ static void uart_stm32_async_rx_timeout(struct k_work* work) {
      */
     unsigned int key = irq_lock();
 
-    if (data->dma_rx.counter == data->dma_rx.buffer_length) {
+    /* When cyclic DMA is used, do not disable the RX on timeout */
+    if ((data->dma_rx.dma_cfg.cyclic == 0) &&
+        (data->dma_rx.counter == data->dma_rx.buffer_length)) {
         uart_stm32_async_rx_disable(dev);
     }
     else {
