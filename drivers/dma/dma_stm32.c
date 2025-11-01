@@ -88,6 +88,7 @@ static void dma_stm32_irq_handler(const struct device* dev, uint32_t id) {
     DMA_TypeDef* dma = config->base;
     struct dma_stm32_stream* stream;
     uint32_t callback_arg;
+    int status;
 
     __ASSERT_NO_MSG(id < config->max_streams);
 
@@ -116,10 +117,7 @@ static void dma_stm32_irq_handler(const struct device* dev, uint32_t id) {
             dma_stm32_clear_ht(dma, id);
         }
 
-        if (stream->dma_callback != NULL) {
-            stream->dma_callback(dev, stream->user_data, callback_arg,
-                                 DMA_STATUS_BLOCK);
-        }
+        status = DMA_STATUS_BLOCK;
     }
     else if (stm32_dma_is_tc_irq_active(dma, id)) {
         /* Circular buffer never stops receiving as long as peripheral is enabled */
@@ -132,10 +130,7 @@ static void dma_stm32_irq_handler(const struct device* dev, uint32_t id) {
             dma_stm32_clear_tc(dma, id);
         }
 
-        if (stream->dma_callback != NULL) {
-            stream->dma_callback(dev, stream->user_data, callback_arg,
-                                 DMA_STATUS_COMPLETE);
-        }
+        status = DMA_STATUS_COMPLETE;
     }
     else if (stm32_dma_is_unexpected_irq_happened(dma, id)) {
         /* Let HAL DMA handle flags on its own */
@@ -145,9 +140,7 @@ static void dma_stm32_irq_handler(const struct device* dev, uint32_t id) {
             stm32_dma_clear_stream_irq(dma, id);
         }
 
-        if (stream->dma_callback != NULL) {
-            stream->dma_callback(dev, stream->user_data, callback_arg, -EIO);
-        }
+        status = -EIO;
     }
     else {
         /* Let HAL DMA handle flags on its own */
@@ -158,9 +151,12 @@ static void dma_stm32_irq_handler(const struct device* dev, uint32_t id) {
             dma_stm32_clear_stream_irq(dev, id);
         }
 
-        if (stream->dma_callback != NULL) {
-            stream->dma_callback(dev, stream->user_data, callback_arg, -EIO);
-        }
+        status = -EIO;
+    }
+
+    if (stream->dma_callback != NULL) {
+        stream->dma_callback(dev, stream->user_data, callback_arg,
+                             status);
     }
 }
 
