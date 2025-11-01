@@ -1403,13 +1403,13 @@ static int spi_stm32_half_duplex_switch_to_receive(const struct spi_stm32_config
 }
 #endif /* !CONFIG_SPI_RTIO */
 
-static int transceive(const struct device* dev,
-                      const struct spi_config* config,
-                      const struct spi_buf_set* tx_bufs,
-                      const struct spi_buf_set* rx_bufs,
-                      bool asynchronous,
-                      spi_callback_t cb,
-                      void* userdata) {
+static int spi_stm32_ll_transceive(const struct device* dev,
+                                   const struct spi_config* config,
+                                   const struct spi_buf_set* tx_bufs,
+                                   const struct spi_buf_set* rx_bufs,
+                                   bool asynchronous,
+                                   spi_callback_t cb,
+                                   void* userdata) {
     struct spi_stm32_data* data = dev->data;
     int ret;
 
@@ -1657,13 +1657,13 @@ static bool spi_buf_set_in_nocache(const struct spi_buf_set* bufs) {
 }
 #endif /* CONFIG_DCACHE */
 
-static int transceive_dma(const struct device* dev,
-                          const struct spi_config* config,
-                          const struct spi_buf_set* tx_bufs,
-                          const struct spi_buf_set* rx_bufs,
-                          bool asynchronous,
-                          spi_callback_t cb,
-                          void* userdata) {
+static int spi_stm32_ll_transceive_dma(const struct device* dev,
+                                       const struct spi_config* config,
+                                       const struct spi_buf_set* tx_bufs,
+                                       const struct spi_buf_set* rx_bufs,
+                                       bool asynchronous,
+                                       spi_callback_t cb,
+                                       void* userdata) {
     const struct spi_stm32_config* cfg = dev->config;
     struct spi_stm32_data* data = dev->data;
     SPI_TypeDef* spi = cfg->spi;
@@ -1916,11 +1916,11 @@ static int spi_stm32_transceive(const struct device* dev,
     struct spi_stm32_data const* data = dev->data;
 
     if ((data->dma_tx.dma_dev != NULL) && (data->dma_rx.dma_dev != NULL)) {
-        return transceive_dma(dev, config, tx_bufs, rx_bufs,
-                              false, NULL, NULL);
+        return spi_stm32_ll_transceive_dma(dev, config, tx_bufs, rx_bufs,
+                                           false, NULL, NULL);
     }
     #endif /* CONFIG_SPI_STM32_DMA */
-    return transceive(dev, config, tx_bufs, rx_bufs, false, NULL, NULL);
+    return spi_stm32_ll_transceive(dev, config, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -1930,7 +1930,7 @@ static int spi_stm32_transceive_async(const struct device* dev,
                                       const struct spi_buf_set* rx_bufs,
                                       spi_callback_t cb,
                                       void* userdata) {
-    return transceive(dev, config, tx_bufs, rx_bufs, true, cb, userdata);
+    return spi_stm32_ll_transceive(dev, config, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
