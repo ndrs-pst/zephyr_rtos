@@ -35,19 +35,17 @@ static bool is_descendant_of(struct smf_state const* test_state,
 
 static struct smf_state const* get_child_of(struct smf_state const* states,
                                             struct smf_state const* parent) {
-    struct smf_state const* tmp = states;
+    struct smf_state const* state = states;
 
-    while (true) {
-        if (tmp->parent == parent) {
-            return (tmp);
+    while (state != NULL) {
+        if (state->parent == parent) {
+            return (state);
         }
 
-        if (tmp->parent == NULL) {
-            return (NULL);
-        }
-
-        tmp = tmp->parent;
+        state = state->parent;
     }
+
+    return (NULL);
 }
 
 /**
