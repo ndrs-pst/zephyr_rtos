@@ -226,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 62136a8ff8a2e644b72f0dc902d33b397991cace
+      revision: a279c14e196cb0904593035888a334dcd2c720bd
       groups:
         - hal
     - name: hal_rpi_pico
@@ -369,7 +369,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: d3341a660f2f33156e1a8bb8ea47ad83066defea
+      revision: 04aa7243e04946b5422b124bea9c0675ab6b120f
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
