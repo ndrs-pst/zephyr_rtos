@@ -313,7 +313,7 @@ static bool net_if_tx(struct net_if* iface, struct net_pkt* pkt) {
     }
     else {
         net_stats_update_bytes_sent(iface, status);
-		conn_mgr_if_used(iface);
+        conn_mgr_if_used(iface);
     }
 
     if (context != NULL) {
@@ -5637,7 +5637,6 @@ static void notify_iface_up(struct net_if* iface) {
 }
 
 static void notify_iface_down(struct net_if* iface) {
-    net_tcp_close_all_for_iface(iface);
     net_if_flag_clear(iface, NET_IF_RUNNING);
     net_mgmt_event_notify(NET_EVENT_IF_DOWN, iface);
     net_virtual_disable(iface);
@@ -5648,6 +5647,12 @@ static void notify_iface_down(struct net_if* iface) {
         clear_joined_ipv6_mcast_groups(iface);
         clear_joined_ipv4_mcast_groups(iface);
         net_ipv4_autoconf_reset(iface);
+    }
+
+    if (IS_ENABLED(CONFIG_NET_NATIVE_TCP)) {
+        net_if_unlock(iface);
+        net_tcp_close_all_for_iface(iface);
+        net_if_lock(iface);
     }
 }
 
