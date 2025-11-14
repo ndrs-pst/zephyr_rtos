@@ -9,6 +9,7 @@
 
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/phy.h>
@@ -21,21 +22,26 @@ extern const struct device *eth_stm32_phy_dev;
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
 #define IS_ETH_DMATXDESC_OWN(dma_tx_desc) (dma_tx_desc->DESC3 & ETH_DMATXNDESCRF_OWN)
-#define ETH_RXBUFNB	ETH_RX_DESC_CNT
-#define ETH_TXBUFNB	ETH_TX_DESC_CNT
+#define ETH_RXBUFNB         ETH_RX_DESC_CNT
+#define ETH_TXBUFNB         ETH_TX_DESC_CNT
 /* Only one tx_buffer is sufficient to pass only 1 dma_buffer */
-#define ETH_TXBUF_DEF_NB	1U
+#define ETH_TXBUF_DEF_NB    1U
 #else
 #define IS_ETH_DMATXDESC_OWN(dma_tx_desc) (dma_tx_desc->Status & ETH_DMATXDESC_OWN)
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
 
 #if defined(CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER) && \
-	    DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
+            DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
 #define __eth_stm32_desc __dtcm_noinit_section
 #define __eth_stm32_buf  __dtcm_noinit_section
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H7RSX)
 #define __eth_stm32_desc __attribute__((section(".eth_stm32_desc")))
 #define __eth_stm32_buf  __attribute__((section(".eth_stm32_buf")))
+#elif defined(CONFIG_SOC_SERIES_STM32MP13X)
+#define ETH_DMA_REGION  DT_INST_PHANDLE(0, memory_regions)
+#define ETH_SECTION Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME_TOKEN(ETH_DMA_REGION))
+#define __eth_stm32_desc __aligned(32) ETH_SECTION
+#define __eth_stm32_buf  __aligned(32) ETH_SECTION
 #elif defined(CONFIG_NOCACHE_MEMORY)
 #define __eth_stm32_desc __nocache __aligned(4)
 #define __eth_stm32_buf  __nocache __aligned(4)
@@ -46,44 +52,44 @@ extern const struct device *eth_stm32_phy_dev;
 
 #if defined(CONFIG_ETH_STM32_HAL_API_V1)
 
-#define ETH_MII_MODE	ETH_MEDIA_INTERFACE_MII
-#define ETH_RMII_MODE	ETH_MEDIA_INTERFACE_RMII
+#define ETH_MII_MODE    ETH_MEDIA_INTERFACE_MII
+#define ETH_RMII_MODE   ETH_MEDIA_INTERFACE_RMII
 
 #define ETH_STM32_AUTO_NEGOTIATION_ENABLE                                                          \
-	UTIL_NOT(DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, phy_handle), fixed_link))
+    UTIL_NOT(DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, phy_handle), fixed_link))
 
 #else /* CONFIG_ETH_STM32_HAL_API_V2 */
 
-#define ETH_MII_MODE	HAL_ETH_MII_MODE
-#define ETH_RMII_MODE	HAL_ETH_RMII_MODE
+#define ETH_MII_MODE    HAL_ETH_MII_MODE
+#define ETH_RMII_MODE   HAL_ETH_RMII_MODE
 
 struct eth_stm32_tx_context {
-	struct net_pkt *pkt;
-	uint16_t first_tx_buffer_index;
-	bool used;
+    struct net_pkt* pkt;
+    uint16_t first_tx_buffer_index;
+    bool used;
 };
 
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
 
-#define ETH_GMII_MODE	HAL_ETH_GMII_MODE
-#define ETH_RGMII_MODE	HAL_ETH_RGMII_MODE
+#define ETH_GMII_MODE   HAL_ETH_GMII_MODE
+#define ETH_RGMII_MODE  HAL_ETH_RGMII_MODE
 
 #define STM32_ETH_PHY_MODE(inst) \
-	((DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, rgmii) ? ETH_RGMII_MODE : \
-	 (DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, gmii) ? ETH_GMII_MODE : \
-	 (DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, mii) ? ETH_MII_MODE : \
-								ETH_RMII_MODE))))
+    ((DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, rgmii) ? ETH_RGMII_MODE : \
+     (DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, gmii)  ? ETH_GMII_MODE  : \
+     (DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, mii)   ? ETH_MII_MODE   : \
+                                                                 ETH_RMII_MODE))))
 #else
 #define STM32_ETH_PHY_MODE(inst) \
-	(DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, mii) ? \
-		ETH_MII_MODE : ETH_RMII_MODE)
+    (DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, mii) ? \
+        ETH_MII_MODE : ETH_RMII_MODE)
 #endif
 
 /* Definition of the Ethernet driver buffers size and count */
-#define ETH_STM32_RX_BUF_SIZE	ETH_MAX_PACKET_SIZE /* buffer size for receive */
-#define ETH_STM32_TX_BUF_SIZE	ETH_MAX_PACKET_SIZE /* buffer size for transmit */
+#define ETH_STM32_RX_BUF_SIZE   ETH_MAX_PACKET_SIZE /* buffer size for receive */
+#define ETH_STM32_TX_BUF_SIZE   ETH_MAX_PACKET_SIZE /* buffer size for transmit */
 
 BUILD_ASSERT(ETH_STM32_RX_BUF_SIZE % 4 == 0, "Rx buffer size must be a multiple of 4");
 
@@ -102,6 +108,15 @@ extern ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB];
 struct eth_stm32_hal_dev_cfg {
     void (*config_func)(void);
     struct stm32_pclken pclken;
+
+    #if DT_INST_CLOCKS_HAS_NAME(0, mac_clk)
+    struct stm32_pclken pclken_mac;
+    #endif
+
+    #if DT_INST_CLOCKS_HAS_NAME(0, eth_ker)
+    struct stm32_pclken pclken_ker;
+    #endif
+
     struct stm32_pclken pclken_rx;
     struct stm32_pclken pclken_tx;
 
@@ -145,13 +160,13 @@ int eth_stm32_hal_init(const struct device *dev);
 int eth_stm32_hal_start(const struct device *dev);
 int eth_stm32_hal_stop(const struct device *dev);
 int eth_stm32_hal_set_config(const struct device *dev,
-			     enum ethernet_config_type type,
-			     const struct ethernet_config *config);
+                             enum ethernet_config_type type,
+                             const struct ethernet_config *config);
 struct net_if *eth_stm32_get_iface(struct eth_stm32_hal_dev_data *ctx);
 
 #if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
 void eth_stm32_mcast_filter(const struct device *dev,
-			    const struct ethernet_filter *filter);
+                            const struct ethernet_filter *filter);
 #endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
 
 #ifdef CONFIG_PTP_CLOCK_STM32_HAL

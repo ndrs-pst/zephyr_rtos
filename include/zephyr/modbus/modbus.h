@@ -394,7 +394,7 @@ struct modbus_user_callbacks {
  *
  * @param iface_name Modbus interface name
  *
- * @retval           Modbus interface index or negative error value.
+ * @return           Modbus interface index or negative error value.
  */
 int modbus_iface_get_by_name(char const* iface_name);
 
@@ -429,7 +429,7 @@ typedef int (*modbus_raw_cb_t)(int const iface, const struct modbus_adu* adu,
  * @param excep_code Pointer to possible exception code
  * @param user_data  Pointer to user data
  *
- * @retval           true If response should be sent, false otherwise
+ * @return           true If response should be sent, false otherwise
  */
 typedef bool (*modbus_custom_cb_t)(int const iface,
                                    struct modbus_adu const* const rx_adu,

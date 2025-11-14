@@ -277,7 +277,7 @@ __subsystem struct cellular_driver_api {
  * @retval 0 if successful.
  * @retval -EINVAL if any provided cellular network configuration is invalid or unsupported.
  * @retval -ENOTSUP if API is not supported by cellular network device.
- * @retval Negative errno-code otherwise.
+ * @retval <0 Negative errno-code otherwise.
  */
 static inline int cellular_configure_networks(const struct device* dev,
                                               const struct cellular_network* networks, uint8_t size) {
@@ -299,7 +299,7 @@ static inline int cellular_configure_networks(const struct device* dev,
  *
  * @retval 0 if successful.
  * @retval -ENOTSUP if API is not supported by cellular network device.
- * @retval Negative errno-code otherwise.
+ * @retval <0 Negative errno-code otherwise.
  */
 static inline int cellular_get_supported_networks(const struct device* dev,
                                                   const struct cellular_network** networks,
@@ -323,7 +323,7 @@ static inline int cellular_get_supported_networks(const struct device* dev,
  * @retval 0 if successful.
  * @retval -ENOTSUP if API is not supported by cellular network device.
  * @retval -ENODATA if device is not in a state where signal can be polled
- * @retval Negative errno-code otherwise.
+ * @retval <0 Negative errno-code otherwise.
  */
 static inline int cellular_get_signal(const struct device* dev,
                                       const enum cellular_signal_type type, int16_t* value) {
@@ -347,7 +347,7 @@ static inline int cellular_get_signal(const struct device* dev,
  * @retval 0 if successful.
  * @retval -ENOTSUP if API is not supported by cellular network device.
  * @retval -ENODATA if modem does not provide info requested
- * @retval Negative errno-code from chat module otherwise.
+ * @retval <0 Negative errno-code from chat module otherwise.
  */
 static inline int cellular_get_modem_info(const struct device* dev,
                                           const enum cellular_modem_info_type type, char* info,
@@ -371,7 +371,7 @@ static inline int cellular_get_modem_info(const struct device* dev,
  * @retval 0 if successful.
  * @retval -ENOSYS if API is not supported by cellular network device.
  * @retval -ENODATA if modem does not provide info requested
- * @retval Negative errno-code from chat module otherwise.
+ * @retval <0 Negative errno-code from chat module otherwise.
  */
 static inline int cellular_get_registration_status(const struct device* dev,
                                                    enum cellular_access_technology tech,
@@ -399,7 +399,7 @@ static inline int cellular_get_registration_status(const struct device* dev,
  * @retval -EINVAL if APN string invalid or too long.
  * @retval -EALREADY if APN identical to current one, nothing to do
  * @retval -EBUSY if modem is already dialled, APN cannot be changed
- * @retval Negative errno-code otherwise.
+ * @retval <0 Negative errno-code otherwise.
  */
 static inline int cellular_set_apn(const struct device* dev, const char* apn) {
     const struct cellular_driver_api* api = (const struct cellular_driver_api*)dev->api;

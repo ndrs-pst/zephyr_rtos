@@ -369,8 +369,8 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_NEIGHBOR_REP_COMPLETE);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BSS_MAX_IDLE_PERIOD);
 
-#define NET_REQUEST_WIFI_BGSCAN					\
-	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_BGSCAN)
+#define NET_REQUEST_WIFI_BGSCAN                     \
+    (NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_BGSCAN)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BGSCAN);
 
@@ -805,6 +805,18 @@ struct wifi_connect_req_params {
 
     /** Parameter used for frequency band */
     enum wifi_frequency_bandwidths bandwidth;
+
+    /** Full domain name to verify in the server certificate */
+    const uint8_t *server_cert_domain_exact;
+
+    /** Length of the server_cert_domain_exact string, maximum 128 bytes */
+    uint8_t server_cert_domain_exact_len;
+
+    /** Domain name suffix to verify in the server certificate */
+    const uint8_t *server_cert_domain_suffix;
+
+    /** Length of the server_cert_domain_suffix string, maximum 64 bytes */
+    uint8_t server_cert_domain_suffix_len;
 };
 
 /** @brief Wi-Fi disconnect reason codes. To be overlaid on top of \ref wifi_status
@@ -1605,26 +1617,32 @@ enum wifi_sap_iface_state {
 #if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN) || defined(__DOXYGEN__)
 /** @brief Wi-Fi background scan implementation */
 enum wifi_bgscan_type {
-	/** None, background scan is disabled */
-	WIFI_BGSCAN_NONE = 0,
-	/** Simple, periodic scan based on signal strength */
-	WIFI_BGSCAN_SIMPLE,
-	/** Learn channels used by the network (experimental) */
-	WIFI_BGSCAN_LEARN,
+    /** None, background scan is disabled */
+    WIFI_BGSCAN_NONE = 0,
+
+    /** Simple, periodic scan based on signal strength */
+    WIFI_BGSCAN_SIMPLE,
+
+    /** Learn channels used by the network (experimental) */
+    WIFI_BGSCAN_LEARN,
 };
 
 /** @brief Wi-Fi background scan parameters */
 struct wifi_bgscan_params {
-	/** The type of background scanning */
-	enum wifi_bgscan_type type;
-	/** Short scan interval in seconds */
-	uint16_t short_interval;
-	/** Long scan interval in seconds */
-	uint16_t long_interval;
-	/** Signal strength threshold in dBm */
-	int8_t rssi_threshold;
-	/** Number of BSS Transition Management (BTM) queries */
-	uint16_t btm_queries;
+    /** The type of background scanning */
+    enum wifi_bgscan_type type;
+
+    /** Short scan interval in seconds */
+    uint16_t short_interval;
+
+    /** Long scan interval in seconds */
+    uint16_t long_interval;
+
+    /** Signal strength threshold in dBm */
+    int8_t rssi_threshold;
+
+    /** Number of BSS Transition Management (BTM) queries */
+    uint16_t btm_queries;
 };
 #endif
 
@@ -1703,15 +1721,6 @@ struct wifi_mgmt_ops {
      */
     int (*ap_enable)(const struct device* dev,
                      struct wifi_connect_req_params* params);
-
-    /** Configure STA parameter
-     *
-     * @param dev Pointer to the device structure for the driver instance.
-     * @param params STA mode parameter configuration parameter info
-     *
-     * @return 0 if ok, < 0 if error
-     */
-    int (*config_params)(const struct device* dev, struct wifi_config_params* params);
 
     /** Disable AP mode
      *
@@ -1922,6 +1931,15 @@ struct wifi_mgmt_ops {
      */
     int (*ap_config_params)(const struct device* dev, struct wifi_ap_config_params* params);
 
+    /** Configure STA parameter
+     *
+     * @param dev Pointer to the device structure for the driver instance.
+     * @param params STA mode parameter configuration parameter info
+     *
+     * @return 0 if ok, < 0 if error
+     */
+    int (*config_params)(const struct device* dev, struct wifi_config_params* params);
+
     #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
     /** Dispatch DPP operations by action enum, with or without arguments in string format
      *
@@ -1997,16 +2015,17 @@ struct wifi_mgmt_ops {
      */
     int (*set_bss_max_idle_period)(const struct device* dev,
                                    unsigned short bss_max_idle_period);
-#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN) || defined(__DOXYGEN__)
-	/** Configure background scanning
-	 *
-	 * @param dev Pointer to the device structure for the driver instance.
-	 * @param params Background scanning configuration parameters
-	 *
-	 * @return 0 if ok, < 0 if error
-	 */
-	int (*set_bgscan)(const struct device *dev, struct wifi_bgscan_params *params);
-#endif
+
+    #if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN) || defined(__DOXYGEN__)
+    /** Configure background scanning
+     *
+     * @param dev Pointer to the device structure for the driver instance.
+     * @param params Background scanning configuration parameters
+     *
+     * @return 0 if ok, < 0 if error
+     */
+    int (*set_bgscan)(const struct device* dev, struct wifi_bgscan_params* params);
+    #endif
 };
 
 /** Wi-Fi management offload API */

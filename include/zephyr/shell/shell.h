@@ -1394,7 +1394,7 @@ bool shell_ready(struct shell const* sh);
  * @param[in] sh  Pointer to the shell instance.
  * @param[in] val Insert mode.
  *
- * @retval 0 or 1: previous value
+ * @return 0 or 1: previous value
  * @retval -EINVAL if shell is NULL.
  */
 int shell_insert_mode_set(struct shell const* sh, bool val);
@@ -1407,7 +1407,7 @@ int shell_insert_mode_set(struct shell const* sh, bool val);
  * @param[in] sh  Pointer to the shell instance.
  * @param[in] val Color mode.
  *
- * @retval 0 or 1: previous value
+ * @return 0 or 1: previous value
  * @retval -EINVAL if shell is NULL.
  */
 int shell_use_colors_set(struct shell const* sh, bool val);
@@ -1419,7 +1419,7 @@ int shell_use_colors_set(struct shell const* sh, bool val);
  * @param[in] sh  Pointer to the shell instance.
  * @param[in] val vt100 mode.
  *
- * @retval 0 or 1: previous value
+ * @return 0 or 1: previous value
  * @retval -EINVAL if shell is NULL.
  */
 int shell_use_vt100_set(struct shell const* sh, bool val);
@@ -1431,7 +1431,7 @@ int shell_use_vt100_set(struct shell const* sh, bool val);
  * @param[in] sh  Pointer to the shell instance.
  * @param[in] val Echo mode.
  *
- * @retval 0 or 1: previous value
+ * @return 0 or 1: previous value
  * @retval -EINVAL if shell is NULL.
  */
 int shell_echo_set(struct shell const* sh, bool val);
@@ -1444,7 +1444,7 @@ int shell_echo_set(struct shell const* sh, bool val);
  * @param[in] sh Pointer to the shell instance.
  * @param[in] val Obscure mode.
  *
- * @retval 0 or 1: previous value.
+ * @return 0 or 1: previous value.
  * @retval -EINVAL if shell is NULL.
  */
 int shell_obscure_set(struct shell const* sh, bool val);
@@ -1457,7 +1457,7 @@ int shell_obscure_set(struct shell const* sh, bool val);
  * @param[in] sh  Pointer to the shell instance.
  * @param[in] val Delete mode.
  *
- * @retval 0 or 1: previous value
+ * @return 0 or 1: previous value
  * @retval -EINVAL if shell is NULL.
  */
 int shell_mode_delete_set(struct shell const* sh, bool val);
@@ -1467,7 +1467,7 @@ int shell_mode_delete_set(struct shell const* sh, bool val);
  *
  * @param[in] sh Pointer to the shell instance
  *
- * @retval return value of previous command
+ * @return return value of previous command
  */
 int shell_get_return_value(struct shell const* sh);
 
