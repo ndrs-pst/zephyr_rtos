@@ -125,7 +125,7 @@ static int can_stm32h7_clock_enable(const struct device *dev)
 	const struct can_mcan_config *mcan_cfg = dev->config;
 	const struct can_stm32h7_config *stm32h7_cfg = mcan_cfg->custom;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	uint32_t fdcan_clock = 0xffffffff;
+	uint32_t fdcan_clock;
 	int ret;
 
 	if (!device_is_ready(clk)) {
