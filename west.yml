@@ -117,7 +117,7 @@ manifest:
       groups:
         - babblesim
     - name: cmsis
-      revision: 512cc7e895e8491696b61f7ba8066b4a182569b8
+      revision: a863984ece5a74a49ce3eb0f68cd0f44eef7b505
       path: modules/hal/cmsis
       groups:
         - hal
@@ -129,7 +129,7 @@ manifest:
       path: modules/lib/cmsis-nn
     - name: cmsis_6
       repo-path: CMSIS_6
-      revision: 30a859f44ef8ab4dc8f84b03ed586fd16ccf9d74
+      revision: 887b9bf6f276a4c89edd5e2bdafbe199015f2350
       path: modules/hal/cmsis_6
       groups:
         - hal
@@ -139,7 +139,7 @@ manifest:
       groups:
         - tools
     - name: fatfs
-      revision: f4ead3bf4a6dab3a07d7b5f5315795c073db568d
+      revision: 79df0453c1652cae50949f11bde2d2e541159955
       path: modules/fs/fatfs
       groups:
         - fs
@@ -159,7 +159,7 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: 065e57c5013051c8b7f2256271349c6942bd9344
+      revision: 61d1a65ab64ba6ba2bd46b826b3166255ea108f5
       path: modules/hal/atmel
       groups:
         - hal
@@ -210,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: b374adf9c08434b849fe9dcdb0b099cafc4f31ae
+      revision: 915b656958f8966597ad81aacb54d2bd078a4d7d
       path: modules/hal/nxp
       groups:
         - hal
@@ -250,7 +250,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 286dd285b5bb4fddafdfff27b5405264e5a61bfe
+      revision: e851a702365685b20c88a83b29054ae171c4a1cd
       path: modules/hal/stm32
       groups:
         - hal
@@ -305,12 +305,12 @@ manifest:
       path: modules/fs/littlefs
       groups:
         - fs
-      revision: 8f5ca347843363882619d8f96c00d8dbd88a8e79
+      revision: 32fa5540b5dacb1622664713acefcb46445f01e6
     - name: lora-basics-modem
       revision: 9a14f6772c1d6e303bacb2d594c8063bb804b6ee
       path: modules/lib/lora-basics-modem
     - name: loramac-node
-      revision: fb00b383072518c918e2258b0916c996f2d4eebe
+      revision: 88deb45109317473ac5706e97a6b8bbeb524aab1
       path: modules/lib/loramac-node
     - name: lvgl
       revision: b03edc8e6282a963cd312cd0b409eb5ce263ea75
@@ -321,7 +321,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: f3cc9476e233364031e9ab842290392f260fba82
+      revision: 6d222a81a4be634c8140246c0d5b3ab72e75e431
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -377,11 +377,20 @@ manifest:
       revision: 54abc109c9c0adfd53c70077744c14e454f04f4a
       path: modules/lib/uoscore-uedhoc
     - name: zcbor
-      revision: 9b07780aca6fb21f82a241ba386ad9b379809337
+      revision: 1f622967bd4d19ca2fa50a9ad5d0a9f66ef330ec
       path: modules/lib/zcbor
   # zephyr-keep-sorted-stop
+    - name: thingset
+      path: modules/lib/thingset
+      revision: 84c603f181928dd057989a3b305cb46f14ac2644
+    - name: thingset-node-c
+      path: modules/lib/thingset-node-c
+      revision: c3b935185fd5e68ff232e78d5ac6a67415f1fce1
+    - name: FlashDB
+      path: modules/lib/flashdb
+      revision: eac65043a7b3abaddaa7db82268d5ba8fd8176b9
 
   self:
-    path: zephyr
+    path: zephyr_rtos
     west-commands: scripts/west-commands.yml
     import: submanifests

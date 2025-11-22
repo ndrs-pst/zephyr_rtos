@@ -439,9 +439,9 @@ static int icmpv4_handle_echo_request(struct net_icmp_ctx *ctx,
 		net_sprint_ipv4_addr(&req_src),
 		net_sprint_ipv4_addr(&req_dst));
 
-	payload_len = net_pkt_get_len(pkt) -
-		      net_pkt_ip_hdr_len(pkt) -
-		      net_pkt_ipv4_opts_len(pkt) - NET_ICMPH_LEN;
+	payload_len = (int16_t)(net_pkt_get_len(pkt) -
+						net_pkt_ip_hdr_len(pkt) -
+						net_pkt_ipv4_opts_len(pkt) - NET_ICMPH_LEN);
 	if (payload_len < NET_ICMPV4_UNUSED_LEN) {
 		/* No identifier or sequence number present */
 		goto drop;
@@ -673,9 +673,9 @@ static int icmpv4_handle_dst_unreach(struct net_icmp_ctx *ctx,
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(dst_unreach_access,
 					      struct net_icmpv4_dest_unreach);
-	struct net_icmpv4_dest_unreach *dest_unreach_hdr;
+	struct net_icmpv4_dest_unreach const* dest_unreach_hdr;
 	struct net_ipv4_hdr *ip_hdr = hdr->ipv4;
-	uint16_t length = net_pkt_get_len(pkt);
+	uint16_t length = (uint16_t)net_pkt_get_len(pkt);
 	struct net_pmtu_entry *entry;
 	struct net_sockaddr_in sockaddr_src = {
 		.sin_family = NET_AF_INET,
@@ -685,7 +685,7 @@ static int icmpv4_handle_dst_unreach(struct net_icmp_ctx *ctx,
 
 	ARG_UNUSED(user_data);
 
-	dest_unreach_hdr = (struct net_icmpv4_dest_unreach *)
+	dest_unreach_hdr = (struct net_icmpv4_dest_unreach const*)
 		net_pkt_get_data(pkt, &dst_unreach_access);
 	if (dest_unreach_hdr == NULL) {
 		NET_DBG("DROP: NULL ICMPv4 Destination Unreachable header");
@@ -718,9 +718,9 @@ static int icmpv4_handle_dst_unreach(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	net_ipaddr_copy(&sockaddr_src.sin_addr, (struct net_in_addr *)&ip_hdr->src);
+	net_ipaddr_copy(&sockaddr_src.sin_addr, (struct net_in_addr*)&ip_hdr->src);
 
-	entry = net_pmtu_get_entry((struct net_sockaddr *)&sockaddr_src);
+	entry = net_pmtu_get_entry((struct net_sockaddr*)&sockaddr_src);
 	if (entry == NULL) {
 		NET_DBG("DROP: Cannot find PMTU entry for %s",
 			net_sprint_ipv4_addr(&ip_hdr->src));

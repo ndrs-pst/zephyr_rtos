@@ -190,7 +190,7 @@ static int getaddrinfo_null_host(int port, const struct zsock_addrinfo *hints,
 	if (hints->ai_family == NET_AF_INET || hints->ai_family == NET_AF_UNSPEC) {
 		struct net_sockaddr_in *addr = net_sin(&res->_ai_addr);
 
-		addr->sin_addr.s_addr = NET_INADDR_ANY;
+		addr->sin_addr.s_addr_be = NET_INADDR_ANY;
 		addr->sin_port = net_htons(port);
 		addr->sin_family = NET_AF_INET;
 		INIT_ADDRINFO(res, addr);

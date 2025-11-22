@@ -34,7 +34,7 @@ static struct sys_getopt_state m_getopt_common_state = {
 
 #if CONFIG_GETOPT_LONG
 	.nonopt_start = -1, /* first non option argument (for permute) */
-	.nonopt_end = -1,   /* first option after non options (for permute) */
+	.nonopt_end = -1, /* first option after non options (for permute) */
 #endif
 };
 

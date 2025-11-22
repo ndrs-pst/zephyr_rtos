@@ -43,7 +43,7 @@
 
 int linux_socketcan_iface_open(const char *if_name)
 {
-	struct sockaddr_can addr;
+	struct net_sockaddr_can addr;
 	struct ifreq ifr;
 	int fd, opt, ret = -EINVAL;
 
@@ -66,7 +66,7 @@ int linux_socketcan_iface_open(const char *if_name)
 	addr.can_ifindex = ifr.ifr_ifindex;
 	addr.can_family = PF_CAN;
 
-	ret = bind(fd, (struct sockaddr *)&addr, sizeof(addr));
+	ret = bind(fd, (struct net_sockaddr *)&addr, sizeof(addr));
 	if (ret < 0) {
 		close(fd);
 		return -errno;

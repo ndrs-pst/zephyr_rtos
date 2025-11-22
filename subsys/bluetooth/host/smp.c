@@ -2035,8 +2035,8 @@ static void smp_timeout(struct k_work *work)
 	/* if number of flags or supported commands exceed capacity of one
 	 * atomic variable following error log shall be extended
 	 */
-	BUILD_ASSERT(ATOMIC_BITMAP_SIZE(SMP_NUM_FLAGS) == 1);
-	BUILD_ASSERT(ATOMIC_BITMAP_SIZE(BT_SMP_NUM_CMDS) == 1);
+	BUILD_ASSERT(ATOMIC_BITMAP_SIZE(SMP_NUM_FLAGS) == 1, "SMP_NUM_FLAGS");
+	BUILD_ASSERT(ATOMIC_BITMAP_SIZE(BT_SMP_NUM_CMDS) == 1, "BT_SMP_NUM_CMDS");
 
 	LOG_ERR("SMP Timeout (flags:0x%08x allowed_cmds:0x%08x)",
 		(unsigned int)atomic_get(&smp->flags[0]),

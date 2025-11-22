@@ -229,7 +229,7 @@ static void arp_request_timeout(struct k_work *work)
 }
 
 static inline struct net_in_addr *if_get_addr(struct net_if *iface,
-					  const uint8_t *addr)
+					      const uint8_t *addr)
 {
 	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
 
@@ -799,7 +799,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 	struct net_arp_hdr *arp_hdr;
 	struct net_in_addr src_ipaddr;
 	struct net_pkt *reply;
-	struct net_in_addr *addr;
+	const struct net_in_addr *addr;
 
 	if (net_pkt_get_len(pkt) < sizeof(struct net_arp_hdr)) {
 		NET_DBG("DROP: Too short ARP msg (%zu bytes, min %zu bytes)",

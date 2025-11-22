@@ -304,7 +304,7 @@ static int backend_ready(const struct log_backend *const backend)
 	return log_backend_is_active(backend) ? 0 : -EAGAIN;
 }
 
-const struct log_backend_api log_backend_net_api = {
+static const struct log_backend_api log_backend_net_api = {
 	.panic = panic,
 	.init = init_net,
 	.is_ready = backend_ready,

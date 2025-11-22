@@ -89,7 +89,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 			addrm.sa_family = NET_AF_INET;
 			((struct net_sockaddr_in *)&addrm)->sin_port =
 				((struct net_sockaddr_in *)&udp->bcaddr)->sin_port;
-			((struct net_sockaddr_in *)&addrm)->sin_addr.s_addr = NET_INADDR_ANY;
+			((struct net_sockaddr_in *)&addrm)->sin_addr.s_addr_be = NET_INADDR_ANY;
 		}
 		break;
 	case NET_AF_INET6:

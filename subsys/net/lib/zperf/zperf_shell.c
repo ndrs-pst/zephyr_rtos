@@ -230,7 +230,7 @@ static int zperf_bind_host(const struct shell *sh,
 			return ret;
 		}
 
-		memcpy(&param->addr, &addr, sizeof(struct sockaddr));
+		memcpy(&param->addr, &addr, sizeof(struct net_sockaddr));
 	}
 
 	return 0;
@@ -793,7 +793,7 @@ static void send_ping(const struct shell *sh,
 	}
 
 	dest_addr.sin6_family = NET_AF_INET6;
-	net_ipv6_addr_copy_raw((uint8_t *)&dest_addr.sin6_addr, (uint8_t *)addr);
+	net_ipv6_addr_copy_raw((uint8_t*)&dest_addr.sin6_addr, (uint8_t*)addr);
 
 	k_sem_init(&sem_wait, 0, 1);
 

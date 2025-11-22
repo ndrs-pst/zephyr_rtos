@@ -46,7 +46,7 @@ static const uint8_t empty_disc_packet[MQTT_FIXED_HEADER_MIN_SIZE] = {
 static int pack_uint8(uint8_t val, struct buf_ctx *buf)
 {
 	uint8_t *cur = buf->cur;
-	uint8_t *end = buf->end;
+	uint8_t const *end = buf->end;
 
 	if ((end - cur) < sizeof(uint8_t)) {
 		return -ENOMEM;
@@ -74,7 +74,7 @@ static int pack_uint8(uint8_t val, struct buf_ctx *buf)
 static int pack_uint16(uint16_t val, struct buf_ctx *buf)
 {
 	uint8_t *cur = buf->cur;
-	uint8_t *end = buf->end;
+	uint8_t const *end = buf->end;
 
 	if ((end - cur) < sizeof(uint16_t)) {
 		return -ENOMEM;
@@ -101,18 +101,22 @@ static int pack_uint16(uint16_t val, struct buf_ctx *buf)
  */
 static int pack_utf8_str(const struct mqtt_utf8 *str, struct buf_ctx *buf)
 {
-	if ((buf->end - buf->cur) < GET_UT8STR_BUFFER_SIZE(str)) {
+	uint8_t *cur = buf->cur;
+	uint8_t const *end = buf->end;
+
+	if ((uintptr_t)(end - cur) < GET_UT8STR_BUFFER_SIZE(str)) {
 		return -ENOMEM;
 	}
 
 	NET_DBG(">> str_size:%08x cur:%p, end:%p",
-		 (uint32_t)GET_UT8STR_BUFFER_SIZE(str), (void *)buf->cur, (void *)buf->end);
+		 (uint32_t)GET_UT8STR_BUFFER_SIZE(str), (void*)cur, (void*)end);
 
 	/* Pack length followed by string. */
-	(void)pack_uint16(str->size, buf);
+	sys_put_be16((uint16_t)str->size, cur);
 
-	memcpy(buf->cur, str->utf8, str->size);
-	buf->cur += str->size;
+	/* Since pack_uint16 already increments buf->cur by 2 so (cur + 2) */
+	memcpy((cur + sizeof(uint16_t)), str->utf8, str->size);
+	buf->cur = (cur + sizeof(uint16_t) + str->size);
 
 	return 0;
 }
@@ -718,7 +722,7 @@ static int will_properties_encode(const struct mqtt_client *client,
 int connect_request_encode(const struct mqtt_client *client,
 			   struct buf_ctx *buf)
 {
-	uint8_t connect_flags = client->clean_session << 1;
+	uint8_t connect_flags = (uint8_t)(client->clean_session << 1);
 	const uint8_t message_type =
 			MQTT_MESSAGES_OPTIONS(MQTT_PKT_TYPE_CONNECT, 0, 0, 0);
 	const struct mqtt_utf8 *proto_desc;
@@ -1469,7 +1473,7 @@ int unsubscribe_encode(const struct mqtt_client *client,
 int ping_request_encode(struct buf_ctx *buf)
 {
 	uint8_t *cur = buf->cur;
-	uint8_t *end = buf->end;
+	uint8_t const *end = buf->end;
 
 	if ((end - cur) < sizeof(ping_packet)) {
 		return -ENOMEM;

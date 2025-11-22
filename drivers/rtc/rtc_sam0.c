@@ -10,11 +10,13 @@
  * @brief RTC driver for Atmel SAM0 MCU family.
  */
 
-#include <stdlib.h>
-
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/rtc.h>
 #include "rtc_utils.h"
+
+#include <stdlib.h>
+#include <string.h>
+#include <soc.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(rtc_sam0, CONFIG_RTC_LOG_LEVEL);
@@ -30,8 +32,22 @@ LOG_MODULE_REGISTER(rtc_sam0, CONFIG_RTC_LOG_LEVEL);
 	| RTC_ALARM_TIME_MASK_YEAR	\
 	)
 
-#define RTC_SAM0_CALIBRATE_PPB_MAX	(127)
-#define RTC_SAM0_CALIBRATE_PPB_QUANTA	(1000)
+/* 24.6.8.2 Frequency Correction */
+#define RTC_SAM0_CORRECTION_MAX             (127)
+
+/* Reference Year */
+#define RTC_SAM0_REFERENCE_YEAR             (2020)
+
+/* Reference Year in tm structure year (C standard) */
+#define RTC_SAM0_TM_STRUCT_REFERENCE_YEAR   (1900)
+
+/* Convert tm_year into CLOCK/ALARM */
+#define RTC_SAM0_TM_STRUCT_TO_REGS_YEAR(tm_year)                \
+    RTC_MODE2_CLOCK_YEAR((RTC_SAM0_TM_STRUCT_REFERENCE_YEAR + (uint32_t)(tm_year)) - RTC_SAM0_REFERENCE_YEAR)
+
+/* Convert CLOCK/ALARM register into tm_year */
+#define RTC_SAM0_REGS_YEAR_TO_TM_STRUCT(YEAR)                   \
+    (((int)(YEAR) + RTC_SAM0_REFERENCE_YEAR) - RTC_SAM0_TM_STRUCT_REFERENCE_YEAR)
 
 enum rtc_sam0_counter_mode {
 	COUNTER_MODE_0,
@@ -56,31 +72,44 @@ struct rtc_sam0_config {
 #ifdef CONFIG_RTC_ALARM
 	uint8_t alarms_count;
 #endif /* CONFIG_RTC_ALARM */
+
 #ifdef CONFIG_RTC_CALIBRATION
 	int32_t cal_constant;
 #endif
 };
 
-struct rtc_sam0_data_cb {
+struct rtc_sam0_alarm_cb {
 	rtc_alarm_callback cb;
 	void *cb_data;
 };
 
 struct rtc_sam0_data {
 	struct k_spinlock lock;
+
 #ifdef CONFIG_RTC_ALARM
-	struct rtc_sam0_data_cb *const alarms;
+	struct rtc_sam0_alarm_cb *const alarms;
 #endif /* CONFIG_RTC_ALARM */
+
+#ifdef CONFIG_RTC_UPDATE
+	rtc_update_callback update_callback;
+	void *update_user_data;
+#endif /* CONFIG_RTC_UPDATE */
 };
 
-static inline void rtc_sam0_sync(Rtc *rtc)
+static inline void rtc_sam0_sync(const Rtc *rtc)
 {
 	/* Wait for synchronization */
 #ifdef MCLK
-	while (rtc->MODE0.SYNCBUSY.reg & RTC_MODE0_SYNCBUSY_MASK) {
+	while (rtc->MODE2.SYNCBUSY.reg & RTC_MODE2_SYNCBUSY_MASK_) {
+		if (IS_ENABLED(__GTEST)) {
+			break;
+		}
 	}
 #else
-	while (rtc->MODE0.STATUS.reg & RTC_STATUS_SYNCBUSY) {
+	while (rtc->MODE2.STATUS.reg & RTC_STATUS_SYNCBUSY) {
+		if (IS_ENABLED(__GTEST)) {
+			break;
+		}
 	}
 #endif
 }
@@ -90,32 +119,25 @@ static int rtc_sam0_set_time(const struct device *dev, const struct rtc_time *ti
 	const struct rtc_sam0_config *cfg = dev->config;
 	struct rtc_sam0_data *data = dev->data;
 	RtcMode2 *regs = &cfg->regs->MODE2;
-	uint32_t datetime = 0;
+	uint32_t clk_val;
+	bool rc;
 
-	if (rtc_utils_validate_rtc_time(timeptr, RTC_SAM0_TIME_MASK) == false) {
+	rc = rtc_utils_validate_rtc_time(timeptr, RTC_SAM0_TIME_MASK);
+	if (rc == false) {
 		return -EINVAL;
 	}
 
-	datetime |= RTC_MODE2_CLOCK_SECOND(timeptr->tm_sec);
-	datetime |= RTC_MODE2_CLOCK_MINUTE(timeptr->tm_min);
-	datetime |= RTC_MODE2_CLOCK_HOUR(timeptr->tm_hour);
-	datetime |= RTC_MODE2_CLOCK_DAY(timeptr->tm_mday);
-	datetime |= RTC_MODE2_CLOCK_MONTH(timeptr->tm_mon + 1);
-	datetime |= RTC_MODE2_CLOCK_YEAR(timeptr->tm_year - 99);
+	clk_val = (RTC_SAM0_TM_STRUCT_TO_REGS_YEAR(timeptr->tm_year) |
+		  ((uint32_t)(timeptr->tm_mon + 1)) << RTC_MODE2_CLOCK_MONTH_Pos) |
+		  ((uint32_t)timeptr->tm_mday << RTC_MODE2_CLOCK_DAY_Pos)    |
+		  ((uint32_t)timeptr->tm_hour << RTC_MODE2_CLOCK_HOUR_Pos)   |
+		  ((uint32_t)timeptr->tm_min  << RTC_MODE2_CLOCK_MINUTE_Pos) |
+		  ((uint32_t)timeptr->tm_sec  << RTC_MODE2_CLOCK_SECOND_Pos);
 
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-#ifdef MCLK
-	regs->CTRLA.reg &= ~RTC_MODE0_CTRLA_ENABLE;
+	regs->CLOCK.reg = clk_val;
 	rtc_sam0_sync(cfg->regs);
-	regs->CLOCK.reg = datetime;
-	regs->CTRLA.reg |= RTC_MODE0_CTRLA_ENABLE;
-#else
-	regs->CTRL.reg &= ~RTC_MODE0_CTRL_ENABLE;
-	rtc_sam0_sync(cfg->regs);
-	regs->CLOCK.reg = datetime;
-	regs->CTRL.reg |= RTC_MODE0_CTRL_ENABLE;
-#endif
 
 	k_spin_unlock(&data->lock, key);
 
@@ -125,18 +147,35 @@ static int rtc_sam0_set_time(const struct device *dev, const struct rtc_time *ti
 static int rtc_sam0_get_time(const struct device *dev, struct rtc_time *timeptr)
 {
 	const struct rtc_sam0_config *cfg = dev->config;
-	RTC_MODE2_CLOCK_Type calendar = cfg->regs->MODE2.CLOCK;
+	RtcMode2 *regs = &cfg->regs->MODE2;
 
-	timeptr->tm_sec = calendar.bit.SECOND;
-	timeptr->tm_min = calendar.bit.MINUTE;
+#ifdef MCLK
+	if ((regs->CTRLA.reg & RTC_MODE2_CTRLA_CLOCKSYNC) == 0U) {
+		regs->CTRLA.reg |= RTC_MODE2_CTRLA_CLOCKSYNC;
+
+		while ((regs->SYNCBUSY.reg & RTC_MODE2_SYNCBUSY_CLOCKSYNC) ==
+			RTC_MODE2_SYNCBUSY_CLOCKSYNC) {
+			/* Wait for Synchronization */
+		}
+	}
+
+	while ((regs->SYNCBUSY.reg & RTC_MODE2_SYNCBUSY_CLOCK) ==
+		RTC_MODE2_SYNCBUSY_CLOCK) {
+		/* Synchronization before reading value from CLOCK Register */
+	}
+#endif
+
+	RTC_MODE2_CLOCK_Type calendar = regs->CLOCK;
+	timeptr->tm_sec  = calendar.bit.SECOND;
+	timeptr->tm_min  = calendar.bit.MINUTE;
 	timeptr->tm_hour = calendar.bit.HOUR;
 	timeptr->tm_mday = calendar.bit.DAY;
-	timeptr->tm_mon = calendar.bit.MONTH - 1;
-	timeptr->tm_year = calendar.bit.YEAR + 99;
+	timeptr->tm_mon  = calendar.bit.MONTH - 1;
+	timeptr->tm_year = RTC_SAM0_REGS_YEAR_TO_TM_STRUCT(calendar.bit.YEAR);
 	timeptr->tm_wday = -1;
 	timeptr->tm_yday = -1;
 	timeptr->tm_isdst = -1;
-	timeptr->tm_nsec = 0;
+	timeptr->tm_nsec  = 0;
 
 	LOG_DBG("D/M/Y H:M:S %02d/%02d/%02d %02d:%02d:%02d",
 		timeptr->tm_mday, timeptr->tm_mon + 1, timeptr->tm_year - 99,
@@ -172,7 +211,7 @@ static inline uint32_t rtc_sam0_datetime_from_tm(const struct rtc_time *timeptr,
 	}
 
 	if (mask & RTC_ALARM_TIME_MASK_YEAR) {
-		datetime |= RTC_MODE2_CLOCK_YEAR(timeptr->tm_year - 99);
+		datetime |= RTC_SAM0_TM_STRUCT_TO_REGS_YEAR(timeptr->tm_year);
 	}
 
 	return datetime;
@@ -204,7 +243,7 @@ static inline void rtc_sam0_tm_from_datetime(struct rtc_time *timeptr, uint32_t 
 	}
 
 	if (mask & RTC_ALARM_TIME_MASK_YEAR) {
-		timeptr->tm_year = calendar.bit.YEAR + 99;
+		timeptr->tm_year = RTC_SAM0_REGS_YEAR_TO_TM_STRUCT(calendar.bit.YEAR);
 	}
 
 	timeptr->tm_wday = -1;
@@ -337,7 +376,7 @@ static int rtc_sam0_alarm_get_time(const struct device *dev, uint16_t id, uint16
 {
 	const struct rtc_sam0_config *cfg = dev->config;
 	struct rtc_sam0_data *data = dev->data;
-	RtcMode2 *regs = &cfg->regs->MODE2;
+	const RtcMode2 *regs = &cfg->regs->MODE2;
 	RTC_MODE2_ALARM_Type datetime;
 	uint32_t alarm_msk;
 
@@ -360,7 +399,7 @@ static int rtc_sam0_alarm_get_time(const struct device *dev, uint16_t id, uint16
 
 	k_spin_unlock(&data->lock, key);
 
-	*mask = rtc_sam0_mask_from_alarm_msk(alarm_msk);
+	*mask = (uint16_t)rtc_sam0_mask_from_alarm_msk(alarm_msk);
 
 	rtc_sam0_tm_from_datetime(timeptr, *mask, datetime);
 
@@ -418,28 +457,81 @@ static int rtc_sam0_alarm_set_callback(const struct device *dev, uint16_t id,
 
 	return 0;
 }
+#endif /* CONFIG_RTC_ALARM */
+
+#if defined(CONFIG_RTC_UPDATE)
+static int rtc_sam0_update_set_callback(const struct device *dev,
+					rtc_update_callback callback, void *user_data)
+{
+	const struct rtc_sam0_config *cfg = dev->config;
+	struct rtc_sam0_data *data = dev->data;
+	RtcMode2 *regs = &cfg->regs->MODE2;
+
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	irq_disable(DT_INST_IRQN(0));
+
+	data->update_callback  = callback;
+	data->update_user_data = user_data;
+
+	/* @see 24.6.8.1 Periodic Intervals
+	 *                    f(CLK_RTC_OSC) (default 1,024 Hz)
+	 * f(PERIODIC(n)) = -----------------
+	 *                     2^(n + 3)
+	 * 
+	 * for RTC_MODE2_INTENSET_PER4 will be 2^(4 + 3) = 1,024 / 128 = 8 Hz
+	 */
+	if (data->update_callback != NULL) {
+		regs->INTENSET.reg = RTC_MODE2_INTENSET_PER4;
+	} else {
+		regs->INTENCLR.reg = RTC_MODE2_INTENCLR_PER4;
+	}
+
+	irq_enable(DT_INST_IRQN(0));
+
+	k_spin_unlock(&data->lock, key);
+
+	return (0);
+}
+#endif /* CONFIG_RTC_UPDATE */
 
 static void rtc_sam0_isr(const struct device *dev)
 {
 	const struct rtc_sam0_config *cfg = dev->config;
 	struct rtc_sam0_data *data = dev->data;
 	RtcMode2 *regs = &cfg->regs->MODE2;
-	uint32_t int_flags = regs->INTFLAG.reg;
+	uint16_t int_flags = regs->INTFLAG.reg;
 
+	/* Clear All Interrupts */
+	regs->INTFLAG.reg = RTC_MODE2_INTFLAG_MASK;
+	(void) regs->INTFLAG.reg;
+
+	#if defined(CONFIG_RTC_ALARM)
 	for (int i = 0; i < cfg->alarms_count; ++i) {
 		if (int_flags & RTC_MODE2_INTFLAG_ALARM(BIT(i))) {
 			if (data->alarms[i].cb != NULL) {
-				data->alarms[i].cb(dev, i, data->alarms[i].cb_data);
+				data->alarms[i].cb(dev, (uint16_t)i, data->alarms[i].cb_data);
 			}
 		}
 	}
+	#endif
 
-	regs->INTFLAG.reg |= int_flags;
+	#if defined(CONFIG_RTC_UPDATE)
+	if ((int_flags & RTC_MODE2_INTFLAG_PER4) != 0U) {
+		if (data->update_callback != NULL) {
+			data->update_callback(dev, data->update_user_data);
+		}
+	}
+	#endif /* CONFIG_RTC_UPDATE */
 }
 
-#endif /* CONFIG_RTC_ALARM */
 
 #ifdef CONFIG_RTC_CALIBRATION
+/* @see 24.6.8.2 Frequency Correction
+ * @note Based on API for setting RTC calibration.
+ * A positive calibration value will increase the frequency of the RTC clock,
+ * a negative value will decrease the frequency of the RTC clock.
+ */
 static int rtc_sam0_set_calibration(const struct device *dev, int32_t calibration)
 {
 	const struct rtc_sam0_config *cfg = dev->config;
@@ -455,7 +547,7 @@ static int rtc_sam0_set_calibration(const struct device *dev, int32_t calibratio
 		return 0;
 	}
 
-	if (abs_correction > RTC_SAM0_CALIBRATE_PPB_MAX) {
+	if (abs_correction > RTC_SAM0_CORRECTION_MAX) {
 		LOG_ERR("The calibration %d result in an out of range value %d",
 			calibration, abs_correction);
 		return -EINVAL;
@@ -473,7 +565,7 @@ static int rtc_sam0_set_calibration(const struct device *dev, int32_t calibratio
 static int rtc_sam0_get_calibration(const struct device *dev, int32_t *calibration)
 {
 	const struct rtc_sam0_config *cfg = dev->config;
-	RtcMode2 *regs = &cfg->regs->MODE2;
+	const RtcMode2 *regs = &cfg->regs->MODE2;
 	int32_t correction;
 
 	if (calibration == NULL) {
@@ -527,6 +619,11 @@ static int rtc_sam0_init(const struct device *dev)
 	}
 #endif
 
+	regs->CTRLA.bit.SWRST = 1U;
+	while (regs->SYNCBUSY.bit.SWRST == 1U) {
+		/* Wait for synchronization after Software Reset */
+	}
+
 	rtc_sam0_sync(cfg->regs);
 	regs->EVCTRL.reg = (cfg->evt_ctrl_msk & RTC_MODE0_EVCTRL_MASK);
 
@@ -542,19 +639,19 @@ static int rtc_sam0_init(const struct device *dev)
 #endif
 
 	regs->INTFLAG.reg = 0;
-#ifdef CONFIG_RTC_ALARM
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
 		    rtc_sam0_isr,
 		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
-#endif
+
 	return 0;
 }
 
 static DEVICE_API(rtc, rtc_sam0_driver_api) = {
 	.set_time = rtc_sam0_set_time,
 	.get_time = rtc_sam0_get_time,
+
 #ifdef CONFIG_RTC_ALARM
 	.alarm_get_supported_fields = rtc_sam0_alarm_get_supported_fields,
 	.alarm_set_time = rtc_sam0_alarm_set_time,
@@ -562,6 +659,11 @@ static DEVICE_API(rtc, rtc_sam0_driver_api) = {
 	.alarm_is_pending = rtc_sam0_alarm_is_pending,
 	.alarm_set_callback = rtc_sam0_alarm_set_callback,
 #endif /* CONFIG_RTC_ALARM */
+
+#ifdef CONFIG_RTC_UPDATE
+	.update_set_callback = rtc_sam0_update_set_callback,
+#endif /* CONFIG_RTC_UPDATE */
+
 #ifdef CONFIG_RTC_CALIBRATION
 	.set_calibration = rtc_sam0_set_calibration,
 	.get_calibration = rtc_sam0_get_calibration,
@@ -601,7 +703,7 @@ static DEVICE_API(rtc, rtc_sam0_driver_api) = {
 	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(n, prescaler),				\
 	"sam0:rtc: Missing prescaler devicetree property");				\
 											\
-	static const struct rtc_sam0_config rtc_sam0_config_##n = {			\
+	static struct rtc_sam0_config DT_CONST rtc_sam0_config_##n = {			\
 		.regs = (Rtc *)DT_INST_REG_ADDR(n),					\
 		.mode = DT_INST_ENUM_IDX(n, counter_mode),				\
 		.prescaler = DT_INST_ENUM_IDX(n, prescaler),				\
@@ -619,7 +721,7 @@ static DEVICE_API(rtc, rtc_sam0_driver_api) = {
 	};										\
 											\
 	IF_ENABLED(CONFIG_RTC_ALARM, (							\
-		static struct rtc_sam0_data_cb						\
+		static struct rtc_sam0_alarm_cb						\
 			rtc_sam0_data_cb_##n[DT_INST_PROP(n, alarms_count)] = {};	\
 	))										\
 											\
@@ -637,5 +739,14 @@ static DEVICE_API(rtc, rtc_sam0_driver_api) = {
 			      &rtc_sam0_driver_api);					\
 
 DT_INST_FOREACH_STATUS_OKAY(RTC_SAM0_DEVICE);
+
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+void zephyr_gtest_rtc_sam0(void) {
+    rtc_sam0_config_0.regs = (Rtc*)ut_mcu_rtc_ptr;
+}
+
+#endif
 
 /* clang-format on */

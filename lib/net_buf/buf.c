@@ -79,7 +79,7 @@ static inline struct net_buf *pool_get_uninit(struct net_buf_pool *pool,
 
 	buf = (struct net_buf *)(((uint8_t *)pool->__bufs) + byte_offset);
 
-	buf->pool_id = pool_id(pool);
+	buf->pool_id = (uint8_t)pool_id(pool);
 	buf->user_data_size = pool->user_data_size;
 
 	return buf;
@@ -347,7 +347,7 @@ success:
 	buf->ref   = 1U;
 	buf->flags = 0U;
 	buf->frags = NULL;
-	buf->size  = size;
+	buf->size  = (uint16_t)size;
 	memset(buf->user_data, 0, buf->user_data_size);
 	net_buf_reset(buf);
 
@@ -525,7 +525,7 @@ struct net_buf *net_buf_clone(struct net_buf *buf, k_timeout_t timeout)
 			return NULL;
 		}
 
-		clone->size = size;
+		clone->size = (uint16_t)size;
 		clone->data = clone->__buf + net_buf_headroom(buf);
 		net_buf_add_mem(clone, buf->data, buf->len);
 	}
@@ -630,7 +630,7 @@ size_t net_buf_linearize(void *dst, size_t dst_len, const struct net_buf *src,
 	size_t to_copy;
 	size_t copied;
 
-	len = min(len, dst_len);
+	len = z_min(len, dst_len);
 
 	frag = src;
 
@@ -643,7 +643,7 @@ size_t net_buf_linearize(void *dst, size_t dst_len, const struct net_buf *src,
 	/* traverse the fragment chain until len bytes are copied */
 	copied = 0;
 	while (frag && len > 0) {
-		to_copy = min(len, frag->len - offset);
+		to_copy = z_min(len, frag->len - offset);
 		memcpy((uint8_t *)dst + copied, frag->data + offset, to_copy);
 
 		copied += to_copy;
@@ -673,7 +673,7 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
 	size_t max_size;
 
 	do {
-		uint16_t count = min(len, net_buf_tailroom(frag));
+		size_t count = z_min(len, net_buf_tailroom(frag));
 
 		net_buf_add_mem(frag, value8, count);
 		len -= count;
@@ -695,7 +695,7 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
 			pool = net_buf_pool_get(buf->pool_id);
 			max_size = pool->alloc->max_alloc_size;
 			frag = net_buf_alloc_len(pool,
-						 max_size ? min(len, max_size) : len,
+						 max_size ? z_min(len, max_size) : len,
 						 timeout);
 		}
 
@@ -729,7 +729,7 @@ size_t net_buf_data_match(const struct net_buf *buf, size_t offset, const void *
 
 	while (buf && len > 0) {
 		bptr = buf->data + offset;
-		to_compare = min(len, buf->len - offset);
+		to_compare = z_min(len, buf->len - offset);
 
 		for (size_t i = 0; i < to_compare; ++i) {
 			if (dptr[compared] != bptr[i]) {

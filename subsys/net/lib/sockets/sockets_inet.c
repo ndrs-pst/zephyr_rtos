@@ -3,7 +3,7 @@
  * Copyright (c) 2021 Nordic Semiconductor
  * Copyright (c) 2023 Arm Limited (or its affiliates). All rights reserved.
  * Copyright (c) 2025 Aerlync Labs Inc.
- * Copyright 2025 NXP
+ * Copyright (c) 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,7 +43,7 @@ BUILD_ASSERT(NET_IPPROTO_IP == 0, "Wildcard IPPROTO_IP must equal 0.");
 BUILD_ASSERT(sizeof(net_socklen_t) == sizeof(uint32_t),
 	     "net_socklen_t must be 32-bit wide");
 
-const struct socket_op_vtable sock_fd_op_vtable;
+static struct socket_op_vtable const sock_fd_op_vtable;
 
 static void zsock_received_cb(struct net_context *ctx,
 			      struct net_pkt *pkt,
@@ -340,8 +340,8 @@ int zsock_bind_ctx(struct net_context *ctx, const struct net_sockaddr *addr,
 	 * bind(), but for STREAM socket, next expected operation is
 	 * listen(), which doesn't work if recv callback is set.
 	 */
-	if (net_context_get_type(ctx) == NET_SOCK_DGRAM ||
-	    net_context_get_type(ctx) == NET_SOCK_RAW) {
+	if ((net_context_get_type(ctx) == NET_SOCK_DGRAM) ||
+	    (net_context_get_type(ctx) == NET_SOCK_RAW)) {
 		ret = net_context_recv(ctx, zsock_received_cb, K_NO_WAIT,
 				       ctx->user_data);
 		if (ret < 0) {
@@ -1737,7 +1737,7 @@ static int ipv4_multicast_if(struct net_context *ctx, const void *optval,
 
 		if (ifindex == 0) {
 			/* No interface set */
-			((struct net_in_addr *)optval)->s_addr = NET_INADDR_ANY;
+			((struct net_in_addr *)optval)->s_addr_be = NET_INADDR_ANY;
 			return 0;
 		}
 
@@ -1762,13 +1762,13 @@ static int ipv4_multicast_if(struct net_context *ctx, const void *optval,
 	}
 
 	if (optlen == sizeof(struct net_ip_mreqn)) {
-		struct net_ip_mreqn *mreqn = (struct net_ip_mreqn *)optval;
+		const struct net_ip_mreqn *mreqn = (const struct net_ip_mreqn *)optval;
 
 		if (mreqn->imr_ifindex != 0) {
 			iface = net_if_get_by_index(mreqn->imr_ifindex);
 
-		} else if (mreqn->imr_address.s_addr != NET_INADDR_ANY) {
-			struct net_if_addr *ifaddr;
+		} else if (mreqn->imr_address.s_addr_be != NET_INADDR_ANY) {
+			const struct net_if_addr *ifaddr;
 
 			ifaddr = net_if_ipv4_addr_lookup(&mreqn->imr_address, &iface);
 			if (ifaddr == NULL) {
@@ -1777,10 +1777,10 @@ static int ipv4_multicast_if(struct net_context *ctx, const void *optval,
 			}
 		}
 	} else {
-		struct net_ip_mreq *mreq = (struct net_ip_mreq *)optval;
+		const struct net_ip_mreq *mreq = (const struct net_ip_mreq *)optval;
 
-		if (mreq->imr_interface.s_addr != NET_INADDR_ANY) {
-			struct net_if_addr *ifaddr;
+		if (mreq->imr_interface.s_addr_be != NET_INADDR_ANY) {
+			const struct net_if_addr *ifaddr;
 
 			ifaddr = net_if_ipv4_addr_lookup(&mreq->imr_interface, &iface);
 			if (ifaddr == NULL) {
@@ -1988,13 +1988,10 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 					errno = -ret;
 					return -1;
 				}
-
 				return 0;
 			}
-
 			break;
 		}
-
 		break;
 
 	case NET_IPPROTO_IP:
@@ -2009,10 +2006,8 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 					errno  = -ret;
 					return -1;
 				}
-
 				return 0;
 			}
-
 			break;
 
 		case ZSOCK_IP_TTL:
@@ -2022,7 +2017,6 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 				errno  = -ret;
 				return -1;
 			}
-
 			return 0;
 
 		case ZSOCK_IP_MULTICAST_IF:
@@ -2034,7 +2028,6 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 				return ipv4_multicast_if(ctx, optval, *optlen, true);
 			}
-
 			break;
 
 		case ZSOCK_IP_MULTICAST_TTL:
@@ -2044,7 +2037,6 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 				errno  = -ret;
 				return -1;
 			}
-
 			return 0;
 
 		case ZSOCK_IP_MTU:
@@ -2055,10 +2047,8 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 					errno  = -ret;
 					return -1;
 				}
-
 				return 0;
 			}
-
 			break;
 
 		case ZSOCK_IP_LOCAL_PORT_RANGE:
@@ -2070,11 +2060,10 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 					errno  = -ret;
 					return -1;
 				}
-
 				return 0;
 			}
-
 			break;
+
 #if defined(CONFIG_NET_IPV4)
 		case ZSOCK_IP_MULTICAST_LOOP:
 			ret = net_context_get_option(ctx,
@@ -2084,11 +2073,9 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 				errno  = -ret;
 				return -1;
 			}
-
 			return 0;
 #endif
 		}
-
 		break;
 
 	case NET_IPPROTO_IPV6:
@@ -2101,10 +2088,8 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 					errno  = -ret;
 					return -1;
 				}
-
 				return 0;
 			}
-
 			break;
 
 		case ZSOCK_IPV6_V6ONLY:
@@ -2117,10 +2102,8 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 					errno  = -ret;
 					return -1;
 				}
-
 				return 0;
 			}
-
 			break;
 
 		case ZSOCK_IPV6_ADDR_PREFERENCES:
@@ -2133,10 +2116,8 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 					errno  = -ret;
 					return -1;
 				}
-
 				return 0;
 			}
-
 			break;
 
 		case ZSOCK_IPV6_TCLASS:
@@ -2149,10 +2130,8 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 					errno  = -ret;
 					return -1;
 				}
-
 				return 0;
 			}
-
 			break;
 
 		case ZSOCK_IPV6_UNICAST_HOPS:
@@ -2163,7 +2142,6 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 				errno  = -ret;
 				return -1;
 			}
-
 			return 0;
 
 		case ZSOCK_IPV6_MULTICAST_IF:
@@ -2180,7 +2158,6 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 					errno  = -ret;
 					return -1;
 				}
-
 				return 0;
 			}
 
@@ -2194,7 +2171,6 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 				errno  = -ret;
 				return -1;
 			}
-
 			return 0;
 
 		case ZSOCK_IPV6_MULTICAST_LOOP:
@@ -2205,11 +2181,9 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 				errno = -ret;
 				return -1;
 			}
-
 			return 0;
 
 		}
-
 		break;
 	}
 
@@ -2231,7 +2205,7 @@ static int ipv4_multicast_group(struct net_context *ctx, const void *optval,
 
 	mreqn = (struct net_ip_mreqn *)optval;
 
-	if (mreqn->imr_multiaddr.s_addr == NET_INADDR_ANY) {
+	if (mreqn->imr_multiaddr.s_addr_be == NET_INADDR_ANY) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -2734,8 +2708,8 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 				return 0;
 			}
-
 			break;
+
 #if defined(CONFIG_NET_IPV4)
 		case ZSOCK_IP_MULTICAST_LOOP:
 			ret = net_context_set_option(ctx,
@@ -2745,11 +2719,9 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 				errno  = -ret;
 				return -1;
 			}
-
 			return 0;
 #endif
 		}
-
 		break;
 
 	case NET_IPPROTO_IPV6:
@@ -3199,7 +3171,7 @@ static int sock_getsockname_vmeth(void *obj, struct net_sockaddr *addr,
 	return zsock_getsockname_ctx(obj, addr, addrlen);
 }
 
-const struct socket_op_vtable sock_fd_op_vtable = {
+static struct socket_op_vtable const sock_fd_op_vtable = {
 	.fd_vtable = {
 		.read = sock_read_vmeth,
 		.write = sock_write_vmeth,

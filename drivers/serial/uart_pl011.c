@@ -111,22 +111,22 @@ static inline int clk_enable_arm_pl011(const struct device *dev, uint32_t clk)
 #define PM_INST_GET(n) NULL
 #endif
 
-static void pl011_enable(const struct device *dev)
+static inline void pl011_enable(const struct device *dev)
 {
 	get_uart(dev)->cr |=  PL011_CR_UARTEN;
 }
 
-static void pl011_disable(const struct device *dev)
+static inline void pl011_disable(const struct device *dev)
 {
 	get_uart(dev)->cr &= ~PL011_CR_UARTEN;
 }
 
-static void pl011_enable_fifo(const struct device *dev)
+static inline void pl011_enable_fifo(const struct device *dev)
 {
 	get_uart(dev)->lcr_h |= PL011_LCRH_FEN;
 }
 
-static void pl011_disable_fifo(const struct device *dev)
+static inline void pl011_disable_fifo(const struct device *dev)
 {
 	get_uart(dev)->lcr_h &= ~PL011_LCRH_FEN;
 }

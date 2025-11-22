@@ -15,6 +15,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mdio_shell, CONFIG_LOG_DEFAULT_LEVEL);
 
+STRUCT_SECTION_START_EXTERN(Z_DEVICE_API_TYPE(mdio));
+STRUCT_SECTION_END_EXTERN(Z_DEVICE_API_TYPE(mdio));
 static bool device_is_mdio(const struct device *dev)
 {
 	return DEVICE_API_IS(mdio, dev);

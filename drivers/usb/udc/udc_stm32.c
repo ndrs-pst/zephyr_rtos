@@ -216,16 +216,16 @@ void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
 	ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
 	if (ep_cfg != NULL && ep_cfg->stat.enabled) {
 		status = HAL_PCD_EP_Open(&priv->pcd, USB_CONTROL_EP_OUT,
-					 UDC_STM32_EP0_MAX_PACKET_SIZE,
-					 EP_TYPE_CTRL);
+				UDC_STM32_EP0_MAX_PACKET_SIZE,
+				EP_TYPE_CTRL);
 		__ASSERT_NO_MSG(status == HAL_OK);
 	}
 
 	ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_IN);
 	if (ep_cfg != NULL && ep_cfg->stat.enabled) {
 		status = HAL_PCD_EP_Open(&priv->pcd, USB_CONTROL_EP_IN,
-					 UDC_STM32_EP0_MAX_PACKET_SIZE,
-					 EP_TYPE_CTRL);
+				UDC_STM32_EP0_MAX_PACKET_SIZE,
+				EP_TYPE_CTRL);
 		__ASSERT_NO_MSG(status == HAL_OK);
 	}
 
@@ -478,7 +478,7 @@ static void handle_msg_data_out(struct udc_stm32_data *priv, uint8_t epnum, uint
 		if (udc_ctrl_stage_is_status_out(dev)) {
 			/* s-in-status completed */
 			__ASSERT_NO_MSG(rx_count == 0);
-			udc_ctrl_update_stage(dev, buf);
+			udc_ctrl_update_stage(dev, buf);        /* USBD_PACKET_SEQ04 */
 			udc_ctrl_submit_status(dev, buf);
 		} else {
 			/* Verify that host did not send more data than it promised */
@@ -492,7 +492,7 @@ static void handle_msg_data_out(struct udc_stm32_data *priv, uint8_t epnum, uint
 				/* Not yet - prepare to receive more data and wait */
 				status = HAL_PCD_EP_Receive(&priv->pcd, ep_cfg->addr,
 							    net_buf_tail(buf),
-							    UDC_STM32_EP0_MAX_PACKET_SIZE);
+						   UDC_STM32_EP0_MAX_PACKET_SIZE);
 				__ASSERT_NO_MSG(status == HAL_OK);
 				return;
 			} /* else: buf->len == priv->ep0_out_wlength */
@@ -632,10 +632,10 @@ static void handle_msg_setup(struct udc_stm32_data *priv)
 		return;
 	}
 
-	udc_ep_buf_set_setup(buf);
+	udc_ep_buf_set_setup(buf);                              /* USBD_PACKET_SEQ00 */
 	net_buf_add_mem(buf, setup, sizeof(struct usb_setup_packet));
 
-	udc_ctrl_update_stage(dev, buf);
+	udc_ctrl_update_stage(dev, buf);                        /* USBD_PACKET_SEQ01 */
 
 	if (udc_ctrl_stage_is_data_out(dev)) {
 		/*  Allocate and feed buffer for data OUT stage */
@@ -877,8 +877,8 @@ static int udc_stm32_enable(const struct device *dev)
 	}
 
 	ret = udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
-				     USB_EP_TYPE_CONTROL,
-				     UDC_STM32_EP0_MAX_PACKET_SIZE, 0);
+				      USB_EP_TYPE_CONTROL,
+				      UDC_STM32_EP0_MAX_PACKET_SIZE, 0);
 	if (ret != 0) {
 		LOG_ERR("Failed enabling ep 0x%02x", USB_CONTROL_EP_IN);
 		return ret;
@@ -1187,7 +1187,7 @@ static enum udc_bus_speed udc_stm32_device_speed(const struct device *dev)
 	return UDC_BUS_UNKNOWN;
 }
 
-static const struct udc_api udc_stm32_api = {
+static struct udc_api const udc_stm32_api = {
 	.lock = udc_stm32_lock,
 	.unlock = udc_stm32_unlock,
 	.init = udc_stm32_init,
@@ -1219,7 +1219,7 @@ static const struct udc_api udc_stm32_api = {
  * Kconfig system.
  */
 #define USB_NUM_BIDIR_ENDPOINTS	DT_INST_PROP(0, num_bidir_endpoints)
-#define USB_RAM_SIZE		DT_INST_PROP(0, ram_size)
+#define USB_RAM_SIZE	DT_INST_PROP(0, ram_size)
 
 static struct udc_stm32_data udc0_priv;
 
@@ -1228,7 +1228,7 @@ static struct udc_data udc0_data = {
 	.priv = &udc0_priv,
 };
 
-static const struct udc_stm32_config udc0_cfg  = {
+static struct udc_stm32_config const udc0_cfg  = {
 	.base = (void *)DT_INST_REG_ADDR(0),
 	.num_endpoints = USB_NUM_BIDIR_ENDPOINTS,
 	.dram_size = USB_RAM_SIZE,
@@ -1272,12 +1272,12 @@ static int priv_clock_enable(void)
 	LL_PWR_EnableVddUSB();
 
 	#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-		/* Configure VOSR register of USB HSTransceiverSupply(); */
-		LL_PWR_EnableUSBPowerSupply();
-		LL_PWR_EnableUSBEPODBooster();
-		while (LL_PWR_IsActiveFlag_USBBOOST() != 1) {
-			/* Wait for USB EPOD BOOST ready */
-		}
+	/* Configure VOSR register of USB HSTransceiverSupply(); */
+	LL_PWR_EnableUSBPowerSupply();
+	LL_PWR_EnableUSBEPODBooster();
+	while (LL_PWR_IsActiveFlag_USBBOOST() != 1) {
+		/* Wait for USB EPOD BOOST ready */
+	}
 	#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) */
 #elif defined(CONFIG_SOC_SERIES_STM32N6X)
 	/* Enable Vdd33USB voltage monitoring */
@@ -1421,8 +1421,8 @@ static int priv_clock_enable(void)
 	#if UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_ULPI
 		LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 	#elif UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_UTMI
-		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
-	#endif
+	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
+#endif
 #else /* CONFIG_SOC_SERIES_STM32F2X || CONFIG_SOC_SERIES_STM32F4X */
 	if (UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_ULPI) {
 		LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
@@ -1584,7 +1584,7 @@ static int udc_stm32_driver_init0(const struct device *dev)
 	}
 #endif
 
-	/*cd
+	/*
 	 * Required for at least STM32L4 devices as they electrically
 	 * isolate USB features from VDDUSB. It must be enabled before
 	 * USB can function. Refer to section 5.1.3 in DM00083560 or
@@ -1599,7 +1599,7 @@ static int udc_stm32_driver_init0(const struct device *dev)
 		LL_PWR_EnableVddUSB();
 		LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_PWR);
 	}
-	#else
+#else
 	LL_PWR_EnableVddUSB();
 #endif /* defined(LL_APB1_GRP1_PERIPH_PWR) */
 #endif /* PWR_CR2_USV */

@@ -125,7 +125,7 @@ int mmc_card_init(struct sd_card *card)
 	ocr_arg |= MMC_OCR_SECTOR_MODE;
 
 	/* CMD1 */
-	ret = mmc_send_op_cond(card, ocr_arg);
+	ret = mmc_send_op_cond(card, ocr_arg);                  /* SD_INIT_SEQ34 */
 	if (ret) {
 		LOG_DBG("Failed to query card OCR");
 		return ret;

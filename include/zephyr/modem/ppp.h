@@ -170,21 +170,21 @@ int modem_ppp_init_internal(const struct device *dev);
 #define MODEM_DEV_PPP_DEFINE(_dev, _name, _init_iface, _prio, _mtu, _buf_size)                     \
 	extern const struct ppp_api modem_ppp_ppp_api;                                             \
                                                                                                    \
-	static uint8_t _CONCAT(_name, _receive_buf)[_buf_size];                                    \
-	static uint8_t _CONCAT(_name, _transmit_buf)[_buf_size];                                   \
+	static uint8_t Z_CONCAT(_name, _receive_buf)[_buf_size];                                   \
+	static uint8_t Z_CONCAT(_name, _transmit_buf)[_buf_size];                                  \
                                                                                                    \
 	static struct modem_ppp _name = {                                                          \
 		.init_iface = _init_iface,                                                         \
-		.receive_buf = _CONCAT(_name, _receive_buf),                                       \
-		.transmit_buf = _CONCAT(_name, _transmit_buf),                                     \
+		.receive_buf = Z_CONCAT(_name, _receive_buf),                                      \
+		.transmit_buf = Z_CONCAT(_name, _transmit_buf),                                    \
 		.buf_size = _buf_size,                                                             \
 	};                                                                                         \
-	static const struct modem_ppp_config _CONCAT(_name, _config) = {                           \
+	static const struct modem_ppp_config Z_CONCAT(_name, _config) = {                          \
 		.dev = _dev,                                                                       \
 	};                                                                                         \
                                                                                                    \
-	NET_DEVICE_INIT(_CONCAT(ppp_net_dev_, _name), "modem_ppp_" #_name,                         \
-			modem_ppp_init_internal, NULL, &_name, &_CONCAT(_name, _config), _prio,    \
+	NET_DEVICE_INIT(Z_CONCAT(ppp_net_dev_, _name), "modem_ppp_" # _name,                       \
+			modem_ppp_init_internal, NULL, &_name, &Z_CONCAT(_name, _config), _prio,   \
 			&modem_ppp_ppp_api, PPP_L2, NET_L2_GET_CTX_TYPE(PPP_L2), _mtu)
 
 /**

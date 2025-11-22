@@ -18,9 +18,9 @@ extern void getopt_init(void);
 #define getopt_state sys_getopt_state
 #define option sys_getopt_option
 
-#define no_argument       0
-#define required_argument 1
-#define optional_argument 2
+#define no_argument        0
+#define required_argument  1
+#define optional_argument  2
 
 extern struct sys_getopt_state *getopt_state_get(void);
 

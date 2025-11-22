@@ -137,7 +137,8 @@ int stream_flash_erase_page(struct stream_flash_ctx *ctx, off_t off)
 	int rc;
 	struct flash_pages_info page;
 
-	if (off < ctx->offset || (off - ctx->offset) >= ctx->available) {
+	if (((size_t)off < ctx->offset) ||
+	    (((size_t)off - ctx->offset) >= ctx->available)) {
 		LOG_ERR("Offset out of designated range");
 		return -ERANGE;
 	}
@@ -232,7 +233,7 @@ static int flash_sync(struct stream_flash_ctx *ctx)
 		/* Invert to ensure that caller is able to discover a faulty
 		 * flash_read() even if no error code is returned.
 		 */
-		for (int i = 0; i < ctx->buf_bytes; i++) {
+		for (size_t i = 0U; i < ctx->buf_bytes; i++) {
 			ctx->buf[i] = ~ctx->buf[i];
 		}
 
@@ -261,9 +262,9 @@ static int flash_sync(struct stream_flash_ctx *ctx)
 int stream_flash_buffered_write(struct stream_flash_ctx *ctx, const uint8_t *data,
 				size_t len, bool flush)
 {
-	int processed = 0;
+	size_t processed = 0U;
+	size_t buf_empty_bytes;
 	int rc = 0;
-	int buf_empty_bytes;
 
 	if (!ctx) {
 		return -EFAULT;
@@ -295,14 +296,14 @@ int stream_flash_buffered_write(struct stream_flash_ctx *ctx, const uint8_t *dat
 		ctx->buf_bytes += len - processed;
 	}
 
-	if (flush && ctx->buf_bytes > 0) {
+	if (flush && ctx->buf_bytes > 0U) {
 		rc = flash_sync(ctx);
 	}
 
 	return rc;
 }
 
-size_t stream_flash_bytes_written(const struct stream_flash_ctx *ctx)
+size_t stream_flash_bytes_written(struct stream_flash_ctx const* ctx)
 {
 	return ctx->bytes_written;
 }

@@ -164,7 +164,8 @@ static struct net_conn *conn_find_handler(struct net_if *iface,
 
 	k_mutex_lock(&conn_lock, K_FOREVER);
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn_used, conn, tmp, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE_WITH_TYPE(&conn_used, struct net_conn,
+						    conn, tmp, node) {
 		if (conn->proto != proto) {
 			continue;
 		}
@@ -298,7 +299,7 @@ static int net_conn_change_remote(struct net_conn *conn,
 			memcpy(&conn->remote_addr, remote_addr,
 			       sizeof(struct net_sockaddr_in));
 
-			if (net_sin(remote_addr)->sin_addr.s_addr) {
+			if (net_sin(remote_addr)->sin_addr.s_addr_be) {
 				conn->flags |= NET_CONN_REMOTE_ADDR_SPEC;
 			}
 		} else {
@@ -344,7 +345,7 @@ static int net_conn_change_local(struct net_conn *conn,
 			memcpy(&conn->local_addr, local_addr,
 			       sizeof(struct net_sockaddr_in));
 
-			if (net_sin(local_addr)->sin_addr.s_addr) {
+			if (net_sin(local_addr)->sin_addr.s_addr_be) {
 				conn->flags |= NET_CONN_LOCAL_ADDR_SPEC;
 			}
 		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
@@ -513,7 +514,7 @@ static bool conn_addr_cmp(struct net_pkt *pkt,
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
 	    net_pkt_family(pkt) == NET_AF_INET6 &&
 	    addr->sa_family == NET_AF_INET6) {
-		uint8_t *addr6;
+		const uint8_t *addr6;
 
 		if (is_remote) {
 			addr6 = ip_hdr->ipv6->src;
@@ -533,7 +534,7 @@ static bool conn_addr_cmp(struct net_pkt *pkt,
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		   net_pkt_family(pkt) == NET_AF_INET &&
 		   addr->sa_family == NET_AF_INET) {
-		uint8_t *addr4;
+		const uint8_t *addr4;
 
 		if (is_remote) {
 			addr4 = ip_hdr->ipv4->src;
@@ -541,7 +542,7 @@ static bool conn_addr_cmp(struct net_pkt *pkt,
 			addr4 = ip_hdr->ipv4->dst;
 		}
 
-		if (net_sin(addr)->sin_addr.s_addr) {
+		if (net_sin(addr)->sin_addr.s_addr_be) {
 			if (!net_ipv4_addr_cmp_raw((uint8_t *)&net_sin(addr)->sin_addr,
 						   addr4)) {
 				return false;
@@ -678,7 +679,7 @@ void net_conn_packet_input(struct net_pkt *pkt, uint16_t proto, enum net_sock_ty
 		/* Allow proto mismatch if socket was created with ETH_P_ALL, or it's raw
 		 * packet socket input.
 		 */
-		if (conn->proto != proto && conn->proto != ETH_P_ALL && type != NET_SOCK_RAW) {
+		if ((conn->proto != proto) && (conn->proto != ETH_P_ALL) && (type != NET_SOCK_RAW)) {
 			continue; /* wrong protocol */
 		}
 
@@ -909,7 +910,8 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 
 	k_mutex_lock(&conn_lock, K_FOREVER);
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_used, conn, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_WITH_TYPE(&conn_used, struct net_conn, 
+					       conn, node) {
 		/* Is the candidate connection matching the packet's interface? */
 		if (!is_iface_matching(conn, pkt)) {
 			continue; /* wrong interface */
@@ -1078,7 +1080,8 @@ void net_conn_foreach(net_conn_foreach_cb_t cb, void *user_data)
 
 	k_mutex_lock(&conn_lock, K_FOREVER);
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_used, conn, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_WITH_TYPE(&conn_used, struct net_conn,
+					       conn, node) {
 		cb(conn, user_data);
 	}
 

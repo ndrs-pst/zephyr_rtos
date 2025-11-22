@@ -34,7 +34,7 @@ static int sntp_init_helper(struct sntp_time *tm)
 		struct net_sockaddr_in sntp_addr = {0};
 
 		sntp_addr.sin_family = NET_AF_INET;
-		sntp_addr.sin_addr.s_addr = iface->config.dhcpv4.ntp_addr.s_addr;
+		sntp_addr.sin_addr.s_addr_be = iface->config.dhcpv4.ntp_addr.s_addr_be;
 		return sntp_simple_addr((struct net_sockaddr *)&sntp_addr, sizeof(sntp_addr),
 					CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT, tm);
 	}

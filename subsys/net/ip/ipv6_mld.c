@@ -146,7 +146,7 @@ static int mld_send(struct net_pkt *pkt)
 }
 
 #if defined(CONFIG_NET_MCAST_ROUTE_MLD_REPORTS)
-static void count_mcast_routes(struct net_route_entry_mcast *entry, void *user_data)
+static void count_mcast_routes(struct net_route_entry_mcast* entry, void* user_data)
 {
 	(*((int *)user_data))++;
 }
@@ -176,9 +176,8 @@ static void append_mcast_routes(struct net_route_entry_mcast *entry, void *user_
 }
 #endif
 
-int net_ipv6_mld_send_single(struct net_if *iface, const struct net_in6_addr *addr, uint8_t mode)
-{
-	struct net_pkt *pkt;
+int net_ipv6_mld_send_single(struct net_if* iface, const struct net_in6_addr* addr, uint8_t mode) {
+	struct net_pkt* pkt;
 	int ret;
 
 	pkt = net_pkt_alloc_with_buffer(iface, IPV6_OPT_HDR_ROUTER_ALERT_LEN +
@@ -414,8 +413,8 @@ static int handle_mld_query(struct net_icmp_ctx *ctx,
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(mld_access,
 					      struct net_icmpv6_mld_query);
-	struct net_ipv6_hdr *ip_hdr = hdr->ipv6;
-	uint16_t length = net_pkt_get_len(pkt);
+	struct net_ipv6_hdr const* ip_hdr = hdr->ipv6;
+	uint16_t length = (uint16_t)net_pkt_get_len(pkt);
 	struct net_icmpv6_mld_query *mld_query;
 	uint16_t pkt_len;
 	int ret = -EIO;

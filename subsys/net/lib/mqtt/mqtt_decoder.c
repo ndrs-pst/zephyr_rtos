@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(net_mqtt_dec, CONFIG_MQTT_LOG_LEVEL);
 static int unpack_uint8(struct buf_ctx *buf, uint8_t *val)
 {
 	uint8_t *cur = buf->cur;
-	uint8_t *end = buf->end;
+	uint8_t const *end = buf->end;
 
 	NET_DBG(">> cur:%p, end:%p", (void *)cur, (void *)end);
 
@@ -60,7 +60,7 @@ static int unpack_uint8(struct buf_ctx *buf, uint8_t *val)
 static int unpack_uint16(struct buf_ctx *buf, uint16_t *val)
 {
 	uint8_t *cur = buf->cur;
-	uint8_t *end = buf->end;
+	uint8_t const *end = buf->end;
 
 	NET_DBG(">> cur:%p, end:%p", (void *)cur, (void *)end);
 
@@ -99,7 +99,10 @@ static int unpack_utf8_str(struct buf_ctx *buf, struct mqtt_utf8 *str)
 		return err_code;
 	}
 
-	if ((buf->end - buf->cur) < utf8_strlen) {
+	uint8_t* cur = buf->cur;
+	uint8_t const* end = buf->end;
+
+	if ((end - cur) < utf8_strlen) {
 		return -EINVAL;
 	}
 
@@ -107,8 +110,8 @@ static int unpack_utf8_str(struct buf_ctx *buf, struct mqtt_utf8 *str)
 	/* Zero length UTF8 strings permitted. */
 	if (utf8_strlen) {
 		/* Point to right location in buffer. */
-		str->utf8 = buf->cur;
-		buf->cur += utf8_strlen;
+		str->utf8 = cur;
+		buf->cur  = (cur + utf8_strlen);
 	} else {
 		str->utf8 = NULL;
 	}
@@ -134,9 +137,12 @@ static int unpack_utf8_str(struct buf_ctx *buf, struct mqtt_utf8 *str)
 static int unpack_raw_data(uint32_t length, struct buf_ctx *buf,
 			   struct mqtt_binstr *str)
 {
-	NET_DBG(">> cur:%p, end:%p", (void *)buf->cur, (void *)buf->end);
+	uint8_t *cur = buf->cur;
+	uint8_t const *end = buf->end;
 
-	if ((buf->end - buf->cur) < length) {
+	NET_DBG(">> cur:%p, end:%p", (void *)cur, (void *)end);
+
+	if ((uintptr_t)(end - cur) < length) {
 		return -EINVAL;
 	}
 
@@ -144,8 +150,8 @@ static int unpack_raw_data(uint32_t length, struct buf_ctx *buf,
 
 	/* Zero length binary strings are permitted. */
 	if (length > 0) {
-		str->data = buf->cur;
-		buf->cur += length;
+		str->data = cur;
+		buf->cur  = (cur + length);
 	} else {
 		str->data = NULL;
 	}
@@ -157,7 +163,7 @@ static int unpack_raw_data(uint32_t length, struct buf_ctx *buf,
 
 int unpack_variable_int(struct buf_ctx *buf, uint32_t *val)
 {
-	uint8_t shift = 0U;
+	uint_fast8_t shift = 0U;
 	int bytes = 0;
 
 	*val = 0U;
@@ -667,7 +673,8 @@ int connect_ack_decode(const struct mqtt_client *client, struct buf_ctx *buf,
 		       struct mqtt_connack_param *param)
 {
 	int err_code;
-	uint8_t flags, ret_code;
+	uint8_t flags;
+	uint8_t ret_code;
 
 	err_code = unpack_uint8(buf, &flags);
 	if (err_code != 0) {

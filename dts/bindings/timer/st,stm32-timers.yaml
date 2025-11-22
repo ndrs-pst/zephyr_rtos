@@ -62,3 +62,8 @@ properties:
       STM32L0/STM32L1 have no instance supporting this feature).
 
       Valid range [0 ... 255].
+
+  bsp-hal-tmr-isr:
+    type: boolean
+    description: Use BSP specific 'bsp_hal_tmr_isr' interrupt service routine
+

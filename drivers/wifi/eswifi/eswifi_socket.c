@@ -196,7 +196,7 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 			      struct eswifi_off_socket *socket)
 {
 	struct net_sockaddr *addr = &socket->peer_addr;
-	struct in_addr *sin_addr = &net_sin(addr)->sin_addr;
+	struct net_in_addr *sin_addr = &net_sin(addr)->sin_addr;
 	int err;
 
 	LOG_DBG("");

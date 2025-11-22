@@ -507,8 +507,7 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 			send_raw = true;
 		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM) &&
 			   socket_type == NET_SOCK_DGRAM) {
-			struct net_sockaddr_ll *dst_addr =
-				(struct net_sockaddr_ll *)&context->remote;
+			struct net_sockaddr_ll *dst_addr = (struct net_sockaddr_ll *)&context->remote;
 			struct net_sockaddr_ll_ptr *src_addr =
 				(struct net_sockaddr_ll_ptr *)&context->local;
 

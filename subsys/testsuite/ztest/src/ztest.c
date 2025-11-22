@@ -27,6 +27,8 @@ static bool failed_expectation;
 #include <zephyr/shell/shell.h>
 #endif
 
+#include <stdlib.h>
+
 #ifdef CONFIG_ZTEST_SHUFFLE
 #include <time.h>
 #include <zephyr/random/random.h>
@@ -1189,7 +1191,7 @@ void __weak test_main(void)
 }
 
 #ifndef KERNEL
-int main(void)
+int ztest_main(void)    /* #CUSTOM@NDRS */
 {
 	z_init_mock();
 	test_main();
@@ -1304,7 +1306,7 @@ static int cmd_run_suite(const struct shell *sh, size_t argc, char **argv)
 {
 	struct sys_getopt_state *state;
 	int opt;
-	static struct sys_getopt_option long_options[] = {
+	static const struct sys_getopt_option long_options[] = {
 		{"repeat_iter", sys_getopt_required_argument, NULL, 'r'},
 		{NULL, 0, NULL, 0}};
 	int opt_index = 0;
@@ -1429,8 +1431,7 @@ static void testsuite_list_get(size_t idx, struct shell_static_entry *entry)
 SHELL_CMD_REGISTER(ztest, &sub_ztest_cmds, "Ztest commands", NULL);
 #endif /* CONFIG_ZTEST_SHELL */
 
-int main(void)
-{
+int ztest_main(void) /* #CUSTOM@NDRS */ {
 #ifdef CONFIG_USERSPACE
 	/* Partition containing globals tagged with ZTEST_DMEM and ZTEST_BMEM
 	 * macros. Any variables that user code may reference need to be

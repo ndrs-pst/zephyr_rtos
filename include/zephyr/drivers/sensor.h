@@ -673,15 +673,15 @@ struct sensor_read_config {
  * @endcode
  */
 #define SENSOR_DT_READ_IODEV(name, dt_node, ...)                                                   \
-	static struct sensor_chan_spec _CONCAT(__channel_array_, name)[] = {__VA_ARGS__};          \
+	static struct sensor_chan_spec Z_CONCAT(__channel_array_, name)[] = {__VA_ARGS__};         \
 	static struct sensor_read_config _CONCAT(__sensor_read_config_, name) = {                  \
 		.sensor = DEVICE_DT_GET(dt_node),                                                  \
 		.is_streaming = false,                                                             \
-		.channels = _CONCAT(__channel_array_, name),                                       \
+		.channels = Z_CONCAT(__channel_array_, name),                                      \
 		.count = ARRAY_SIZE(_CONCAT(__channel_array_, name)),                              \
 		.max = ARRAY_SIZE(_CONCAT(__channel_array_, name)),                                \
 	};                                                                                         \
-	RTIO_IODEV_DEFINE(name, &__sensor_iodev_api, _CONCAT(&__sensor_read_config_, name))
+	RTIO_IODEV_DEFINE(name, &__sensor_iodev_api, Z_CONCAT(&__sensor_read_config_, name))
 
 /**
  * @brief Define a stream instance of a sensor
@@ -703,15 +703,15 @@ struct sensor_read_config {
  * @endcode
  */
 #define SENSOR_DT_STREAM_IODEV(name, dt_node, ...)                                                 \
-	static struct sensor_stream_trigger _CONCAT(__trigger_array_, name)[] = {__VA_ARGS__};     \
-	static struct sensor_read_config _CONCAT(__sensor_read_config_, name) = {                  \
+	static struct sensor_stream_trigger Z_CONCAT(__trigger_array_, name)[] = {__VA_ARGS__};    \
+	static struct sensor_read_config Z_CONCAT(__sensor_read_config_, name) = {                 \
 		.sensor = DEVICE_DT_GET(dt_node),                                                  \
 		.is_streaming = true,                                                              \
-		.triggers = _CONCAT(__trigger_array_, name),                                       \
+		.triggers = Z_CONCAT(__trigger_array_, name),                                      \
 		.count = ARRAY_SIZE(_CONCAT(__trigger_array_, name)),                              \
 		.max = ARRAY_SIZE(_CONCAT(__trigger_array_, name)),                                \
 	};                                                                                         \
-	RTIO_IODEV_DEFINE(name, &__sensor_iodev_api, &_CONCAT(__sensor_read_config_, name))
+	RTIO_IODEV_DEFINE(name, &__sensor_iodev_api, &Z_CONCAT(__sensor_read_config_, name))
 
 /* Used to submit an RTIO sqe to the sensor's iodev */
 typedef void (*sensor_submit_t)(const struct device *sensor, struct rtio_iodev_sqe *sqe);
@@ -951,7 +951,11 @@ struct __attribute__((__packed__)) sensor_data_generic_header {
 	int8_t _padding[sizeof(struct sensor_chan_spec) - 1];
 
 	/** Channels present in the frame */
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	struct sensor_chan_spec channels[1];
+	#else
 	struct sensor_chan_spec channels[0];
+	#endif
 };
 
 /**
@@ -1207,9 +1211,9 @@ static inline int32_t sensor_ms2_to_g(const struct sensor_value *ms2)
 	int64_t micro_ms2 = ms2->val1 * 1000000LL + ms2->val2;
 
 	if (micro_ms2 > 0) {
-		return (micro_ms2 + SENSOR_G / 2) / SENSOR_G;
+		return (int32_t)((micro_ms2 + SENSOR_G / 2) / SENSOR_G);
 	} else {
-		return (micro_ms2 - SENSOR_G / 2) / SENSOR_G;
+		return (int32_t)((micro_ms2 - SENSOR_G / 2) / SENSOR_G);
 	}
 }
 
@@ -1238,9 +1242,9 @@ static inline int32_t sensor_ms2_to_mg(const struct sensor_value *ms2)
 	int64_t nano_ms2 = (ms2->val1 * 1000000LL + ms2->val2) * 1000LL;
 
 	if (nano_ms2 > 0) {
-		return (nano_ms2 + SENSOR_G / 2) / SENSOR_G;
+		return (int32_t)((nano_ms2 + SENSOR_G / 2) / SENSOR_G);
 	} else {
-		return (nano_ms2 - SENSOR_G / 2) / SENSOR_G;
+		return (int32_t)((nano_ms2 - SENSOR_G / 2) / SENSOR_G);
 	}
 }
 
@@ -1256,7 +1260,7 @@ static inline int32_t sensor_ms2_to_ug(const struct sensor_value *ms2)
 {
 	int64_t micro_ms2 = (ms2->val1 * INT64_C(1000000)) + ms2->val2;
 
-	return (micro_ms2 * 1000000LL) / SENSOR_G;
+	return (int32_t)((micro_ms2 * 1000000LL) / SENSOR_G);
 }
 
 /**
@@ -1283,9 +1287,9 @@ static inline int32_t sensor_rad_to_degrees(const struct sensor_value *rad)
 	int64_t micro_rad_s = rad->val1 * 1000000LL + rad->val2;
 
 	if (micro_rad_s > 0) {
-		return (micro_rad_s * 180LL + SENSOR_PI / 2) / SENSOR_PI;
+		return (int32_t)((micro_rad_s * 180LL + SENSOR_PI / 2) / SENSOR_PI);
 	} else {
-		return (micro_rad_s * 180LL - SENSOR_PI / 2) / SENSOR_PI;
+		return (int32_t)((micro_rad_s * 180LL - SENSOR_PI / 2) / SENSOR_PI);
 	}
 }
 
@@ -1316,7 +1320,7 @@ static inline int32_t sensor_rad_to_10udegrees(const struct sensor_value *rad)
 {
 	int64_t micro_rad_s = rad->val1 * 1000000LL + rad->val2;
 
-	return (micro_rad_s * 180LL * 100000LL) / SENSOR_PI;
+	return (int32_t)((micro_rad_s * 180LL * 100000LL) / SENSOR_PI);
 }
 
 /**
@@ -1339,7 +1343,7 @@ static inline void sensor_10udegrees_to_rad(int32_t d, struct sensor_value *rad)
  */
 static inline double sensor_value_to_double(const struct sensor_value *val)
 {
-	return (double)val->val1 + (double)val->val2 / 1000000;
+	return (double)val->val1 + ((double)val->val2 / 1000000.0);
 }
 
 /**
@@ -1350,7 +1354,7 @@ static inline double sensor_value_to_double(const struct sensor_value *val)
  */
 static inline float sensor_value_to_float(const struct sensor_value *val)
 {
-	return (float)val->val1 + (float)val->val2 / 1000000;
+	return (float)val->val1 + ((float)val->val2 / 1000000.0f);
 }
 
 /**
@@ -1415,11 +1419,12 @@ struct sensor_info {
 	}
 
 #define SENSOR_INFO_DEFINE(name, ...)					\
+	MSC_DECLARE_SECTION("._sensor_info.static")			\
 	static const STRUCT_SECTION_ITERABLE(sensor_info, name) =	\
 		SENSOR_INFO_INITIALIZER(__VA_ARGS__)
 
 #define SENSOR_INFO_DT_NAME(node_id)					\
-	_CONCAT(__sensor_info, DEVICE_DT_NAME_GET(node_id))
+	Z_CONCAT(__sensor_info, DEVICE_DT_NAME_GET(node_id))
 
 #define SENSOR_INFO_DT_DEFINE(node_id)					\
 	SENSOR_INFO_DEFINE(SENSOR_INFO_DT_NAME(node_id),		\
@@ -1491,7 +1496,7 @@ struct sensor_info {
  */
 static inline int64_t sensor_value_to_deci(const struct sensor_value *val)
 {
-	return ((int64_t)val->val1 * 10) + val->val2 / 100000;
+	return ((int64_t)val->val1 * 10) + (val->val2 / 100000);
 }
 
 /**
@@ -1502,7 +1507,7 @@ static inline int64_t sensor_value_to_deci(const struct sensor_value *val)
  */
 static inline int64_t sensor_value_to_centi(const struct sensor_value *val)
 {
-	return ((int64_t)val->val1 * 100) + val->val2 / 10000;
+	return ((int64_t)val->val1 * 100) + (val->val2 / 10000);
 }
 
 /**
@@ -1513,7 +1518,7 @@ static inline int64_t sensor_value_to_centi(const struct sensor_value *val)
  */
 static inline int64_t sensor_value_to_milli(const struct sensor_value *val)
 {
-	return ((int64_t)val->val1 * 1000) + val->val2 / 1000;
+	return ((int64_t)val->val1 * 1000) + (val->val2 / 1000);
 }
 
 /**

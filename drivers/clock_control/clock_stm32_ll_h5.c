@@ -87,13 +87,25 @@ static uint32_t get_startup_frequency(void)
 
 __unused
 static uint32_t get_pllout_frequency(uint32_t pllsrc_freq,
-					    int pllm_div,
-					    int plln_mul,
-					    int pllout_div)
+				     int pllm_div,
+				     int plln_mul,
+				     int pllout_div)
 {
 	__ASSERT_NO_MSG(pllm_div && pllout_div);
+	int fracn;
+	uint64_t pllout_freq;
 
-	return (pllsrc_freq / pllm_div) * plln_mul / pllout_div;
+	if (IS_ENABLED(STM32_PLL_FRACN_ENABLED)) {
+		fracn = STM32_PLL_FRACN_VALUE;
+	} else {
+		fracn = 0;
+	}
+
+	/* Scale up the fractional part */
+	pllout_freq = (uint64_t)pllsrc_freq * ((plln_mul * STM32_PLL_FRACN_DIVISOR) + fracn) /
+		(pllm_div * STM32_PLL_FRACN_DIVISOR);
+
+	return (uint32_t)(pllout_freq / pllout_div);
 }
 
 static uint32_t get_sysclk_frequency(void)
@@ -119,11 +131,11 @@ static uint32_t get_sysclk_frequency(void)
 /** @brief Verifies clock is part of active clock configuration */
 int enabled_clock(uint32_t src_clk)
 {
-	if ((src_clk == STM32_SRC_SYSCLK) ||
-	    (src_clk == STM32_SRC_HCLK) ||
-	    (src_clk == STM32_SRC_PCLK1) ||
-	    (src_clk == STM32_SRC_PCLK2) ||
-	    (src_clk == STM32_SRC_PCLK3) ||
+	if ((src_clk == STM32_SRC_SYSCLK)   ||
+	    (src_clk == STM32_SRC_HCLK)     ||
+	    (src_clk == STM32_SRC_PCLK1)    ||
+	    (src_clk == STM32_SRC_PCLK2)    ||
+	    (src_clk == STM32_SRC_PCLK3)    ||
 	    (src_clk == STM32_SRC_TIMPCLK1) ||
 	    (src_clk == STM32_SRC_TIMPCLK2) ||
 	    ((src_clk == STM32_SRC_HSE) && IS_ENABLED(STM32_HSE_ENABLED)) ||
@@ -448,6 +460,9 @@ static void set_regu_voltage(uint32_t hclk_freq)
 		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
 	}
 	while (LL_PWR_IsActiveFlag_VOS() == 0) {
+		if (IS_ENABLED(__GTEST)) {
+			break;
+		}
 	}
 }
 
@@ -559,6 +574,9 @@ static int set_up_plls(void)
 
 	LL_RCC_PLL1_Enable();
 	while (LL_RCC_PLL1_IsReady() != 1U) {
+		if (IS_ENABLED(__GTEST)) {
+			break;
+		}
 	}
 
 	goto setup_pll2;
@@ -713,7 +731,10 @@ static void set_up_fixed_clock_sources(void)
 		/* Enable HSE */
 		LL_RCC_HSE_Enable();
 		while (LL_RCC_HSE_IsReady() != 1) {
-		/* Wait for HSE ready */
+			/* Wait for HSE ready */
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	}
 
@@ -728,7 +749,10 @@ static void set_up_fixed_clock_sources(void)
 			/* Enable HSI */
 			LL_RCC_HSI_Enable();
 			while (LL_RCC_HSI_IsReady() != 1) {
-			/* Wait for HSI ready */
+				/* Wait for HSI ready */
+				if (IS_ENABLED(__GTEST)) {
+					break;
+				}
 			}
 		}
 		/* HSI divider configuration */
@@ -750,6 +774,9 @@ static void set_up_fixed_clock_sources(void)
 		LL_RCC_LSE_Enable();
 		/* Wait for LSE ready */
 		while (!LL_RCC_LSE_IsReady()) {
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 
 		stm32_backup_domain_disable_access();
@@ -767,6 +794,9 @@ static void set_up_fixed_clock_sources(void)
 
 		/* Wait till CSI is ready */
 		while (LL_RCC_CSI_IsReady() != 1) {
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	}
 
@@ -774,12 +804,18 @@ static void set_up_fixed_clock_sources(void)
 		/* Enable LSI oscillator */
 		LL_RCC_LSI_Enable();
 		while (LL_RCC_LSI_IsReady() != 1) {
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	}
 
 	if (IS_ENABLED(STM32_HSI48_ENABLED)) {
 		LL_RCC_HSI48_Enable();
 		while (LL_RCC_HSI48_IsReady() != 1) {
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	}
 
@@ -823,21 +859,33 @@ int stm32_clock_control_init(const struct device *dev)
 		/* Set PLL1 as System Clock Source */
 		LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PLL1);
 		while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_PLL1) {
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	} else if (IS_ENABLED(STM32_SYSCLK_SRC_HSE)) {
 		/* Set HSE as SYSCLCK source */
 		LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSE);
 		while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSE) {
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	} else if (IS_ENABLED(STM32_SYSCLK_SRC_CSI)) {
 		/* Set CSI as SYSCLCK source */
 		LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_CSI);
 		while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_CSI) {
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	} else if (IS_ENABLED(STM32_SYSCLK_SRC_HSI)) {
 		/* Set HSI as SYSCLCK source */
 		LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
 		while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
+			if (IS_ENABLED(__GTEST)) {
+				break;
+			}
 		}
 	} else {
 		return -ENOTSUP;

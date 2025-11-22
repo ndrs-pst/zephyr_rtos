@@ -225,7 +225,7 @@ bool usbd_is_suspended(struct usbd_context *uds_ctx)
 	return uds_ctx->status.suspended;
 }
 
-int usbd_init(struct usbd_context *const uds_ctx)
+int usbd_init(struct usbd_context *const uds_ctx)               /* USBD_INIT_SEQ00 */
 {
 	int ret;
 
@@ -253,7 +253,7 @@ int usbd_init(struct usbd_context *const uds_ctx)
 		goto init_exit;
 	}
 
-	ret = usbd_device_init_core(uds_ctx);
+	ret = usbd_device_init_core(uds_ctx);                   /* USBD_INIT_SEQ01 */
 	if (ret) {
 		goto init_exit;
 	}
@@ -268,7 +268,7 @@ init_exit:
 	return ret;
 }
 
-int usbd_enable(struct usbd_context *const uds_ctx)
+int usbd_enable(struct usbd_context *const uds_ctx)             /* USBD_INIT_SEQ04 */
 {
 	int ret;
 
@@ -287,7 +287,7 @@ int usbd_enable(struct usbd_context *const uds_ctx)
 		goto enable_exit;
 	}
 
-	ret = udc_enable(uds_ctx->dev);
+	ret = udc_enable(uds_ctx->dev);                         /* USBD_INIT_SEQ05 */
 	if (ret != 0) {
 		LOG_ERR("Failed to enable controller");
 		goto enable_exit;

@@ -152,7 +152,7 @@ static int hci_event_filter(const uint8_t *evt_data)
 
 	switch (evt_type) {
 	case BT_HCI_EVT_LE_META_EVENT: {
-		uint8_t subevt_type = evt_data[sizeof(struct bt_hci_evt_hdr)];
+		uint8_t subevt_type = evt_data[BT_HCI_EVT_HDR_SIZE];
 
 		switch (subevt_type) {
 		case BT_HCI_EVT_LE_ADVERTISING_REPORT:

@@ -39,9 +39,15 @@ extern "C" {
  * @param[in]  secname type name of iterable section.
  * @param[in]  section_postfix postfix to use in section name
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS re-arrange `__in_section` declaration sequence */
+#define TYPE_SECTION_ITERABLE(type, varname, secname, section_postfix) \
+	__in_section(_##secname, static, Z_CONCAT(section_postfix, _)) __used __noasan \
+	Z_DECL_ALIGN(type) varname
+#else
 #define TYPE_SECTION_ITERABLE(type, varname, secname, section_postfix) \
 	Z_DECL_ALIGN(type) varname \
-	__in_section(_##secname, static, _CONCAT(section_postfix, _)) __used __noasan
+	__in_section(_##secname, static, Z_CONCAT(section_postfix, _)) __used __noasan
+#endif
 
 /**
  * @brief iterable section start symbol for a generic type
@@ -52,7 +58,7 @@ extern "C" {
  * would be TYPE_SECTION_START(foobar)
  *
  */
-#define TYPE_SECTION_START(secname) _CONCAT(_##secname, _list_start)
+#define TYPE_SECTION_START(secname) Z_CONCAT(_##secname, _list_start)
 
 /**
  * @brief iterable section end symbol for a generic type
@@ -62,7 +68,7 @@ extern "C" {
  * @param[in]  secname type name of iterable section.  For 'struct foobar' this
  * would be TYPE_SECTION_START(foobar)
  */
-#define TYPE_SECTION_END(secname) _CONCAT(_##secname, _list_end)
+#define TYPE_SECTION_END(secname) Z_CONCAT(_##secname, _list_end)
 
 /**
  * @brief iterable section extern for start symbol for a generic type
@@ -102,15 +108,24 @@ extern "C" {
  * list of struct objects to iterate over. This is normally done using
  * ITERABLE_SECTION_ROM() or ITERABLE_SECTION_RAM() in the linker script.
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
 #define TYPE_SECTION_FOREACH(type, secname, iterator)		\
 	TYPE_SECTION_START_EXTERN(type, secname);		\
-	TYPE_SECTION_END_EXTERN(type, secname);		\
+	TYPE_SECTION_END_EXTERN(type, secname);			\
+	for (type * iterator = TYPE_SECTION_START(secname);	\
+	     iterator < TYPE_SECTION_END(secname);		\
+	     iterator++)
+#else
+#define TYPE_SECTION_FOREACH(type, secname, iterator)		\
+	TYPE_SECTION_START_EXTERN(type, secname);		\
+	TYPE_SECTION_END_EXTERN(type, secname);			\
 	for (type * iterator = TYPE_SECTION_START(secname); ({	\
 		__ASSERT(iterator <= TYPE_SECTION_END(secname),\
 			      "unexpected list end location");	\
 		     iterator < TYPE_SECTION_END(secname);	\
 	     });						\
 	     iterator++)
+#endif
 
 /**
  * @brief Get element from section for a generic type.

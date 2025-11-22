@@ -207,7 +207,7 @@ static void init(const struct log_backend *const backend)
 	mtrace_init();
 }
 
-const struct log_backend_api log_backend_adsp_mtrace_api = {
+static const struct log_backend_api log_backend_adsp_mtrace_api = {
 	.process = process,
 	.dropped = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : dropped,
 	.panic = panic,

@@ -443,7 +443,7 @@ static int sockaddr_to_nsos_mid(const struct net_sockaddr *addr, net_socklen_t a
 
 		addr_in_mid->sin_family = NSOS_MID_AF_INET;
 		addr_in_mid->sin_port = addr_in->sin_port;
-		addr_in_mid->sin_addr = addr_in->sin_addr.s_addr;
+		addr_in_mid->sin_addr = addr_in->sin_addr.s_addr_be;
 
 		*addrlen_mid = sizeof(*addr_in_mid);
 
@@ -530,7 +530,7 @@ static int sockaddr_from_nsos_mid(struct net_sockaddr *addr, net_socklen_t *addr
 
 		addr_in.sin_family = NET_AF_INET;
 		addr_in.sin_port = addr_in_mid->sin_port;
-		addr_in.sin_addr.s_addr = addr_in_mid->sin_addr;
+		addr_in.sin_addr.s_addr_be = addr_in_mid->sin_addr;
 
 		memcpy(addr, &addr_in, MIN(*addrlen, sizeof(addr_in)));
 		*addrlen = sizeof(addr_in);

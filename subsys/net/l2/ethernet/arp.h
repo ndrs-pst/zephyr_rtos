@@ -67,6 +67,7 @@ int net_arp_prepare(struct net_pkt *pkt,
 			struct net_in_addr *request_ip,
 			struct net_in_addr *current_ip,
 			struct net_pkt **arp_pkt);
+
 enum net_verdict net_arp_input(struct net_pkt *pkt,
 			       struct net_eth_addr *src,
 			       struct net_eth_addr *dst);

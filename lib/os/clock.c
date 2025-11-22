@@ -222,7 +222,7 @@ int z_vrfy_sys_clock_nanosleep(int clock_id, int flags, const struct timespec *r
 #include <zephyr/syscalls/sys_clock_nanosleep_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-#ifdef CONFIG_ZTEST
+#if defined(CONFIG_ZTEST) && !defined(_MSC_VER) /* #CUSTOM@NDRS */
 #include <zephyr/ztest.h>
 static void reset_clock_offset(void)
 {

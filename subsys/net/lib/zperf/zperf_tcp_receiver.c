@@ -311,7 +311,7 @@ static int zperf_tcp_receiver_init(void)
 			}
 		} else {
 use_any_ipv4:
-			in4_addr->sin_addr.s_addr = NET_INADDR_ANY;
+			in4_addr->sin_addr.s_addr_be = NET_INADDR_ANY;
 		}
 
 		in4_addr->sin_port = net_htons(tcp_server_port);

@@ -280,14 +280,14 @@ extern "C" {
 #define ZSOCK_TLS_SESSION_CACHE_ENABLED 1 /**< Enable TLS session caching. */
 
 /* Valid values for @ref TLS_DTLS_CID (Connection ID) option */
-#define ZSOCK_TLS_DTLS_CID_DISABLED		0 /**< CID is disabled  */
-#define ZSOCK_TLS_DTLS_CID_SUPPORTED		1 /**< CID is supported */
-#define ZSOCK_TLS_DTLS_CID_ENABLED		2 /**< CID is enabled   */
+#define ZSOCK_TLS_DTLS_CID_DISABLED     0 /**< CID is disabled  */
+#define ZSOCK_TLS_DTLS_CID_SUPPORTED    1 /**< CID is supported */
+#define ZSOCK_TLS_DTLS_CID_ENABLED      2 /**< CID is enabled   */
 
 /* Valid values for @ref TLS_DTLS_CID_STATUS option */
-#define ZSOCK_TLS_DTLS_CID_STATUS_DISABLED	0 /**< CID is disabled */
-#define ZSOCK_TLS_DTLS_CID_STATUS_DOWNLINK	1 /**< CID is in use by us */
-#define ZSOCK_TLS_DTLS_CID_STATUS_UPLINK	2 /**< CID is in use by peer */
+#define ZSOCK_TLS_DTLS_CID_STATUS_DISABLED  0 /**< CID is disabled */
+#define ZSOCK_TLS_DTLS_CID_STATUS_DOWNLINK  1 /**< CID is in use by us */
+#define ZSOCK_TLS_DTLS_CID_STATUS_UPLINK    2 /**< CID is in use by peer */
 #define ZSOCK_TLS_DTLS_CID_STATUS_BIDIRECTIONAL	3 /**< CID is in use by us and peer */
 
 /** Data structure for @ref ZSOCK_TLS_CERT_VERIFY_CALLBACK socket option. */
@@ -602,7 +602,7 @@ static inline int zsock_fcntl_wrapper(int sock, int cmd, ...)
  * if @kconfig{CONFIG_POSIX_API} is defined (in which case
  * it may conflict with generic POSIX `ioctl()` function).
  */
-__syscall int zsock_ioctl_impl(int sock, unsigned long request, va_list ap);
+__syscall int zsock_ioctl_impl(int sock, unsigned long request, va_list args);
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -632,6 +632,7 @@ static inline int zsock_ioctl_wrapper(int sock, unsigned long request, ...)
  * This function is also exposed as `poll()`
  * if @kconfig{CONFIG_POSIX_API} is defined (in which case
  * it may conflict with generic POSIX `poll()` function).
+ * @see z_impl_zsock_poll() in `subsys/net/lib/sockets/sockets.c`
  */
 static inline int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 {
@@ -950,7 +951,7 @@ int zsock_getnameinfo(const struct net_sockaddr *addr, net_socklen_t addrlen,
  * @name IPv4 level options (NET_IPPROTO_IP)
  * @{
  */
-/* Socket options for IPPROTO_IP level */
+/* Socket options for NET_IPPROTO_IP level */
 /** Set or receive the Type-Of-Service value for an outgoing packet. */
 #define ZSOCK_IP_TOS 1
 
@@ -1151,6 +1152,7 @@ struct net_socket_register {
 #endif
 
 #define _NET_SOCKET_REGISTER(socket_name, prio, _family, _is_supported, _handler, _is_offloaded) \
+	MSC_DECLARE_SECTION("._net_socket_register.static")		\
 	static const STRUCT_SECTION_ITERABLE(net_socket_register,	\
 			NET_SOCKET_GET_NAME(socket_name, prio)) = {	\
 		.family = _family,					\

@@ -74,7 +74,7 @@ static inline void lpspi_handle_rx_irq(const struct device *dev)
 	LOG_DBG("RX FIFO: %d, RX BUF: %p", rx_fsr, ctx->rx_buf);
 
 	while ((rx_fsr = rx_fifo_cur_len(base)) > 0 && spi_context_rx_on(ctx)) {
-		words_read = lpspi_rx_buf_write_words(dev, rx_fsr);
+		words_read = (uint8_t)lpspi_rx_buf_write_words(dev, rx_fsr);
 		total_words_read += words_read;
 		total_words_written += (spi_context_rx_buf_on(ctx) ? words_read : 0);
 		spi_context_update_rx(ctx, lpspi_data->word_size_bytes, words_read);
@@ -109,7 +109,7 @@ static inline void lpspi_fill_tx_fifo(const struct device *dev, const uint8_t *b
 	uint32_t next_word;
 	uint32_t next_word_bytes;
 
-	for (int word_count = 0; word_count < fill_len; word_count++) {
+	for (size_t word_count = 0; word_count < fill_len; word_count++) {
 		next_word_bytes = MIN(word_size, buf_len);
 		next_word = lpspi_next_tx_word(dev, buf, offset, next_word_bytes);
 		base->TDR = next_word;
@@ -128,7 +128,7 @@ static void lpspi_fill_tx_fifo_nop(const struct device *dev, size_t fill_len)
 	struct lpspi_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 
-	for (int i = 0; i < fill_len; i++) {
+	for (size_t i = 0; i < fill_len; i++) {
 		base->TDR = 0;
 	}
 
@@ -145,7 +145,7 @@ static void lpspi_next_tx_fill(const struct device *dev)
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	struct spi_context *ctx = &data->ctx;
 	uint8_t left_in_fifo = tx_fifo_cur_len(base);
-	size_t fill_len = MIN(ctx->tx_len, config->tx_fifo_size - left_in_fifo);
+	size_t fill_len = MIN(ctx->tx_len, (size_t)(config->tx_fifo_size - left_in_fifo));
 	size_t actual_filled = 0;
 
 	const struct spi_buf *current_buf = ctx->current_tx;

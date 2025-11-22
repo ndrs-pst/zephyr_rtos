@@ -131,7 +131,11 @@ enum dns_server_source {
 #define MDNS_SERVER_COUNT 1
 #endif /* CONFIG_NET_IPV6 && CONFIG_NET_IPV4 */
 #else
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 #define MDNS_SERVER_COUNT 0
+#else
+#define MDNS_SERVER_COUNT 1
+#endif
 #endif /* CONFIG_MDNS_RESOLVER */
 
 /* If LLMNR is enabled, then add some extra well known multicast servers to the
@@ -144,7 +148,11 @@ enum dns_server_source {
 #define LLMNR_SERVER_COUNT 1
 #endif /* CONFIG_NET_IPV6 && CONFIG_NET_IPV4 */
 #else
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 #define LLMNR_SERVER_COUNT 0
+#else
+#define LLMNR_SERVER_COUNT 1
+#endif
 #endif /* CONFIG_MDNS_RESOLVER */
 
 #define DNS_MAX_MCAST_SERVERS (MDNS_SERVER_COUNT + LLMNR_SERVER_COUNT)
@@ -185,6 +193,10 @@ enum dns_server_source {
 #if defined(CONFIG_ZVFS_POLL_MAX)
 BUILD_ASSERT(CONFIG_ZVFS_POLL_MAX >= DNS_DISPATCHER_MAX_POLL,
 	     "CONFIG_ZVFS_POLL_MAX must be larger than " STRINGIFY(DNS_DISPATCHER_MAX_POLL));
+#endif
+
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define EPFNOSUPPORT         135
 #endif
 
 /** @brief What is the type of the socket given to DNS socket dispatcher,
@@ -321,7 +333,7 @@ struct dns_addrinfo {
 			char ai_canonname[DNS_MAX_NAME_SIZE + 1];
 		};
 
-		/* AF_UNSPEC extensions */
+		/* NET_AF_UNSPEC extensions */
 		struct {
 			enum dns_resolve_extension ai_extension;
 
@@ -564,7 +576,7 @@ struct mdns_responder_context {
  * the stack, then the variable needs to be valid for the whole duration of
  * the resolving. Caller does not need to fill the variable beforehand or
  * edit the context afterwards.
- * @param dns_servers_str DNS server addresses using textual strings. The
+ * @param servers DNS server addresses using textual strings. The
  * array is NULL terminated. The port number can be given in the string.
  * Syntax for the server addresses with or without port numbers:
  *    IPv4        : 10.0.9.1

@@ -162,8 +162,8 @@ static int igmp_v3_create(struct net_pkt *pkt, uint8_t type, struct net_if_mcast
 		}
 
 		for (int j = 0; j < mcast[i].sources_len; j++) {
-			if (net_pkt_write(pkt, &mcast[i].sources[j].in_addr.s_addr,
-					  sizeof(mcast[i].sources[j].in_addr.s_addr))) {
+			if (net_pkt_write(pkt, &mcast[i].sources[j].in_addr.s_addr_be,
+					  sizeof(mcast[i].sources[j].in_addr.s_addr_be))) {
 				return -ENOBUFS;
 			}
 		}
@@ -612,8 +612,8 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct net_in_addr *addr,
 						    : IGMPV3_CHANGE_TO_EXCLUDE_MODE;
 		maddr->sources_len = param->sources_len;
 		for (int i = 0; i < param->sources_len; i++) {
-			net_ipaddr_copy(&maddr->sources[i].in_addr.s_addr,
-					&param->source_list[i].s_addr);
+			net_ipaddr_copy(&maddr->sources[i].in_addr.s_addr_be,
+					&param->source_list[i].s_addr_be);
 		}
 	} else {
 		maddr->record_type = IGMPV3_CHANGE_TO_EXCLUDE_MODE;

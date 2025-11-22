@@ -101,7 +101,7 @@ static void create_ipv4_addr(struct net_sockaddr_in *addr)
 	addr->sin_port = net_htons(LLMNR_LISTEN_PORT);
 
 	/* Well known IPv4 224.0.0.252 address */
-	addr->sin_addr.s_addr = net_htonl(0xE00000FC);
+	addr->sin_addr.s_addr_be = net_htonl(0xE00000FC);
 }
 
 static void create_ipv4_dst_addr(struct net_sockaddr_in *src_addr,

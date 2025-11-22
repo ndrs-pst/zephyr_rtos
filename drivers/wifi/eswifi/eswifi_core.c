@@ -108,7 +108,7 @@ static void __parse_scan_res(char *str, struct wifi_scan_result *res)
 		case 2: /* mac addr */
 			break;
 		case 3: /* RSSI */
-			res->rssi = atoi(str);
+			res->rssi = (int8_t)atoi(str);
 			break;
 		case 4: /* bitrate */
 			break;
@@ -210,6 +210,7 @@ static int __parse_ipv4_address(char *str, char *ssid, uint8_t ip[4])
 
 		ip[byte++] = atoi(str);
 		while (*str && (*str++ != '.')) {
+			/* pass */
 		}
 	}
 
@@ -257,7 +258,7 @@ static void eswifi_scan(struct eswifi_dev *eswifi)
 static int eswifi_connect(struct eswifi_dev *eswifi)
 {
 	char connect[] = "C0\r";
-	struct in_addr addr;
+	struct net_in_addr addr;
 	char *rsp;
 	int err;
 
@@ -434,7 +435,7 @@ static int eswifi_get_mac_addr(struct eswifi_dev *eswifi, uint8_t addr[6])
 
 	/* format is "ff:ff:ff:ff:ff:ff" */
 	for (i = 0; i < ret && byte < 6; i++) {
-		addr[byte++] = strtol(&rsp[i], NULL, 16);
+		addr[byte++] = (uint8_t)strtol(&rsp[i], NULL, 16);
 		i += 2;
 	}
 

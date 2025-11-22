@@ -134,7 +134,7 @@ static int hci_df_set_cl_cte_tx_params(const struct bt_le_ext_adv *adv,
 		return -ENOBUFS;
 	}
 
-	cp = net_buf_add(buf, sizeof(*cp));
+	cp = net_buf_add(buf, BT_HCI_CP_LE_SET_CL_CTE_TX_PARAMS_SZ);
 	cp->handle = adv->handle;
 	cp->cte_len = params->cte_len;
 	cp->cte_type = get_hci_cte_type(params->cte_type);
@@ -300,8 +300,8 @@ prepare_cl_cte_rx_enable_cmd_params(struct net_buf **buf, struct bt_le_per_adv_s
 		return -ENOBUFS;
 	}
 
-	cp = net_buf_add(*buf, sizeof(*cp));
-	(void)memset(cp, 0, sizeof(*cp));
+	cp = net_buf_add(*buf, BT_HCI_CP_LE_SET_CL_CTE_SAMPLING_ENABLE_SZ);
+	(void)memset(cp, 0, BT_HCI_CP_LE_SET_CL_CTE_SAMPLING_ENABLE_SZ);
 
 	cp->sync_handle = sys_cpu_to_le16(sync->handle);
 	cp->sampling_enable = enable ? 1 : 0;
@@ -378,12 +378,12 @@ int hci_df_prepare_connectionless_iq_report(struct net_buf *buf,
 	struct bt_hci_evt_le_connectionless_iq_report *evt;
 	struct bt_le_per_adv_sync *per_adv_sync;
 
-	if (buf->len < sizeof(*evt)) {
+	if (buf->len < BT_HCI_EVT_LE_CONNECTIONLESS_IQ_REPORT_SZ) {
 		LOG_ERR("Unexpected end of buffer");
 		return -EINVAL;
 	}
 
-	evt = net_buf_pull_mem(buf, sizeof(*evt));
+	evt = net_buf_pull_mem(buf, BT_HCI_EVT_LE_CONNECTIONLESS_IQ_REPORT_SZ);
 
 	per_adv_sync = bt_hci_per_adv_sync_lookup_handle(sys_le16_to_cpu(evt->sync_handle));
 
@@ -495,8 +495,8 @@ static void prepare_conn_cte_tx_params_cmd(struct net_buf *buf, const struct bt_
 	struct bt_hci_cp_le_set_conn_cte_tx_params *cp;
 	uint8_t *ant_ids;
 
-	cp = net_buf_add(buf, sizeof(*cp));
-	(void)memset(cp, 0, sizeof(*cp));
+	cp = net_buf_add(buf, BT_HCI_CP_LE_SET_CONN_CTE_TX_PARAMS_SZ);
+	(void)memset(cp, 0, BT_HCI_CP_LE_SET_CONN_CTE_TX_PARAMS_SZ);
 
 	cp->handle = sys_cpu_to_le16(conn->handle);
 	cp->cte_types = params->cte_types;
@@ -584,8 +584,8 @@ static int prepare_conn_cte_rx_enable_cmd_params(struct net_buf **buf, struct bt
 		return -ENOBUFS;
 	}
 
-	cp = net_buf_add(*buf, sizeof(*cp));
-	(void)memset(cp, 0, sizeof(*cp));
+	cp = net_buf_add(*buf, BT_HCI_CP_LE_SET_CONN_CTE_RX_PARAMS_SZ);
+	(void)memset(cp, 0, BT_HCI_CP_LE_SET_CONN_CTE_RX_PARAMS_SZ);
 
 	cp->handle = sys_cpu_to_le16(conn->handle);
 	cp->sampling_enable = enable ? 1 : 0;
@@ -668,12 +668,12 @@ int hci_df_prepare_connection_iq_report(struct net_buf *buf,
 	struct bt_hci_evt_le_connection_iq_report *evt;
 	struct bt_conn *conn;
 
-	if (buf->len < sizeof(*evt)) {
+	if (buf->len < BT_HCI_EVT_LE_CONNECTION_IQ_REPORT_SZ) {
 		LOG_ERR("Unexpected end of buffer");
 		return -EINVAL;
 	}
 
-	evt = net_buf_pull_mem(buf, sizeof(*evt));
+	evt = net_buf_pull_mem(buf, BT_HCI_EVT_LE_CONNECTION_IQ_REPORT_SZ);
 
 	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle), BT_CONN_TYPE_LE);
 	if (!conn) {

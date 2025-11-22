@@ -10,7 +10,7 @@
 
 /** Domain clocks */
 
-/* RM0468, Table 56 Kernel clock dictribution summary */
+/* RM0468, Table 56 Kernel clock distribution summary */
 
 /** System clock */
 /* defined in stm32_common_clocks.h */

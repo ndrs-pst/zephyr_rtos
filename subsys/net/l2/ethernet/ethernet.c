@@ -480,7 +480,7 @@ static inline bool ethernet_ipv4_dst_is_broadcast_or_mcast(struct net_pkt *pkt)
 static bool ethernet_fill_in_dst_on_ipv4_mcast(struct net_pkt *pkt,
 					       struct net_eth_addr *dst)
 {
-	if (net_pkt_family(pkt) == NET_AF_INET &&
+	if ((net_pkt_family(pkt) == NET_AF_INET) &&
 	    net_ipv4_is_addr_mcast_raw(NET_IPV4_HDR(pkt)->dst)) {
 		/* Multicast address */
 		net_eth_ipv4_mcast_to_mac_addr(
@@ -511,8 +511,7 @@ static int ethernet_ll_prepare_on_ipv4(struct net_if *iface,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_ARP)) {
-		return net_arp_prepare(pkt,
-				       (struct net_in_addr *)NET_IPV4_HDR(pkt)->dst, NULL, out);
+		return net_arp_prepare(pkt, (struct net_in_addr *)NET_IPV4_HDR(pkt)->dst, NULL, out);
 	}
 
 	return NET_ARP_COMPLETE;
@@ -527,7 +526,7 @@ static int ethernet_ll_prepare_on_ipv4(struct net_if *iface,
 static bool ethernet_fill_in_dst_on_ipv6_mcast(struct net_pkt *pkt,
 					       struct net_eth_addr *dst)
 {
-	if (net_pkt_family(pkt) == NET_AF_INET6 &&
+	if ((net_pkt_family(pkt) == NET_AF_INET6) &&
 	    net_ipv6_is_addr_mcast_raw(NET_IPV6_HDR(pkt)->dst)) {
 		memcpy(dst, (uint8_t *)multicast_eth_addr.addr,
 		       sizeof(struct net_eth_addr) - 4);

@@ -62,21 +62,29 @@ NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(resolve_svc, dns_dispatcher_svc_handler,
 /* See dns_unpack_answer, and also see:
  * https://tools.ietf.org/html/rfc1035#section-4.1.2
  */
-#define DNS_QUERY_POS		0x0c
+#define DNS_QUERY_POS       0x0C
 
-#define DNS_IPV4_LEN		sizeof(struct net_in_addr)
-#define DNS_IPV6_LEN		sizeof(struct net_in6_addr)
+#define DNS_IPV4_LEN        sizeof(struct net_in_addr)
+#define DNS_IPV6_LEN        sizeof(struct net_in6_addr)
 
 #define DNS_RESOLVER_MIN_BUF	1
 #define DNS_RESOLVER_BUF_CTR	(DNS_RESOLVER_MIN_BUF + \
 				 CONFIG_DNS_RESOLVER_ADDITIONAL_BUF_CTR)
 
+#if defined(_MSC_VER) /* #CUSTOM@NDRS, _ud_size from 0 -> 4 */
 NET_BUF_POOL_DEFINE(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
-		    DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);
+                    DNS_RESOLVER_MAX_BUF_SIZE, 4, NULL);
 
 NET_BUF_POOL_DEFINE(dns_qname_pool, DNS_RESOLVER_BUF_CTR,
-		    CONFIG_DNS_RESOLVER_MAX_QUERY_LEN,
-		    0, NULL);
+                    CONFIG_DNS_RESOLVER_MAX_QUERY_LEN, 4, NULL);
+#else
+NET_BUF_POOL_DEFINE(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
+                    DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);
+
+NET_BUF_POOL_DEFINE(dns_qname_pool, DNS_RESOLVER_BUF_CTR,
+                    CONFIG_DNS_RESOLVER_MAX_QUERY_LEN,
+                    0, NULL);
+#endif
 
 #ifdef CONFIG_DNS_RESOLVER_CACHE
 DNS_CACHE_DEFINE(dns_cache, CONFIG_DNS_RESOLVER_CACHE_MAX_ENTRIES);
@@ -219,7 +227,7 @@ static void dns_postprocess_server(struct dns_resolve_context *ctx, int idx)
 		if (!IS_ENABLED(CONFIG_MDNS_RESPONDER) && ctx->servers[idx].is_mdns) {
 			struct net_in_addr mcast_addr = { { { 224, 0, 0, 251 } } };
 
-			if (net_sin(addr)->sin_addr.s_addr == mcast_addr.s_addr) {
+			if (net_sin(addr)->sin_addr.s_addr_be == mcast_addr.s_addr_be) {
 				struct net_if *iface;
 
 				iface = net_if_get_by_index(ctx->servers[idx].if_index);
@@ -465,8 +473,8 @@ static bool is_server_name_found(struct dns_resolve_context *ctx,
 }
 
 static int idx_of_server_addr(struct dns_resolve_context *ctx,
-			      const struct net_sockaddr *addr,
-			      int if_index)
+				 const struct net_sockaddr *addr,
+				 int if_index)
 {
 	ARRAY_FOR_EACH(ctx->servers, i) {
 		if (ctx->servers[i].dns_server.sa_family == addr->sa_family &&
@@ -673,7 +681,7 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 		int found_idx;
 
 		found_idx = idx_of_server_addr(ctx, servers_sa[i],
-					       interfaces == NULL ? 0 : interfaces[i]);
+					     interfaces == NULL ? 0 : interfaces[i]);
 		if (found_idx != -1) {
 			NET_DBG("Server %s already exists",
 				net_sprint_addr(ctx->servers[i].dns_server.sa_family,
@@ -1102,7 +1110,8 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 {
 	struct dns_addrinfo info = { 0 };
 	uint32_t ttl; /* RR ttl, so far it is not passed to caller */
-	uint8_t *src, *addr;
+	uint8_t *src;
+	uint8_t *addr = NULL;
 	int address_size;
 	/* index that points to the current answer being analyzed */
 	int answer_ptr;
@@ -1339,6 +1348,13 @@ rr_qtype_aaaa:
 					goto quit;
 				}
 
+				if (addr == NULL) {
+					/* This should not happen, but just in case */
+					errno = EINVAL;
+					ret = DNS_EAI_SYSTEM;
+					goto quit;
+				}
+
 				src = dns_msg->msg + dns_msg->response_position;
 				memcpy(addr, src, address_size);
 			}
@@ -1378,6 +1394,7 @@ rr_qtype_aaaa:
 					      &ctx->queries[*query_idx]);
 			break;
 		}
+
 		case DNS_RESPONSE_SRV: {
 			int priority;
 			int weight;
@@ -1449,6 +1466,7 @@ rr_qtype_aaaa:
 			items++;
 			break;
 		}
+
 		case DNS_RESPONSE_CNAME_NO_IP:
 			/* Instead of using the QNAME at DNS_QUERY_POS,
 			 * we will use this CNAME
@@ -1596,7 +1614,7 @@ static int dns_write(struct dns_resolve_context *ctx,
 	dns_id = ctx->queries[query_idx].id;
 	query_type = ctx->queries[query_idx].query_type;
 
-	len = buf_len;
+	len = (uint16_t)buf_len;
 
 	ret = dns_msg_pack_query(buf, &len, (uint16_t)max_len,
 				 dns_qname->data, dns_qname->len, dns_id,

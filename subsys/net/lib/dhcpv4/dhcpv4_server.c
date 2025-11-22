@@ -1526,7 +1526,7 @@ static void dhcpv4_server_cb(struct net_socket_service_event *evt)
 	}
 
 	ret = zsock_recvfrom(evt->event.fd, recv_buf, sizeof(recv_buf),
-			     ZSOCK_MSG_DONTWAIT, NULL, 0);
+			     ZSOCK_MSG_DONTWAIT, NULL, NULL);
 	if (ret < 0) {
 		if (errno == EAGAIN) {
 			return;
@@ -1648,7 +1648,7 @@ int net_dhcpv4_server_start(struct net_if *iface, struct net_in_addr *base_addr)
 	LOG_DBG("Started DHCPv4 server, address pool:");
 	for (int i = 0; i < ARRAY_SIZE(server_ctx[slot].addr_pool); i++) {
 		server_ctx[slot].addr_pool[i].state = DHCPV4_SERVER_ADDR_FREE;
-		server_ctx[slot].addr_pool[i].addr.s_addr =
+		server_ctx[slot].addr_pool[i].addr.s_addr_be =
 					net_htonl(net_ntohl(base_addr->s_addr) + i);
 
 		LOG_DBG("\t%2d: %s", i,

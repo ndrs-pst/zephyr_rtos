@@ -78,3 +78,20 @@ DEVICE_DT_INST_DEFINE(0,
 		      NULL, NULL, NULL,
 		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		      &nxp_s32_clock_driver_api);
+
+#if (__GTEST == 1U) /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+void zephyr_gtest_clock_s32k3(void) {
+	struct device const* dev;
+	int rc;
+
+	dev = DEVICE_DT_GET(DT_NODELABEL(clock));
+	rc = dev->ops.init(dev);
+	if (rc == 0) {
+		dev->state->initialized = true;
+		dev->state->init_res = 0U;
+	}
+}
+#endif
+

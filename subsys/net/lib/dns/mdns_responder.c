@@ -135,7 +135,7 @@ static void create_ipv4_addr(struct net_sockaddr_in *addr)
 	addr->sin_port = net_htons(MDNS_LISTEN_PORT);
 
 	/* Well known IPv4 224.0.0.251 address */
-	addr->sin_addr.s_addr = net_htonl(0xE00000FB);
+	addr->sin_addr.s_addr_be = net_htonl(0xE00000FB);
 }
 
 #if defined(CONFIG_MDNS_RESPONDER_PROBE)

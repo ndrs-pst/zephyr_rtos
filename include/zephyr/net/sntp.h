@@ -66,7 +66,7 @@ struct sntp_ctx {
  *
  * @return 0 if ok, <0 if error.
  */
-int sntp_init(struct sntp_ctx *ctx, struct net_sockaddr *addr,
+int sntp_init(struct sntp_ctx *ctx, const struct net_sockaddr *addr,
 	      net_socklen_t addr_len);
 
 /**

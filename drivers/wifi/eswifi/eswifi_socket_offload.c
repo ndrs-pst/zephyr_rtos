@@ -322,7 +322,8 @@ static ssize_t eswifi_socket_recv(void *obj, void *buf, size_t max_len,
 {
 	intptr_t sock = OBJ_TO_SD(obj);
 	struct eswifi_off_socket *socket;
-	int len = 0, ret = 0;
+	int len = 0;
+	int ret;
 	struct net_pkt *pkt;
 
 	if ((max_len == 0) || (buf == NULL) ||
@@ -342,7 +343,6 @@ static ssize_t eswifi_socket_recv(void *obj, void *buf, size_t max_len,
 	if (ret < 0) {
 		LOG_ERR("Rescheduling socket read error");
 		errno = -ret;
-		len = -1;
 	}
 
 	if (flags & ZSOCK_MSG_DONTWAIT) {
@@ -363,7 +363,7 @@ static ssize_t eswifi_socket_recv(void *obj, void *buf, size_t max_len,
 
 skip_wait:
 	len = net_pkt_remaining_data(pkt);
-	if (len > max_len) {
+	if (len > (int)max_len) {
 		len = max_len;
 		socket->prev_pkt_rem = pkt;
 	} else {

@@ -39,8 +39,8 @@ int net_udp_finalize(struct net_pkt *pkt, bool force_chksum)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
 	struct net_udp_hdr *udp_hdr;
-	uint16_t length = 0;
-	enum net_if_checksum_type type = net_pkt_family(pkt) == NET_AF_INET6 ?
+	uint16_t length;
+	enum net_if_checksum_type type = (net_pkt_family(pkt) == NET_AF_INET6) ?
 		NET_IF_CHECKSUM_IPV6_UDP : NET_IF_CHECKSUM_IPV4_UDP;
 
 	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data(pkt, &udp_access);
@@ -48,8 +48,8 @@ int net_udp_finalize(struct net_pkt *pkt, bool force_chksum)
 		return -ENOBUFS;
 	}
 
-	length = net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
-		 net_pkt_ip_opts_len(pkt);
+	length = (uint16_t)(net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
+		 net_pkt_ip_opts_len(pkt));
 
 	udp_hdr->len = net_htons(length);
 
@@ -151,7 +151,7 @@ struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
 				  struct net_pkt_data_access *udp_access)
 {
 	struct net_udp_hdr *udp_hdr;
-	enum net_if_checksum_type type = net_pkt_family(pkt) == NET_AF_INET6 ?
+	enum net_if_checksum_type type = (net_pkt_family(pkt) == NET_AF_INET6) ?
 		NET_IF_CHECKSUM_IPV6_UDP : NET_IF_CHECKSUM_IPV4_UDP;
 
 	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data(pkt, udp_access);

@@ -16,6 +16,10 @@
 
 #include "eswifi_offload.h"
 
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define EPFNOSUPPORT        135
+#endif
+
 #define AT_OK_STR "\r\nOK\r\n> "
 #define AT_OK_STR_LEN 8
 #define AT_RSP_DELIMITER "\r\n"

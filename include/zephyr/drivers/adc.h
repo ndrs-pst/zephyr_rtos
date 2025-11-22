@@ -35,27 +35,27 @@ extern "C" {
 
 /** @brief ADC channel gain factors. */
 enum adc_gain {
-	ADC_GAIN_1_6, /**< x 1/6. */
-	ADC_GAIN_1_5, /**< x 1/5. */
-	ADC_GAIN_1_4, /**< x 1/4. */
-	ADC_GAIN_2_7, /**< x 2/7. */
-	ADC_GAIN_1_3, /**< x 1/3. */
-	ADC_GAIN_2_5, /**< x 2/5. */
-	ADC_GAIN_1_2, /**< x 1/2. */
-	ADC_GAIN_2_3, /**< x 2/3. */
-	ADC_GAIN_4_5, /**< x 4/5. */
-	ADC_GAIN_1,   /**< x 1. */
-	ADC_GAIN_2,   /**< x 2. */
-	ADC_GAIN_3,   /**< x 3. */
-	ADC_GAIN_4,   /**< x 4. */
-	ADC_GAIN_6,   /**< x 6. */
-	ADC_GAIN_8,   /**< x 8. */
-	ADC_GAIN_12,  /**< x 12. */
-	ADC_GAIN_16,  /**< x 16. */
-	ADC_GAIN_24,  /**< x 24. */
-	ADC_GAIN_32,  /**< x 32. */
-	ADC_GAIN_64,  /**< x 64. */
-	ADC_GAIN_128, /**< x 128. */
+    ADC_GAIN_1_6,   /**< x 1/6. */
+    ADC_GAIN_1_5,   /**< x 1/5. */
+    ADC_GAIN_1_4,   /**< x 1/4. */
+    ADC_GAIN_2_7,   /**< x 2/7. */
+    ADC_GAIN_1_3,   /**< x 1/3. */
+    ADC_GAIN_2_5,   /**< x 2/5. */
+    ADC_GAIN_1_2,   /**< x 1/2. */
+    ADC_GAIN_2_3,   /**< x 2/3. */
+    ADC_GAIN_4_5,   /**< x 4/5. */
+    ADC_GAIN_1,     /**< x 1.   */
+    ADC_GAIN_2,     /**< x 2.   */
+    ADC_GAIN_3,     /**< x 3.   */
+    ADC_GAIN_4,     /**< x 4.   */
+    ADC_GAIN_6,     /**< x 6.   */
+    ADC_GAIN_8,     /**< x 8.   */
+    ADC_GAIN_12,    /**< x 12.  */
+    ADC_GAIN_16,    /**< x 16.  */
+    ADC_GAIN_24,    /**< x 24.  */
+    ADC_GAIN_32,    /**< x 32.  */
+    ADC_GAIN_64,    /**< x 64.  */
+    ADC_GAIN_128    /**< x 128. */
 };
 
 /**
@@ -74,7 +74,7 @@ enum adc_gain {
  * @retval 0 if the gain was successfully reversed
  * @retval -EINVAL if the gain could not be interpreted
  */
-int adc_gain_invert(enum adc_gain gain, int32_t *value);
+int adc_gain_invert(enum adc_gain gain, int32_t* value);
 
 /**
  * @brief Invert the application of gain to a measurement value.
@@ -92,105 +92,105 @@ int adc_gain_invert(enum adc_gain gain, int32_t *value);
  * @retval 0 if the gain was successfully reversed
  * @retval -EINVAL if the gain could not be interpreted
  */
-int adc_gain_invert_64(enum adc_gain gain, int64_t *value);
+int adc_gain_invert_64(enum adc_gain gain, int64_t* value);
 
 /** @brief ADC references. */
 enum adc_reference {
-	ADC_REF_VDD_1,     /**< VDD. */
-	ADC_REF_VDD_1_2,   /**< VDD/2. */
-	ADC_REF_VDD_1_3,   /**< VDD/3. */
-	ADC_REF_VDD_1_4,   /**< VDD/4. */
-	ADC_REF_INTERNAL,  /**< Internal. */
-	ADC_REF_EXTERNAL0, /**< External, input 0. */
-	ADC_REF_EXTERNAL1, /**< External, input 1. */
+    ADC_REF_VDD_1,      /**< VDD. */
+    ADC_REF_VDD_1_2,    /**< VDD/2. */
+    ADC_REF_VDD_1_3,    /**< VDD/3. */
+    ADC_REF_VDD_1_4,    /**< VDD/4. */
+    ADC_REF_INTERNAL,   /**< Internal. */
+    ADC_REF_EXTERNAL0,  /**< External, input 0. */
+    ADC_REF_EXTERNAL1   /**< External, input 1. */
 };
 
 /**
  * @brief Structure for specifying the configuration of an ADC channel.
  */
 struct adc_channel_cfg {
-	/** Gain selection. */
-	enum adc_gain gain;
+    /** Gain selection. */
+    enum adc_gain gain;
 
-	/** Reference selection. */
-	enum adc_reference reference;
+    /** Reference selection. */
+    enum adc_reference reference;
 
-	/**
-	 * Acquisition time.
-	 * Use the ADC_ACQ_TIME macro to compose the value for this field or
-	 * pass ADC_ACQ_TIME_DEFAULT to use the default setting for a given
-	 * hardware (e.g. when the hardware does not allow to configure the
-	 * acquisition time).
-	 * Particular drivers do not necessarily support all the possible units.
-	 * Value range is 0-16383 for a given unit.
-	 */
-	uint16_t acquisition_time;
+    /**
+     * Acquisition time.
+     * Use the ADC_ACQ_TIME macro to compose the value for this field or
+     * pass ADC_ACQ_TIME_DEFAULT to use the default setting for a given
+     * hardware (e.g. when the hardware does not allow to configure the
+     * acquisition time).
+     * Particular drivers do not necessarily support all the possible units.
+     * Value range is 0-16383 for a given unit.
+     */
+    uint16_t acquisition_time;
 
-	/**
-	 * Channel identifier.
-	 * This value primarily identifies the channel within the ADC API - when
-	 * a read request is done, the corresponding bit in the "channels" field
-	 * of the "adc_sequence" structure must be set to include this channel
-	 * in the sampling.
-	 * For hardware that does not allow selection of analog inputs for given
-	 * channels, but rather have dedicated ones, this value also selects the
-	 * physical ADC input to be used in the sampling. Otherwise, when it is
-	 * needed to explicitly select an analog input for the channel, or two
-	 * inputs when the channel is a differential one, the selection is done
-	 * in "input_positive" and "input_negative" fields.
-	 * Particular drivers indicate which one of the above two cases they
-	 * support by selecting or not a special hidden Kconfig option named
-	 * ADC_CONFIGURABLE_INPUTS. If this option is not selected, the macro
-	 * CONFIG_ADC_CONFIGURABLE_INPUTS is not defined and consequently the
-	 * mentioned two fields are not present in this structure.
-	 * While this API allows identifiers from range 0-31, particular drivers
-	 * may support only a limited number of channel identifiers (dependent
-	 * on the underlying hardware capabilities or configured via a dedicated
-	 * Kconfig option).
-	 */
-	uint8_t channel_id   : 5;
+    /**
+     * Channel identifier.
+     * This value primarily identifies the channel within the ADC API - when
+     * a read request is done, the corresponding bit in the "channels" field
+     * of the "adc_sequence" structure must be set to include this channel
+     * in the sampling.
+     * For hardware that does not allow selection of analog inputs for given
+     * channels, but rather have dedicated ones, this value also selects the
+     * physical ADC input to be used in the sampling. Otherwise, when it is
+     * needed to explicitly select an analog input for the channel, or two
+     * inputs when the channel is a differential one, the selection is done
+     * in "input_positive" and "input_negative" fields.
+     * Particular drivers indicate which one of the above two cases they
+     * support by selecting or not a special hidden Kconfig option named
+     * ADC_CONFIGURABLE_INPUTS. If this option is not selected, the macro
+     * CONFIG_ADC_CONFIGURABLE_INPUTS is not defined and consequently the
+     * mentioned two fields are not present in this structure.
+     * While this API allows identifiers from range 0-31, particular drivers
+     * may support only a limited number of channel identifiers (dependent
+     * on the underlying hardware capabilities or configured via a dedicated
+     * Kconfig option).
+     */
+    uint8_t channel_id   : 5;
 
-	/** Channel type: single-ended or differential. */
-	uint8_t differential : 1;
+    /** Channel type: single-ended or differential. */
+    uint8_t differential : 1;
 
-#ifdef CONFIG_ADC_CONFIGURABLE_INPUTS
-	/**
-	 * Positive ADC input.
-	 * This is a driver dependent value that identifies an ADC input to be
-	 * associated with the channel.
-	 */
-	uint8_t input_positive;
+    #if defined(CONFIG_ADC_CONFIGURABLE_INPUTS) || defined(_MSC_VER) /* #CUSTOM@NDRS */
+    /**
+     * Positive ADC input.
+     * This is a driver dependent value that identifies an ADC input to be
+     * associated with the channel.
+     */
+    uint8_t input_positive;
 
-	/**
-	 * Negative ADC input (used only for differential channels).
-	 * This is a driver dependent value that identifies an ADC input to be
-	 * associated with the channel.
-	 */
-	uint8_t input_negative;
-#endif /* CONFIG_ADC_CONFIGURABLE_INPUTS */
+    /**
+     * Negative ADC input (used only for differential channels).
+     * This is a driver dependent value that identifies an ADC input to be
+     * associated with the channel.
+     */
+    uint8_t input_negative;
+    #endif /* CONFIG_ADC_CONFIGURABLE_INPUTS */
 
-#ifdef CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
-	uint8_t current_source_pin_set : 1;
-	/**
-	 * Output pin for the current sources.
-	 * This is only available if the driver enables this feature
-	 * via the hidden configuration option ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN.
-	 * The meaning itself is then defined by the driver itself.
-	 */
-	uint8_t current_source_pin[2];
-#endif /* CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN */
+    #ifdef CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
+    uint8_t current_source_pin_set : 1;
+    /**
+     * Output pin for the current sources.
+     * This is only available if the driver enables this feature
+     * via the hidden configuration option ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN.
+     * The meaning itself is then defined by the driver itself.
+     */
+    uint8_t current_source_pin[2];
+    #endif /* CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN */
 
-#ifdef CONFIG_ADC_CONFIGURABLE_VBIAS_PIN
-	/**
-	 * Output pins for the bias voltage.
-	 * This is only available if the driver enables this feature
-	 * via the hidden configuration option ADC_CONFIGURABLE_VBIAS_PIN.
-	 * The field is interpreted as a bitmask, where each bit represents
-	 * one of the input pins. The actual mapping to the physical pins
-	 * depends on the driver itself.
-	 */
-	uint32_t vbias_pins;
-#endif /* CONFIG_ADC_CONFIGURABLE_VBIAS_PIN */
+    #ifdef CONFIG_ADC_CONFIGURABLE_VBIAS_PIN
+    /**
+     * Output pins for the bias voltage.
+     * This is only available if the driver enables this feature
+     * via the hidden configuration option ADC_CONFIGURABLE_VBIAS_PIN.
+     * The field is interpreted as a bitmask, where each bit represents
+     * one of the input pins. The actual mapping to the physical pins
+     * depends on the driver itself.
+     */
+    uint32_t vbias_pins;
+    #endif /* CONFIG_ADC_CONFIGURABLE_VBIAS_PIN */
 };
 
 /**
@@ -258,23 +258,23 @@ struct adc_channel_cfg {
  * @return Static initializer for an adc_channel_cfg structure.
  */
 #define ADC_CHANNEL_CFG_DT(node_id) { \
-	.gain             = DT_STRING_TOKEN(node_id, zephyr_gain), \
-	.reference        = DT_STRING_TOKEN(node_id, zephyr_reference), \
-	.acquisition_time = DT_PROP(node_id, zephyr_acquisition_time), \
-	.channel_id       = DT_REG_ADDR(node_id), \
-COND_CODE_1(UTIL_OR(DT_PROP(node_id, zephyr_differential), \
-		   UTIL_AND(CONFIG_ADC_CONFIGURABLE_INPUTS, \
-			    DT_NODE_HAS_PROP(node_id, zephyr_input_negative))), \
-	(.differential    = true,), \
-	(.differential    = false,)) \
-IF_ENABLED(CONFIG_ADC_CONFIGURABLE_INPUTS, \
-	(.input_positive  = DT_PROP_OR(node_id, zephyr_input_positive, 0), \
-	 .input_negative  = DT_PROP_OR(node_id, zephyr_input_negative, 0),)) \
-IF_ENABLED(CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN, \
-	(.current_source_pin_set = DT_NODE_HAS_PROP(node_id, zephyr_current_source_pin), \
-	 .current_source_pin = DT_PROP_OR(node_id, zephyr_current_source_pin, {0}),)) \
-IF_ENABLED(CONFIG_ADC_CONFIGURABLE_VBIAS_PIN, \
-	(.vbias_pins = DT_PROP_OR(node_id, zephyr_vbias_pins, 0),)) \
+    .gain             = DT_STRING_TOKEN(node_id, zephyr_gain),      \
+    .reference        = DT_STRING_TOKEN(node_id, zephyr_reference), \
+    .acquisition_time = DT_PROP(node_id, zephyr_acquisition_time),  \
+    .channel_id       = DT_REG_ADDR(node_id),                       \
+    COND_CODE_1(UTIL_OR(DT_PROP(node_id, zephyr_differential),      \
+                        UTIL_AND(CONFIG_ADC_CONFIGURABLE_INPUTS,    \
+                                 DT_NODE_HAS_PROP(node_id, zephyr_input_negative))), \
+    (.differential    = true,),                                     \
+    (.differential    = false,))                                    \
+    IF_ENABLED(CONFIG_ADC_CONFIGURABLE_INPUTS,                      \
+    (.input_positive  = DT_PROP_OR(node_id, zephyr_input_positive, 0),   \
+     .input_negative  = DT_PROP_OR(node_id, zephyr_input_negative, 0),)) \
+    IF_ENABLED(CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN, \
+    (.current_source_pin_set = DT_NODE_HAS_PROP(node_id, zephyr_current_source_pin), \
+     .current_source_pin = DT_PROP_OR(node_id, zephyr_current_source_pin, {0}),)) \
+    IF_ENABLED(CONFIG_ADC_CONFIGURABLE_VBIAS_PIN,                   \
+    (.vbias_pins = DT_PROP_OR(node_id, zephyr_vbias_pins, 0),))     \
 }
 
 /**
@@ -284,74 +284,74 @@ IF_ENABLED(CONFIG_ADC_CONFIGURABLE_VBIAS_PIN, \
  * @see ADC_DT_SPEC_GET
  */
 struct adc_dt_spec {
-	/**
-	 * Pointer to the device structure for the ADC driver instance
-	 * used by this io-channel.
-	 */
-	const struct device *dev;
+    /**
+     * Pointer to the device structure for the ADC driver instance
+     * used by this io-channel.
+     */
+    const struct device* dev;
 
-	/** ADC channel identifier used by this io-channel. */
-	uint8_t channel_id;
+    /** ADC channel identifier used by this io-channel. */
+    uint8_t channel_id;
 
-	/**
-	 * Flag indicating whether configuration of the associated ADC channel
-	 * is provided as a child node of the corresponding ADC controller in
-	 * devicetree.
-	 */
-	bool channel_cfg_dt_node_exists;
+    /**
+     * Flag indicating whether configuration of the associated ADC channel
+     * is provided as a child node of the corresponding ADC controller in
+     * devicetree.
+     */
+    bool channel_cfg_dt_node_exists;
 
-	/**
-	 * Configuration of the associated ADC channel specified in devicetree.
-	 * This field is valid only when @a channel_cfg_dt_node_exists is set
-	 * to @a true.
-	 */
-	struct adc_channel_cfg channel_cfg;
+    /**
+     * Configuration of the associated ADC channel specified in devicetree.
+     * This field is valid only when @a channel_cfg_dt_node_exists is set
+     * to @a true.
+     */
+    struct adc_channel_cfg channel_cfg;
 
-	/**
-	 * Voltage of the reference selected for the channel or 0 if this
-	 * value is not provided in devicetree.
-	 * This field is valid only when @a channel_cfg_dt_node_exists is set
-	 * to @a true.
-	 */
-	uint16_t vref_mv;
+    /**
+     * Voltage of the reference selected for the channel or 0 if this
+     * value is not provided in devicetree.
+     * This field is valid only when @a channel_cfg_dt_node_exists is set
+     * to @a true.
+     */
+    uint16_t vref_mv;
 
-	/**
-	 * ADC resolution to be used for that channel.
-	 * This field is valid only when @a channel_cfg_dt_node_exists is set
-	 * to @a true.
-	 */
-	uint8_t resolution;
+    /**
+     * ADC resolution to be used for that channel.
+     * This field is valid only when @a channel_cfg_dt_node_exists is set
+     * to @a true.
+     */
+    uint8_t resolution;
 
-	/**
-	 * Oversampling setting to be used for that channel.
-	 * This field is valid only when @a channel_cfg_dt_node_exists is set
-	 * to @a true.
-	 */
-	uint8_t oversampling;
+    /**
+     * Oversampling setting to be used for that channel.
+     * This field is valid only when @a channel_cfg_dt_node_exists is set
+     * to @a true.
+     */
+    uint8_t oversampling;
 };
 
 /** @cond INTERNAL_HIDDEN */
 
-#define ADC_DT_SPEC_STRUCT(ctlr, input) { \
-		.dev = DEVICE_DT_GET(ctlr), \
-		.channel_id = input, \
-		ADC_CHANNEL_CFG_FROM_DT_NODE(\
-			ADC_CHANNEL_DT_NODE(ctlr, input)) \
-	}
+#define ADC_DT_SPEC_STRUCT(ctlr, input) {   \
+    .dev = DEVICE_DT_GET(ctlr),             \
+    .channel_id = input,                    \
+    ADC_CHANNEL_CFG_FROM_DT_NODE(           \
+        ADC_CHANNEL_DT_NODE(ctlr, input))   \
+}
 
-#define ADC_CHANNEL_DT_NODE(ctlr, input) \
-	DT_FOREACH_CHILD_VARGS(ctlr, ADC_FOREACH_INPUT, input)
+#define ADC_CHANNEL_DT_NODE(ctlr, input)    \
+    DT_FOREACH_CHILD_VARGS(ctlr, ADC_FOREACH_INPUT, input)
 
-#define ADC_FOREACH_INPUT(node, input) \
-	IF_ENABLED(IS_EQ(DT_REG_ADDR_RAW(node), input), (node))
+#define ADC_FOREACH_INPUT(node, input)      \
+    IF_ENABLED(IS_EQ(DT_REG_ADDR_RAW(node), input), (node))
 
-#define ADC_CHANNEL_CFG_FROM_DT_NODE(node_id) \
-	IF_ENABLED(DT_NODE_EXISTS(node_id), \
-		(.channel_cfg_dt_node_exists = true, \
-		 .channel_cfg  = ADC_CHANNEL_CFG_DT(node_id), \
-		 .vref_mv      = DT_PROP_OR(node_id, zephyr_vref_mv, 0), \
-		 .resolution   = DT_PROP_OR(node_id, zephyr_resolution, 0), \
-		 .oversampling = DT_PROP_OR(node_id, zephyr_oversampling, 0),))
+#define ADC_CHANNEL_CFG_FROM_DT_NODE(node_id)   \
+    IF_ENABLED(DT_NODE_EXISTS(node_id),         \
+        (.channel_cfg_dt_node_exists = true,    \
+         .channel_cfg  = ADC_CHANNEL_CFG_DT(node_id), \
+         .vref_mv      = DT_PROP_OR(node_id, zephyr_vref_mv, 0),    \
+         .resolution   = DT_PROP_OR(node_id, zephyr_resolution, 0), \
+         .oversampling = DT_PROP_OR(node_id, zephyr_oversampling, 0),))
 
 /** @endcond */
 
@@ -424,8 +424,8 @@ struct adc_dt_spec {
  * @return Static initializer for an adc_dt_spec structure.
  */
 #define ADC_DT_SPEC_GET_BY_NAME(node_id, name) \
-	ADC_DT_SPEC_STRUCT(DT_IO_CHANNELS_CTLR_BY_NAME(node_id, name), \
-			   DT_IO_CHANNELS_INPUT_BY_NAME(node_id, name))
+    ADC_DT_SPEC_STRUCT(DT_IO_CHANNELS_CTLR_BY_NAME(node_id, name), \
+                       DT_IO_CHANNELS_INPUT_BY_NAME(node_id, name))
 
 /** @brief Get ADC io-channel information from a DT_DRV_COMPAT devicetree
  *         instance by name.
@@ -438,7 +438,7 @@ struct adc_dt_spec {
  * @return Static initializer for an adc_dt_spec structure.
  */
 #define ADC_DT_SPEC_INST_GET_BY_NAME(inst, name) \
-	ADC_DT_SPEC_GET_BY_NAME(DT_DRV_INST(inst), name)
+    ADC_DT_SPEC_GET_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
  * @brief Get ADC io-channel information from devicetree.
@@ -510,8 +510,8 @@ struct adc_dt_spec {
  * @return Static initializer for an adc_dt_spec structure.
  */
 #define ADC_DT_SPEC_GET_BY_IDX(node_id, idx) \
-	ADC_DT_SPEC_STRUCT(DT_IO_CHANNELS_CTLR_BY_IDX(node_id, idx), \
-			   DT_IO_CHANNELS_INPUT_BY_IDX(node_id, idx))
+    ADC_DT_SPEC_STRUCT(DT_IO_CHANNELS_CTLR_BY_IDX(node_id, idx), \
+                       DT_IO_CHANNELS_INPUT_BY_IDX(node_id, idx))
 
 /** @brief Get ADC io-channel information from a DT_DRV_COMPAT devicetree
  *         instance.
@@ -524,7 +524,7 @@ struct adc_dt_spec {
  * @return Static initializer for an adc_dt_spec structure.
  */
 #define ADC_DT_SPEC_INST_GET_BY_IDX(inst, idx) \
-	ADC_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), idx)
+    ADC_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), idx)
 
 /**
  * @brief Equivalent to ADC_DT_SPEC_GET_BY_IDX(node_id, 0).
@@ -535,7 +535,7 @@ struct adc_dt_spec {
  *
  * @return Static initializer for an adc_dt_spec structure.
  */
-#define ADC_DT_SPEC_GET(node_id) ADC_DT_SPEC_GET_BY_IDX(node_id, 0)
+#define ADC_DT_SPEC_GET(node_id)    ADC_DT_SPEC_GET_BY_IDX(node_id, 0)
 
 /** @brief Equivalent to ADC_DT_SPEC_INST_GET_BY_IDX(inst, 0).
  *
@@ -545,7 +545,7 @@ struct adc_dt_spec {
  *
  * @return Static initializer for an adc_dt_spec structure.
  */
-#define ADC_DT_SPEC_INST_GET(inst) ADC_DT_SPEC_GET(DT_DRV_INST(inst))
+#define ADC_DT_SPEC_INST_GET(inst)  ADC_DT_SPEC_GET(DT_DRV_INST(inst))
 
 /* Forward declaration of the adc_sequence structure. */
 struct adc_sequence;
@@ -554,17 +554,17 @@ struct adc_sequence;
  * @brief Action to be performed after a sampling is done.
  */
 enum adc_action {
-	/** The sequence should be continued normally. */
-	ADC_ACTION_CONTINUE = 0,
+    /** The sequence should be continued normally. */
+    ADC_ACTION_CONTINUE = 0,
 
-	/**
-	 * The sampling should be repeated. New samples or sample should be
-	 * read from the ADC and written in the same place as the recent ones.
-	 */
-	ADC_ACTION_REPEAT,
+    /**
+     * The sampling should be repeated. New samples or sample should be
+     * read from the ADC and written in the same place as the recent ones.
+     */
+    ADC_ACTION_REPEAT,
 
-	/** The sequence should be finished immediately. */
-	ADC_ACTION_FINISH,
+    /** The sequence should be finished immediately. */
+    ADC_ACTION_FINISH
 };
 
 /**
@@ -586,185 +586,190 @@ enum adc_action {
  *
  * @returns Action to be performed by the driver. See @ref adc_action.
  */
-typedef enum adc_action (*adc_sequence_callback)(const struct device *dev,
-						 const struct adc_sequence *sequence,
-						 uint16_t sampling_index);
+typedef enum adc_action (*adc_sequence_callback)(const struct device* dev,
+                                                 const struct adc_sequence* sequence,
+                                                 uint16_t sampling_index);
 
 /**
  * @brief Structure defining additional options for an ADC sampling sequence.
  */
 struct adc_sequence_options {
-	/**
-	 * Interval between consecutive samplings (in microseconds), 0 means
-	 * sample as fast as possible, without involving any timer.
-	 * The accuracy of this interval is dependent on the implementation of
-	 * a given driver. The default routine that handles the intervals uses
-	 * a kernel timer for this purpose, thus, it has the accuracy of the
-	 * kernel's system clock. Particular drivers may use some dedicated
-	 * hardware timers and achieve a better precision.
-	 */
-	uint32_t interval_us;
+    /**
+     * Interval between consecutive samplings (in microseconds), 0 means
+     * sample as fast as possible, without involving any timer.
+     * The accuracy of this interval is dependent on the implementation of
+     * a given driver. The default routine that handles the intervals uses
+     * a kernel timer for this purpose, thus, it has the accuracy of the
+     * kernel's system clock. Particular drivers may use some dedicated
+     * hardware timers and achieve a better precision.
+     */
+    uint32_t interval_us;
 
-	/**
-	 * Callback function to be called after each sampling is done.
-	 * Optional - set to NULL if it is not needed.
-	 */
-	adc_sequence_callback callback;
+    /**
+     * Callback function to be called after each sampling is done.
+     * Optional - set to NULL if it is not needed.
+     */
+    adc_sequence_callback callback;
 
-	/**
-	 * Pointer to user data. It can be used to associate the sequence
-	 * with any other data that is needed in the callback function.
-	 */
-	void *user_data;
+    /**
+     * Pointer to user data. It can be used to associate the sequence
+     * with any other data that is needed in the callback function.
+     */
+    void* user_data;
 
-	/**
-	 * Number of extra samplings to perform (the total number of samplings
-	 * is 1 + extra_samplings).
-	 */
-	uint16_t extra_samplings;
+    /**
+     * Number of extra samplings to perform (the total number of samplings
+     * is 1 + extra_samplings).
+     */
+    uint16_t extra_samplings;
 };
 
 /**
  * @brief Structure defining an ADC sampling sequence.
  */
 struct adc_sequence {
-	/**
-	 * Pointer to a structure defining additional options for the sequence.
-	 * If NULL, the sequence consists of a single sampling.
-	 */
-	const struct adc_sequence_options *options;
+    /**
+     * Pointer to a structure defining additional options for the sequence.
+     * If NULL, the sequence consists of a single sampling.
+     */
+    const struct adc_sequence_options* options;
 
-	/**
-	 * Bit-mask indicating the channels to be included in each sampling
-	 * of this sequence.
-	 * All selected channels must be configured with adc_channel_setup()
-	 * before they are used in a sequence.
-	 * The least significant bit corresponds to channel 0.
-	 */
-	uint32_t channels;
+    /**
+     * Bit-mask indicating the channels to be included in each sampling
+     * of this sequence.
+     * All selected channels must be configured with adc_channel_setup()
+     * before they are used in a sequence.
+     * The least significant bit corresponds to channel 0.
+     */
+    uint32_t channels;
 
-	/**
-	 * Pointer to a buffer where the samples are to be written. Samples
-	 * from subsequent samplings are written sequentially in the buffer.
-	 * The number of samples written for each sampling is determined by
-	 * the number of channels selected in the "channels" field.
-	 * The values written to the buffer represent a sample from each
-	 * selected channel starting from the one with the lowest ID.
-	 * The buffer must be of an appropriate size, taking into account
-	 * the number of selected channels and the ADC resolution used,
-	 * as well as the number of samplings contained in the sequence.
-	 */
-	void *buffer;
+    /**
+     * Pointer to a buffer where the samples are to be written. Samples
+     * from subsequent samplings are written sequentially in the buffer.
+     * The number of samples written for each sampling is determined by
+     * the number of channels selected in the "channels" field.
+     * The values written to the buffer represent a sample from each
+     * selected channel starting from the one with the lowest ID.
+     * The buffer must be of an appropriate size, taking into account
+     * the number of selected channels and the ADC resolution used,
+     * as well as the number of samplings contained in the sequence.
+     */
+    void* buffer;
 
-	/**
-	 * Specifies the actual size of the buffer pointed by the "buffer"
-	 * field (in bytes). The driver must ensure that samples are not
-	 * written beyond the limit and it must return an error if the buffer
-	 * turns out to be not large enough to hold all the requested samples.
-	 */
-	size_t buffer_size;
+    /**
+     * Specifies the actual size of the buffer pointed by the "buffer"
+     * field (in bytes). The driver must ensure that samples are not
+     * written beyond the limit and it must return an error if the buffer
+     * turns out to be not large enough to hold all the requested samples.
+     */
+    size_t buffer_size;
 
-	/**
-	 * ADC resolution.
-	 * For single-ended channels the sample values are from range:
-	 *   0 .. 2^resolution - 1,
-	 * for differential ones:
-	 *   - 2^(resolution-1) .. 2^(resolution-1) - 1.
-	 */
-	uint8_t resolution;
+    /**
+     * ADC resolution.
+     * For single-ended channels the sample values are from range:
+     *   0 .. 2^resolution - 1,
+     * for differential ones:
+     *   - 2^(resolution-1) .. 2^(resolution-1) - 1.
+     */
+    uint8_t resolution;
 
-	/**
-	 * Oversampling setting.
-	 * Each sample is averaged from 2^oversampling conversion results.
-	 * This feature may be unsupported by a given ADC hardware, or in
-	 * a specific mode (e.g. when sampling multiple channels).
-	 */
-	uint8_t oversampling;
+    /**
+     * Oversampling setting.
+     * Each sample is averaged from 2^oversampling conversion results.
+     * This feature may be unsupported by a given ADC hardware, or in
+     * a specific mode (e.g. when sampling multiple channels).
+     */
+    uint8_t oversampling;
 
-	/**
-	 * Perform calibration before the reading is taken if requested.
-	 *
-	 * The impact of channel configuration on the calibration
-	 * process is specific to the underlying hardware.  ADC
-	 * implementations that do not support calibration should
-	 * ignore this flag.
-	 */
-	bool calibrate;
+    /**
+     * Perform calibration before the reading is taken if requested.
+     *
+     * The impact of channel configuration on the calibration
+     * process is specific to the underlying hardware.  ADC
+     * implementations that do not support calibration should
+     * ignore this flag.
+     */
+    bool calibrate;
 };
 
 struct adc_data_header {
-	/**
-	 * The closest timestamp for when the first frame was generated as attained by
-	 * :c:func:`k_uptime_ticks`.
-	 */
-	uint64_t base_timestamp_ns;
-	/**
-	 * The number of elements in the 'readings' array.
-	 *
-	 * This must be at least 1
-	 */
-	uint16_t reading_count;
+    /**
+     * The closest timestamp for when the first frame was generated as attained by
+     * :c:func:`k_uptime_ticks`.
+     */
+    uint64_t base_timestamp_ns;
+
+    /**
+     * The number of elements in the 'readings' array.
+     *
+     * This must be at least 1
+     */
+    uint16_t reading_count;
 };
 
 /**
  * Data for the adc channel.
  */
 struct adc_data {
-	struct adc_data_header header;
-	int8_t shift;
-	struct adc_sample_data {
-		uint32_t timestamp_delta;
-		union {
-			q31_t value;
-		};
-	} readings[1];
+    struct adc_data_header header;
+    int8_t shift;
+
+    struct adc_sample_data {
+        uint32_t timestamp_delta;
+
+        union {
+            q31_t value;
+        };
+    } readings[1];
 };
 
 /**
  * @brief ADC trigger types.
  */
 enum adc_trigger_type {
-	/** Trigger fires whenever new data is ready. */
-	ADC_TRIG_DATA_READY,
+    /** Trigger fires whenever new data is ready. */
+    ADC_TRIG_DATA_READY,
 
-	/** Trigger fires when the FIFO watermark has been reached. */
-	ADC_TRIG_FIFO_WATERMARK,
+    /** Trigger fires when the FIFO watermark has been reached. */
+    ADC_TRIG_FIFO_WATERMARK,
 
-	/** Trigger fires when the FIFO becomes full. */
-	ADC_TRIG_FIFO_FULL,
+    /** Trigger fires when the FIFO becomes full. */
+    ADC_TRIG_FIFO_FULL,
 
-	/**
-	 * Number of all common adc triggers.
-	 */
-	ADC_TRIG_COMMON_COUNT,
+    /**
+     * Number of all common adc triggers.
+     */
+    ADC_TRIG_COMMON_COUNT,
 
-	/**
-	 * This and higher values are adc specific.
-	 * Refer to the adc header file.
-	 */
-	ADC_TRIG_PRIV_START = ADC_TRIG_COMMON_COUNT,
+    /**
+     * This and higher values are adc specific.
+     * Refer to the adc header file.
+     */
+    ADC_TRIG_PRIV_START = ADC_TRIG_COMMON_COUNT,
 
-	/**
-	 * Maximum value describing a adc trigger type.
-	 */
-	ADC_TRIG_MAX = INT16_MAX,
+    /**
+     * Maximum value describing a adc trigger type.
+     */
+    ADC_TRIG_MAX = INT16_MAX,
 };
 
 /**
  * @brief Options for what to do with the associated data when a trigger is consumed
  */
 enum adc_stream_data_opt {
-	/** @brief Include whatever data is associated with the trigger */
-	ADC_STREAM_DATA_INCLUDE = 0,
-	/** @brief Do nothing with the associated trigger data, it may be consumed later */
-	ADC_STREAM_DATA_NOP = 1,
-	/** @brief Flush/clear whatever data is associated with the trigger */
-	ADC_STREAM_DATA_DROP = 2,
+    /** @brief Include whatever data is associated with the trigger */
+    ADC_STREAM_DATA_INCLUDE = 0,
+
+    /** @brief Do nothing with the associated trigger data, it may be consumed later */
+    ADC_STREAM_DATA_NOP = 1,
+
+    /** @brief Flush/clear whatever data is associated with the trigger */
+    ADC_STREAM_DATA_DROP = 2,
 };
 
 struct adc_stream_trigger {
-	enum adc_trigger_type trigger;
-	enum adc_stream_data_opt opt;
+    enum adc_trigger_type trigger;
+    enum adc_stream_data_opt opt;
 };
 
 /**
@@ -775,8 +780,8 @@ struct adc_stream_trigger {
  *
  */
 struct adc_chan_spec {
-	uint8_t chan_idx; /**< A ADC channel index */
-	uint8_t chan_resolution;  /**< A ADC channel resolution */
+    uint8_t chan_idx;        /**< A ADC channel index */
+    uint8_t chan_resolution; /**< A ADC channel resolution */
 };
 
 /*
@@ -784,15 +789,15 @@ struct adc_chan_spec {
  * streaming adc data.
  */
 struct adc_read_config {
-	const struct device *adc;
-	const bool is_streaming;
-	const struct adc_dt_spec *adc_spec;
-	const struct adc_stream_trigger *triggers;
-	struct adc_sequence *sequence;
-	uint16_t fifo_watermark_lvl;
-	uint16_t fifo_mode;
-	size_t adc_spec_cnt;
-	size_t trigger_cnt;
+    const struct device* adc;
+    bool const is_streaming;
+    const struct adc_dt_spec* adc_spec;
+    const struct adc_stream_trigger* triggers;
+    struct adc_sequence* sequence;
+    uint16_t fifo_watermark_lvl;
+    uint16_t fifo_mode;
+    size_t adc_spec_cnt;
+    size_t trigger_cnt;
 };
 
 /**
@@ -800,100 +805,99 @@ struct adc_read_config {
  *
  */
 struct adc_decoder_api {
-	/**
-	 * @brief Get the number of frames in the current buffer.
-	 *
-	 * @param[in]  buffer The buffer provided on the @ref rtio context.
-	 * @param[in]  channel The channel to get the count for
-	 * @param[out] frame_count The number of frames on the buffer (at least 1)
-	 * @return 0 on success
-	 * @return -ENOTSUP if the channel/channel_idx aren't found
-	 */
-	int (*get_frame_count)(const uint8_t *buffer, uint32_t channel,
-			       uint16_t *frame_count);
+    /**
+     * @brief Get the number of frames in the current buffer.
+     *
+     * @param[in]  buffer The buffer provided on the @ref rtio context.
+     * @param[in]  channel The channel to get the count for
+     * @param[out] frame_count The number of frames on the buffer (at least 1)
+     * @return 0 on success
+     * @return -ENOTSUP if the channel/channel_idx aren't found
+     */
+    int (*get_frame_count)(uint8_t const* buffer, uint32_t channel,
+                           uint16_t* frame_count);
 
-	/**
-	 * @brief Get the size required to decode a given channel
-	 *
-	 * When decoding a single frame, use @p base_size. For every additional frame, add another
-	 * @p frame_size. As an example, to decode 3 frames use: 'base_size + 2 * frame_size'.
-	 *
-	 * @param[in] adc_spec ADC Specs
-	 * @param[in]  channel The channel to query
-	 * @param[out] base_size The size of decoding the first frame
-	 * @param[out] frame_size The additional size of every additional frame
-	 * @return 0 on success
-	 * @return -ENOTSUP if the channel is not supported
-	 */
-	int (*get_size_info)(struct adc_dt_spec adc_spec, uint32_t channel, size_t *base_size,
-			     size_t *frame_size);
+    /**
+     * @brief Get the size required to decode a given channel
+     *
+     * When decoding a single frame, use @p base_size. For every additional frame, add another
+     * @p frame_size. As an example, to decode 3 frames use: 'base_size + 2 * frame_size'.
+     *
+     * @param[in] adc_spec ADC Specs
+     * @param[in]  channel The channel to query
+     * @param[out] base_size The size of decoding the first frame
+     * @param[out] frame_size The additional size of every additional frame
+     * @return 0 on success
+     * @return -ENOTSUP if the channel is not supported
+     */
+    int (*get_size_info)(struct adc_dt_spec adc_spec, uint32_t channel, size_t* base_size,
+                         size_t* frame_size);
 
-	/**
-	 * @brief Decode up to @p max_count samples from the buffer
-	 *
-	 * Decode samples of channel across multiple frames. If there exist
-	 * multiple instances of the same channel, @p channel_index is used to differentiate them.
-	 *
-	 * @param[in]     buffer The buffer provided on the @ref rtio context
-	 * @param[in]     channel The channel to decode
-	 * @param[in,out] fit The current frame iterator
-	 * @param[in]     max_count The maximum number of channels to decode.
-	 * @param[out]    data_out The decoded data
-	 * @return 0 no more samples to decode
-	 * @return >0 the number of decoded frames
-	 * @return <0 on error
-	 */
-	int (*decode)(const uint8_t *buffer, uint32_t channel, uint32_t *fit,
-		      uint16_t max_count, void *data_out);
+    /**
+     * @brief Decode up to @p max_count samples from the buffer
+     *
+     * Decode samples of channel across multiple frames. If there exist
+     * multiple instances of the same channel, @p channel_index is used to differentiate them.
+     *
+     * @param[in]     buffer The buffer provided on the @ref rtio context
+     * @param[in]     channel The channel to decode
+     * @param[in,out] fit The current frame iterator
+     * @param[in]     max_count The maximum number of channels to decode.
+     * @param[out]    data_out The decoded data
+     * @return 0 no more samples to decode
+     * @return >0 the number of decoded frames
+     * @return <0 on error
+     */
+    int (*decode)(uint8_t const* buffer, uint32_t channel, uint32_t* fit,
+                  uint16_t max_count, void* data_out);
 
-	/**
-	 * @brief Check if the given trigger type is present
-	 *
-	 * @param[in] buffer The buffer provided on the @ref rtio context
-	 * @param[in] trigger The trigger type in question
-	 * @return Whether the trigger is present in the buffer
-	 */
-	bool (*has_trigger)(const uint8_t *buffer, enum adc_trigger_type trigger);
+    /**
+     * @brief Check if the given trigger type is present
+     *
+     * @param[in] buffer The buffer provided on the @ref rtio context
+     * @param[in] trigger The trigger type in question
+     * @return Whether the trigger is present in the buffer
+     */
+    bool (*has_trigger)(uint8_t const* buffer, enum adc_trigger_type trigger);
 };
 
 /**
  * @brief Type definition of ADC API function for configuring a channel.
  * See adc_channel_setup() for argument descriptions.
  */
-typedef int (*adc_api_channel_setup)(const struct device *dev,
-				     const struct adc_channel_cfg *channel_cfg);
+typedef int (*adc_api_channel_setup)(const struct device* dev,
+                                     const struct adc_channel_cfg* channel_cfg);
 
 /**
  * @brief Type definition of ADC API function for setting a read request.
  * See adc_read() for argument descriptions.
  */
-typedef int (*adc_api_read)(const struct device *dev,
-			    const struct adc_sequence *sequence);
+typedef int (*adc_api_read)(const struct device* dev,
+                            const struct adc_sequence* sequence);
 
 /**
  * @brief Type definition of ADC API function for setting an submit
  *        stream request.
  */
-typedef void (*adc_api_submit)(const struct device *dev,
-				  struct rtio_iodev_sqe *sqe);
+typedef void (*adc_api_submit)(const struct device* dev,
+                               struct rtio_iodev_sqe* sqe);
 
 /**
  * @brief Get the decoder associate with the given device
  *
  * @see adc_get_decoder() for more details
  */
-typedef int (*adc_api_get_decoder)(const struct device *dev,
-				    const struct adc_decoder_api **api);
-
+typedef int (*adc_api_get_decoder)(const struct device* dev,
+                                   const struct adc_decoder_api** api);
 
 /**
  * @brief Type definition of ADC API function for setting an asynchronous
  *        read request.
  * See adc_read_async() for argument descriptions.
  */
-typedef int (*adc_api_read_async)(const struct device *dev,
-				  const struct adc_sequence *sequence,
-				  struct k_poll_signal *async);
+typedef int (*adc_api_read_async)(const struct device* dev,
+                                  const struct adc_sequence* sequence,
+                                  struct k_poll_signal* async);
 
 /**
  * @brief ADC driver API
@@ -901,16 +905,19 @@ typedef int (*adc_api_read_async)(const struct device *dev,
  * This is the mandatory API any ADC driver needs to expose.
  */
 __subsystem struct adc_driver_api {
-	adc_api_channel_setup channel_setup;
-	adc_api_read          read;
-#ifdef CONFIG_ADC_ASYNC
-	adc_api_read_async    read_async;
-#endif
-#ifdef CONFIG_ADC_STREAM
-	adc_api_submit    submit;
-	adc_api_get_decoder get_decoder;
-#endif
-	uint16_t ref_internal;	/* mV */
+    adc_api_channel_setup channel_setup;
+    adc_api_read read;
+
+    #ifdef CONFIG_ADC_ASYNC
+    adc_api_read_async read_async;
+    #endif
+
+    #ifdef CONFIG_ADC_STREAM
+    adc_api_submit submit;
+    adc_api_get_decoder get_decoder;
+    #endif
+
+    uint16_t ref_internal; /* mV */
 };
 
 /**
@@ -925,13 +932,12 @@ __subsystem struct adc_driver_api {
  * @retval 0       On success.
  * @retval -EINVAL If a parameter with an invalid value has been provided.
  */
-__syscall int adc_channel_setup(const struct device *dev,
-				const struct adc_channel_cfg *channel_cfg);
+__syscall int adc_channel_setup(const struct device* dev,
+                                const struct adc_channel_cfg* channel_cfg);
 
-static inline int z_impl_adc_channel_setup(const struct device *dev,
-					   const struct adc_channel_cfg *channel_cfg)
-{
-	return DEVICE_API_GET(adc, dev)->channel_setup(dev, channel_cfg);
+static inline int z_impl_adc_channel_setup(const struct device* dev,
+                                           const struct adc_channel_cfg* channel_cfg) {
+    return DEVICE_API_GET(adc, dev)->channel_setup(dev, channel_cfg);
 }
 
 /**
@@ -943,13 +949,12 @@ static inline int z_impl_adc_channel_setup(const struct device *dev,
  * Devicetree is not valid.
  * @see adc_channel_setup()
  */
-static inline int adc_channel_setup_dt(const struct adc_dt_spec *spec)
-{
-	if (!spec->channel_cfg_dt_node_exists) {
-		return -ENOTSUP;
-	}
+static inline int adc_channel_setup_dt(const struct adc_dt_spec* spec) {
+    if (!spec->channel_cfg_dt_node_exists) {
+        return (-ENOTSUP);
+    }
 
-	return adc_channel_setup(spec->dev, &spec->channel_cfg);
+    return adc_channel_setup(spec->dev, &spec->channel_cfg);
 }
 
 /**
@@ -973,13 +978,12 @@ static inline int adc_channel_setup_dt(const struct adc_dt_spec *spec)
  *                  in the buffer, but at least some of them were taken with
  *                  an extra delay compared to what was scheduled.
  */
-__syscall int adc_read(const struct device *dev,
-		       const struct adc_sequence *sequence);
+__syscall int adc_read(const struct device* dev,
+                       const struct adc_sequence* sequence);
 
-static inline int z_impl_adc_read(const struct device *dev,
-				  const struct adc_sequence *sequence)
-{
-	return DEVICE_API_GET(adc, dev)->read(dev, sequence);
+static inline int z_impl_adc_read(const struct device* dev,
+                                  const struct adc_sequence* sequence) {
+    return DEVICE_API_GET(adc, dev)->read(dev, sequence);
 }
 
 /**
@@ -991,10 +995,9 @@ static inline int z_impl_adc_read(const struct device *dev,
  * @return A value from adc_read().
  * @see adc_read()
  */
-static inline int adc_read_dt(const struct adc_dt_spec *spec,
-			      const struct adc_sequence *sequence)
-{
-	return adc_read(spec->dev, sequence);
+static inline int adc_read_dt(const struct adc_dt_spec* spec,
+                              const struct adc_sequence* sequence) {
+    return adc_read(spec->dev, sequence);
 }
 
 /**
@@ -1017,16 +1020,15 @@ static inline int adc_read_dt(const struct adc_dt_spec *spec,
  *          See adc_read() for a list of possible error codes.
  *
  */
-__syscall int adc_read_async(const struct device *dev,
-			     const struct adc_sequence *sequence,
-			     struct k_poll_signal *async);
+__syscall int adc_read_async(const struct device* dev,
+                             const struct adc_sequence* sequence,
+                             struct k_poll_signal* async);
 
 #ifdef CONFIG_ADC_ASYNC
-static inline int z_impl_adc_read_async(const struct device *dev,
-					const struct adc_sequence *sequence,
-					struct k_poll_signal *async)
-{
-	return DEVICE_API_GET(adc, dev)->read_async(dev, sequence, async);
+static inline int z_impl_adc_read_async(const struct device* dev,
+                                        const struct adc_sequence* sequence,
+                                        struct k_poll_signal* async) {
+    return DEVICE_API_GET(adc, dev)->read_async(dev, sequence, async);
 }
 #endif /* CONFIG_ADC_ASYNC */
 
@@ -1063,73 +1065,75 @@ static inline int adc_read_async_dt(const struct adc_dt_spec *spec,
  * @note This function is available only if @kconfig{CONFIG_ADC_STREAM}
  * is selected.
  *
- * @param dev	Pointer to the device structure for the driver instance.
- * @param api	Pointer to the decoder which will be set upon success.
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param api Pointer to the decoder which will be set upon success.
  *
  * @returns 0 on success, negative error code otherwise.
  *
  *
  */
-__syscall int adc_get_decoder(const struct device *dev,
-				const struct adc_decoder_api **api);
+__syscall int adc_get_decoder(const struct device* dev,
+                              const struct adc_decoder_api** api);
+
 /*
  * Generic data structure used for encoding the sample timestamp and number of channels sampled.
  */
 struct __attribute__((__packed__)) adc_data_generic_header {
-	/* The timestamp at which the data was collected from the adc */
-	uint64_t timestamp_ns;
+    /* The timestamp at which the data was collected from the adc */
+    uint64_t timestamp_ns;
 
-	/*
-	 * The number of channels present in the frame.
-	 */
-	uint8_t num_channels;
+    /*
+     * The number of channels present in the frame.
+     */
+    uint8_t num_channels;
 
-	/* Shift value for all samples in the frame */
-	int8_t shift;
+    /* Shift value for all samples in the frame */
+    int8_t shift;
 
-	/* This padding is needed to make sure that the 'channels' field is aligned */
-	int16_t _padding;
+    /* This padding is needed to make sure that the 'channels' field is aligned */
+    int16_t _padding;
 
-	/* Channels present in the frame */
-	struct adc_chan_spec channels[0];
+    /* Channels present in the frame */
+    struct adc_chan_spec channels[0];
 };
 
-static inline int adc_stream(struct rtio_iodev *iodev, struct rtio *ctx, void *userdata,
-				struct rtio_sqe **handle)
-{
-	if (IS_ENABLED(CONFIG_USERSPACE)) {
-		struct rtio_sqe sqe;
+static inline int adc_stream(struct rtio_iodev* iodev, struct rtio* ctx, void* userdata,
+                             struct rtio_sqe** handle) {
+    if (IS_ENABLED(CONFIG_USERSPACE)) {
+        struct rtio_sqe sqe;
 
-		rtio_sqe_prep_read_multishot(&sqe, iodev, RTIO_PRIO_NORM, userdata);
-		rtio_sqe_copy_in_get_handles(ctx, &sqe, handle, 1);
-	} else {
-		struct rtio_sqe *sqe = rtio_sqe_acquire(ctx);
+        rtio_sqe_prep_read_multishot(&sqe, iodev, RTIO_PRIO_NORM, userdata);
+        rtio_sqe_copy_in_get_handles(ctx, &sqe, handle, 1);
+    }
+    else {
+        struct rtio_sqe* sqe = rtio_sqe_acquire(ctx);
 
-		if (sqe == NULL) {
-			return -ENOMEM;
-		}
-		if (handle != NULL) {
-			*handle = sqe;
-		}
-		rtio_sqe_prep_read_multishot(sqe, iodev, RTIO_PRIO_NORM, userdata);
-	}
-	rtio_submit(ctx, 0);
-	return 0;
+        if (sqe == NULL) {
+            return (-ENOMEM);
+        }
+
+        if (handle != NULL) {
+            *handle = sqe;
+        }
+        rtio_sqe_prep_read_multishot(sqe, iodev, RTIO_PRIO_NORM, userdata);
+    }
+    rtio_submit(ctx, 0);
+
+    return (0);
 }
 
-static inline int z_impl_adc_get_decoder(const struct device *dev,
-					    const struct adc_decoder_api **decoder)
-{
-	const struct adc_driver_api *api = DEVICE_API_GET(adc, dev);
+static inline int z_impl_adc_get_decoder(const struct device* dev,
+                                         const struct adc_decoder_api** decoder) {
+    const struct adc_driver_api* api = DEVICE_API_GET(adc, dev);
 
-	__ASSERT_NO_MSG(api != NULL);
+    __ASSERT_NO_MSG(api != NULL);
 
-	if (api->get_decoder == NULL) {
-		*decoder = NULL;
-		return -1;
-	}
+    if (api->get_decoder == NULL) {
+        *decoder = NULL;
+        return (-1);
+    }
 
-	return api->get_decoder(dev, decoder);
+    return api->get_decoder(dev, decoder);
 }
 #endif /* CONFIG_ADC_STREAM */
 
@@ -1142,9 +1146,8 @@ static inline int z_impl_adc_get_decoder(const struct device *dev,
  * @return a positive value is the reference voltage value.  Returns
  * zero if reference voltage information is not available.
  */
-static inline uint16_t adc_ref_internal(const struct device *dev)
-{
-	return DEVICE_API_GET(adc, dev)->ref_internal;
+static inline uint16_t adc_ref_internal(const struct device* dev) {
+    return DEVICE_API_GET(adc, dev)->ref_internal;
 }
 
 /**
@@ -1171,7 +1174,7 @@ static inline uint16_t adc_ref_internal(const struct device *dev)
  * @retval -EINVAL if the gain is not reversible
  */
 typedef int (*adc_raw_to_x_fn)(int32_t ref_mv, enum adc_gain gain, uint8_t resolution,
-			       int32_t *valp);
+                               int32_t* valp);
 
 /**
  * @brief Convert a raw ADC value to millivolts.
@@ -1179,21 +1182,20 @@ typedef int (*adc_raw_to_x_fn)(int32_t ref_mv, enum adc_gain gain, uint8_t resol
  * @see adc_raw_to_x_fn
  */
 static inline int adc_raw_to_millivolts(int32_t ref_mv, enum adc_gain gain, uint8_t resolution,
-					int32_t *valp)
-{
-	int64_t adc_mv = (int64_t)*valp * (int64_t)ref_mv;
-	int ret = adc_gain_invert_64(gain, &adc_mv);
+                                        int32_t* valp) {
+    int64_t adc_mv = (int64_t)*valp * (int64_t)ref_mv;
+    int ret = adc_gain_invert_64(gain, &adc_mv);
 
-	if (ret == 0) {
-		adc_mv = adc_mv >> resolution;
-		if (adc_mv > INT32_MAX || adc_mv < INT32_MIN) {
-			__ASSERT_MSG_INFO("conversion result is out of range");
-		}
+    if (ret == 0) {
+        adc_mv = (adc_mv >> resolution);
+        if ((adc_mv > INT32_MAX) || (adc_mv < INT32_MIN)) {
+            __ASSERT_MSG_INFO("conversion result is out of range");
+        }
 
-		*valp = (int32_t)adc_mv;
-	}
+        *valp = (int32_t)adc_mv;
+    }
 
-	return ret;
+    return (ret);
 }
 
 /**
@@ -1202,16 +1204,15 @@ static inline int adc_raw_to_millivolts(int32_t ref_mv, enum adc_gain gain, uint
  * @see adc_raw_to_x_fn
  */
 static inline int adc_raw_to_microvolts(int32_t ref_mv, enum adc_gain gain, uint8_t resolution,
-					int32_t *valp)
-{
-	int64_t adc_uv = (int64_t)*valp * ref_mv * 1000;
-	int ret = adc_gain_invert_64(gain, &adc_uv);
+                                        int32_t* valp) {
+    int64_t adc_uv = (int64_t)*valp * ref_mv * 1000;
+    int ret = adc_gain_invert_64(gain, &adc_uv);
 
-	if (ret == 0) {
-		*valp = (int32_t)(adc_uv >> resolution);
-	}
+    if (ret == 0) {
+        *valp = (int32_t)(adc_uv >> resolution);
+    }
 
-	return ret;
+    return (ret);
 }
 
 /**
@@ -1231,36 +1232,35 @@ static inline int adc_raw_to_microvolts(int32_t ref_mv, enum adc_gain gain, uint
  * @see adc_raw_to_x_fn
  */
 static inline int adc_raw_to_x_dt_chan(adc_raw_to_x_fn conv_func,
-					    const struct adc_dt_spec *spec,
-					    const struct adc_channel_cfg *channel_cfg,
-					    int32_t *valp)
-{
-	int32_t vref_mv;
-	uint8_t resolution;
+                                       const struct adc_dt_spec* spec,
+                                       const struct adc_channel_cfg* channel_cfg,
+                                       int32_t* valp) {
+    int32_t vref_mv;
+    uint8_t resolution;
 
-	if (!spec->channel_cfg_dt_node_exists) {
-		return -ENOTSUP;
-	}
+    if (!spec->channel_cfg_dt_node_exists) {
+        return (-ENOTSUP);
+    }
 
-	if (channel_cfg->reference == ADC_REF_INTERNAL) {
-		vref_mv = (int32_t)adc_ref_internal(spec->dev);
-	} else {
-		vref_mv = spec->vref_mv;
-	}
+    if (channel_cfg->reference == ADC_REF_INTERNAL) {
+        vref_mv = (int32_t)adc_ref_internal(spec->dev);
+    }
+    else {
+        vref_mv = spec->vref_mv;
+    }
 
-	resolution = spec->resolution;
+    resolution = spec->resolution;
 
-	/*
-	 * For differential channels, one bit less needs to be specified
-	 * for resolution to achieve correct conversion.
-	 */
-	if (channel_cfg->differential) {
-		resolution -= 1U;
-	}
+    /*
+     * For differential channels, one bit less needs to be specified
+     * for resolution to achieve correct conversion.
+     */
+    if (channel_cfg->differential) {
+        resolution -= 1U;
+    }
 
-	return conv_func(vref_mv, channel_cfg->gain, resolution, valp);
+    return conv_func(vref_mv, channel_cfg->gain, resolution, valp);
 }
-
 
 /**
  * @brief Convert a raw ADC value to millivolts using information stored
@@ -1275,9 +1275,8 @@ static inline int adc_raw_to_x_dt_chan(adc_raw_to_x_fn conv_func,
  * Devicetree is not valid.
  * @see adc_raw_to_millivolts()
  */
-static inline int adc_raw_to_millivolts_dt(const struct adc_dt_spec *spec, int32_t *valp)
-{
-	return adc_raw_to_x_dt_chan(adc_raw_to_millivolts, spec, &spec->channel_cfg, valp);
+static inline int adc_raw_to_millivolts_dt(const struct adc_dt_spec* spec, int32_t* valp) {
+    return adc_raw_to_x_dt_chan(adc_raw_to_millivolts, spec, &spec->channel_cfg, valp);
 }
 
 /**
@@ -1293,9 +1292,8 @@ static inline int adc_raw_to_millivolts_dt(const struct adc_dt_spec *spec, int32
  * Devicetree is not valid.
  * @see adc_raw_to_microvolts()
  */
-static inline int adc_raw_to_microvolts_dt(const struct adc_dt_spec *spec, int32_t *valp)
-{
-	return adc_raw_to_x_dt_chan(adc_raw_to_microvolts, spec, &spec->channel_cfg, valp);
+static inline int adc_raw_to_microvolts_dt(const struct adc_dt_spec* spec, int32_t* valp) {
+    return adc_raw_to_x_dt_chan(adc_raw_to_microvolts, spec, &spec->channel_cfg, valp);
 }
 
 /**
@@ -1316,18 +1314,17 @@ static inline int adc_raw_to_microvolts_dt(const struct adc_dt_spec *spec, int32
  * @retval 0 On success
  * @retval -ENOTSUP If @p spec does not have valid channel configuration
  */
-static inline int adc_sequence_init_dt(const struct adc_dt_spec *spec,
-				       struct adc_sequence *seq)
-{
-	if (!spec->channel_cfg_dt_node_exists) {
-		return -ENOTSUP;
-	}
+static inline int adc_sequence_init_dt(const struct adc_dt_spec* spec,
+                                       struct adc_sequence* seq) {
+    if (!spec->channel_cfg_dt_node_exists) {
+        return (-ENOTSUP);
+    }
 
-	seq->channels = BIT(spec->channel_id);
-	seq->resolution = spec->resolution;
-	seq->oversampling = spec->oversampling;
+    seq->channels     = BIT(spec->channel_id);
+    seq->resolution   = spec->resolution;
+    seq->oversampling = spec->oversampling;
 
-	return 0;
+    return (0);
 }
 
 /**
@@ -1337,9 +1334,8 @@ static inline int adc_sequence_init_dt(const struct adc_dt_spec *spec,
  *
  * @return true if the ADC device is ready for use and false otherwise.
  */
-static inline bool adc_is_ready_dt(const struct adc_dt_spec *spec)
-{
-	return device_is_ready(spec->dev);
+static inline bool adc_is_ready_dt(const struct adc_dt_spec* spec) {
+    return device_is_ready(spec->dev);
 }
 
 /**
@@ -1360,8 +1356,8 @@ static inline bool adc_is_ready_dt(const struct adc_dt_spec *spec)
  * static const adc_decoder_api *decoder = ADC_DECODER_DT_GET(DT_ALIAS(adc));
  * @endcode
  */
-#define ADC_DECODER_DT_GET(node_id)                                                             \
-	&UTIL_CAT(DT_STRING_TOKEN_BY_IDX(node_id, compatible, 0), __adc_decoder_api)
+#define ADC_DECODER_DT_GET(node_id) \
+    &UTIL_CAT(DT_STRING_TOKEN_BY_IDX(node_id, compatible, 0), __adc_decoder_api)
 
 /**
  * @brief Define a decoder API
@@ -1378,36 +1374,36 @@ static inline bool adc_is_ready_dt(const struct adc_dt_spec *spec)
  * };
  * @endcode
  */
-#define ADC_DECODER_API_DT_DEFINE()								\
-	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT), (), (static))			\
-	const STRUCT_SECTION_ITERABLE(adc_decoder_api, ADC_DECODER_NAME())
+#define ADC_DECODER_API_DT_DEFINE() \
+    COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT), (), (static)) \
+    const STRUCT_SECTION_ITERABLE(adc_decoder_api, ADC_DECODER_NAME())
 
-#define Z_MAYBE_ADC_DECODER_DECLARE_INTERNAL_IDX(node_id, prop, idx)				\
-	extern const struct adc_decoder_api UTIL_CAT(						\
-		DT_STRING_TOKEN_BY_IDX(node_id, prop, idx), __adc_decoder_api);
+#define Z_MAYBE_ADC_DECODER_DECLARE_INTERNAL_IDX(node_id, prop, idx)    \
+    extern const struct adc_decoder_api UTIL_CAT(                       \
+        DT_STRING_TOKEN_BY_IDX(node_id, prop, idx), __adc_decoder_api);
 
-#define Z_MAYBE_ADC_DECODER_DECLARE_INTERNAL(node_id)						\
-	COND_CODE_1(DT_NODE_HAS_PROP(node_id, compatible),					\
-			(DT_FOREACH_PROP_ELEM(node_id, compatible,				\
-					  Z_MAYBE_ADC_DECODER_DECLARE_INTERNAL_IDX)),		\
-						())
+#define Z_MAYBE_ADC_DECODER_DECLARE_INTERNAL(node_id)           \
+    COND_CODE_1(DT_NODE_HAS_PROP(node_id, compatible),          \
+                (DT_FOREACH_PROP_ELEM(node_id, compatible,      \
+                                      Z_MAYBE_ADC_DECODER_DECLARE_INTERNAL_IDX)), \
+                                      ())
 
 DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_ADC_DECODER_DECLARE_INTERNAL)
 
 /* The default adc iodev API */
 extern const struct rtio_iodev_api __adc_iodev_api;
 
-#define ADC_DT_STREAM_IODEV(name, dt_node, adc_dt_spec, ...)					\
-	static struct adc_stream_trigger _CONCAT(__trigger_array_, name)[] = {__VA_ARGS__};	\
-	static struct adc_read_config _CONCAT(__adc_read_config_, name) = {			\
-		.adc = DEVICE_DT_GET(dt_node),							\
-		.is_streaming = true,								\
-		.adc_spec = adc_dt_spec,							\
-		.triggers = _CONCAT(__trigger_array_, name),					\
-		.adc_spec_cnt = ARRAY_SIZE(adc_dt_spec),					\
-		.trigger_cnt = ARRAY_SIZE(_CONCAT(__trigger_array_, name)),			\
-	};											\
-	RTIO_IODEV_DEFINE(name, &__adc_iodev_api, &_CONCAT(__adc_read_config_, name))
+#define ADC_DT_STREAM_IODEV(name, dt_node, adc_dt_spec, ...)    \
+    static struct adc_stream_trigger Z_CONCAT(__trigger_array_, name)[] = {__VA_ARGS__}; \
+    static struct adc_read_config Z_CONCAT(__adc_read_config_, name) = { \
+        .adc          = DEVICE_DT_GET(dt_node),                 \
+        .is_streaming = true,                                   \
+        .adc_spec     = adc_dt_spec,                            \
+        .triggers     = Z_CONCAT(__trigger_array_, name),       \
+        .adc_spec_cnt = ARRAY_SIZE(adc_dt_spec),                \
+        .trigger_cnt  = ARRAY_SIZE(Z_CONCAT(__trigger_array_, name)), \
+    };                                                          \
+    RTIO_IODEV_DEFINE(name, &__adc_iodev_api, &Z_CONCAT(__adc_read_config_, name))
 
 #ifdef __cplusplus
 }
@@ -1415,4 +1411,4 @@ extern const struct rtio_iodev_api __adc_iodev_api;
 
 #include <zephyr/syscalls/adc.h>
 
-#endif  /* ZEPHYR_INCLUDE_DRIVERS_ADC_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_ADC_H_ */

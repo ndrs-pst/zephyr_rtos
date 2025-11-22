@@ -40,55 +40,55 @@ extern "C" {
 #define NET_VLAN_TAG_UNSPEC 0x0fff
 /** @endcond */
 
-/* Protocol families. */
-#define NET_PF_UNSPEC   0            /**< Unspecified protocol family.  */
-#define NET_PF_INET     1            /**< IP protocol family version 4. */
-#define NET_PF_INET6    2            /**< IP protocol family version 6. */
-#define NET_PF_PACKET   3            /**< Packet family.                */
-#define NET_PF_CAN      4            /**< Controller Area Network.      */
-#define NET_PF_NET_MGMT 5            /**< Network management info.      */
-#define NET_PF_LOCAL    6            /**< Inter-process communication   */
-#define NET_PF_UNIX     NET_PF_LOCAL /**< Inter-process communication   */
+/* Protocol families. (PF) */
+#define NET_PF_UNSPEC   0                   /**< Unspecified protocol family.  */
+#define NET_PF_INET     1                   /**< IP protocol family version 4. */
+#define NET_PF_INET6    2                   /**< IP protocol family version 6. */
+#define NET_PF_PACKET   3                   /**< Packet family.                */
+#define NET_PF_CAN      4                   /**< Controller Area Network.      */
+#define NET_PF_NET_MGMT 5                   /**< Network management info.      */
+#define NET_PF_LOCAL    6                   /**< Inter-process communication   */
+#define NET_PF_UNIX     NET_PF_LOCAL        /**< Inter-process communication   */
 
-/* Address families. */
-#define NET_AF_UNSPEC      NET_PF_UNSPEC   /**< Unspecified address family.   */
-#define NET_AF_INET        NET_PF_INET     /**< IP protocol family version 4. */
-#define NET_AF_INET6       NET_PF_INET6    /**< IP protocol family version 6. */
-#define NET_AF_PACKET      NET_PF_PACKET   /**< Packet family.                */
-#define NET_AF_CAN         NET_PF_CAN      /**< Controller Area Network.      */
-#define NET_AF_NET_MGMT    NET_PF_NET_MGMT /**< Network management info.      */
-#define NET_AF_LOCAL       NET_PF_LOCAL    /**< Inter-process communication   */
-#define NET_AF_UNIX        NET_PF_UNIX     /**< Inter-process communication   */
+/* Address families. (AF) */
+#define NET_AF_UNSPEC   NET_PF_UNSPEC       /**< Unspecified address family.   */
+#define NET_AF_INET     NET_PF_INET         /**< IP protocol family version 4. */
+#define NET_AF_INET6    NET_PF_INET6        /**< IP protocol family version 6. */
+#define NET_AF_PACKET   NET_PF_PACKET       /**< Packet family.                */
+#define NET_AF_CAN      NET_PF_CAN          /**< Controller Area Network.      */
+#define NET_AF_NET_MGMT NET_PF_NET_MGMT     /**< Network management info.      */
+#define NET_AF_LOCAL    NET_PF_LOCAL        /**< Inter-process communication   */
+#define NET_AF_UNIX     NET_PF_UNIX         /**< Inter-process communication   */
 
 /** Protocol numbers from IANA/BSD */
 enum net_ip_protocol {
-	NET_IPPROTO_IP = 0,            /**< IP protocol (pseudo-val for setsockopt() */
-	NET_IPPROTO_ICMP = 1,          /**< ICMP protocol   */
-	NET_IPPROTO_IGMP = 2,          /**< IGMP protocol   */
-	NET_IPPROTO_ETH_P_ALL = 3,     /**< Every packet. from linux if_ether.h   */
-	NET_IPPROTO_IPIP = 4,          /**< IPIP tunnels    */
-	NET_IPPROTO_TCP = 6,           /**< TCP protocol    */
-	NET_IPPROTO_UDP = 17,          /**< UDP protocol    */
-	NET_IPPROTO_IPV6 = 41,         /**< IPv6 protocol   */
-	NET_IPPROTO_ICMPV6 = 58,       /**< ICMPv6 protocol */
-	NET_IPPROTO_RAW = 255,         /**< RAW IP packets  */
+    NET_IPPROTO_IP     = 0,                 /**< IP protocol (pseudo-val for setsockopt() */
+    NET_IPPROTO_ICMP   = 1,                 /**< ICMP protocol   */
+    NET_IPPROTO_IGMP   = 2,                 /**< IGMP protocol   */
+    NET_IPPROTO_ETH_P_ALL = 3,              /**< Every packet. from linux if_ether.h   */
+    NET_IPPROTO_IPIP   = 4,                 /**< IPIP tunnels    */
+    NET_IPPROTO_TCP    = 6,                 /**< TCP protocol    */
+    NET_IPPROTO_UDP    = 17,                /**< UDP protocol    */
+    NET_IPPROTO_IPV6   = 41,                /**< IPv6 protocol   */
+    NET_IPPROTO_ICMPV6 = 58,                /**< ICMPv6 protocol */
+    NET_IPPROTO_RAW    = 255,               /**< RAW IP packets  */
 };
 
 /** Protocol numbers for TLS protocols */
 enum net_ip_protocol_secure {
-	NET_IPPROTO_TLS_1_0 = 256,     /**< TLS 1.0 protocol */
-	NET_IPPROTO_TLS_1_1 = 257,     /**< TLS 1.1 protocol */
-	NET_IPPROTO_TLS_1_2 = 258,     /**< TLS 1.2 protocol */
-	NET_IPPROTO_TLS_1_3 = 259,     /**< TLS 1.3 protocol */
-	NET_IPPROTO_DTLS_1_0 = 272,    /**< DTLS 1.0 protocol */
-	NET_IPPROTO_DTLS_1_2 = 273,    /**< DTLS 1.2 protocol */
+    NET_IPPROTO_TLS_1_0  = 256,             /**< TLS 1.0 protocol */
+    NET_IPPROTO_TLS_1_1  = 257,             /**< TLS 1.1 protocol */
+    NET_IPPROTO_TLS_1_2  = 258,             /**< TLS 1.2 protocol */
+    NET_IPPROTO_TLS_1_3  = 259,             /**< TLS 1.3 protocol */
+    NET_IPPROTO_DTLS_1_0 = 272,             /**< DTLS 1.0 protocol */
+    NET_IPPROTO_DTLS_1_2 = 273,             /**< DTLS 1.2 protocol */
 };
 
 /** Socket type */
 enum net_sock_type {
-	NET_SOCK_STREAM = 1,           /**< Stream socket type   */
-	NET_SOCK_DGRAM,                /**< Datagram socket type */
-	NET_SOCK_RAW                   /**< RAW socket type      */
+    NET_SOCK_STREAM = 1,                    /**< Stream socket type   */
+    NET_SOCK_DGRAM,                         /**< Datagram socket type */
+    NET_SOCK_RAW                            /**< RAW socket type      */
 };
 
 /** @brief Convert 16-bit value from network to host byte order.
@@ -140,25 +140,29 @@ enum net_sock_type {
 #define net_htonll(x) sys_cpu_to_be64(x)
 
 /** IPv6 address struct */
-struct net_in6_addr {
-	union {
-		uint8_t s6_addr[16];   /**< IPv6 address buffer */
-		uint16_t s6_addr16[8]; /**< In big endian */
-		uint32_t s6_addr32[4]; /**< In big endian */
-	};
+struct /**/net_in6_addr {
+    union {
+        uint8_t  s6_addr[16];   /**< IPv6 address buffer */
+        uint16_t s6_addr16[8];  /**< In big endian */
+        uint32_t s6_addr32[4];  /**< In big endian */
+    };
 };
 
 /** Binary size of the IPv6 address */
 #define NET_IPV6_ADDR_SIZE 16
 
 /** IPv4 address struct */
-struct net_in_addr {
-	union {
-		uint8_t s4_addr[4];    /**< IPv4 address buffer */
-		uint16_t s4_addr16[2]; /**< In big endian */
-		uint32_t s4_addr32[1]; /**< In big endian */
-		uint32_t s_addr; /**< In big endian, for POSIX compatibility. */
-	};
+struct /**/net_in_addr {
+    union {
+        uint8_t  s4_addr[4];    /**< IPv4 address buffer */
+        uint16_t s4_addr16[2];  /**< In big endian */
+        uint32_t s4_addr32[1];  /**< In big endian */
+
+        #if !defined(_MSC_VER)  /* #CUSTOM@NDRS */
+        uint32_t s_addr;        /* In big endian, for POSIX compatibility. */
+        #endif
+        uint32_t s_addr_be;     /* In big endian, for POSIX compatibility. */
+    };
 };
 
 /** Binary size of the IPv4 address */
@@ -177,67 +181,67 @@ typedef uint32_t net_socklen_t;
 
 /** Socket address struct for IPv6. */
 struct net_sockaddr_in6 {
-	net_sa_family_t		sin6_family;   /**< NET_AF_INET6           */
-	uint16_t		sin6_port;     /**< Port number            */
-	struct net_in6_addr	sin6_addr;     /**< IPv6 address           */
-	uint8_t			sin6_scope_id; /**< Interfaces for a scope */
+    net_sa_family_t sin6_family;            /**< NET_AF_INET6           */
+    uint16_t sin6_port;                     /**< Port number            */
+    struct net_in6_addr sin6_addr;          /**< IPv6 address           */
+    uint8_t sin6_scope_id;                  /**< Interfaces for a scope */
 };
 
 /** Socket address struct for IPv4. */
 struct net_sockaddr_in {
-	net_sa_family_t		sin_family;    /**< NET_AF_INET  */
-	uint16_t		sin_port;      /**< Port number  */
-	struct net_in_addr	sin_addr;      /**< IPv4 address */
+    net_sa_family_t sin_family;             /**< NET_AF_INET  */
+    uint16_t sin_port;                      /**< Port number  */
+    struct net_in_addr sin_addr;            /**< IPv4 address */
 };
 
 /** Socket address struct for packet socket. */
 struct net_sockaddr_ll {
-	net_sa_family_t sll_family;   /**< Always NET_AF_PACKET               */
-	uint16_t        sll_protocol; /**< Physical-layer protocol            */
-	int             sll_ifindex;  /**< Interface number                   */
-	uint16_t        sll_hatype;   /**< ARP hardware type                  */
-	uint8_t         sll_pkttype;  /**< Packet type                        */
-	uint8_t         sll_halen;    /**< Length of address                  */
-	uint8_t         sll_addr[8];  /**< Physical-layer address, big endian */
+    net_sa_family_t sll_family;             /**< Always NET_AF_PACKET               */
+    uint16_t sll_protocol;                  /**< Physical-layer protocol            */
+    int      sll_ifindex;                   /**< Interface number                   */
+    uint16_t sll_hatype;                    /**< ARP hardware type                  */
+    uint8_t  sll_pkttype;                   /**< Packet type                        */
+    uint8_t  sll_halen;                     /**< Length of address                  */
+    uint8_t  sll_addr[8];                   /**< Physical-layer address, big endian */
 };
 
 /** @cond INTERNAL_HIDDEN */
 
 /** Socket address struct for IPv6 where address is a pointer */
 struct net_sockaddr_in6_ptr {
-	net_sa_family_t		sin6_family;   /**< NET_AF_INET6           */
-	uint16_t		sin6_port;     /**< Port number            */
-	struct net_in6_addr    *sin6_addr;     /**< IPv6 address           */
-	uint8_t			sin6_scope_id; /**< interfaces for a scope */
+    net_sa_family_t sin6_family;            /**< NET_AF_INET6           */
+    uint16_t sin6_port;                     /**< Port number            */
+    struct net_in6_addr* sin6_addr;         /**< IPv6 address           */
+    uint8_t sin6_scope_id;                  /**< interfaces for a scope */
 };
 
 /** Socket address struct for IPv4 where address is a pointer */
 struct net_sockaddr_in_ptr {
-	net_sa_family_t		sin_family;    /**< NET_AF_INET  */
-	uint16_t		sin_port;      /**< Port number  */
-	struct net_in_addr     *sin_addr;      /**< IPv4 address */
+    net_sa_family_t sin_family;             /**< NET_AF_INET  */
+    uint16_t sin_port;                      /**< Port number  */
+    struct net_in_addr* sin_addr;           /**< IPv4 address */
 };
 
 /** Socket address struct for packet socket where address is a pointer */
 struct net_sockaddr_ll_ptr {
-	net_sa_family_t sll_family;   /**< Always NET_AF_PACKET               */
-	uint16_t        sll_protocol; /**< Physical-layer protocol            */
-	int             sll_ifindex;  /**< Interface number                   */
-	uint16_t        sll_hatype;   /**< ARP hardware type                  */
-	uint8_t         sll_pkttype;  /**< Packet type                        */
-	uint8_t         sll_halen;    /**< Length of address                  */
-	uint8_t        *sll_addr;     /**< Physical-layer address, big endian */
+    net_sa_family_t sll_family;             /**< Always NET_AF_PACKET               */
+    uint16_t sll_protocol;                  /**< Physical-layer protocol            */
+    int      sll_ifindex;                   /**< Interface number                   */
+    uint16_t sll_hatype;                    /**< ARP hardware type                  */
+    uint8_t  sll_pkttype;                   /**< Packet type                        */
+    uint8_t  sll_halen;                     /**< Length of address                  */
+    uint8_t* sll_addr;                      /**< Physical-layer address, big endian */
 };
 
 /** Socket address struct for unix socket where address is a pointer */
 struct net_sockaddr_un_ptr {
-	net_sa_family_t sun_family;   /**< Always NET_AF_UNIX */
-	char           *sun_path;     /**< Pathname           */
+    net_sa_family_t sun_family;             /**< Always NET_AF_UNIX */
+    char* sun_path;                         /**< Pathname           */
 };
 
 struct net_sockaddr_can_ptr {
-	net_sa_family_t can_family;
-	int             can_ifindex;
+    net_sa_family_t can_family;
+    int can_ifindex;
 };
 
 /** @endcond */
@@ -245,28 +249,38 @@ struct net_sockaddr_can_ptr {
 #if !defined(HAVE_IOVEC)
 /** IO vector array element */
 struct net_iovec {
-	void  *iov_base; /**< Pointer to data */
-	size_t iov_len;  /**< Length of the data */
+    void*  iov_base;                        /**< Pointer to data */
+    size_t iov_len;                         /**< Length of the data */
 };
 #endif
 
 /** Message struct */
 struct net_msghdr {
-	void             *msg_name;       /**< Optional socket address, big endian */
-	net_socklen_t     msg_namelen;    /**< Size of socket address */
-	struct net_iovec *msg_iov;        /**< Scatter/gather array */
-	size_t            msg_iovlen;     /**< Number of elements in msg_iov */
-	void             *msg_control;    /**< Ancillary data */
-	size_t            msg_controllen; /**< Ancillary data buffer len */
-	int               msg_flags;      /**< Flags on received message */
+    void* msg_name;                         /**< Optional socket address, big endian */
+    net_socklen_t msg_namelen;              /**< Size of socket address */
+    struct net_iovec* msg_iov;              /**< Scatter/gather array */
+    size_t msg_iovlen;                      /**< Number of elements in msg_iov */
+    void*  msg_control;                     /**< Ancillary data */
+    size_t msg_controllen;                  /**< Ancillary data buffer len */
+    int msg_flags;                          /**< Flags on received message */
 };
 
 /** Control message ancillary data */
 struct net_cmsghdr {
-	net_socklen_t cmsg_len;    /**< Number of bytes, including header */
-	int           cmsg_level;  /**< Originating protocol */
-	int           cmsg_type;   /**< Protocol-specific type */
-	z_max_align_t cmsg_data[]; /**< Flexible array member to force alignment of net_cmsghdr */
+    net_socklen_t cmsg_len;                 /**< Number of bytes, including header */
+    int cmsg_level;                         /**< Originating protocol */
+    int cmsg_type;                          /**< Protocol-specific type */
+
+    #if defined(_MSC_VER) /* #CUSTOM@NDRS */
+    /* This is a workaround for MSVC which does not allow zero-sized
+     * arrays. The size of the array is 1.
+     * This change will effect production code in C when using sizeof()
+     * so it will be used only in MSVC.
+     */
+    z_max_align_t cmsg_data[1];
+    #else
+    z_max_align_t cmsg_data[]; /**< Flexible array member to force alignment of net_cmsghdr */
+    #endif
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -289,9 +303,9 @@ struct net_cmsghdr {
  * associated with the passed msghdr.  It returns NULL if there isn't
  * enough space for a cmsghdr in the buffer.
  */
-#define NET_CMSG_FIRSTHDR(msghdr)				  \
-	((msghdr)->msg_controllen >= sizeof(struct net_cmsghdr) ? \
-	 (struct net_cmsghdr *)((msghdr)->msg_control) : NULL)
+#define NET_CMSG_FIRSTHDR(msghdr)                             \
+    ((msghdr)->msg_controllen >= sizeof(struct net_cmsghdr) ? \
+     (struct net_cmsghdr *)((msghdr)->msg_control) : NULL)
 #endif
 
 #if !defined(NET_CMSG_NXTHDR)
@@ -299,14 +313,14 @@ struct net_cmsghdr {
  * Returns the next valid cmsghdr after the passed cmsghdr. It returns NULL
  * when there isn't enough space left in the buffer.
  */
-#define NET_CMSG_NXTHDR(msghdr, cmsg)					 \
-	(((cmsg) == NULL) ? NET_CMSG_FIRSTHDR(msghdr) :			 \
-	 (((uint8_t *)(cmsg) + NET_ALIGN_H((cmsg)->cmsg_len) +		 \
-	   NET_ALIGN_D(sizeof(struct net_cmsghdr)) >			 \
-	   (uint8_t *)((msghdr)->msg_control) + (msghdr)->msg_controllen) ? \
-	  NULL :							 \
-	  (struct net_cmsghdr *)((uint8_t *)(cmsg) +			 \
-				 NET_ALIGN_H((cmsg)->cmsg_len))))
+#define NET_CMSG_NXTHDR(msghdr, cmsg)                           \
+    (((cmsg) == NULL) ? NET_CMSG_FIRSTHDR(msghdr) :             \
+     (((uint8_t*)(cmsg) + NET_ALIGN_H((cmsg)->cmsg_len) +       \
+        NET_ALIGN_D(sizeof(struct net_cmsghdr)) >               \
+        (uint8_t*)((msghdr)->msg_control) + (msghdr)->msg_controllen) ? \
+        NULL :                                                  \
+      (struct net_cmsghdr*)((uint8_t *)(cmsg) +                 \
+                            NET_ALIGN_H((cmsg)->cmsg_len))))
 #endif
 
 #if !defined(NET_CMSG_DATA)
@@ -340,17 +354,17 @@ struct net_cmsghdr {
 /** @cond INTERNAL_HIDDEN */
 
 /* Packet types.  */
-#define NET_PACKET_HOST         0     /* To us            */
-#define NET_PACKET_BROADCAST    1     /* To all           */
-#define NET_PACKET_MULTICAST    2     /* To group         */
-#define NET_PACKET_OTHERHOST    3     /* To someone else  */
-#define NET_PACKET_OUTGOING     4     /* Originated by us */
+#define NET_PACKET_HOST         0           /* To us            */
+#define NET_PACKET_BROADCAST    1           /* To all           */
+#define NET_PACKET_MULTICAST    2           /* To group         */
+#define NET_PACKET_OTHERHOST    3           /* To someone else  */
+#define NET_PACKET_OUTGOING     4           /* Originated by us */
 #define NET_PACKET_LOOPBACK     5
 #define NET_PACKET_FASTROUTE    6
 
 /* ARP protocol HARDWARE identifiers. */
-#define NET_ARPHRD_ETHER 1
-#define NET_ARPHRD_PPP   512
+#define NET_ARPHRD_ETHER        1
+#define NET_ARPHRD_PPP          512
 
 /* Note: These macros are defined in a specific order.
  * The largest sockaddr size is the last one.
@@ -358,14 +372,14 @@ struct net_cmsghdr {
 #if defined(CONFIG_NET_IPV4)
 #undef NET_SOCKADDR_MAX_SIZE
 #undef NET_SOCKADDR_PTR_MAX_SIZE
-#define NET_SOCKADDR_MAX_SIZE (sizeof(struct net_sockaddr_in))
+#define NET_SOCKADDR_MAX_SIZE     (sizeof(struct net_sockaddr_in))
 #define NET_SOCKADDR_PTR_MAX_SIZE (sizeof(struct net_sockaddr_in_ptr))
 #endif
 
 #if defined(CONFIG_NET_SOCKETS_PACKET)
 #undef NET_SOCKADDR_MAX_SIZE
 #undef NET_SOCKADDR_PTR_MAX_SIZE
-#define NET_SOCKADDR_MAX_SIZE (sizeof(struct net_sockaddr_ll))
+#define NET_SOCKADDR_MAX_SIZE     (sizeof(struct net_sockaddr_ll))
 #define NET_SOCKADDR_PTR_MAX_SIZE (sizeof(struct net_sockaddr_ll_ptr))
 #endif
 
@@ -393,7 +407,7 @@ struct net_cmsghdr {
 #if !defined(CONFIG_NET_IPV6)
 #if !defined(CONFIG_NET_SOCKETS_PACKET)
 #if !defined(CONFIG_NET_NATIVE_OFFLOADED_SOCKETS)
-#define NET_SOCKADDR_MAX_SIZE (sizeof(struct net_sockaddr_in6))
+#define NET_SOCKADDR_MAX_SIZE     (sizeof(struct net_sockaddr_in6))
 #define NET_SOCKADDR_PTR_MAX_SIZE (sizeof(struct net_sockaddr_in6_ptr))
 #endif
 #endif
@@ -405,43 +419,50 @@ struct net_cmsghdr {
 #define SOCKADDR_ALIGN (4)
 
 /** Generic sockaddr struct. Must be cast to proper type. */
-struct net_sockaddr {
-	net_sa_family_t sa_family; /**< Address family */
-/** @cond INTERNAL_HIDDEN */
-	char data[NET_SOCKADDR_MAX_SIZE - sizeof(net_sa_family_t)];
-/** @endcond */
+struct /**/net_sockaddr {
+    net_sa_family_t sa_family;  /**< Address family */
+                            /** @cond INTERNAL_HIDDEN */
+    char data[NET_SOCKADDR_MAX_SIZE - sizeof(net_sa_family_t)];
+    /** @endcond */
 } __aligned(SOCKADDR_ALIGN);
 
 /** @cond INTERNAL_HIDDEN */
 
-struct net_sockaddr_ptr {
-	net_sa_family_t family;
-	char data[NET_SOCKADDR_PTR_MAX_SIZE - sizeof(net_sa_family_t)];
+struct /**/net_sockaddr_ptr {
+    net_sa_family_t family;
+    char data[NET_SOCKADDR_PTR_MAX_SIZE - sizeof(net_sa_family_t)];
 } __aligned(SOCKADDR_ALIGN);
+
+#if (__GTEST == 0) /* #CUSTOM@NDRS */
+#define sockaddr            net_sockaddr
+#define sockaddr_ptr        net_sockaddr_ptr
+#define sockaddr_in_ptr     net_sockaddr_in_ptr
+#endif
 
 /* Same as sockaddr in our case */
-struct net_sockaddr_storage {
-	net_sa_family_t ss_family;
-	char data[NET_SOCKADDR_MAX_SIZE - sizeof(net_sa_family_t)];
+struct /**/net_sockaddr_storage {
+    net_sa_family_t ss_family;
+    char data[NET_SOCKADDR_MAX_SIZE - sizeof(net_sa_family_t)];
 } __aligned(SOCKADDR_ALIGN);
 
 /* Socket address struct for UNIX domain sockets */
-struct net_sockaddr_un {
-	net_sa_family_t sun_family;    /* NET_AF_UNIX */
-	char            sun_path[NET_SOCKADDR_MAX_SIZE - sizeof(net_sa_family_t)];
+struct /**/net_sockaddr_un {
+    net_sa_family_t sun_family;             /* NET_AF_UNIX */
+    char sun_path[NET_SOCKADDR_MAX_SIZE - sizeof(net_sa_family_t)];
 };
 
-struct net_addr {
-	net_sa_family_t family;
-	union {
-#if defined(CONFIG_NET_NAMESPACE_COMPAT_MODE)
-		struct net_in6_addr net_in6_addr;
-		struct net_in_addr net_in_addr;
-#else
-		struct net_in6_addr in6_addr;
-		struct net_in_addr in_addr;
-#endif
-	};
+struct /**/net_addr {
+    net_sa_family_t family;
+
+    union {
+        #if defined(CONFIG_NET_NAMESPACE_COMPAT_MODE)
+        struct net_in6_addr net_in6_addr;
+        struct net_in_addr net_in_addr;
+        #else
+        struct net_in6_addr in6_addr;
+        struct net_in_addr in_addr;
+        #endif
+    };
 };
 
 /** A pointer to IPv6 any address (all values zero) */
@@ -453,12 +474,12 @@ extern const struct net_in6_addr net_in6addr_loopback;
 /** @endcond */
 
 /** IPv6 address initializer */
-#define NET_IN6ADDR_ANY_INIT { { { 0, 0, 0, 0, 0, 0, 0, 0,	\
-				   0, 0, 0, 0, 0, 0, 0, 0 } } }
+#define NET_IN6ADDR_ANY_INIT { { { 0, 0, 0, 0, 0, 0, 0, 0,      \
+                                   0, 0, 0, 0, 0, 0, 0, 0 } } }
 
 /** IPv6 loopback address initializer */
-#define NET_IN6ADDR_LOOPBACK_INIT { { { 0, 0, 0, 0, 0, 0, 0, 0,	\
-					0, 0, 0, 0, 0, 0, 0, 1 } } }
+#define NET_IN6ADDR_LOOPBACK_INIT { { { 0, 0, 0, 0, 0, 0, 0, 0, \
+                                        0, 0, 0, 0, 0, 0, 0, 1 } } }
 
 /** IPv4 any address */
 #define NET_INADDR_ANY 0
@@ -469,7 +490,7 @@ extern const struct net_in6_addr net_in6addr_loopback;
 /** IPv4 address initializer */
 #define NET_INADDR_ANY_INIT { { { NET_INADDR_ANY } } }
 
-/** IPv6 loopback address initializer */
+/** IPv4 loopback address initializer */
 #define NET_INADDR_LOOPBACK_INIT  { { { 127, 0, 0, 1 } } }
 
 /** Max length of the IPv4 address as a string. Defined by POSIX. */
@@ -490,201 +511,214 @@ extern const struct net_in6_addr net_in6addr_loopback;
 
 /** @brief IP Maximum Transfer Unit */
 enum net_ip_mtu {
-	/** IPv6 MTU length. We must be able to receive this size IPv6 packet
-	 * without fragmentation.
-	 */
-#if defined(CONFIG_NET_NATIVE_IPV6)
-	NET_IPV6_MTU = CONFIG_NET_IPV6_MTU,
-#else
-	NET_IPV6_MTU = 1280,
-#endif
+    /** IPv6 MTU length. We must be able to receive this size IPv6 packet
+     * without fragmentation.
+     */
+    #if defined(CONFIG_NET_NATIVE_IPV6)
+    NET_IPV6_MTU = CONFIG_NET_IPV6_MTU,
+    #else
+    NET_IPV6_MTU = 1280,
+    #endif
 
-	/** IPv4 MTU length. We must be able to receive this size IPv4 packet
-	 * without fragmentation.
-	 */
-#if defined(CONFIG_NET_NATIVE_IPV4)
-	NET_IPV4_MTU = CONFIG_NET_IPV4_MTU,
-#else
-	NET_IPV4_MTU = 576,
-#endif
+    /** IPv4 MTU length. We must be able to receive this size IPv4 packet
+     * without fragmentation.
+     */
+    #if defined(CONFIG_NET_NATIVE_IPV4)
+    NET_IPV4_MTU = CONFIG_NET_IPV4_MTU,
+    #else
+    NET_IPV4_MTU = 576,
+    #endif
 };
 
 /** @brief Network packet priority settings described in IEEE 802.1Q Annex I.1 */
 enum net_priority {
-	NET_PRIORITY_BK = 1, /**< Background (lowest)                */
-	NET_PRIORITY_BE = 0, /**< Best effort (default)              */
-	NET_PRIORITY_EE = 2, /**< Excellent effort                   */
-	NET_PRIORITY_CA = 3, /**< Critical applications              */
-	NET_PRIORITY_VI = 4, /**< Video, < 100 ms latency and jitter */
-	NET_PRIORITY_VO = 5, /**< Voice, < 10 ms latency and jitter  */
-	NET_PRIORITY_IC = 6, /**< Internetwork control               */
-	NET_PRIORITY_NC = 7  /**< Network control (highest)          */
+    NET_PRIORITY_BK = 1, /**< Background (lowest)                */
+    NET_PRIORITY_BE = 0, /**< Best effort (default)              */
+    NET_PRIORITY_EE = 2, /**< Excellent effort                   */
+    NET_PRIORITY_CA = 3, /**< Critical applications              */
+    NET_PRIORITY_VI = 4, /**< Video, < 100 ms latency and jitter */
+    NET_PRIORITY_VO = 5, /**< Voice, < 10 ms latency and jitter  */
+    NET_PRIORITY_IC = 6, /**< Internetwork control               */
+    NET_PRIORITY_NC = 7  /**< Network control (highest)          */
 } __packed;
 
 #define NET_MAX_PRIORITIES 8 /**< How many priority values there are */
 
 /** @brief IPv6/IPv4 network connection tuple */
 struct net_tuple {
-	struct net_addr *remote_addr;  /**< IPv6/IPv4 remote address */
-	struct net_addr *local_addr;   /**< IPv6/IPv4 local address  */
-	uint16_t remote_port;          /**< UDP/TCP remote port      */
-	uint16_t local_port;           /**< UDP/TCP local port       */
-	enum net_ip_protocol ip_proto; /**< IP protocol              */
+    struct net_addr*     remote_addr; /**< IPv6/IPv4 remote address */
+    struct net_addr*     local_addr;  /**< IPv6/IPv4 local address  */
+    uint16_t             remote_port; /**< UDP/TCP remote port      */
+    uint16_t             local_port;  /**< UDP/TCP local port       */
+    enum net_ip_protocol ip_proto;    /**< IP protocol              */
 };
 
 /** @brief What is the current state of the network address */
 enum net_addr_state {
-	NET_ADDR_ANY_STATE = -1, /**< Default (invalid) address type */
-	NET_ADDR_TENTATIVE = 0,  /**< Tentative address              */
-	NET_ADDR_PREFERRED,      /**< Preferred address              */
-	NET_ADDR_DEPRECATED,     /**< Deprecated address             */
+    NET_ADDR_ANY_STATE = -1, /**< Default (invalid) address type */
+    NET_ADDR_TENTATIVE = 0,  /**< Tentative address              */
+    NET_ADDR_PREFERRED,      /**< Preferred address              */
+    NET_ADDR_DEPRECATED,     /**< Deprecated address             */
 } __packed;
 
 /** @brief How the network address is assigned to network interface */
 enum net_addr_type {
-	/** Default value. This is not a valid value. */
-	NET_ADDR_ANY = 0,
-	/** Auto configured address */
-	NET_ADDR_AUTOCONF,
-	/** Address is from DHCP */
-	NET_ADDR_DHCP,
-	/** Manually set address */
-	NET_ADDR_MANUAL,
-	/** Manually set address which is overridable by DHCP */
-	NET_ADDR_OVERRIDABLE,
+    /** Default value. This is not a valid value. */
+    NET_ADDR_ANY = 0,
+    /** Auto configured address */
+    NET_ADDR_AUTOCONF,
+    /** Address is from DHCP */
+    NET_ADDR_DHCP,
+    /** Manually set address */
+    NET_ADDR_MANUAL,
+    /** Manually set address which is overridable by DHCP */
+    NET_ADDR_OVERRIDABLE,
 } __packed;
 
 /** @cond INTERNAL_HIDDEN */
 
 struct net_ipv6_hdr {
-	uint8_t vtc;
-	uint8_t tcflow;
-	uint16_t flow;
-	uint16_t len;
-	uint8_t nexthdr;
-	uint8_t hop_limit;
-	uint8_t src[NET_IPV6_ADDR_SIZE];
-	uint8_t dst[NET_IPV6_ADDR_SIZE];
+    uint8_t  vtc;
+    uint8_t  tcflow;
+    uint16_t flow;
+    uint16_t len;
+    uint8_t  nexthdr;
+    uint8_t  hop_limit;
+    uint8_t  src[NET_IPV6_ADDR_SIZE];
+    uint8_t  dst[NET_IPV6_ADDR_SIZE];
 } __packed;
 
 struct net_ipv6_frag_hdr {
-	uint8_t nexthdr;
-	uint8_t reserved;
-	uint16_t offset;
-	uint32_t id;
+    uint8_t  nexthdr;
+    uint8_t  reserved;
+    uint16_t offset;
+    uint32_t id;
 } __packed;
 
 struct net_ipv4_hdr {
-	uint8_t vhl;
-	uint8_t tos;
-	uint16_t len;
-	uint8_t id[2];
-	uint8_t offset[2];
-	uint8_t ttl;
-	uint8_t proto;
-	uint16_t chksum;
-	uint8_t src[NET_IPV4_ADDR_SIZE];
-	uint8_t dst[NET_IPV4_ADDR_SIZE];
+    uint8_t  vhl;
+    uint8_t  tos;
+    uint16_t len;
+    uint8_t  id[2];
+    uint8_t  offset[2];
+    uint8_t  ttl;
+    uint8_t  proto;
+    uint16_t chksum;
+    uint8_t  src[NET_IPV4_ADDR_SIZE];
+    uint8_t  dst[NET_IPV4_ADDR_SIZE];
 } __packed;
 
 struct net_icmp_hdr {
-	uint8_t type;
-	uint8_t code;
-	uint16_t chksum;
+    uint8_t  type;
+    uint8_t  code;
+    uint16_t chksum;
 } __packed;
 
 struct net_udp_hdr {
-	uint16_t src_port;
-	uint16_t dst_port;
-	uint16_t len;
-	uint16_t chksum;
+    uint16_t src_port;
+    uint16_t dst_port;
+    uint16_t len;
+    uint16_t chksum;
 } __packed;
 
 struct net_tcp_hdr {
-	uint16_t src_port;
-	uint16_t dst_port;
-	uint8_t seq[4];
-	uint8_t ack[4];
-	uint8_t offset;
-	uint8_t flags;
-	uint8_t wnd[2];
-	uint16_t chksum;
-	uint8_t urg[2];
-	uint8_t optdata[0];
+    uint16_t src_port;
+    uint16_t dst_port;
+    uint8_t  seq[4];
+    uint8_t  ack[4];
+    uint8_t  offset;
+    uint8_t  flags;
+    uint8_t  wnd[2];
+    uint16_t chksum;
+    uint8_t  urg[2];
+
+    #if defined(_MSC_VER) /* #CUSTOM@NDRS */
+    /* This is a workaround for MSVC which does not allow zero-sized
+     * arrays. The size of the array is 1.
+     * This change will effect production code in C when using sizeof()
+     * so it will be used only in MSVC.
+     */
+    uint8_t optdata[1];
+    #else
+    uint8_t optdata[0];
+    #endif
 } __packed;
 
-static inline const char *net_addr_type2str(enum net_addr_type type)
-{
-	switch (type) {
-	case NET_ADDR_AUTOCONF:
-		return "AUTO";
-	case NET_ADDR_DHCP:
-		return "DHCP";
-	case NET_ADDR_MANUAL:
-		return "MANUAL";
-	case NET_ADDR_OVERRIDABLE:
-		return "OVERRIDE";
-	case NET_ADDR_ANY:
-	default:
-		break;
-	}
+static inline char const* net_addr_type2str(enum net_addr_type type) {
+    switch (type) {
+        case NET_ADDR_AUTOCONF :
+            return "AUTO";
 
-	return "<unknown>";
+        case NET_ADDR_DHCP :
+            return "DHCP";
+
+        case NET_ADDR_MANUAL :
+            return "MANUAL";
+
+        case NET_ADDR_OVERRIDABLE :
+            return "OVERRIDE";
+
+        case NET_ADDR_ANY :
+        default :
+            break;
+    }
+
+    return "<unknown>";
 }
 
 /* IPv6 extension headers types */
-#define NET_IPV6_NEXTHDR_HBHO        0
-#define NET_IPV6_NEXTHDR_DESTO       60
-#define NET_IPV6_NEXTHDR_ROUTING     43
-#define NET_IPV6_NEXTHDR_FRAG        44
-#define NET_IPV6_NEXTHDR_NONE        59
+#define NET_IPV6_NEXTHDR_HBHO    0
+#define NET_IPV6_NEXTHDR_DESTO   60
+#define NET_IPV6_NEXTHDR_ROUTING 43
+#define NET_IPV6_NEXTHDR_FRAG    44
+#define NET_IPV6_NEXTHDR_NONE    59
 
 /**
  * This 2 unions are here temporarily, as long as net_context.h will
  * be still public and not part of the core only.
  */
 union net_ip_header {
-	struct net_ipv4_hdr *ipv4;
-	struct net_ipv6_hdr *ipv6;
+    struct net_ipv4_hdr* ipv4;
+    struct net_ipv6_hdr* ipv6;
 };
 
 union net_proto_header {
-	struct net_udp_hdr *udp;
-	struct net_tcp_hdr *tcp;
+    struct net_udp_hdr* udp;
+    struct net_tcp_hdr* tcp;
 };
 
-#define NET_UDPH_LEN	8			/* Size of UDP header */
-#define NET_TCPH_LEN	20			/* Size of TCP header */
-#define NET_ICMPH_LEN	4			/* Size of ICMP header */
+#define NET_UDPH_LEN  8  /* Size of UDP header */
+#define NET_TCPH_LEN  20 /* Size of TCP header */
+#define NET_ICMPH_LEN 4  /* Size of ICMP header */
 
-#define NET_IPV6H_LEN	   40			/* Size of IPv6 header */
-#define NET_ICMPV6H_LEN	   NET_ICMPH_LEN	/* Size of ICMPv6 header */
-#define NET_IPV6UDPH_LEN   (NET_UDPH_LEN + NET_IPV6H_LEN) /* IPv6 + UDP */
-#define NET_IPV6TCPH_LEN   (NET_TCPH_LEN + NET_IPV6H_LEN) /* IPv6 + TCP */
+#define NET_IPV6H_LEN      40                              /* Size of IPv6 header */
+#define NET_ICMPV6H_LEN    NET_ICMPH_LEN                   /* Size of ICMPv6 header */
+#define NET_IPV6UDPH_LEN   (NET_UDPH_LEN + NET_IPV6H_LEN)  /* IPv6 + UDP */
+#define NET_IPV6TCPH_LEN   (NET_TCPH_LEN + NET_IPV6H_LEN)  /* IPv6 + TCP */
 #define NET_IPV6ICMPH_LEN  (NET_IPV6H_LEN + NET_ICMPH_LEN) /* ICMPv6 + IPv6 */
 #define NET_IPV6_FRAGH_LEN 8
 
-#define NET_IPV4H_LEN	   20			/* Size of IPv4 header */
-#define NET_ICMPV4H_LEN	   NET_ICMPH_LEN	/* Size of ICMPv4 header */
-#define NET_IPV4UDPH_LEN   (NET_UDPH_LEN + NET_IPV4H_LEN) /* IPv4 + UDP */
-#define NET_IPV4TCPH_LEN   (NET_TCPH_LEN + NET_IPV4H_LEN) /* IPv4 + TCP */
-#define NET_IPV4ICMPH_LEN  (NET_IPV4H_LEN + NET_ICMPH_LEN) /* ICMPv4 + IPv4 */
+#define NET_IPV4H_LEN     20                              /* Size of IPv4 header */
+#define NET_ICMPV4H_LEN   NET_ICMPH_LEN                   /* Size of ICMPv4 header */
+#define NET_IPV4UDPH_LEN  (NET_UDPH_LEN + NET_IPV4H_LEN)  /* IPv4 + UDP */
+#define NET_IPV4TCPH_LEN  (NET_TCPH_LEN + NET_IPV4H_LEN)  /* IPv4 + TCP */
+#define NET_IPV4ICMPH_LEN (NET_IPV4H_LEN + NET_ICMPH_LEN) /* ICMPv4 + IPv4 */
 
-#define NET_IPV6H_LENGTH_OFFSET		0x04	/* Offset of the Length field in the IPv6 header */
+#define NET_IPV6H_LENGTH_OFFSET 0x04 /* Offset of the Length field in the IPv6 header */
 
-#define NET_IPV6_FRAGH_OFFSET_MASK	0xfff8	/* Mask for the 13-bit Fragment Offset field */
-#define NET_IPV4_FRAGH_OFFSET_MASK	0x1fff	/* Mask for the 13-bit Fragment Offset field */
-#define NET_IPV4_MORE_FRAG_MASK		0x2000	/* Mask for the 1-bit More Fragments field */
-#define NET_IPV4_DO_NOT_FRAG_MASK	0x4000	/* Mask for the 1-bit Do Not Fragment field */
+#define NET_IPV6_FRAGH_OFFSET_MASK 0xfff8 /* Mask for the 13-bit Fragment Offset field */
+#define NET_IPV4_FRAGH_OFFSET_MASK 0x1fff /* Mask for the 13-bit Fragment Offset field */
+#define NET_IPV4_MORE_FRAG_MASK    0x2000 /* Mask for the 1-bit More Fragments field */
+#define NET_IPV4_DO_NOT_FRAG_MASK  0x4000 /* Mask for the 1-bit Do Not Fragment field */
 
 /** Network interface name length */
 #if defined(CONFIG_NET_INTERFACE_NAME)
-#define NET_IFNAMSIZ CONFIG_NET_INTERFACE_NAME_LEN
+#define NET_IFNAMSIZ    CONFIG_NET_INTERFACE_NAME_LEN
 #else
 #if defined(Z_DEVICE_MAX_NAME_LEN)
-#define NET_IFNAMSIZ Z_DEVICE_MAX_NAME_LEN
+#define NET_IFNAMSIZ    Z_DEVICE_MAX_NAME_LEN
 #else
-#define NET_IFNAMSIZ 1
+#define NET_IFNAMSIZ    1
 #endif /* Z_DEVICE_MAX_NAME_LEN */
 #endif /* CONFIG_NET_INTERFACE_NAME */
 
@@ -697,7 +731,7 @@ union net_proto_header {
 
 /** Interface description structure */
 struct net_ifreq {
-	char ifr_name[NET_IFNAMSIZ]; /**< Network interface name */
+    char ifr_name[NET_IFNAMSIZ];            /**< Network interface name */
 };
 /** @} */
 
@@ -708,37 +742,37 @@ struct net_ifreq {
  * option is set.
  */
 struct net_in_pktinfo {
-	unsigned int       ipi_ifindex;   /**< Network interface index    */
-	struct net_in_addr ipi_spec_dst;  /**< Local address              */
-	struct net_in_addr ipi_addr;      /**< Header Destination address */
+    unsigned int ipi_ifindex;               /**< Network interface index    */
+    struct net_in_addr ipi_spec_dst;        /**< Local address              */
+    struct net_in_addr ipi_addr;            /**< Header Destination address */
 };
 
 /**
  * @brief Struct used when joining or leaving a IPv4 multicast group.
  */
 struct net_ip_mreqn {
-	struct net_in_addr imr_multiaddr; /**< IP multicast group address    */
-	struct net_in_addr imr_address;   /**< IP address of local interface */
-	int                imr_ifindex;   /**< Network interface index       */
+    struct net_in_addr imr_multiaddr;       /**< IP multicast group address    */
+    struct net_in_addr imr_address;         /**< IP address of local interface */
+    int imr_ifindex;                        /**< Network interface index       */
 };
 
 /**
  * @brief Struct used when setting a IPv4 multicast network interface.
  */
 struct net_ip_mreq  {
-	struct net_in_addr imr_multiaddr; /**< IP multicast group address    */
-	struct net_in_addr imr_interface; /**< IP address of local interface */
+    struct net_in_addr imr_multiaddr;       /**< IP multicast group address    */
+    struct net_in_addr imr_interface;       /**< IP address of local interface */
 };
 
 /**
  * @brief Struct used when joining or leaving a IPv6 multicast group.
  */
 struct net_ipv6_mreq {
-	/** IPv6 multicast address of group */
-	struct net_in6_addr ipv6mr_multiaddr;
+    /** IPv6 multicast address of group */
+    struct net_in6_addr ipv6mr_multiaddr;
 
-	/** Network interface index of the local IPv6 address */
-	int ipv6mr_ifindex;
+    /** Network interface index of the local IPv6 address */
+    int ipv6mr_ifindex;
 };
 
 /**
@@ -748,17 +782,16 @@ struct net_ipv6_mreq {
  * option is set.
  */
 struct net_in6_pktinfo {
-	struct net_in6_addr ipi6_addr;    /**< Destination IPv6 address */
-	unsigned int        ipi6_ifindex; /**< Receive interface index */
+    struct net_in6_addr ipi6_addr;  /**< Destination IPv6 address */
+    unsigned int ipi6_ifindex;      /**< Receive interface index */
 };
 
 /** @cond INTERNAL_HIDDEN */
-static inline bool net_ipv6_is_addr_loopback_raw(const uint8_t *addr)
-{
-	return UNALIGNED_GET((uint32_t *)addr) == 0 &&
-	       UNALIGNED_GET((uint32_t *)addr + 1) == 0 &&
-	       UNALIGNED_GET((uint32_t *)addr + 2) == 0 &&
-	       net_ntohl(UNALIGNED_GET((uint32_t *)addr + 3)) == 1;
+static inline bool net_ipv6_is_addr_loopback_raw(uint8_t const* addr) {
+    return (UNALIGNED_GET((uint32_t*)addr)     == 0) &&
+           (UNALIGNED_GET((uint32_t*)addr + 1) == 0) &&
+           (UNALIGNED_GET((uint32_t*)addr + 2) == 0) &&
+           (net_ntohl(UNALIGNED_GET((uint32_t *)addr + 3)) == 1);
 }
 /** @endcond */
 
@@ -769,15 +802,13 @@ static inline bool net_ipv6_is_addr_loopback_raw(const uint8_t *addr)
  *
  * @return True if address is a loopback address, False otherwise.
  */
-static inline bool net_ipv6_is_addr_loopback(const struct net_in6_addr *addr)
-{
-	return net_ipv6_is_addr_loopback_raw(addr->s6_addr);
+static inline bool net_ipv6_is_addr_loopback(struct net_in6_addr const* addr) {
+    return net_ipv6_is_addr_loopback_raw(addr->s6_addr);
 }
 
 /** @cond INTERNAL_HIDDEN */
-static inline bool net_ipv6_is_addr_mcast_raw(const uint8_t *addr)
-{
-	return addr[0] == 0xff;
+static inline bool net_ipv6_is_addr_mcast_raw(uint8_t const* addr) {
+    return (addr[0] == 0xFF);
 }
 /** @endcond */
 
@@ -788,26 +819,24 @@ static inline bool net_ipv6_is_addr_mcast_raw(const uint8_t *addr)
  *
  * @return True if address is multicast address, False otherwise.
  */
-static inline bool net_ipv6_is_addr_mcast(const struct net_in6_addr *addr)
-{
-	return net_ipv6_is_addr_mcast_raw(addr->s6_addr);
+static inline bool net_ipv6_is_addr_mcast(const struct net_in6_addr* addr) {
+    return net_ipv6_is_addr_mcast_raw(addr->s6_addr);
 }
 
 struct net_if;
 struct net_if_config;
 
 /** @cond INTERNAL_HIDDEN */
-extern struct net_if_addr *net_if_ipv6_addr_lookup_raw(const uint8_t *addr,
-						       struct net_if **ret);
+extern struct net_if_addr* net_if_ipv6_addr_lookup_raw(uint8_t const* addr,
+                                                       struct net_if** ret);
 
-static inline bool net_ipv6_is_my_addr_raw(const uint8_t *addr)
-{
-	return net_if_ipv6_addr_lookup_raw(addr, NULL) != NULL;
+static inline bool net_ipv6_is_my_addr_raw(uint8_t const* addr) {
+    return (net_if_ipv6_addr_lookup_raw(addr, NULL) != NULL);
 }
 /** @endcond */
 
-extern struct net_if_addr *net_if_ipv6_addr_lookup(const struct net_in6_addr *addr,
-						   struct net_if **iface);
+extern struct net_if_addr *net_if_ipv6_addr_lookup(struct net_in6_addr const* addr,
+                                                   struct net_if** iface);
 
 /**
  * @brief Check if IPv6 address is found in one of the network interfaces.
@@ -816,13 +845,12 @@ extern struct net_if_addr *net_if_ipv6_addr_lookup(const struct net_in6_addr *ad
  *
  * @return True if address was found, False otherwise.
  */
-static inline bool net_ipv6_is_my_addr(struct net_in6_addr *addr)
-{
-	return net_if_ipv6_addr_lookup(addr, NULL) != NULL;
+static inline bool net_ipv6_is_my_addr(struct net_in6_addr* addr) {
+    return net_if_ipv6_addr_lookup(addr, NULL) != NULL;
 }
 
-extern struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(
-	const struct net_in6_addr *addr, struct net_if **iface);
+extern struct net_if_mcast_addr* net_if_ipv6_maddr_lookup(
+        const struct net_in6_addr* addr, struct net_if** iface);
 
 /**
  * @brief Check if IPv6 multicast address is found in one of the
@@ -832,9 +860,8 @@ extern struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(
  *
  * @return True if address was found, False otherwise.
  */
-static inline bool net_ipv6_is_my_maddr(struct net_in6_addr *maddr)
-{
-	return net_if_ipv6_maddr_lookup(maddr, NULL) != NULL;
+static inline bool net_ipv6_is_my_maddr(struct net_in6_addr* maddr) {
+    return net_if_ipv6_maddr_lookup(maddr, NULL) != NULL;
 }
 
 /**
@@ -846,34 +873,33 @@ static inline bool net_ipv6_is_my_maddr(struct net_in6_addr *maddr)
  *
  * @return True if IPv6 prefixes are the same, False otherwise.
  */
-static inline bool net_ipv6_is_prefix(const uint8_t *addr1,
-				      const uint8_t *addr2,
-				      uint8_t length)
-{
-	uint8_t bits = 128 - length;
-	uint8_t bytes = length / 8U;
-	uint8_t remain = bits % 8;
-	uint8_t mask;
+static inline bool net_ipv6_is_prefix(uint8_t const* addr1,
+                                      uint8_t const* addr2,
+                                      uint8_t length) {
+    uint8_t bits   = 128 - length;
+    uint8_t bytes  = length / 8U;
+    uint8_t remain = bits % 8;
+    uint8_t mask;
 
-	if (length > 128) {
-		return false;
-	}
+    if (length > 128) {
+        return false;
+    }
 
-	if (memcmp(addr1, addr2, bytes)) {
-		return false;
-	}
+    if (memcmp(addr1, addr2, bytes)) {
+        return false;
+    }
 
-	if (!remain) {
-		/* No remaining bits, the prefixes are the same as first
-		 * bytes are the same.
-		 */
-		return true;
-	}
+    if (!remain) {
+        /* No remaining bits, the prefixes are the same as first
+         * bytes are the same.
+         */
+        return true;
+    }
 
-	/* Create a mask that has remaining most significant bits set */
-	mask = (uint8_t)((0xff << (8 - remain)) ^ 0xff) << remain;
+    /* Create a mask that has remaining most significant bits set */
+    mask = (uint8_t)((0xFF << (8 - remain)) ^ 0xFF) << remain;
 
-	return (addr1[bytes] & mask) == (addr2[bytes] & mask);
+    return (addr1[bytes] & mask) == (addr2[bytes] & mask);
 }
 
 
@@ -885,33 +911,32 @@ static inline bool net_ipv6_is_prefix(const uint8_t *addr1,
  * @param prefix_len Prefix length (max length is 128).
  */
 static inline void net_ipv6_addr_prefix_mask(const uint8_t *inaddr,
-					     uint8_t *outaddr,
-					     uint8_t prefix_len)
+                         uint8_t *outaddr,
+                         uint8_t prefix_len)
 {
-	uint8_t bits = 128 - prefix_len;
-	uint8_t bytes = prefix_len / 8U;
-	uint8_t remain = bits % 8;
-	uint8_t mask;
+    uint8_t bits = 128 - prefix_len;
+    uint8_t bytes = prefix_len / 8U;
+    uint8_t remain = bits % 8;
+    uint8_t mask;
 
-	memset(outaddr, 0, 16U);
-	memcpy(outaddr, inaddr, bytes);
+    memset(outaddr, 0, 16U);
+    memcpy(outaddr, inaddr, bytes);
 
-	if (!remain) {
-		/* No remaining bits, the prefixes are the same as first
-		 * bytes are the same.
-		 */
-		return;
-	}
+    if (!remain) {
+        /* No remaining bits, the prefixes are the same as first
+         * bytes are the same.
+         */
+        return;
+    }
 
-	/* Create a mask that has remaining most significant bits set */
-	mask = (uint8_t)((0xff << (8 - remain)) ^ 0xff) << remain;
-	outaddr[bytes] = inaddr[bytes] & mask;
+    /* Create a mask that has remaining most significant bits set */
+    mask = (uint8_t)((0xff << (8 - remain)) ^ 0xff) << remain;
+    outaddr[bytes] = inaddr[bytes] & mask;
 }
 
 /** @cond INTERNAL_HIDDEN */
-static inline bool net_ipv4_is_addr_loopback_raw(const uint8_t *addr)
-{
-	return addr[0] == 127U;
+static inline bool net_ipv4_is_addr_loopback_raw(uint8_t const* addr) {
+    return (addr[0] == 127U);
 }
 /** @endcond */
 
@@ -922,15 +947,13 @@ static inline bool net_ipv4_is_addr_loopback_raw(const uint8_t *addr)
  *
  * @return True if address is a loopback address, False otherwise.
  */
-static inline bool net_ipv4_is_addr_loopback(const struct net_in_addr *addr)
-{
-	return net_ipv4_is_addr_loopback_raw(addr->s4_addr);
+static inline bool net_ipv4_is_addr_loopback(struct net_in_addr const* addr) {
+    return net_ipv4_is_addr_loopback_raw(addr->s4_addr);
 }
 
 /** @cond INTERNAL_HIDDEN */
-static inline bool net_ipv4_is_addr_unspecified_raw(const uint8_t *addr)
-{
-	return UNALIGNED_GET((uint32_t *)addr) == 0;
+static inline bool net_ipv4_is_addr_unspecified_raw(uint8_t const* addr) {
+    return (UNALIGNED_GET((uint32_t *)addr) == 0);
 }
 /** @endcond */
 
@@ -941,15 +964,13 @@ static inline bool net_ipv4_is_addr_unspecified_raw(const uint8_t *addr)
  *
  *  @return True if the address is unspecified, false otherwise.
  */
-static inline bool net_ipv4_is_addr_unspecified(const struct net_in_addr *addr)
-{
-	return net_ipv4_is_addr_unspecified_raw(addr->s4_addr);
+static inline bool net_ipv4_is_addr_unspecified(struct net_in_addr const* addr) {
+    return net_ipv4_is_addr_unspecified_raw(addr->s4_addr);
 }
 
 /** @cond INTERNAL_HIDDEN */
-static inline bool net_ipv4_is_addr_mcast_raw(const uint8_t *addr)
-{
-	return (net_ntohl(UNALIGNED_GET((uint32_t *)addr)) & 0xF0000000) == 0xE0000000;
+static inline bool net_ipv4_is_addr_mcast_raw(uint8_t const* addr) {
+    return ((net_ntohl(UNALIGNED_GET((uint32_t*)addr)) & 0xF0000000) == 0xE0000000);
 }
 /** @endcond */
 
@@ -960,15 +981,13 @@ static inline bool net_ipv4_is_addr_mcast_raw(const uint8_t *addr)
  *
  * @return True if address is multicast address, False otherwise.
  */
-static inline bool net_ipv4_is_addr_mcast(const struct net_in_addr *addr)
-{
-	return net_ipv4_is_addr_mcast_raw(addr->s4_addr);
+static inline bool net_ipv4_is_addr_mcast(const struct net_in_addr* addr) {
+    return net_ipv4_is_addr_mcast_raw(addr->s4_addr);
 }
 
 /** @cond INTERNAL_HIDDEN */
-static inline bool net_ipv4_is_ll_addr_raw(const uint8_t *addr)
-{
-	return (net_ntohl(UNALIGNED_GET((uint32_t *)addr)) & 0xFFFF0000) == 0xA9FE0000;
+static inline bool net_ipv4_is_ll_addr_raw(uint8_t const* addr) {
+    return ((net_ntohl(UNALIGNED_GET((uint32_t *)addr)) & 0xFFFF0000) == 0xA9FE0000);
 }
 /** @endcond */
 
@@ -979,9 +998,8 @@ static inline bool net_ipv4_is_ll_addr_raw(const uint8_t *addr)
  *
  * @return True if it is, false otherwise.
  */
-static inline bool net_ipv4_is_ll_addr(const struct net_in_addr *addr)
-{
-	return net_ipv4_is_ll_addr_raw(addr->s4_addr);
+static inline bool net_ipv4_is_ll_addr(const struct net_in_addr* addr) {
+    return net_ipv4_is_ll_addr_raw(addr->s4_addr);
 }
 
 /**
@@ -993,23 +1011,22 @@ static inline bool net_ipv4_is_ll_addr(const struct net_in_addr *addr)
  *
  * @return True if it is, false otherwise.
  */
-static inline bool net_ipv4_is_private_addr(const struct net_in_addr *addr)
-{
-	uint32_t masked_24, masked_16, masked_12, masked_10, masked_8;
+static inline bool net_ipv4_is_private_addr(const struct net_in_addr* addr) {
+    uint32_t masked_24, masked_16, masked_12, masked_10, masked_8;
 
-	masked_24 = net_ntohl(UNALIGNED_GET(&addr->s_addr)) & 0xFFFFFF00;
-	masked_16 = masked_24 & 0xFFFF0000;
-	masked_12 = masked_24 & 0xFFF00000;
-	masked_10 = masked_24 & 0xFFC00000;
-	masked_8 = masked_24 & 0xFF000000;
+    masked_24 = net_ntohl(UNALIGNED_GET(&addr->s_addr_be)) & 0xFFFFFF00;
+    masked_16 = masked_24 & 0xFFFF0000;
+    masked_12 = masked_24 & 0xFFF00000;
+    masked_10 = masked_24 & 0xFFC00000;
+    masked_8  = masked_24 & 0xFF000000;
 
-	return masked_8  == 0x0A000000 || /* 10.0.0.0/8      */
-	       masked_10 == 0x64400000 || /* 100.64.0.0/10   */
-	       masked_12 == 0xAC100000 || /* 172.16.0.0/12   */
-	       masked_16 == 0xC0A80000 || /* 192.168.0.0/16  */
-	       masked_24 == 0xC0000200 || /* 192.0.2.0/24    */
-	       masked_24 == 0xC0336400 || /* 192.51.100.0/24 */
-	       masked_24 == 0xCB007100;   /* 203.0.113.0/24  */
+    return masked_8  == 0x0A000000 || /* 10.0.0.0/8      */
+           masked_10 == 0x64400000 || /* 100.64.0.0/10   */
+           masked_12 == 0xAC100000 || /* 172.16.0.0/12   */
+           masked_16 == 0xC0A80000 || /* 192.168.0.0/16  */
+           masked_24 == 0xC0000200 || /* 192.0.2.0/24    */
+           masked_24 == 0xC0336400 || /* 192.51.100.0/24 */
+           masked_24 == 0xCB007100;   /* 203.0.113.0/24  */
 }
 
 /**
@@ -1021,7 +1038,7 @@ static inline bool net_ipv4_is_private_addr(const struct net_in_addr *addr)
  *  @return Destination address.
  */
 #define net_ipaddr_copy(dest, src) \
-	UNALIGNED_PUT(UNALIGNED_GET(src), dest)
+        UNALIGNED_PUT(UNALIGNED_GET(src), dest)
 
 /**
  *  @brief Copy an IPv4 address raw buffer
@@ -1029,10 +1046,9 @@ static inline bool net_ipv4_is_private_addr(const struct net_in_addr *addr)
  *  @param dest Destination IP address.
  *  @param src Source IP address.
  */
-static inline void net_ipv4_addr_copy_raw(uint8_t *dest,
-					  const uint8_t *src)
-{
-	net_ipaddr_copy((struct net_in_addr *)dest, (const struct net_in_addr *)src);
+static inline void net_ipv4_addr_copy_raw(uint8_t* dest,
+                                          uint8_t const* src) {
+    net_ipaddr_copy((struct net_in_addr*)dest, (const struct net_in_addr*)src);
 }
 
 /**
@@ -1041,10 +1057,9 @@ static inline void net_ipv4_addr_copy_raw(uint8_t *dest,
  *  @param dest Destination IP address.
  *  @param src Source IP address.
  */
-static inline void net_ipv6_addr_copy_raw(uint8_t *dest,
-					  const uint8_t *src)
-{
-	memcpy(dest, src, sizeof(struct net_in6_addr));
+static inline void net_ipv6_addr_copy_raw(uint8_t* dest,
+                                          uint8_t const* src) {
+    memcpy(dest, src, sizeof(struct net_in6_addr));
 }
 
 /**
@@ -1055,10 +1070,9 @@ static inline void net_ipv6_addr_copy_raw(uint8_t *dest,
  *
  *  @return True if the addresses are the same, false otherwise.
  */
-static inline bool net_ipv4_addr_cmp_raw(const uint8_t *addr1,
-					 const uint8_t *addr2)
-{
-	return UNALIGNED_GET((uint32_t *)addr1) == UNALIGNED_GET((uint32_t *)addr2);
+static inline bool net_ipv4_addr_cmp_raw(uint8_t const* addr1,
+                                         uint8_t const* addr2) {
+    return (UNALIGNED_GET((uint32_t*)addr1) == UNALIGNED_GET((uint32_t*)addr2));
 }
 
 /**
@@ -1069,10 +1083,9 @@ static inline bool net_ipv4_addr_cmp_raw(const uint8_t *addr1,
  *
  *  @return True if the addresses are the same, false otherwise.
  */
-static inline bool net_ipv4_addr_cmp(const struct net_in_addr *addr1,
-				     const struct net_in_addr *addr2)
-{
-	return net_ipv4_addr_cmp_raw(addr1->s4_addr, addr2->s4_addr);
+static inline bool net_ipv4_addr_cmp(struct net_in_addr const* addr1,
+                                     struct net_in_addr const* addr2) {
+    return net_ipv4_addr_cmp_raw(addr1->s4_addr, addr2->s4_addr);
 }
 
 /**
@@ -1083,10 +1096,9 @@ static inline bool net_ipv4_addr_cmp(const struct net_in_addr *addr1,
  *
  *  @return True if the addresses are the same, false otherwise.
  */
-static inline bool net_ipv6_addr_cmp(const struct net_in6_addr *addr1,
-				     const struct net_in6_addr *addr2)
-{
-	return !memcmp(addr1, addr2, sizeof(struct net_in6_addr));
+static inline bool net_ipv6_addr_cmp(const struct net_in6_addr* addr1,
+                                     const struct net_in6_addr* addr2) {
+    return !memcmp(addr1, addr2, sizeof(struct net_in6_addr));
 }
 
 /**
@@ -1097,17 +1109,15 @@ static inline bool net_ipv6_addr_cmp(const struct net_in6_addr *addr1,
  *
  *  @return True if the addresses are the same, false otherwise.
  */
-static inline bool net_ipv6_addr_cmp_raw(const uint8_t *addr1,
-					 const uint8_t *addr2)
-{
-	return net_ipv6_addr_cmp((const struct net_in6_addr *)addr1,
-				 (const struct net_in6_addr *)addr2);
+static inline bool net_ipv6_addr_cmp_raw(uint8_t const* addr1,
+                                         uint8_t const* addr2) {
+    return net_ipv6_addr_cmp((const struct net_in6_addr*)addr1,
+                             (const struct net_in6_addr*)addr2);
 }
 
 /** @cond INTERNAL_HIDDEN */
-static inline bool net_ipv6_is_ll_addr_raw(const uint8_t *addr)
-{
-	return UNALIGNED_GET((uint16_t *)addr) == net_htons(0xFE80);
+static inline bool net_ipv6_is_ll_addr_raw(uint8_t const* addr) {
+    return (UNALIGNED_GET((uint16_t*)addr) == net_htons(0xFE80));
 }
 /** @endcond */
 
@@ -1118,9 +1128,8 @@ static inline bool net_ipv6_is_ll_addr_raw(const uint8_t *addr)
  *
  * @return True if it is, false otherwise.
  */
-static inline bool net_ipv6_is_ll_addr(const struct net_in6_addr *addr)
-{
-	return net_ipv6_is_ll_addr_raw(addr->s6_addr);
+static inline bool net_ipv6_is_ll_addr(struct net_in6_addr const* addr) {
+    return net_ipv6_is_ll_addr_raw(addr->s6_addr);
 }
 
 /**
@@ -1130,11 +1139,9 @@ static inline bool net_ipv6_is_ll_addr(const struct net_in6_addr *addr)
  *
  * @return True if it is, false otherwise.
  */
-static inline bool net_ipv6_is_sl_addr(const struct net_in6_addr *addr)
-{
-	return UNALIGNED_GET(&addr->s6_addr16[0]) == net_htons(0xFEC0);
+static inline bool net_ipv6_is_sl_addr(const struct net_in6_addr* addr) {
+    return (UNALIGNED_GET(&addr->s6_addr16[0]) == net_htons(0xFEC0));
 }
-
 
 /**
  * @brief Check if the given IPv6 address is a unique local address.
@@ -1143,9 +1150,8 @@ static inline bool net_ipv6_is_sl_addr(const struct net_in6_addr *addr)
  *
  * @return True if it is, false otherwise.
  */
-static inline bool net_ipv6_is_ula_addr(const struct net_in6_addr *addr)
-{
-	return addr->s6_addr[0] == 0xFD;
+static inline bool net_ipv6_is_ula_addr(const struct net_in6_addr* addr) {
+    return (addr->s6_addr[0] == 0xFD);
 }
 
 /**
@@ -1155,9 +1161,8 @@ static inline bool net_ipv6_is_ula_addr(const struct net_in6_addr *addr)
  *
  * @return True if it is, false otherwise.
  */
-static inline bool net_ipv6_is_global_addr(const struct net_in6_addr *addr)
-{
-	return (addr->s6_addr[0] & 0xE0) == 0x20;
+static inline bool net_ipv6_is_global_addr(const struct net_in6_addr* addr) {
+    return ((addr->s6_addr[0] & 0xE0) == 0x20);
 }
 
 /**
@@ -1169,15 +1174,14 @@ static inline bool net_ipv6_is_global_addr(const struct net_in6_addr *addr)
  *
  * @return True if it is, false otherwise.
  */
-static inline bool net_ipv6_is_private_addr(const struct net_in6_addr *addr)
-{
-	uint32_t masked_32, masked_7;
+static inline bool net_ipv6_is_private_addr(const struct net_in6_addr* addr) {
+    uint32_t masked_32, masked_7;
 
-	masked_32 = net_ntohl(UNALIGNED_GET(&addr->s6_addr32[0]));
-	masked_7 = masked_32 & 0xfc000000;
+    masked_32 = net_ntohl(UNALIGNED_GET(&addr->s6_addr32[0]));
+    masked_7  = masked_32 & 0xFC000000;
 
-	return masked_32 == 0x20010db8 || /* 2001:db8::/32 */
-	       masked_7  == 0xfc000000;   /* fc00::/7      */
+    return masked_32 == 0x20010DB8 || /* 2001:db8::/32 */
+           masked_7  == 0xFC000000;   /* fc00::/7      */
 }
 
 /**
@@ -1185,25 +1189,25 @@ static inline bool net_ipv6_is_private_addr(const struct net_in6_addr *addr)
  *
  * @return Any IPv6 address.
  */
-const struct net_in6_addr *net_ipv6_unspecified_address(void);
+const struct net_in6_addr* net_ipv6_unspecified_address(void);
 
 /**
  * @brief Return pointer to any (all bits zeros) IPv4 address.
  *
  * @return Any IPv4 address.
  */
-const struct net_in_addr *net_ipv4_unspecified_address(void);
+const struct net_in_addr* net_ipv4_unspecified_address(void);
 
 /**
  * @brief Return pointer to broadcast (all bits ones) IPv4 address.
  *
  * @return Broadcast IPv4 address.
  */
-const struct net_in_addr *net_ipv4_broadcast_address(void);
+const struct net_in_addr* net_ipv4_broadcast_address(void);
 
 struct net_if;
-extern bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
-				      const struct net_in_addr *addr);
+extern bool net_if_ipv4_addr_mask_cmp(struct net_if* iface,
+                                      const struct net_in_addr* addr);
 
 /**
  * @brief Check if the given address belongs to same subnet that
@@ -1214,40 +1218,37 @@ extern bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
  *
  * @return True if address is in same subnet, false otherwise.
  */
-static inline bool net_ipv4_addr_mask_cmp(struct net_if *iface,
-					  const struct net_in_addr *addr)
-{
-	return net_if_ipv4_addr_mask_cmp(iface, addr);
+static inline bool net_ipv4_addr_mask_cmp(struct net_if* iface,
+                                          const struct net_in_addr* addr) {
+    return net_if_ipv4_addr_mask_cmp(iface, addr);
 }
 
 /** @cond INTERNAL_HIDDEN */
-extern bool net_if_ipv4_is_addr_bcast_raw(struct net_if *iface,
-					  const uint8_t *addr);
+extern bool net_if_ipv4_is_addr_bcast_raw(struct net_if* iface,
+                                          uint8_t const* addr);
 
 #if defined(CONFIG_NET_NATIVE_IPV4)
-static inline bool net_ipv4_is_addr_bcast_raw(struct net_if *iface,
-					      const uint8_t *addr)
-{
-	if (net_ipv4_addr_cmp_raw(addr, net_ipv4_broadcast_address()->s4_addr)) {
-		return true;
-	}
+static inline bool net_ipv4_is_addr_bcast_raw(struct net_if* iface,
+                                              uint8_t const* addr) {
+    if (net_ipv4_addr_cmp_raw(addr, net_ipv4_broadcast_address()->s4_addr)) {
+        return (true);
+    }
 
-	return net_if_ipv4_is_addr_bcast_raw(iface, addr);
+    return net_if_ipv4_is_addr_bcast_raw(iface, addr);
 }
 #else
-static inline bool net_ipv4_is_addr_bcast_raw(struct net_if *iface,
-					      const uint8_t *addr)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(addr);
+static inline bool net_ipv4_is_addr_bcast_raw(struct net_if* iface,
+                                              uint8_t const* addr) {
+    ARG_UNUSED(iface);
+    ARG_UNUSED(addr);
 
-	return false;
+    return (false);
 }
 #endif
 /** @endcond */
 
-extern bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
-				      const struct net_in_addr *addr);
+extern bool net_if_ipv4_is_addr_bcast(struct net_if* iface,
+                                      const struct net_in_addr* addr);
 
 /**
  * @brief Check if the given IPv4 address is a broadcast address.
@@ -1258,45 +1259,42 @@ extern bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
  * @return True if address is a broadcast address, false otherwise.
  */
 #if defined(CONFIG_NET_NATIVE_IPV4)
-static inline bool net_ipv4_is_addr_bcast(struct net_if *iface,
-					  const struct net_in_addr *addr)
-{
-	if (net_ipv4_addr_cmp(addr, net_ipv4_broadcast_address())) {
-		return true;
-	}
+static inline bool net_ipv4_is_addr_bcast(struct net_if* iface,
+                                          const struct net_in_addr* addr) {
+    if (net_ipv4_addr_cmp(addr, net_ipv4_broadcast_address())) {
+        return true;
+    }
 
-	return net_if_ipv4_is_addr_bcast(iface, addr);
+    return net_if_ipv4_is_addr_bcast(iface, addr);
 }
 #else
-static inline bool net_ipv4_is_addr_bcast(struct net_if *iface,
-					  const struct net_in_addr *addr)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(addr);
+static inline bool net_ipv4_is_addr_bcast(struct net_if* iface,
+                                          const struct net_in_addr* addr) {
+    ARG_UNUSED(iface);
+    ARG_UNUSED(addr);
 
-	return false;
+    return false;
 }
 #endif
 
 /** @cond INTERNAL_HIDDEN */
-extern struct net_if_addr *net_if_ipv4_addr_lookup_raw(const uint8_t *addr,
-						       struct net_if **ret);
+extern struct net_if_addr* net_if_ipv4_addr_lookup_raw(uint8_t const* addr,
+                                                       struct net_if** ret);
 
-static inline bool net_ipv4_is_my_addr_raw(const uint8_t *addr)
-{
-	bool ret;
+static inline bool net_ipv4_is_my_addr_raw(uint8_t const* addr) {
+    bool ret;
 
-	ret = net_if_ipv4_addr_lookup_raw(addr, NULL) != NULL;
-	if (!ret) {
-		ret = net_ipv4_is_addr_bcast_raw(NULL, addr);
-	}
+    ret = (net_if_ipv4_addr_lookup_raw(addr, NULL) != NULL);
+    if (!ret) {
+        ret = net_ipv4_is_addr_bcast_raw(NULL, addr);
+    }
 
-	return ret;
+    return (ret);
 }
 /** @endcond */
 
 extern struct net_if_addr *net_if_ipv4_addr_lookup(const struct net_in_addr *addr,
-						   struct net_if **iface);
+                                                   struct net_if** iface);
 
 /**
  * @brief Check if the IPv4 address is assigned to any network interface
@@ -1307,25 +1305,23 @@ extern struct net_if_addr *net_if_ipv4_addr_lookup(const struct net_in_addr *add
  * @return True if IPv4 address is found in one of the network interfaces,
  * False otherwise.
  */
-static inline bool net_ipv4_is_my_addr(const struct net_in_addr *addr)
-{
-	bool ret;
+static inline bool net_ipv4_is_my_addr(const struct net_in_addr* addr) {
+    bool ret;
 
-	ret = net_if_ipv4_addr_lookup(addr, NULL) != NULL;
-	if (!ret) {
-		ret = net_ipv4_is_addr_bcast(NULL, addr);
-	}
+    ret = net_if_ipv4_addr_lookup(addr, NULL) != NULL;
+    if (!ret) {
+        ret = net_ipv4_is_addr_bcast(NULL, addr);
+    }
 
-	return ret;
+    return ret;
 }
 
 /** @cond INTERNAL_HIDDEN */
-static inline bool net_ipv6_is_addr_unspecified_raw(const uint8_t *addr)
-{
-	return UNALIGNED_GET((uint32_t *)addr) == 0 &&
-	       UNALIGNED_GET((uint32_t *)addr + 1) == 0 &&
-	       UNALIGNED_GET((uint32_t *)addr + 2) == 0 &&
-	       UNALIGNED_GET((uint32_t *)addr + 3) == 0;
+static inline bool net_ipv6_is_addr_unspecified_raw(uint8_t const* addr) {
+    return (UNALIGNED_GET((uint32_t*)addr)     == 0) &&
+           (UNALIGNED_GET((uint32_t*)addr + 1) == 0) &&
+           (UNALIGNED_GET((uint32_t*)addr + 2) == 0) &&
+           (UNALIGNED_GET((uint32_t*)addr + 3) == 0);
 }
 /** @endcond */
 
@@ -1336,19 +1332,16 @@ static inline bool net_ipv6_is_addr_unspecified_raw(const uint8_t *addr)
  *
  *  @return True if the address is unspecified, false otherwise.
  */
-static inline bool net_ipv6_is_addr_unspecified(const struct net_in6_addr *addr)
-{
-	return net_ipv6_is_addr_unspecified_raw(addr->s6_addr);
+static inline bool net_ipv6_is_addr_unspecified(const struct net_in6_addr* addr) {
+    return net_ipv6_is_addr_unspecified_raw(addr->s6_addr);
 }
 
 /** @cond INTERNAL_HIDDEN */
-static inline bool net_ipv6_is_addr_solicited_node_raw(const uint8_t *addr)
-{
-	return UNALIGNED_GET((uint32_t *)addr) == net_htonl(0xff020000) &&
-	       UNALIGNED_GET((uint32_t *)addr + 1) == 0x00000000 &&
-	       UNALIGNED_GET((uint32_t *)addr + 2) == net_htonl(0x00000001) &&
-	       ((UNALIGNED_GET((uint32_t *)addr + 3) & net_htonl(0xff000000)) ==
-		net_htonl(0xff000000));
+static inline bool net_ipv6_is_addr_solicited_node_raw(uint8_t const* addr) {
+    return (UNALIGNED_GET((uint32_t*)addr)     == net_htonl(0xFF020000)) &&
+           (UNALIGNED_GET((uint32_t*)addr + 1) == 0x00000000)            &&
+           (UNALIGNED_GET((uint32_t*)addr + 2) == net_htonl(0x00000001)) &&
+           ((UNALIGNED_GET((uint32_t*)addr + 3) & net_htonl(0xFF000000)) == net_htonl(0xFF000000));
 }
 /** @endcond */
 
@@ -1360,27 +1353,24 @@ static inline bool net_ipv6_is_addr_solicited_node_raw(const uint8_t *addr)
  *
  *  @return True if the address is solicited node address, false otherwise.
  */
-static inline bool net_ipv6_is_addr_solicited_node(const struct net_in6_addr *addr)
-{
-	return net_ipv6_is_addr_solicited_node_raw(addr->s6_addr);
+static inline bool net_ipv6_is_addr_solicited_node(struct net_in6_addr const* addr) {
+    return net_ipv6_is_addr_solicited_node_raw(addr->s6_addr);
 }
 
 /** @cond INTERNAL_HIDDEN */
-static inline bool net_ipv6_is_addr_mcast_scope_raw(const uint8_t *addr,
-						    int scope)
-{
-	return (addr[0] == 0xff) && ((addr[1] & 0xF) == scope);
+static inline bool net_ipv6_is_addr_mcast_scope_raw(uint8_t const* addr,
+                                                    int scope) {
+    return ((addr[0] == 0xFF) && ((addr[1] & 0x0F) == scope));
 }
 /** @endcond */
 
 /** @cond INTERNAL_HIDDEN */
-static inline int net_ipv6_get_addr_mcast_scope_raw(const uint8_t *addr)
-{
-	if (addr[0] == 0xff) {
-		return (addr[1] & 0xF);
-	}
+static inline int net_ipv6_get_addr_mcast_scope_raw(const uint8_t* addr) {
+    if (addr[0] == 0xFF) {
+        return (addr[1] & 0xF);
+    }
 
-	return -1;
+    return (-1);
 }
 /** @endcond */
 
@@ -1394,10 +1384,9 @@ static inline int net_ipv6_get_addr_mcast_scope_raw(const uint8_t *addr)
  * @return True if the address is in given scope multicast address,
  * false otherwise.
  */
-static inline bool net_ipv6_is_addr_mcast_scope(const struct net_in6_addr *addr,
-						int scope)
-{
-	return net_ipv6_is_addr_mcast_scope_raw(addr->s6_addr, scope);
+static inline bool net_ipv6_is_addr_mcast_scope(struct net_in6_addr const* addr,
+                                                int scope) {
+    return net_ipv6_is_addr_mcast_scope_raw(addr->s6_addr, scope);
 }
 
 /**
@@ -1409,11 +1398,10 @@ static inline bool net_ipv6_is_addr_mcast_scope(const struct net_in6_addr *addr,
  * @return True if both addresses have same multicast scope,
  * false otherwise.
  */
-static inline bool net_ipv6_is_same_mcast_scope(const struct net_in6_addr *addr_1,
-						const struct net_in6_addr *addr_2)
-{
-	return (addr_1->s6_addr[0] == 0xff) && (addr_2->s6_addr[0] == 0xff) &&
-		(addr_1->s6_addr[1] == addr_2->s6_addr[1]);
+static inline bool net_ipv6_is_same_mcast_scope(const struct net_in6_addr* addr_1,
+                                                const struct net_in6_addr* addr_2) {
+    return (addr_1->s6_addr[0] == 0xff) && (addr_2->s6_addr[0] == 0xff) &&
+           (addr_1->s6_addr[1] == addr_2->s6_addr[1]);
 }
 
 /**
@@ -1423,35 +1411,29 @@ static inline bool net_ipv6_is_same_mcast_scope(const struct net_in6_addr *addr_
  *
  * @return Scope of the address, -1 if address is not multicast.
  */
-static inline int net_ipv6_get_addr_mcast_scope(const struct net_in6_addr *addr)
-{
-	return net_ipv6_get_addr_mcast_scope_raw(addr->s6_addr);
+static inline int net_ipv6_get_addr_mcast_scope(const struct net_in6_addr* addr) {
+    return net_ipv6_get_addr_mcast_scope_raw(addr->s6_addr);
 }
 
 /** @cond INTERNAL_HIDDEN */
-static inline bool net_ipv6_is_addr_mcast_iface_raw(const uint8_t *addr)
-{
-	return net_ipv6_is_addr_mcast_scope_raw(addr, 0x01);
+static inline bool net_ipv6_is_addr_mcast_iface_raw(uint8_t const* addr) {
+    return net_ipv6_is_addr_mcast_scope_raw(addr, 0x01);
 }
 
-static inline bool net_ipv6_is_addr_mcast_link_raw(const uint8_t *addr)
-{
-	return net_ipv6_is_addr_mcast_scope_raw(addr, 0x02);
+static inline bool net_ipv6_is_addr_mcast_link_raw(uint8_t const* addr) {
+    return net_ipv6_is_addr_mcast_scope_raw(addr, 0x02);
 }
 
-static inline bool net_ipv6_is_addr_mcast_mesh_raw(const uint8_t *addr)
-{
-	return net_ipv6_is_addr_mcast_scope_raw(addr, 0x03);
+static inline bool net_ipv6_is_addr_mcast_mesh_raw(uint8_t const* addr) {
+    return net_ipv6_is_addr_mcast_scope_raw(addr, 0x03);
 }
 
-static inline bool net_ipv6_is_addr_mcast_site_raw(const uint8_t *addr)
-{
-	return net_ipv6_is_addr_mcast_scope_raw(addr, 0x05);
+static inline bool net_ipv6_is_addr_mcast_site_raw(uint8_t const* addr) {
+    return net_ipv6_is_addr_mcast_scope_raw(addr, 0x05);
 }
 
-static inline bool net_ipv6_is_addr_mcast_org_raw(const uint8_t *addr)
-{
-	return net_ipv6_is_addr_mcast_scope_raw(addr, 0x08);
+static inline bool net_ipv6_is_addr_mcast_org_raw(uint8_t const* addr) {
+    return net_ipv6_is_addr_mcast_scope_raw(addr, 0x08);
 }
 /** @endcond */
 
@@ -1462,9 +1444,8 @@ static inline bool net_ipv6_is_addr_mcast_org_raw(const uint8_t *addr)
  *
  * @return True if the address is global multicast address, false otherwise.
  */
-static inline bool net_ipv6_is_addr_mcast_global(const struct net_in6_addr *addr)
-{
-	return net_ipv6_is_addr_mcast_scope(addr, 0x0e);
+static inline bool net_ipv6_is_addr_mcast_global(const struct net_in6_addr* addr) {
+    return net_ipv6_is_addr_mcast_scope(addr, 0x0e);
 }
 
 /**
@@ -1476,9 +1457,8 @@ static inline bool net_ipv6_is_addr_mcast_global(const struct net_in6_addr *addr
  * @return True if the address is a interface scope multicast address,
  * false otherwise.
  */
-static inline bool net_ipv6_is_addr_mcast_iface(const struct net_in6_addr *addr)
-{
-	return net_ipv6_is_addr_mcast_scope(addr, 0x01);
+static inline bool net_ipv6_is_addr_mcast_iface(const struct net_in6_addr* addr) {
+    return net_ipv6_is_addr_mcast_scope(addr, 0x01);
 }
 
 /**
@@ -1490,9 +1470,8 @@ static inline bool net_ipv6_is_addr_mcast_iface(const struct net_in6_addr *addr)
  * @return True if the address is a link local scope multicast address,
  * false otherwise.
  */
-static inline bool net_ipv6_is_addr_mcast_link(const struct net_in6_addr *addr)
-{
-	return net_ipv6_is_addr_mcast_scope(addr, 0x02);
+static inline bool net_ipv6_is_addr_mcast_link(const struct net_in6_addr* addr) {
+    return net_ipv6_is_addr_mcast_scope(addr, 0x02);
 }
 
 /**
@@ -1504,9 +1483,8 @@ static inline bool net_ipv6_is_addr_mcast_link(const struct net_in6_addr *addr)
  * @return True if the address is a mesh-local scope multicast address,
  * false otherwise.
  */
-static inline bool net_ipv6_is_addr_mcast_mesh(const struct net_in6_addr *addr)
-{
-	return net_ipv6_is_addr_mcast_scope(addr, 0x03);
+static inline bool net_ipv6_is_addr_mcast_mesh(const struct net_in6_addr* addr) {
+    return net_ipv6_is_addr_mcast_scope(addr, 0x03);
 }
 
 /**
@@ -1518,9 +1496,8 @@ static inline bool net_ipv6_is_addr_mcast_mesh(const struct net_in6_addr *addr)
  * @return True if the address is a site scope multicast address,
  * false otherwise.
  */
-static inline bool net_ipv6_is_addr_mcast_site(const struct net_in6_addr *addr)
-{
-	return net_ipv6_is_addr_mcast_scope(addr, 0x05);
+static inline bool net_ipv6_is_addr_mcast_site(const struct net_in6_addr* addr) {
+    return net_ipv6_is_addr_mcast_scope(addr, 0x05);
 }
 
 /**
@@ -1532,19 +1509,17 @@ static inline bool net_ipv6_is_addr_mcast_site(const struct net_in6_addr *addr)
  * @return True if the address is an organization scope multicast address,
  * false otherwise.
  */
-static inline bool net_ipv6_is_addr_mcast_org(const struct net_in6_addr *addr)
-{
-	return net_ipv6_is_addr_mcast_scope(addr, 0x08);
+static inline bool net_ipv6_is_addr_mcast_org(const struct net_in6_addr* addr) {
+    return net_ipv6_is_addr_mcast_scope(addr, 0x08);
 }
 
 /** @cond INTERNAL_HIDDEN */
-static inline bool net_ipv6_is_addr_mcast_group_raw(const uint8_t *addr,
-						    const uint8_t *group)
-{
-	return UNALIGNED_GET((uint16_t *)addr + 1) == UNALIGNED_GET((uint16_t *)group + 1) &&
-	       UNALIGNED_GET((uint32_t *)addr + 1) == UNALIGNED_GET((uint32_t *)group + 1) &&
-	       UNALIGNED_GET((uint32_t *)addr + 2) == UNALIGNED_GET((uint32_t *)group + 2) &&
-	       UNALIGNED_GET((uint32_t *)addr + 3) == UNALIGNED_GET((uint32_t *)group + 3);
+static inline bool net_ipv6_is_addr_mcast_group_raw(uint8_t const* addr,
+                                                    uint8_t const* group) {
+    return (UNALIGNED_GET((uint16_t*)addr + 1) == UNALIGNED_GET((uint16_t*)group + 1)) &&
+           (UNALIGNED_GET((uint32_t*)addr + 1) == UNALIGNED_GET((uint32_t*)group + 1)) &&
+           (UNALIGNED_GET((uint32_t*)addr + 2) == UNALIGNED_GET((uint32_t*)group + 2)) &&
+           (UNALIGNED_GET((uint32_t*)addr + 3) == UNALIGNED_GET((uint32_t*)group + 3));
 }
 /** @endcond */
 
@@ -1558,21 +1533,19 @@ static inline bool net_ipv6_is_addr_mcast_group_raw(const uint8_t *addr,
  * @return True if the IPv6 multicast address belongs to given multicast
  * group, false otherwise.
  */
-static inline bool net_ipv6_is_addr_mcast_group(const struct net_in6_addr *addr,
-						const struct net_in6_addr *group)
-{
-	return net_ipv6_is_addr_mcast_group_raw(addr->s6_addr, group->s6_addr);
+static inline bool net_ipv6_is_addr_mcast_group(const struct net_in6_addr* addr,
+                                                const struct net_in6_addr* group) {
+    return net_ipv6_is_addr_mcast_group_raw(addr->s6_addr, group->s6_addr);
 }
 
 /** @cond INTERNAL_HIDDEN */
-static inline bool net_ipv6_is_addr_mcast_all_nodes_group_raw(const uint8_t *addr)
-{
-	static const uint8_t all_nodes_mcast_group[NET_IPV6_ADDR_SIZE] = {
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-	};
+static inline bool net_ipv6_is_addr_mcast_all_nodes_group_raw(uint8_t const* addr) {
+    static uint8_t const all_nodes_mcast_group[NET_IPV6_ADDR_SIZE] = {
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+    };
 
-	return net_ipv6_is_addr_mcast_group_raw(addr, all_nodes_mcast_group);
+    return net_ipv6_is_addr_mcast_group_raw(addr, all_nodes_mcast_group);
 }
 /** @endcond */
 
@@ -1585,9 +1558,8 @@ static inline bool net_ipv6_is_addr_mcast_all_nodes_group_raw(const uint8_t *add
  * group, false otherwise
  */
 static inline bool
-net_ipv6_is_addr_mcast_all_nodes_group(const struct net_in6_addr *addr)
-{
-	return net_ipv6_is_addr_mcast_all_nodes_group_raw(addr->s6_addr);
+net_ipv6_is_addr_mcast_all_nodes_group(struct net_in6_addr const* addr) {
+    return net_ipv6_is_addr_mcast_all_nodes_group_raw(addr->s6_addr);
 }
 
 /**
@@ -1600,17 +1572,15 @@ net_ipv6_is_addr_mcast_all_nodes_group(const struct net_in6_addr *addr)
  * false otherwise.
  */
 static inline bool
-net_ipv6_is_addr_mcast_iface_all_nodes(const struct net_in6_addr *addr)
-{
-	return net_ipv6_is_addr_mcast_iface(addr) &&
-	       net_ipv6_is_addr_mcast_all_nodes_group(addr);
+net_ipv6_is_addr_mcast_iface_all_nodes(const struct net_in6_addr* addr) {
+    return net_ipv6_is_addr_mcast_iface(addr) &&
+           net_ipv6_is_addr_mcast_all_nodes_group(addr);
 }
 
 /** @cond INTERNAL_HIDDEN */
-static inline bool net_ipv6_is_addr_mcast_link_all_nodes_raw(const uint8_t *addr)
-{
-	return net_ipv6_is_addr_mcast_link_raw(addr) &&
-	       net_ipv6_is_addr_mcast_all_nodes_group_raw(addr);
+static inline bool net_ipv6_is_addr_mcast_link_all_nodes_raw(uint8_t const* addr) {
+    return net_ipv6_is_addr_mcast_link_raw(addr) &&
+           net_ipv6_is_addr_mcast_all_nodes_group_raw(addr);
 }
 /** @endcond */
 
@@ -1624,10 +1594,9 @@ static inline bool net_ipv6_is_addr_mcast_link_all_nodes_raw(const uint8_t *addr
  * address, false otherwise.
  */
 static inline bool
-net_ipv6_is_addr_mcast_link_all_nodes(const struct net_in6_addr *addr)
-{
-	return net_ipv6_is_addr_mcast_link(addr) &&
-	       net_ipv6_is_addr_mcast_all_nodes_group(addr);
+net_ipv6_is_addr_mcast_link_all_nodes(const struct net_in6_addr* addr) {
+    return net_ipv6_is_addr_mcast_link(addr) &&
+           net_ipv6_is_addr_mcast_all_nodes_group(addr);
 }
 
 /**
@@ -1638,20 +1607,19 @@ net_ipv6_is_addr_mcast_link_all_nodes(const struct net_in6_addr *addr)
  *  @param dst IPv6 address.
  */
 static inline
-void net_ipv6_addr_create_solicited_node(const struct net_in6_addr *src,
-					 struct net_in6_addr *dst)
-{
-	dst->s6_addr[0]   = 0xFF;
-	dst->s6_addr[1]   = 0x02;
-	UNALIGNED_PUT(0, &dst->s6_addr16[1]);
-	UNALIGNED_PUT(0, &dst->s6_addr16[2]);
-	UNALIGNED_PUT(0, &dst->s6_addr16[3]);
-	UNALIGNED_PUT(0, &dst->s6_addr16[4]);
-	dst->s6_addr[10]  = 0U;
-	dst->s6_addr[11]  = 0x01;
-	dst->s6_addr[12]  = 0xFF;
-	dst->s6_addr[13]  = src->s6_addr[13];
-	UNALIGNED_PUT(UNALIGNED_GET(&src->s6_addr16[7]), &dst->s6_addr16[7]);
+void net_ipv6_addr_create_solicited_node(const struct net_in6_addr* src,
+                                         struct net_in6_addr* dst) {
+    dst->s6_addr[0] = 0xFF;
+    dst->s6_addr[1] = 0x02;
+    UNALIGNED_PUT(0, &dst->s6_addr16[1]);
+    UNALIGNED_PUT(0, &dst->s6_addr16[2]);
+    UNALIGNED_PUT(0, &dst->s6_addr16[3]);
+    UNALIGNED_PUT(0, &dst->s6_addr16[4]);
+    dst->s6_addr[10] = 0U;
+    dst->s6_addr[11] = 0x01;
+    dst->s6_addr[12] = 0xFF;
+    dst->s6_addr[13] = src->s6_addr[13];
+    UNALIGNED_PUT(UNALIGNED_GET(&src->s6_addr16[7]), &dst->s6_addr16[7]);
 }
 
 /** @brief Construct an IPv6 address from eight 16-bit words.
@@ -1666,20 +1634,19 @@ void net_ipv6_addr_create_solicited_node(const struct net_in6_addr *src,
  *  @param addr6 16-bit word which is part of the address
  *  @param addr7 16-bit word which is part of the address
  */
-static inline void net_ipv6_addr_create(struct net_in6_addr *addr,
-					uint16_t addr0, uint16_t addr1,
-					uint16_t addr2, uint16_t addr3,
-					uint16_t addr4, uint16_t addr5,
-					uint16_t addr6, uint16_t addr7)
-{
-	UNALIGNED_PUT(net_htons(addr0), &addr->s6_addr16[0]);
-	UNALIGNED_PUT(net_htons(addr1), &addr->s6_addr16[1]);
-	UNALIGNED_PUT(net_htons(addr2), &addr->s6_addr16[2]);
-	UNALIGNED_PUT(net_htons(addr3), &addr->s6_addr16[3]);
-	UNALIGNED_PUT(net_htons(addr4), &addr->s6_addr16[4]);
-	UNALIGNED_PUT(net_htons(addr5), &addr->s6_addr16[5]);
-	UNALIGNED_PUT(net_htons(addr6), &addr->s6_addr16[6]);
-	UNALIGNED_PUT(net_htons(addr7), &addr->s6_addr16[7]);
+static inline void net_ipv6_addr_create(struct net_in6_addr* addr,
+                                        uint16_t addr0, uint16_t addr1,
+                                        uint16_t addr2, uint16_t addr3,
+                                        uint16_t addr4, uint16_t addr5,
+                                        uint16_t addr6, uint16_t addr7) {
+    UNALIGNED_PUT(net_htons(addr0), &addr->s6_addr16[0]);
+    UNALIGNED_PUT(net_htons(addr1), &addr->s6_addr16[1]);
+    UNALIGNED_PUT(net_htons(addr2), &addr->s6_addr16[2]);
+    UNALIGNED_PUT(net_htons(addr3), &addr->s6_addr16[3]);
+    UNALIGNED_PUT(net_htons(addr4), &addr->s6_addr16[4]);
+    UNALIGNED_PUT(net_htons(addr5), &addr->s6_addr16[5]);
+    UNALIGNED_PUT(net_htons(addr6), &addr->s6_addr16[6]);
+    UNALIGNED_PUT(net_htons(addr7), &addr->s6_addr16[7]);
 }
 
 /**
@@ -1687,9 +1654,8 @@ static inline void net_ipv6_addr_create(struct net_in6_addr *addr,
  *
  *  @param addr IPv6 address
  */
-static inline void net_ipv6_addr_create_ll_allnodes_mcast(struct net_in6_addr *addr)
-{
-	net_ipv6_addr_create(addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0001);
+static inline void net_ipv6_addr_create_ll_allnodes_mcast(struct net_in6_addr* addr) {
+    net_ipv6_addr_create(addr, 0xFF02, 0, 0, 0, 0, 0, 0, 0x0001);
 }
 
 /**
@@ -1697,9 +1663,8 @@ static inline void net_ipv6_addr_create_ll_allnodes_mcast(struct net_in6_addr *a
  *
  *  @param addr IPv6 address
  */
-static inline void net_ipv6_addr_create_ll_allrouters_mcast(struct net_in6_addr *addr)
-{
-	net_ipv6_addr_create(addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0002);
+static inline void net_ipv6_addr_create_ll_allrouters_mcast(struct net_in6_addr* addr) {
+    net_ipv6_addr_create(addr, 0xFF02, 0, 0, 0, 0, 0, 0, 0x0002);
 }
 
 /**
@@ -1708,12 +1673,11 @@ static inline void net_ipv6_addr_create_ll_allrouters_mcast(struct net_in6_addr 
  *  @param addr4 IPv4 address
  *  @param addr6 IPv6 address to be created
  */
-static inline void net_ipv6_addr_create_v4_mapped(const struct net_in_addr *addr4,
-						  struct net_in6_addr *addr6)
-{
-	net_ipv6_addr_create(addr6, 0, 0, 0, 0, 0, 0xffff,
-			     net_ntohs(addr4->s4_addr16[0]),
-			     net_ntohs(addr4->s4_addr16[1]));
+static inline void net_ipv6_addr_create_v4_mapped(const struct net_in_addr* addr4,
+                                                  struct net_in6_addr* addr6) {
+    net_ipv6_addr_create(addr6, 0, 0, 0, 0, 0, 0xffff,
+                         net_ntohs(addr4->s4_addr16[0]),
+                         net_ntohs(addr4->s4_addr16[1]));
 }
 
 /**
@@ -1724,15 +1688,14 @@ static inline void net_ipv6_addr_create_v4_mapped(const struct net_in_addr *addr
  *
  *  @return True if IPv6 address is a IPv4 mapped address, False otherwise.
  */
-static inline bool net_ipv6_addr_is_v4_mapped(const struct net_in6_addr *addr)
-{
-	if (UNALIGNED_GET(&addr->s6_addr32[0]) == 0 &&
-	    UNALIGNED_GET(&addr->s6_addr32[1]) == 0 &&
-	    UNALIGNED_GET(&addr->s6_addr16[5]) == 0xffff) {
-		return true;
-	}
+static inline bool net_ipv6_addr_is_v4_mapped(const struct net_in6_addr* addr) {
+    if (UNALIGNED_GET(&addr->s6_addr32[0]) == 0 &&
+        UNALIGNED_GET(&addr->s6_addr32[1]) == 0 &&
+        UNALIGNED_GET(&addr->s6_addr16[5]) == 0xffff) {
+        return true;
+    }
 
-	return false;
+    return false;
 }
 
 /**
@@ -1753,12 +1716,12 @@ static inline bool net_ipv6_addr_is_v4_mapped(const struct net_in6_addr *addr)
  *
  *  @return 0 if ok, < 0 if error
  */
-int net_ipv6_addr_generate_iid(struct net_if *iface,
-			       const struct net_in6_addr *prefix,
-			       uint8_t *network_id, size_t network_id_len,
-			       uint8_t dad_counter,
-			       struct net_in6_addr *addr,
-			       struct net_linkaddr *lladdr);
+int net_ipv6_addr_generate_iid(struct net_if* iface,
+                               const struct net_in6_addr* prefix,
+                               uint8_t*_network_id, size_t network_id_len,
+                               uint8_t dad_counter,
+                               struct net_in6_addr* addr,
+                               struct net_linkaddr* lladdr);
 
 /**
  *  @brief Create IPv6 address interface identifier.
@@ -1766,61 +1729,59 @@ int net_ipv6_addr_generate_iid(struct net_if *iface,
  *  @param addr IPv6 address
  *  @param lladdr Link local address
  */
-static inline void net_ipv6_addr_create_iid(struct net_in6_addr *addr,
-					    struct net_linkaddr *lladdr)
-{
-	(void)net_ipv6_addr_generate_iid(NULL, NULL, NULL, 0, 0, addr, lladdr);
+static inline void net_ipv6_addr_create_iid(struct net_in6_addr* addr,
+                                            struct net_linkaddr* lladdr) {
+    (void) net_ipv6_addr_generate_iid(NULL, NULL, NULL, 0, 0, addr, lladdr);
 }
 
 /** @cond INTERNAL_HIDDEN */
-static inline bool net_ipv6_addr_based_on_ll_raw(const uint8_t *addr,
-						 const struct net_linkaddr *lladdr)
-{
-	if (addr == NULL || lladdr == NULL) {
-		return false;
-	}
+static inline bool net_ipv6_addr_based_on_ll_raw(uint8_t const* addr,
+                                                 struct net_linkaddr const* lladdr) {
+    if ((addr == NULL) || (lladdr == NULL)) {
+        return false;
+    }
 
-	switch (lladdr->len) {
-	case 2:
-		if (!memcmp(&addr[14], lladdr->addr, lladdr->len) &&
-		    addr[8]  == 0U &&
-		    addr[9]  == 0U &&
-		    addr[10] == 0U &&
-		    addr[11] == 0xff &&
-		    addr[12] == 0xfe) {
-			return true;
-		}
+    switch (lladdr->len) {
+        case 2 :
+            if (!memcmp(&addr[14], lladdr->addr, lladdr->len) &&
+                addr[8]  == 0U &&
+                addr[9]  == 0U &&
+                addr[10] == 0U &&
+                addr[11] == 0xFF &&
+                addr[12] == 0xFE) {
+                return true;
+            }
+            break;
 
-		break;
-	case 6:
-		if (lladdr->type == NET_LINK_ETHERNET) {
-			if (!memcmp(&addr[9], &lladdr->addr[1], 2) &&
-			    !memcmp(&addr[13], &lladdr->addr[3], 3) &&
-			    addr[11] == 0xff &&
-			    addr[12] == 0xfe &&
-			    (addr[8] ^ 0x02) == lladdr->addr[0]) {
-				return true;
-			}
-		}
+        case 6 :
+            if (lladdr->type == NET_LINK_ETHERNET) {
+                if (!memcmp(&addr[9], &lladdr->addr[1], 2) &&
+                    !memcmp(&addr[13], &lladdr->addr[3], 3) &&
+                    (addr[11] == 0xFF) &&
+                    (addr[12] == 0xFE) &&
+                    (addr[8] ^ 0x02) == lladdr->addr[0]) {
+                    return (true);
+                }
+            }
+            break;
 
-		break;
-	case 8:
-		if (sizeof(lladdr->addr) < 8) {
-			return false;
-		}
+        case 8 :
+            if (sizeof(lladdr->addr) < 8) {
+                return false;
+            }
 
-		if (!memcmp(&addr[9], &lladdr->addr[1],
-			    lladdr->len - 1) &&
-		    (addr[8] ^ 0x02) == lladdr->addr[0]) {
-			return true;
-		}
+            if (!memcmp(&addr[9], &lladdr->addr[1],
+                        lladdr->len - 1) &&
+                (addr[8] ^ 0x02) == lladdr->addr[0]) {
+                return true;
+            }
+            break;
 
-		break;
-	default:
-		return false;
-	}
+        default :
+            return false;
+    }
 
-	return false;
+    return false;
 }
 /** @endcond */
 
@@ -1829,14 +1790,13 @@ static inline bool net_ipv6_addr_based_on_ll_raw(const uint8_t *addr,
  *
  *  @return True if it is, False otherwise
  */
-static inline bool net_ipv6_addr_based_on_ll(const struct net_in6_addr *addr,
-					     const struct net_linkaddr *lladdr)
-{
-	if (addr == NULL || lladdr == NULL) {
-		return false;
-	}
+static inline bool net_ipv6_addr_based_on_ll(struct net_in6_addr const* addr,
+                                             struct net_linkaddr const* lladdr) {
+    if ((addr == NULL) || (lladdr == NULL)) {
+        return (false);
+    }
 
-	return net_ipv6_addr_based_on_ll_raw(addr->s6_addr, lladdr);
+    return net_ipv6_addr_based_on_ll_raw(addr->s6_addr, lladdr);
 }
 
 /**
@@ -1847,9 +1807,8 @@ static inline bool net_ipv6_addr_based_on_ll(const struct net_in6_addr *addr,
  *
  * @return Pointer to socket address (struct sockaddr)
  */
-static inline struct net_sockaddr *net_sad(const struct net_sockaddr_storage *addr)
-{
-	return (struct net_sockaddr *)addr;
+static inline struct net_sockaddr* net_sad(const struct net_sockaddr_storage* addr) {
+    return (struct net_sockaddr*)addr;
 }
 
 /**
@@ -1860,9 +1819,8 @@ static inline struct net_sockaddr *net_sad(const struct net_sockaddr_storage *ad
  *
  * @return Pointer to IPv6 socket address
  */
-static inline struct net_sockaddr_in6 *net_sin6(const struct net_sockaddr *addr)
-{
-	return (struct net_sockaddr_in6 *)addr;
+static inline struct net_sockaddr_in6* net_sin6(const struct net_sockaddr* addr) {
+    return (struct net_sockaddr_in6*)addr;
 }
 
 /**
@@ -1873,9 +1831,8 @@ static inline struct net_sockaddr_in6 *net_sin6(const struct net_sockaddr *addr)
  *
  * @return Pointer to IPv4 socket address
  */
-static inline struct net_sockaddr_in *net_sin(const struct net_sockaddr *addr)
-{
-	return (struct net_sockaddr_in *)addr;
+static inline struct net_sockaddr_in* net_sin(const struct net_sockaddr* addr) {
+    return (struct net_sockaddr_in*)addr;
 }
 
 /**
@@ -1887,9 +1844,8 @@ static inline struct net_sockaddr_in *net_sin(const struct net_sockaddr *addr)
  * @return Pointer to IPv6 socket address
  */
 static inline
-struct net_sockaddr_in6_ptr *net_sin6_ptr(const struct net_sockaddr_ptr *addr)
-{
-	return (struct net_sockaddr_in6_ptr *)addr;
+struct net_sockaddr_in6_ptr* net_sin6_ptr(const struct net_sockaddr_ptr* addr) {
+    return (struct net_sockaddr_in6_ptr*)addr;
 }
 
 /**
@@ -1901,9 +1857,8 @@ struct net_sockaddr_in6_ptr *net_sin6_ptr(const struct net_sockaddr_ptr *addr)
  * @return Pointer to IPv4 socket address
  */
 static inline
-struct net_sockaddr_in_ptr *net_sin_ptr(const struct net_sockaddr_ptr *addr)
-{
-	return (struct net_sockaddr_in_ptr *)addr;
+struct net_sockaddr_in_ptr* net_sin_ptr(const struct net_sockaddr_ptr* addr) {
+    return (struct net_sockaddr_in_ptr*)addr;
 }
 
 /**
@@ -1915,9 +1870,8 @@ struct net_sockaddr_in_ptr *net_sin_ptr(const struct net_sockaddr_ptr *addr)
  * @return Pointer to linklayer socket address
  */
 static inline
-struct net_sockaddr_ll_ptr *net_sll_ptr(const struct net_sockaddr_ptr *addr)
-{
-	return (struct net_sockaddr_ll_ptr *)addr;
+struct net_sockaddr_ll_ptr* net_sll_ptr(const struct net_sockaddr_ptr* addr) {
+    return (struct net_sockaddr_ll_ptr*)addr;
 }
 
 /**
@@ -1929,9 +1883,8 @@ struct net_sockaddr_ll_ptr *net_sll_ptr(const struct net_sockaddr_ptr *addr)
  * @return Pointer to CAN socket address
  */
 static inline
-struct net_sockaddr_can_ptr *net_can_ptr(const struct net_sockaddr_ptr *addr)
-{
-	return (struct net_sockaddr_can_ptr *)addr;
+struct net_sockaddr_can_ptr* net_can_ptr(const struct net_sockaddr_ptr* addr) {
+    return (struct net_sockaddr_can_ptr*)addr;
 }
 
 /**
@@ -1947,7 +1900,7 @@ struct net_sockaddr_can_ptr *net_can_ptr(const struct net_sockaddr_ptr *addr)
  *
  * @return 0 if ok, < 0 if error
  */
-__syscall int net_addr_pton(net_sa_family_t family, const char *src, void *dst);
+__syscall int net_addr_pton(net_sa_family_t family, char const* src, void* dst);
 
 /**
  * @brief Convert IP address to string form.
@@ -1960,8 +1913,8 @@ __syscall int net_addr_pton(net_sa_family_t family, const char *src, void *dst);
  *
  * @return dst pointer if ok, NULL if error
  */
-__syscall char *net_addr_ntop(net_sa_family_t family, const void *src,
-			      char *dst, size_t size);
+__syscall char* net_addr_ntop(net_sa_family_t family, void const* src,
+                              char* dst, size_t size);
 
 /**
  * @brief Create netmask from mask length.
@@ -1974,7 +1927,7 @@ __syscall char *net_addr_ntop(net_sa_family_t family, const void *src,
  * @return 0 if ok, < 0 if error
  */
 int net_mask_len_to_netmask(net_sa_family_t family, uint8_t mask_len,
-			    struct net_sockaddr *mask);
+                            struct net_sockaddr* mask);
 
 /**
  * @brief Create mask length from netmask.
@@ -1986,8 +1939,8 @@ int net_mask_len_to_netmask(net_sa_family_t family, uint8_t mask_len,
  *
  * @return 0 if ok, < 0 if error
  */
-int net_netmask_to_mask_len(net_sa_family_t family, struct net_sockaddr *mask,
-			    uint8_t *mask_len);
+int net_netmask_to_mask_len(net_sa_family_t family, struct net_sockaddr* mask,
+                            uint8_t* mask_len);
 
 /**
  * @brief Parse a string that contains either IPv4 or IPv6 address
@@ -2006,12 +1959,12 @@ int net_netmask_to_mask_len(net_sa_family_t family, struct net_sockaddr *mask,
  *
  * @param str String that contains the IP address.
  * @param str_len Length of the string to be parsed.
- * @param addr Pointer to user supplied struct sockaddr.
+ * @param addr Pointer to user supplied struct net_sockaddr.
  *
  * @return True if parsing could be done, false otherwise.
  */
-bool net_ipaddr_parse(const char *str, size_t str_len,
-		      struct net_sockaddr *addr);
+bool net_ipaddr_parse(char const* str, size_t str_len,
+                      struct net_sockaddr* addr);
 
 /**
  * @brief Parse a string that contains either IPv4 or IPv6 address
@@ -2040,19 +1993,19 @@ bool net_ipaddr_parse(const char *str, size_t str_len,
  *         "" if we could parse the IP address and there is nothing more to parse.
  *         All other values point to next character after the "," or " " in the string.
  */
-const char *net_ipaddr_parse_mask(const char *str, size_t str_len,
-				  struct net_sockaddr *addr, uint8_t *mask_len);
+char const* net_ipaddr_parse_mask(const char *str, size_t str_len,
+                                  struct net_sockaddr *addr, uint8_t *mask_len);
 
 /**
  * @brief Set the default port in the sockaddr structure.
  * If the port is already set, then do nothing.
  *
- * @param addr Pointer to user supplied struct sockaddr.
+ * @param addr Pointer to user supplied struct net_sockaddr.
  * @param default_port Default port number to set.
  *
  * @return 0 if ok, <0 if error
  */
-int net_port_set_default(struct net_sockaddr *addr, uint16_t default_port);
+int net_port_set_default(struct net_sockaddr const* addr, uint16_t default_port);
 
 /**
  * @brief Compare TCP sequence numbers.
@@ -2065,9 +2018,8 @@ int net_port_set_default(struct net_sockaddr *addr, uint16_t default_port);
  *
  * @return < 0 if seq1 < seq2, 0 if seq1 == seq2, > 0 if seq > seq2
  */
-static inline int32_t net_tcp_seq_cmp(uint32_t seq1, uint32_t seq2)
-{
-	return (int32_t)(seq1 - seq2);
+static inline int32_t net_tcp_seq_cmp(uint32_t seq1, uint32_t seq2) {
+    return (int32_t)(seq1 - seq2);
 }
 
 /**
@@ -2080,9 +2032,8 @@ static inline int32_t net_tcp_seq_cmp(uint32_t seq1, uint32_t seq2)
  *
  * @return True if seq > seq2
  */
-static inline bool net_tcp_seq_greater(uint32_t seq1, uint32_t seq2)
-{
-	return net_tcp_seq_cmp(seq1, seq2) > 0;
+static inline bool net_tcp_seq_greater(uint32_t seq1, uint32_t seq2) {
+    return net_tcp_seq_cmp(seq1, seq2) > 0;
 }
 
 /**
@@ -2096,7 +2047,7 @@ static inline bool net_tcp_seq_greater(uint32_t seq1, uint32_t seq2)
  *
  * @return 0 if ok, <0 if error
  */
-int net_bytes_from_str(uint8_t *buf, int buf_len, const char *src);
+int net_bytes_from_str(uint8_t* buf, int buf_len, char const* src);
 
 /**
  * @brief Convert Tx network packet priority to traffic class so we can place
@@ -2126,26 +2077,25 @@ int net_rx_priority2tc(enum net_priority prio);
  *
  * @return Network priority
  */
-static inline enum net_priority net_vlan2priority(uint8_t priority)
-{
-	/* Map according to IEEE 802.1Q */
-	static const uint8_t vlan2priority[] = {
-		NET_PRIORITY_BE,
-		NET_PRIORITY_BK,
-		NET_PRIORITY_EE,
-		NET_PRIORITY_CA,
-		NET_PRIORITY_VI,
-		NET_PRIORITY_VO,
-		NET_PRIORITY_IC,
-		NET_PRIORITY_NC
-	};
+static inline enum net_priority net_vlan2priority(uint8_t priority) {
+    /* Map according to IEEE 802.1Q */
+    static const uint8_t vlan2priority[] = {
+        NET_PRIORITY_BE,
+        NET_PRIORITY_BK,
+        NET_PRIORITY_EE,
+        NET_PRIORITY_CA,
+        NET_PRIORITY_VI,
+        NET_PRIORITY_VO,
+        NET_PRIORITY_IC,
+        NET_PRIORITY_NC
+    };
 
-	if (priority >= ARRAY_SIZE(vlan2priority)) {
-		/* Use Best Effort as the default priority */
-		return NET_PRIORITY_BE;
-	}
+    if (priority >= ARRAY_SIZE(vlan2priority)) {
+        /* Use Best Effort as the default priority */
+        return NET_PRIORITY_BE;
+    }
 
-	return (enum net_priority)vlan2priority[priority];
+    return (enum net_priority)vlan2priority[priority];
 }
 
 /**
@@ -2155,10 +2105,9 @@ static inline enum net_priority net_vlan2priority(uint8_t priority)
  *
  * @return VLAN priority (PCP)
  */
-static inline uint8_t net_priority2vlan(enum net_priority priority)
-{
-	/* The conversion works both ways */
-	return (uint8_t)net_vlan2priority(priority);
+static inline uint8_t net_priority2vlan(enum net_priority priority) {
+    /* The conversion works both ways */
+    return (uint8_t)net_vlan2priority(priority);
 }
 
 /**
@@ -2169,7 +2118,7 @@ static inline uint8_t net_priority2vlan(enum net_priority priority)
  *
  * @return Network address family as a string, or NULL if family is unknown.
  */
-const char *net_family2str(net_sa_family_t family);
+char const* net_family2str(net_sa_family_t family);
 
 /**
  * @brief Add IPv6 prefix as a privacy extension filter.
@@ -2182,15 +2131,14 @@ const char *net_family2str(net_sa_family_t family);
  * @return 0 if ok, <0 if error
  */
 #if defined(CONFIG_NET_IPV6_PE)
-int net_ipv6_pe_add_filter(struct net_in6_addr *addr, bool is_denylist);
+int net_ipv6_pe_add_filter(struct net_in6_addr* addr, bool is_denylist);
 #else
-static inline int net_ipv6_pe_add_filter(struct net_in6_addr *addr,
-					 bool is_denylist)
-{
-	ARG_UNUSED(addr);
-	ARG_UNUSED(is_denylist);
+static inline int net_ipv6_pe_add_filter(struct net_in6_addr* addr,
+                                         bool is_denylist) {
+    ARG_UNUSED(addr);
+    ARG_UNUSED(is_denylist);
 
-	return -ENOTSUP;
+    return (-ENOTSUP);
 }
 #endif /* CONFIG_NET_IPV6_PE */
 
@@ -2202,13 +2150,12 @@ static inline int net_ipv6_pe_add_filter(struct net_in6_addr *addr,
  * @return 0 if ok, <0 if error
  */
 #if defined(CONFIG_NET_IPV6_PE)
-int net_ipv6_pe_del_filter(struct net_in6_addr *addr);
+int net_ipv6_pe_del_filter(struct net_in6_addr* addr);
 #else
-static inline int net_ipv6_pe_del_filter(struct net_in6_addr *addr)
-{
-	ARG_UNUSED(addr);
+static inline int net_ipv6_pe_del_filter(struct net_in6_addr* addr) {
+    ARG_UNUSED(addr);
 
-	return -ENOTSUP;
+    return (-ENOTSUP);
 }
 #endif /* CONFIG_NET_IPV6_PE */
 

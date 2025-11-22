@@ -70,9 +70,13 @@ enum {
  *
  */
 struct net_sockaddr_can {
-	net_sa_family_t can_family;   /**< Address family */
-	int             can_ifindex;  /**< SocketCAN network interface index */
+    net_sa_family_t can_family;   /**< Address family */
+    int         can_ifindex;  /**< SocketCAN network interface index */
 };
+
+#if (__GTEST == 0)
+#define sockaddr_can    net_sockaddr_can
+#endif
 
 /**
  * @name Linux SocketCAN compatibility

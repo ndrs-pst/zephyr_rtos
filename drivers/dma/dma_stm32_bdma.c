@@ -552,7 +552,7 @@ BDMA_STM32_EXPORT_API int bdma_stm32_configure(const struct device *dev,
 	channel->user_data	= config->user_data;
 	channel->src_size	= config->source_data_size;
 	channel->dst_size	= config->dest_data_size;
-	channel->cyclic		= config->head_block->source_reload_en;
+	channel->cyclic		= (bool)config->head_block->source_reload_en;
 
 	/* check dest or source memory address, warn if 0 */
 	if (config->head_block->source_address == 0) {

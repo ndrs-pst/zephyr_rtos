@@ -46,7 +46,9 @@ FUNC_NORETURN void z_thread_entry(k_thread_entry_t entry,
  * otherwise lead to reading invalid memory and cause faults during
  * unwinding or debugging.
  */
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 	ARCH_CFI_UNDEFINED_RETURN_ADDRESS();
+#endif
 #ifdef CONFIG_CURRENT_THREAD_USE_TLS
 	z_tls_current = k_sched_current_thread_query();
 #endif

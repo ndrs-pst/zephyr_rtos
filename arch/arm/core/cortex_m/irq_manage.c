@@ -130,6 +130,7 @@ void z_irq_spurious(const void *unused)
 }
 
 #ifdef CONFIG_PM
+#if (__GTEST == 0U) /* #CUSTOM@NDRS */
 void _arch_isr_direct_pm(void)
 {
 	unsigned int key;
@@ -144,6 +145,14 @@ void _arch_isr_direct_pm(void)
 
 	arch_irq_unlock(key);
 }
+#else
+void _arch_isr_direct_pm(void) {
+	if (_kernel.idle) {
+		_kernel.idle = 0;
+		pm_system_resume();
+	}
+}
+#endif
 #endif
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)

@@ -418,9 +418,9 @@ struct hl7800_config {
 struct hl7800_iface_ctx {
 	struct net_if *iface;
 	uint8_t mac_addr[6];
-	struct in_addr ipv4Addr, subnet, gateway, dns_v4;
+	struct net_in_addr ipv4Addr, subnet, gateway, dns_v4;
 #ifdef CONFIG_NET_IPV6
-	struct in6_addr ipv6Addr, dns_v6;
+	struct net_in6_addr ipv6Addr, dns_v6;
 	char dns_v6_string[HL7800_IPV6_ADDR_LEN];
 #endif
 	bool restarting;
@@ -1454,7 +1454,7 @@ static int send_data(struct hl7800_socket *sock, struct net_pkt *pkt)
 	send_len = net_buf_frags_len(frag);
 	/* start sending data */
 	k_sem_reset(&sock->sock_send_sem);
-	if (sock->type == SOCK_STREAM) {
+	if (sock->type == NET_SOCK_STREAM) {
 		snprintk(buf, sizeof(buf), "AT+KTCPSND=%d,%zu", sock->socket_id,
 			 send_len);
 	} else {
@@ -1504,7 +1504,7 @@ static int send_data(struct hl7800_socket *sock, struct net_pkt *pkt)
 		ret = -ETIMEDOUT;
 	}
 done:
-	if (sock->type == SOCK_STREAM) {
+	if (sock->type == NET_SOCK_STREAM) {
 		if (sock->error == 0) {
 			sock->state = SOCK_CONNECTED;
 		}
@@ -2008,7 +2008,7 @@ char *mdm_hl7800_get_imsi(void)
  * a01.a02.a03.a04.a05.a06.a07.a08.a09.a10.a11.a12.a13.a14.a15.a16 to
  * an IPv6 address.
  */
-static int hl7800_net_addr6_pton(const char *src, struct in6_addr *dst)
+static int hl7800_net_addr6_pton(const char *src, struct net_in6_addr *dst)
 {
 	int num_sections = 8;
 	int i, len;
@@ -2062,8 +2062,8 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 	size_t out_len;
 	char value[MDM_IP_INFO_RESP_SIZE];
 	char *search_start, *addr_start, *sm_start;
-	struct in_addr new_ipv4_addr;
-	struct in6_addr new_ipv6_addr;
+	struct net_in_addr new_ipv4_addr;
+	struct net_in6_addr new_ipv6_addr;
 	bool is_ipv4;
 	int addr_len;
 	char temp_addr_str[HL7800_IPV6_ADDR_LEN];

@@ -1202,7 +1202,7 @@ struct bt_iso_info {
 
 	/** Connection Type specific Info.*/
 	union {
-#if defined(CONFIG_BT_ISO_UNICAST) || defined(__DOXYGEN__)
+		#if defined(CONFIG_BT_ISO_UNICAST) || defined(__DOXYGEN__)
 		/**
 		 * @brief Unicast specific Info.
 		 *
@@ -1211,8 +1211,9 @@ struct bt_iso_info {
 		 * @ref BT_ISO_CHAN_TYPE_PERIPHERAL.
 		 */
 		struct bt_iso_unicast_info unicast;
-#endif /* CONFIG_BT_ISO_UNICAST */
-#if defined(CONFIG_BT_ISO_BROADCASTER) || defined(__DOXYGEN__)
+		#endif /* CONFIG_BT_ISO_UNICAST */
+
+		#if defined(CONFIG_BT_ISO_BROADCASTER) || defined(__DOXYGEN__)
 		/**
 		 * @brief Broadcaster specific Info.
 		 *
@@ -1220,8 +1221,9 @@ struct bt_iso_info {
 		 * Use this when the @ref bt_iso_info.type is @ref BT_ISO_CHAN_TYPE_BROADCASTER.
 		 */
 		struct bt_iso_broadcaster_info broadcaster;
-#endif /* CONFIG_BT_ISO_BROADCASTER */
-#if defined(CONFIG_BT_ISO_SYNC_RECEIVER) || defined(__DOXYGEN__)
+		#endif /* CONFIG_BT_ISO_BROADCASTER */
+
+		#if defined(CONFIG_BT_ISO_SYNC_RECEIVER) || defined(__DOXYGEN__)
 		/**
 		 * @brief Sync receiver specific Info.
 		 *
@@ -1229,7 +1231,11 @@ struct bt_iso_info {
 		 * Use this when the @ref bt_iso_info.type is @ref BT_ISO_CHAN_TYPE_SYNC_RECEIVER.
 		 */
 		struct bt_iso_sync_receiver_info sync_receiver;
-#endif /* CONFIG_BT_ISO_SYNC_RECEIVER */
+		#endif /* CONFIG_BT_ISO_SYNC_RECEIVER */
+
+		#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+		uint8_t dummy;
+		#endif
 	};
 };
 

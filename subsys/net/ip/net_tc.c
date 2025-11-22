@@ -177,7 +177,7 @@ int net_tc_tx_thread_priority(int tc)
 	int priority;
 	int thread_priority;
 
-	BUILD_ASSERT(BASE_PRIO_TX >= PRIO_SPREAD_TX * (NET_TC_TX_COUNT - 1));
+	BUILD_ASSERT(BASE_PRIO_TX >= PRIO_SPREAD_TX * (NET_TC_TX_COUNT - 1), "Too few BASE_PRIO_TX");
 	NET_ASSERT(tc >= 0 && tc < NET_TC_TX_COUNT);
 	thread_priority = BASE_PRIO_TX - PRIO_SPREAD_TX * tc;
 
@@ -192,7 +192,7 @@ int net_tc_rx_thread_priority(int tc)
 	int priority;
 	int thread_priority;
 
-	BUILD_ASSERT(BASE_PRIO_RX >= PRIO_SPREAD_RX * (NET_TC_RX_COUNT - 1));
+	BUILD_ASSERT(BASE_PRIO_RX >= PRIO_SPREAD_RX * (NET_TC_RX_COUNT - 1), "Too few BASE_PRIO_RX");
 	NET_ASSERT(tc >= 0 && tc < NET_TC_RX_COUNT);
 	thread_priority = BASE_PRIO_RX - PRIO_SPREAD_RX * tc;
 
@@ -293,7 +293,7 @@ static void tc_tx_handler(void *p1, void *p2, void *p3)
 #endif
 	struct net_pkt *pkt;
 
-	while (1) {
+	while (true) {
 		pkt = k_fifo_get(fifo, K_FOREVER);
 		if (pkt == NULL) {
 			continue;
@@ -319,7 +319,7 @@ void net_tc_tx_init(void)
 #else
 	int i;
 
-	BUILD_ASSERT(NET_TC_TX_COUNT >= 0);
+	BUILD_ASSERT(NET_TC_TX_COUNT >= 0, "NET_TC_TX_COUNT >= 0 error !!!");
 
 #if defined(CONFIG_NET_STATISTICS)
 	net_if_foreach(net_tc_tx_stats_priority_setup, NULL);
@@ -376,7 +376,7 @@ void net_tc_rx_init(void)
 #else
 	int i;
 
-	BUILD_ASSERT(NET_TC_RX_COUNT >= 0);
+	BUILD_ASSERT(NET_TC_RX_COUNT >= 0, "NET_TC_RX_COUNT >= 0 error !!!");
 
 #if defined(CONFIG_NET_STATISTICS)
 	net_if_foreach(net_tc_rx_stats_priority_setup, NULL);

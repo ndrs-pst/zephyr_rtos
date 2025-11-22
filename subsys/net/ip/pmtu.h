@@ -37,7 +37,7 @@ struct net_pmtu_entry {
 #if defined(CONFIG_NET_PMTU)
 struct net_pmtu_entry *net_pmtu_get_entry(const struct net_sockaddr *dst);
 #else
-static inline struct net_pmtu_entry *net_pmtu_get_entry(const struct net_sockaddr *dst)
+static inline struct net_pmtu_entry* net_pmtu_get_entry(const struct net_sockaddr *dst)
 {
 	ARG_UNUSED(dst);
 

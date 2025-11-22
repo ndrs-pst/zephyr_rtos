@@ -35,3 +35,6 @@ else()
 endif()
 
 add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/zephyr/src hal_nxp)
+
+#CUSTOM@NDRS
+zephyr_compile_definitions(__GTEST=0)
