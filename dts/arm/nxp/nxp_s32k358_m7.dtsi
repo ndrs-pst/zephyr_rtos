@@ -62,13 +62,22 @@
 			reg = <0x20400000 DT_SIZE_K(768)>;
 		};
 
-		/*
-		 * S32K358 has 8MB Flash
-		 * Last 48KB is reserved by Secure BAF, application core cannot access it.
-		 */
-		flash0: flash@400000 {
-			reg = <0x00400000 DT_SIZE_K(8144)>;
-			status = "disabled";
+		flash_ctrl0: flash-controller@402ec000 {
+			compatible = "nxp,s32k3-c40";
+			reg = <0x402ec000 0x4000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			erase-block-size = <8192>; /* 8KB sector */
+			write-block-size = <8>;    /* 64-bit phrase */
+
+			/*
+			 * S32K358 has 8MB Flash
+			 * Last 48KB is reserved by Secure BAF, application core cannot access it.
+			 */
+			flash0: flash@400000 {
+				compatible = "soc-nv-flash";
+				reg = <0x00400000 DT_SIZE_K(8144)>;
+			};
 		};
 
 		clock: clock-controller@402c8000 {

@@ -1,0 +1,19 @@
+description: NXP S32K3 C40 Flash Controller
+
+compatible: "nxp,s32k3-c40"
+
+include: flash-controller.yaml
+
+properties:
+  reg:
+    required: true
+    
+  write-block-size:
+    type: int
+    required: true
+    description: Flash write block size in bytes (typically 8 for S32K3)
+    
+  erase-block-size:
+    type: int
+    required: true
+    description: Flash erase block size (sector size, typically 8KB for S32K3)
