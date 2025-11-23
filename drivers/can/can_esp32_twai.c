@@ -106,7 +106,7 @@ static void can_esp32_twai_write_reg32(const struct device *dev, uint8_t reg, ui
 {
 	const struct can_sja1000_config *sja1000_config = dev->config;
 	const struct can_esp32_twai_config *twai_config = sja1000_config->custom;
-	mm_reg_t addr = twai_config->base + reg * sizeof(uint32_t);
+	mm_reg_t addr = twai_config->base + (reg * sizeof(uint32_t));
 
 	sys_write32(val, addr);
 }

@@ -575,9 +575,8 @@ static void can_sja1000_handle_receive_irq(const struct device *dev)
 	do {
 		can_sja1000_read_frame(dev, &frame);
 
-#ifndef CONFIG_CAN_ACCEPT_RTR
-		if ((frame.flags & CAN_FRAME_RTR) == 0U) {
-#endif /* !CONFIG_CAN_ACCEPT_RTR */
+		if (IS_ENABLED(CONFIG_CAN_ACCEPT_RTR) ||
+		    ((frame.flags & CAN_FRAME_RTR) == 0U)) {
 			for (int i = 0; i < ARRAY_SIZE(data->filters); i++) {
 				if (!atomic_test_bit(data->rx_allocs, i)) {
 					continue;
@@ -590,9 +589,7 @@ static void can_sja1000_handle_receive_irq(const struct device *dev)
 					}
 				}
 			}
-#ifndef CONFIG_CAN_ACCEPT_RTR
 		}
-#endif /* !CONFIG_CAN_ACCEPT_RTR */
 
 		can_sja1000_write_reg(dev, CAN_SJA1000_CMR, CAN_SJA1000_CMR_RRB);
 		sr = can_sja1000_read_reg(dev, CAN_SJA1000_SR);
@@ -734,7 +731,7 @@ void can_sja1000_isr(const struct device *dev)
 		can_sja1000_handle_error_passive_irq(dev);
 	}
 
-	if (prev_state != data->state && cb != NULL) {
+	if ((prev_state != data->state) && (cb != NULL)) {
 		err_cnt.rx_err_cnt = can_sja1000_read_reg(dev, CAN_SJA1000_RXERR);
 		err_cnt.tx_err_cnt = can_sja1000_read_reg(dev, CAN_SJA1000_TXERR);
 		cb(dev, data->state, err_cnt, cb_data);
@@ -744,6 +741,7 @@ void can_sja1000_isr(const struct device *dev)
 int can_sja1000_init(const struct device *dev)
 {
 	const struct can_sja1000_config *config = dev->config;
+	can_sja1000_write_reg_t write_reg = config->write_reg;
 	struct can_sja1000_data *data = dev->data;
 	struct can_timing timing = { 0 };
 	int err;
@@ -772,18 +770,18 @@ int can_sja1000_init(const struct device *dev)
 	}
 
 	/* Set PeliCAN mode */
-	can_sja1000_write_reg(dev, CAN_SJA1000_CDR, config->cdr | CAN_SJA1000_CDR_CAN_MODE);
+	write_reg(dev, CAN_SJA1000_CDR, config->cdr | CAN_SJA1000_CDR_CAN_MODE);
 
 	/* Set up acceptance code and mask to match any frame (software filtering) */
-	can_sja1000_write_reg(dev, CAN_SJA1000_ACR0, 0x00);
-	can_sja1000_write_reg(dev, CAN_SJA1000_ACR1, 0x00);
-	can_sja1000_write_reg(dev, CAN_SJA1000_ACR2, 0x00);
-	can_sja1000_write_reg(dev, CAN_SJA1000_ACR3, 0x00);
+	write_reg(dev, CAN_SJA1000_ACR0, 0x00);
+	write_reg(dev, CAN_SJA1000_ACR1, 0x00);
+	write_reg(dev, CAN_SJA1000_ACR2, 0x00);
+	write_reg(dev, CAN_SJA1000_ACR3, 0x00);
 
-	can_sja1000_write_reg(dev, CAN_SJA1000_AMR0, 0xFF);
-	can_sja1000_write_reg(dev, CAN_SJA1000_AMR1, 0xFF);
-	can_sja1000_write_reg(dev, CAN_SJA1000_AMR2, 0xFF);
-	can_sja1000_write_reg(dev, CAN_SJA1000_AMR3, 0xFF);
+	write_reg(dev, CAN_SJA1000_AMR0, 0xFF);
+	write_reg(dev, CAN_SJA1000_AMR1, 0xFF);
+	write_reg(dev, CAN_SJA1000_AMR2, 0xFF);
+	write_reg(dev, CAN_SJA1000_AMR3, 0xFF);
 
 	err = can_calc_timing(dev, &timing, config->common.bitrate,
 			      config->common.sample_point);
@@ -802,13 +800,13 @@ int can_sja1000_init(const struct device *dev)
 	}
 
 	/* Set output control */
-	can_sja1000_write_reg(dev, CAN_SJA1000_OCR, config->ocr);
+	write_reg(dev, CAN_SJA1000_OCR, config->ocr);
 
 	/* Clear error counters and error capture */
 	can_sja1000_clear_errors(dev);
 
 	/* Set error warning limit */
-	can_sja1000_write_reg(dev, CAN_SJA1000_EWLR, 96);
+	write_reg(dev, CAN_SJA1000_EWLR, 96);
 
 	/* Set normal mode */
 	data->common.mode = CAN_MODE_NORMAL;
@@ -818,12 +816,12 @@ int can_sja1000_init(const struct device *dev)
 	}
 
 	/* Enable interrupts */
-	can_sja1000_write_reg(dev, CAN_SJA1000_IER,
+	write_reg(dev, CAN_SJA1000_IER,
 #ifdef CONFIG_CAN_STATS
-			      CAN_SJA1000_IER_BEIE | CAN_SJA1000_IER_DOIE |
+		  CAN_SJA1000_IER_BEIE | CAN_SJA1000_IER_DOIE |
 #endif /* CONFIG_CAN_STATS */
-			      CAN_SJA1000_IER_RIE | CAN_SJA1000_IER_TIE |
-			      CAN_SJA1000_IER_EIE | CAN_SJA1000_IER_EPIE);
+		  CAN_SJA1000_IER_RIE | CAN_SJA1000_IER_TIE |
+		  CAN_SJA1000_IER_EIE | CAN_SJA1000_IER_EPIE);
 
 	return 0;
 }
