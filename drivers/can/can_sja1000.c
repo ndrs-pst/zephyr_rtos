@@ -277,14 +277,13 @@ static void can_sja1000_read_frame(const struct device *dev, struct can_frame *f
 	can_sja1000_read_reg_t read_reg = config->read_reg;
 	uint32_t id;
 	uint8_t info;
-	int i;
-
-	memset(frame, 0, sizeof(*frame));
+	uint8_t base_reg;
 
 	info = read_reg(dev, CAN_SJA1000_FRAME_INFO);
-
 	if ((info & CAN_SJA1000_FRAME_INFO_RTR) != 0) {
-		frame->flags |= CAN_FRAME_RTR;
+		frame->flags = CAN_FRAME_RTR;
+	} else {
+		frame->flags = 0;
 	}
 
 	frame->dlc = CAN_SJA1000_FRAME_INFO_DLC_GET(info);
@@ -305,24 +304,25 @@ static void can_sja1000_read_frame(const struct device *dev, struct can_frame *f
 		id |= FIELD_PREP(GENMASK(4, 0),
 				 read_reg(dev, CAN_SJA1000_EFF_ID4) >> 3);
 		frame->id = id;
-
-		if ((frame->flags & CAN_FRAME_RTR) == 0U) {
-			for (i = 0; i < frame->dlc; i++) {
-				frame->data[i] = read_reg(dev, CAN_SJA1000_EFF_DATA + i);
-			}
-		}
+		base_reg = CAN_SJA1000_EFF_DATA;
 	} else {
 		id = FIELD_PREP(GENMASK(10, 3),
 				read_reg(dev, CAN_SJA1000_XFF_ID1));
 		id |= FIELD_PREP(GENMASK(2, 0),
 				 read_reg(dev, CAN_SJA1000_XFF_ID2) >> 5);
 		frame->id = id;
+		base_reg = CAN_SJA1000_SFF_DATA;
+	}
 
-		if ((frame->flags & CAN_FRAME_RTR) == 0U) {
-			for (i = 0; i < frame->dlc; i++) {
-				frame->data[i] = read_reg(dev, CAN_SJA1000_SFF_DATA + i);
-			}
-		}
+	if ((frame->flags & CAN_FRAME_RTR) == 0U) {
+		frame->data[0] = read_reg(dev, base_reg);
+		frame->data[1] = read_reg(dev, base_reg + 1);
+		frame->data[2] = read_reg(dev, base_reg + 2);
+		frame->data[3] = read_reg(dev, base_reg + 3);
+		frame->data[4] = read_reg(dev, base_reg + 4);
+		frame->data[5] = read_reg(dev, base_reg + 5);
+		frame->data[6] = read_reg(dev, base_reg + 6);
+		frame->data[7] = read_reg(dev, base_reg + 7);
 	}
 }
 
@@ -332,10 +332,9 @@ void can_sja1000_write_frame(const struct device *dev, const struct can_frame *f
 	can_sja1000_write_reg_t write_reg = config->write_reg;
 	uint32_t id;
 	uint8_t info;
-	int i;
+	uint8_t base_reg;
 
 	info = CAN_SJA1000_FRAME_INFO_DLC_PREP(frame->dlc);
-
 	if ((frame->flags & CAN_FRAME_RTR) != 0) {
 		info |= CAN_SJA1000_FRAME_INFO_RTR;
 	}
@@ -356,24 +355,25 @@ void can_sja1000_write_frame(const struct device *dev, const struct can_frame *f
 			  FIELD_GET(GENMASK(12, 5), id));
 		write_reg(dev, CAN_SJA1000_EFF_ID4,
 			  FIELD_GET(GENMASK(4, 0), id) << 3);
-
-		if ((frame->flags & CAN_FRAME_RTR) == 0U) {
-			for (i = 0; i < frame->dlc; i++) {
-				write_reg(dev, CAN_SJA1000_EFF_DATA + i, frame->data[i]);
-			}
-		}
+		base_reg = CAN_SJA1000_EFF_DATA;
 	} else {
 		id = frame->id;
 		write_reg(dev, CAN_SJA1000_XFF_ID1,
 			  FIELD_GET(GENMASK(10, 3), id));
 		write_reg(dev, CAN_SJA1000_XFF_ID2,
 			  FIELD_GET(GENMASK(2, 0), id) << 5);
+		base_reg = CAN_SJA1000_SFF_DATA;
+	}
 
-		if ((frame->flags & CAN_FRAME_RTR) == 0U) {
-			for (i = 0; i < frame->dlc; i++) {
-				write_reg(dev, CAN_SJA1000_SFF_DATA + i, frame->data[i]);
-			}
-		}
+	if ((frame->flags & CAN_FRAME_RTR) == 0U) {
+		write_reg(dev, base_reg, frame->data[0]);
+		write_reg(dev, base_reg + 1, frame->data[1]);
+		write_reg(dev, base_reg + 2, frame->data[2]);
+		write_reg(dev, base_reg + 3, frame->data[3]);
+		write_reg(dev, base_reg + 4, frame->data[4]);
+		write_reg(dev, base_reg + 5, frame->data[5]);
+		write_reg(dev, base_reg + 6, frame->data[6]);
+		write_reg(dev, base_reg + 7, frame->data[7]);
 	}
 }
 
@@ -438,14 +438,13 @@ int can_sja1000_add_rx_filter(const struct device *dev, can_rx_callback_t callba
 {
 	struct can_sja1000_data *data = dev->data;
 	int filter_id = -ENOSPC;
-	int i;
 
 	if ((filter->flags & ~(CAN_FILTER_IDE)) != 0) {
 		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(data->filters); i++) {
+	for (int i = 0; i < ARRAY_SIZE(data->filters); i++) {
 		if (!atomic_test_and_set_bit(data->rx_allocs, i)) {
 			filter_id = i;
 			break;
@@ -572,7 +571,6 @@ static void can_sja1000_handle_receive_irq(const struct device *dev)
 	struct can_frame frame;
 	can_rx_callback_t callback;
 	uint8_t sr;
-	int i;
 
 	do {
 		can_sja1000_read_frame(dev, &frame);
@@ -580,7 +578,7 @@ static void can_sja1000_handle_receive_irq(const struct device *dev)
 #ifndef CONFIG_CAN_ACCEPT_RTR
 		if ((frame.flags & CAN_FRAME_RTR) == 0U) {
 #endif /* !CONFIG_CAN_ACCEPT_RTR */
-			for (i = 0; i < ARRAY_SIZE(data->filters); i++) {
+			for (int i = 0; i < ARRAY_SIZE(data->filters); i++) {
 				if (!atomic_test_bit(data->rx_allocs, i)) {
 					continue;
 				}

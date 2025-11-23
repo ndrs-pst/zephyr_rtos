@@ -83,7 +83,7 @@ static uint8_t can_esp32_twai_read_reg(const struct device *dev, uint8_t reg)
 {
 	const struct can_sja1000_config *sja1000_config = dev->config;
 	const struct can_esp32_twai_config *twai_config = sja1000_config->custom;
-	mm_reg_t addr = twai_config->base + reg * sizeof(uint32_t);
+	mm_reg_t addr = twai_config->base + (reg * sizeof(uint32_t));
 
 	return sys_read32(addr) & 0xFF;
 }
@@ -92,7 +92,7 @@ static void can_esp32_twai_write_reg(const struct device *dev, uint8_t reg, uint
 {
 	const struct can_sja1000_config *sja1000_config = dev->config;
 	const struct can_esp32_twai_config *twai_config = sja1000_config->custom;
-	mm_reg_t addr = twai_config->base + reg * sizeof(uint32_t);
+	mm_reg_t addr = twai_config->base + (reg * sizeof(uint32_t));
 
 	sys_write32(val & 0xFF, addr);
 }
