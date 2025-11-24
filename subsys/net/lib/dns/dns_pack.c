@@ -534,7 +534,7 @@ int dns_unpack_name(const uint8_t *msg, int maxlen, const uint8_t *src,
 				return -EMSGSIZE;
 			}
 
-			if ((label_len + 1 >= dest_size) ||
+			if (((size_t)(label_len + 1) >= dest_size) ||
 			    ((curr_src + label_len) >= (msg + maxlen))) {
 				return -EMSGSIZE;
 			}

@@ -405,8 +405,6 @@ static int phy_mc_lan8742a_init(const struct device* dev) {
         return (ret);
     }
 
-    mdio_bus_enable(cfg->mdio_dev);
-
     #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(mc_interrupt_gpio)
     if (cfg->interrupt_gpio.port == NULL) {
         goto skip_int_gpio;
