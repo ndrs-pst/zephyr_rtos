@@ -24,7 +24,7 @@ manifest:
     - name: babblesim
       url-base: https://github.com/BabbleSim
 
-  group-filter: [-babblesim, -optional]
+  group-filter: [-babblesim, -optional, -testing]
 
   #
   # Please add items below based on alphabetical order
@@ -165,7 +165,7 @@ manifest:
         - hal
     - name: hal_bouffalolab
       path: modules/hal/bouffalolab
-      revision: 89df8327276755b5935dc4cc2f2f68e27a8dba3d
+      revision: 4d6677b8323a0f95302cc8098f7279c9ae30369b
       groups:
         - hal
     - name: hal_espressif
@@ -358,11 +358,22 @@ manifest:
     - name: picolibc
       path: modules/lib/picolibc
       revision: ca8b6ebba5226a75545e57a140443168a26ba664
+    - name: psa-arch-tests
+      revision: 87b08682a111ebb085cd8b1ea41d603191d6d146
+      path: modules/tee/tf-m/psa-arch-tests
+      groups:
+        - testing
+        - tee
     - name: segger
       revision: 9f08435a79d41133d7046b7c59d1b25929eda450
       path: modules/debug/segger
       groups:
         - debug
+    - name: tf-m-tests
+      revision: a90702bcb8fadb6f70daf0ffbb13888dfe63fc99
+      path: modules/tee/tf-m/tf-m-tests
+      groups:
+        - testing
     - name: trusted-firmware-a
       revision: 0a29cac8fe0f7bdb835b469d9ea11b8e17377a92
       path: modules/tee/tf-a/trusted-firmware-a
