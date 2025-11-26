@@ -5750,15 +5750,17 @@ West:
     - dleach02
     - mmahadevan108
     - decsny
+    - ZhaoxiangJin
   collaborators:
     - manuargue
     - PetervdPerk-NXP
     - bperseghetti
     - JiafeiPan
-    - ZhaoxiangJin
     - EmilioCBen
     - MaochenWang1
     - axelnxp
+    - zejiang0jason
+    - Holt-Sun
   files:
     - modules/hal_nxp/
   labels:
@@ -5768,6 +5770,7 @@ West:
   status: odd fixes
   collaborators:
     - dleach02
+    - zejiang0jason
   files:
     - modules/Kconfig.vega
   labels:

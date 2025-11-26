@@ -277,7 +277,7 @@ static void can_sja1000_read_frame(const struct device *dev, struct can_frame *f
 	can_sja1000_read_reg_t read_reg = config->read_reg;
 	uint32_t id;
 	uint8_t info;
-	uint8_t base_reg;
+	uint8_t data_reg;
 
 	info = read_reg(dev, CAN_SJA1000_FRAME_INFO);
 	if ((info & CAN_SJA1000_FRAME_INFO_RTR) != 0) {
@@ -304,25 +304,25 @@ static void can_sja1000_read_frame(const struct device *dev, struct can_frame *f
 		id |= FIELD_PREP(GENMASK(4, 0),
 				 read_reg(dev, CAN_SJA1000_EFF_ID4) >> 3);
 		frame->id = id;
-		base_reg = CAN_SJA1000_EFF_DATA;
+		data_reg = CAN_SJA1000_EFF_DATA;
 	} else {
 		id = FIELD_PREP(GENMASK(10, 3),
 				read_reg(dev, CAN_SJA1000_XFF_ID1));
 		id |= FIELD_PREP(GENMASK(2, 0),
 				 read_reg(dev, CAN_SJA1000_XFF_ID2) >> 5);
 		frame->id = id;
-		base_reg = CAN_SJA1000_SFF_DATA;
+		data_reg = CAN_SJA1000_SFF_DATA;
 	}
 
 	if ((frame->flags & CAN_FRAME_RTR) == 0U) {
-		frame->data[0] = read_reg(dev, base_reg);
-		frame->data[1] = read_reg(dev, base_reg + 1);
-		frame->data[2] = read_reg(dev, base_reg + 2);
-		frame->data[3] = read_reg(dev, base_reg + 3);
-		frame->data[4] = read_reg(dev, base_reg + 4);
-		frame->data[5] = read_reg(dev, base_reg + 5);
-		frame->data[6] = read_reg(dev, base_reg + 6);
-		frame->data[7] = read_reg(dev, base_reg + 7);
+		frame->data[0] = read_reg(dev, data_reg);
+		frame->data[1] = read_reg(dev, data_reg + 1);
+		frame->data[2] = read_reg(dev, data_reg + 2);
+		frame->data[3] = read_reg(dev, data_reg + 3);
+		frame->data[4] = read_reg(dev, data_reg + 4);
+		frame->data[5] = read_reg(dev, data_reg + 5);
+		frame->data[6] = read_reg(dev, data_reg + 6);
+		frame->data[7] = read_reg(dev, data_reg + 7);
 	}
 }
 
@@ -332,7 +332,7 @@ void can_sja1000_write_frame(const struct device *dev, const struct can_frame *f
 	can_sja1000_write_reg_t write_reg = config->write_reg;
 	uint32_t id;
 	uint8_t info;
-	uint8_t base_reg;
+	uint8_t data_reg;
 
 	info = CAN_SJA1000_FRAME_INFO_DLC_PREP(frame->dlc);
 	if ((frame->flags & CAN_FRAME_RTR) != 0) {
@@ -355,25 +355,25 @@ void can_sja1000_write_frame(const struct device *dev, const struct can_frame *f
 			  FIELD_GET(GENMASK(12, 5), id));
 		write_reg(dev, CAN_SJA1000_EFF_ID4,
 			  FIELD_GET(GENMASK(4, 0), id) << 3);
-		base_reg = CAN_SJA1000_EFF_DATA;
+		data_reg = CAN_SJA1000_EFF_DATA;
 	} else {
 		id = frame->id;
 		write_reg(dev, CAN_SJA1000_XFF_ID1,
 			  FIELD_GET(GENMASK(10, 3), id));
 		write_reg(dev, CAN_SJA1000_XFF_ID2,
 			  FIELD_GET(GENMASK(2, 0), id) << 5);
-		base_reg = CAN_SJA1000_SFF_DATA;
+		data_reg = CAN_SJA1000_SFF_DATA;
 	}
 
 	if ((frame->flags & CAN_FRAME_RTR) == 0U) {
-		write_reg(dev, base_reg, frame->data[0]);
-		write_reg(dev, base_reg + 1, frame->data[1]);
-		write_reg(dev, base_reg + 2, frame->data[2]);
-		write_reg(dev, base_reg + 3, frame->data[3]);
-		write_reg(dev, base_reg + 4, frame->data[4]);
-		write_reg(dev, base_reg + 5, frame->data[5]);
-		write_reg(dev, base_reg + 6, frame->data[6]);
-		write_reg(dev, base_reg + 7, frame->data[7]);
+		write_reg(dev, data_reg, frame->data[0]);
+		write_reg(dev, data_reg + 1, frame->data[1]);
+		write_reg(dev, data_reg + 2, frame->data[2]);
+		write_reg(dev, data_reg + 3, frame->data[3]);
+		write_reg(dev, data_reg + 4, frame->data[4]);
+		write_reg(dev, data_reg + 5, frame->data[5]);
+		write_reg(dev, data_reg + 6, frame->data[6]);
+		write_reg(dev, data_reg + 7, frame->data[7]);
 	}
 }
 
