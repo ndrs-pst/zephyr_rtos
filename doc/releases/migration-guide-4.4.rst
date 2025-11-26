@@ -37,6 +37,8 @@ Boards
 Device Drivers and Devicetree
 *****************************
 
+.. zephyr-keep-sorted-start re(^\w)
+
 Ethernet
 ========
 
@@ -61,7 +63,7 @@ MDIO
   (:github:`99690`).
 
 QSPI
-===
+====
 
 * :dtcompatible:`st,stm32-qspi` compatible nodes configured with ``dual-flash`` property
   now need to also include the ``ssht-enable`` property to reenable sample shifting.
@@ -93,6 +95,8 @@ STM32
   * ``CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT``
 
   * ``CONFIG_POWER_SUPPLY_EXTERNAL_SOURCE``
+
+.. zephyr-keep-sorted-stop
 
 Bluetooth
 *********
