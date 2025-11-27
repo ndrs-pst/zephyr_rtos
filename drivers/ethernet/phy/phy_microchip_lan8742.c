@@ -264,14 +264,14 @@ static int phy_lan8742_read(const struct device *dev, uint16_t reg_addr, uint32_
 {
 	const struct phy_lan8742_dev_config *const cfg = dev->config;
 
-	return mdio_read(cfg->mdio, cfg->phy_addr, reg_addr, (uint16_t *)data);
+	return mdio_read(cfg->mdio, cfg->phy_addr, (uint8_t)reg_addr, (uint16_t *)data);
 }
 
 static int phy_lan8742_write(const struct device *dev, uint16_t reg_addr, uint32_t data)
 {
 	const struct phy_lan8742_dev_config *const cfg = dev->config;
 
-	return mdio_write(cfg->mdio, cfg->phy_addr, reg_addr, (uint16_t)data);
+	return mdio_write(cfg->mdio, cfg->phy_addr, (uint8_t)reg_addr, (uint16_t)data);
 }
 
 static int phy_lan8742_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds,
