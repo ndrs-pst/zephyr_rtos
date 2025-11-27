@@ -19,6 +19,26 @@ properties:
     type: phandle-array
     description: GPIO connected to MAC PHY reset signal pin. Reset is active low.
 
+  led1-function-select:
+    type: string
+    default: "link-activity"
+    description: LED1 Function Select
+    enum:
+      - "link-activity"
+      - "#int"
+      - "#pme"
+      - "link-speed"
+
+  led2-function-select:
+    type: string
+    default: "link-speed"
+    description: LED1 Function Select
+    enum:
+      - "link-activity"
+      - "#int"
+      - "#pme"
+      - "link-speed"
+
   default-speeds:
     default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",
               "100BASE Full-Duplex"]
