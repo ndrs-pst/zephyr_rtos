@@ -32,12 +32,12 @@ properties:
   led2-function-select:
     type: string
     default: "link-speed"
-    description: LED1 Function Select
+    description: LED2 Function Select
     enum:
-      - "link-activity"
+      - "link-speed"
       - "#int"
       - "#pme"
-      - "link-speed"
+      - "link-activity"
 
   default-speeds:
     default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",

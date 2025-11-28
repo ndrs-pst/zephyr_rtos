@@ -20,6 +20,8 @@ LOG_MODULE_REGISTER(microchip_lan8742, CONFIG_PHY_LOG_LEVEL);
 struct phy_lan8742_dev_config {
     uint8_t phy_addr;
     enum phy_link_speed default_speeds;
+    uint16_t led1_func_sel;
+    uint16_t led2_func_sel;
     const struct device* const mdio;
     struct gpio_dt_spec gpio_reset;
 };
@@ -35,10 +37,12 @@ struct phy_lan8742_dev_data {
     k_timepoint_t autoneg_timeout;
 };
 
-#define MII_INVALID_PHY_ID UINT32_MAX
+#define MII_INVALID_PHY_ID                  UINT32_MAX
 
 /* How often to poll auto-negotiation status while waiting for it to complete */
-#define MII_AUTONEG_POLL_INTERVAL_MS 100
+#define MII_AUTONEG_POLL_INTERVAL_MS        100
+#define LAN8742_MMDACR_MMD_DEVAD            3
+#define LAN8742_MMDAADR_WUCSR_INDEX         32784
 
 static void phy_lan8742_invoke_link_cb(const struct device* dev);
 
@@ -394,6 +398,7 @@ static int phy_lan8742_init(const struct device* dev) {
     const struct phy_lan8742_dev_config* const cfg = dev->config;
     struct phy_lan8742_dev_data* const ctx = dev->data;
     uint32_t phy_id;
+    uint16_t wucsr;
     bool is_ready;
     int ret;
 
@@ -420,6 +425,16 @@ static int phy_lan8742_init(const struct device* dev) {
         LOG_INF("PHY (%d) ID 0x%X", cfg->phy_addr, phy_id);
     }
 
+    wucsr = ((cfg->led1_func_sel << 13) | (cfg->led2_func_sel << 11));
+    ret = mdio_write_c45(cfg->mdio, cfg->phy_addr,
+                         LAN8742_MMDACR_MMD_DEVAD,
+                         LAN8742_MMDAADR_WUCSR_INDEX,
+                         wucsr);
+    if ((ret < 0) && (ret != -ENOSYS)) {
+        LOG_ERR("Failed to configure LED functions (%d)", ret);
+        return (ret);
+    }
+
     k_work_init_delayable(&ctx->monitor_work, phy_lan8742_monitor_work);
 
     /* Advertise default speeds */
@@ -440,6 +455,8 @@ static int phy_lan8742_init(const struct device* dev) {
     static const struct phy_lan8742_dev_config phy_lan8742_dev_config_##n = { \
         .phy_addr       = DT_INST_REG_ADDR(n),                  \
         .default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),  \
+        .led1_func_sel  = DT_ENUM_IDX_OR(n, led1_function_select, 0), \
+        .led2_func_sel  = DT_ENUM_IDX_OR(n, led2_function_select, 0), \
         .mdio           = DEVICE_DT_GET(DT_INST_PARENT(n)),     \
         .gpio_reset     = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}) \
     }
