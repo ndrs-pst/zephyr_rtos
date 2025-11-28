@@ -516,7 +516,7 @@ static DEVICE_API(counter, counter_stm32_driver_api) = {
         }                                                       \
     } while (0)
 
-void counter_stm32_irq_handler(const struct device* dev) {
+static void counter_stm32_irq_handler_cc(const struct device* dev) {
     const struct counter_stm32_config* config = dev->config;
     struct counter_stm32_data const* data = dev->data;
     TIM_TypeDef* timer = config->timer;
@@ -534,13 +534,30 @@ void counter_stm32_irq_handler(const struct device* dev) {
             __fallthrough;
         case 1U :
             TIM_IRQ_HANDLE_CC(timer, 1);
+        __fallthrough;
+        default:
+            break;
     }
+}
+
+static void counter_stm32_irq_handler_up(const struct device* dev) {
+    const struct counter_stm32_config* config = dev->config;
+    TIM_TypeDef* timer = config->timer;
 
     /* TIM Update event */
     if (LL_TIM_IsActiveFlag_UPDATE(timer) && LL_TIM_IsEnabledIT_UPDATE(timer)) {
         LL_TIM_ClearFlag_UPDATE(timer);
         counter_stm32_top_irq_handle(dev);
     }
+}
+
+static void counter_stm32_irq_handler_brk_up_trg_com(const struct device* dev) {
+    counter_stm32_irq_handler_up(dev);
+}
+
+__maybe_unused static void counter_stm32_irq_handler_global(const struct device* dev) {
+    counter_stm32_irq_handler_cc(dev);
+    counter_stm32_irq_handler_brk_up_trg_com(dev);
 }
 
 #define TIMER(idx) DT_INST_PARENT(idx)
@@ -559,7 +576,7 @@ void counter_stm32_irq_handler(const struct device* dev) {
                             bsp_hal_tmr_isr, 0)),               \
         (IRQ_CONNECT(DT_IRQ_BY_NAME(TIMER(idx), name, irq),     \
                      DT_IRQ_BY_NAME(TIMER(idx), name, priority),\
-                     counter_stm32_irq_handler,                 \
+                     counter_stm32_irq_handler_##name,          \
                      DEVICE_DT_INST_GET(idx), 0))               \
     )                                                           \
     irq_enable(DT_IRQ_BY_NAME(TIMER(idx), name, irq));          \
@@ -575,6 +592,10 @@ void counter_stm32_irq_handler(const struct device* dev) {
     static struct counter_stm32_ch_data counter##idx##_ch_data[TIMER_MAX_CH]; \
                                                                 \
     static void counter_##idx##_stm32_irq_config(const struct device* dev) { \
+        IF_ENABLED(DT_IRQ_HAS_NAME(TIMER(idx), up),             \
+            (IRQ_CONNECT_AND_ENABLE_BY_NAME(idx, up)))          \
+        IF_ENABLED(DT_IRQ_HAS_NAME(TIMER(idx), brk_up_trg_com), \
+            (IRQ_CONNECT_AND_ENABLE_BY_NAME(idx, brk_up_trg_com))) \
         COND_CODE_1(DT_IRQ_HAS_NAME(TIMER(idx), cc),            \
             (IRQ_CONNECT_AND_ENABLE_BY_NAME(idx, cc)),          \
         (COND_CODE_1(DT_IRQ_HAS_NAME(TIMER(idx), global),       \
@@ -599,7 +620,9 @@ void counter_stm32_irq_handler(const struct device* dev) {
         .pclken = pclken_##idx,                                 \
         .pclk_len = DT_NUM_CLOCKS(TIMER(idx)),                  \
         .irq_config_func = counter_##idx##_stm32_irq_config,    \
-        .irqn = DT_IRQN(TIMER(idx)),                            \
+        .irqn = COND_CODE_1(DT_IRQ_HAS_NAME(TIMER(idx), cc),    \
+                            (DT_IRQ_BY_NAME(TIMER(idx), cc, irq)), \
+                            (DT_IRQ_BY_NAME(TIMER(idx), global, irq))), \
         .reset = RESET_DT_SPEC_GET(TIMER(idx)),                 \
     };                                                          \
                                                                 \
@@ -617,9 +640,14 @@ DT_INST_FOREACH_STATUS_OKAY(COUNTER_DEVICE_INIT)
 #include "mcu_reg_stub.h"
 
 #define STM32_COUNTER_CFG_REG_INIT(idx)     \
-    zephyr_counter_cfg_reg_init(&counter##idx##_config);
+    zephyr_counter_cfg_reg_init(DEVICE_DT_GET(DT_DRV_INST(idx)), \
+                                &counter##idx##_data, &counter##idx##_config);
 
-void zephyr_counter_cfg_reg_init(struct counter_stm32_config* cfg) {
+void zephyr_counter_cfg_reg_init(const struct device* dev,
+                                 struct counter_stm32_data* data,
+                                 struct counter_stm32_config* cfg) {
+    int rc;
+
     switch ((uintptr_t)cfg->timer) {
         case TIM1_BASE :
             cfg->timer = (TIM_TypeDef*)ut_mcu_tim1_ptr;
@@ -656,6 +684,12 @@ void zephyr_counter_cfg_reg_init(struct counter_stm32_config* cfg) {
         default :
             // pass
             break;
+    }
+
+    rc = dev->ops.init(dev);
+    if (rc == 0) {
+        dev->state->initialized = true;
+        dev->state->init_res = 0U;
     }
 }
 
