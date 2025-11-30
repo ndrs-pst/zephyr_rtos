@@ -1600,6 +1600,62 @@ void shell_fprintf_error(struct shell const* sh, const char* fmt, ...) {
     va_end(args);
 }
 
+void shell_hexdump_line_width(const struct shell* sh, unsigned int offset,
+                              uint8_t const* data, size_t len, uint8_t width) {
+    uint8_t group_size;
+    int i;
+
+    __ASSERT_NO_MSG(sh);
+
+    if ((width % 8) == 0) {
+        group_size = (width / 8);           /* Convert bit width to bytes */
+    }
+    else {
+        group_size = 1;                     /* Default to byte-wise grouping */
+    }
+
+    shell_fprintf_normal(sh, "%08X: ", offset);
+
+    /* Print hex values with width-based grouping */
+    for (i = 0; i < SHELL_HEXDUMP_BYTES_IN_LINE; i++) {
+        if (i < len) {
+            shell_fprintf_normal(sh, "%02X", data[i]);
+        }
+        else {
+            shell_fprintf_normal(sh, "  ");
+        }
+
+        /* Add spacing logic: after each group, except at line boundaries */
+        bool is_group_end = (((i + 1) % group_size) == 0);
+        bool is_half_line = ((i + 1) == 8);
+        bool is_line_end  = ((i + 1) >= SHELL_HEXDUMP_BYTES_IN_LINE);
+
+        if (is_group_end || is_line_end) {
+            shell_fprintf_normal(sh, is_half_line ? "  " : " ");
+        }
+    }
+
+    shell_fprintf_normal(sh, "|");
+
+    for (i = 0; i < SHELL_HEXDUMP_BYTES_IN_LINE; i++) {
+        if (i > 0 && !(i % 8)) {
+            shell_fprintf_normal(sh, " ");
+        }
+
+        if (i < len) {
+            char c = data[i];
+
+            shell_fprintf_normal(sh, "%c",
+                                 isprint((int)c) != 0 ? c : '.');
+        }
+        else {
+            shell_fprintf_normal(sh, " ");
+        }
+    }
+
+    shell_print(sh, "|");
+}
+
 void shell_hexdump_line(const struct shell* sh, unsigned int offset,
                         uint8_t const* data, size_t len) {
     __ASSERT_NO_MSG(sh);
@@ -1614,8 +1670,7 @@ void shell_hexdump_line(const struct shell* sh, unsigned int offset,
         }
 
         if (i < len) {
-            shell_fprintf_normal(sh, "%02X ",
-                                 data[i] & 0xFF);
+            shell_fprintf_normal(sh, "%02X ", data[i]);
         }
         else {
             shell_fprintf_normal(sh, "   ");

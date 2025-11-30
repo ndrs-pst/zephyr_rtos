@@ -1226,13 +1226,31 @@ void shell_vfprintf(struct shell const* sh, enum shell_vt100_color color,
                     char const* fmt, va_list args);
 
 /**
+ * @brief Print a line of data in hexadecimal format with given width.
+ *
+ * Each line shows the offset, bytes (grouped by width) and then ASCII representation.
+ *
+ * For example, with width 32:
+ * 00008010: 20250020 2f480008  80050020 af460020
+ *    | %. /H.. ... .F. |
+ *
+ * @param sh Pointer to the shell instance.
+ * @param offset Offset to show for this line.
+ * @param data Pointer to data.
+ * @param len Length of data.
+ * @param width Width of the line.
+ */
+void shell_hexdump_line_width(const struct shell* sh, unsigned int offset,
+                              uint8_t const* data, size_t len, uint8_t width);
+
+/**
  * @brief Print a line of data in hexadecimal format.
  *
  * Each line shows the offset, bytes and then ASCII representation.
  *
  * For example:
  *
- * 00008010: 20 25 00 20 2f 48 00 08  80 05 00 20 af 46 00
+ * 00008010: 20 25 00 20 2f 48 00 08  80 05 00 20 af 46 00 20
  *    | %. /H.. ... .F. |
  *
  * @param[in] sh     Pointer to the shell instance.

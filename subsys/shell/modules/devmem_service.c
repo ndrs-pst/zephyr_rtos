@@ -85,7 +85,8 @@ static int memory_dump(const struct shell* sh, mem_addr_t phys_addr, size_t size
             }
         }
 
-        shell_hexdump_line(sh, addr, hex_data, MIN(size, SHELL_HEXDUMP_BYTES_IN_LINE));
+        shell_hexdump_line_width(sh, addr, hex_data,
+                                 MIN(size, SHELL_HEXDUMP_BYTES_IN_LINE), width);
     }
 
     return (0);
