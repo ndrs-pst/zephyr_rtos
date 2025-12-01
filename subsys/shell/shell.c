@@ -1247,7 +1247,7 @@ static int instance_init(const struct shell* sh,
     ctx->vt100_ctx.cons.terminal_wid = CONFIG_SHELL_DEFAULT_TERMINAL_WIDTH;
     ctx->vt100_ctx.cons.terminal_hei = CONFIG_SHELL_DEFAULT_TERMINAL_HEIGHT;
 
-    #if defined(CONFIG_SHELL_PROMPT_CHANGE) && CONFIG_SHELL_PROMPT_CHANGE
+    #if IS_ENABLED(CONFIG_SHELL_PROMPT_CHANGE)
     shell_prompt_change(sh, sh->default_prompt);
     #else
     ctx->prompt = sh->default_prompt;
@@ -1705,7 +1705,7 @@ void shell_hexdump(const struct shell* sh, uint8_t const* data, size_t len) {
 }
 
 int shell_prompt_change(const struct shell* sh, char const* prompt) {
-#if defined(CONFIG_SHELL_PROMPT_CHANGE) && CONFIG_SHELL_PROMPT_CHANGE
+    #if IS_ENABLED(CONFIG_SHELL_PROMPT_CHANGE)
     __ASSERT_NO_MSG(sh);
 
     if (prompt == NULL) {
