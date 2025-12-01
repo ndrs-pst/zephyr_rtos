@@ -1602,17 +1602,10 @@ void shell_fprintf_error(struct shell const* sh, const char* fmt, ...) {
 
 void shell_hexdump_line_width(const struct shell* sh, unsigned int offset,
                               uint8_t const* data, size_t len, uint8_t width) {
-    uint8_t group_size;
+    uint8_t group_size = ((width & 7) != 0) ? 1 : (width / 8);
     int i;
 
     __ASSERT_NO_MSG(sh);
-
-    if ((width % 8) == 0) {
-        group_size = (width / 8);           /* Convert bit width to bytes */
-    }
-    else {
-        group_size = 1;                     /* Default to byte-wise grouping */
-    }
 
     shell_fprintf_normal(sh, "%08X: ", offset);
 
@@ -1625,20 +1618,17 @@ void shell_hexdump_line_width(const struct shell* sh, unsigned int offset,
             shell_fprintf_normal(sh, "  ");
         }
 
-        /* Add spacing logic: after each group, except at line boundaries */
-        bool is_group_end = (((i + 1) % group_size) == 0);
-        bool is_half_line = ((i + 1) == 8);
-        bool is_line_end  = ((i + 1) >= SHELL_HEXDUMP_BYTES_IN_LINE);
-
-        if (is_group_end || is_line_end) {
-            shell_fprintf_normal(sh, is_half_line ? "  " : " ");
+        /* Add space after each group or at line end; double space at mid-line */
+        if ((((i + 1) % group_size) == 0) ||
+            ((i + 1) >= SHELL_HEXDUMP_BYTES_IN_LINE)) {
+            shell_fprintf_normal(sh, ((i + 1) == 8) ? "  " : " ");
         }
     }
 
     shell_fprintf_normal(sh, "|");
 
     for (i = 0; i < SHELL_HEXDUMP_BYTES_IN_LINE; i++) {
-        if (i > 0 && !(i % 8)) {
+        if ((i > 0) && ((i % 8) == 0)) {
             shell_fprintf_normal(sh, " ");
         }
 
@@ -1646,7 +1636,7 @@ void shell_hexdump_line_width(const struct shell* sh, unsigned int offset,
             char c = data[i];
 
             shell_fprintf_normal(sh, "%c",
-                                 isprint((int)c) != 0 ? c : '.');
+                                 (isprint((int)c) != 0) ? c : '.');
         }
         else {
             shell_fprintf_normal(sh, " ");
@@ -1665,7 +1655,7 @@ void shell_hexdump_line(const struct shell* sh, unsigned int offset,
     shell_fprintf_normal(sh, "%08X: ", offset);
 
     for (i = 0; i < SHELL_HEXDUMP_BYTES_IN_LINE; i++) {
-        if (i > 0 && !(i % 8)) {
+        if ((i > 0) && ((i % 8) == 0)) {
             shell_fprintf_normal(sh, " ");
         }
 
@@ -1688,7 +1678,7 @@ void shell_hexdump_line(const struct shell* sh, unsigned int offset,
             char c = data[i];
 
             shell_fprintf_normal(sh, "%c",
-                                 isprint((int)c) != 0 ? c : '.');
+                                 (isprint((int)c) != 0) ? c : '.');
         }
         else {
             shell_fprintf_normal(sh, " ");
