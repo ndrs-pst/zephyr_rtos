@@ -1015,8 +1015,8 @@
 
 	die_temp: dietemp {
 		compatible = "st,stm32-temp-cal";
-		ts-cal1-addr = <0x0BFA0710>;
-		ts-cal2-addr = <0x0BFA0742>;
+		ts-cal1-addr = <0x0bfa0710>;
+		ts-cal2-addr = <0x0bfa0742>;
 		ts-cal1-temp = <30>;
 		ts-cal2-temp = <130>;
 		ts-cal-vrefanalog = <3000>;
@@ -1027,7 +1027,7 @@
 
 	vref1: vref_1 {
 		compatible = "st,stm32-vref";
-		vrefint-cal-addr = <0x0BFA07A5>;
+		vrefint-cal-addr = <0x0bfa07a5>;
 		vrefint-cal-mv = <3000>;
 		vrefint-cal-resolution = <14>;
 		io-channels = <&adc1 0>;
@@ -1036,7 +1036,7 @@
 
 	vref4: vref_4 {
 		compatible = "st,stm32-vref";
-		vrefint-cal-addr = <0x0BFA07A5>;
+		vrefint-cal-addr = <0x0bfa07a5>;
 		vrefint-cal-mv = <3000>;
 		vrefint-cal-resolution = <14>;
 		io-channels = <&adc4 0>;
