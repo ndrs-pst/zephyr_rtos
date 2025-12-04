@@ -110,6 +110,11 @@ STM32
 
   * ``CONFIG_POWER_SUPPLY_EXTERNAL_SOURCE``
 
+USB
+===
+
+  * :dtcompatible:`maxim,max3421e_spi` has been renamed to :dtcompatible:`maxim,max3421e-spi`.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
@@ -156,6 +161,12 @@ JWT
 * Previously deprecated ``CONFIG_JWT_SIGN_RSA_LEGACY`` is removed. This removal happens before
   the usual deprecation period of 2 releases because it has been agreed (see :github:`97660`)
   that Mbed TLS is an external module, so normal deprecation rules do not apply in this case.
+
+Libsbc
+======
+
+* Libsbc (sbc.c and sbc.h) is moved under the Bluetooth subsystem. The sbc.h is in
+  include/zephyr/bluetooth now.
 
 Modules
 *******

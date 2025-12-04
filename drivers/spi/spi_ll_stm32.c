@@ -1757,11 +1757,13 @@ static int spi_stm32_ll_transceive_dma(const struct device* dev,
     spi_stm32_cs_control(dev, true);
 
     uint8_t word_size_bytes = SPI_WORD_SIZE_GET(config->operation) / BITS_PER_BYTE;
+    struct dma_config* rx_cfg = &data->dma_rx.dma_cfg;
+    struct dma_config* tx_cfg = &data->dma_tx.dma_cfg;
 
-    data->dma_rx.dma_cfg.source_data_size = word_size_bytes;
-    data->dma_rx.dma_cfg.dest_data_size   = word_size_bytes;
-    data->dma_tx.dma_cfg.source_data_size = word_size_bytes;
-    data->dma_tx.dma_cfg.dest_data_size   = word_size_bytes;
+    rx_cfg->source_data_size = rx_cfg->source_burst_length = word_size_bytes;
+    rx_cfg->dest_data_size   = rx_cfg->dest_burst_length   = word_size_bytes;
+    tx_cfg->source_data_size = tx_cfg->source_burst_length = word_size_bytes;
+    tx_cfg->dest_data_size   = tx_cfg->dest_burst_length   = word_size_bytes;
 
     while ((data->ctx.rx_len > 0) || (data->ctx.tx_len > 0)) {
         size_t dma_len;
@@ -2133,29 +2135,32 @@ static int spi_stm32_init(const struct device* dev) {
 #endif /* CONFIG_SPI_STM32_INTERRUPT */
 
 #define SPI_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)    \
-    .dma_dev = DEVICE_DT_GET(STM32_DMA_CTLR(index, dir)),       \
-    .channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),  \
-    .dma_cfg = {                            \
-        .dma_slot            = STM32_DMA_SLOT(index, dir, slot),\
-        .channel_direction   = STM32_DMA_CONFIG_DIRECTION(      \
+    .dma_dev = DEVICE_DT_GET(STM32_DMA_CTLR(index, dir)),               \
+    .channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),          \
+    .dma_cfg = {                                                        \
+        .dma_slot            = STM32_DMA_SLOT(index, dir, slot),        \
+        .channel_direction   = STM32_DMA_CONFIG_DIRECTION(              \
                                   STM32_DMA_CHANNEL_CONFIG(index, dir)),\
         .source_data_size    = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(  \
                                   STM32_DMA_CHANNEL_CONFIG(index, dir)),\
         .dest_data_size      = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE( \
                                   STM32_DMA_CHANNEL_CONFIG(index, dir)),\
-        .source_burst_length = 1, /* SINGLE transfer */         \
-        .dest_burst_length   = 1, /* SINGLE transfer */         \
-        .channel_priority    = STM32_DMA_CONFIG_PRIORITY(       \
-                                  STM32_DMA_CHANNEL_CONFIG(index, dir)),\
-        .dma_callback        = spi_stm32_dma_callback,          \
-        .block_count         = 2,           \
-    },                                      \
-    .src_addr_increment = STM32_DMA_CONFIG_##src_dev##_ADDR_INC(\
+        /* use single transfers (burst length = data size) */           \
+        .source_burst_length = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(  \
+            STM32_DMA_CHANNEL_CONFIG(index, dir)),                      \
+        .dest_burst_length = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(   \
+            STM32_DMA_CHANNEL_CONFIG(index, dir)),                      \
+        .channel_priority = STM32_DMA_CONFIG_PRIORITY(                  \
+            STM32_DMA_CHANNEL_CONFIG(index, dir)),                      \
+        .dma_callback        = spi_stm32_dma_callback,                  \
+        .block_count         = 2,                                       \
+    },                                                                  \
+    .src_addr_increment = STM32_DMA_CONFIG_##src_dev##_ADDR_INC(        \
                              STM32_DMA_CHANNEL_CONFIG(index, dir)),     \
     .dst_addr_increment = STM32_DMA_CONFIG_##dest_dev##_ADDR_INC(       \
                              STM32_DMA_CHANNEL_CONFIG(index, dir)),     \
-    .fifo_threshold     = STM32_DMA_FEATURES_FIFO_THRESHOLD(    \
-                             STM32_DMA_FEATURES(index, dir)),   \
+    .fifo_threshold     = STM32_DMA_FEATURES_FIFO_THRESHOLD(            \
+                             STM32_DMA_FEATURES(index, dir)),           \
 
 #ifdef CONFIG_SPI_STM32_DMA
 #define SPI_DMA_CHANNEL(id, dir, DIR, src, dest)            \

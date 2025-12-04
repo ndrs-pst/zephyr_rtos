@@ -195,7 +195,7 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: 89754d87258945ceb1cff8ecee0ddd8852396ae8
+      revision: 5dd7bc0858d29b405891ad8d6b3e911b4003ebca
       path: modules/hal/microchip
       groups:
         - hal
@@ -210,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 38be2ed55db5ffd0ce80bd96e8cdc32a6ae2e72a
+      revision: f923db5ec61e1984f469132e51108be4c5b3a6f0
       path: modules/hal/nxp
       groups:
         - hal
