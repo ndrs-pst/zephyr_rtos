@@ -83,6 +83,12 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w)
 
+* Audio
+
+  * :c:macro:`PDM_DT_IO_CFG_GET`
+  * :c:macro:`PDM_DT_HAS_LEFT_CHANNEL`
+  * :c:macro:`PDM_DT_HAS_RIGHT_CHANNEL`
+
 * Bluetooth
 
   * Host
@@ -111,6 +117,11 @@ New APIs and options
 
   * :dtcompatible:`jedec,mspi-nor` now allows MSPI configuration of read, write and
     control commands separately via devicetree.
+
+* Modem
+
+  * :kconfig:option:`CONFIG_MODEM_HL78XX_AT_SHELL`
+  * :kconfig:option:`CONFIG_MODEM_HL78XX_AIRVANTAGE`
 
 * NVMEM
 

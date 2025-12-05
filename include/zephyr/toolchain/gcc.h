@@ -361,7 +361,7 @@ do {                        \
 
 #ifndef __deprecated_version
 #define __deprecated_version(version) \
-	__attribute__((deprecated("planned removal in v" #version)))
+    __attribute__((deprecated("planned removal in v" #version)))
 #endif
 
 #ifndef __attribute_const__
@@ -623,7 +623,7 @@ do {                        \
  * to generate named symbol/value pairs for kconfigs.
  */
 
-#if defined(CONFIG_ARM)
+#if defined(CONFIG_ARM) || (defined(CONFIG_ARCH_POSIX) && defined(__arm__))
 
 /*
  * GNU/ARM backend does not have a proper operand modifier which does not
@@ -643,19 +643,9 @@ do {                        \
             "\n\t.equ\t" #name "," #value           \
             "\n\t.type\t" #name ",%object")
 
-#elif defined(CONFIG_X86)
-
-#define GEN_ABSOLUTE_SYM(name, value)               \
-    __asm__(".globl\t" #name "\n\t.equ\t" #name     \
-            ",%c0"                                  \
-            "\n\t.type\t" #name ",@object" :  : "n"(value))
-
-#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
-    __asm__(".globl\t" #name                        \
-            "\n\t.equ\t" #name "," #value           \
-            "\n\t.type\t" #name ",@object")
-
-#elif defined(CONFIG_ARC) || defined(CONFIG_ARM64)
+#elif defined(CONFIG_ARC) || defined(CONFIG_ARM64) \
+    || defined(CONFIG_ARCH_POSIX) /*&& (__x86_64 or __i*86 or __aarch64__)*/ \
+    || defined(CONFIG_X86)
 
 #define GEN_ABSOLUTE_SYM(name, value)               \
     __asm__(".globl\t" #name "\n\t.equ\t" #name     \
@@ -679,17 +669,6 @@ do {                        \
     __asm__(".globl\t" #name                        \
             "\n\t.equ\t" #name "," #value           \
             "\n\t.type\t" #name ",%object")
-
-#elif defined(CONFIG_ARCH_POSIX)
-#define GEN_ABSOLUTE_SYM(name, value)               \
-    __asm__(".globl\t" #name "\n\t.equ\t" #name     \
-            ",%c0"                                  \
-            "\n\t.type\t" #name ",@object" :  : "n"(value))
-
-#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
-    __asm__(".globl\t" #name                        \
-            "\n\t.equ\t" #name "," #value           \
-            "\n\t.type\t" #name ",@object")
 
 #elif defined(CONFIG_SPARC)
 #define GEN_ABSOLUTE_SYM(name, value)               \
