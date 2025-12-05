@@ -41,6 +41,11 @@ The following sections provide detailed lists of changes by component.
 Security Vulnerability Related
 ******************************
 
+The following CVEs are addressed by this release:
+
+* :cve:`2025-53022` `(TF-M) FWU does not check the length of the TLV’s payload
+  <https://trustedfirmware-m.readthedocs.io/en/latest/security/security_advisories/fwu_tlv_payload_out_of_bounds_vulnerability.html>`_
+
 API Changes
 ***********
 
@@ -114,6 +119,17 @@ New APIs and options
     * :kconfig:option:`CONFIG_NVMEM_FLASH`
     * :kconfig:option:`CONFIG_NVMEM_FLASH_WRITE`
 
+* PWM
+
+  * Extended API with PWM events
+
+    * :c:struct:`pwm_event_callback` to hold a pwm event callback
+    * :c:func:`pwm_init_event_callback` to help initialize a :c:struct:`pwm_event_callback` object
+    * :c:func:`pwm_add_event_callback` to add a callback
+    * :c:func:`pwm_remove_event_callback` to remove a callback
+    * :c:member:`manage_event_callback` in :c:struct:`pwm_driver_api` to manage pwm events
+    * :kconfig:option:`CONFIG_PWM_EVENT`
+
 * Power
 
   * The new ``voltage-scale`` property of :dtcompatible:`st,stm32u5-pwr` can be used to
@@ -169,6 +185,11 @@ Libraries / Subsystems
 
 Other notable changes
 *********************
+
+* TF-M was updated to version 2.2.2 (from 2.2.0). The release notes can be found at:
+
+  * https://trustedfirmware-m.readthedocs.io/en/tf-mv2.2.2/releases/2.2.1.html
+  * https://trustedfirmware-m.readthedocs.io/en/tf-mv2.2.2/releases/2.2.2.html
 
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
