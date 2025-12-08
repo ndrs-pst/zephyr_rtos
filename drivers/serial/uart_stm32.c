@@ -2439,7 +2439,7 @@ static int uart_stm32_pm_action(const struct device* dev,
             /* Stop device clock. Note: fixed clocks are not handled yet. */
             err = clock_control_off(data->clock, (clock_control_subsys_t)&config->pclken[0]);
             if (err < 0) {
-                LOG_ERR("Could not enable (LP)UART clock");
+                LOG_ERR("Could not disable (LP)UART clock");
                 return (err);
             }
 

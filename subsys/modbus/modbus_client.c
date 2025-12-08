@@ -233,7 +233,7 @@ static int mbc_validate_wr_response(struct modbus_context const* ctx,
         case MODBUS_FC15_COILS_WR :
         case MODBUS_FC16_HOLDING_REGS_WR :
             if (req_addr != resp_addr || req_value != resp_value) {
-                err = ENXIO;
+                err = -EIO;
             }
             else {
                 err = 0;
