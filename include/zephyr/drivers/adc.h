@@ -340,10 +340,7 @@ struct adc_dt_spec {
 }
 
 #define ADC_CHANNEL_DT_NODE(ctlr, input)    \
-    DT_FOREACH_CHILD_VARGS(ctlr, ADC_FOREACH_INPUT, input)
-
-#define ADC_FOREACH_INPUT(node, input)      \
-    IF_ENABLED(IS_EQ(DT_REG_ADDR_RAW(node), input), (node))
+    DT_CHILD_BY_UNIT_ADDR_INT(ctlr, input)
 
 #define ADC_CHANNEL_CFG_FROM_DT_NODE(node_id)   \
     IF_ENABLED(DT_NODE_EXISTS(node_id),         \
@@ -1051,11 +1048,10 @@ static inline int z_impl_adc_read_async(const struct device* dev,
  * @return A value from adc_read().
  * @see adc_read()
  */
-static inline int adc_read_async_dt(const struct adc_dt_spec *spec,
-				    const struct adc_sequence *sequence,
-				    struct k_poll_signal *async)
-{
-	return adc_read_async(spec->dev, sequence, async);
+static inline int adc_read_async_dt(const struct adc_dt_spec* spec,
+                                    const struct adc_sequence* sequence,
+                                    struct k_poll_signal* async) {
+    return adc_read_async(spec->dev, sequence, async);
 }
 
 #ifdef CONFIG_ADC_STREAM

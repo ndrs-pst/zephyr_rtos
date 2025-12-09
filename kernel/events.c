@@ -277,7 +277,7 @@ static uint32_t k_event_wait_internal(struct k_event *event, uint32_t events,
 	wait_condition = options & K_EVENT_WAIT_MASK;
 	thread = k_sched_current_thread_query();
 
-	k_spinlock_key_t  key = k_spin_lock(&event->lock);
+	k_spinlock_key_t key = k_spin_lock(&event->lock);
 
 	if (options & K_EVENT_OPTION_RESET) {
 		event->events = 0;

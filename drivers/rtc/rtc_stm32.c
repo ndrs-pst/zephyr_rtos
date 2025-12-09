@@ -187,7 +187,6 @@ static int rtc_stm32_enter_init_mode(void) {
 
 static int rtc_stm32_configure(const struct device* dev) {
     const struct rtc_stm32_config* cfg = dev->config;
-
     int err = 0;
 
     uint32_t hour_format     = LL_RTC_GetHourFormat(RTC);
@@ -1090,6 +1089,7 @@ static int rtc_stm32_get_time_ext(const struct device* dev, uint8_t* du) {
 
 static int rtc_stm32_set_time_ext(const struct device* dev, uint8_t const* du) {
     struct rtc_stm32_data* data = dev->data;
+    int err;
 
     uint32_t real_year = ((uint16_t)((uint16_t)du[0] << 8U) | (uint16_t)du[1]);
     if (real_year < RTC_YEAR_REF) {
@@ -1110,9 +1110,8 @@ static int rtc_stm32_set_time_ext(const struct device* dev, uint8_t const* du) {
 
     LL_RTC_DisableWriteProtection(RTC);
 
-    ErrorStatus status = LL_RTC_EnterInitMode(RTC);
-
-    if (status != SUCCESS) {
+    err = rtc_stm32_enter_init_mode();
+    if (err != SUCCESS) {
         stm32_backup_domain_disable_access();
         k_spin_unlock(&data->lock, key);
         return (-EIO);

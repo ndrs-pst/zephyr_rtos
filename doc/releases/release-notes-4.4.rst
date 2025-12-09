@@ -52,6 +52,17 @@ API Changes
 ..
   Only removed, deprecated and new APIs. Changes go in migration guide.
 
+* Architectures
+
+  * Xtensa
+
+    * Removed as these are architectural features:
+
+      * :kconfig:option:`CONFIG_XTENSA_MMU_DOUBLE_MAP`
+      * :kconfig:option:`CONFIG_XTENSA_RPO_CACHE`
+      * :kconfig:option:`CONFIG_XTENSA_CACHED_REGION`
+      * :kconfig:option:`CONFIG_XTENSA_UNCACHED_REGION`
+
 Removed APIs and options
 ========================
 
@@ -82,6 +93,12 @@ New APIs and options
   instead.
 
 .. zephyr-keep-sorted-start re(^\* \w)
+
+* Architectures
+
+  * Xtensa
+
+    * :kconfig:option:`CONFIG_XTENSA_MMU_USE_DEFAULT_MAPPINGS`
 
 * Audio
 
@@ -199,6 +216,11 @@ New Samples
   Same as above, this will also be recomputed at the time of the release.
  Just link the sample, further details go in the sample documentation itself.
 
+DeviceTree
+**********
+
+* :c:macro:`DT_CHILD_BY_UNIT_ADDR_INT`
+* :c:macro:`DT_INST_CHILD_BY_UNIT_ADDR_INT`
 
 Libraries / Subsystems
 **********************
