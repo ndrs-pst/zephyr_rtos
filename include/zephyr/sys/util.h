@@ -1071,9 +1071,9 @@ static inline size_t sys_count_bits(const void* value, size_t len) {
  * @return The greatest common divisor of a and b, always returns an unsigned value.
  *         If one of the parameters is 0, returns the absolute value of the other parameter.
  */
-#define gcd(a, b) ((((__typeof__(a))-1) < 0) ? gcd_s(a, b) : gcd_u(a, b))
+#define z_gcd(a, b) ((((__typeof__(a))-1) < 0) ? z_gcd_s(a, b) : z_gcd_u(a, b))
 
-static ALWAYS_INLINE uint32_t gcd_u(uint32_t a, uint32_t b) {
+static ALWAYS_INLINE uint32_t z_gcd_u(uint32_t a, uint32_t b) {
     uint32_t c;
 
     if (a == 0) {
@@ -1094,15 +1094,15 @@ static ALWAYS_INLINE uint32_t gcd_u(uint32_t a, uint32_t b) {
     return b;
 }
 
-static ALWAYS_INLINE uint32_t gcd_s(int32_t a, int32_t b) {
+static ALWAYS_INLINE uint32_t z_gcd_s(int32_t a, int32_t b) {
     #if defined(_MSC_VER) /* #CUSTOM@NDRS */
     /* Avoid negating unsigned casts on MSVC and handle INT32_MIN safely
      * by widening to 64-bit before negation. */
     uint32_t abs_a = (a < 0) ? (uint32_t)(-(int64_t)a) : (uint32_t)a;
     uint32_t abs_b = (b < 0) ? (uint32_t)(-(int64_t)b) : (uint32_t)b;
-    return gcd_u(abs_a, abs_b);
+    return z_gcd_u(abs_a, abs_b);
     #else
-    return gcd_u(a < 0 ? -(uint32_t)a : (uint32_t)a, b < 0 ? -(uint32_t)b : (uint32_t)b);
+    return z_gcd_u(a < 0 ? -(uint32_t)a : (uint32_t)a, b < 0 ? -(uint32_t)b : (uint32_t)b);
     #endif
 }
 
@@ -1115,26 +1115,26 @@ static ALWAYS_INLINE uint32_t gcd_s(int32_t a, int32_t b) {
  * @retval The least common multiple of a and b.
  * @retval 0 if either input is 0.
  */
-#define lcm(a, b) ((((__typeof__(a))-1) < 0) ? lcm_s(a, b) : lcm_u(a, b))
+#define z_lcm(a, b) ((((__typeof__(a))-1) < 0) ? z_lcm_s(a, b) : z_lcm_u(a, b))
 
-static ALWAYS_INLINE uint64_t lcm_u(uint32_t a, uint32_t b) {
+static ALWAYS_INLINE uint64_t z_lcm_u(uint32_t a, uint32_t b) {
     if ((a == 0) || (b == 0)) {
         return 0;
     }
 
-    return (uint64_t)(a / gcd_u(a, b)) * (uint64_t)b;
+    return (uint64_t)(a / z_gcd_u(a, b)) * (uint64_t)b;
 }
 
-static ALWAYS_INLINE uint64_t lcm_s(int32_t a, int32_t b) {
+static ALWAYS_INLINE uint64_t z_lcm_s(int32_t a, int32_t b) {
     #if defined(_MSC_VER) /* #CUSTOM@NDRS */
     /* Avoid negating unsigned casts on MSVC and handle INT32_MIN safely
      * by widening to 64-bit before negation. */
     uint32_t abs_a = (a < 0) ? (uint32_t)(-(int64_t)a) : (uint32_t)a;
     uint32_t abs_b = (b < 0) ? (uint32_t)(-(int64_t)b) : (uint32_t)b;
 
-    return lcm_u(abs_a, abs_b);
+    return z_lcm_u(abs_a, abs_b);
     #else
-    return lcm_u(a < 0 ? -(uint32_t)a : (uint32_t)a, b < 0 ? -(uint32_t)b : (uint32_t)b);
+    return z_lcm_u(a < 0 ? -(uint32_t)a : (uint32_t)a, b < 0 ? -(uint32_t)b : (uint32_t)b);
     #endif
 }
 
