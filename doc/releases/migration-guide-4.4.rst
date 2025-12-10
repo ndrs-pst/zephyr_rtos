@@ -39,6 +39,31 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w)
 
+Controller Area Network (CAN)
+=============================
+
+* Removed ``CONFIG_CAN_MAX_FILTER``, ``CONFIG_CAN_MAX_STD_ID_FILTER``,
+  ``CONFIG_CAN_MAX_EXT_ID_FILTER``, and ``CONFIG_CAN_MAX_MB`` (:github:`100596`). These are replaced
+  by the following driver-specific Kconfig symbols, some of which have had their default value
+  increased to meet typical software needs:
+
+  * :kconfig:option:`CONFIG_CAN_LOOPBACK_MAX_FILTERS` for :dtcompatible:`zephyr,can-loopback`
+  * :kconfig:option:`CONFIG_CAN_MAX32_MAX_FILTERS` for :dtcompatible:`adi,max32-can`
+  * :kconfig:option:`CONFIG_CAN_MCP2515_MAX_FILTERS` for :dtcompatible:`microchip,mcp2515`
+  * :kconfig:option:`CONFIG_CAN_MCP251XFD_MAX_FILTERS` for :dtcompatible:`microchip,mcp251xfd`
+  * :kconfig:option:`CONFIG_CAN_MCUX_FLEXCAN_MAX_FILTERS` for :dtcompatible:`nxp,flexcan`
+  * :kconfig:option:`CONFIG_CAN_MCUX_FLEXCAN_MAX_MB` for :dtcompatible:`nxp,flexcan`
+  * :kconfig:option:`CONFIG_CAN_NATIVE_LINUX_MAX_FILTERS` for
+    :dtcompatible:`zephyr,native-linux-can`
+  * :kconfig:option:`CONFIG_CAN_RCAR_MAX_FILTERS` for :dtcompatible:`renesas,rcar-can`
+  * :kconfig:option:`CONFIG_CAN_SJA1000_MAX_FILTERS` for :dtcompatible:`kvaser,pcican` and
+    :dtcompatible:`espressif,esp32-twai`
+  * :kconfig:option:`CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS` for :dtcompatible:`st,stm32-bxcan`
+  * :kconfig:option:`CONFIG_CAN_STM32_BXCAN_MAX_STD_ID_FILTERS` for :dtcompatible:`st,stm32-bxcan`
+  * :kconfig:option:`CONFIG_CAN_STM32_FDCAN_MAX_EXT_ID_FILTERS` for :dtcompatible:`st,stm32-fdcan`
+  * :kconfig:option:`CONFIG_CAN_STM32_FDCAN_MAX_STD_ID_FILTERS` for :dtcompatible:`st,stm32-fdcan`
+  * :kconfig:option:`CONFIG_CAN_XMC4XXX_MAX_FILTERS` for :dtcompatible:`infineon,xmc4xxx-can-node`
+
 Ethernet
 ========
 
@@ -114,6 +139,11 @@ STM32
   * ``CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT``
 
   * ``CONFIG_POWER_SUPPLY_EXTERNAL_SOURCE``
+
+* The ST-specific chosen property ``/chosen/zephyr,ccm`` is replaced by ``/chosen/zephyr,dtcm``.
+  Attribute macros ``__ccm_data_section``, ``__ccm_bss_section`` and ``__ccm_noinit_section`` are
+  deprecated, but retained for backwards compatibility; **they will be removed in Zephyr 4.5**.
+  The generic ``__dtcm_{data,bss,noinit}_section`` macros should be used instead. (:github:`100590`)
 
 Shell
 =====
@@ -213,6 +243,14 @@ Libsbc
 
 * Libsbc (sbc.c and sbc.h) is moved under the Bluetooth subsystem. The sbc.h is in
   include/zephyr/bluetooth now.
+
+Tracing
+========
+
+* CTF: Changed uint8_t id to uint16_t id in the CTF metadata event header. This
+  doubles the space used for event IDs but allows 65,535 events instead of 255.
+
+  With this change, existing CTF traces with 8-bit IDs won't be compatible.
 
 Modules
 *******
