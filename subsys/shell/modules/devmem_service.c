@@ -63,18 +63,18 @@ static int memory_dump(const struct shell* sh, mem_addr_t phys_addr, size_t size
                     break;
 
                 case 16 :
-                    value = sys_read16(addr + data_offset);
+                    value = sys_le16_to_cpu(sys_read16(addr + data_offset));
                     sys_put_le16(value, &hex_data[data_offset]);
                     break;
 
                 case 32 :
-                    value = sys_read32(addr + data_offset);
+                    value = sys_le32_to_cpu(sys_read32(addr + data_offset));
                     sys_put_le32(value, &hex_data[data_offset]);
                     break;
 
                 #ifdef CONFIG_64BIT
                 case 64 :
-                    value = sys_read64(addr + data_offset);
+                    value = sys_le64_to_cpu(sys_read64(addr + data_offset));
                     sys_put_le64(value, &hex_data[data_offset]);
                     break;
                 #endif /* CONFIG_64BIT */
@@ -283,7 +283,7 @@ static int memory_read(const struct shell* sh, mem_addr_t addr, uint8_t width) {
         #endif /* CONFIG_64BIT */
 
         default :
-            shell_print(sh, "Incorrect data width");
+        shell_print(sh, "Incorrect data width");
             err = -EINVAL;
             break;
     }
@@ -318,7 +318,7 @@ static int memory_write(const struct shell* sh, mem_addr_t addr, uint8_t width, 
         #endif /* CONFIG_64BIT */
 
         default :
-            shell_print(sh, "Incorrect data width");
+        shell_print(sh, "Incorrect data width");
             err = -EINVAL;
             break;
     }
