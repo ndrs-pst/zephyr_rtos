@@ -554,6 +554,18 @@ struct ethernet_config {
 
 /** @endcond */
 
+/** Ethernet statistics type (bitmap) */
+enum ethernet_stats_type {
+    /** Common statistics only (excludes vendor statistics) */
+    ETHERNET_STATS_TYPE_COMMON = BIT(0),
+
+    /** Vendor statistics only */
+    ETHERNET_STATS_TYPE_VENDOR = BIT(1),
+
+    /** All statistics */
+    ETHERNET_STATS_TYPE_ALL = 0xFFFFFFFFU,
+};
+
 /** Ethernet L2 API operations. */
 struct ethernet_api {
     /**
@@ -568,6 +580,14 @@ struct ethernet_api {
      */
     #if defined(CONFIG_NET_STATISTICS_ETHERNET)
     struct net_stats_eth* (*get_stats)(const struct device* dev);
+
+    /** Optional function to collect ethernet specific statistics with
+     * type filter. If NULL, get_stats() will be called instead, which
+     * is equivalent to calling this with ETHERNET_STATS_TYPE_ALL.
+     * @param type Bitmask of ethernet_stats_type values.
+     */
+    struct net_stats_eth* (*get_stats_type)(const struct device* dev,
+                                            uint32_t type);
     #endif
 
     /** Start the device */
@@ -1001,8 +1021,8 @@ enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if* iface) {
 static inline
 int net_eth_get_hw_config(struct net_if* iface, enum ethernet_config_type type,
                           struct ethernet_config* config) {
-    const struct ethernet_api *eth =
-        (struct ethernet_api *)net_if_get_device(iface)->api;
+    const struct ethernet_api* eth =
+        (struct ethernet_api*)net_if_get_device(iface)->api;
 
     if (!eth->get_config) {
         return (-ENOTSUP);
@@ -1108,7 +1128,7 @@ static inline
 struct net_if* net_eth_get_vlan_main(struct net_if* iface) {
     ARG_UNUSED(iface);
 
-    return NULL;
+    return (NULL);
 }
 #endif
 
@@ -1301,39 +1321,45 @@ static inline bool net_eth_is_vlan_interface(struct net_if* iface) {
 
 /** @brief MAC address configuration types */
 enum net_eth_mac_type {
-	/** MAC address is handled by the driver (backwards compatible case) */
-	NET_ETH_MAC_DEFAULT = 0,
-	/** A random MAC address is generated during initialization */
-	NET_ETH_MAC_RANDOM,
-	/**
-	 * The MAC address is read from an NVMEM cell
-	 * @kconfig_dep{CONFIG_NVMEM}
-	 */
-	NET_ETH_MAC_NVMEM,
-	/** A static MAC address is provided in the device tree. */
-	NET_ETH_MAC_STATIC,
+    /** MAC address is handled by the driver (backwards compatible case) */
+    NET_ETH_MAC_DEFAULT = 0,
+
+    /** A random MAC address is generated during initialization */
+    NET_ETH_MAC_RANDOM,
+
+    /**
+     * The MAC address is read from an NVMEM cell
+     * @kconfig_dep{CONFIG_NVMEM}
+     */
+    NET_ETH_MAC_NVMEM,
+
+    /** A static MAC address is provided in the device tree. */
+    NET_ETH_MAC_STATIC,
 };
 
 /** @brief MAC address configuration */
 struct net_eth_mac_config {
-	/** The configuration type */
-	enum net_eth_mac_type type;
-	/**
-	 * The static MAC address part.
-	 * If less than 6 bytes are provided, this can be used as a prefix for
-	 * a random generated MAC address or data read from an NVMEM cell.
-	 * For example to set the OUI.
-	 */
-	uint8_t addr[NET_ETH_ADDR_LEN];
-	/** The length of the statically provided part */
-	uint8_t addr_len;
-#if defined(CONFIG_NVMEM) || defined(__DOXYGEN__)
-	/**
-	 * The NVMEM cell to read the MAC address from
-	 * @kconfig_dep{CONFIG_NVMEM}
-	 */
-	struct nvmem_cell cell;
-#endif
+    /** The configuration type */
+    enum net_eth_mac_type type;
+
+    /**
+     * The static MAC address part.
+     * If less than 6 bytes are provided, this can be used as a prefix for
+     * a random generated MAC address or data read from an NVMEM cell.
+     * For example to set the OUI.
+     */
+    uint8_t addr[NET_ETH_ADDR_LEN];
+
+    /** The length of the statically provided part */
+    uint8_t addr_len;
+
+    #if defined(CONFIG_NVMEM) || defined(__DOXYGEN__)
+    /**
+     * The NVMEM cell to read the MAC address from
+     * @kconfig_dep{CONFIG_NVMEM}
+     */
+    struct nvmem_cell cell;
+    #endif
 };
 
 /**
@@ -1350,38 +1376,38 @@ struct net_eth_mac_config {
  * @retval <0 Negative errno code if failure.
  * @retval 0 If successful.
  */
-static inline int net_eth_mac_load(const struct net_eth_mac_config *cfg, uint8_t *mac_addr)
-{
-	if (cfg == NULL || cfg->type == NET_ETH_MAC_DEFAULT) {
-		return -ENODATA;
-	}
+static inline int net_eth_mac_load(const struct net_eth_mac_config* cfg, uint8_t* mac_addr) {
+    if ((cfg == NULL) || (cfg->type == NET_ETH_MAC_DEFAULT)) {
+        return (-ENODATA);
+    }
 
-	/* Copy the static part */
-	memcpy(mac_addr, cfg->addr, cfg->addr_len);
+    /* Copy the static part */
+    memcpy(mac_addr, cfg->addr, cfg->addr_len);
 
-	if (cfg->type == NET_ETH_MAC_RANDOM) {
-		sys_rand_get(&mac_addr[cfg->addr_len], NET_ETH_ADDR_LEN - cfg->addr_len);
+    if (cfg->type == NET_ETH_MAC_RANDOM) {
+        sys_rand_get(&mac_addr[cfg->addr_len], NET_ETH_ADDR_LEN - cfg->addr_len);
 
-		/* Clear group bit, multicast (I/G) */
-		mac_addr[0] &= ~0x01;
-		/* Set MAC address locally administered, unicast (LAA) */
-		mac_addr[0] |= 0x02;
+        /* Clear group bit, multicast (I/G) */
+        mac_addr[0] &= ~0x01;
 
-		return 0;
-	}
+        /* Set MAC address locally administered, unicast (LAA) */
+        mac_addr[0] |= 0x02;
 
-#if defined(CONFIG_NVMEM)
-	if (cfg->type == NET_ETH_MAC_NVMEM) {
-		return nvmem_cell_read(&cfg->cell, &mac_addr[cfg->addr_len], 0,
-				       NET_ETH_ADDR_LEN - cfg->addr_len);
-	}
-#endif
+        return (0);
+    }
 
-	if (cfg->type == NET_ETH_MAC_STATIC) {
-		return 0;
-	}
+    #if defined(CONFIG_NVMEM)
+    if (cfg->type == NET_ETH_MAC_NVMEM) {
+        return nvmem_cell_read(&cfg->cell, &mac_addr[cfg->addr_len], 0,
+                               NET_ETH_ADDR_LEN - cfg->addr_len);
+    }
+    #endif
 
-	return -ENODATA;
+    if (cfg->type == NET_ETH_MAC_STATIC) {
+        return (0);
+    }
+
+    return (-ENODATA);
 }
 
 /** @cond INTERNAL_HIDDEN */
@@ -1393,38 +1419,38 @@ static inline int net_eth_mac_load(const struct net_eth_mac_config *cfg, uint8_t
  *
  * @param node_id Node identifier.
  */
-#define Z_NET_ETH_MAC_DEV_CONFIG_INIT_CELL(node_id)                                                \
-	.cell = NVMEM_CELL_GET_BY_NAME_OR(node_id, mac_address, {0}),
+#define Z_NET_ETH_MAC_DEV_CONFIG_INIT_CELL(node_id)                     \
+    .cell = NVMEM_CELL_GET_BY_NAME_OR(node_id, mac_address, {0}),
 #else
 #define Z_NET_ETH_MAC_DEV_CONFIG_INIT_CELL(node_id)
 #endif
 
-#define Z_NET_ETH_MAC_DT_CONFIG_INIT_RANDOM(node_id)                                               \
-	{                                                                                          \
-		.type = NET_ETH_MAC_RANDOM,                                                        \
-		.addr = DT_PROP_OR(node_id, zephyr_mac_address_prefix, {0}),                       \
-		.addr_len = DT_PROP_LEN_OR(node_id, zephyr_mac_address_prefix, 0),                 \
-	}
+#define Z_NET_ETH_MAC_DT_CONFIG_INIT_RANDOM(node_id)                    \
+    {                                                                   \
+        .type = NET_ETH_MAC_RANDOM,                                     \
+        .addr = DT_PROP_OR(node_id, zephyr_mac_address_prefix, {0}),    \
+        .addr_len = DT_PROP_LEN_OR(node_id, zephyr_mac_address_prefix, 0), \
+    }
 
-#define Z_NET_ETH_MAC_DT_CONFIG_INIT_NVMEM(node_id)                                                \
-	{                                                                                          \
-		.type = NET_ETH_MAC_NVMEM,                                                         \
-		.addr = DT_PROP_OR(node_id, zephyr_mac_address_prefix, {0}),                       \
-		.addr_len = DT_PROP_LEN_OR(node_id, zephyr_mac_address_prefix, 0),                 \
-		Z_NET_ETH_MAC_DEV_CONFIG_INIT_CELL(node_id)                                        \
-	}
+#define Z_NET_ETH_MAC_DT_CONFIG_INIT_NVMEM(node_id)                     \
+    {                                                                   \
+        .type = NET_ETH_MAC_NVMEM,                                      \
+        .addr = DT_PROP_OR(node_id, zephyr_mac_address_prefix, {0}),    \
+        .addr_len = DT_PROP_LEN_OR(node_id, zephyr_mac_address_prefix, 0), \
+        Z_NET_ETH_MAC_DEV_CONFIG_INIT_CELL(node_id)                     \
+    }
 
-#define Z_NET_ETH_MAC_DT_CONFIG_INIT_STATIC(node_id)                                               \
-	{                                                                                          \
-		.type = NET_ETH_MAC_STATIC,                                                        \
-		.addr = DT_PROP(node_id, local_mac_address),                                       \
-		.addr_len = DT_PROP_LEN(node_id, local_mac_address),                               \
-	}
+#define Z_NET_ETH_MAC_DT_CONFIG_INIT_STATIC(node_id)                    \
+    {                                                                   \
+        .type = NET_ETH_MAC_STATIC,                                     \
+        .addr = DT_PROP(node_id, local_mac_address),                    \
+        .addr_len = DT_PROP_LEN(node_id, local_mac_address),            \
+    }
 
-#define Z_NET_ETH_MAC_DT_CONFIG_INIT_DEFAULT(node_id)                                              \
-	{                                                                                          \
-		.type = NET_ETH_MAC_DEFAULT,                                                       \
-	}
+#define Z_NET_ETH_MAC_DT_CONFIG_INIT_DEFAULT(node_id)                   \
+    {                                                                   \
+        .type = NET_ETH_MAC_DEFAULT,                                    \
+    }
 
 /** @endcond */
 
@@ -1433,14 +1459,14 @@ static inline int net_eth_mac_load(const struct net_eth_mac_config *cfg, uint8_t
  *
  * @param node_id Node identifier.
  */
-#define NET_ETH_MAC_DT_CONFIG_INIT(node_id)                                                        \
-	COND_CASE_1(DT_PROP(node_id, zephyr_random_mac_address),                                   \
-		    (Z_NET_ETH_MAC_DT_CONFIG_INIT_RANDOM(node_id)),                                \
-		    DT_NVMEM_CELLS_HAS_NAME(node_id, mac_address),                                 \
-		    (Z_NET_ETH_MAC_DT_CONFIG_INIT_NVMEM(node_id)),                                 \
-		    DT_NODE_HAS_PROP(node_id, local_mac_address),                                  \
-		    (Z_NET_ETH_MAC_DT_CONFIG_INIT_STATIC(node_id)),                                \
-		    (Z_NET_ETH_MAC_DT_CONFIG_INIT_DEFAULT(node_id)))
+#define NET_ETH_MAC_DT_CONFIG_INIT(node_id)                             \
+    COND_CASE_1(DT_PROP(node_id, zephyr_random_mac_address),            \
+                (Z_NET_ETH_MAC_DT_CONFIG_INIT_RANDOM(node_id)),         \
+                DT_NVMEM_CELLS_HAS_NAME(node_id, mac_address),          \
+                (Z_NET_ETH_MAC_DT_CONFIG_INIT_NVMEM(node_id)),          \
+                DT_NODE_HAS_PROP(node_id, local_mac_address),           \
+                (Z_NET_ETH_MAC_DT_CONFIG_INIT_STATIC(node_id)),         \
+                (Z_NET_ETH_MAC_DT_CONFIG_INIT_DEFAULT(node_id)))
 
 /**
  * @brief Like NET_ETH_MAC_DT_CONFIG_INIT for an instance of a DT_DRV_COMPAT compatible
@@ -1449,8 +1475,8 @@ static inline int net_eth_mac_load(const struct net_eth_mac_config *cfg, uint8_t
  *
  * @see #NET_ETH_MAC_DT_CONFIG_INIT
  */
-#define NET_ETH_MAC_DT_INST_CONFIG_INIT(inst)                                                      \
-	NET_ETH_MAC_DT_CONFIG_INIT(DT_DRV_INST(inst))
+#define NET_ETH_MAC_DT_INST_CONFIG_INIT(inst)                           \
+    NET_ETH_MAC_DT_CONFIG_INIT(DT_DRV_INST(inst))
 
 /**
  * @brief Inform ethernet L2 driver that ethernet carrier is detected.

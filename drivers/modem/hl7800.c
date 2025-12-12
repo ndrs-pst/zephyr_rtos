@@ -377,7 +377,7 @@ static const char OK_STRING[] = "OK";
 
 struct hl7800_socket {
 	struct net_context *context;
-	sa_family_t family;
+	net_sa_family_t family;
 	enum net_sock_type type;
 	enum net_ip_protocol ip_proto;
 	struct net_sockaddr src;
@@ -5958,7 +5958,7 @@ done:
 	return ret;
 }
 
-static int offload_get(sa_family_t family, enum net_sock_type type,
+static int offload_get(net_sa_family_t family, enum net_sock_type type,
 		       enum net_ip_protocol ip_proto,
 		       struct net_context **context)
 {
@@ -6010,7 +6010,7 @@ done:
 }
 
 static int offload_bind(struct net_context *context,
-			const struct net_sockaddr *addr, socklen_t addr_len)
+			const struct net_sockaddr *addr, net_socklen_t addr_len)
 {
 	struct hl7800_socket *sock = NULL;
 
@@ -6049,7 +6049,7 @@ static int offload_listen(struct net_context *context, int backlog)
 }
 
 static int offload_connect(struct net_context *context,
-			   const struct net_sockaddr *addr, socklen_t addr_len,
+			   const struct net_sockaddr *addr, net_socklen_t addr_len,
 			   net_context_connect_cb_t cb, int32_t timeout,
 			   void *user_data)
 {
@@ -6136,7 +6136,7 @@ static int offload_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 }
 
 static int offload_sendto(struct net_pkt *pkt, const struct net_sockaddr *dst_addr,
-			  socklen_t addr_len, net_context_send_cb_t cb,
+			  net_socklen_t addr_len, net_context_send_cb_t cb,
 			  int32_t timeout, void *user_data)
 {
 	struct net_context *context = net_pkt_context(pkt);
@@ -6192,7 +6192,7 @@ static int offload_send(struct net_pkt *pkt, net_context_send_cb_t cb,
 			int32_t timeout, void *user_data)
 {
 	struct net_context *context = net_pkt_context(pkt);
-	socklen_t addr_len;
+	net_socklen_t addr_len;
 
 	addr_len = 0;
 
