@@ -5136,8 +5136,8 @@ struct /**/k_msgq {
     .read_ptr = q_buffer, \
     .write_ptr = q_buffer, \
     .used_msgs = 0, \
-    .flags = 0, \
     Z_POLL_EVENT_OBJ_INIT(obj) \
+    .flags = 0 \
     }
 
 /**
