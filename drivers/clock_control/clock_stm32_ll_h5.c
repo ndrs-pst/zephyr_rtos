@@ -40,6 +40,8 @@
 #define PLL2_ID		2
 #define PLL3_ID		3
 
+#define PLL_FRACN_DIVISOR 8192
+
 static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 {
 	return clock / prescaler;
@@ -87,34 +89,27 @@ static uint32_t get_startup_frequency(void)
 
 __unused
 static uint32_t get_pllout_frequency(uint32_t pllsrc_freq,
-				     int pllm_div,
-				     int plln_mul,
-				     int pllout_div)
+				     unsigned int pllm_div,
+				     unsigned int plln_mul,
+				     unsigned int plln_frac,
+				     unsigned int pllout_div)
 {
 	__ASSERT_NO_MSG(pllm_div && pllout_div);
-	int fracn;
-	uint64_t pllout_freq;
 
-	if (IS_ENABLED(STM32_PLL_FRACN_ENABLED)) {
-		fracn = STM32_PLL_FRACN_VALUE;
-	} else {
-		fracn = 0;
-	}
+	uint32_t f_vco = (pllsrc_freq / pllm_div) *
+			 ((uint64_t)plln_mul * PLL_FRACN_DIVISOR + plln_frac) / PLL_FRACN_DIVISOR;
 
-	/* Scale up the fractional part */
-	pllout_freq = (uint64_t)pllsrc_freq * ((plln_mul * STM32_PLL_FRACN_DIVISOR) + fracn) /
-		(pllm_div * STM32_PLL_FRACN_DIVISOR);
-
-	return (uint32_t)(pllout_freq / pllout_div);
+	return f_vco / pllout_div;
 }
 
 static uint32_t get_sysclk_frequency(void)
 {
 #if defined(STM32_SYSCLK_SRC_PLL)
 	return get_pllout_frequency(get_pllsrc_frequency(PLL1_ID),
-					STM32_PLL_M_DIVISOR,
-					STM32_PLL_N_MULTIPLIER,
-					STM32_PLL_R_DIVISOR);
+				    STM32_PLL_M_DIVISOR,
+				    STM32_PLL_N_MULTIPLIER,
+				    STM32_PLL_FRACN_VALUE,
+				    STM32_PLL_R_DIVISOR);
 #elif defined(STM32_SYSCLK_SRC_CSI)
 	return STM32_CSI_FREQ;
 #elif defined(STM32_SYSCLK_SRC_HSE)
@@ -300,61 +295,70 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 #if defined(STM32_PLL_ENABLED)
 	case STM32_SRC_PLL1_P:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(PLL1_ID),
-					      STM32_PLL_M_DIVISOR,
-					      STM32_PLL_N_MULTIPLIER,
-					      STM32_PLL_P_DIVISOR);
+					     STM32_PLL_M_DIVISOR,
+					     STM32_PLL_N_MULTIPLIER,
+					     STM32_PLL_FRACN_VALUE,
+					     STM32_PLL_P_DIVISOR);
 		break;
 	case STM32_SRC_PLL1_Q:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(PLL1_ID),
-					      STM32_PLL_M_DIVISOR,
-					      STM32_PLL_N_MULTIPLIER,
-					      STM32_PLL_Q_DIVISOR);
+					     STM32_PLL_M_DIVISOR,
+					     STM32_PLL_N_MULTIPLIER,
+					     STM32_PLL_FRACN_VALUE,
+					     STM32_PLL_Q_DIVISOR);
 		break;
 	case STM32_SRC_PLL1_R:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(PLL1_ID),
-					      STM32_PLL_M_DIVISOR,
-					      STM32_PLL_N_MULTIPLIER,
-					      STM32_PLL_R_DIVISOR);
+					     STM32_PLL_M_DIVISOR,
+					     STM32_PLL_N_MULTIPLIER,
+					     STM32_PLL_FRACN_VALUE,
+					     STM32_PLL_R_DIVISOR);
 		break;
 #endif /* STM32_PLL_ENABLED */
 #if defined(STM32_PLL2_ENABLED)
 	case STM32_SRC_PLL2_P:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(PLL2_ID),
-					      STM32_PLL2_M_DIVISOR,
-					      STM32_PLL2_N_MULTIPLIER,
-					      STM32_PLL2_P_DIVISOR);
+					     STM32_PLL2_M_DIVISOR,
+					     STM32_PLL2_N_MULTIPLIER,
+					     STM32_PLL2_FRACN_VALUE,
+					     STM32_PLL2_P_DIVISOR);
 		break;
 	case STM32_SRC_PLL2_Q:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(PLL2_ID),
-					      STM32_PLL2_M_DIVISOR,
-					      STM32_PLL2_N_MULTIPLIER,
-					      STM32_PLL2_Q_DIVISOR);
+					     STM32_PLL2_M_DIVISOR,
+					     STM32_PLL2_N_MULTIPLIER,
+					     STM32_PLL2_FRACN_VALUE,
+					     STM32_PLL2_Q_DIVISOR);
 		break;
 	case STM32_SRC_PLL2_R:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(PLL2_ID),
-					      STM32_PLL2_M_DIVISOR,
-					      STM32_PLL2_N_MULTIPLIER,
-					      STM32_PLL2_R_DIVISOR);
+					     STM32_PLL2_M_DIVISOR,
+					     STM32_PLL2_N_MULTIPLIER,
+					     STM32_PLL2_FRACN_VALUE,
+					     STM32_PLL2_R_DIVISOR);
 		break;
 #endif /* STM32_PLL2_ENABLED */
 #if defined(STM32_PLL3_ENABLED)
 	case STM32_SRC_PLL3_P:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(PLL3_ID),
-					      STM32_PLL3_M_DIVISOR,
-					      STM32_PLL3_N_MULTIPLIER,
-					      STM32_PLL3_P_DIVISOR);
+					     STM32_PLL3_M_DIVISOR,
+					     STM32_PLL3_N_MULTIPLIER,
+					     STM32_PLL3_FRACN_VALUE,
+					     STM32_PLL3_P_DIVISOR);
 		break;
 	case STM32_SRC_PLL3_Q:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(PLL3_ID),
-					      STM32_PLL3_M_DIVISOR,
-					      STM32_PLL3_N_MULTIPLIER,
-					      STM32_PLL3_Q_DIVISOR);
+					     STM32_PLL3_M_DIVISOR,
+					     STM32_PLL3_N_MULTIPLIER,
+					     STM32_PLL3_FRACN_VALUE,
+					     STM32_PLL3_Q_DIVISOR);
 		break;
 	case STM32_SRC_PLL3_R:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(PLL3_ID),
-					      STM32_PLL3_M_DIVISOR,
-					      STM32_PLL3_N_MULTIPLIER,
-					      STM32_PLL3_R_DIVISOR);
+					     STM32_PLL3_M_DIVISOR,
+					     STM32_PLL3_N_MULTIPLIER,
+					     STM32_PLL3_FRACN_VALUE,
+					     STM32_PLL3_R_DIVISOR);
 		break;
 #endif /* STM32_PLL3_ENABLED */
 	case STM32_SRC_TIMPCLK1:
