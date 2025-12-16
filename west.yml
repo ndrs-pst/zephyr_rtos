@@ -200,7 +200,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 757314f07fbf2fb0f0257d7cfa147ca03f9d8398
+      revision: 09f24fd6cc7df57a5b5d08102ceb4a38381e2c82
       path: modules/hal/nordic
       groups:
         - hal
@@ -255,7 +255,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: f3677ef1d58af18a6f15358c935bd65943b1f3d9
+      revision: 5df9cb1db3e215b5b567abdfeb6d18cc853710e9
       path: modules/hal/stm32
       groups:
         - hal
