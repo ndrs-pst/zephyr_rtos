@@ -60,7 +60,7 @@ int64_t timeutil_timegm64(const struct tm* tm) {
 
 time_t timeutil_timegm(const struct tm* tm) {
     int64_t time = timeutil_timegm64(tm);
-    time_t rv    = (time_t)time;
+    time_t rv = (time_t)time;
 
     errno = 0;
     if ((sizeof(rv) == sizeof(int32_t)) &&
@@ -133,12 +133,14 @@ int timeutil_sync_ref_from_local(const struct timeutil_sync_state* tsp,
         const struct timeutil_sync_config* cfg = tsp->cfg;
         int64_t local_delta = local - tsp->base.local;
 
+        #ifdef CONFIG_TIMEUTIL_APPLY_SKEW
         /* (x * 1.0) != x for large values of x.
          * Therefore only apply the multiplication if the skew is not one.
          */
         if (tsp->skew != 1.0f) {
             local_delta = (int64_t)((double)local_delta * (double)tsp->skew);
         }
+        #endif /* CONFIG_TIMEUTIL_APPLY_SKEW */
 
         int64_t ref_delta = (local_delta * cfg->ref_Hz) / cfg->local_Hz;
         int64_t ref_abs   = (int64_t)tsp->base.ref + ref_delta;
@@ -162,15 +164,17 @@ int timeutil_sync_local_from_ref(const struct timeutil_sync_state* tsp,
     if ((tsp->skew > 0) && (tsp->base.ref > 0) && (localp != NULL)) {
         const struct timeutil_sync_config* cfg = tsp->cfg;
         int64_t ref_delta = (int64_t)(ref - tsp->base.ref);
+        int64_t local_delta = (ref_delta * cfg->local_Hz) / cfg->ref_Hz;
 
+        #ifdef CONFIG_TIMEUTIL_APPLY_SKEW
         /* (x / 1.0) != x for large values of x.
          * Therefore only apply the division if the skew is not one.
          */
-        int64_t local_delta = (ref_delta * cfg->local_Hz) / cfg->ref_Hz;
-
         if (tsp->skew != 1.0f) {
             local_delta = (int64_t)((double)local_delta / (double)tsp->skew);
         }
+        #endif /* CONFIG_TIMEUTIL_APPLY_SKEW */
+
         int64_t local_abs = (int64_t)tsp->base.local + (int64_t)local_delta;
 
         *localp = local_abs;
@@ -187,48 +191,51 @@ int32_t timeutil_sync_skew_to_ppb(float skew) {
     return ((ppb64 == ppb32) ? ppb32 : INT32_MIN);
 }
 
-bool timespec_normalize(struct timespec *ts)
-{
-	__ASSERT_NO_MSG(ts != NULL);
+bool timespec_normalize(struct timespec* ts) {
+    __ASSERT_NO_MSG(ts != NULL);
 
-	long sec;
+    long sec;
 
-	if (ts->tv_nsec >= (long)NSEC_PER_SEC) {
-		sec = ts->tv_nsec / (long)NSEC_PER_SEC;
-	} else if (ts->tv_nsec < 0) {
-		sec = DIV_ROUND_UP((unsigned long)-ts->tv_nsec, NSEC_PER_SEC);
-	} else {
-		sec = 0;
-	}
+    if (ts->tv_nsec >= (long)NSEC_PER_SEC) {
+        sec = ts->tv_nsec / (long)NSEC_PER_SEC;
+    }
+    else if (ts->tv_nsec < 0) {
+        sec = DIV_ROUND_UP((unsigned long)-ts->tv_nsec, NSEC_PER_SEC);
+    }
+    else {
+        sec = 0;
+    }
 
-	if ((ts->tv_nsec < 0) && (ts->tv_sec < 0) && (ts->tv_sec - SYS_TIME_T_MIN < sec)) {
-		/*
-		 * When `tv_nsec` is negative and `tv_sec` is already most negative,
-		 * further subtraction would cause integer overflow.
-		 */
-		return false;
-	}
+    if ((ts->tv_nsec < 0) && (ts->tv_sec < 0) && (ts->tv_sec - SYS_TIME_T_MIN < sec)) {
+        /*
+         * When `tv_nsec` is negative and `tv_sec` is already most negative,
+         * further subtraction would cause integer overflow.
+         */
+        return (false);
+    }
 
-	if ((ts->tv_nsec >= (long)NSEC_PER_SEC) && (ts->tv_sec > 0) &&
-	    (SYS_TIME_T_MAX - ts->tv_sec < sec)) {
-		/*
-		 * When `tv_nsec` is >= `NSEC_PER_SEC` and `tv_sec` is already most
-		 * positive, further addition would cause integer overflow.
-		 */
-		return false;
-	}
+    if ((ts->tv_nsec >= (long)NSEC_PER_SEC) && (ts->tv_sec > 0) &&
+        (SYS_TIME_T_MAX - ts->tv_sec < sec)) {
+        /*
+         * When `tv_nsec` is >= `NSEC_PER_SEC` and `tv_sec` is already most
+         * positive, further addition would cause integer overflow.
+         */
+        return (false);
+    }
 
-	if (ts->tv_nsec >= (long)NSEC_PER_SEC) {
-		ts->tv_sec += sec;
-		ts->tv_nsec -= sec * (long)NSEC_PER_SEC;
-	} else if (ts->tv_nsec < 0) {
-		ts->tv_sec -= sec;
-		ts->tv_nsec += sec * (long)NSEC_PER_SEC;
-	} else {
-		/* no change: SonarQube was complaining */
-	}
+    if (ts->tv_nsec >= (long)NSEC_PER_SEC) {
+        ts->tv_sec += sec;
+        ts->tv_nsec -= sec * (long)NSEC_PER_SEC;
+    }
+    else if (ts->tv_nsec < 0) {
+        ts->tv_sec -= sec;
+        ts->tv_nsec += sec * (long)NSEC_PER_SEC;
+    }
+    else {
+        /* no change: SonarQube was complaining */
+    }
 
-	__ASSERT_NO_MSG(timespec_is_valid(ts));
+    __ASSERT_NO_MSG(timespec_is_valid(ts));
 
-	return true;
+    return (true);
 }
