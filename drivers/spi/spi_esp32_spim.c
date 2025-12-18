@@ -27,8 +27,8 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 #include "spi_context.h"
 #include "spi_esp32_spim.h"
 
-#if defined(CONFIG_SOC_SERIES_ESP32S2) && defined(CONFIG_ADC_ESP32_DMA) &&                         \
-	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(spi3)) && DT_PROP(DT_NODELABEL(spi3), dma_enabled)
+#if defined(CONFIG_SOC_SERIES_ESP32S2) && defined(CONFIG_ADC_ESP32_DMA) && \
+    DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(spi3)) && DT_PROP(DT_NODELABEL(spi3), dma_enabled)
 #error "spi3 must not have dma-enabled if ADC_ESP32_DMA is enabled for ESP32-S2"
 #endif
 
@@ -426,7 +426,22 @@ static int IRAM_ATTR spi_esp32_configure(struct device const* dev,
         return (-ENOTSUP);
     }
 
-    hal_dev->cs_pin_id = ctx->config->slave;
+    /*
+     * CS handling:
+     * - When using GPIO CS (cs-gpios property), the spi_context manages
+     *   chip select via GPIO. Hardware CS must be disabled by setting
+     *   cs_pin_id outside valid range (0-2). Any value > 2 disables all
+     *   hardware CS lines per documentation.
+     * - When using hardware CS (directly via pinctrl), the slave
+     *   number maps to the hardware CS pin (CS0, CS1, CS2).
+     */
+    if (spi_cs_is_gpio(spi_cfg)) {
+        hal_dev->cs_pin_id = -1;
+    }
+    else {
+        hal_dev->cs_pin_id = ctx->config->slave;
+    }
+
     int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
     if (ret) {
