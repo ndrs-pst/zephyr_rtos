@@ -200,7 +200,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 09f24fd6cc7df57a5b5d08102ceb4a38381e2c82
+      revision: 248eadcacf976bbd27f1c0bc0dd3f11d8ec8657e
       path: modules/hal/nordic
       groups:
         - hal
@@ -231,7 +231,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 69c3df17e3788f1ba8c7ace191e21e20bbd8d641
+      revision: 0164f2f515ad196674103f33cab10a7d547ce3cf
       groups:
         - hal
     - name: hal_rpi_pico
@@ -245,7 +245,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 091a5bbd2f83b83d4f00f166c6781b19bee0d03d
+      revision: 6bde23d62ffd16347d1696ba15db92b070907828
       path: modules/hal/silabs
       groups:
         - hal
@@ -379,6 +379,7 @@ manifest:
       path: modules/tee/tf-m/tf-m-tests
       groups:
         - testing
+        - tee
     - name: trusted-firmware-a
       revision: 0a29cac8fe0f7bdb835b469d9ea11b8e17377a92
       path: modules/tee/tf-a/trusted-firmware-a
