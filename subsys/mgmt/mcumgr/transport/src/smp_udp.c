@@ -163,8 +163,8 @@ static int smp_udp_ud_copy(struct net_buf* dst, const struct net_buf* src) {
 }
 
 static void smp_udp_ud_init(struct net_buf* nb, void* priv) {
-    struct sockaddr *ud = net_buf_user_data(nb);
-    const struct sockaddr *addr = priv;
+	struct net_sockaddr *ud = net_buf_user_data(nb);
+	const struct net_sockaddr *addr = priv;
 
     if (addr) {
         memcpy(ud, addr, sizeof(*addr));
@@ -176,10 +176,10 @@ static int create_socket(enum proto_type proto, int* sock) {
     int err;
     struct net_sockaddr_storage addr_storage;
     struct net_sockaddr* addr = (struct net_sockaddr*)&addr_storage;
-    socklen_t addr_len = 0;
+	net_socklen_t addr_len = 0;
 
     #if defined(CONFIG_MCUMGR_TRANSPORT_UDP_DTLS)
-    int socket_role = TLS_DTLS_ROLE_SERVER;
+	int socket_role = ZSOCK_TLS_DTLS_ROLE_SERVER;
     #endif
 
     if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_UDP_IPV4) &&
@@ -190,7 +190,7 @@ static int create_socket(enum proto_type proto, int* sock) {
         memset(addr4, 0, sizeof(*addr4));
         addr4->sin_family = NET_AF_INET;
         addr4->sin_port = net_htons(CONFIG_MCUMGR_TRANSPORT_UDP_PORT);
-        addr4->sin_addr.s_addr_be = net_htonl(INADDR_ANY);
+        addr4->sin_addr.s_addr_be = net_htonl(NET_INADDR_ANY);
     }
     else if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_UDP_IPV6) &&
              proto == PROTOCOL_IPV6) {
@@ -223,7 +223,7 @@ static int create_socket(enum proto_type proto, int* sock) {
         CONFIG_MCUMGR_TRANSPORT_UDP_DTLS_TLS_TAG,
     };
 
-    err = zsock_setsockopt(tmp_sock, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag_list,
+	err = zsock_setsockopt(tmp_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST, sec_tag_list,
                            sizeof(sec_tag_list));
 
     if (err < 0) {
@@ -232,7 +232,7 @@ static int create_socket(enum proto_type proto, int* sock) {
     }
 
     /* Set role to DTLS server */
-    err = zsock_setsockopt(tmp_sock, SOL_TLS, TLS_DTLS_ROLE, &socket_role,
+	err = zsock_setsockopt(tmp_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_DTLS_ROLE, &socket_role,
                            sizeof(socket_role));
 
     if (err < 0) {
@@ -275,7 +275,7 @@ static void smp_udp_receive_thread(void* p1, void* p2, void* p3) {
 
     while (true) {
         struct net_sockaddr addr;
-        socklen_t addr_len = sizeof(addr);
+		net_socklen_t addr_len = sizeof(addr);
 
         int len = zsock_recvfrom(conf->sock, conf->recv_buffer,
                                  CONFIG_MCUMGR_TRANSPORT_UDP_MTU, 0, &addr, &addr_len);

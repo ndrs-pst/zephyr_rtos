@@ -325,7 +325,7 @@ static int winc1500_get(net_sa_family_t family,
  */
 static int winc1500_bind(struct net_context *context,
 			 const struct net_sockaddr *addr,
-			 socklen_t addrlen)
+			 net_socklen_t addrlen)
 {
 	SOCKET socket = (intptr_t)context->offload_context;
 	int ret;
@@ -382,7 +382,7 @@ static int winc1500_listen(struct net_context *context, int backlog)
  */
 static int winc1500_connect(struct net_context *context,
 			    const struct net_sockaddr *addr,
-			    socklen_t addrlen,
+			    net_socklen_t addrlen,
 			    net_context_connect_cb_t cb,
 			    int32_t timeout,
 			    void *user_data)
@@ -484,7 +484,7 @@ out:
  */
 static int winc1500_sendto(struct net_pkt *pkt,
 			   const struct net_sockaddr *dst_addr,
-			   socklen_t addrlen,
+			   net_socklen_t addrlen,
 			   net_context_send_cb_t cb,
 			   int32_t timeout,
 			   void *user_data)

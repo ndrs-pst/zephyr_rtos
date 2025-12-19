@@ -75,7 +75,7 @@ static int __read_data(struct eswifi_dev *eswifi, size_t len, char **data)
 }
 
 int __eswifi_bind(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket,
-		      const struct net_sockaddr *addr, socklen_t addrlen)
+		      const struct net_sockaddr *addr, net_socklen_t addrlen)
 {
 	int err;
 

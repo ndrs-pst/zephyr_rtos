@@ -570,7 +570,7 @@ MODEM_CMD_DEFINE(on_cmd_cipdns) {
         }
 
         addrs[i].sin_family = NET_AF_INET;
-        addrs[i].sin_port   = htons(53);
+        addrs[i].sin_port   = net_htons(53);
 
         valid_servers++;
     }

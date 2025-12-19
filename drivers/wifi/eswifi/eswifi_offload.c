@@ -21,7 +21,7 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 
 static int eswifi_off_bind(struct net_context *context,
 			   const struct net_sockaddr *addr,
-			   socklen_t addrlen)
+			   net_socklen_t addrlen)
 {
 	struct eswifi_off_socket *socket = context->offload_context;
 	struct eswifi_dev *eswifi = eswifi_by_iface_idx(context->iface);
@@ -97,7 +97,7 @@ static void eswifi_off_connect_work(struct k_work *work)
 
 static int eswifi_off_connect(struct net_context *context,
 			      const struct net_sockaddr *addr,
-			      socklen_t addrlen,
+			      net_socklen_t addrlen,
 			      net_context_connect_cb_t cb,
 			      int32_t timeout,
 			      void *user_data)
@@ -294,7 +294,7 @@ static int eswifi_off_send(struct net_pkt *pkt,
 
 static int eswifi_off_sendto(struct net_pkt *pkt,
 			     const struct net_sockaddr *dst_addr,
-			     socklen_t addrlen,
+			     net_socklen_t addrlen,
 			     net_context_send_cb_t cb,
 			     int32_t timeout,
 			     void *user_data)
