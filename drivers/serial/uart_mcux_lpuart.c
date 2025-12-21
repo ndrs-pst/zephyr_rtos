@@ -1077,7 +1077,7 @@ static int mcux_lpuart_configure_basic(struct device const* dev, const struct ua
     }
 
     ret = mcux_lpuart_config_flowctrl(dev, cfg->flow_ctrl, uart_config);
-    if (ret) {
+    if (ret != 0) {
         return (ret);
     }
 
@@ -1099,7 +1099,7 @@ static int mcux_lpuart_configure_async(struct device const* dev) {
     LPUART_GetDefaultConfig(&uart_config);
 
     ret = mcux_lpuart_configure_basic(dev, &data->uart_config, &uart_config);
-    if (ret) {
+    if (ret != 0) {
         return (ret);
     }
 
@@ -1145,7 +1145,12 @@ static int mcux_lpuart_configure_init(struct device const* dev, const struct uar
     LPUART_GetDefaultConfig(&uart_config);
 
     ret = mcux_lpuart_configure_basic(dev, cfg, &uart_config);
-    if (ret) {
+    if (ret != 0) {
+        return (ret);
+    }
+
+    ret = clock_control_on(config->clock_dev, config->clock_subsys);
+    if (ret != 0) {
         return (ret);
     }
 
@@ -1219,7 +1224,7 @@ static int mcux_lpuart_configure(struct device const* dev,
     LPUART_Deinit(config->base);
 
     int ret = mcux_lpuart_configure_init(dev, cfg);
-    if (ret) {
+    if (ret != 0) {
         return (ret);
     }
 
@@ -1442,8 +1447,8 @@ static DEVICE_API(uart, mcux_lpuart_driver_api) = {
 #if LPUART_ASYNC_ENABLE
 #define TX_DMA_CONFIG(id)                               \
     .tx_dma_config = {                                  \
-        .dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, tx)),    \
-        .dma_channel = DT_INST_DMAS_CELL_BY_NAME(id, tx, mux),          \
+        .dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, tx)), \
+        .dma_channel = DT_INST_DMAS_CELL_BY_NAME(id, tx, mux), \
         .dma_cfg = {                                    \
             .source_burst_length  = 1,                  \
             .dest_burst_length    = 1,                  \
@@ -1453,18 +1458,18 @@ static DEVICE_API(uart, mcux_lpuart_driver_api) = {
             .error_callback_dis   = 0,                  \
             .block_count          = 1,                  \
             .head_block =                               \
-                &mcux_lpuart_##id##_data.async.tx_dma_params.active_dma_block,  \
+                &mcux_lpuart_##id##_data.async.tx_dma_params.active_dma_block, \
             .channel_direction = MEMORY_TO_PERIPHERAL,  \
             .dma_slot = DT_INST_DMAS_CELL_BY_NAME(      \
                         id, tx, source),                \
             .dma_callback = dma_callback,               \
-            .user_data    = (void*)DEVICE_DT_INST_GET(id)   \
+            .user_data    = (void*)DEVICE_DT_INST_GET(id) \
         },                                              \
     },
 #define RX_DMA_CONFIG(id)                               \
     .rx_dma_config = {                                  \
-        .dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, rx)),    \
-        .dma_channel = DT_INST_DMAS_CELL_BY_NAME(id, rx, mux),          \
+        .dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, rx)), \
+        .dma_channel = DT_INST_DMAS_CELL_BY_NAME(id, rx, mux), \
         .dma_cfg = {                                    \
             .source_burst_length  = 1,                  \
             .dest_burst_length    = 1,                  \

@@ -185,7 +185,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: e81d26f77faa419a6b2286418dbe6796c92ed18a
+      revision: 470f874ce432763a2b82cd322d0ff6efc89240cd
       path: modules/hal/infineon
       groups:
         - hal
@@ -255,7 +255,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 5df9cb1db3e215b5b567abdfeb6d18cc853710e9
+      revision: ba05f5a8295a89bd2935ce13f5d813c5b4e7007d
       path: modules/hal/stm32
       groups:
         - hal

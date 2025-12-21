@@ -1255,6 +1255,7 @@ Documentation Infrastructure:
   status: odd fixes
   collaborators:
     - anangl
+    - ZhaoxiangJin
   files:
     - drivers/adc/
     - include/zephyr/drivers/adc.h
@@ -2254,6 +2255,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - bjarki-andreasen
+  collaborators:
+    - Holt-Sun
   files:
     - drivers/rtc/
     - include/zephyr/drivers/rtc/
