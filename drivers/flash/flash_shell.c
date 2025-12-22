@@ -782,6 +782,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
 STRUCT_SECTION_START_EXTERN(Z_DEVICE_API_TYPE(flash));
 STRUCT_SECTION_END_EXTERN(Z_DEVICE_API_TYPE(flash));
+
 static bool device_is_flash(const struct device* dev) {
     return DEVICE_API_IS(flash, dev);
 }

@@ -376,6 +376,7 @@ STRUCT_SECTION_END_EXTERN(Z_DEVICE_API_TYPE(i2c));
 STRUCT_SECTION_START_EXTERN(Z_DEVICE_API_TYPE(i3c));
 STRUCT_SECTION_END_EXTERN(Z_DEVICE_API_TYPE(i3c));
 #endif
+
 static bool device_is_i2c(const struct device *dev) {
     #ifdef CONFIG_I3C
     return DEVICE_API_IS(i2c, dev) || DEVICE_API_IS(i3c, dev);

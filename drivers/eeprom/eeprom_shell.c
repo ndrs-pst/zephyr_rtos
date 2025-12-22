@@ -208,6 +208,7 @@ static int cmd_fill(const struct shell* sh, size_t argc, char** argv) {
 
 STRUCT_SECTION_START_EXTERN(Z_DEVICE_API_TYPE(eeprom));
 STRUCT_SECTION_END_EXTERN(Z_DEVICE_API_TYPE(eeprom));
+
 static bool device_is_eeprom(const struct device* dev) {
     return DEVICE_API_IS(eeprom, dev);
 }

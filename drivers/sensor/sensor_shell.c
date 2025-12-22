@@ -184,6 +184,7 @@ static int find_sensor_trigger_device(const struct device *sensor)
 
 STRUCT_SECTION_START_EXTERN(Z_DEVICE_API_TYPE(sensor));
 STRUCT_SECTION_END_EXTERN(Z_DEVICE_API_TYPE(sensor));
+
 static bool sensor_device_check(const struct device *dev)
 {
 	return DEVICE_API_IS(sensor, dev);
