@@ -882,3 +882,9 @@ int sdmmc_write_blocks(struct sd_card* card, uint8_t const* wbuf, uint32_t start
                        uint32_t num_blocks) {
     return card_write_blocks(card, wbuf, start_block, num_blocks);
 }
+
+int sdmmc_erase_blocks(struct sd_card *card, uint32_t start_block,
+		       uint32_t num_blocks)
+{
+	return card_erase_blocks(card, start_block, num_blocks);
+}

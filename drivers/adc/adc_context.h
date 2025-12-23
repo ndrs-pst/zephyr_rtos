@@ -67,7 +67,7 @@ struct adc_context {
     bool asynchronous;
     #endif /* CONFIG_ADC_ASYNC */
 
-    struct adc_sequence         sequence;
+    struct adc_sequence sequence;
     struct adc_sequence_options options;
     uint16_t sampling_index;
 };

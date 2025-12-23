@@ -148,7 +148,7 @@ struct adc_channel_cfg {
      * on the underlying hardware capabilities or configured via a dedicated
      * Kconfig option).
      */
-    uint8_t channel_id   : 5;
+    uint8_t channel_id : 5;
 
     /** Channel type: single-ended or differential. */
     uint8_t differential : 1;
