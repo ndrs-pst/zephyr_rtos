@@ -58,7 +58,7 @@
 			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 		};
 
-		sram0_1: sram0_1@20400000 {
+		sram0_1_2: sram0_1_2@20400000 {
 			compatible = "mmio-sram";
 			reg = <0x20400000 DT_SIZE_K(768)>;
 		};
