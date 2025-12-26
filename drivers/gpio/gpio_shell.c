@@ -199,7 +199,7 @@ static int get_gpio_pin(const struct shell* sh, const struct gpio_ctrl* ctrl, ch
 
 static int get_sh_gpio(const struct shell* sh, char** argv, struct sh_gpio* gpio) {
     const struct gpio_ctrl* ctrl;
-    int ret;
+    int ret = 0; /* Always set to 0 */
     int pin;
 
     ctrl = get_gpio_ctrl(argv[ARGV_DEV]);
@@ -301,6 +301,7 @@ static int cmd_gpio_conf(const struct shell* sh, size_t argc, char** argv) {
         if ((flags & (GPIO_ACTIVE_LOW | GPIO_ACTIVE_HIGH)) == 0) {
             flags |= GPIO_ACTIVE_HIGH;
         }
+
         /* Default to initialization to logic 0 if not specified */
         if ((flags & GPIO_OUTPUT_INIT_LOGICAL) == 0) {
             flags |= GPIO_OUTPUT_INIT_LOGICAL | GPIO_OUTPUT_INIT_LOW;
@@ -319,7 +320,7 @@ static int cmd_gpio_conf(const struct shell* sh, size_t argc, char** argv) {
         return (SHELL_CMD_HELP_PRINTED);
     }
 
-    if (argc == 5) {
+    if (argc == 6) {
         vendor_specific = shell_strtoul(argv[ARGV_VENDOR_SPECIFIC], 0, &ret);
         if ((ret == 0) && ((vendor_specific & ~(0xFF00U)) == 0)) {
             flags |= vendor_specific;
@@ -634,15 +635,20 @@ static void print_ordered_info(const struct shell* sh) {
 }
 
 static int cmd_gpio_info(const struct shell* sh, size_t argc, char** argv) {
-    const struct gpio_ctrl* ctrl = get_gpio_ctrl(argv[ARGV_DEV]);
+    const struct gpio_ctrl* ctrl;
 
-    if (ctrl == NULL) {
-        /* No device specified */
-        print_ordered_info(sh);
-        return (0);
+    if (argc >= 2) {
+        ctrl = get_gpio_ctrl(argv[ARGV_DEV]);
+        if (ctrl == NULL) {
+            shell_error(sh, "unknown gpio controller: %s", argv[ARGV_DEV]);
+            return (-EINVAL);
+        }
+
+        print_gpio_ctrl_info(sh, ctrl);
     }
-
-    print_gpio_ctrl_info(sh, ctrl);
+    else {
+        print_ordered_info(sh);
+    }
 
     return (0);
 }
