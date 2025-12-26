@@ -187,6 +187,7 @@ static void mcux_lpuart_poll_out(struct device const* dev, unsigned char c) {
             & LPUART_STAT_TDRE_MASK)) {
         /* pass */
     }
+
     /* Lock interrupts while we send data */
     key = irq_lock();
 
@@ -1082,7 +1083,7 @@ static int mcux_lpuart_configure_basic(struct device const* dev, const struct ua
     }
 
     uart_config->baudRate_Bps = cfg->baudrate;
-    uart_config->enableRx     = true;
+    uart_config->enableRx = true;
     /* Tx will be enabled manually after set tx-rts */
     uart_config->enableTx = false;
 
@@ -1128,17 +1129,21 @@ static int mcux_lpuart_configure_async(struct device const* dev) {
 
 static int mcux_lpuart_configure_init(struct device const* dev, const struct uart_config* cfg) {
     const struct mcux_lpuart_config* config = dev->config;
+    LPUART_Type* lpuart = config->base;
     struct mcux_lpuart_data* data = dev->data;
     lpuart_config_t uart_config;
     uint32_t clock_freq;
+    bool is_ready;
     int ret;
 
-    if (!device_is_ready(config->clock_dev)) {
+    is_ready = device_is_ready(config->clock_dev);
+    if (is_ready == false) {
         return (-ENODEV);
     }
 
-    if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-                               &clock_freq)) {
+    ret = clock_control_get_rate(config->clock_dev, config->clock_subsys,
+                                 &clock_freq);
+    if (ret != 0) {
         return (-EINVAL);
     }
 
@@ -1154,25 +1159,25 @@ static int mcux_lpuart_configure_init(struct device const* dev, const struct uar
         return (ret);
     }
 
-    LPUART_Init(config->base, &uart_config, clock_freq);
+    LPUART_Init(lpuart, &uart_config, clock_freq);
 
     #ifdef LPUART_HAS_MODEM
     if (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485) {
         /* Set the LPUART into RS485 mode (tx driver enable using RTS) */
-        config->base->MODIR |= LPUART_MODIR_TXRTSE(true);
+        lpuart->MODIR |= LPUART_MODIR_TXRTSE(true);
         if (!config->rs485_de_active_low) {
-            config->base->MODIR |= LPUART_MODIR_TXRTSPOL(1);
+            lpuart->MODIR |= LPUART_MODIR_TXRTSPOL(1);
         }
     }
     #endif
 
     /* Now can enable tx */
-    config->base->CTRL |= LPUART_CTRL_TE(true);
+    lpuart->CTRL |= LPUART_CTRL_TE(true);
 
     if (config->loopback_en) {
         /* Set the LPUART into loopback mode */
-        config->base->CTRL |= LPUART_CTRL_LOOPS_MASK;
-        config->base->CTRL &= ~LPUART_CTRL_RSRC_MASK;
+        lpuart->CTRL |= LPUART_CTRL_LOOPS_MASK;
+        lpuart->CTRL &= ~LPUART_CTRL_RSRC_MASK;
     }
     else if (config->single_wire) {
         /* Enable the single wire / half-duplex mode, only possible when
@@ -1181,21 +1186,21 @@ static int mcux_lpuart_configure_init(struct device const* dev, const struct uar
          */
         unsigned int key = irq_lock();
 
-        config->base->CTRL |= (LPUART_CTRL_LOOPS_MASK | LPUART_CTRL_RSRC_MASK);
+        lpuart->CTRL |= (LPUART_CTRL_LOOPS_MASK | LPUART_CTRL_RSRC_MASK);
         irq_unlock(key);
     }
     else {
         #ifdef LPUART_CTRL_TXINV
         /* Only invert TX in full-duplex mode */
         if (config->tx_invert) {
-            config->base->CTRL |= LPUART_CTRL_TXINV(1);
+            lpuart->CTRL |= LPUART_CTRL_TXINV(1);
         }
         #endif
     }
 
     #ifdef LPUART_STAT_RXINV
     if (config->rx_invert) {
-        config->base->STAT |= LPUART_STAT_RXINV(1);
+        lpuart->STAT |= LPUART_STAT_RXINV(1);
     }
     #endif
 
