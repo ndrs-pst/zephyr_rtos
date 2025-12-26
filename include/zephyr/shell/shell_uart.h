@@ -73,6 +73,15 @@ struct shell_uart_polling {
 	struct k_timer rx_timer;
 };
 
+/* #CUSTOM@NDRS
+ * Make CONFIG_SHELL_ASYNC_API=y to ensure compatibility with CONFIG_DCACHE=y.
+ */
+#if (IS_ENABLED(CONFIG_SHELL_ASYNC_API) && IS_ENABLED(CONFIG_NOCACHE_MEMORY))
+#define SHELL_UART_NOCACHE_ATTR __attribute__((section(".nocache")))
+#else
+#define SHELL_UART_NOCACHE_ATTR
+#endif
+
 #ifdef CONFIG_SHELL_BACKEND_SERIAL_API_POLLING
 #define SHELL_UART_STRUCT struct shell_uart_polling
 #elif defined(CONFIG_SHELL_BACKEND_SERIAL_API_ASYNC)
@@ -88,7 +97,7 @@ struct shell_uart_polling {
  * previous Zephyr version, it will be removed in future release.
  */
 #define SHELL_UART_DEFINE(_name, ...)                                                              \
-	static SHELL_UART_STRUCT _name##_shell_uart;                                               \
+	SHELL_UART_NOCACHE_ATTR static SHELL_UART_STRUCT _name##_shell_uart;                       \
 	struct shell_transport _name = {                                                           \
 		.api = &shell_uart_transport_api,                                                  \
 		.ctx = (struct shell_telnet *)&_name##_shell_uart,                                 \

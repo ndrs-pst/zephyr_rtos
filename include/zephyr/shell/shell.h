@@ -77,6 +77,15 @@ extern "C" {
  */
 #define SHELL_OPT_ARG_MAX           (0xFD)
 
+/* #CUSTOM@NDRS
+ * Make CONFIG_SHELL_ASYNC_API=y to ensure compatibility with CONFIG_DCACHE=y.
+ */
+#if (IS_ENABLED(CONFIG_SHELL_ASYNC_API) && IS_ENABLED(CONFIG_NOCACHE_MEMORY))
+#define SHELL_NOCACHE_ATTR __attribute__((section(".nocache")))
+#else
+#define SHELL_NOCACHE_ATTR
+#endif
+
 /**
  * @brief Shell API
  * @defgroup shell_api Shell API
@@ -1124,7 +1133,7 @@ extern void z_shell_print_stream(void const* user_ctx, char const* data,
  * @param[in] _shell_flag    Shell output newline sequence.
  */
 #define SHELL_DEFINE(_name, _prompt, _transport_iface, _log_queue_size, _log_timeout, _shell_flag) \
-    static uint8_t _name##_out_buffer[CONFIG_SHELL_PRINTF_BUFF_SIZE];                          \
+    SHELL_NOCACHE_ATTR static uint8_t _name##_out_buffer[CONFIG_SHELL_PRINTF_BUFF_SIZE];       \
     Z_SHELL_LOG_BACKEND_DEFINE(_name, _name##_out_buffer, CONFIG_SHELL_PRINTF_BUFF_SIZE,       \
                                _log_queue_size, _log_timeout);                                 \
     Z_SHELL_DEFINE(_name, _prompt, _transport_iface, _name##_out_buffer,                       \
