@@ -39,11 +39,11 @@ static inline void lpspi_rx_word_write_bytes(const struct device* dev, size_t of
 }
 
 /* Reads a maximum number of words from RX fifo and writes them to the remainder of the RX buf */
-static inline size_t lpspi_rx_buf_write_words(const struct device* dev, uint8_t max_read) {
+static inline size_t lpspi_rx_buf_write_words(const struct device* dev, size_t max_read) {
     struct lpspi_data* data = dev->data;
     struct lpspi_driver_data* lpspi_data = (struct lpspi_driver_data*)data->driver_data;
     struct spi_context* ctx = &data->ctx;
-    size_t words_read = z_min(ctx->rx_len, (size_t)max_read);
+    size_t words_read = z_min(ctx->rx_len, max_read);
 
     for (size_t i = 0; i < words_read; i++) {
         lpspi_rx_word_write_bytes(dev, (i * lpspi_data->word_size_bytes));
@@ -60,7 +60,7 @@ static inline void lpspi_handle_rx_irq(const struct device* dev) {
     size_t total_words_written = 0;
     size_t total_words_read = 0;
     size_t words_read;
-    uint8_t rx_fsr;
+    size_t rx_fsr;
 
     lpspi->SR = LPSPI_SR_RDF_MASK;
 
@@ -133,8 +133,8 @@ static void lpspi_next_tx_fill(const struct device* dev) {
     struct lpspi_data* data = dev->data;
     struct lpspi_driver_data* lpspi_data = (struct lpspi_driver_data*)data->driver_data;
     struct spi_context* ctx = &data->ctx;
-    uint8_t left_in_fifo = tx_fifo_cur_len(lpspi);
-    size_t fill_len = z_min(ctx->tx_len, (size_t)(config->tx_fifo_size - left_in_fifo));
+    size_t left_in_fifo = tx_fifo_cur_len(lpspi);
+    size_t fill_len = z_min(ctx->tx_len, ((size_t)config->tx_fifo_size - left_in_fifo));
     size_t actual_filled = 0;
 
     const struct spi_buf* current_buf = ctx->current_tx;

@@ -212,7 +212,8 @@ static void lpspi_dma_callback(const struct device* dev, void* arg, uint32_t cha
         goto error;
     }
 
-    if (channel != dma_data->dma_tx.channel && channel != dma_data->dma_rx.channel) {
+    if ((channel != dma_data->dma_tx.channel) &&
+        (channel != dma_data->dma_rx.channel)) {
         ret = -EIO;
         goto error;
     }
@@ -309,13 +310,13 @@ static int lpspi_ll_transceive_dma(const struct device* dev, const struct spi_co
     struct lpspi_data* data = dev->data;
     struct spi_nxp_dma_data* dma_data = (struct spi_nxp_dma_data*)data->driver_data;
     struct spi_context* ctx = &data->ctx;
-    uint8_t major_ver = (lpspi->VERID & LPSPI_VERID_MAJOR_MASK) >> LPSPI_VERID_MAJOR_SHIFT;
+    uint8_t major_ver = data->major_version;
     int ret;
 
     spi_context_lock(ctx, asynchronous, cb, userdata, spi_cfg);
 
     ret = lpspi_configure(dev, spi_cfg);
-    if (ret) {
+    if (ret != 0) {
         goto out;
     }
 
@@ -457,8 +458,8 @@ static void lpspi_isr(const struct device* dev) {
     static struct spi_nxp_dma_data lpspi_dma_data##n = {SPI_DMA_CHANNELS(n)}; \
                                                                 \
     static struct lpspi_data lpspi_data_##n = {                 \
-        .driver_data = &lpspi_dma_data##n,                      \
         SPI_NXP_LPSPI_COMMON_DATA_INIT(n)                       \
+        .driver_data = &lpspi_dma_data##n,                      \
     };                                                          \
                                                                 \
     SPI_DEVICE_DT_INST_DEFINE(n, lpspi_dma_init, NULL, &lpspi_data_##n, \

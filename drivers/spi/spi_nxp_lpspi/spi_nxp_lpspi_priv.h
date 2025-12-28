@@ -53,19 +53,19 @@ struct lpspi_data {
     struct spi_context ctx;
     void* driver_data;
     size_t transfer_len;
-    uint8_t major_version;
     uint32_t clock_freq;
+    uint8_t major_version;
 };
 
 /* Common helper functions used to interact with LPSPI FIFOs (TX and RX) when dealing
  * with cpu-based implementation.
  */
-static inline uint8_t rx_fifo_cur_len(LPSPI_Type* base) {
-    return (base->FSR & LPSPI_FSR_RXCOUNT_MASK) >> LPSPI_FSR_RXCOUNT_SHIFT;
+static inline size_t rx_fifo_cur_len(LPSPI_Type* base) {
+    return (size_t)((base->FSR & LPSPI_FSR_RXCOUNT_MASK) >> LPSPI_FSR_RXCOUNT_SHIFT);
 }
 
-static inline uint8_t tx_fifo_cur_len(LPSPI_Type* base) {
-    return (base->FSR & LPSPI_FSR_TXCOUNT_MASK) >> LPSPI_FSR_TXCOUNT_SHIFT;
+static inline size_t tx_fifo_cur_len(LPSPI_Type* base) {
+    return (size_t)((base->FSR & LPSPI_FSR_TXCOUNT_MASK) >> LPSPI_FSR_TXCOUNT_SHIFT);
 }
 
 /* Verifies spi_cfg validity and set up configuration of hardware for xfer
