@@ -252,7 +252,7 @@ static int cmd_flash_shell_read(const struct shell* sh, size_t argc, char* argv[
     }
 
     for (upto = 0; upto < cnt; upto += todo) {
-        todo = MIN((cnt - upto), SHELL_HEXDUMP_BYTES_IN_LINE);
+        todo = z_min((cnt - upto), SHELL_HEXDUMP_BYTES_IN_LINE);
         ret = flash_read(flash_dev, addr, &m_flash_buf[0], todo);
         if (ret != 0) {
             shell_error(sh, "Read ERROR!");
@@ -299,7 +299,6 @@ static int cmd_flash_shell_test(const struct shell* sh, size_t argc, char* argv[
 
     while (repeat--) {
         result = flash_erase(flash_dev, addr, size);
-
         if (result) {
             shell_error(sh, "Erase Failed, code %d.", result);
             break;
@@ -540,11 +539,10 @@ static int cmd_erase_test(const struct shell* sh, size_t argc, char* argv[]) {
     return result;
 }
 
-static int cmd_erase_write_test(const struct shell *sh, size_t argc, char *argv[])
-{
-    const struct device *flash_dev;
+static int cmd_erase_write_test(const struct shell* sh, size_t argc, char* argv[]) {
+    const struct device* flash_dev;
     uint32_t repeat;
-    int result_erase = 0;
+    int result_erase;
     int result_write = 0;
     uint32_t addr;
     uint32_t size;
@@ -582,7 +580,7 @@ static int cmd_erase_write_test(const struct shell *sh, size_t argc, char *argv[
             break;
         }
 
-        if (result_write) {
+        if (result_write != 0) {
             shell_error(sh, "Write failed: %d", result_write);
             break;
         }
@@ -625,14 +623,13 @@ static int set_bypass(const struct shell* sh, shell_bypass_cb_t bypass) {
 
 static void bypass_cb(struct shell const* sh, uint8_t* recv, size_t len, void* user_data) {
     uint32_t left_to_read = flash_load_total - flash_load_written - flash_load_boff;
-    uint32_t to_copy = MIN(len, left_to_read);
+    uint32_t to_copy = z_min(len, left_to_read);
     uint32_t copied = 0;
 
     ARG_UNUSED(user_data);
 
     while (copied < to_copy) {
-
-        uint32_t buf_copy = MIN(to_copy, flash_load_buf_size - flash_load_boff);
+        uint32_t buf_copy = z_min(to_copy, flash_load_buf_size - flash_load_boff);
 
         memcpy(flash_load_buf + flash_load_boff, recv + copied, buf_copy);
 
@@ -765,12 +762,15 @@ static int cmd_flash_shell_page_info(const struct shell* sh, size_t argc, char* 
 }
 
 #if DT_HAS_COMPAT_STATUS_OKAY(fixed_partitions)
-#define PRINT_PARTITION_INFO(part)                                                                 \
-        shell_print(sh, "%-32s %-15s 0x%08x %d KiB", DT_NODE_FULL_NAME(part),                      \
-                    DT_PROP_OR(part, label, ""), DT_REG_ADDR(part), DT_REG_SIZE(part) / 1024);
+#define PRINT_PARTITION_INFO(part)                              \
+    shell_print(sh, "%-32s %-15s 0x%08x %d KiB", DT_NODE_FULL_NAME(part), \
+                DT_PROP_OR(part, label, ""), DT_REG_ADDR(part), DT_REG_SIZE(part) / 1024);
+
+#define PRINT_PARTITIONS_FOREACH_CHILD(node_id)                 \
+    DT_FOREACH_CHILD(node_id, PRINT_PARTITION_INFO)
 
 static int cmd_partitions(const struct shell* sh, size_t argc, char* argv[]) {
-    DT_FOREACH_CHILD(DT_COMPAT_GET_ANY_STATUS_OKAY(fixed_partitions), PRINT_PARTITION_INFO);
+    DT_FOREACH_STATUS_OKAY(fixed_partitions, PRINT_PARTITIONS_FOREACH_CHILD);
 
     return (0);
 }
@@ -799,7 +799,7 @@ static void device_name_get(size_t idx, struct shell_static_entry* entry) {
 SHELL_STATIC_SUBCMD_SET_CREATE(flash_cmds,
     SHELL_CMD_ARG(copy, &dsub_device_name,
                   "<src_device> <dst_device> <src_offset> <dst_offset> <size>",
-                  cmd_flash_shell_copy, 5, 5),
+                  cmd_flash_shell_copy, 6, 0),
     SHELL_CMD_ARG(erase, &dsub_device_name,
                   "[<device>] <page address> [<size>]",
                   cmd_flash_shell_erase, 2, 2),
@@ -822,7 +822,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(flash_cmds,
     #if DT_HAS_COMPAT_STATUS_OKAY(fixed_partitions)
     SHELL_CMD_ARG(partitions, &dsub_device_name,
                   "",
-                  cmd_partitions, 0, 0),
+                  cmd_partitions, 1, 0),
     #endif
 
     #ifdef CONFIG_FLASH_SHELL_TEST_COMMANDS
