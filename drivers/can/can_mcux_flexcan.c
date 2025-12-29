@@ -281,7 +281,7 @@ static int mcux_flexcan_start(const struct device *dev)
 		/* Re-add all RX filters using current mode */
 		k_mutex_lock(&data->rx_mutex, K_FOREVER);
 
-		for (alloc = RX_START_IDX; alloc < config->rx_mb; alloc++) {
+		for (alloc = RX_START_IDX; alloc < (int)config->rx_mb; alloc++) {
 			if (atomic_test_bit(data->rx_allocs, alloc)) {
 				status = mcux_flexcan_mb_start(dev, alloc);
 				if (status != kStatus_Success) {
@@ -355,7 +355,7 @@ static int mcux_flexcan_stop(const struct device *dev)
 	data->common.started = false;
 
 	/* Abort any pending TX frames before entering freeze mode */
-	for (alloc = 0; alloc < config->tx_mb; alloc++) {
+	for (alloc = 0; alloc < (int)config->tx_mb; alloc++) {
 		function = data->tx_cbs[alloc].function;
 		arg = data->tx_cbs[alloc].arg;
 
@@ -386,7 +386,7 @@ static int mcux_flexcan_stop(const struct device *dev)
 		 */
 		k_mutex_lock(&data->rx_mutex, K_FOREVER);
 
-		for (alloc = RX_START_IDX; alloc < config->rx_mb; alloc++) {
+		for (alloc = RX_START_IDX; alloc < (int)config->rx_mb; alloc++) {
 			if (atomic_test_bit(data->rx_allocs, alloc)) {
 				mcux_flexcan_mb_stop(dev, alloc);
 			}
@@ -748,7 +748,7 @@ static int mcux_flexcan_send(const struct device *dev,
 		return -EAGAIN;
 	}
 
-	for (alloc = 0; alloc < config->tx_mb; alloc++) {
+	for (alloc = 0; alloc < (int)config->tx_mb; alloc++) {
 		if (!atomic_test_and_set_bit(data->tx_allocs, alloc)) {
 			break;
 		}
@@ -819,7 +819,7 @@ static int mcux_flexcan_add_rx_filter(const struct device *dev,
 	k_mutex_lock(&data->rx_mutex, K_FOREVER);
 
 	/* Find and allocate RX message buffer */
-	for (i = RX_START_IDX; i < config->rx_mb; i++) {
+	for (i = RX_START_IDX; i < (int)config->rx_mb; i++) {
 		if (!atomic_test_and_set_bit(data->rx_allocs, i)) {
 			alloc = i;
 			break;
@@ -923,7 +923,7 @@ static void mcux_flexcan_remove_rx_filter(const struct device *dev, int filter_i
 	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
 
-	if (filter_id < 0 || filter_id >= config->rx_mb) {
+	if (filter_id < 0 || filter_id >= (int)config->rx_mb) {
 		LOG_ERR("filter ID %d out of bounds", filter_id);
 		return;
 	}
@@ -998,7 +998,7 @@ static inline void mcux_flexcan_transfer_error_status(const struct device *dev,
 
 	if (state == CAN_STATE_BUS_OFF) {
 		/* Abort any pending TX frames in case of bus-off */
-		for (alloc = 0; alloc < config->tx_mb; alloc++) {
+		for (alloc = 0; alloc < (int)config->tx_mb; alloc++) {
 			/* Copy callback function and argument before clearing bit */
 			function = data->tx_cbs[alloc].function;
 			arg = data->tx_cbs[alloc].arg;
