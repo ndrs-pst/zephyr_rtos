@@ -302,7 +302,7 @@ Aesc Platform:
   files-regex:
     - ^drivers/.*aesc(\.c)?$
   labels:
-    - "area: Aesc Silicon Platform"
+    - "platform: Aesc Silicon"
 
 Ambiq Platforms:
   status: maintained
@@ -1136,6 +1136,8 @@ Devicetree:
 
 Devicetree Bindings:
   status: odd fixes
+  collaborators:
+    - JarmouniA
   files-regex:
     - ^dts/bindings/.*zephyr.*
   files:
@@ -1143,7 +1145,7 @@ Devicetree Bindings:
     - include/zephyr/dt-bindings/
     - scripts/bindings_properties_allowlist.yaml
   labels:
-    - "area: Devicetree Bindings"
+    - "area: Devicetree Binding"
 
 Disk:
   status: maintained
