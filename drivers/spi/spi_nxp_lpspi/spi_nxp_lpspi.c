@@ -97,7 +97,7 @@ static inline void lpspi_fill_tx_fifo(const struct device* dev, uint8_t const* b
     LPSPI_Type* lpspi = (LPSPI_Type*)DEVICE_MMIO_NAMED_GET(dev, reg_base);
     struct lpspi_data* data = dev->data;
     struct lpspi_driver_data* lpspi_data = (struct lpspi_driver_data*)data->driver_data;
-    uint8_t word_size = lpspi_data->word_size_bytes;
+    size_t word_size = lpspi_data->word_size_bytes;
     size_t offset = 0;
     uint32_t next_word;
     uint32_t next_word_bytes;
@@ -229,7 +229,7 @@ static void lpspi_isr(const struct device* dev) {
     const struct lpspi_config* config = dev->config;
     struct lpspi_data* data = dev->data;
     struct lpspi_driver_data* lpspi_data = (struct lpspi_driver_data*)data->driver_data;
-    uint8_t word_size_bytes = lpspi_data->word_size_bytes;
+    size_t word_size_bytes = lpspi_data->word_size_bytes;
     struct spi_context* ctx = &data->ctx;
     uint32_t status_flags = lpspi->SR;
 
