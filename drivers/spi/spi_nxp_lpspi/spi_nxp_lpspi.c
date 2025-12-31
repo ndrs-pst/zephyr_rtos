@@ -25,14 +25,14 @@ static inline void lpspi_rx_word_write_bytes(const struct device* dev, size_t of
     struct lpspi_driver_data* lpspi_data = (struct lpspi_driver_data*)data->driver_data;
     struct spi_context* ctx = &data->ctx;
     size_t num_bytes = lpspi_data->word_size_bytes;
-    uint8_t* buf  = &ctx->rx_buf[offset];
     uint32_t word = lpspi->RDR;
 
-    if (!spi_context_rx_buf_on(ctx) && spi_context_rx_on(ctx)) {
+    if (!spi_context_rx_buf_on(ctx)) {
         /* receive no actual data if rx buf is NULL */
         return;
     }
 
+    uint8_t* buf = &ctx->rx_buf[offset];
     for (size_t i = 0; i < num_bytes; i++) {
         buf[i] = (uint8_t)(word >> (BITS_PER_BYTE * i));
     }
@@ -44,9 +44,11 @@ static inline size_t lpspi_rx_buf_write_words(const struct device* dev, size_t m
     struct lpspi_driver_data* lpspi_data = (struct lpspi_driver_data*)data->driver_data;
     struct spi_context* ctx = &data->ctx;
     size_t words_read = z_min(ctx->rx_len, max_read);
+    size_t offset = 0;
 
     for (size_t i = 0; i < words_read; i++) {
-        lpspi_rx_word_write_bytes(dev, (i * lpspi_data->word_size_bytes));
+        lpspi_rx_word_write_bytes(dev, offset);
+        offset += lpspi_data->word_size_bytes;
     }
 
     return words_read;
@@ -58,22 +60,22 @@ static inline void lpspi_handle_rx_irq(const struct device* dev) {
     struct lpspi_driver_data* lpspi_data = (struct lpspi_driver_data*)data->driver_data;
     struct spi_context* ctx = &data->ctx;
     size_t total_words_written = 0;
-    size_t total_words_read = 0;
     size_t words_read;
     size_t rx_fsr;
 
     lpspi->SR = LPSPI_SR_RDF_MASK;
 
-    LOG_DBG("RX FIFO: %d, RX BUF: %p", rx_fsr, ctx->rx_buf);
+    rx_fsr = rx_fifo_cur_len(lpspi);
+    LOG_DBG("RX FIFO: %zu, RX BUF: %p", rx_fsr, ctx->rx_buf);
 
-    while (((rx_fsr = rx_fifo_cur_len(lpspi)) > 0) && spi_context_rx_on(ctx)) {
+    while ((rx_fsr > 0) && spi_context_rx_on(ctx)) {
         words_read = lpspi_rx_buf_write_words(dev, rx_fsr);
-        total_words_read += words_read;
         total_words_written += (spi_context_rx_buf_on(ctx) ? words_read : 0);
         spi_context_update_rx(ctx, lpspi_data->word_size_bytes, words_read);
+        rx_fsr = rx_fifo_cur_len(lpspi);
     }
 
-    LOG_DBG("RX done %d words to spi buf", total_words_written);
+    LOG_DBG("RX done %zu words to spi buf", total_words_written);
 }
 
 /* constructs the next word from the buffer */
