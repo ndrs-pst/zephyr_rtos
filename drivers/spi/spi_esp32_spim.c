@@ -132,8 +132,8 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device* dev) {
     size_t bit_len = transfer_len_bytes << 3;
     uint8_t* rx_temp = NULL;
     uint8_t* tx_temp = NULL;
-    size_t dma_len_tx = MIN(ctx->tx_len * data->dfs, SPI_DMA_MAX_BUFFER_SIZE);
-    size_t dma_len_rx = MIN(ctx->rx_len * data->dfs, SPI_DMA_MAX_BUFFER_SIZE);
+    size_t dma_len_tx = MIN(ctx->tx.len * data->dfs, SPI_DMA_MAX_BUFFER_SIZE);
+    size_t dma_len_rx = MIN(ctx->rx.len * data->dfs, SPI_DMA_MAX_BUFFER_SIZE);
     bool prepare_data = true;
     int err = 0;
 
@@ -184,8 +184,8 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device* dev) {
     /* keep cs line active until last transmission */
     hal_trans->cs_keep_active =
         (UTIL_OR(IS_ENABLED(DT_SPI_CTX_HAS_NO_CS_GPIOS), (ctx->num_cs_gpios == 0)) &&
-         (ctx->rx_count > 1 || ctx->tx_count > 1 || ctx->rx_len > transfer_len_frames ||
-          ctx->tx_len > transfer_len_frames));
+         (ctx->rx.count > 1 || ctx->tx.count > 1 || ctx->rx.len > transfer_len_frames ||
+          ctx->tx.len > transfer_len_frames));
 
     /* configure SPI */
     spi_hal_setup_trans(hal, hal_dev, hal_trans);

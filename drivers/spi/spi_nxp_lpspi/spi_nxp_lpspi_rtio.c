@@ -387,7 +387,7 @@ static void lpspi_rtio_iodev_complete(const struct device* dev, int status) {
     NVIC_ClearPendingIRQ(config->irqn);
 
     if (!(ctx->config->operation & SPI_HOLD_ON_CS)) {
-        spi_context_cs_control(&data->ctx, false);
+        spi_context_cs_control(ctx, false);
     }
 
     lpspi->TCR &= ~(LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK);

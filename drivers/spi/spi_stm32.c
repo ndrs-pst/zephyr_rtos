@@ -403,60 +403,62 @@ static int spi_dma_move_buffers(const struct device* dev, size_t len) {
 
 static void spi_stm32_send_next_frame(SPI_TypeDef* spi,
                                       struct spi_stm32_data* data) {
-    uint8_t const frame_size = bits2bytes(data->ctx.config->operation);
+    struct spi_context* ctx = &data->ctx;
+    uint8_t const frame_size = bits2bytes(ctx->config->operation);
     uint32_t tx_frame = data->tx_nop;
 
     if (frame_size == 1U) {
-        if (spi_context_tx_buf_on(&data->ctx)) {
-            tx_frame = UNALIGNED_GET((uint8_t*)(data->ctx.tx_buf));
+        if (spi_context_tx_buf_on(ctx)) {
+            tx_frame = UNALIGNED_GET((uint8_t*)(ctx->tx_buf));
         }
         LL_SPI_TransmitData8(spi, (uint8_t)tx_frame);
     }
     else if (frame_size == 2U) {
-        if (spi_context_tx_buf_on(&data->ctx)) {
-            tx_frame = UNALIGNED_GET((uint16_t*)(data->ctx.tx_buf));
+        if (spi_context_tx_buf_on(ctx)) {
+            tx_frame = UNALIGNED_GET((uint16_t*)(ctx->tx_buf));
         }
         LL_SPI_TransmitData16(spi, (uint16_t)tx_frame);
     }
     else {
         #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-        if (spi_context_tx_buf_on(&data->ctx)) {
-            tx_frame = UNALIGNED_GET((uint32_t*)(data->ctx.tx_buf));
+        if (spi_context_tx_buf_on(ctx)) {
+            tx_frame = UNALIGNED_GET((uint32_t*)(ctx->tx_buf));
         }
         LL_SPI_TransmitData32(spi, tx_frame);
         #endif
     }
 
-    spi_context_update_tx(&data->ctx, frame_size, 1);
+    spi_context_update_tx(ctx, frame_size, 1);
 }
 
 static void spi_stm32_read_next_frame(SPI_TypeDef* spi,
                                       struct spi_stm32_data* data) {
-    uint8_t const frame_size = bits2bytes(data->ctx.config->operation);
+    struct spi_context* ctx = &data->ctx;
+    uint8_t const frame_size = bits2bytes(ctx->config->operation);
     uint32_t rx_frame;
 
     if (frame_size == 1U) {
         rx_frame = LL_SPI_ReceiveData8(spi);
-        if (spi_context_rx_buf_on(&data->ctx)) {
-            UNALIGNED_PUT(rx_frame, (uint8_t*)data->ctx.rx_buf);
+        if (spi_context_rx_buf_on(ctx)) {
+            UNALIGNED_PUT(rx_frame, (uint8_t*)ctx->rx_buf);
         }
     }
     else if (frame_size == 2U) {
         rx_frame = LL_SPI_ReceiveData16(spi);
-        if (spi_context_rx_buf_on(&data->ctx)) {
-            UNALIGNED_PUT(rx_frame, (uint16_t*)data->ctx.rx_buf);
+        if (spi_context_rx_buf_on(ctx)) {
+            UNALIGNED_PUT(rx_frame, (uint16_t*)ctx->rx_buf);
         }
     }
     else {
         #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
         rx_frame = LL_SPI_ReceiveData32(spi);
-        if (spi_context_rx_buf_on(&data->ctx)) {
-            UNALIGNED_PUT(rx_frame, (uint32_t*)data->ctx.rx_buf);
+        if (spi_context_rx_buf_on(ctx)) {
+            UNALIGNED_PUT(rx_frame, (uint32_t*)ctx->rx_buf);
         }
         #endif
     }
 
-    spi_context_update_rx(&data->ctx, frame_size, 1);
+    spi_context_update_rx(ctx, frame_size, 1);
 }
 
 static bool spi_stm32_transfer_ongoing(struct spi_stm32_data* data) {
@@ -526,51 +528,52 @@ static void spi_stm32_shift_m(const struct spi_stm32_config* cfg,
 
 /* Shift a SPI frame as slave. */
 static void spi_stm32_shift_s(SPI_TypeDef* spi, struct spi_stm32_data* data) {
-    uint8_t frame_size = bits2bytes(data->ctx.config->operation);
+    struct spi_context* ctx = &data->ctx;
+    uint8_t frame_size = bits2bytes(ctx->config->operation);
 
-    if (ll_func_tx_is_not_full(spi) && spi_context_tx_on(&data->ctx)) {
+    if (ll_func_tx_is_not_full(spi) && spi_context_tx_on(ctx)) {
         uint32_t tx_frame;
 
         if (frame_size == 1U) {
-            tx_frame = UNALIGNED_GET((uint8_t*)(data->ctx.tx_buf));
+            tx_frame = UNALIGNED_GET((uint8_t*)(ctx->tx_buf));
             LL_SPI_TransmitData8(spi, (uint8_t)tx_frame);
         }
         else if (frame_size == 2U) {
-            tx_frame = UNALIGNED_GET((uint16_t*)(data->ctx.tx_buf));
+            tx_frame = UNALIGNED_GET((uint16_t*)(ctx->tx_buf));
             LL_SPI_TransmitData16(spi, tx_frame);
         }
         else {
             #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-            tx_frame = UNALIGNED_GET((uint32_t*)(data->ctx.tx_buf));
+            tx_frame = UNALIGNED_GET((uint32_t*)(ctx->tx_buf));
             LL_SPI_TransmitData32(spi, tx_frame);
             #endif
         }
 
-        spi_context_update_tx(&data->ctx, frame_size, 1);
+        spi_context_update_tx(ctx, frame_size, 1);
     }
     else {
         ll_func_disable_int_tx_empty(spi);
     }
 
-    if (ll_func_rx_is_not_empty(spi) && spi_context_rx_buf_on(&data->ctx)) {
+    if (ll_func_rx_is_not_empty(spi) && spi_context_rx_buf_on(ctx)) {
         uint32_t rx_frame;
 
         if (frame_size == 1U) {
             rx_frame = LL_SPI_ReceiveData8(spi);
-            UNALIGNED_PUT(rx_frame, (uint8_t*)data->ctx.rx_buf);
+            UNALIGNED_PUT(rx_frame, (uint8_t*)ctx->rx_buf);
         }
         else if (frame_size == 2U) {
             rx_frame = LL_SPI_ReceiveData16(spi);
-            UNALIGNED_PUT(rx_frame, (uint16_t*)data->ctx.rx_buf);
+            UNALIGNED_PUT(rx_frame, (uint16_t*)ctx->rx_buf);
         }
         else {
             #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
             rx_frame = LL_SPI_ReceiveData32(spi);
-            UNALIGNED_PUT(rx_frame, (uint32_t*)data->ctx.rx_buf);
+            UNALIGNED_PUT(rx_frame, (uint32_t*)ctx->rx_buf);
             #endif
         }
 
-        spi_context_update_rx(&data->ctx, frame_size, 1);
+        spi_context_update_rx(ctx, frame_size, 1);
     }
 }
 
@@ -683,22 +686,23 @@ static int spi_stm32_configure(const struct device* dev,
 static void spi_stm32_iodev_msg_start(const struct device* dev, struct spi_config* config,
                                       const uint8_t* tx_buf, uint8_t* rx_buf, uint32_t buf_len) {
     struct spi_stm32_data* data = dev->data;
+    struct spi_context* ctx = &data->ctx;
     uint32_t size = buf_len / bits2bytes(config->operation);
 
     const struct spi_buf current_tx = {.buf = NULL, .len = size};
     const struct spi_buf current_rx = {.buf = NULL, .len = size};
 
-    data->ctx.current_tx = &current_tx;
-    data->ctx.current_rx = &current_rx;
+    ctx->tx.current = &current_tx;
+    ctx->rx.current = &current_rx;
 
-    data->ctx.tx_buf   = tx_buf;
-    data->ctx.rx_buf   = rx_buf;
-    data->ctx.tx_len   = (tx_buf != NULL) ? size : 0;
-    data->ctx.rx_len   = (rx_buf != NULL) ? size : 0;
-    data->ctx.tx_count = (tx_buf != NULL) ? 1 : 0;
-    data->ctx.rx_count = (rx_buf != NULL) ? 1 : 0;
+    ctx->tx_buf   = tx_buf;
+    ctx->rx_buf   = rx_buf;
+    ctx->tx.len   = (tx_buf != NULL) ? size : 0;
+    ctx->rx.len   = (rx_buf != NULL) ? size : 0;
+    ctx->tx.count = (tx_buf != NULL) ? 1 : 0;
+    ctx->rx.count = (rx_buf != NULL) ? 1 : 0;
 
-    data->ctx.sync_status = 0;
+    ctx->sync_status = 0;
 
     #ifdef CONFIG_SPI_SLAVE
     ctx->recv_frames = 0;
@@ -1670,6 +1674,7 @@ int spi_stpm3x_transceive_dt(struct spi_dt_spec const* spec,
                              uint8_t rx[]) {
     struct spi_stm32_config const* cfg = spec->bus->config;
     struct spi_stm32_data* data = spec->bus->data;
+    struct spi_context* ctx = &data->ctx;
     SPI_TypeDef* spi = cfg->spi;
 
     // Register the thunking handler
@@ -1690,9 +1695,9 @@ int spi_stpm3x_transceive_dt(struct spi_dt_spec const* spec,
     data->ErrorCode = HAL_SPI_ERROR_NONE;
     data->State     = HAL_SPI_STATE_BUSY_TX_RX;
 
-    data->ctx.rx_buf = rx;
-    data->ctx.rx_len = 0U;
-    data->ctx.tx_len = 0U;
+    ctx->rx_buf = rx;
+    ctx->rx.len = 0U;
+    ctx->tx.len = 0U;
 
     // Set the number of data at current transfer
     MODIFY_REG(spi->CR2, SPI_CR2_TSIZE, 4U);
@@ -1807,6 +1812,7 @@ static int spi_stm32_ll_transceive_dma(const struct device* dev,
                                        void* userdata) {
     const struct spi_stm32_config* cfg = dev->config;
     struct spi_stm32_data* data = dev->data;
+    struct spi_context* ctx = &data->ctx;
     SPI_TypeDef* spi = cfg->spi;
     int ret;
     int err;
@@ -1827,7 +1833,7 @@ static int spi_stm32_ll_transceive_dma(const struct device* dev,
     }
     #endif /* CONFIG_DCACHE */
 
-    spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
+    spi_context_lock(ctx, asynchronous, cb, userdata, config);
 
     spi_stm32_pm_policy_state_lock_get(dev);
 
@@ -1854,7 +1860,7 @@ static int spi_stm32_ll_transceive_dma(const struct device* dev,
     #endif /* st_stm32h7_spi */
 
     /* Set buffers info */
-    spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, bits2bytes(config->operation));
+    spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, bits2bytes(config->operation));
 
     #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
     /* set request before enabling (else SPI CFG1 reg is write protected) */
@@ -1894,30 +1900,30 @@ static int spi_stm32_ll_transceive_dma(const struct device* dev,
     tx_cfg->source_data_size = tx_cfg->source_burst_length = word_size_bytes;
     tx_cfg->dest_data_size   = tx_cfg->dest_burst_length   = word_size_bytes;
 
-    while ((data->ctx.rx_len > 0) || (data->ctx.tx_len > 0)) {
+    while ((ctx->rx.len > 0) || (ctx->tx.len > 0)) {
         size_t dma_len;
 
         data->status_flags = 0;
 
         if (transfer_dir == LL_SPI_FULL_DUPLEX) {
-            if (data->ctx.rx_len == 0) {
-                dma_len = data->ctx.tx_len;
+            if (ctx->rx.len == 0) {
+                dma_len = ctx->tx.len;
             }
-            else if (data->ctx.tx_len == 0) {
-                dma_len = data->ctx.rx_len;
+            else if (ctx->tx.len == 0) {
+                dma_len = ctx->rx.len;
             }
             else {
-                dma_len = z_min(data->ctx.tx_len, data->ctx.rx_len);
+                dma_len = z_min(ctx->tx.len, ctx->rx.len);
             }
 
             ret = spi_dma_move_buffers(dev, dma_len);
         }
         else if (transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
-            dma_len = data->ctx.tx_len;
+            dma_len = ctx->tx.len;
             ret = spi_dma_move_tx_buffers(dev, dma_len);
         }
         else {
-            dma_len = data->ctx.rx_len;
+            dma_len = ctx->rx.len;
             ret = spi_dma_move_rx_buffers(dev, dma_len);
         }
 
@@ -1965,7 +1971,7 @@ static int spi_stm32_ll_transceive_dma(const struct device* dev,
         /* wait until spi is no more busy (spi TX fifo is really empty) */
         while (ll_func_spi_dma_busy(spi) && LL_SPI_IsEnabled(spi)) {
             #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-            uint32_t width = SPI_WORD_SIZE_GET(data->ctx.config->operation);
+            uint32_t width = SPI_WORD_SIZE_GET(ctx->config->operation);
 
             /* The TXC flag is not raised at the end of 9, 17 or 25
              * bit transfer, so disable the SPI in these cases to avoid being stuck.
@@ -1991,19 +1997,19 @@ static int spi_stm32_ll_transceive_dma(const struct device* dev,
         uint8_t frame_size_bytes = bits2bytes(config->operation);
 
         if (transfer_dir == LL_SPI_FULL_DUPLEX) {
-            spi_context_update_tx(&data->ctx, frame_size_bytes, dma_len);
-            spi_context_update_rx(&data->ctx, frame_size_bytes, dma_len);
+            spi_context_update_tx(ctx, frame_size_bytes, dma_len);
+            spi_context_update_rx(ctx, frame_size_bytes, dma_len);
         }
         else if (transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
-            spi_context_update_tx(&data->ctx, frame_size_bytes, dma_len);
+            spi_context_update_tx(ctx, frame_size_bytes, dma_len);
         }
         else {
-            spi_context_update_rx(&data->ctx, frame_size_bytes, dma_len);
+            spi_context_update_rx(ctx, frame_size_bytes, dma_len);
         }
 
         if ((transfer_dir == LL_SPI_HALF_DUPLEX_TX) &&
-            !spi_context_tx_on(&data->ctx) &&
-            spi_context_rx_on(&data->ctx)) {
+            !spi_context_tx_on(ctx) &&
+            spi_context_rx_on(ctx)) {
             LL_SPI_Disable(spi);
             LL_SPI_SetTransferDirection(spi, LL_SPI_HALF_DUPLEX_RX);
 
@@ -2044,15 +2050,15 @@ static int spi_stm32_ll_transceive_dma(const struct device* dev,
     }
 
     #ifdef CONFIG_SPI_SLAVE
-    if (spi_context_is_slave(&data->ctx) && (ret == 0)) {
-        ret = data->ctx.recv_frames;
+    if (spi_context_is_slave(ctx) && (ret == 0)) {
+        ret = ctx->recv_frames;
     }
     #endif /* CONFIG_SPI_SLAVE */
 
 end :
     spi_stm32_pm_policy_state_lock_put(dev);
 
-    spi_context_release(&data->ctx, ret);
+    spi_context_release(ctx, ret);
 
     return (ret);
 }

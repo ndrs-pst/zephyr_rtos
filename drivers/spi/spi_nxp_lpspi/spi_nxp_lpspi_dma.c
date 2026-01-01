@@ -224,7 +224,7 @@ static void lpspi_dma_callback(const struct device* dev, void* arg, uint32_t cha
             spi_context_update_rx(ctx, 1, rx->dma_blk_cfg.block_size);
             /* Calculate next DMA transfer size */
             dma_data->synchronize_dma_size = spi_context_max_continuous_chunk(ctx);
-            LOG_DBG("tx len:%d rx len:%d next dma size:%d", ctx->tx_len, ctx->rx_len,
+            LOG_DBG("tx len:%d rx len:%d next dma size:%d", ctx->tx.len, ctx->rx.len,
                     dma_data->synchronize_dma_size);
             if (dma_data->synchronize_dma_size > 0) {
                 ret = (channel == dma_data->dma_tx.channel)
@@ -334,7 +334,7 @@ static int lpspi_ll_transceive_dma(const struct device* dev, const struct spi_co
      * mode, a none-zero TX watermark may break this.
      */
     lpspi->FCR = (LPSPI_FCR_TXWATER(0) | LPSPI_FCR_RXWATER(0));
-    spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+    spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, 1);
 
     /* Set next dma size is invalid. */
     dma_data->synchronize_dma_size = 0;

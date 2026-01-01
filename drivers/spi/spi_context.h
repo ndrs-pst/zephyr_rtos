@@ -30,6 +30,13 @@ enum spi_ctx_runtime_op_mode {
     SPI_CTX_RUNTIME_OP_MODE_SLAVE  = BIT(1)
 };
 
+/* #CUSTOM@NDRS */
+struct spi_tx_rx_control_block {
+    const struct spi_buf* current;
+    size_t count;
+    size_t len;
+};
+
 struct spi_context {
     const struct spi_config* config;
 
@@ -60,15 +67,10 @@ struct spi_context {
     bool asynchronous;
     #endif /* CONFIG_SPI_ASYNC */
 
-    const struct spi_buf* current_tx;
-    size_t tx_count;
-    const struct spi_buf* current_rx;
-    size_t rx_count;
-
+    struct spi_tx_rx_control_block tx;
+    struct spi_tx_rx_control_block rx;
     const uint8_t* tx_buf;
-    size_t   tx_len;
     uint8_t* rx_buf;
-    size_t   rx_len;
 
     #ifdef CONFIG_SPI_SLAVE
     int recv_frames;
@@ -430,21 +432,22 @@ static inline void spi_context_unlock_unconditionally(struct spi_context* ctx __
  * Generally not needed to be used directly by drivers.
  * Use spi_context_update_(tx/rx) instead.
  */
-static inline void* spi_context_get_next_buf(const struct spi_buf** current,
-                                             size_t* count,
-                                             size_t* buf_len,
+static inline void* spi_context_get_next_buf(struct spi_tx_rx_control_block* cb,
                                              uint8_t dfs) {
     /* This loop skips zero-length buffers in the set, if any. */
-    while (*count) {
-        if (((*current)->len / dfs) != 0) {
-            *buf_len = (*current)->len / dfs;
-            return (*current)->buf;
+    while (cb->count) {
+        size_t len = (cb->current->len / dfs);
+
+        if (len != 0) {
+            cb->len = len;
+            return cb->current->buf;
         }
-        ++(*current);
-        --(*count);
+
+        ++cb->current;
+        --cb->count;
     }
 
-    *buf_len = 0;
+    cb->len = 0;
 
     return (NULL);
 }
@@ -467,18 +470,16 @@ void spi_context_buffers_setup(struct spi_context* ctx,
                                uint8_t dfs) {
     LOG_DBG("tx_bufs %p - rx_bufs %p - %u", tx_bufs, rx_bufs, dfs);
 
-    ctx->current_tx = tx_bufs ? tx_bufs->buffers : NULL;
-    ctx->tx_count = ctx->current_tx ? tx_bufs->count : 0;
-    ctx->tx_buf = (const uint8_t*)
-        spi_context_get_next_buf(&ctx->current_tx, &ctx->tx_count,
-                                 &ctx->tx_len, dfs);
+    struct spi_tx_rx_control_block* tx = &ctx->tx;
+    struct spi_tx_rx_control_block* rx = &ctx->rx;
 
-    ctx->current_rx = rx_bufs ? rx_bufs->buffers : NULL;
-    ctx->rx_count = ctx->current_rx ? rx_bufs->count : 0;
-    ctx->rx_buf = (uint8_t*)
-        spi_context_get_next_buf(&ctx->current_rx, &ctx->rx_count,
-                                 &ctx->rx_len, dfs);
+    tx->current = tx_bufs ? tx_bufs->buffers : NULL;
+    tx->count   = tx->current ? tx_bufs->count : 0;
+    ctx->tx_buf = (const uint8_t*)spi_context_get_next_buf(tx, dfs);
 
+    rx->current = rx_bufs ? rx_bufs->buffers : NULL;
+    rx->count   = rx->current ? rx_bufs->count : 0;
+    ctx->rx_buf = (uint8_t*)spi_context_get_next_buf(rx, dfs);
     ctx->sync_status = 0;
 
     #ifdef CONFIG_SPI_SLAVE
@@ -487,10 +488,10 @@ void spi_context_buffers_setup(struct spi_context* ctx,
 
     LOG_DBG("current_tx %p (%zu), current_rx %p (%zu),"
             " tx buf/len %p/%zu, rx buf/len %p/%zu",
-            ctx->current_tx, ctx->tx_count,
-            ctx->current_rx, ctx->rx_count,
-            (void*)ctx->tx_buf, ctx->tx_len,
-            (void*)ctx->rx_buf, ctx->rx_len);
+            tx->current, tx->count,
+            rx->current, rx->count,
+            (void*)ctx->tx_buf, tx->len,
+            (void*)ctx->rx_buf, rx->len);
 }
 
 /*
@@ -501,17 +502,16 @@ void spi_context_buffers_setup(struct spi_context* ctx,
  */
 static ALWAYS_INLINE
 void spi_context_update_tx(struct spi_context* ctx, uint8_t dfs, uint32_t len) {
-    if (ctx->tx_len > 0U) {
-        if (len <= ctx->tx_len) {
-            ctx->tx_len -= len;
-            if (ctx->tx_len == 0U) {
+    struct spi_tx_rx_control_block* tx = &ctx->tx;
+
+    if (tx->len > 0U) {
+        if (len <= tx->len) {
+            tx->len -= len;
+            if (tx->len == 0U) {
                 /* Current buffer is done. Get the next one to be processed. */
-                ++ctx->current_tx;
-                --ctx->tx_count;
-                ctx->tx_buf = (const uint8_t*)
-                    spi_context_get_next_buf(&ctx->current_tx,
-                                             &ctx->tx_count,
-                                             &ctx->tx_len, dfs);
+                ++tx->current;
+                --tx->count;
+                ctx->tx_buf = (const uint8_t*)spi_context_get_next_buf(tx, dfs);
             }
             else if (ctx->tx_buf != NULL) {
                 ctx->tx_buf += (dfs * len);
@@ -520,7 +520,7 @@ void spi_context_update_tx(struct spi_context* ctx, uint8_t dfs, uint32_t len) {
                 /* pass */
             }
 
-            LOG_DBG("tx buf/len %p/%zu", (void*)ctx->tx_buf, ctx->tx_len);
+            LOG_DBG("tx buf/len %p/%zu", (void*)ctx->tx_buf, tx->len);
         }
         else {
             LOG_ERR("Update exceeds current buffer");
@@ -533,7 +533,7 @@ void spi_context_update_tx(struct spi_context* ctx, uint8_t dfs, uint32_t len) {
  */
 static ALWAYS_INLINE
 bool spi_context_tx_on(struct spi_context* ctx) {
-    return (ctx->tx_len > 0);
+    return (ctx->tx.len > 0);
 }
 
 /* Similar to spi_context_tx_on, but only returns true if the current buffer is
@@ -541,7 +541,7 @@ bool spi_context_tx_on(struct spi_context* ctx) {
  */
 static ALWAYS_INLINE
 bool spi_context_tx_buf_on(struct spi_context* ctx) {
-    return ((ctx->tx_buf != NULL) && (ctx->tx_len > 0));
+    return ((ctx->tx_buf != NULL) && (ctx->tx.len > 0));
 }
 
 /*
@@ -552,23 +552,22 @@ bool spi_context_tx_buf_on(struct spi_context* ctx) {
  */
 static ALWAYS_INLINE
 void spi_context_update_rx(struct spi_context* ctx, uint8_t dfs, uint32_t len) {
+    struct spi_tx_rx_control_block* rx = &ctx->rx;
+
     #ifdef CONFIG_SPI_SLAVE
     if (spi_context_is_slave(ctx)) {
         ctx->recv_frames += len;
     }
     #endif /* CONFIG_SPI_SLAVE */
 
-    if (ctx->rx_len > 0U) {
-        if (len <= ctx->rx_len) {
-            ctx->rx_len -= len;
-            if (ctx->rx_len == 0U) {
+    if (rx->len > 0U) {
+        if (len <= rx->len) {
+            rx->len -= len;
+            if (rx->len == 0U) {
                 /* Current buffer is done. Get the next one to be processed. */
-                ++ctx->current_rx;
-                --ctx->rx_count;
-                ctx->rx_buf = (uint8_t*)
-                    spi_context_get_next_buf(&ctx->current_rx,
-                                             &ctx->rx_count,
-                                             &ctx->rx_len, dfs);
+                ++rx->current;
+                --rx->count;
+                ctx->rx_buf = (uint8_t*)spi_context_get_next_buf(rx, dfs);
             }
             else if (ctx->rx_buf != NULL) {
                 ctx->rx_buf += (dfs * len);
@@ -577,7 +576,7 @@ void spi_context_update_rx(struct spi_context* ctx, uint8_t dfs, uint32_t len) {
                 /* pass */
             }
 
-            LOG_DBG("rx buf/len %p/%zu", (void *)ctx->rx_buf, ctx->rx_len);
+            LOG_DBG("rx buf/len %p/%zu", (void *)ctx->rx_buf, rx->len);
         }
         else {
             LOG_ERR("Update exceeds current buffer");
@@ -590,7 +589,7 @@ void spi_context_update_rx(struct spi_context* ctx, uint8_t dfs, uint32_t len) {
  */
 static ALWAYS_INLINE
 bool spi_context_rx_on(struct spi_context* ctx) {
-    return (ctx->rx_len > 0);
+    return (ctx->rx.len > 0);
 }
 
 /* Similar to spi_context_rx_on, but only returns true if the current buffer is
@@ -598,7 +597,7 @@ bool spi_context_rx_on(struct spi_context* ctx) {
  */
 static ALWAYS_INLINE
 bool spi_context_rx_buf_on(struct spi_context* ctx) {
-    return ((ctx->rx_buf != NULL) && (ctx->rx_len > 0));
+    return ((ctx->rx_buf != NULL) && (ctx->rx.len > 0));
 }
 
 /*
@@ -611,70 +610,62 @@ bool spi_context_rx_buf_on(struct spi_context* ctx) {
  * And if both are 0 then will return 0 and should indicate transfer completion.
  */
 static inline size_t spi_context_max_continuous_chunk(struct spi_context* ctx) {
-    if (ctx->tx_len == 0U) {
-        return (ctx->rx_len);
+    if (ctx->tx.len == 0U) {
+        return (ctx->rx.len);
     }
-    else if (ctx->rx_len == 0U) {
-        return (ctx->tx_len);
+    else if (ctx->rx.len == 0U) {
+        return (ctx->tx.len);
     }
 
-    return MIN(ctx->tx_len, ctx->rx_len);
+    return MIN(ctx->tx.len, ctx->rx.len);
 }
 
 /* Returns the length of the longer of the current RX or current TX buffer. */
 static inline size_t spi_context_longest_current_buf(struct spi_context* ctx) {
-    return MAX(ctx->tx_len, ctx->rx_len);
+    return MAX(ctx->tx.len, ctx->rx.len);
 }
 
 /* Helper function, not intended to be used by drivers directly */
-static size_t spi_context_count_tx_buf_lens(struct spi_context* ctx, size_t start_index) {
+static size_t spi_context_count_buf_lens(struct spi_tx_rx_control_block* cb, size_t start_index) {
     size_t total_len = 0;
 
-    for (size_t n = start_index; n < ctx->tx_count; ++n) {
-        total_len += ctx->current_tx[n].len;
+    for (size_t n = start_index; n < cb->count; ++n) {
+        total_len += cb->current[n].len;
     }
 
     return (total_len);
 }
-
-/* Helper function, not intended to be used by drivers directly */
-static size_t spi_context_count_rx_buf_lens(struct spi_context* ctx, size_t start_index) {
-    size_t total_len = 0;
-
-    for (size_t n = start_index; n < ctx->rx_count; ++n) {
-        total_len += ctx->current_rx[n].len;
-    }
-
-    return (total_len);
-}
-
 
 /* Returns the length of the sum of the remaining TX buffers in the buf set, including
  * the current buffer in the total.
  */
 static inline size_t spi_context_total_tx_len(struct spi_context* ctx) {
-    return spi_context_count_tx_buf_lens(ctx, 0);
+    return spi_context_count_buf_lens(&ctx->tx, 0);
 }
 
 /* Returns the length of the sum of the remaining RX buffers in the buf set, including
  * the current buffer in the total.
  */
 static inline size_t spi_context_total_rx_len(struct spi_context* ctx) {
-    return spi_context_count_rx_buf_lens(ctx, 0);
+    return spi_context_count_buf_lens(&ctx->rx, 0);
 }
 
 /* Similar to spi_context_total_tx_len, except does not count words that have been finished
  * in the current buffer, ie only including what is remaining in the current buffer in the sum.
  */
 static inline size_t spi_context_tx_len_left(struct spi_context* ctx, uint8_t dfs) {
-    return ((ctx->tx_len * dfs) + spi_context_count_tx_buf_lens(ctx, 1));
+    struct spi_tx_rx_control_block* tx = &ctx->tx;
+
+    return ((tx->len * dfs) + spi_context_count_buf_lens(tx, 1));
 }
 
 /* Similar to spi_context_total_rx_len, except does not count words that have been finished
  * in the current buffer, ie only including what is remaining in the current buffer in the sum.
  */
 static inline size_t spi_context_rx_len_left(struct spi_context* ctx, uint8_t dfs) {
-    return ((ctx->rx_len * dfs) + spi_context_count_rx_buf_lens(ctx, 1));
+    struct spi_tx_rx_control_block* rx = &ctx->rx;
+
+    return ((rx->len * dfs) + spi_context_count_buf_lens(rx, 1));
 }
 
 #ifdef __cplusplus

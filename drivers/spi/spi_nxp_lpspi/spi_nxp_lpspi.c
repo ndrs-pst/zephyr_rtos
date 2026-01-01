@@ -43,7 +43,7 @@ static inline size_t lpspi_rx_buf_write_words(const struct device* dev, size_t m
     struct lpspi_data* data = dev->data;
     struct lpspi_driver_data* lpspi_data = (struct lpspi_driver_data*)data->driver_data;
     struct spi_context* ctx = &data->ctx;
-    size_t words_read = z_min(ctx->rx_len, max_read);
+    size_t words_read = z_min(ctx->rx.len, max_read);
     size_t offset = 0;
 
     for (size_t i = 0; i < words_read; i++) {
@@ -136,13 +136,13 @@ static void lpspi_next_tx_fill(const struct device* dev) {
     struct lpspi_driver_data* lpspi_data = (struct lpspi_driver_data*)data->driver_data;
     struct spi_context* ctx = &data->ctx;
     size_t left_in_fifo = tx_fifo_cur_len(lpspi);
-    size_t fill_len = z_min(ctx->tx_len, ((size_t)config->tx_fifo_size - left_in_fifo));
+    size_t fill_len = z_min(ctx->tx.len, ((size_t)config->tx_fifo_size - left_in_fifo));
     size_t actual_filled = 0;
 
-    const struct spi_buf* current_buf = ctx->current_tx;
+    const struct spi_buf* current_buf = ctx->tx.current;
     uint8_t const* cur_buf_pos = ctx->tx_buf;
-    size_t cur_buf_len_left = ctx->tx_len;
-    size_t bufs_left = ctx->tx_count;
+    size_t cur_buf_len_left = ctx->tx.len;
+    size_t bufs_left = ctx->tx.count;
 
     while (fill_len > 0) {
         size_t next_buf_fill = z_min(cur_buf_len_left, fill_len);
@@ -221,7 +221,7 @@ static inline void lpspi_end_xfer(const struct device* dev) {
     }
 
     spi_context_cs_control(ctx, false);
-    spi_context_release(&data->ctx, 0);
+    spi_context_release(ctx, 0);
 }
 
 static void lpspi_isr(const struct device* dev) {
@@ -336,7 +336,7 @@ static int lpspi_ll_transceive(const struct device* dev, const struct spi_config
     uint8_t op_mode = SPI_OP_MODE_GET(spi_cfg->operation);
     int ret = 0;
 
-    spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
+    spi_context_lock(ctx, asynchronous, cb, userdata, spi_cfg);
 
     lpspi_data->word_size_bytes =
         DIV_ROUND_UP(SPI_WORD_SIZE_GET(spi_cfg->operation), BITS_PER_BYTE);

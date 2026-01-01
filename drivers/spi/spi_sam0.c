@@ -563,14 +563,14 @@ static bool spi_sam0_dma_advance_segment(const struct device* dev) {
 
     data = dev->data;
     /* Pick the shorter buffer of ones that have an actual length */
-    if (data->ctx.rx_len != 0) {
-        segment_len = data->ctx.rx_len;
-        if (data->ctx.tx_len != 0) {
-            segment_len = MIN(segment_len, data->ctx.tx_len);
+    if (data->ctx.rx.len != 0) {
+        segment_len = data->ctx.rx.len;
+        if (data->ctx.tx.len != 0) {
+            segment_len = MIN(segment_len, data->ctx.tx.len);
         }
     }
     else {
-        segment_len = data->ctx.tx_len;
+        segment_len = data->ctx.tx.len;
     }
 
     if (segment_len > 0) {
@@ -593,7 +593,7 @@ static int spi_sam0_dma_advance_buffers(const struct device* dev) {
 
     if (data->dma_segment_len > 0U) {
         /* Load receive first, so it can accept transmit data */
-        if (data->ctx.rx_len > 0U) {
+        if (data->ctx.rx.len > 0U) {
             ret = spi_sam0_dma_rx_load(dev, data->ctx.rx_buf, data->dma_segment_len);
         }
         else {
@@ -602,7 +602,7 @@ static int spi_sam0_dma_advance_buffers(const struct device* dev) {
 
         if (ret == 0) {
             /* Now load the transmit, which starts the actual bus clocking */
-            if (data->ctx.tx_len > 0U) {
+            if (data->ctx.tx.len > 0U) {
                 ret = spi_sam0_dma_tx_load(dev, data->ctx.tx_buf, data->dma_segment_len);
             }
             else {
