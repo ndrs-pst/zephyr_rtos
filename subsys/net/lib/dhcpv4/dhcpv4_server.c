@@ -742,7 +742,7 @@ static int dhcpv4_get_client_id(struct dhcp_msg *msg, uint8_t *options,
 	int ret;
 
 	client_id->hw_addr_type = msg->htype;
-	memcpy(client_id->hw_addr_buf, msg->chaddr, min(msg->hlen,
+	memcpy(client_id->hw_addr_buf, msg->chaddr, z_min(msg->hlen,
 			DHCPV4_HARDWARE_ADDRESS_MAX_SIZE));
 	client_id->hw_addr_len = msg->hlen;
 
