@@ -982,7 +982,8 @@ static int /**/spi_nor_write(const struct device* dev, off_t addr,
     }
 
     /* Ensure flash is powered before write */
-    if (pm_device_runtime_get(dev) < 0) {
+    ret = pm_device_runtime_get(dev);
+    if (ret < 0) {
         return (-EIO);
     }
 
@@ -1039,7 +1040,6 @@ static int /**/spi_nor_write(const struct device* dev, off_t addr,
     }
 
     int ret2 = spi_nor_write_protection_set(dev, true);
-
     if (ret == 0) {
         /* In case of no error from ret then override with ret2 */
         ret = ret2;
@@ -1073,13 +1073,13 @@ static int spi_nor_erase(const struct device* dev, off_t addr, size_t size) {
     }
 
     /* Ensure flash is powered before erase */
-    if (pm_device_runtime_get(dev) < 0) {
+    ret = pm_device_runtime_get(dev);
+    if (ret < 0) {
         return (-EIO);
     }
 
     acquire_device(dev);
     ret = spi_nor_write_protection_set(dev, false);
-
     while ((size > 0) && (ret == 0)) {
         ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
         if (ret) {
@@ -1135,7 +1135,6 @@ static int spi_nor_erase(const struct device* dev, off_t addr, size_t size) {
     }
 
     int ret2 = spi_nor_write_protection_set(dev, true);
-
     if (ret == 0) {
         ret = ret2;
     }
@@ -1660,7 +1659,6 @@ static int spi_nor_configure(const struct device* dev) {
      */
     if (cfg->enter_4byte_addr != 0) {
         rc = spi_nor_set_address_mode(dev, cfg->enter_4byte_addr);
-
         if (rc != 0) {
             LOG_ERR("Unable to enter 4-byte mode: %d\n", rc);
             return (-ENODEV);
@@ -1776,7 +1774,8 @@ static int spi_nor_init(const struct device* dev) {
     }
     #endif /* ANY_INST_HAS_HOLD_GPIOS */
 
-    return pm_device_driver_init(dev, spi_nor_pm_control);
+    int ret = pm_device_driver_init(dev, spi_nor_pm_control);
+    return (ret);
 }
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
