@@ -77,7 +77,7 @@ struct shell_uart_polling {
  * Make CONFIG_SHELL_ASYNC_API=y to ensure compatibility with CONFIG_DCACHE=y.
  */
 #if (IS_ENABLED(CONFIG_SHELL_ASYNC_API) && IS_ENABLED(CONFIG_NOCACHE_MEMORY))
-#define SHELL_UART_NOCACHE_ATTR __attribute__((section(".nocache")))
+#define SHELL_UART_NOCACHE_ATTR __nocache
 #else
 #define SHELL_UART_NOCACHE_ATTR
 #endif
