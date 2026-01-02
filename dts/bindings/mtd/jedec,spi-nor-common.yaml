@@ -133,3 +133,13 @@ properties:
       output data at a higher clock rate than the standard read command.  This
       property indicates that the device supports the fast read command with
       8 dummy cycles after the address phase of the command.
+
+  write-block-size:
+    type: int
+    default: 1
+    description: |
+      Minimum write block size and address alignment requirement in bytes.
+      Specifies the address alignment boundary for write operations.
+      Write length can range from 1 byte up to the device's page program size,
+      but the starting address must be aligned to this value.
+      A value of 1 allows writes at any address with lengths from 1.

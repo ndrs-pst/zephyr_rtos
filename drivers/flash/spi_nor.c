@@ -112,6 +112,8 @@ struct spi_nor_config {
     #endif /* CONFIG_SPI_NOR_SFDP_DEVICETREE */
     #endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
 
+    struct flash_parameters flash_parameters;
+
     /* Optional bits in SR to be cleared on startup.
      *
      * This information cannot be derived from SFDP.
@@ -296,11 +298,6 @@ static inline uint16_t dev_page_size(const struct device* dev) {
     return (data->page_size);
     #endif /* CONFIG_SPI_NOR_SFDP_MINIMAL */
 }
-
-static const struct flash_parameters flash_nor_parameters = {
-    .write_block_size = 1U,
-    .erase_value      = 0xFFU
-};
 
 /* Capture the time at which the device entered deep power-down. */
 static inline void record_entered_dpd(const struct device* const dev) {
@@ -1801,9 +1798,9 @@ static void spi_nor_pages_layout(const struct device* dev,
 
 static const struct flash_parameters*
 flash_nor_get_parameters(const struct device* dev) {
-    ARG_UNUSED(dev);
+    struct spi_nor_config const* cfg = dev->config;
 
-    return (&flash_nor_parameters);
+    return (&cfg->flash_parameters);
 }
 
 static int flash_nor_get_size(const struct device* dev, uint64_t* size) {
@@ -1935,6 +1932,10 @@ static DEVICE_API(flash, spi_nor_api) = {
         .use_4b_addr_opcodes = DT_INST_PROP(idx, use_4b_addr_opcodes),  \
         .has_flsr = DT_INST_PROP(idx, use_flag_status_register),        \
         .use_fast_read = DT_INST_PROP(idx, use_fast_read),              \
+        .flash_parameters = {                                           \
+            .write_block_size = DT_INST_PROP(idx, write_block_size),    \
+            .erase_value = 0xFF,                                        \
+        },                                                              \
         IF_ENABLED(INST_HAS_LOCK(idx), (.has_lock = DT_INST_PROP(idx, has_lock),)) \
         IF_ENABLED(ANY_INST_HAS_DPD, (INIT_T_ENTER_DPD(idx),))          \
         IF_ENABLED(UTIL_AND(ANY_INST_HAS_DPD, ANY_INST_HAS_T_EXIT_DPD), \
