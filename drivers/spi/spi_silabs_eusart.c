@@ -483,14 +483,14 @@ static int spi_eusart_prepare_dma_transaction(const struct device *dev,
 		return 0;
 	}
 
-	ret = spi_eusart_prepare_dma_channel(dev, data->ctx.current_tx, data->ctx.tx_count,
+	ret = spi_eusart_prepare_dma_channel(dev, data->ctx.tx.current, data->ctx.tx.count,
 					     &data->dma_chan_tx, padded_transaction_size,
 					     true);
 	if (ret) {
 		return ret;
 	}
 
-	ret = spi_eusart_prepare_dma_channel(dev, data->ctx.current_rx, data->ctx.rx_count,
+	ret = spi_eusart_prepare_dma_channel(dev, data->ctx.rx.current, data->ctx.rx.count,
 					     &data->dma_chan_rx, padded_transaction_size, false);
 	return ret;
 }
