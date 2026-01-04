@@ -246,16 +246,16 @@ static inline void spi_it8xxx2_tx(const struct device *dev)
 	struct spi_context *ctx = &data->ctx;
 	uint32_t mem_address;
 
-	if (ctx->tx_count > 1) {
+	if (ctx->tx.count > 1) {
 		data->cmdq_data.command.fields.cs_active = 1;
 	} else {
 		data->cmdq_data.command.fields.cs_active = 0;
 	}
 	data->cmdq_data.command.fields.cmd_end = 1;
 	data->cmdq_data.command.fields.read_write = 0;
-	if (ctx->tx_len <= SPI_CMDQ_WR_CMD_LEN_MAX) {
-		data->cmdq_data.spi_write_cmd_length = ctx->tx_len;
-		memcpy(data->cmdq_data.write_data, ctx->tx_buf, ctx->tx_len);
+	if (ctx->tx.len <= SPI_CMDQ_WR_CMD_LEN_MAX) {
+		data->cmdq_data.spi_write_cmd_length = ctx->tx.len;
+		memcpy(data->cmdq_data.write_data, ctx->tx_buf, ctx->tx.len);
 		data->cmdq_data.data_length_lb = 0;
 		data->cmdq_data.data_length_hb = 0;
 		data->cmdq_data.data_addr_lb = 0;
@@ -263,14 +263,14 @@ static inline void spi_it8xxx2_tx(const struct device *dev)
 	} else {
 		data->cmdq_data.spi_write_cmd_length = SPI_CMDQ_WR_CMD_LEN_MAX;
 		memcpy(data->cmdq_data.write_data, ctx->tx_buf, SPI_CMDQ_WR_CMD_LEN_MAX);
-		data->cmdq_data.data_length_lb = BYTE_0(ctx->tx_len - SPI_CMDQ_WR_CMD_LEN_MAX);
-		data->cmdq_data.data_length_hb = BYTE_1(ctx->tx_len - SPI_CMDQ_WR_CMD_LEN_MAX);
+		data->cmdq_data.data_length_lb = BYTE_0(ctx->tx.len - SPI_CMDQ_WR_CMD_LEN_MAX);
+		data->cmdq_data.data_length_hb = BYTE_1(ctx->tx.len - SPI_CMDQ_WR_CMD_LEN_MAX);
 		mem_address = (uint32_t)(ctx->tx_buf + SPI_CMDQ_WR_CMD_LEN_MAX) - SRAM_BASE_ADDR;
 		data->cmdq_data.data_addr_lb = BYTE_0(mem_address);
 		data->cmdq_data.data_addr_hb = BYTE_1(mem_address);
 		data->cmdq_data.check_bit_mask |= ((BYTE_2(mem_address)) & 0x03);
 	}
-	data->transfer_len = ctx->tx_len;
+	data->transfer_len = ctx->tx.len;
 }
 
 static inline void spi_it8xxx2_rx(const struct device *dev)
@@ -278,7 +278,7 @@ static inline void spi_it8xxx2_rx(const struct device *dev)
 	struct spi_it8xxx2_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 
-	if (ctx->rx_count > 1) {
+	if (ctx->rx.count > 1) {
 		data->cmdq_data.command.fields.cs_active = 1;
 	} else {
 		data->cmdq_data.command.fields.cs_active = 0;
@@ -286,11 +286,11 @@ static inline void spi_it8xxx2_rx(const struct device *dev)
 	data->cmdq_data.command.fields.cmd_end = 1;
 	data->cmdq_data.command.fields.read_write = 1;
 	data->cmdq_data.spi_write_cmd_length = 0;
-	data->cmdq_data.data_length_lb = BYTE_0(ctx->rx_len);
-	data->cmdq_data.data_length_hb = BYTE_1(ctx->rx_len);
+	data->cmdq_data.data_length_lb = BYTE_0(ctx->rx.len);
+	data->cmdq_data.data_length_hb = BYTE_1(ctx->rx.len);
 	data->cmdq_data.data_addr_lb = 0;
 	data->cmdq_data.data_addr_hb = 0;
-	data->receive_len = ctx->rx_len;
+	data->receive_len = ctx->rx.len;
 }
 
 static inline void spi_it8xxx2_tx_rx(const struct device *dev)
@@ -300,39 +300,39 @@ static inline void spi_it8xxx2_tx_rx(const struct device *dev)
 	uint32_t mem_address;
 
 	data->cmdq_data.command.fields.cmd_end = 1;
-	if (ctx->tx_len <= SPI_CMDQ_WR_CMD_LEN_MAX) {
+	if (ctx->tx.len <= SPI_CMDQ_WR_CMD_LEN_MAX) {
 		data->cmdq_data.command.fields.cs_active = 0;
 		data->cmdq_data.command.fields.read_write = 1;
-		data->cmdq_data.spi_write_cmd_length = ctx->tx_len;
-		memcpy(data->cmdq_data.write_data, ctx->tx_buf, ctx->tx_len);
+		data->cmdq_data.spi_write_cmd_length = ctx->tx.len;
+		memcpy(data->cmdq_data.write_data, ctx->tx_buf, ctx->tx.len);
 		if (ctx->rx_buf == ctx->tx_buf) {
-			spi_context_update_tx(ctx, 1, ctx->tx_len);
-			spi_context_update_rx(ctx, 1, ctx->rx_len);
+			spi_context_update_tx(ctx, 1, ctx->tx.len);
+			spi_context_update_rx(ctx, 1, ctx->rx.len);
 		}
 
-		data->cmdq_data.data_length_lb = BYTE_0(ctx->rx_len);
-		data->cmdq_data.data_length_hb = BYTE_1(ctx->rx_len);
+		data->cmdq_data.data_length_lb = BYTE_0(ctx->rx.len);
+		data->cmdq_data.data_length_hb = BYTE_1(ctx->rx.len);
 		data->cmdq_data.data_addr_lb = 0;
 		data->cmdq_data.data_addr_hb = 0;
-		data->transfer_len = ctx->tx_len;
-		data->receive_len = ctx->rx_len;
+		data->transfer_len = ctx->tx.len;
+		data->receive_len = ctx->rx.len;
 	} else {
 		data->cmdq_data.command.fields.cs_active = 1;
 		data->cmdq_data.command.fields.read_write = 0;
 		data->cmdq_data.spi_write_cmd_length = SPI_CMDQ_WR_CMD_LEN_MAX;
 		memcpy(data->cmdq_data.write_data, ctx->tx_buf, SPI_CMDQ_WR_CMD_LEN_MAX);
-		data->cmdq_data.data_length_lb = BYTE_0(ctx->tx_len - SPI_CMDQ_WR_CMD_LEN_MAX);
-		data->cmdq_data.data_length_hb = BYTE_1(ctx->tx_len - SPI_CMDQ_WR_CMD_LEN_MAX);
+		data->cmdq_data.data_length_lb = BYTE_0(ctx->tx.len - SPI_CMDQ_WR_CMD_LEN_MAX);
+		data->cmdq_data.data_length_hb = BYTE_1(ctx->tx.len - SPI_CMDQ_WR_CMD_LEN_MAX);
 
 		mem_address = (uint32_t)(ctx->tx_buf + SPI_CMDQ_WR_CMD_LEN_MAX) - SRAM_BASE_ADDR;
 		data->cmdq_data.data_addr_lb = BYTE_0(mem_address);
 		data->cmdq_data.data_addr_hb = BYTE_1(mem_address);
 		data->cmdq_data.check_bit_mask |= ((BYTE_2(mem_address)) & 0x03);
 		if (ctx->rx_buf == ctx->tx_buf) {
-			spi_context_update_tx(ctx, 1, ctx->tx_len);
-			spi_context_update_rx(ctx, 1, ctx->rx_len);
+			spi_context_update_tx(ctx, 1, ctx->tx.len);
+			spi_context_update_rx(ctx, 1, ctx->rx.len);
 		}
-		data->transfer_len = ctx->tx_len;
+		data->transfer_len = ctx->tx.len;
 		data->receive_len = 0;
 	}
 }

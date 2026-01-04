@@ -442,20 +442,20 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 
 #ifdef CONFIG_SPI_RENESAS_RX_INTERRUPT
 
-	if (data->ctx.rx_len == 0) {
+	if (data->ctx.rx.len == 0) {
 		data->data_len = spi_context_is_slave(&data->ctx)
 					 ? (spi_context_total_tx_len(&data->ctx) / data->dfs)
-					 : data->ctx.tx_len;
-	} else if (data->ctx.tx_len == 0) {
+					 : data->ctx.tx.len;
+	} else if (data->ctx.tx.len == 0) {
 		data->data_len = spi_context_is_slave(&data->ctx)
 					 ? (spi_context_total_rx_len(&data->ctx) / data->dfs)
-					 : data->ctx.rx_len;
+					 : data->ctx.rx.len;
 	} else {
 		data->data_len = spi_context_is_slave(&data->ctx)
 					 ? (MAX(spi_context_total_tx_len(&data->ctx),
 						spi_context_total_rx_len(&data->ctx)) /
 					    data->dfs)
-					 : MIN(data->ctx.tx_len, data->ctx.rx_len);
+					 : MIN(data->ctx.tx.len, data->ctx.rx.len);
 	}
 
 	data->tcb.xfr_length = data->data_len;
@@ -599,16 +599,16 @@ static int rspi_rx_init(const struct device *dev)
 
 static void rx_rspi_retransmit(struct rx_rspi_data *data)
 {
-	if (data->ctx.rx_len == 0) {
-		data->data_len = data->ctx.tx_len;
+	if (data->ctx.rx.len == 0) {
+		data->data_len = data->ctx.tx.len;
 		data->tcb.transfer_mode = RSPI_DO_TX;
 		data->tcb.do_tx = true;
-	} else if (data->ctx.tx_len == 0) {
-		data->data_len = data->ctx.rx_len;
+	} else if (data->ctx.tx.len == 0) {
+		data->data_len = data->ctx.rx.len;
 		data->tcb.transfer_mode = RSPI_DO_RX;
 		data->tcb.do_tx = false;
 	} else {
-		data->data_len = MIN(data->ctx.tx_len, data->ctx.rx_len);
+		data->data_len = MIN(data->ctx.tx.len, data->ctx.rx.len);
 		data->tcb.transfer_mode = RSPI_DO_TX_RX;
 		data->tcb.do_tx = true;
 	}

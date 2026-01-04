@@ -155,7 +155,7 @@ static int spi_bitbang_transceive(const struct device *dev,
 	while (spi_context_tx_buf_on(ctx) || spi_context_rx_buf_on(ctx)) {
 		uint32_t w = 0;
 
-		if (ctx->tx_len) {
+		if (ctx->tx.len) {
 			switch (data->dfs) {
 			case 4:
 			case 3:

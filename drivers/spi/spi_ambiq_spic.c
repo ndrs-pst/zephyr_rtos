@@ -209,9 +209,9 @@ static int spi_ambiq_xfer_half_duplex(const struct device *dev, am_hal_iom_dir_e
 		ctx_update = spi_context_update_tx;
 	}
 	if (dir == AM_HAL_IOM_RX) {
-		rem_num = ctx->rx_len;
+		rem_num = ctx->rx.len;
 	} else {
-		rem_num = ctx->tx_len;
+		rem_num = ctx->tx.len;
 	}
 	while (rem_num) {
 		cur_num = (rem_num > AM_HAL_IOM_MAX_TXNSIZE_SPI) ? AM_HAL_IOM_MAX_TXNSIZE_SPI
@@ -267,12 +267,12 @@ static int spi_ambiq_xfer_full_duplex(const struct device *dev)
 	am_hal_iom_transfer_t trans = {0};
 	struct spi_ambiq_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
-	bool trx_once = (ctx->tx_len == ctx->rx_len);
+	bool trx_once = (ctx->tx.len == ctx->rx.len);
 	int ret = 0;
 
 	/* Tx and Rx length must be the same for am_hal_iom_spi_blocking_fullduplex */
 	trans.eDirection = AM_HAL_IOM_FULLDUPLEX;
-	trans.ui32NumBytes = MIN(ctx->rx_len, ctx->tx_len);
+	trans.ui32NumBytes = MIN(ctx->rx.len, ctx->tx.len);
 	trans.pui32RxBuffer = (uint32_t *)ctx->rx_buf;
 	trans.pui32TxBuffer = (uint32_t *)ctx->tx_buf;
 	spi_context_update_tx(ctx, 1, trans.ui32NumBytes);
@@ -287,14 +287,14 @@ static int spi_ambiq_xfer_full_duplex(const struct device *dev)
 	if (!trx_once) {
 		spi_context_update_trx ctx_update;
 
-		if (ctx->tx_len) {
+		if (ctx->tx.len) {
 			trans.eDirection = AM_HAL_IOM_TX;
-			trans.ui32NumBytes = ctx->tx_len;
+			trans.ui32NumBytes = ctx->tx.len;
 			trans.pui32TxBuffer = (uint32_t *)ctx->tx_buf;
 			ctx_update = spi_context_update_tx;
 		} else {
 			trans.eDirection = AM_HAL_IOM_RX;
-			trans.ui32NumBytes = ctx->rx_len;
+			trans.ui32NumBytes = ctx->rx.len;
 			trans.pui32RxBuffer = (uint32_t *)ctx->rx_buf;
 			ctx_update = spi_context_update_rx;
 		}
@@ -320,7 +320,7 @@ static int spi_ambiq_xfer(const struct device *dev, const struct spi_config *con
 	while (1) {
 		if (spi_context_tx_buf_on(ctx) && spi_context_rx_buf_on(ctx)) {
 			if (ctx->rx_buf == ctx->tx_buf) {
-				spi_context_update_rx(ctx, 1, ctx->rx_len);
+				spi_context_update_rx(ctx, 1, ctx->rx.len);
 			} else if (!(config->operation & SPI_HALF_DUPLEX)) {
 				ret = spi_ambiq_xfer_full_duplex(dev);
 				if (ret != 0) {
@@ -332,7 +332,7 @@ static int spi_ambiq_xfer(const struct device *dev, const struct spi_config *con
 		}
 		if (spi_context_tx_on(ctx)) {
 			if (ctx->tx_buf == NULL) {
-				spi_context_update_tx(ctx, 1, ctx->tx_len);
+				spi_context_update_tx(ctx, 1, ctx->tx.len);
 			} else {
 				ret = spi_ambiq_xfer_half_duplex(dev, AM_HAL_IOM_TX);
 				if (ret != 0) {
@@ -343,7 +343,7 @@ static int spi_ambiq_xfer(const struct device *dev, const struct spi_config *con
 			}
 		} else if (spi_context_rx_on(ctx)) {
 			if (ctx->rx_buf == NULL) {
-				spi_context_update_rx(ctx, 1, ctx->rx_len);
+				spi_context_update_rx(ctx, 1, ctx->rx.len);
 			} else {
 				ret = spi_ambiq_xfer_half_duplex(dev, AM_HAL_IOM_RX);
 				if (ret != 0) {

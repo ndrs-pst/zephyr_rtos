@@ -486,7 +486,7 @@ void spi_context_buffers_setup(struct spi_context* ctx,
     ctx->recv_frames = 0;
     #endif /* CONFIG_SPI_SLAVE */
 
-    LOG_DBG("current_tx %p (%zu), current_rx %p (%zu),"
+    LOG_DBG("tx->current %p (%zu), rx->current %p (%zu),"
             " tx buf/len %p/%zu, rx buf/len %p/%zu",
             tx->current, tx->count,
             rx->current, rx->count,

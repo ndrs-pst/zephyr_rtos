@@ -219,8 +219,8 @@ static void spi_pw_rx_thld_set(const struct device *dev,
 		reg_data = spi_pw_reg_read(dev, PW_SPI_REG_SIRF);
 		reg_data &= (uint32_t) ~(PW_SPI_WM_MASK);
 		reg_data |= PW_SPI_SIRF_WM_DFLT;
-		if (spi->ctx.rx_len && spi->ctx.rx_len < spi->fifo_depth) {
-			reg_data = spi->ctx.rx_len - 1;
+		if (spi->ctx.rx.len && spi->ctx.rx.len < spi->fifo_depth) {
+			reg_data = spi->ctx.rx.len - 1;
 		}
 	}
 	spi_pw_reg_write(dev, PW_SPI_REG_SIRF, reg_data);
@@ -623,7 +623,7 @@ static void spi_pw_tx_data(const struct device *dev)
 				break;
 			}
 		} else if (spi_context_rx_on(&spi->ctx)) {
-			if ((int)(spi->ctx.rx_len - spi->fifo_diff) <= 0) {
+			if ((int)(spi->ctx.rx.len - spi->fifo_diff) <= 0) {
 				break;
 			}
 
@@ -674,10 +674,10 @@ static void spi_pw_rx_data(const struct device *dev)
 		spi->fifo_diff--;
 	}
 
-	if (!spi->ctx.rx_len && spi->ctx.tx_len < spi->fifo_depth) {
-		spi_pw_update_rx_fifo_level(spi->ctx.tx_len - 1, dev);
-	} else if (spi_pw_get_rx_fifo_level(dev) >= spi->ctx.rx_len) {
-		spi_pw_update_rx_fifo_level(spi->ctx.rx_len - 1, dev);
+	if (!spi->ctx.rx.len && spi->ctx.tx.len < spi->fifo_depth) {
+		spi_pw_update_rx_fifo_level(spi->ctx.tx.len - 1, dev);
+	} else if (spi_pw_get_rx_fifo_level(dev) >= spi->ctx.rx.len) {
+		spi_pw_update_rx_fifo_level(spi->ctx.rx.len - 1, dev);
 	}
 }
 

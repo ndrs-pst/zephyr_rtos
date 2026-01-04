@@ -84,7 +84,7 @@ static int spi_rts5912_configure(const struct device *dev, const struct spi_conf
 		return -EINVAL;
 	}
 
-	if (ctx->rx_len > 0) {
+	if (ctx->rx.len > 0) {
 		LOG_ERR("Can't support Pure RX");
 		return -EINVAL;
 	}
@@ -135,7 +135,7 @@ static inline void rts5912_spi_tx(const struct device *dev)
 	volatile struct spi_reg *const spi = spi_config->spi_reg_base;
 	uint32_t timeout_cnt = 0;
 
-	if (ctx->tx_len == 1) {
+	if (ctx->tx.len == 1) {
 		spi->TRSF = ((spi->TRSF & ~RTS5912_SPI_TRSF_MODE_MASK) |
 			     (RTS5912_SPI_ADDR_ONLY_MODE & RTS5912_SPI_TRSF_MODE_MASK));
 	} else {
@@ -144,10 +144,10 @@ static inline void rts5912_spi_tx(const struct device *dev)
 	}
 
 	spi->CTRL |= RTS5912_SPI_CTRL_RST_MASK;
-	spi->LEN = ctx->tx_len - 1;
+	spi->LEN = ctx->tx.len - 1;
 	spi->CMDL = ctx->tx_buf[0];
 
-	for (int i = 1; i < ctx->tx_len; i++) {
+	for (int i = 1; i < ctx->tx.len; i++) {
 		spi->TX = ctx->tx_buf[i];
 	}
 	spi->TRSF |= RTS5912_SPI_TRSF_START_MASK;
@@ -207,7 +207,7 @@ static int rts5912_spi_transceive(const struct device *dev, const struct spi_con
 		ret = rts5912_spi_xfer(dev);
 
 		if (!ret) {
-			spi_context_update_tx(ctx, 1U, ctx->tx_len);
+			spi_context_update_tx(ctx, 1U, ctx->tx.len);
 		}
 	} while (!ret && !spi_rts5912_transfer_done(ctx));
 

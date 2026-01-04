@@ -324,19 +324,19 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	if (!spi_context_total_tx_len(&data->ctx) && !spi_context_total_rx_len(&data->ctx)) {
 		goto end_transceive;
 	}
-	if (data->ctx.rx_len == 0) {
+	if (data->ctx.rx.len == 0) {
 		data->data_len = spi_context_is_slave(&data->ctx)
 					 ? spi_context_total_tx_len(&data->ctx)
-					 : data->ctx.tx_len;
-	} else if (data->ctx.tx_len == 0) {
+					 : data->ctx.tx.len;
+	} else if (data->ctx.tx.len == 0) {
 		data->data_len = spi_context_is_slave(&data->ctx)
 					 ? spi_context_total_rx_len(&data->ctx)
-					 : data->ctx.rx_len;
+					 : data->ctx.rx.len;
 	} else {
 		data->data_len = spi_context_is_slave(&data->ctx)
 					 ? MAX(spi_context_total_tx_len(&data->ctx),
 					       spi_context_total_rx_len(&data->ctx))
-					 : MIN(data->ctx.tx_len, data->ctx.rx_len);
+					 : MIN(data->ctx.tx.len, data->ctx.rx.len);
 	}
 
 	if (data->ctx.tx_buf == NULL) { /* If there is only the rx buffer */
@@ -546,16 +546,16 @@ static void spi_rz_retransmit(struct spi_rz_data *data)
 	spi_bit_width_t spi_width =
 		(spi_bit_width_t)(SPI_WORD_SIZE_GET(data->ctx.config->operation) - 1);
 
-	if (data->ctx.rx_len == 0) {
-		data->data_len = data->ctx.tx_len;
+	if (data->ctx.rx.len == 0) {
+		data->data_len = data->ctx.tx.len;
 		data->fsp_ctrl->p_tx_data = data->ctx.tx_buf;
 		data->fsp_ctrl->p_rx_data = NULL;
-	} else if (data->ctx.tx_len == 0) {
-		data->data_len = data->ctx.rx_len;
+	} else if (data->ctx.tx.len == 0) {
+		data->data_len = data->ctx.rx.len;
 		data->fsp_ctrl->p_tx_data = NULL;
 		data->fsp_ctrl->p_rx_data = data->ctx.rx_buf;
 	} else {
-		data->data_len = MIN(data->ctx.tx_len, data->ctx.rx_len);
+		data->data_len = MIN(data->ctx.tx.len, data->ctx.rx.len);
 		data->fsp_ctrl->p_tx_data = data->ctx.tx_buf;
 		data->fsp_ctrl->p_rx_data = data->ctx.rx_buf;
 	}

@@ -373,14 +373,14 @@ static int gspi_siwx91x_prepare_dma_transaction(const struct device *dev,
 		return 0;
 	}
 
-	ret = gspi_siwx91x_prepare_dma_channel(dev, data->ctx.current_tx, data->ctx.tx_count,
+	ret = gspi_siwx91x_prepare_dma_channel(dev, data->ctx.tx.current, data->ctx.tx.count,
 					       &data->dma_tx, padded_transaction_size, true,
 					       burst_size);
 	if (ret) {
 		return ret;
 	}
 
-	ret = gspi_siwx91x_prepare_dma_channel(dev, data->ctx.current_rx, data->ctx.rx_count,
+	ret = gspi_siwx91x_prepare_dma_channel(dev, data->ctx.rx.current, data->ctx.rx.count,
 					       &data->dma_rx, padded_transaction_size, false,
 					       burst_size);
 
@@ -413,12 +413,12 @@ static int gspi_siwx91x_burst_size(struct spi_context *ctx)
 {
 	int burst_len = 4;
 
-	for (int i = 0; i < ctx->tx_count; i++) {
-		burst_len = MIN(burst_len, gspi_siwx91x_burst_size_buf(ctx->current_tx + i));
+	for (int i = 0; i < ctx->tx.count; i++) {
+		burst_len = MIN(burst_len, gspi_siwx91x_burst_size_buf(ctx->tx.current + i));
 	}
 
-	for (int i = 0; i < ctx->rx_count; i++) {
-		burst_len = MIN(burst_len, gspi_siwx91x_burst_size_buf(ctx->current_rx + i));
+	for (int i = 0; i < ctx->rx.count; i++) {
+		burst_len = MIN(burst_len, gspi_siwx91x_burst_size_buf(ctx->rx.current + i));
 	}
 
 	return burst_len;

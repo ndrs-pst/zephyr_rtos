@@ -14,16 +14,16 @@ static bool spi_nxp_s32_last_packet(struct spi_nxp_s32_data *data)
 {
 	struct spi_context *ctx = &data->ctx;
 
-	if (ctx->tx_count <= 1U && ctx->rx_count <= 1U) {
-		if (!spi_context_tx_on(ctx) && (data->transfer_len == ctx->rx_len)) {
+	if (ctx->tx.count <= 1U && ctx->rx.count <= 1U) {
+		if (!spi_context_tx_on(ctx) && (data->transfer_len == ctx->rx.len)) {
 			return true;
 		}
 
-		if (!spi_context_rx_on(ctx) && (data->transfer_len == ctx->tx_len)) {
+		if (!spi_context_rx_on(ctx) && (data->transfer_len == ctx->tx.len)) {
 			return true;
 		}
 
-		if ((ctx->rx_len == ctx->tx_len) && (data->transfer_len == ctx->tx_len)) {
+		if ((ctx->rx.len == ctx->tx.len) && (data->transfer_len == ctx->tx.len)) {
 			return true;
 		}
 	}

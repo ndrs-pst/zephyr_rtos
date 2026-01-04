@@ -156,12 +156,12 @@ static void spi_renesas_ra_sci_b_retransmit(struct spi_renesas_ra_sci_b_data *da
 {
 	fsp_err_t fsp_err;
 
-	if (data->ctx.rx_len == 0) {
-		data->data_len = data->ctx.tx_len;
-	} else if (data->ctx.tx_len == 0) {
-		data->data_len = data->ctx.rx_len;
+	if (data->ctx.rx.len == 0) {
+		data->data_len = data->ctx.tx.len;
+	} else if (data->ctx.tx.len == 0) {
+		data->data_len = data->ctx.rx.len;
 	} else {
-		data->data_len = MIN(data->ctx.tx_len, data->ctx.rx_len);
+		data->data_len = MIN(data->ctx.tx.len, data->ctx.rx.len);
 	}
 
 	if (data->ctx.rx_buf == NULL) {
@@ -194,7 +194,7 @@ static void spi_renesas_ra_sci_b_callback(spi_callback_args_t *p_args)
 
 				data_receive_len = (!!(data->fsp_ctrl.rx_count))
 							   ? (data->fsp_ctrl.rx_count)
-							   : data->ctx.rx_len;
+							   : data->ctx.rx.len;
 
 				spi_context_update_rx(&data->ctx, 1, data_receive_len);
 			}
@@ -457,19 +457,19 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 	renesas_ra_spi_context_cs_control(dev, true);
 
 #ifdef CONFIG_SPI_RENESAS_RA_SCI_B_INTERRUPT
-	if (data->ctx.rx_len == 0) {
+	if (data->ctx.rx.len == 0) {
 		data->data_len = spi_context_is_slave(&data->ctx)
 					 ? spi_context_total_tx_len(&data->ctx)
-					 : data->ctx.tx_len;
-	} else if (data->ctx.tx_len == 0) {
+					 : data->ctx.tx.len;
+	} else if (data->ctx.tx.len == 0) {
 		data->data_len = spi_context_is_slave(&data->ctx)
 					 ? spi_context_total_rx_len(&data->ctx)
-					 : data->ctx.rx_len;
+					 : data->ctx.rx.len;
 	} else {
 		data->data_len = spi_context_is_slave(&data->ctx)
 					 ? MAX(spi_context_total_tx_len(&data->ctx),
 					       spi_context_total_rx_len(&data->ctx))
-					 : MIN(data->ctx.tx_len, data->ctx.rx_len);
+					 : MIN(data->ctx.tx.len, data->ctx.rx.len);
 	}
 
 	if (data->ctx.rx_buf == NULL) {

@@ -709,7 +709,7 @@ static int transceive_dma(const struct device *dev,
 		goto out;
 	}
 
-	if ((data->ctx.tx_count + data->ctx.rx_count) == 0) {
+	if ((data->ctx.tx.count + data->ctx.rx.count) == 0) {
 		/* no data to transfer */
 		ret = 0;
 		goto out;

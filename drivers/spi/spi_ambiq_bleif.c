@@ -43,7 +43,7 @@ struct spi_ambiq_data {
 static int spi_config(const struct device *dev, const struct spi_config *config)
 {
 	struct spi_ambiq_data *data = dev->data;
-	struct spi_context *ctx = &(data->ctx);
+	struct spi_context *ctx = &data->ctx;
 
 	int ret = 0;
 
@@ -99,15 +99,15 @@ static int spi_ambiq_xfer(const struct device *dev, const struct spi_config *con
 
 	am_hal_ble_transfer_t trans = {0};
 
-	if (ctx->tx_len) {
+	if (ctx->tx.len) {
 		trans.ui8Command = AM_HAL_BLE_WRITE;
 		trans.pui32Data = (uint32_t *)ctx->tx_buf;
-		trans.ui16Length = ctx->tx_len;
+		trans.ui16Length = ctx->tx.len;
 		trans.bContinue = false;
 	} else {
 		trans.ui8Command = AM_HAL_BLE_READ;
 		trans.pui32Data = (uint32_t *)ctx->rx_buf;
-		trans.ui16Length = ctx->rx_len;
+		trans.ui16Length = ctx->rx.len;
 		trans.bContinue = false;
 	}
 

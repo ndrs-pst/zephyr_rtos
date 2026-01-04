@@ -45,7 +45,7 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 	flexio_spi_transfer_t transfer;
 	status_t status;
 
-	if ((ctx->tx_len == 0) && (ctx->rx_len == 0)) {
+	if ((ctx->tx.len == 0) && (ctx->rx.len == 0)) {
 		/* nothing left to rx or tx, we're done! */
 		spi_context_cs_control(&data->ctx, false);
 		spi_context_complete(&data->ctx, dev, 0);
@@ -54,29 +54,29 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 
 	transfer.flags = kFLEXIO_SPI_csContinuous | data->transfer_flags;
 
-	if (ctx->tx_len == 0) {
+	if (ctx->tx.len == 0) {
 		/* rx only, nothing to tx */
 		transfer.txData = NULL;
 		transfer.rxData = ctx->rx_buf;
-		transfer.dataSize = ctx->rx_len;
-	} else if (ctx->rx_len == 0) {
+		transfer.dataSize = ctx->rx.len;
+	} else if (ctx->rx.len == 0) {
 		/* tx only, nothing to rx */
 		transfer.txData = (uint8_t *) ctx->tx_buf;
 		transfer.rxData = NULL;
-		transfer.dataSize = ctx->tx_len;
-	} else if (ctx->tx_len == ctx->rx_len) {
+		transfer.dataSize = ctx->tx.len;
+	} else if (ctx->tx.len == ctx->rx.len) {
 		/* rx and tx are the same length */
 		transfer.txData = (uint8_t *) ctx->tx_buf;
 		transfer.rxData = ctx->rx_buf;
-		transfer.dataSize = ctx->tx_len;
-	} else if (ctx->tx_len > ctx->rx_len) {
+		transfer.dataSize = ctx->tx.len;
+	} else if (ctx->tx.len > ctx->rx.len) {
 		/* Break up the tx into multiple transfers so we don't have to
 		 * rx into a longer intermediate buffer. Leave chip select
 		 * active between transfers.
 		 */
 		transfer.txData = (uint8_t *) ctx->tx_buf;
 		transfer.rxData = ctx->rx_buf;
-		transfer.dataSize = ctx->rx_len;
+		transfer.dataSize = ctx->rx.len;
 	} else {
 		/* Break up the rx into multiple transfers so we don't have to
 		 * tx from a longer intermediate buffer. Leave chip select
@@ -84,7 +84,7 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 		 */
 		transfer.txData = (uint8_t *) ctx->tx_buf;
 		transfer.rxData = ctx->rx_buf;
-		transfer.dataSize = ctx->tx_len;
+		transfer.dataSize = ctx->tx.len;
 	}
 
 	data->transfer_len = transfer.dataSize;
