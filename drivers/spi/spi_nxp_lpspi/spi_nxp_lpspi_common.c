@@ -35,11 +35,11 @@ static LPSPI_Type* const lpspi_bases[] = LPSPI_BASE_PTRS;
 #ifdef LPSPI_RSTS
 static const reset_ip_name_t lpspi_resets[] = LPSPI_RSTS;
 
-static inline reset_ip_name_t lpspi_get_reset(LPSPI_Type* const base) {
+static inline reset_ip_name_t lpspi_get_reset(LPSPI_Type* const lpspi) {
     reset_ip_name_t rst = -1; /* invalid initial value */
 
     ARRAY_FOR_EACH(lpspi_bases, idx) {
-        if (lpspi_bases[idx] == base) {
+        if (lpspi_bases[idx] == lpspi) {
             rst = lpspi_resets[idx];
             break;
         }
@@ -54,11 +54,11 @@ static inline reset_ip_name_t lpspi_get_reset(LPSPI_Type* const base) {
 #ifdef LPSPI_CLOCKS
 static const clock_ip_name_t lpspi_clocks[] = LPSPI_CLOCKS;
 
-static inline clock_ip_name_t lpspi_get_clock(LPSPI_Type* const base) {
+static inline clock_ip_name_t lpspi_get_clock(LPSPI_Type* const lpspi) {
     clock_ip_name_t clk = -1; /* invalid initial value */
 
     ARRAY_FOR_EACH(lpspi_bases, idx) {
-        if (lpspi_bases[idx] == base) {
+        if (lpspi_bases[idx] == lpspi) {
             clk = lpspi_clocks[idx];
             break;
         }
@@ -353,11 +353,11 @@ int lpspi_configure(const struct device* dev, const struct spi_config* spi_cfg) 
 
 static void lpspi_module_system_init(LPSPI_Type* lpspi) {
     #ifdef LPSPI_CLOCKS
-    CLOCK_EnableClock(lpspi_get_clock(base));
+    CLOCK_EnableClock(lpspi_get_clock(lpspi));
     #endif
 
     #ifdef LPSPI_RSTS
-    RESET_ReleasePeripheralReset(lpspi_get_reset(base));
+    RESET_ReleasePeripheralReset(lpspi_get_reset(lpspi));
     #endif
 }
 

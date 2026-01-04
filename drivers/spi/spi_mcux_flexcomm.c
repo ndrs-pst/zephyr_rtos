@@ -99,7 +99,7 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 	spi_transfer_t transfer;
 	status_t status;
 
-	if ((ctx->tx_len == 0) && (ctx->rx_len == 0)) {
+	if ((ctx->tx.len == 0) && (ctx->rx.len == 0)) {
 		/* nothing left to rx or tx, we're done! */
 		spi_context_cs_control(ctx, false);
 		spi_context_complete(ctx, dev, 0);
@@ -109,29 +109,29 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 	}
 
 	transfer.configFlags = 0;
-	if (ctx->tx_len == 0) {
+	if (ctx->tx.len == 0) {
 		/* rx only, nothing to tx */
 		transfer.txData = NULL;
 		transfer.rxData = ctx->rx_buf;
-		transfer.dataSize = ctx->rx_len;
-	} else if (ctx->rx_len == 0) {
+		transfer.dataSize = ctx->rx.len;
+	} else if (ctx->rx.len == 0) {
 		/* tx only, nothing to rx */
 		transfer.txData = (uint8_t *) ctx->tx_buf;
 		transfer.rxData = NULL;
-		transfer.dataSize = ctx->tx_len;
-	} else if (ctx->tx_len == ctx->rx_len) {
+		transfer.dataSize = ctx->tx.len;
+	} else if (ctx->tx.len == ctx->rx.len) {
 		/* rx and tx are the same length */
 		transfer.txData = (uint8_t *) ctx->tx_buf;
 		transfer.rxData = ctx->rx_buf;
-		transfer.dataSize = ctx->tx_len;
-	} else if (ctx->tx_len > ctx->rx_len) {
+		transfer.dataSize = ctx->tx.len;
+	} else if (ctx->tx.len > ctx->rx.len) {
 		/* Break up the tx into multiple transfers so we don't have to
 		 * rx into a longer intermediate buffer. Leave chip select
 		 * active between transfers.
 		 */
 		transfer.txData = (uint8_t *) ctx->tx_buf;
 		transfer.rxData = ctx->rx_buf;
-		transfer.dataSize = ctx->rx_len;
+		transfer.dataSize = ctx->rx.len;
 	} else {
 		/* Break up the rx into multiple transfers so we don't have to
 		 * tx from a longer intermediate buffer. Leave chip select
@@ -139,10 +139,10 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 		 */
 		transfer.txData = (uint8_t *) ctx->tx_buf;
 		transfer.rxData = ctx->rx_buf;
-		transfer.dataSize = ctx->tx_len;
+		transfer.dataSize = ctx->tx.len;
 	}
 
-	if (ctx->tx_count <= 1 && ctx->rx_count <= 1) {
+	if (ctx->tx.count <= 1 && ctx->rx.count <= 1) {
 		transfer.configFlags = kSPI_FrameAssert;
 	}
 
@@ -565,7 +565,7 @@ static int spi_mcux_dma_transfer(const struct device *dev, const struct spi_conf
 			LOG_ERR("unexpected block length");
 			return -ECANCELED;
 		}
-		if (ctx->tx_count <= 1 && ctx->rx_count <= 1 &&
+		if (ctx->tx.count <= 1 && ctx->rx.count <= 1 &&
 		    block_length == spi_context_longest_current_buf(ctx)) {
 			/* On the last buffer. First send all but the last word, then when only one
 			 * word is remaining, load the last buffer with that word so it can be set
@@ -656,7 +656,7 @@ static int spi_mcux_transfer_one_word(const struct device *dev, const struct spi
 	tmp32 = base->FIFORD;
 
 	/* copy to user buffer if given one */
-	if (ctx->rx_len > 0 && ctx->rx_buf != NULL) {
+	if (ctx->rx.len > 0 && ctx->rx_buf != NULL) {
 		ctx->rx_buf[0] = (uint8_t)tmp32;
 		if (data->word_size_bits > 8) {
 			ctx->rx_buf[1] = (uint8_t)(tmp32 >> 8);
@@ -733,7 +733,7 @@ static int transceive_dma(const struct device *dev,
 	 * word. This also avoids the edge case where the FIFOWR bits cannot be set by a chained
 	 * DMA descriptor, because there is only one DMA descriptor.
 	 */
-	if (ctx->tx_count <= 1 && ctx->rx_count <= 1 &&
+	if (ctx->tx.count <= 1 && ctx->rx.count <= 1 &&
 	    spi_context_longest_current_buf(ctx) == 1) {
 		/* Disable DMATX/RX */
 		base->FIFOCFG &= ~(SPI_FIFOCFG_DMARX_MASK | SPI_FIFOCFG_DMATX_MASK);
