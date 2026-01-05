@@ -107,7 +107,7 @@ const struct dmamux_stm32_dma_fops *get_dma_fops(const struct dmamux_stm32_confi
 	}
 #endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dmamux2)) */
 
-	__ASSERT(false, "Unknown dma base address %x", dev_config->base);
+	__ASSERT(false, "Unknown dma base address %" PRIxPTR, dev_config->base);
 
 	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
 	return &dmamux1;

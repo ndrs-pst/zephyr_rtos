@@ -1906,16 +1906,7 @@ static int spi_stm32_ll_transceive_dma(const struct device* dev,
         data->status_flags = 0;
 
         if (transfer_dir == LL_SPI_FULL_DUPLEX) {
-            if (ctx->rx.len == 0) {
-                dma_len = ctx->tx.len;
-            }
-            else if (ctx->tx.len == 0) {
-                dma_len = ctx->rx.len;
-            }
-            else {
-                dma_len = z_min(ctx->tx.len, ctx->rx.len);
-            }
-
+            dma_len = spi_context_max_continuous_chunk(ctx);
             ret = spi_dma_move_buffers(dev, dma_len);
         }
         else if (transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
@@ -2068,15 +2059,21 @@ static int spi_stm32_transceive(const struct device* dev,
                                 const struct spi_config* config,
                                 const struct spi_buf_set* tx_bufs,
                                 const struct spi_buf_set* rx_bufs) {
+    int ret;
+
     #ifdef CONFIG_SPI_STM32_DMA
     struct spi_stm32_data const* data = dev->data;
 
     if ((data->dma_tx.dma_dev != NULL) && (data->dma_rx.dma_dev != NULL)) {
-        return spi_stm32_ll_transceive_dma(dev, config, tx_bufs, rx_bufs,
+        ret = spi_stm32_ll_transceive_dma(dev, config, tx_bufs, rx_bufs,
                                            false, NULL, NULL);
+        return (ret);
     }
     #endif /* CONFIG_SPI_STM32_DMA */
-    return spi_stm32_ll_transceive(dev, config, tx_bufs, rx_bufs, false, NULL, NULL);
+
+    ret = spi_stm32_ll_transceive(dev, config, tx_bufs, rx_bufs, false, NULL, NULL);
+
+    return (ret);
 }
 
 #ifdef CONFIG_SPI_ASYNC

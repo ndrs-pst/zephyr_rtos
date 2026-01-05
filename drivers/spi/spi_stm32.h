@@ -75,11 +75,12 @@ struct spi_stm32_data {
     uint32_t tx_nop;                        /* 4-bytes expansion of overrun character (orc) */
 
     #ifdef CONFIG_SPI_STM32_DMA
-    struct k_sem      status_sem;
+    struct k_sem status_sem;
     volatile uint32_t status_flags;
-    struct stream     dma_rx;
-    struct stream     dma_tx;
+    struct stream dma_rx;
+    struct stream dma_tx;
     #endif /* CONFIG_SPI_STM32_DMA */
+
     bool pm_policy_state_on;
 };
 
