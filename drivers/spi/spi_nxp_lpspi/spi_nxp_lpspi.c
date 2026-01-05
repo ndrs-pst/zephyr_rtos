@@ -243,7 +243,7 @@ static void lpspi_isr(const struct device* dev) {
         lpspi_handle_tx_irq(dev);
     }
 
-    if (spi_context_rx_len_left(ctx, word_size_bytes) == 0) {
+    if (spi_context_rx_len_left(ctx, (uint8_t)word_size_bytes) == 0) {
         lpspi->IER &= ~LPSPI_IER_RDIE_MASK;
         lpspi->CR |= LPSPI_CR_RRF_MASK; /* flush rx fifo */
     }
