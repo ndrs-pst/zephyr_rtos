@@ -293,6 +293,10 @@ static int dma_stm32_disable_stream(DMA_TypeDef* dma, uint32_t id) {
     }
 }
 
+static inline bool dma_stm32_data_size_is_invalid(uint32_t size) {
+    return ((size != 4U) && (size != 2U) && (size != 1U));
+}
+
 DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device* dev,
                                              uint32_t id,
                                              struct dma_config* config) {
@@ -352,18 +356,22 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device* dev,
                 dev->name);
         return (-ENOTSUP);
     }
-    #endif /* CONFIG_DMA_STM32_V1 */
 
     /* Support only the same data width for source and dest */
-    if ((config->dest_data_size != config->source_data_size)) {
+    if (config->dest_data_size != config->source_data_size) {
         LOG_ERR("source and dest data size differ.");
         return (-EINVAL);
     }
+    #else /* CONFIG_DMA_STM32_V1 */
+    if (dma_stm32_data_size_is_invalid(config->dest_data_size)) {
+        LOG_ERR("invalid dest unit size: %d",
+                config->dest_data_size);
+        return (-EINVAL);
+    }
+    #endif /* CONFIG_DMA_STM32_V1 */
 
-    if ((config->source_data_size != 4U) &&
-        (config->source_data_size != 2U) &&
-        (config->source_data_size != 1U)) {
-        LOG_ERR("source and dest unit size error, %d",
+    if (dma_stm32_data_size_is_invalid(config->source_data_size)) {
+        LOG_ERR("invalid source unit size: %d",
                 config->source_data_size);
         return (-EINVAL);
     }
@@ -398,15 +406,15 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device* dev,
 
     if (stream->direction == MEMORY_TO_PERIPHERAL) {
         DMA_InitStruct.MemoryOrM2MDstAddress =
-                    config->head_block->source_address;
+            config->head_block->source_address;
         DMA_InitStruct.PeriphOrM2MSrcAddress =
-                    config->head_block->dest_address;
+            config->head_block->dest_address;
     }
     else {
         DMA_InitStruct.PeriphOrM2MSrcAddress =
-                    config->head_block->source_address;
+            config->head_block->source_address;
         DMA_InitStruct.MemoryOrM2MDstAddress =
-                    config->head_block->dest_address;
+            config->head_block->dest_address;
     }
 
     uint16_t memory_addr_adj = 0;
@@ -470,7 +478,7 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device* dev,
 
     stream->source_periph = (stream->direction == PERIPHERAL_TO_MEMORY);
 
-    /* set the data width, when source_data_size equals dest_data_size */
+    /* set the data widths */
     int index;
 
     index = find_lsb_set(config->source_data_size) - 1;
