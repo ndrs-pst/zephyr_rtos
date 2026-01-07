@@ -192,7 +192,7 @@ unlock :
 
 int can_mcan_set_timing(const struct device* dev, const struct can_timing* timing) {
     struct can_mcan_data* data = dev->data;
-    uint32_t nbtp = 0U;
+    uint32_t nbtp;
     int err;
 
     if (data->common.started) {
@@ -201,17 +201,13 @@ int can_mcan_set_timing(const struct device* dev, const struct can_timing* timin
 
     k_mutex_lock(&data->lock, K_FOREVER);
 
-    nbtp |= FIELD_PREP(CAN_MCAN_NBTP_NSJW  , timing->sjw - 1UL)        |
-            FIELD_PREP(CAN_MCAN_NBTP_NTSEG1, timing->phase_seg1 - 1UL) |
-            FIELD_PREP(CAN_MCAN_NBTP_NTSEG2, timing->phase_seg2 - 1UL) |
-            FIELD_PREP(CAN_MCAN_NBTP_NBRP  , timing->prescaler  - 1UL);
+    nbtp = FIELD_PREP(CAN_MCAN_NBTP_NSJW  , timing->sjw - 1UL)        |
+           FIELD_PREP(CAN_MCAN_NBTP_NTSEG1, timing->phase_seg1 - 1UL) |
+           FIELD_PREP(CAN_MCAN_NBTP_NTSEG2, timing->phase_seg2 - 1UL) |
+           FIELD_PREP(CAN_MCAN_NBTP_NBRP  , timing->prescaler  - 1UL);
 
     err = can_mcan_write_reg(dev, CAN_MCAN_NBTP, nbtp);
-    if (err != 0) {
-        goto unlock;
-    }
 
-unlock :
     k_mutex_unlock(&data->lock);
 
     return (err);
@@ -457,11 +453,9 @@ int can_mcan_set_mode(const struct device* dev, can_mode_t mode) {
     }
 
     err = can_mcan_write_reg(dev, CAN_MCAN_TEST, test);
-    if (err != 0) {
-        goto unlock;
+    if (err == 0) {
+        data->common.mode = mode;
     }
-
-    data->common.mode = mode;
 
 unlock :
     k_mutex_unlock(&data->lock);
@@ -1092,7 +1086,7 @@ int can_mcan_add_rx_filter_std(const struct device* dev, can_rx_callback_t callb
                                void* user_data, const struct can_filter* filter) {
     const struct can_mcan_config* config = dev->config;
     const struct can_mcan_callbacks* cbs = config->callbacks;
-    struct can_mcan_data *data = dev->data;
+    struct can_mcan_data* data = dev->data;
     struct can_mcan_std_filter filter_element = {
         .sfid1 = filter->id,
         .sfid2 = filter->mask,
@@ -1100,6 +1094,7 @@ int can_mcan_add_rx_filter_std(const struct device* dev, can_rx_callback_t callb
     };
     int filter_id = -ENOSPC;
     int err;
+    int ret;
 
     k_mutex_lock(&data->lock, K_FOREVER);
 
@@ -1112,8 +1107,8 @@ int can_mcan_add_rx_filter_std(const struct device* dev, can_rx_callback_t callb
 
     if (filter_id == -ENOSPC) {
         LOG_WRN("No free standard id filter left");
-        k_mutex_unlock(&data->lock);
-        return -ENOSPC;
+        ret = -ENOSPC;
+        goto unlock;
     }
 
     /* TODO proper fifo balancing */
@@ -1124,18 +1119,20 @@ int can_mcan_add_rx_filter_std(const struct device* dev, can_rx_callback_t callb
                               &filter_element, sizeof(filter_element));
     if (err != 0) {
         LOG_ERR("failed to write std filter element (err %d)", err);
-        k_mutex_unlock(&data->lock);
-        return (err);
+        ret = err;
+        goto unlock;
     }
 
     cbs->std[filter_id].function = callback;
     cbs->std[filter_id].user_data = user_data;
 
+    LOG_DBG("added std filter at index %d", filter_id);
+    ret = filter_id;
+
+unlock :
     k_mutex_unlock(&data->lock);
 
-    LOG_DBG("added std filter at index %d", filter_id);
-
-    return (filter_id);
+    return (ret);
 }
 
 static int can_mcan_add_rx_filter_ext(const struct device* dev, can_rx_callback_t callback,
@@ -1150,6 +1147,7 @@ static int can_mcan_add_rx_filter_ext(const struct device* dev, can_rx_callback_
     };
     int filter_id = -ENOSPC;
     int err;
+    int ret;
 
     k_mutex_lock(&data->lock, K_FOREVER);
 
@@ -1162,8 +1160,8 @@ static int can_mcan_add_rx_filter_ext(const struct device* dev, can_rx_callback_
 
     if (filter_id == -ENOSPC) {
         LOG_WRN("No free extended id filter left");
-        k_mutex_unlock(&data->lock);
-        return (-ENOSPC);
+        ret = -ENOSPC;
+        goto unlock;
     }
 
     /* TODO proper fifo balancing */
@@ -1174,18 +1172,20 @@ static int can_mcan_add_rx_filter_ext(const struct device* dev, can_rx_callback_
                               &filter_element, sizeof(filter_element));
     if (err != 0) {
         LOG_ERR("failed to write std filter element (err %d)", err);
-        k_mutex_unlock(&data->lock);
-        return (err);
+        ret = err;
+        goto unlock;
     }
 
     cbs->ext[filter_id].function = callback;
     cbs->ext[filter_id].user_data = user_data;
 
+    LOG_DBG("added ext filter at index %d", filter_id);
+    ret = filter_id;
+
+unlock :
     k_mutex_unlock(&data->lock);
 
-    LOG_DBG("added ext filter at index %d", filter_id);
-
-    return (filter_id);
+    return (ret);
 }
 
 int can_mcan_add_rx_filter(const struct device* dev, can_rx_callback_t callback, void* user_data,
@@ -1220,7 +1220,7 @@ void can_mcan_remove_rx_filter(const struct device* dev, int filter_id) {
     struct can_mcan_data* data = dev->data;
     int err;
 
-    if (filter_id < 0) {
+    if ((filter_id < 0) || (filter_id >= (cbs->num_std + cbs->num_ext))) {
         LOG_ERR("filter ID %d out of bounds", filter_id);
         return;
     }
@@ -1229,11 +1229,6 @@ void can_mcan_remove_rx_filter(const struct device* dev, int filter_id) {
 
     if (filter_id >= cbs->num_std) {
         filter_id -= cbs->num_std;
-        if (filter_id >= cbs->num_ext) {
-            LOG_ERR("filter ID %d out of bounds", filter_id);
-            k_mutex_unlock(&data->lock);
-            return;
-        }
 
         cbs->ext[filter_id].function  = NULL;
         cbs->ext[filter_id].user_data = NULL;
@@ -1284,18 +1279,12 @@ void can_mcan_enable_configuration_change(const struct device* dev) {
     k_mutex_lock(&data->lock, K_FOREVER);
 
     err = can_mcan_read_reg(dev, CAN_MCAN_CCCR, &cccr);
-    if (err != 0) {
-        goto unlock;
+    if (err == 0) {
+        cccr |= CAN_MCAN_CCCR_CCE;
+
+        (void) can_mcan_write_reg(dev, CAN_MCAN_CCCR, cccr);
     }
 
-    cccr |= CAN_MCAN_CCCR_CCE;
-
-    err = can_mcan_write_reg(dev, CAN_MCAN_CCCR, cccr);
-    if (err != 0) {
-        goto unlock;
-    }
-
-unlock :
     k_mutex_unlock(&data->lock);
 }
 
