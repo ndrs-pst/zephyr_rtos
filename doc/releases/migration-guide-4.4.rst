@@ -229,6 +229,12 @@ Counter
            resolution = <16>;
        };
 
+EEPROM
+======
+
+* Added :c:func:`eeprom_target_read_data()` and :c:func:`eeprom_target_write_data()` which takes an
+  offset and length and deprecated :c:func:`eeprom_target_program()` for the I2C EEPROM target driver.
+
 Ethernet
 ========
 
@@ -444,6 +450,12 @@ Bluetooth Audio
   receive states at the end of the procedure. Users will have to manually call
   :c:func:`bt_bap_broadcast_assistant_read_recv_state` to read the existing receive states, if any,
   prior to performing any operations. (:github:`91587`)
+
+Bluetooth Mesh
+==============
+
+* :kconfig:option:`CONFIG_BT_MESH_MODEL_VND_MSG_CID_FORCE` has been deprecated. Enabling it no
+  longer has any effect on message handling performance.
 
 Networking
 **********
