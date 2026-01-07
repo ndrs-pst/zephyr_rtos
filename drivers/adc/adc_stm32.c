@@ -666,6 +666,7 @@ static int adc_stm32_calibrate(const struct device* dev) {
     else { /* case ADC3*/
         channel_offset = 16UL;
     }
+
     /* Read factory calibration factors */
     for (uint32_t count = 0UL; count < ADC_LINEAR_CALIB_REG_COUNT; count++) {
         linear_calib_buffer = *(uint32_t*)
@@ -923,7 +924,7 @@ static int set_resolution(const struct device* dev,
     return (0);
 }
 
-static int set_sequencer(const struct device* dev) {
+static void set_sequencer(const struct device* dev) {
     const struct adc_stm32_cfg* config = dev->config;
     struct adc_stm32_data* data = dev->data;
     ADC_TypeDef* adc = config->base;
@@ -983,8 +984,6 @@ static int set_sequencer(const struct device* dev) {
         DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
     LL_ADC_SetSequencersScanMode(adc, LL_ADC_SEQ_SCAN_ENABLE);
     #endif /* st_stm32f1_adc || st_stm32f4_adc */
-
-    return (0);
 }
 
 static int start_read(const struct device* dev,
@@ -1025,10 +1024,7 @@ static int start_read(const struct device* dev,
     }
 
     /* Configure the sequencer */
-    err = set_sequencer(dev);
-    if (err < 0) {
-        return (err);
-    }
+    set_sequencer(dev);
 
     err = check_buffer(sequence, data->channel_count);
     if (err) {

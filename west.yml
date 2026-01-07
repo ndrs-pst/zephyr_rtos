@@ -131,7 +131,7 @@ manifest:
       path: modules/lib/cmsis-nn
     - name: cmsis_6
       repo-path: CMSIS_6
-      revision: 887b9bf6f276a4c89edd5e2bdafbe199015f2350
+      revision: f2ab7afafd0fc33d093e5e2786c989fce10e311f
       path: modules/hal/cmsis_6
       groups:
         - hal
@@ -167,7 +167,7 @@ manifest:
         - hal
     - name: hal_bouffalolab
       path: modules/hal/bouffalolab
-      revision: ebecd183d4f52225e465d056f457792e4ebe80c1
+      revision: 6236ecf4224ffb5fe1e3542c0380db951bb14540
       groups:
         - hal
     - name: hal_espressif
@@ -233,7 +233,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 0164f2f515ad196674103f33cab10a7d547ce3cf
+      revision: 6894582f2d7ff750caa60d60dd5ccac7927b72e4
       groups:
         - hal
     - name: hal_rpi_pico
@@ -301,7 +301,7 @@ manifest:
       revision: b97860e78998551af99931ece149eeffc538bdb1
       path: modules/lib/libmctp
     - name: libmetal
-      revision: 91d38634d1882f0a2151966f8c5c230ce1c0de7b
+      revision: 66e084293b2a7ced5a73fbd247deddba8915883a
       path: modules/hal/libmetal
       groups:
         - hal
@@ -352,7 +352,7 @@ manifest:
       revision: 9f09f0785f9fc716514d8956a2a446021697400c
       path: modules/lib/nrf_wifi
     - name: open-amp
-      revision: c30a6d8b92fcebdb797fc1a7698e8729e250f637
+      revision: 5efe7974f9546582e99f5a842a816ea4b65f5227
       path: modules/lib/open-amp
     - name: openthread
       revision: 2bc7712f57af22058770d1ef131ad3da79a0c764
@@ -393,7 +393,7 @@ manifest:
       groups:
         - tee
     - name: uoscore-uedhoc
-      revision: 54abc109c9c0adfd53c70077744c14e454f04f4a
+      revision: ac80c3bf2b88deec86d129654fbde09761582342
       path: modules/lib/uoscore-uedhoc
     - name: zcbor
       revision: 1f622967bd4d19ca2fa50a9ad5d0a9f66ef330ec
