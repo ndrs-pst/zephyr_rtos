@@ -47,7 +47,6 @@
 LOG_MODULE_REGISTER(adc_stm32);
 
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
-#include <zephyr/dt-bindings/adc/stm32_adc.h>
 #include <zephyr/irq.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
 
@@ -164,11 +163,11 @@ LOG_MODULE_REGISTER(adc_stm32);
 #define MAX_RANK 16
 #endif
 
-#define RANK(i, _) _CONCAT_1(LL_ADC_REG_RANK_, UTIL_INC(i))
+#define RANK(i, _) CONCAT(LL_ADC_REG_RANK_, UTIL_INC(i))
 static uint32_t const table_rank[] = {
     LISTIFY(MAX_RANK, RANK, (, ))};
 
-#define SEQ_LEN(i, _) _CONCAT_2(LL_ADC_REG_SEQ_SCAN_ENABLE_, UTIL_INC(UTIL_INC(i)), RANKS)
+#define SEQ_LEN(i, _) CONCAT(LL_ADC_REG_SEQ_SCAN_ENABLE_, UTIL_INC(UTIL_INC(i)), RANKS)
 /* Length of this array signifies the maximum sequence length */
 static uint32_t const table_seq_len[] = {
     LL_ADC_REG_SEQ_SCAN_DISABLE,
@@ -224,7 +223,10 @@ struct adc_stm32_cfg {
     const struct stm32_pclken pclken_pre;
     uint32_t clk_prescaler;
     const struct pinctrl_dev_config* pcfg;
-    uint16_t const sampling_time_table[STM32_NB_SAMPLING_TIME];
+    const uint8_t* table_raw_resolution;
+    const uint32_t* table_ll_resolution;
+    const uint16_t sampling_time_table[STM32_NB_SAMPLING_TIME];
+    int8_t table_resolution_size;
     int8_t num_sampling_time_common_channels;
     int8_t sequencer_type;
     int8_t oversampler_type;
@@ -235,8 +237,6 @@ struct adc_stm32_cfg {
     bool has_channel_preselection   :1;
     bool has_differential_support   :1;
     bool differential_channels_used :1;
-    int8_t res_table_size;
-    uint32_t const res_table[];
 };
 
 #ifdef CONFIG_ADC_STM32_DMA
@@ -696,7 +696,7 @@ static int adc_stm32_calibrate(const struct device* dev) {
 #define MAX_OVS_SHIFT 8
 #endif
 
-#define OVS_SHIFT(i, _) _CONCAT_1(LL_ADC_OVS_SHIFT_RIGHT_, UTIL_INC(i))
+#define OVS_SHIFT(i, _) CONCAT(LL_ADC_OVS_SHIFT_RIGHT_, UTIL_INC(i))
 static uint32_t const table_oversampling_shift[] = {
     LL_ADC_OVS_SHIFT_NONE,
     LISTIFY(MAX_OVS_SHIFT, OVS_SHIFT, (, ))
@@ -855,71 +855,29 @@ static void dma_callback(const struct device* dev, void* user_data,
 }
 #endif /* CONFIG_ADC_STM32_DMA */
 
-static uint8_t get_reg_value(const struct device* dev, uint32_t reg,
-                             uint32_t shift, uint32_t mask) {
-    const struct adc_stm32_cfg* config = dev->config;
-
-    uintptr_t addr = (uintptr_t)config->base + reg;
-
-    return ((*(volatile uint32_t*)addr >> shift) & mask);
-}
-
-static void set_reg_value(const struct device* dev, uint32_t reg,
-                          uint32_t shift, uint32_t mask, uint32_t value) {
-    const struct adc_stm32_cfg* config = dev->config;
-    size_t reg32_offset = reg / sizeof(uint32_t);
-    volatile uint32_t* addr = (volatile uint32_t*)config->base + reg32_offset;
-
-    stm32_reg_modify_bits(addr, (mask << shift), (value << shift));
-}
-
 static int set_resolution(const struct device* dev,
                           const struct adc_sequence* sequence) {
     const struct adc_stm32_cfg* config = dev->config;
-    ADC_TypeDef* adc = config->base;
-    uint8_t res_reg_addr = 0xFF;
-    uint8_t res_shift    = 0;
-    uint8_t res_mask     = 0;
-    uint8_t res_reg_val  = 0;
+    __maybe_unused ADC_TypeDef* adc = config->base;
     int i;
 
-    for (i = 0; i < config->res_table_size; i++) {
-        if (sequence->resolution == STM32_ADC_GET_REAL_VAL(config->res_table[i])) {
-            res_reg_addr = STM32_ADC_GET_REG(config->res_table[i]);
-            res_shift    = STM32_ADC_GET_SHIFT(config->res_table[i]);
-            res_mask     = STM32_ADC_GET_MASK(config->res_table[i]);
-            res_reg_val  = STM32_ADC_GET_REG_VAL(config->res_table[i]);
+    for (i = 0; i < config->table_resolution_size; i++) {
+        if (sequence->resolution == config->table_raw_resolution[i]) {
             break;
         }
     }
 
-    if (i == config->res_table_size) {
+    if (i == config->table_resolution_size) {
         LOG_ERR("Invalid resolution");
         return (-EINVAL);
     }
 
-    /*
-     * Some MCUs (like STM32F1x) have no register to configure resolution.
-     * These MCUs have a register address value of 0xFF and should be
-     * ignored.
-     */
-    if (res_reg_addr != 0xFF) {
-        /*
-         * We don't use LL_ADC_SetResolution and LL_ADC_GetResolution
-         * because they don't strictly use hardware resolution values
-         * and makes internal conversions for some series.
-         * (see stm32h7xx_ll_adc.h)
-         * Instead we set the register ourselves if needed.
-         */
-        if (get_reg_value(dev, res_reg_addr, res_shift, res_mask) != res_reg_val) {
-            /*
-             * Writing ADC_CFGR1 register while ADEN bit is set
-             * resets RES[1:0] bitfield. We need to disable and enable adc.
-             */
-            adc_stm32_disable(adc);
-            set_reg_value(dev, res_reg_addr, res_shift, res_mask, res_reg_val);
-        }
+    #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
+    if (LL_ADC_GetResolution(adc) != config->table_ll_resolution[i]) {
+        adc_stm32_disable(adc);
+        LL_ADC_SetResolution(adc, config->table_ll_resolution[i]);
     }
+    #endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
 
     return (0);
 }
@@ -1805,7 +1763,7 @@ static DEVICE_API(adc, api_stm32_driver_api) = {
 
 /* Concat prefix (1st element) and DIV value (2nd element) of st,adc-prescaler */
 #define ADC_STM32_DT_PRESC(x)   \
-    Z_CONCAT(ADC_STM32_CLOCK_PREFIX(x), ADC_STM32_DIV(x))
+    CONCAT(ADC_STM32_CLOCK_PREFIX(x), ADC_STM32_DIV(x))
 
 /* Macro to check if the ADC instance clock setup is correct */
 #define ADC_STM32_CHECK_DT_CLOCK(x) \
@@ -1961,13 +1919,24 @@ DT_INST_FOREACH_STATUS_OKAY(GENERATE_ISR)
                 (ADC_DMA_CHANNEL_INIT(id, src, dest)),          \
                 (/* Required for other adc instances without dma */))
 
+#define LIST_RESOLUTION(i, index)                               \
+    CONCAT(LL_ADC_RESOLUTION_, DT_INST_PROP_BY_IDX(index, st_adc_resolutions, i), B)
+
 #define ADC_STM32_INIT(index)                                   \
                                                                 \
     ADC_STM32_CHECK_DT_CLOCK(index);                            \
                                                                 \
     PINCTRL_DT_INST_DEFINE(index);                              \
                                                                 \
-static struct adc_stm32_cfg DT_CONST adc_stm32_cfg_##index = {  \
+    static const uint8_t table_raw_resolution##index[] =        \
+        DT_INST_PROP(index, st_adc_resolutions);                \
+                                                                \
+    static const uint32_t table_ll_resolution##index[] = {      \
+        LISTIFY(DT_INST_PROP_LEN(index, st_adc_resolutions),    \
+            LIST_RESOLUTION, (,), index),                       \
+    };                                                          \
+                                                                \
+    static struct adc_stm32_cfg DT_CONST adc_stm32_cfg_##index = { \
     .base = (ADC_TypeDef*)DT_INST_REG_ADDR(index),              \
     ADC_STM32_IRQ_FUNC(index)                                   \
     .pclken = STM32_DT_INST_CLOCK_INFO_BY_NAME(index, adcx),    \
@@ -1994,9 +1963,10 @@ static struct adc_stm32_cfg DT_CONST adc_stm32_cfg_##index = {  \
     .sampling_time_table = DT_INST_PROP(index, sampling_times), \
     .num_sampling_time_common_channels =                        \
         DT_INST_PROP_OR(index, num_sampling_time_common_channels, 0), \
-    .res_table_size = DT_INST_PROP_LEN(index, resolutions),     \
-    .res_table = DT_INST_PROP(index, resolutions),              \
-};                                                              \
+        .table_resolution_size = DT_INST_PROP_LEN(index, st_adc_resolutions), \
+        .table_raw_resolution = table_raw_resolution##index,    \
+        .table_ll_resolution  = table_ll_resolution##index,     \
+    };                                                          \
                                                                 \
     static struct adc_stm32_data adc_stm32_data_##index = {     \
         ADC_CONTEXT_INIT_TIMER(adc_stm32_data_##index, ctx),    \

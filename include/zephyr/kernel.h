@@ -2127,7 +2127,7 @@ static inline uint32_t k_uptime_seconds(void) {
 }
 
 /**
- * @brief Get elapsed time.
+ * @brief Get elapsed time, and update the referenced time.
  *
  * This routine computes the elapsed time between the current system uptime
  * and an earlier reference time, in milliseconds.
