@@ -46,7 +46,7 @@ LOG_MODULE_REGISTER(cat1_spi, CONFIG_SPI_LOG_LEVEL);
 #define IFX_CAT1_SPI_RSLT_TRANSFER_ERROR (-2)
 #define IFX_CAT1_SPI_RSLT_CLOCK_ERROR    (-3)
 
-#if CY_SCB_DRV_VERSION_MINOR >= 20 && defined(COMPONENT_CAT1) && CY_SCB_DRV_VERSION_MAJOR == 3
+#if (CY_SCB_DRV_VERSION_MINOR >= 20) && defined(COMPONENT_CAT1) && (CY_SCB_DRV_VERSION_MAJOR == 3)
 #define IFX_CAT1_SPI_ASYMM_PDL_FUNC_AVAIL
 #endif
 
@@ -62,10 +62,10 @@ typedef void (*ifx_cat1_spi_event_callback_t)(void* callback_arg, uint32_t event
 
 /* Device config structure */
 struct ifx_cat1_spi_config {
-    CySCB_Type*                      reg_addr;
+    CySCB_Type* reg_addr;
     const struct pinctrl_dev_config* pcfg;
-    cy_stc_scb_spi_config_t          scb_spi_config;
-    cy_cb_scb_spi_handle_events_t    spi_handle_events_func;
+    cy_stc_scb_spi_config_t scb_spi_config;
+    cy_cb_scb_spi_handle_events_t spi_handle_events_func;
 
     uint32_t irq_num;
     void (*irq_config_func)(const struct device* dev);
@@ -77,16 +77,16 @@ struct ifx_cat1_spi_config {
 
 #ifdef CONFIG_IFX_CAT1_SPI_DMA
 struct ifx_cat1_dma_stream {
-    const struct device*    dev_dma;
-    uint32_t                dma_channel;
-    struct dma_config       dma_cfg;
+    const struct device* dev_dma;
+    uint32_t dma_channel;
+    struct dma_config dma_cfg;
     struct dma_block_config blk_cfg;
 };
 #endif
 
 typedef struct {
     cy_israddress callback;
-    void*         callback_arg;
+    void* callback_arg;
 } ifx_cat1_event_callback_data_t;
 
 /* Data structure */
@@ -129,12 +129,12 @@ struct ifx_cat1_spi_data {
     cy_stc_syspm_callback_t spi_deep_sleep;
 };
 
-cy_rslt_t ifx_cat1_spi_init_cfg(const struct device* dev, cy_stc_scb_spi_config_t* scb_spi_config);
-void ifx_cat1_spi_register_callback(const struct device* dev,
-                                    ifx_cat1_spi_event_callback_t callback, void* callback_arg);
-void        spi_free(const struct device* dev);
-cy_rslt_t   spi_set_frequency(const struct device* dev, uint32_t hz);
-static void spi_irq_handler(const struct device* dev);
+static cy_rslt_t ifx_cat1_spi_init_cfg(const struct device* dev, cy_stc_scb_spi_config_t* scb_spi_config);
+static void ifx_cat1_spi_register_callback(const struct device* dev,
+                                           ifx_cat1_spi_event_callback_t callback, void* callback_arg);
+static void ifx_cat1_spi_free(const struct device* dev);
+static cy_rslt_t ifx_cat1_spi_set_frequency(const struct device* dev, uint32_t hz);
+static void ifx_cat1_spi_irq_handler(const struct device* dev);
 static void ifx_cat1_spi_cb_wrapper(const struct device* dev, uint32_t event);
 cy_rslt_t   ifx_cat1_spi_transfer_async(const struct device* dev, uint8_t const* tx, size_t tx_length,
                                         uint8_t* rx, size_t rx_length);
@@ -171,13 +171,13 @@ static void transfer_chunk(const struct device* dev) {
     data->chunk_len = chunk_len;
 
     #ifdef CONFIG_IFX_CAT1_SPI_DMA
-    const struct ifx_cat1_spi_config* const config  = dev->config;
+    const struct ifx_cat1_spi_config* const config = dev->config;
     CySCB_Type* spi_reg = config->reg_addr;
 
     Cy_SCB_SetRxFifoLevel(spi_reg, chunk_len - 1);
 
-    register struct ifx_cat1_dma_stream* dma_tx = &data->dma_tx;
-    register struct ifx_cat1_dma_stream* dma_rx = &data->dma_rx;
+    struct ifx_cat1_dma_stream* dma_tx = &data->dma_tx;
+    struct ifx_cat1_dma_stream* dma_rx = &data->dma_rx;
 
     if (data->dma_configured && spi_context_rx_buf_on(ctx) && spi_context_tx_buf_on(ctx)) {
         /* Optimization to reduce config time if only buffer and size
@@ -204,7 +204,7 @@ static void transfer_chunk(const struct device* dev) {
         dma_tx->blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
     }
     else {
-        tx_dummy_data                   = 0;
+        tx_dummy_data = 0;
         dma_tx->blk_cfg.source_address  = (uint32_t)&tx_dummy_data;
         dma_tx->blk_cfg.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
     }
@@ -246,7 +246,7 @@ exit :
     spi_context_complete(ctx, dev, ret);
 }
 
-static void spi_interrupt_callback(void* arg, uint32_t event) {
+static void ifx_cat1_spi_interrupt_callback(void* arg, uint32_t event) {
     const struct device* dev = (const struct device*)arg;
     struct ifx_cat1_spi_data* const data = dev->data;
     struct spi_context* ctx = &data->ctx;
@@ -287,7 +287,7 @@ static void dma_callback(const struct device* dma_dev, void* arg, uint32_t chann
 }
 #endif
 
-int spi_config(const struct device* dev, const struct spi_config* spi_cfg) {
+static int ifx_cat1_spi_config(const struct device* dev, const struct spi_config* spi_cfg) {
     cy_rslt_t result;
     struct ifx_cat1_spi_data* const data = dev->data;
     const struct ifx_cat1_spi_config* const config = dev->config;
@@ -295,19 +295,21 @@ int spi_config(const struct device* dev, const struct spi_config* spi_cfg) {
     struct spi_context* ctx = &data->ctx;
     bool spi_mode_cpol = false;
     bool spi_mode_cpha = false;
+    spi_operation_t spi_mode = SPI_MODE_GET(spi_cfg->operation);
+    uint32_t word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 
-    if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_LOOP) {
+    if ((spi_mode & SPI_MODE_LOOP) != 0) {
         return (-ENOTSUP);
     }
 
-    if (SPI_WORD_SIZE_GET(spi_cfg->operation) > IFX_CAT1_SPI_MAX_DATA_WIDTH) {
-        LOG_ERR("Word size %d is greater than %d", SPI_WORD_SIZE_GET(spi_cfg->operation),
+    if (word_size > IFX_CAT1_SPI_MAX_DATA_WIDTH) {
+        LOG_ERR("Word size %d is greater than %d", word_size,
                 IFX_CAT1_SPI_MAX_DATA_WIDTH);
         return (-EINVAL);
     }
 
-    if (SPI_WORD_SIZE_GET(spi_cfg->operation) < IFX_CAT1_SPI_MIN_DATA_WIDTH) {
-        LOG_ERR("Word size %d is less than %d", SPI_WORD_SIZE_GET(spi_cfg->operation),
+    if (word_size < IFX_CAT1_SPI_MIN_DATA_WIDTH) {
+        LOG_ERR("Word size %d is less than %d", word_size,
                 IFX_CAT1_SPI_MIN_DATA_WIDTH);
         return (-EINVAL);
     }
@@ -338,18 +340,16 @@ int spi_config(const struct device* dev, const struct spi_config* spi_cfg) {
         }
     }
 
-    if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL) {
+    if ((spi_mode & SPI_MODE_CPOL) != 0) {
         spi_mode_cpol = true;
     }
 
-    if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA) {
+    if ((spi_mode & SPI_MODE_CPHA) != 0) {
         spi_mode_cpha = true;
     }
 
-    if (SPI_WORD_SIZE_GET(spi_cfg->operation)) {
-        scb_spi_config.txDataWidth = SPI_WORD_SIZE_GET(spi_cfg->operation);
-        scb_spi_config.rxDataWidth = SPI_WORD_SIZE_GET(spi_cfg->operation);
-    }
+    scb_spi_config.txDataWidth = word_size;
+    scb_spi_config.rxDataWidth = word_size;
 
     if (spi_mode_cpha) {
         scb_spi_config.sclkMode =
@@ -364,7 +364,7 @@ int spi_config(const struct device* dev, const struct spi_config* spi_cfg) {
 
     /* Force free resource */
     if (config->reg_addr != NULL) {
-        spi_free(dev);
+        ifx_cat1_spi_free(dev);
     }
 
     /* Initialize the SPI peripheral */
@@ -380,7 +380,7 @@ int spi_config(const struct device* dev, const struct spi_config* spi_cfg) {
     }
 
     /* Set the data rate */
-    result = spi_set_frequency(dev, spi_cfg->frequency);
+    result = ifx_cat1_spi_set_frequency(dev, spi_cfg->frequency);
     if (result != CY_RSLT_SUCCESS) {
         return (-EIO);
     }
@@ -389,7 +389,7 @@ int spi_config(const struct device* dev, const struct spi_config* spi_cfg) {
     data->write_fill = 0;
 
     /* Register common SPI callback */
-    ifx_cat1_spi_register_callback(dev, spi_interrupt_callback, (void*)dev);
+    ifx_cat1_spi_register_callback(dev, ifx_cat1_spi_interrupt_callback, (void*)dev);
 
     /* Enable the spi event */
     data->irq_cause |= CY_SCB_SPI_TRANSFER_CMPLT_EVENT;
@@ -405,28 +405,28 @@ int spi_config(const struct device* dev, const struct spi_config* spi_cfg) {
 static int spi_ifx_cat1_pdl_transceive(const struct device* dev, const struct spi_config* spi_cfg,
                                        const struct spi_buf_set* tx_bufs, const struct spi_buf_set* rx_bufs,
                                        bool asynchronous, spi_callback_t cb, void* userdata) {
-    int result;
     struct ifx_cat1_spi_data* const data = dev->data;
     struct spi_context* ctx = &data->ctx;
+    int ret;
 
     spi_context_lock(ctx, asynchronous, cb, userdata, spi_cfg);
 
-    result = spi_config(dev, spi_cfg);
-    if (result) {
-        LOG_ERR("Error in SPI Configuration (result: 0x%x)", result);
-        spi_context_release(ctx, result);
-        return (result);
+    ret = ifx_cat1_spi_config(dev, spi_cfg);
+    if (ret != 0) {
+        LOG_ERR("Error in SPI Configuration (result: 0x%x)", ret);
+        spi_context_release(ctx, ret);
+        return (ret);
     }
 
     spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, data->dfs_value);
     spi_context_cs_control(ctx, true);
 
     transfer_chunk(dev);
-    result = spi_context_wait_for_completion(&data->ctx);
+    ret = spi_context_wait_for_completion(&data->ctx);
 
-    spi_context_release(ctx, result);
+    spi_context_release(ctx, ret);
 
-    return (result);
+    return (ret);
 }
 
 static int ifx_cat1_spi_transceive_sync(const struct device* dev, const struct spi_config* spi_cfg,
@@ -445,7 +445,7 @@ static int ifx_cat1_spi_transceive_async(const struct device* dev, const struct 
 #endif
 
 static int ifx_cat1_spi_release(const struct device* dev, const struct spi_config* spi_cfg) {
-    spi_free(dev);
+    ifx_cat1_spi_free(dev);
 
     #ifdef CONFIG_IFX_CAT1_SPI_DMA
     struct ifx_cat1_spi_data* const data = dev->data;
@@ -456,7 +456,7 @@ static int ifx_cat1_spi_release(const struct device* dev, const struct spi_confi
     return (0);
 }
 
-static const struct spi_driver_api ifx_cat1_spi_api = {
+static DEVICE_API(spi, ifx_cat1_spi_api) = {
     .transceive = ifx_cat1_spi_transceive_sync,
 
     #if defined(CONFIG_SPI_ASYNC)
@@ -600,7 +600,7 @@ static int ifx_cat1_spi_init(const struct device* dev) {
     }                                                           \
                                                                 \
     static void ifx_cat1_spi_irq_config_func_##n(const struct device* dev) { \
-        IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_irq_handler, \
+        IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), ifx_cat1_spi_irq_handler, \
                     DEVICE_DT_INST_GET(n), 0);                  \
     }                                                           \
                                                                 \
@@ -652,7 +652,7 @@ static int ifx_cat1_spi_init(const struct device* dev) {
                             &spi_cat1_config_##n.spi_deep_sleep_param, NULL, NULL, 1} \
     };                                                          \
                                                                 \
-    DEVICE_DT_INST_DEFINE(n, &ifx_cat1_spi_init, NULL, &spi_cat1_data_##n, \
+    DEVICE_DT_INST_DEFINE(n, ifx_cat1_spi_init, NULL, &spi_cat1_data_##n, \
                           &spi_cat1_config_##n, POST_KERNEL,    \
                           CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ifx_cat1_spi_api);
 
@@ -766,8 +766,8 @@ cy_rslt_t ifx_cat1_spi_abort_async(const struct device* dev) {
 /* Registers a callback function, which notifies that
  * SPI events occurred in the Cy_SCB_SPI_Interrupt.
  */
-void ifx_cat1_spi_register_callback(const struct device* dev,
-                                    ifx_cat1_spi_event_callback_t callback, void* callback_arg) {
+static void ifx_cat1_spi_register_callback(const struct device* dev,
+                                           ifx_cat1_spi_event_callback_t callback, void* callback_arg) {
     /* TODO: we need rework to removecallback_data structure */
 
     struct ifx_cat1_spi_data* const data = dev->data;
@@ -838,13 +838,13 @@ static uint8_t ifx_cat1_get_hfclk_for_peri_group(uint8_t peri_group) {
             return (CLK_HF1);
 
         case 4 :
-            return CLK_HF2;
+            return (CLK_HF2);
 
         case 5 :
-            return CLK_HF3;
+            return (CLK_HF3);
 
         case 6 :
-            return CLK_HF4;
+            return (CLK_HF4);
 
         default :
             return (-EINVAL);
@@ -858,16 +858,15 @@ static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device* dev, uint32_t h
                                             uint8_t* over_sample_val) {
 
     struct ifx_cat1_spi_data* const data = dev->data;
-
-    cy_rslt_t result = CY_RSLT_SUCCESS;
+    cy_rslt_t result;
     uint8_t  oversample_value;
     uint32_t divider_value;
     uint32_t last_diff        = 0xFFFFFFFFU;
     uint8_t  last_ovrsmpl_val = 0;
     uint32_t last_dvdr_val    = 0;
-    uint32_t oversampled_freq = 0;
-    uint32_t divided_freq     = 0;
-    uint32_t diff             = 0;
+    uint32_t oversampled_freq;
+    uint32_t divided_freq;
+    uint32_t diff;
 
     #if defined(COMPONENT_CAT1A)
     uint32_t peri_freq = Cy_SysClk_ClkPeriGetFrequency();
@@ -882,12 +881,12 @@ static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device* dev, uint32_t h
         for (oversample_value = IFX_CAT1_SPI_OVERSAMPLE_MIN;
              oversample_value <= IFX_CAT1_SPI_OVERSAMPLE_MAX;
              oversample_value++) {
-            oversampled_freq = hz * oversample_value;
-            if ((hz * oversample_value > peri_freq) &&
+            oversampled_freq = (hz * oversample_value);
+            if (((hz * oversample_value) > peri_freq) &&
                 (IFX_CAT1_SPI_OVERSAMPLE_MIN == oversample_value)) {
-                return IFX_CAT1_SPI_RSLT_CLOCK_ERROR;
+                return (IFX_CAT1_SPI_RSLT_CLOCK_ERROR);
             }
-            else if (hz * oversample_value > peri_freq) {
+            else if ((hz * oversample_value) > peri_freq) {
                 continue;
             }
 
@@ -920,7 +919,7 @@ static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device* dev, uint32_t h
             (uint32_t)(3e6f / (desired_period_us_divided - 36.66f / 1e3f));
 
         if (required_frequency > peri_freq) {
-            return IFX_CAT1_SPI_RSLT_CLOCK_ERROR;
+            return (IFX_CAT1_SPI_RSLT_CLOCK_ERROR);
         }
 
         last_dvdr_val = 1;
@@ -941,8 +940,7 @@ static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device* dev, uint32_t h
     return (result);
 }
 
-cy_rslt_t spi_set_frequency(const struct device* dev, uint32_t hz) {
-
+static cy_rslt_t ifx_cat1_spi_set_frequency(const struct device* dev, uint32_t hz) {
     struct ifx_cat1_spi_data* const data = dev->data;
     const struct ifx_cat1_spi_config* const config = dev->config;
 
@@ -994,19 +992,19 @@ static cy_rslt_t spi_init_hw(const struct device* dev, cy_stc_scb_spi_config_t* 
     if (result == CY_RSLT_SUCCESS) {
         data->callback_data.callback     = NULL;
         data->callback_data.callback_arg = NULL;
-        data->irq_cause                  = 0;
+        data->irq_cause = 0;
 
         irq_enable(config->irq_num);
         Cy_SCB_SPI_Enable(config->reg_addr);
     }
     else {
-        spi_free(dev);
+        ifx_cat1_spi_free(dev);
     }
 
     return (result);
 }
 
-cy_rslt_t ifx_cat1_spi_init_cfg(const struct device* dev, cy_stc_scb_spi_config_t* scb_spi_config) {
+static cy_rslt_t ifx_cat1_spi_init_cfg(const struct device* dev, cy_stc_scb_spi_config_t* scb_spi_config) {
     struct ifx_cat1_spi_data* const data = dev->data;
 
     cy_stc_scb_spi_config_t cfg_local = *scb_spi_config;
@@ -1024,13 +1022,13 @@ cy_rslt_t ifx_cat1_spi_init_cfg(const struct device* dev, cy_stc_scb_spi_config_
     }
 
     if (result != CY_RSLT_SUCCESS) {
-        spi_free(dev);
+        ifx_cat1_spi_free(dev);
     }
 
     return (result);
 }
 
-void spi_free(const struct device* dev) {
+static void ifx_cat1_spi_free(const struct device* dev) {
     const struct ifx_cat1_spi_config* const config = dev->config;
 
     Cy_SCB_SPI_Disable(config->reg_addr, NULL);
@@ -1038,7 +1036,7 @@ void spi_free(const struct device* dev) {
     irq_disable(config->irq_num);
 }
 
-static void spi_irq_handler(const struct device* dev) {
+static void ifx_cat1_spi_irq_handler(const struct device* dev) {
     struct ifx_cat1_spi_data* const data = dev->data;
     const struct ifx_cat1_spi_config* const config = dev->config;
 
@@ -1059,7 +1057,7 @@ static void spi_irq_handler(const struct device* dev) {
               CY_SCB_SPI_TRANSFER_ACTIVE)) {
 
         #if !defined(IFX_CAT1_SPI_ASYMM_PDL_FUNC_AVAIL)
-        if (NULL != data->tx_buffer) {
+        if (data->tx_buffer != NULL) {
             /* Start TX Transfer */
             data->pending      = IFX_CAT1_SPI_PENDING_TX;
             uint8_t const* buf = data->tx_buffer;
@@ -1069,7 +1067,7 @@ static void spi_irq_handler(const struct device* dev) {
             Cy_SCB_SPI_Transfer(config->reg_addr, (uint8_t*)buf, NULL,
                                 data->tx_buffer_size, &data->context);
         }
-        else if (NULL != data->rx_buffer) {
+        else if (data->rx_buffer != NULL) {
             /* Start RX Transfer */
             data->pending   = IFX_CAT1_SPI_PENDING_RX;
             uint8_t* rx_buf = data->rx_buffer;
