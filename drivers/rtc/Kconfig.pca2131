@@ -1,0 +1,33 @@
+# NXP PCA2131 RTC
+#
+# Based on the PCF8523 RTC driver options.
+
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_PCA2131
+	bool "NXP PCA2131 RTC driver"
+	default y
+	depends on DT_HAS_NXP_PCA2131_ENABLED
+	select I2C
+	help
+	  Enable the NXP PCA2131 RTC driver.
+
+if RTC_PCA2131
+
+if RTC_ALARM || RTC_UPDATE
+
+config RTC_PCA2131_THREAD_STACK_SIZE
+	int "Stack size for the PCA2131 interrupt thread"
+	default 512
+	help
+	  Size of the stack used for the thread handling interrupts and dispatching callbacks.
+
+config RTC_PCA2131_THREAD_PRIO
+	int "Priority for the PCA2131 interrupt thread"
+	default 0
+	help
+	  Priority level for the thread handling interrupts and dispatching callbacks.
+
+endif # RTC_ALARM || RTC_UPDATE
+
+endif # RTC_PCA2131
