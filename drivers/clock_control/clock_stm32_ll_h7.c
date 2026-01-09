@@ -222,7 +222,7 @@ static uint32_t get_pllout_frequency(uint32_t pllsrc_freq,
 
     __ASSERT_NO_MSG((pllm_div != 0) && (pllout_div != 0));
 
-    return PLLX_OUT_FREQ(pllsrc_freq, pllm_div, plln_mul_u64, plln_frac, pllout_div);
+    return (uint32_t)PLLX_OUT_FREQ(pllsrc_freq, pllm_div, plln_mul_u64, plln_frac, pllout_div);
 }
 
 __unused

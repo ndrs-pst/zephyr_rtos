@@ -27,6 +27,8 @@ Build System
   C standard version.  If your toolchain does not support this standard you will
   need to use one of the existing and now deprecated options:
   :kconfig:option:`CONFIG_STD_C99` or :kconfig:option:`CONFIG_STD_C11`.
+* The ``full_name`` property of ``board``/``boards`` entries corresponding to new boards in
+  board.yml files is now required.
 
 Kernel
 ******
@@ -450,6 +452,9 @@ Video
 * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_SZ_MAX` is replaced by
   :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE` which represent the
   size in byte allocated for the whole video buffer pool.
+
+* The :dtcompatible:`ovti,ov2640` reset pin handling has been corrected, resulting in an inverted
+  active level compared to before, to match the active level expected by the sensor.
 
 .. zephyr-keep-sorted-stop
 
