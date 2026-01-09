@@ -133,9 +133,11 @@ static int mcux_flexcan_get_core_clock(const struct device *dev, uint32_t *rate)
 
 static int mcux_flexcan_get_max_filters(const struct device *dev, bool ide)
 {
-	ARG_UNUSED(ide);
-
-	return CONFIG_CAN_MCUX_FLEXCAN_MAX_FILTERS;
+	if (ide) { /* Since MCUX flexcan has unified filters and has no separate IDE filters */
+		return -ENOSYS;
+	} else {
+		return CONFIG_CAN_MCUX_FLEXCAN_MAX_FILTERS;
+	}
 }
 
 static int mcux_flexcan_set_timing(const struct device *dev,
