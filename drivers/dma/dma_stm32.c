@@ -155,8 +155,7 @@ static void dma_stm32_irq_handler(const struct device* dev, uint32_t id) {
     }
 
     if (stream->dma_callback != NULL) {
-        stream->dma_callback(dev, stream->user_data, callback_arg,
-                             status);
+        stream->dma_callback(dev, stream->user_data, callback_arg, status);
     }
 }
 

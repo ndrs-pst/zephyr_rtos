@@ -135,6 +135,12 @@ static int i2c_dw_error_chk(const struct device *dev)
 			LOG_ERR("SDA Stuck Low on %s", dev->name);
 		}
 
+		/* Check if user abort the transmit */
+		if (ic_txabrt_src.bits.USRABRT) {
+			dw->state |= I2C_DW_USER_ABRT;
+			LOG_ERR("User Abort on %s", dev->name);
+		}
+
 		/* Clear RTS5912_INTR_STAT_TX_ABRT */
 		(void) read_clr_tx_abrt(reg_base);
 	}

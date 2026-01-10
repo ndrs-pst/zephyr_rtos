@@ -11,6 +11,7 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/llext/symbol.h>
 
 static uint64_t curr_tick;
 
@@ -194,6 +195,7 @@ k_ticks_t z_timeout_remaining(const struct _timeout* timeout) {
 
     return (ticks);
 }
+EXPORT_SYMBOL(z_timeout_remaining);
 
 k_ticks_t z_timeout_expires(const struct _timeout* timeout) {
     k_ticks_t ticks = 0;
@@ -207,6 +209,7 @@ k_ticks_t z_timeout_expires(const struct _timeout* timeout) {
 
     return (ticks);
 }
+EXPORT_SYMBOL(z_timeout_expires);
 
 int32_t z_get_next_timeout_expiry(void) {
     int32_t ret = (int32_t)K_TICKS_FOREVER;
