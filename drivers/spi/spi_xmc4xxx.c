@@ -400,13 +400,7 @@ static int spi_xmc4xxx_transceive_dma(const struct device *dev, const struct spi
 			XMC_USIC_CH_TBUF_STATUS_BUSY) {
 		};
 
-		if (data->ctx.rx.len == 0) {
-			dma_len = data->ctx.tx.len;
-		} else if (data->ctx.tx.len == 0) {
-			dma_len = data->ctx.rx.len;
-		} else {
-			dma_len = MIN(data->ctx.tx.len, data->ctx.rx.len);
-		}
+		dma_len = spi_context_max_continuous_chunk(&data->ctx);
 
 		if (ctx->rx_buf) {
 

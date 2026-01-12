@@ -507,6 +507,23 @@ Networking
   code cannot use POSIX APIs, then the relevant network API prefix needs to be added to the
   code calling a network API.
 
+* The enum for HTTP server transaction status has been renamed from ``http_data_status``
+  to ``http_transaction_status`` to better reflect its purpose. The enum values have also been
+  renamed as follows:
+
+  - ``HTTP_SERVER_DATA_ABORTED`` → ``HTTP_SERVER_TRANSACTION_ABORTED``
+  - ``HTTP_SERVER_DATA_MORE`` → ``HTTP_SERVER_REQUEST_DATA_MORE``
+  - ``HTTP_SERVER_DATA_FINAL`` → ``HTTP_SERVER_REQUEST_DATA_FINAL``
+
+  The handler callback type for dynamic resources has been updated accordingly to use the new enum
+  and its renamed values. Applications using dynamic HTTP resources must update their handler
+  callbacks to use the new enum and handle the renamed values.
+
+* The HTTP server now reports for dynamic resources the ``HTTP_SERVER_TRANSACTION_COMPLETE``
+  status when the response has been sent completely to the client. Applications should now also
+  handle this status in the handler callback to properly reset resource state after successful
+  response transmission.
+
 Modem
 *****
 

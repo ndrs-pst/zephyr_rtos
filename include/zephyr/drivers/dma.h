@@ -106,30 +106,41 @@ struct dma_block_config {
     #ifdef CONFIG_DMA_64BIT
     /** block starting address at source */
     uint64_t source_address;
+
     /** block starting address at destination */
     uint64_t dest_address;
     #else
     /** block starting address at source */
     uint32_t source_address;
+
     /** block starting address at destination */
     uint32_t dest_address;
     #endif
+
     /** Address adjustment at gather boundary */
     uint32_t source_gather_interval;
+
     /** Address adjustment at scatter boundary */
     uint32_t dest_scatter_interval;
+
     /** Continuous transfer count between scatter boundaries */
     uint16_t dest_scatter_count;
+
     /** Continuous transfer count between gather boundaries */
     uint16_t source_gather_count;
+
     /** Number of bytes to be transferred for this block */
     uint32_t block_size;
+
     /** Pointer to next block in a transfer list */
     struct dma_block_config* next_block;
+
     /** Enable source gathering when set to 1 */
-    uint16_t source_gather_en  : 1;
+    uint16_t source_gather_en : 1;
+
     /** Enable destination scattering when set to 1 */
-    uint16_t dest_scatter_en   : 1;
+    uint16_t dest_scatter_en : 1;
+
     /**
      * Source address adjustment option
      *
@@ -137,7 +148,8 @@ struct dma_block_config {
      * - 0b01 decrement
      * - 0b10 no change
      */
-    uint16_t source_addr_adj   : 2;
+    uint16_t source_addr_adj : 2;
+
     /**
      * Destination address adjustment
      *
@@ -145,13 +157,17 @@ struct dma_block_config {
      * - 0b01 decrement
      * - 0b10 no change
      */
-    uint16_t dest_addr_adj     : 2;
+    uint16_t dest_addr_adj : 2;
+
     /** Reload source address at the end of block transfer */
-    uint16_t source_reload_en  : 1;
+    uint16_t source_reload_en : 1;
+
     /** Reload destination address at the end of block transfer */
-    uint16_t dest_reload_en    : 1;
+    uint16_t dest_reload_en : 1;
+
     /** FIFO fill before starting transfer, HW specific meaning */
     uint16_t fifo_mode_control : 4;
+
     /**
      * Transfer flow control mode
      *
@@ -160,13 +176,15 @@ struct dma_block_config {
      */
     uint16_t flow_control_mode : 1;
 
-    uint16_t _reserved         : 3;
+    uint16_t _reserved : 3;
 };
 
 /** The DMA callback event has occurred at the completion of a transfer list */
-#define DMA_STATUS_COMPLETE 0
+#define DMA_STATUS_COMPLETE         0
 /** The DMA callback has occurred at the completion of a single transfer block in a transfer list */
-#define DMA_STATUS_BLOCK 1
+#define DMA_STATUS_BLOCK            1
+/** The DMA callback event has occurred at the half completion of a single transfer block */
+#define DMA_STATUS_HALF_COMPLETE    2
 
 /**
  * @typedef dma_callback_t
@@ -195,7 +213,8 @@ typedef void (*dma_callback_t)(const struct device* dev, void* user_data,
  */
 struct dma_config {
     /** Which peripheral and direction, HW specific */
-    uint32_t dma_slot             : 8;
+    uint32_t dma_slot : 8;
+
     /**
      * Direction the transfers are occurring
      *
@@ -207,7 +226,11 @@ struct dma_config {
      * - 0b101 memory to host
      * - others hardware specific
      */
-    uint32_t channel_direction    : 3;
+    uint32_t channel_direction : 3;
+
+    /** enable half completion callback when set to 1 */
+    uint32_t half_complete_callback_en : 1;
+
     /**
      * Completion callback enable
      *
@@ -215,55 +238,71 @@ struct dma_config {
      * - 0b1 callback invoked at completion of each block
      */
     uint32_t complete_callback_en : 1;
+
     /**
      * Error callback disable
      *
      * - 0b0 error callback enabled
      * - 0b1 error callback disabled
      */
-    uint32_t error_callback_dis :    1;
+    uint32_t error_callback_dis : 1;
+
     /**
      * Source handshake, HW specific
      *
      * - 0b0 HW
      * - 0b1 SW
      */
-    uint32_t source_handshake     : 1;
+    uint32_t source_handshake : 1;
+
     /**
      * Destination handshake, HW specific
      *
      * - 0b0 HW
      * - 0b1 SW
      */
-    uint32_t dest_handshake       : 1;
+    uint32_t dest_handshake : 1;
+
     /**
      * Channel priority for arbitration, HW specific
      */
-    uint32_t channel_priority     : 4;
-    /** Source chaining enable, HW specific */
-    uint32_t source_chaining_en   : 1;
-    /** Destination chaining enable, HW specific */
-    uint32_t dest_chaining_en     : 1;
-    /** Linked channel, HW specific */
-    uint32_t linked_channel       : 7;
-    /** Cyclic transfer list, HW specific */
-    uint32_t cyclic               : 1;
+    uint32_t channel_priority : 4;
 
-    uint32_t _reserved            : 3;
+    /** Source chaining enable, HW specific */
+    uint32_t source_chaining_en : 1;
+
+    /** Destination chaining enable, HW specific */
+    uint32_t dest_chaining_en : 1;
+
+    /** Linked channel, HW specific */
+    uint32_t linked_channel : 7;
+
+    /** Cyclic transfer list, HW specific */
+    uint32_t cyclic : 1;
+
+    uint32_t _reserved : 2;
+
     /** Width of source data (in bytes) */
-    uint32_t source_data_size     : 16;
+    uint32_t source_data_size : 16;
+
     /** Width of destination data (in bytes) */
-    uint32_t dest_data_size       : 16;
+    uint32_t dest_data_size : 16;
+
     /** Source burst length in bytes */
-    uint32_t source_burst_length  : 16;
+    uint32_t source_burst_length : 16;
+
     /** Destination burst length in bytes */
-    uint32_t dest_burst_length    : 16;
+    uint32_t dest_burst_length : 16;
+
     /** Number of blocks in transfer list */
     uint32_t block_count;
+
     /** Pointer to the first block in the transfer list */
     struct dma_block_config* head_block;
+
     /** Optional attached user data for callbacks */
     void* user_data;
+
     /** Optional callback for completion and error events */
     dma_callback_t dma_callback;
 };
@@ -274,16 +313,22 @@ struct dma_config {
 struct dma_status {
     /** Is the current DMA transfer busy or idle */
     bool busy;
+
     /** Direction for the transfer */
     enum dma_channel_direction dir;
+
     /** Pending length to be transferred in bytes, HW specific */
     uint32_t pending_length;
+
     /** Available buffers space, HW specific */
     uint32_t free;
+
     /** Write position in circular DMA buffer, HW specific */
     uint32_t write_position;
+
     /** Read position in circular DMA buffer, HW specific */
     uint32_t read_position;
+
     /** Total copied, HW specific */
     uint64_t total_copied;
 };
@@ -296,8 +341,10 @@ struct dma_status {
 struct dma_context {
     /** magic code to identify the context */
     int32_t magic;
+
     /** number of dma channels */
     int dma_channels;
+
     /** atomic holding bit flags for each channel to mark as used/unused */
     atomic_t* atomic;
 };
