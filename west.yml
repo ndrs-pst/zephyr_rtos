@@ -257,7 +257,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: ba05f5a8295a89bd2935ce13f5d813c5b4e7007d
+      revision: e8f2a599cabe29aea46aa57f94f05a911165ce43
       path: modules/hal/stm32
       groups:
         - hal
@@ -293,7 +293,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 5af8b179632c602b8a05c34c74a50dda3d546eaa
+      revision: 1a2fbb7910f23822a785294eab9f4922c6119711
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -349,7 +349,7 @@ manifest:
       revision: 0f0c43748111c65800c6920f1c0690676423a351
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: 9f09f0785f9fc716514d8956a2a446021697400c
+      revision: eaf223da0c3f987caa1156cbed54b513bee4ba37
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: 5efe7974f9546582e99f5a842a816ea4b65f5227
