@@ -70,10 +70,17 @@ static inline clock_ip_name_t lpspi_get_clock(LPSPI_Type* const lpspi) {
 }
 #endif
 
-int lpspi_wait_tx_fifo_empty(const struct device* dev) {
+int lpspi_wait_tx_fifo_empty(const struct device* dev, spi_operation_t operation) {
     LPSPI_Type* lpspi = (LPSPI_Type*)DEVICE_MMIO_NAMED_GET(dev, reg_base);
     int arbitrary_cycle_limit = CONFIG_SPI_NXP_LPSPI_TXFIFO_WAIT_CYCLES;
     bool limit_wait = (arbitrary_cycle_limit > 0);
+
+    /* In slave mode, master controls TX FIFO drain via clock.
+     * Don't wait - it will deadlock.
+     */
+    if (SPI_OP_MODE_GET(operation) == SPI_OP_MODE_SLAVE) {
+        return 0;
+    }
 
     while (FIELD_GET(LPSPI_FSR_TXCOUNT_MASK, lpspi->FSR) != 0) {
         if (!limit_wait) {
@@ -348,7 +355,9 @@ int lpspi_configure(const struct device* dev, const struct spi_config* spi_cfg) 
                  LPSPI_TCR_FRAMESZ(word_size - 1) |
                  LPSPI_TCR_PRESCALE(prescaler) | LPSPI_TCR_PCS(spi_cfg->slave);
 
-    return lpspi_wait_tx_fifo_empty(dev);
+    ret = lpspi_wait_tx_fifo_empty(dev, operation);
+
+    return (ret);
 }
 
 static void lpspi_module_system_init(LPSPI_Type* lpspi) {

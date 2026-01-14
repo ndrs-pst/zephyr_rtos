@@ -358,7 +358,7 @@ static void lpspi_rtio_iodev_start(const struct device* dev) {
     lpspi->TCR |= LPSPI_TCR_CONT_MASK;
 
     /* tcr is written to tx fifo */
-    lpspi_wait_tx_fifo_empty(dev);
+    lpspi_wait_tx_fifo_empty(dev, spi_cfg->operation);
 
     lpspi->FCR = (LPSPI_FCR_TXWATER(0) | LPSPI_FCR_RXWATER(config->rx_fifo_size / 2));
     lpspi->CR |= LPSPI_CR_MEN_MASK;

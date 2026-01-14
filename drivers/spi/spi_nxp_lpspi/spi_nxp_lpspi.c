@@ -322,7 +322,7 @@ static void lpspi_master_setup_native_cs(const struct device* dev, const struct 
     }
 
     /* tcr is written to tx fifo */
-    lpspi_wait_tx_fifo_empty(dev);
+    lpspi_wait_tx_fifo_empty(dev, spi_cfg->operation);
 }
 
 static int lpspi_ll_transceive(const struct device* dev, const struct spi_config* spi_cfg,
@@ -334,7 +334,7 @@ static int lpspi_ll_transceive(const struct device* dev, const struct spi_config
     struct lpspi_driver_data* lpspi_data = (struct lpspi_driver_data*)data->driver_data;
     struct spi_context* ctx = &data->ctx;
     uint8_t op_mode = SPI_OP_MODE_GET(spi_cfg->operation);
-    int ret = 0;
+    int ret;
 
     spi_context_lock(ctx, asynchronous, cb, userdata, spi_cfg);
 
@@ -346,7 +346,7 @@ static int lpspi_ll_transceive(const struct device* dev, const struct spi_config
         goto error;
     }
 
-    if (op_mode == SPI_OP_MODE_SLAVE && !(spi_cfg->operation & SPI_MODE_CPHA)) {
+    if ((op_mode == SPI_OP_MODE_SLAVE) && !(spi_cfg->operation & SPI_MODE_CPHA)) {
         LOG_ERR("CPHA=0 not supported with LPSPI peripheral mode");
         ret = -ENOTSUP;
         goto error;
@@ -366,7 +366,7 @@ static int lpspi_ll_transceive(const struct device* dev, const struct spi_config
     lpspi_data->lpspi_op_mode = op_mode;
 
     ret = lpspi_configure(dev, spi_cfg);
-    if (ret) {
+    if (ret != 0) {
         goto error;
     }
 
