@@ -486,7 +486,8 @@ Bluetooth Classic:
     - makeshi
     - chengkai15
   files:
-    - doc/connectivity/bluetooth/shell/classic/a2dp.rst
+    - doc/connectivity/bluetooth/shell/classic/
+    - doc/connectivity/bluetooth/api/classic/
     - subsys/bluetooth/common/
     - subsys/bluetooth/host/classic/
     - include/zephyr/bluetooth/classic/
@@ -584,13 +585,15 @@ Bluetooth Host:
     - include/zephyr/bluetooth/iso.h
     - include/zephyr/bluetooth/controller.h
     - include/zephyr/bluetooth/mesh.h
+    - include/zephyr/bluetooth/sbc.h
     - doc/connectivity/bluetooth/bluetooth-ctlr-arch.rst
     - doc/connectivity/bluetooth/autopts/
     - doc/connectivity/bluetooth/img/ctlr*
     - doc/connectivity/bluetooth/api/audio/
+    - doc/connectivity/bluetooth/api/classic/
     - doc/connectivity/bluetooth/api/mesh/
     - doc/connectivity/bluetooth/api/controller.rst
-    - doc/connectivity/bluetooth/shell/classic/a2dp.rst
+    - doc/connectivity/bluetooth/shell/classic/
     - doc/connectivity/bluetooth/shell/host/iso.rst
     - doc/connectivity/bluetooth/shell/audio/
     - samples/bluetooth/bap*/
@@ -606,6 +609,7 @@ Bluetooth Host:
     - subsys/bluetooth/host/iso.c
     - subsys/bluetooth/host/iso_internal.h
     - subsys/bluetooth/host/shell/iso.c
+    - subsys/bluetooth/lib/sbc.c
     - tests/bluetooth/audio/
     - tests/bluetooth/classic/
     - tests/bluetooth/controller/
@@ -3373,6 +3377,7 @@ Microchip MEC Platforms:
   status: maintained
   maintainers:
     - jvasanth1
+    - scottwcpg
   collaborators:
     - VenkatKotakonda
     - albertofloyd
@@ -6024,6 +6029,8 @@ West:
     - MarkWangChinese
   files:
     - modules/libsbc/
+    - include/zephyr/bluetooth/sbc.h
+    - subsys/bluetooth/lib/sbc.c
   labels:
     - "area: Audio"
 
@@ -6363,6 +6370,7 @@ Xilinx Platforms:
     - henrikbrixandersen
     - ibirnbaum
     - kedareswararao
+    - neeliajay
   files:
     - boards/amd/
     - drivers/*/*xilinx*
