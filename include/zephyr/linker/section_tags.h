@@ -61,10 +61,12 @@
 
 #if defined(CONFIG_NOCACHE_MEMORY) && !defined(_MSC_VER) /* #CUSTOM@NDRS */
 #define __nocache __in_section_unique(_NOCACHE_SECTION_NAME)
+#define __nocache_named(name) __in_section_unique_named(_NOCACHE_SECTION_NAME, name)
 #define __nocache_load __in_section_unique(_NOCACHE_LOAD_SECTION_NAME)
 #define __nocache_noinit __nocache
 #else
 #define __nocache
+#define __nocache_named(name)
 #define __nocache_load
 #define __nocache_noinit __noinit
 #endif /* CONFIG_NOCACHE_MEMORY */
