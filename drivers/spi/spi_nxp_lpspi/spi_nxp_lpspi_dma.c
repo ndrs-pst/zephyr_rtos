@@ -85,15 +85,13 @@ static void spi_mcux_issue_TCR(const struct device* dev) {
 }
 
 static struct dma_block_config* lpspi_dma_common_load(struct spi_dma_stream* stream,
-                                                      const struct device* dev, uint8_t const* buf,
-                                                      size_t len) {
+                                                      const struct device* dev, size_t len) {
     struct dma_block_config* blk_cfg = &stream->dma_blk_cfg;
 
     memset(blk_cfg, 0, sizeof(struct dma_block_config));
 
     blk_cfg->block_size = len;
 
-    stream->dma_cfg.source_burst_length = 1;
     stream->dma_cfg.user_data  = (void*)dev;
     stream->dma_cfg.head_block = blk_cfg;
 
@@ -105,7 +103,7 @@ static int lpspi_dma_tx_load(const struct device* dev, uint8_t const* buf, size_
     struct lpspi_data* data = dev->data;
     struct spi_nxp_dma_data* dma_data = (struct spi_nxp_dma_data*)data->driver_data;
     struct spi_dma_stream* stream = &dma_data->dma_tx;
-    struct dma_block_config* blk_cfg = lpspi_dma_common_load(stream, dev, buf, len);
+    struct dma_block_config* blk_cfg = lpspi_dma_common_load(stream, dev, len);
     int ret;
 
     if (buf == NULL) {
@@ -130,7 +128,7 @@ static int lpspi_dma_rx_load(const struct device* dev, uint8_t* buf, size_t len)
     struct lpspi_data* data = dev->data;
     struct spi_nxp_dma_data* dma_data = (struct spi_nxp_dma_data*)data->driver_data;
     struct spi_dma_stream* stream = &dma_data->dma_rx;
-    struct dma_block_config* blk_cfg = lpspi_dma_common_load(stream, dev, buf, len);
+    struct dma_block_config* blk_cfg = lpspi_dma_common_load(stream, dev, len);
     int ret;
 
     if (buf == NULL) {
@@ -428,8 +426,10 @@ static void lpspi_isr(const struct device* dev) {
 
 #define LPSPI_DMA_COMMON_CFG(n)             \
     .dma_callback = lpspi_dma_callback,     \
-    .source_data_size = 1,                  \
-    .dest_data_size = 1,                    \
+    .source_data_size = DT_INST_PROP_OR(n, dma_source_data_size, 1),    \
+    .dest_data_size = DT_INST_PROP_OR(n, dma_dest_data_size, 1),        \
+    .source_burst_length = DT_INST_PROP_OR(n, dma_source_burst_length, 1), \
+    .dest_burst_length = DT_INST_PROP_OR(n, dma_dest_burst_length, 1),  \
     .block_count = 1
 
 #define SPI_DMA_CHANNELS(n)                                                     \
