@@ -275,6 +275,23 @@ Counter
      GPT now uses explicit devicetree properties rather than hardcoded values, allowing
      per-instance customization.
 
+Display
+=======
+
+* For ILI9XXX controllers, the usage of ``ILI9XXX_PIXEL_FORMAT_x`` in devicetrees for panel color
+  format selection has been updated to ``PANEL_PIXEL_FORMAT_x``. Out-of-tree boards and shields
+  should be updated accordingly. (:github:`99267`).
+
+* For ILI9341 controller, display mirroring configuration has been updated to conform with
+  the described behavior of the sample ``samples/drivers/display``. (:github:`99267`).
+
+DMA
+===
+
+* Removed the :kconfig:option:`CONFIG_DMA_MCUX_EDMA_V5` (:github:`100341`). This macro previously distinguished between
+  nxp,version(5) and nxp,version(4). It now supports unified maintenance for both versions.
+  Users can modify ``DMA_MCUX_EDMA_V5`` to ``DMA_MCUX_EDMA_V4``.
+
 EEPROM
 ======
 
