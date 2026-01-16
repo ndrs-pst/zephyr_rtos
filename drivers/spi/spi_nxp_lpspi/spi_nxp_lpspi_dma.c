@@ -220,6 +220,7 @@ static void lpspi_dma_callback(const struct device* dev, void* arg, uint32_t cha
         case LPSPI_TRANSFER_STATE_ONGOING :
             spi_context_update_tx(ctx, 1, tx->dma_blk_cfg.block_size);
             spi_context_update_rx(ctx, 1, rx->dma_blk_cfg.block_size);
+
             /* Calculate next DMA transfer size */
             dma_data->synchronize_dma_size = spi_context_max_continuous_chunk(ctx);
             LOG_DBG("tx len:%d rx len:%d next dma size:%d", ctx->tx.len, ctx->rx.len,
@@ -281,6 +282,7 @@ static void lpspi_dma_callback(const struct device* dev, void* arg, uint32_t cha
         case LPSPI_TRANSFER_STATE_TX_DONE :
         case LPSPI_TRANSFER_STATE_RX_DONE :
             dma_data->state = LPSPI_TRANSFER_STATE_RX_TX_DONE;
+
             /* TX and RX both done here. */
             spi_context_complete(ctx, spi_dev, 0);
             spi_context_cs_control(ctx, false);
