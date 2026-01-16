@@ -475,7 +475,6 @@
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
 			reg = <0x40304000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCANA_CLK>;
-			clk-source = <0>;
 			interrupts = <109 0>, <110 0>, <111 0>, <112 0>;
 			interrupt-names = "ored", "ored_0_31_mb",
 					  "ored_32_63_mb", "ored_64_95_mb";
@@ -488,7 +487,6 @@
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
 			reg = <0x40308000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCANA_CLK>;
-			clk-source = <0>;
 			interrupts = <113 0>, <114 0>, <115 0>, <129 0>;
 			interrupt-names = "ored", "ored_0_31_mb",
 					  "ored_32_63_mb", "ored_64_95_mb";
@@ -501,7 +499,6 @@
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
 			reg = <0x4030c000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCANA_CLK>;
-			clk-source = <0>;
 			interrupts = <116 0>, <117 0>, <118 0>, <130 0>;
 			interrupt-names = "ored", "ored_0_31_mb",
 					  "ored_32_63_mb", "ored_64_95_mb";
@@ -514,7 +511,6 @@
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
 			reg = <0x40310000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCANB_CLK>;
-			clk-source = <0>;
 			interrupts = <119 0>, <120 0>, <131 0>;
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb";
 			number-of-mb = <64>;
@@ -526,7 +522,6 @@
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
 			reg = <0x40314000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCANB_CLK>;
-			clk-source = <0>;
 			interrupts = <121 0>, <122 0>, <132 0>;
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb";
 			number-of-mb = <64>;
@@ -538,7 +533,6 @@
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
 			reg = <0x40318000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCANB_CLK>;
-			clk-source = <0>;
 			interrupts = <123 0>, <124 0>, <133 0>;
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb";
 			number-of-mb = <64>;
@@ -550,7 +544,6 @@
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
 			reg = <0x4031c000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCANB_CLK>;
-			clk-source = <0>;
 			interrupts = <125 0>, <126 0>, <134 0>;
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb";
 			number-of-mb = <64>;
@@ -562,7 +555,6 @@
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
 			reg = <0x40320000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCANB_CLK>;
-			clk-source = <0>;
 			interrupts = <127 0>, <128 0>, <135 0>;
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb";
 			number-of-mb = <64>;
