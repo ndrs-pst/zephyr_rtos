@@ -246,13 +246,17 @@ do {                        \
 #define __in_section(a, b, c) ___in_section(a, b, c)
 #endif /* defined(_MSC_VER) */
 
+#define ___in_section_unique(a, b) \
+    __attribute__((section("." Z_STRINGIFY(a)   \
+                           "." __FILE__         \
+                           "." Z_STRINGIFY(b))))
+
 #ifndef __in_section_unique
-#define __in_section_unique(seg) ___in_section(seg, __FILE__, __COUNTER__)
+#define __in_section_unique(seg) ___in_section_unique(seg, __COUNTER__)
 #endif
 
 #ifndef __in_section_unique_named
-#define __in_section_unique_named(seg, name) \
-    ___in_section(seg, __FILE__, name)
+#define __in_section_unique_named(seg, name) ___in_section_unique(seg, name)
 #endif
 
 #if defined(_MSC_VER) /* #CUSTOM@NDRS */

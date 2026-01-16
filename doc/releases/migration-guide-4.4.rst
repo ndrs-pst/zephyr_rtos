@@ -46,6 +46,43 @@ Boards
   in the respective board CMakeLists.txt files. Applications that depended on these definitions
   being globally available may need to be updated. (:github:`101322`)
 
+* NXP has changed the scope of some in-tree compile flags to limit their visibility to only where
+  they are needed. Out-of-tree applications or boards that depended on these flags being globally
+  available may need to add them to their own CMakeLists.txt files to ensure they continue to build
+  correctly. (:github:`100252`)
+  The affected flags are listed below:
+
+  * For the RT10xx and RT11xx families, the compile flag ``BOARD_FLASH_SIZE``, originally defined in
+    ``boards/nxp/mimxrt10xx_evk/CMakeLists.txt`` and ``boards/nxp/mimxrt11xx_evk/CMakeLists.txt``, is
+    used only by the HAL header ``fsl_flexspi_nor_boot.h``, which is included by
+    :zephyr_file:`soc/nxp/imxrt/imxrt10xx/soc.c` and :zephyr_file:`soc/nxp/imxrt/imxrt11xx/soc.c`.
+    To avoid potential collisions with other global flags, the macro is now defined at the SoC layer
+    using ``zephyr_library_compile_definitions()`` in :zephyr_file:`soc/nxp/imxrt/imxrt10xx/CMakeLists.txt`
+    and :zephyr_file:`soc/nxp/imxrt/imxrt11xx/CMakeLists.txt`. This change has been applied to all
+    RTxxxx boards.
+
+  * For the RTxxx family, the compile flag ``BOARD_FLASH_SIZE``, originally defined in
+    ``boards/nxp/mimxrtxxx_evk/CMakeLists.txt``, is not used in the Zephyr tree and has
+    therefore been removed from all RTxxx board CMakeLists.txt files.
+
+  * For the RTxxx family, the compile flag ``BOOT_HEADER_ENABLE``, previously defined in
+    ``boards/nxp/mimxrtxxx_evk/CMakeLists.txt`` and used in ``boards/nxp/rtxxx/<boot_header>.c``,
+    has been replaced by a Kconfig option. Consequently, the line
+    ``zephyr_compile_definitions(BOOT_HEADER_ENABLE=1)`` has been removed from the RTxxx board
+    CMakeLists.txt files.
+
+  * Removed compile flag ``BOOT_HEADER_ENABLE`` definition from :zephyr_file:`boards/nxp/rd_rw612_bga/CMakeLists.txt`,
+    as it is not used in the Zephyr tree.
+
+  * Originally, the compile flags ``XIP_BOOT_HEADER_ENABLE`` and ``XIP_BOOT_HEADER_DCD_ENABLE`` were
+    used in ``boards/nxp/rt1xxx/<boot_header>.c``. These flags have been converted to Kconfig options
+    across NXP RTxxxx evaluation boards, allowing boot-header configuration via the Kconfig build system
+    instead of compile-time defines. Consequently, we removed ``zephyr_compile_definitions(XIP_BOOT_HEADER_ENABLE=1)``
+    and ``zephyr_compile_definitions(XIP_BOOT_HEADER_DCD_ENABLE=1)`` from the RTxxxx board-level CMakeLists.txt files.
+    Because these macros are also required by ``hal_nxp/rt10xx/fsl_flexspi_nor_boot.h`` and
+    ``hal_nxp/rt11xx/fsl_flexspi_nor_boot.h``, they were added to the corresponding SoC-layer CMakeLists.txt files
+    using ``zephyr_library_compile_definitions()`` to limit their scope.
+
 Device Drivers and Devicetree
 *****************************
 
@@ -103,6 +140,10 @@ Controller Area Network (CAN)
 * Replaced Kconfig option ``CONFIG_CAN_MAX_MB`` for :dtcompatible:`nxp,flexcan` and
   :dtcompatible:`nxp,flexcan-fd` with per-instance ``number-of-mb`` and
   ``number-of-mb-fd`` devicetree properties (:github:`99483`).
+
+* The :dtcompatible:`nxp,flexcan` ``clk-source`` devicetree property, if present, now automatically
+  selects between the named input clocks ``clksrc0`` and ``clksrc1`` for use as the CAN protocol
+  engine clock.
 
 Counter
 =======
@@ -610,6 +651,24 @@ Modem HL78XX
   initialization reliability across all supported boards.
 
   Applications depending on the previous defaults must update their configuration.
+
+LoRaWAN
+*******
+
+* The LoRaWAN region Kconfig symbols have been renamed from ``LORAMAC_REGION_*`` to
+  ``LORAWAN_REGION_*`` to make them backend-agnostic. Applications using any of the following
+  symbols must update their configuration files:
+
+  * ``CONFIG_LORAMAC_REGION_AS923`` → :kconfig:option:`CONFIG_LORAWAN_REGION_AS923`
+  * ``CONFIG_LORAMAC_REGION_AU915`` → :kconfig:option:`CONFIG_LORAWAN_REGION_AU915`
+  * ``CONFIG_LORAMAC_REGION_CN470`` → :kconfig:option:`CONFIG_LORAWAN_REGION_CN470`
+  * ``CONFIG_LORAMAC_REGION_CN779`` → :kconfig:option:`CONFIG_LORAWAN_REGION_CN779`
+  * ``CONFIG_LORAMAC_REGION_EU433`` → :kconfig:option:`CONFIG_LORAWAN_REGION_EU433`
+  * ``CONFIG_LORAMAC_REGION_EU868`` → :kconfig:option:`CONFIG_LORAWAN_REGION_EU868`
+  * ``CONFIG_LORAMAC_REGION_KR920`` → :kconfig:option:`CONFIG_LORAWAN_REGION_KR920`
+  * ``CONFIG_LORAMAC_REGION_IN865`` → :kconfig:option:`CONFIG_LORAWAN_REGION_IN865`
+  * ``CONFIG_LORAMAC_REGION_US915`` → :kconfig:option:`CONFIG_LORAWAN_REGION_US915`
+  * ``CONFIG_LORAMAC_REGION_RU864`` → :kconfig:option:`CONFIG_LORAWAN_REGION_RU864`
 
 Other subsystems
 ****************
