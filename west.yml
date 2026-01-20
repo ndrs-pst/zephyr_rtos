@@ -207,12 +207,12 @@ manifest:
       groups:
         - hal
     - name: hal_nuvoton
-      revision: 602db600cae5275ab0946de696a6068d769a6b3d
+      revision: 8f1bf948a94cf59926ea7b686985e1d6c6f954c7
       path: modules/hal/nuvoton
       groups:
         - hal
     - name: hal_nxp
-      revision: 0c4c76b4cc6148d1c1e5da1c5051fb42514ce449
+      revision: eb2cfc9a230901baece1e93d91cd09878a6b5ed0
       path: modules/hal/nxp
       groups:
         - hal

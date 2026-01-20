@@ -85,6 +85,10 @@ Deprecated APIs and options
       :c:member:`bt_conn_le_info.interval_us` instead. Note that the units have changed:
       ``interval`` was in units of 1.25 milliseconds, while ``interval_us`` is in microseconds.
 
+* POSIX
+
+  * :kconfig:option:`CONFIG_XOPEN_STREAMS` was deprecated. Instead, use :kconfig:option:`CONFIG_XSI_STREAMS`
+
 * Sensors
 
   * NXP
@@ -141,10 +145,20 @@ New APIs and options
 
 * Build system
 
+  * Added :ref:`slot1-partition <snippet-slot1-partition>` snippet.
+
   * Sysbuild
 
     * Added :kconfig:option:`SB_CONFIG_MERGED_HEX_FILES` which allows generating
       :ref:`merged hex files <sysbuild_merged_hex_files>`.
+
+    * Added experimental ``ExternalZephyrVariantProject_Add()`` sysbuild CMake function which
+      allows for adding :ref:`variant images<sysbuild_zephyr_application>` to projects which are
+      based on existing images in a build.
+
+    * Added :kconfig:option:`SB_CONFIG_MCUBOOT_DIRECT_XIP_GENERATE_VARIANT` which allows for
+      generating slot 1 images automatically in sysbuild projects when using MCUboot in
+      direct-xip mode.
 
 * Ethernet
 

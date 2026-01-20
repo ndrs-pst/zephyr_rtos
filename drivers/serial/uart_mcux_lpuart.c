@@ -723,16 +723,22 @@ static int mcux_lpuart_tx(struct device const* dev, uint8_t const* buf, size_t l
 
     unsigned int key = irq_lock();
 
-    /* Check for an ongiong transfer and abort if it is pending */
+    /* If a previous transfer is still in progress, the async UART API requires -EBUSY. */
     struct dma_status status;
     int const get_status_result = dma_get_status(config->tx_dma_config.dma_dev,
                                                  config->tx_dma_config.dma_channel,
                                                  &status);
 
-    if ((get_status_result < 0) || status.busy) {
+    if (get_status_result < 0) {
         irq_unlock(key);
-        LOG_ERR("Unable to submit UART DMA Transfer.");
-        return get_status_result < 0 ? get_status_result : -EBUSY;
+        LOG_ERR("Failed to get DMA(Tx) status (%d)", get_status_result);
+        return (get_status_result);
+    }
+
+    if (status.busy) {
+        irq_unlock(key);
+        LOG_DBG("UART TX busy (DMA ch %u)", config->tx_dma_config.dma_channel);
+        return (-EBUSY);
     }
 
     int ret;

@@ -83,6 +83,19 @@ Boards
     ``hal_nxp/rt11xx/fsl_flexspi_nor_boot.h``, they were added to the corresponding SoC-layer CMakeLists.txt files
     using ``zephyr_library_compile_definitions()`` to limit their scope.
 
+* The following Nordic SoC Kconfigs have been deprecated and replaced, and Kconfig/CMake/code
+  needs to be updated if they reference the deprecated Kconfigs:
+
+  * :kconfig:option:`CONFIG_SOC_SERIES_NRF51X` with :kconfig:option:`CONFIG_SOC_SERIES_NRF51`
+  * :kconfig:option:`CONFIG_SOC_SERIES_NRF52X` with :kconfig:option:`CONFIG_SOC_SERIES_NRF52`
+  * :kconfig:option:`CONFIG_SOC_SERIES_NRF53X` with :kconfig:option:`CONFIG_SOC_SERIES_NRF53`
+  * :kconfig:option:`CONFIG_SOC_SERIES_NRF54HX` with :kconfig:option:`CONFIG_SOC_SERIES_NRF54H`
+  * :kconfig:option:`CONFIG_SOC_SERIES_NRF54LX` with :kconfig:option:`CONFIG_SOC_SERIES_NRF54L`
+  * :kconfig:option:`CONFIG_SOC_SERIES_NRF91X` with :kconfig:option:`CONFIG_SOC_SERIES_NRF91`
+  * :kconfig:option:`CONFIG_SOC_SERIES_NRF92X` with :kconfig:option:`CONFIG_SOC_SERIES_NRF92`
+
+* ITE ``it515xx_evb`` is renamed to ``it51xxx_evb``.
+
 Device Drivers and Devicetree
 *****************************
 
@@ -411,6 +424,27 @@ GPIO
   The Devicetree property ``port-is-output`` has been removed.
   The reg-names are now taken directly from LiteX. (:github:`99329`)
 
+* The ``irqs`` property of :dtcompatible:`renesas,rz-gpio` has been reworked
+  to map a pin to an interrupt phandle explicitly instead of an interrupt index (:github:`101256`).
+
+  .. code-block:: devicetree
+
+     /* Old (Zephyr ≤ 4.3) */
+     &gpio16 {
+         /* Map port16 pin3 to tint7 */
+         irqs = <3 7>;
+     };
+
+     /* New (Zephyr ≥ 4.4) */
+     &tint7 {
+         status = "okay";
+     };
+
+     &gpio16 {
+         /* Map port16 pin3 to tint7 */
+         irqs = <&tint7 3>;
+     };
+
 Infineon
 ========
 
@@ -613,6 +647,9 @@ Bluetooth Audio
   receive states at the end of the procedure. Users will have to manually call
   :c:func:`bt_bap_broadcast_assistant_read_recv_state` to read the existing receive states, if any,
   prior to performing any operations. (:github:`91587`)
+* :kconfig:option:`CONFIG_BT_AUDIO` now depends on :kconfig:option:`CONFIG_UTF8`.
+  Applications that enable :kconfig:option:`CONFIG_BT_AUDIO` must also have
+  :kconfig:option:`CONFIG_UTF8` enabled. (:github:`102350`)
 
 Bluetooth Mesh
 ==============
