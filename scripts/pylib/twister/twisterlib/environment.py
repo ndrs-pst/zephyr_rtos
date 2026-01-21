@@ -19,6 +19,7 @@ from collections.abc import Generator
 from datetime import datetime, timezone
 from importlib import metadata
 from pathlib import Path
+from typing import Any
 
 import zephyr_module
 from twisterlib.constants import SUPPORTED_SIMS
@@ -1033,9 +1034,11 @@ def parse_arguments(
 
     return options
 
+
 def strip_ansi_sequences(s: str) -> str:
     """Remove ANSI escape sequences from a string."""
     return re.sub(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', "", s)
+
 
 class TwisterEnv:
 
@@ -1064,28 +1067,28 @@ class TwisterEnv:
         self.outdir = os.path.abspath(options.outdir)
 
         self.snippet_roots = [Path(ZEPHYR_BASE)]
-        modules = zephyr_module.parse_modules(ZEPHYR_BASE)
-        for module in modules:
-            snippet_root = module.meta.get("build", {}).get("settings", {}).get("snippet_root")
-            if snippet_root:
-                self.snippet_roots.append(Path(module.project) / snippet_root)
-
-
         self.soc_roots = [Path(ZEPHYR_BASE), Path(ZEPHYR_BASE) / 'subsys' / 'testsuite']
         self.dts_roots = [Path(ZEPHYR_BASE)]
         self.arch_roots = [Path(ZEPHYR_BASE)]
 
+        modules = zephyr_module.parse_modules(ZEPHYR_BASE)
         for module in modules:
-            soc_root = module.meta.get("build", {}).get("settings", {}).get("soc_root")
+            settings = module.meta.get("build", {}).get("settings", {})
+            project = Path(module.project)
+            snippet_root = settings.get("snippet_root")
+            if snippet_root:
+                self.snippet_roots.append(project / snippet_root)
+            soc_root = settings.get("soc_root")
             if soc_root:
-                self.soc_roots.append(Path(module.project) / Path(soc_root))
-            dts_root = module.meta.get("build", {}).get("settings", {}).get("dts_root")
+                self.soc_roots.append(project / Path(soc_root))
+            dts_root = settings.get("dts_root")
             if dts_root:
-                self.dts_roots.append(Path(module.project) / Path(dts_root))
-            arch_root = module.meta.get("build", {}).get("settings", {}).get("arch_root")
+                self.dts_roots.append(project / Path(dts_root))
+            arch_root = settings.get("arch_root")
             if arch_root:
-                self.arch_roots.append(Path(module.project) / Path(arch_root))
+                self.arch_roots.append(project / Path(arch_root))
 
+        self.modules = [m.meta for m in modules]
         self.hwm = None
 
         self.test_config = options.test_config
@@ -1137,9 +1140,9 @@ class TwisterEnv:
             logger.exception("Failure while reading head commit date.")
 
     @staticmethod
-    def run_cmake_script(args=None):
-        if args is None:
-            args = []
+    def run_cmake_script(args: list[str]) -> dict[str, Any]:
+        if not args:
+            raise ValueError("args list cannot be empty")
         script = os.fspath(args[0])
 
         logger.debug(f"Running cmake script {script}")
