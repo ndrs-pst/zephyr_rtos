@@ -1,5 +1,5 @@
 /*
- * Copyright 2018, 2024-2025 NXP
+ * Copyright 2018, 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -383,7 +383,17 @@ int spi_nxp_init_common(const struct device* dev) {
         return -ENODEV;
     }
 
-    lpspi_module_system_init(lpspi);
+    err = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
+    if (err != 0) {
+        /* Check if error is due to lack of support */
+        if (err != -ENOSYS) {
+            /* Real error occurred */
+            LOG_ERR("Failed to configure clock: %d", err);
+            return err;
+        }
+    }
+
+    lpspi_module_system_init(base);
 
     data->major_version = (lpspi->VERID & LPSPI_VERID_MAJOR_MASK) >> LPSPI_VERID_MAJOR_SHIFT;
 

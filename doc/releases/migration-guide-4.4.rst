@@ -46,6 +46,8 @@ Boards
   in the respective board CMakeLists.txt files. Applications that depended on these definitions
   being globally available may need to be updated. (:github:`101322`)
 
+* Renesas ``ek_ra8t2/r7ka8t2lfecac/cm85`` is renamed to ``ek_ra8t2/r7ka8t2lflcac/cm85``.
+
 * NXP has changed the scope of some in-tree compile flags to limit their visibility to only where
   they are needed. Out-of-tree applications or boards that depended on these flags being globally
   available may need to add them to their own CMakeLists.txt files to ensure they continue to build
@@ -752,6 +754,15 @@ Libsbc
 
 * Libsbc (sbc.c and sbc.h) is moved under the Bluetooth subsystem. The sbc.h is in
   include/zephyr/bluetooth now.
+
+Management
+==========
+
+* MCUmgr
+
+  * If using :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UART` then
+    :kconfig:option:`CONFIG_UART_MCUMGR` must now also be selected, this has changed to be
+    ``depends on`` rather than ``select``.
 
 Tracing
 ========
