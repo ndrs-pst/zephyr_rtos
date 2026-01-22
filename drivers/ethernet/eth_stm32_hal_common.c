@@ -11,6 +11,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/dsa.h>
+#include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/lldp.h>
@@ -101,7 +102,7 @@ static int eth_stm32_phy_reset_and_configure(const struct device *phy)
 static void eth_stm32_rx_thread(void *arg1, void *unused1, void *unused2)
 {
 	const struct device *dev = (const struct device *)arg1;
-	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+	struct eth_stm32_hal_dev_data *ctx = dev->data;
 	struct net_if *iface;
 	struct net_pkt *pkt;
 	int res;
@@ -109,8 +110,8 @@ static void eth_stm32_rx_thread(void *arg1, void *unused1, void *unused2)
 	ARG_UNUSED(unused1);
 	ARG_UNUSED(unused2);
 
-	while (1) {
-		res = k_sem_take(&dev_data->rx_int_sem, K_FOREVER);
+	while (true) {
+		res = k_sem_take(&ctx->rx_int_sem, K_FOREVER);
 		if (res == 0) {
 			/* semaphore taken and receive packets */
 			while ((pkt = eth_stm32_rx(dev)) != NULL) {
@@ -133,8 +134,8 @@ static void eth_stm32_rx_thread(void *arg1, void *unused1, void *unused2)
 
 static void eth_stm32_isr(const struct device *dev)
 {
-	struct eth_stm32_hal_dev_data *dev_data = dev->data;
-	ETH_HandleTypeDef *heth = &dev_data->heth;
+	struct eth_stm32_hal_dev_data *ctx = dev->data;
+	ETH_HandleTypeDef *heth = &ctx->heth;
 
 	HAL_ETH_IRQHandler(heth);
 }
@@ -143,44 +144,12 @@ void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef *heth_handle)
 {
 	__ASSERT_NO_MSG(heth_handle != NULL);
 
-	struct eth_stm32_hal_dev_data *dev_data =
+	struct eth_stm32_hal_dev_data *ctx =
 		CONTAINER_OF(heth_handle, struct eth_stm32_hal_dev_data, heth);
 
-	__ASSERT_NO_MSG(dev_data != NULL);
+	__ASSERT_NO_MSG(ctx != NULL);
 
-	k_sem_give(&dev_data->rx_int_sem);
-}
-
-static void eth_stm32_generate_mac(uint8_t *mac_addr)
-{
-#if defined(ETH_STM32_RANDOM_MAC)
-	/* "zephyr,random-mac-address" is set, generate a random mac address */
-	gen_random_mac(mac_addr, ST_OUI_B0, ST_OUI_B1, ST_OUI_B2);
-#else /* Use user defined mac address */
-	mac_addr[0] = ST_OUI_B0;
-	mac_addr[1] = ST_OUI_B1;
-	mac_addr[2] = ST_OUI_B2;
-#if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
-	mac_addr[3] = NODE_MAC_ADDR_OCTET(DT_DRV_INST(0), 3);
-	mac_addr[4] = NODE_MAC_ADDR_OCTET(DT_DRV_INST(0), 4);
-	mac_addr[5] = NODE_MAC_ADDR_OCTET(DT_DRV_INST(0), 5);
-#else
-	uint8_t unique_device_ID_12_bytes[12];
-	uint32_t result_mac_32_bits;
-
-	/* Nothing defined by the user, use device id */
-	hwinfo_get_device_id(unique_device_ID_12_bytes, 12);
-	result_mac_32_bits = crc32_ieee((uint8_t *)unique_device_ID_12_bytes, 12);
-	memcpy(&mac_addr[3], &result_mac_32_bits, 3);
-
-	/**
-	 * Set MAC address locally administered bit (LAA) as this is not assigned by the
-	 * manufacturer
-	 */
-	mac_addr[0] |= 0x02;
-
-#endif /* NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))) */
-#endif
+	k_sem_give(&ctx->rx_int_sem);
 }
 
 static int eth_stm32_initialize(const struct device *dev)
@@ -221,7 +190,42 @@ static int eth_stm32_initialize(const struct device *dev)
 		return ret;
 	}
 
-	eth_stm32_generate_mac(ctx->mac_addr);
+	if (cfg->mac_cfg.type != NET_ETH_MAC_NVMEM) {
+#if defined(ETH_STM32_RANDOM_MAC)
+		/* "zephyr,random-mac-address" is set, generate a random mac address */
+		gen_random_mac(ctx->mac_addr, ST_OUI_B0, ST_OUI_B1, ST_OUI_B2);
+#else /* Use user defined mac address */
+		ctx->mac_addr[0] = ST_OUI_B0;
+		ctx->mac_addr[1] = ST_OUI_B1;
+		ctx->mac_addr[2] = ST_OUI_B2;
+#if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
+		ctx->mac_addr[3] = NODE_MAC_ADDR_OCTET(DT_DRV_INST(0), 3);
+		ctx->mac_addr[4] = NODE_MAC_ADDR_OCTET(DT_DRV_INST(0), 4);
+		ctx->mac_addr[5] = NODE_MAC_ADDR_OCTET(DT_DRV_INST(0), 5);
+#else
+		uint8_t unique_device_ID_12_bytes[12];
+		uint32_t result_mac_32_bits;
+
+		/* Nothing defined by the user, use device id */
+		hwinfo_get_device_id(unique_device_ID_12_bytes, 12);
+		result_mac_32_bits = crc32_ieee((uint8_t *)unique_device_ID_12_bytes, 12);
+		memcpy(&ctx->mac_addr[3], &result_mac_32_bits, 3);
+
+		/**
+		 * Set MAC address locally administered bit (LAA) as this is not assigned by the
+		 * manufacturer
+		 */
+		ctx->mac_addr[0] |= 0x02;
+
+#endif /* NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))) */
+#endif
+	} else {
+		ret = net_eth_mac_load(&cfg->mac_cfg, ctx->mac_addr);
+		if (ret < 0) {
+			LOG_ERR("Failed to load MAC (%d)", ret);
+			return ret;
+		}
+	}
 
 	heth->Init.MACAddr = ctx->mac_addr;
 
@@ -284,7 +288,7 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 				   void *user_data)
 {
 	const struct device *dev = (const struct device *)user_data;
-	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+	struct eth_stm32_hal_dev_data *ctx = dev->data;
 
 	ARG_UNUSED(phy_dev);
 
@@ -295,9 +299,9 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 	if (state->is_up) {
 		eth_stm32_set_mac_config(dev, state);
 		eth_stm32_hal_start(dev);
-		net_eth_carrier_on(dev_data->iface);
+		net_eth_carrier_on(ctx->iface);
 	} else {
-		net_eth_carrier_off(dev_data->iface);
+		net_eth_carrier_off(ctx->iface);
 	}
 }
 
@@ -404,9 +408,9 @@ static const struct device *eth_stm32_hal_get_phy(const struct device *dev)
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 static struct net_stats_eth *eth_stm32_hal_get_stats(const struct device *dev)
 {
-	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+	struct eth_stm32_hal_dev_data *ctx = dev->data;
 
-	return &dev_data->stats;
+	return &ctx->stats;
 }
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
 
@@ -460,6 +464,7 @@ static const struct eth_stm32_hal_dev_cfg eth0_config = {
 #endif
 
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
+	.mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0),
 };
 
 BUILD_ASSERT(DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii)

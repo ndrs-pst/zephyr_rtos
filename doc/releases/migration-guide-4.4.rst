@@ -355,6 +355,15 @@ Display
   :kconfig:option:`SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565X` and :kconfig:option:`ST7789V_RGB565X`
   respectively. (:github:`99276`)
 
+* ``CONFIG_SSD1327`` symbol has been renamed to :kconfig:option:`CONFIG_SSD1327_5` to include ``SSD1325`` as well.
+
+* ``solomon,ssd1327fb`` devicetree compatible has been renamed :dtcompatible:`solomon,ssd1327`
+  to harmonize with other display controllers and eliminate the zephyr-irrelevant ``fb`` suffix.
+
+* ``solomon,ssd1306fb`` and ``solomon,ssd1309fb`` devicetree compatibles has been renamed
+  :dtcompatible:`solomon,ssd1306` and :dtcompatible:`solomon,ssd1309` respectively,
+  to harmonize with other display controllers and eliminate the zephyr-irrelevant ``fb`` suffix.
+
 DMA
 ===
 
@@ -741,6 +750,15 @@ Other subsystems
 
   * Use :kconfig:option:`CONFIG_CACHE_HAS_MIRRORED_MEMORY_REGIONS` instead of
     :kconfig:option:`CONFIG_CACHE_DOUBLEMAP` as the former is more descriptive of the feature.
+
+Flash
+=====
+
+* Previously deprecated ``CONFIG_FLASH_AREA_CHECK_INTEGRITY_MBEDTLS`` is now
+  removed.
+
+* ``CONFIG_FLASH_AREA_CHECK_INTEGRITY_PSA`` is also removed since there is
+  now no alternative for the crypto library backend.
 
 JWT
 ===
