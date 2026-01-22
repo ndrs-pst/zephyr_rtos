@@ -383,17 +383,17 @@ int spi_nxp_init_common(const struct device* dev) {
         return -ENODEV;
     }
 
-    err = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
-    if (err != 0) {
+    ret = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
+    if (ret != 0) {
         /* Check if error is due to lack of support */
-        if (err != -ENOSYS) {
+        if (ret != -ENOSYS) {
             /* Real error occurred */
-            LOG_ERR("Failed to configure clock: %d", err);
-            return err;
+            LOG_ERR("Failed to configure clock: %d", ret);
+            return ret;
         }
     }
 
-    lpspi_module_system_init(base);
+    lpspi_module_system_init(lpspi);
 
     data->major_version = (lpspi->VERID & LPSPI_VERID_MAJOR_MASK) >> LPSPI_VERID_MAJOR_SHIFT;
 
