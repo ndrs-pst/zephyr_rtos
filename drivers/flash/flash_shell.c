@@ -63,9 +63,8 @@ __attribute__((__section__(".nocache")));
 static uint32_t __aligned(4) m_buf_arr[BUF_ARRAY_CNT]
 __attribute__((__section__(".nocache")));
 
-static int parse_helper(const struct shell* sh, size_t* argc,
-                        char** argv[], const struct device** flash_dev,
-                        uint32_t* addr) {
+static int parse_helper(const struct shell* sh, size_t* argc, char** argv[],
+                        const struct device** flash_dev, uint32_t* addr) {
     char* endptr;
 
     *addr = strtoul((*argv)[1], &endptr, 16);
@@ -128,8 +127,7 @@ static int cmd_flash_shell_erase(const struct shell* sh, size_t argc, char* argv
     else {
         struct flash_pages_info info;
 
-        result = flash_get_page_info_by_offs(flash_dev, page_addr,
-                                             &info);
+        result = flash_get_page_info_by_offs(flash_dev, page_addr, &info);
         if (result != 0) {
             shell_error(sh, "Could not determine page size, "
                         "code %d.", result);
@@ -247,7 +245,7 @@ static int cmd_flash_shell_read(const struct shell* sh, size_t argc, char* argv[
     }
 
     if (argc > 2) {
-        cnt = strtoul(argv[2], NULL, 16);
+        cnt = strtoul(argv[2], NULL, 0);
     }
     else {
         cnt = 1;
@@ -711,7 +709,7 @@ static int cmd_flash_shell_load(const struct shell* sh, size_t argc, char* argv[
 
     if (flash_load_buf_size < write_block_size) {
         shell_error(sh, "Size of buffer is too small to be aligned to %zu.",
-                write_block_size);
+                    write_block_size);
         return (-ENOSPC);
     }
 
@@ -805,16 +803,16 @@ SHELL_STATIC_SUBCMD_SET_CREATE(flash_cmds,
     SHELL_CMD_ARG(erase, &dsub_device_name,
                   "[<device>] <page address> [<size>]",
                   cmd_flash_shell_erase, 2, 2),
-    SHELL_CMD_ARG(read , &dsub_device_name,
-                  "[<device>] <address> [<Dword count>]",
-                  cmd_flash_shell_read , 2, 2),
-    SHELL_CMD_ARG(test , &dsub_device_name,
+    SHELL_CMD_ARG(read, &dsub_device_name,
+                  "[<device>] <address> [<byte count>]",
+                  cmd_flash_shell_read, 2, 2),
+    SHELL_CMD_ARG(test, &dsub_device_name,
                   "[<device>] <address> <size> <repeat count>",
                   cmd_flash_shell_test, 4, 1),
     SHELL_CMD_ARG(write, &dsub_device_name,
                   "[<device>] <address> <dword> [<dword>...]",
                   cmd_flash_shell_write, 3, BUF_ARRAY_CNT),
-    SHELL_CMD_ARG(load , &dsub_device_name,
+    SHELL_CMD_ARG(load, &dsub_device_name,
                   "[<device>] <address> <size>",
                   cmd_flash_shell_load, 3, 1),
     SHELL_CMD_ARG(page_info, &dsub_device_name,
