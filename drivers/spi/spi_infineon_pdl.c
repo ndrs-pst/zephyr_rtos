@@ -160,7 +160,7 @@ static uint8_t get_dfs_value(struct spi_context* ctx) {
     }
 }
 
-static void transfer_chunk(const struct device* dev) {
+static void spi_ifx_cat1_transfer_chunk(const struct device* dev) {
     struct ifx_cat1_spi_data* const data = dev->data;
     struct spi_context* ctx = &data->ctx;
     size_t chunk_len = spi_context_max_continuous_chunk(ctx);
@@ -186,13 +186,16 @@ static void transfer_chunk(const struct device* dev) {
         ret = -EIO;
     }
     else {
+        struct dma_config* rx_cfg = &dma_rx->dma_cfg;
+        struct dma_config* tx_cfg = &dma_tx->dma_cfg;
+
         Cy_SCB_SetTxFifoLevel(config->reg_addr, 1U);
         Cy_SCB_SetRxFifoLevel(config->reg_addr, 0U);
 
         if (chunk_len > IFX_CAT1_SPI_DMA_BURST_SIZE) {
-            dma_rx->dma_cfg.source_burst_length = dma_tx->dma_cfg.source_burst_length =
+            rx_cfg->source_burst_length = tx_cfg->source_burst_length =
                 IFX_CAT1_SPI_DMA_BURST_SIZE;
-            dma_rx->dma_cfg.dest_burst_length = dma_tx->dma_cfg.dest_burst_length =
+            rx_cfg->dest_burst_length = tx_cfg->dest_burst_length =
                 IFX_CAT1_SPI_DMA_BURST_SIZE;
             if ((chunk_len % IFX_CAT1_SPI_DMA_BURST_SIZE) != 0) {
                 LOG_ERR("DMA (DW) only supports lengths is multiple of burst "
@@ -200,34 +203,36 @@ static void transfer_chunk(const struct device* dev) {
                         IFX_CAT1_SPI_DMA_BURST_SIZE);
                 goto exit;
             }
-            dma_rx->dma_cfg.block_count = dma_tx->dma_cfg.block_count = 1;
+            rx_cfg->block_count = tx_cfg->block_count = 1;
         }
         else {
-            dma_rx->dma_cfg.source_burst_length = dma_tx->dma_cfg.source_burst_length =
-                0;
-            dma_rx->dma_cfg.dest_burst_length = dma_tx->dma_cfg.dest_burst_length = 0;
-            dma_rx->dma_cfg.block_count = dma_tx->dma_cfg.block_count = 1;
+            rx_cfg->source_burst_length = tx_cfg->source_burst_length = 0;
+            rx_cfg->dest_burst_length = tx_cfg->dest_burst_length = 0;
+            rx_cfg->block_count = tx_cfg->block_count = 1;
         }
 
-        dma_rx->blk_cfg.block_size = dma_tx->blk_cfg.block_size = chunk_len;
+        struct dma_block_config* rx_blk = &dma_rx->blk_cfg;
+        struct dma_block_config* tx_blk = &dma_tx->blk_cfg;
+
+        rx_blk->block_size = tx_blk->block_size = chunk_len;
 
         if (spi_context_rx_buf_on(ctx)) {
-            dma_rx->blk_cfg.dest_address = (uint32_t)ctx->rx_buf;
-            dma_rx->blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+            rx_blk->dest_address = (uint32_t)ctx->rx_buf;
+            rx_blk->dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
         }
         else {
-            dma_rx->blk_cfg.dest_address = (uint32_t)&rx_dummy_data;
-            dma_rx->blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+            rx_blk->dest_address = (uint32_t)&rx_dummy_data;
+            rx_blk->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
         }
 
         if (spi_context_tx_buf_on(ctx)) {
-            dma_tx->blk_cfg.source_address = (uint32_t)ctx->tx_buf;
-            dma_tx->blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+            tx_blk->source_address = (uint32_t)ctx->tx_buf;
+            tx_blk->source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
         }
         else {
             tx_dummy_data = 0;
-            dma_tx->blk_cfg.source_address = (uint32_t)&tx_dummy_data;
-            dma_tx->blk_cfg.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+            tx_blk->source_address = (uint32_t)&tx_dummy_data;
+            tx_blk->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
         }
 
         ret = dma_config(dma_rx->dev_dma, dma_rx->dma_channel, &dma_rx->dma_cfg);
@@ -286,12 +291,13 @@ static void ifx_cat1_spi_interrupt_callback(void* arg, uint32_t event) {
         spi_context_update_tx(ctx, data->dfs_value, data->chunk_len);
         spi_context_update_rx(ctx, data->dfs_value, data->chunk_len);
 
-        transfer_chunk(dev);
+        spi_ifx_cat1_transfer_chunk(dev);
     }
 }
 
 #ifdef CONFIG_SPI_INFINEON_DMA
-static void dma_callback(const struct device* dma_dev, void* arg, uint32_t channel, int status) {
+static void spi_ifx_cat1_dma_callback(const struct device* dma_dev, void* arg,
+                                      uint32_t channel, int status) {
     struct device* dev = arg;
     struct ifx_cat1_spi_data* const data = dev->data;
     struct spi_context* ctx = &data->ctx;
@@ -300,7 +306,7 @@ static void dma_callback(const struct device* dma_dev, void* arg, uint32_t chann
         spi_context_update_tx(ctx, get_dfs_value(ctx), data->chunk_len);
         spi_context_update_rx(ctx, get_dfs_value(ctx), data->chunk_len);
 
-        transfer_chunk(dev);
+        spi_ifx_cat1_transfer_chunk(dev);
     }
     else if (channel == data->dma_tx.dma_channel) {
         /* pass */
@@ -452,7 +458,7 @@ static int spi_ifx_cat1_pdl_transceive(const struct device* dev, const struct sp
     spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, data->dfs_value);
     spi_context_cs_control(ctx, true);
 
-    transfer_chunk(dev);
+    spi_ifx_cat1_transfer_chunk(dev);
     ret = spi_context_wait_for_completion(&data->ctx);
 
     spi_context_release(ctx, ret);
@@ -517,7 +523,7 @@ static int ifx_cat1_spi_init(const struct device* dev) {
         data->dma_rx.blk_cfg.dest_addr_adj   = DMA_ADDR_ADJ_INCREMENT;
         data->dma_rx.dma_cfg.head_block      = &data->dma_rx.blk_cfg;
         data->dma_rx.dma_cfg.user_data       = (void*)dev;
-        data->dma_rx.dma_cfg.dma_callback    = dma_callback;
+        data->dma_rx.dma_cfg.dma_callback    = spi_ifx_cat1_dma_callback;
 
         #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
         Cy_TrigMux_Connect(PERI_0_TRIG_IN_MUX_0_SCB_RX_TR_OUT0 + data->resource.block_num,
@@ -535,7 +541,7 @@ static int ifx_cat1_spi_init(const struct device* dev) {
         data->dma_tx.blk_cfg.dest_addr_adj   = DMA_ADDR_ADJ_NO_CHANGE;
         data->dma_tx.dma_cfg.head_block      = &data->dma_tx.blk_cfg;
         data->dma_tx.dma_cfg.user_data       = (void*)dev;
-        data->dma_tx.dma_cfg.dma_callback    = dma_callback;
+        data->dma_tx.dma_cfg.dma_callback    = spi_ifx_cat1_dma_callback;
 
         #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
         Cy_TrigMux_Connect(PERI_0_TRIG_IN_MUX_0_SCB_TX_TR_OUT0 + data->resource.block_num,
