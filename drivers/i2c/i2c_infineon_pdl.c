@@ -168,7 +168,7 @@ static void ifx_master_event_handler(void* callback_arg, uint32_t event) {
         return;
     }
 
-    if (0 != (CY_SCB_I2C_SLAVE_READ_EVENT & event)) {
+    if ((event & CY_SCB_I2C_SLAVE_READ_EVENT) != 0) {
         if (data->p_target_config->callbacks->read_requested) {
             data->p_target_config->callbacks->read_requested(data->p_target_config,
                                                              &data->i2c_target_wr_byte);
@@ -179,7 +179,7 @@ static void ifx_master_event_handler(void* callback_arg, uint32_t event) {
         }
     }
 
-    if (0 != (CY_SCB_I2C_SLAVE_RD_BUF_EMPTY_EVENT & event)) {
+    if ((event & CY_SCB_I2C_SLAVE_RD_BUF_EMPTY_EVENT) != 0) {
         if (data->p_target_config->callbacks->read_processed) {
             data->p_target_config->callbacks->read_processed(data->p_target_config,
                                                              &data->i2c_target_wr_byte);
@@ -190,7 +190,7 @@ static void ifx_master_event_handler(void* callback_arg, uint32_t event) {
         }
     }
 
-    if (0 != (CY_SCB_I2C_SLAVE_WRITE_EVENT & event)) {
+    if ((event & CY_SCB_I2C_SLAVE_WRITE_EVENT) != 0) {
         Cy_SCB_I2C_SlaveConfigWriteBuf(config->base, (uint8_t*)data->target_wr_buffer,
                                        CONFIG_I2C_INFINEON_CAT1_TARGET_BUF, &data->context);
         if (data->p_target_config->callbacks->write_requested) {
@@ -198,9 +198,9 @@ static void ifx_master_event_handler(void* callback_arg, uint32_t event) {
         }
     }
 
-    if (0 != (CY_SCB_I2C_SLAVE_WR_CMPLT_EVENT & event)) {
+    if ((event & CY_SCB_I2C_SLAVE_WR_CMPLT_EVENT) != 0) {
         if (data->p_target_config->callbacks->write_received) {
-            for (int i = 0; i < data->context.slaveRxBufferIdx; i++) {
+            for (size_t i = 0; i < data->context.slaveRxBufferIdx; i++) {
                 data->p_target_config->callbacks->write_received(data->p_target_config,
                                                                  data->target_wr_buffer[i]);
             }
@@ -211,7 +211,7 @@ static void ifx_master_event_handler(void* callback_arg, uint32_t event) {
         }
     }
 
-    if (0 != (CY_SCB_I2C_SLAVE_RD_CMPLT_EVENT & event)) {
+    if ((event & CY_SCB_I2C_SLAVE_RD_CMPLT_EVENT) != 0) {
         if (data->p_target_config->callbacks->stop) {
             data->p_target_config->callbacks->stop(data->p_target_config);
         }
@@ -660,7 +660,7 @@ static int ifx_cat1_i2c_target_unregister(const struct device* dev, struct i2c_t
     return 0;
 }
 
-static void i2c_isr_handler(const struct device* dev) {
+static void ifx_cat1_i2c_isr_handler(const struct device* dev) {
     struct ifx_cat1_i2c_data* data = (struct ifx_cat1_i2c_data*)dev->data;
     const struct ifx_cat1_i2c_config* const config = dev->config;
 
@@ -699,7 +699,7 @@ void ifx_cat1_i2c_cb_wrapper(const struct device* dev, uint32_t event) {
 }
 
 /* I2C API structure */
-static const struct i2c_driver_api i2c_cat1_driver_api = {
+static DEVICE_API(i2c, i2c_cat1_driver_api) = {
     .configure         = ifx_cat1_i2c_configure,
     .transfer          = ifx_cat1_i2c_transfer,
     .get_config        = ifx_cat1_i2c_get_config,
@@ -736,7 +736,7 @@ static const struct i2c_driver_api i2c_cat1_driver_api = {
 
 #define I2C_CAT1_INIT_FUNC(n)                                   \
     static void ifx_cat1_i2c_irq_config_func_##n(const struct device* dev) {    \
-        IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i2c_isr_handler, \
+        IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), ifx_cat1_i2c_isr_handler, \
                     DEVICE_DT_INST_GET(n), 0);                  \
     }
 
@@ -750,7 +750,7 @@ static const struct i2c_driver_api i2c_cat1_driver_api = {
                                                                 \
     I2C_CAT1_INIT_FUNC(n)                                       \
                                                                 \
-    static const struct ifx_cat1_i2c_config i2c_cat1_cfg_##n = {\
+    static struct ifx_cat1_i2c_config DT_CONST i2c_cat1_cfg_##n = { \
         .pcfg                   = PINCTRL_DT_INST_DEV_CONFIG_GET(n), \
         .master_frequency       = DT_INST_PROP_OR(n, clock_frequency, 100000), \
         .base                   = (CySCB_Type*)DT_INST_REG_ADDR(n), \
@@ -773,3 +773,94 @@ static const struct i2c_driver_api i2c_cat1_driver_api = {
                               &i2c_cat1_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_I2C_INIT)
+
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+#define IFX_CAT1_I2C_CFG_REG_INIT(n) \
+    zephyr_gtest_i2c_ifx_cat1_reg_init(DEVICE_DT_GET(DT_DRV_INST(n)), \
+                                       &ifx_cat1_i2c_data##n, &i2c_cat1_cfg_##n);
+
+static void zephyr_gtest_i2c_ifx_cat1_reg_init(const struct device* dev,
+                                               struct ifx_cat1_i2c_data* data,
+                                               struct ifx_cat1_i2c_config* cfg) {
+    uintptr_t base_addr = (uintptr_t)cfg->base;
+    int rc;
+
+    switch (base_addr) {
+        case SCB0_BASE : {
+            cfg->base = (CySCB_Type*)ut_mcu_scb0_ptr;
+            break;
+        }
+
+        case SCB1_BASE : {
+            cfg->base = (CySCB_Type*)ut_mcu_scb1_ptr;
+            break;
+        }
+
+        case SCB2_BASE : {
+            cfg->base = (CySCB_Type*)ut_mcu_scb2_ptr;
+            break;
+        }
+
+        case SCB3_BASE : {
+            cfg->base = (CySCB_Type*)ut_mcu_scb3_ptr;
+            break;
+        }
+
+        case SCB4_BASE : {
+            cfg->base = (CySCB_Type*)ut_mcu_scb4_ptr;
+            break;
+        }
+
+        case SCB5_BASE : {
+            cfg->base = (CySCB_Type*)ut_mcu_scb5_ptr;
+            break;
+        }
+
+        case SCB6_BASE : {
+            cfg->base = (CySCB_Type*)ut_mcu_scb6_ptr;
+            break;
+        }
+
+        case SCB7_BASE : {
+            cfg->base = (CySCB_Type*)ut_mcu_scb7_ptr;
+            break;
+        }
+
+        case SCB8_BASE : {
+            cfg->base = (CySCB_Type*)ut_mcu_scb8_ptr;
+            break;
+        }
+
+        case SCB9_BASE : {
+            cfg->base = (CySCB_Type*)ut_mcu_scb9_ptr;
+            break;
+        }
+
+        case SCB10_BASE : {
+            cfg->base = (CySCB_Type*)ut_mcu_scb10_ptr;
+            break;
+        }
+
+        case SCB11_BASE : {
+            cfg->base = (CySCB_Type*)ut_mcu_scb11_ptr;
+            break;
+        }
+
+        default : {
+            break;
+        }
+    }
+
+    rc = dev->ops.init(dev);
+    if (rc == 0) {
+        dev->state->initialized = true;
+        dev->state->init_res = 0U;
+    }
+}
+
+void zephyr_gtest_i2c_ifx_cat1(void) {
+    DT_INST_FOREACH_STATUS_OKAY(IFX_CAT1_I2C_CFG_REG_INIT)
+}
+#endif
