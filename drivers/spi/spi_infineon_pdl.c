@@ -642,7 +642,7 @@ static int ifx_cat1_spi_init(const struct device* dev) {
                                                                 \
     PINCTRL_DT_INST_DEFINE(n);                                  \
                                                                 \
-    static struct ifx_cat1_spi_config spi_cat1_config_##n = {   \
+    static struct ifx_cat1_spi_config DT_CONST spi_cat1_config_##n = { \
         .reg_addr = (CySCB_Type*)DT_INST_REG_ADDR(n),           \
         .pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),              \
         .cs_oversample_cnt = DT_INST_PROP_LEN_OR(n, oversample, 0), \
@@ -825,7 +825,7 @@ static void ifx_cat1_spi_register_callback(const struct device* dev,
 #endif
 
 static uint8_t ifx_cat1_get_hfclk_for_peri_group(uint8_t peri_group) {
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+    #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
     switch (peri_group) {
         case IFX_CAT1_INSTANCE_GROUP(0, 0) :
         case IFX_CAT1_INSTANCE_GROUP(1, 4) :
@@ -1178,3 +1178,94 @@ static void ifx_cat1_spi_cb_wrapper(const struct device* dev, uint32_t event) {
         callback(data->callback_data.callback_arg, anded_events);
     }
 }
+
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+#define IFX_CAT1_SPI_CFG_REG_INIT(n) \
+    zephyr_gtest_spi_ifx_cat1_reg_init(DEVICE_DT_GET(DT_DRV_INST(n)), \
+                                       &ifx_cat1_spi##n##_data, &ifx_cat1_spi##n##_cfg);
+
+static void zephyr_gtest_spi_ifx_cat1_reg_init(const struct device* dev,
+                                               struct ifx_cat1_spi_data* data,
+                                               struct ifx_cat1_spi_config* cfg) {
+    uintptr_t base_addr = (uintptr_t)cfg->reg_addr;
+    int rc;
+
+    switch (base_addr) {
+        case SCB0_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb0_ptr;
+            break;
+        }
+
+        case SCB1_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb1_ptr;
+            break;
+        }
+
+        case SCB2_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb2_ptr;
+            break;
+        }
+
+        case SCB3_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb3_ptr;
+            break;
+        }
+
+        case SCB4_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb4_ptr;
+            break;
+        }
+
+        case SCB5_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb5_ptr;
+            break;
+        }
+
+        case SCB6_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb6_ptr;
+            break;
+        }
+
+        case SCB7_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb7_ptr;
+            break;
+        }
+
+        case SCB8_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb8_ptr;
+            break;
+        }
+
+        case SCB9_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb9_ptr;
+            break;
+        }
+
+        case SCB10_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb10_ptr;
+            break;
+        }
+
+        case SCB11_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb11_ptr;
+            break;
+        }
+
+        default : {
+            break;
+        }
+    }
+
+    rc = dev->ops.init(dev);
+    if (rc == 0) {
+        dev->state->initialized = true;
+        dev->state->init_res = 0U;
+    }
+}
+
+void zephyr_gtest_spi_ifx_cat1(void) {
+    DT_INST_FOREACH_STATUS_OKAY(IFX_CAT1_SPI_CFG_REG_INIT)
+}
+#endif
