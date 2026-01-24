@@ -485,8 +485,8 @@ void ifx_cat1_uart_enable_event(const struct device* dev, uint32_t event, bool e
     struct ifx_cat1_uart_data* const data = dev->data;
     const struct ifx_cat1_uart_config* const config = dev->config;
 
-    uint32_t tx_mask = 0x0;
-    uint32_t rx_mask = 0x0;
+    uint32_t tx_mask = 0x00;
+    uint32_t rx_mask = 0x00;
 
     uint32_t current_tx_mask = Cy_SCB_GetTxInterruptMask(config->reg_addr);
     uint32_t current_rx_mask = Cy_SCB_GetRxInterruptMask(config->reg_addr);
@@ -1568,7 +1568,7 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
         return ifx_cat1_uart_init(dev);                         \
     }                                                           \
                                                                 \
-    static struct ifx_cat1_uart_config ifx_cat1_uart##n##_cfg = {                   \
+    static struct ifx_cat1_uart_config DT_CONST ifx_cat1_uart##n##_cfg = {          \
         .dt_cfg.baudrate  = DT_INST_PROP(n, current_speed),                         \
         .dt_cfg.parity    = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),   \
         .dt_cfg.stop_bits = DT_INST_ENUM_IDX_OR(n, stop_bits, UART_CFG_STOP_BITS_1),\
@@ -1584,3 +1584,94 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
                           &ifx_cat1_uart_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_UART_INIT)
+
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+#define IFX_CAT1_UART_CFG_REG_INIT(n) \
+    zephyr_gtest_uart_ifx_cat1_reg_init(DEVICE_DT_GET(DT_DRV_INST(n)), \
+                                        &ifx_cat1_uart##n##_data, &ifx_cat1_uart##n##_cfg);
+
+static void zephyr_gtest_uart_ifx_cat1_reg_init(const struct device* dev,
+                                                struct ifx_cat1_uart_data* data,
+                                                struct ifx_cat1_uart_config* cfg) {
+    int rc;
+    uintptr_t base_addr = (uintptr_t)cfg->reg_addr;
+
+    switch (base_addr) {
+        case SCB0_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb0_ptr;
+            break;
+        }
+
+        case SCB1_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb1_ptr;
+            break;
+        }
+
+        case SCB2_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb2_ptr;
+            break;
+        }
+
+        case SCB3_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb3_ptr;
+            break;
+        }
+
+        case SCB4_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb4_ptr;
+            break;
+        }
+
+        case SCB5_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb5_ptr;
+            break;
+        }
+
+        case SCB6_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb6_ptr;
+            break;
+        }
+
+        case SCB7_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb7_ptr;
+            break;
+        }
+
+        case SCB8_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb8_ptr;
+            break;
+        }
+
+        case SCB9_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb9_ptr;
+            break;
+        }
+
+        case SCB10_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb10_ptr;
+            break;
+        }
+
+        case SCB11_BASE : {
+            cfg->reg_addr = (CySCB_Type*)ut_mcu_scb11_ptr;
+            break;
+        }
+
+        default : {
+            break;
+        }
+    }
+
+    rc = dev->ops.init(dev);
+    if (rc == 0) {
+        dev->state->initialized = true;
+        dev->state->init_res = 0U;
+    }
+}
+
+void zephyr_gtest_uart_ifx_cat1(void) {
+    DT_INST_FOREACH_STATUS_OKAY(IFX_CAT1_UART_CFG_REG_INIT)
+}
+#endif
