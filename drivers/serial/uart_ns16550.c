@@ -253,6 +253,11 @@ uint8_t sys_in8(io_port_t port);
 #define MSR_RI 0x40   /* complement of ring signal */
 #define MSR_DCD 0x80  /* complement of dcd */
 
+/* constants for uart status register */
+#define USR_TFNF 0x02 /* Transmit FIFO Not Full */
+#define USR_TFE 0x04 /* Transmit FIFO Empty */
+#define USR_RFNE 0x08 /* Receive FIFO Not Empty */
+
 #if defined(CONFIG_UART_NS16550_INTEL_LPSS_DMA)
 #define UNMASK_LPSS_INT(chan) (BIT(chan) | (BIT(8) << chan)) /* unmask LPSS DMA Interrupt */
 #endif
@@ -347,6 +352,7 @@ struct uart_ns16550_dev_config {
 #if UART_NS16550_RESET_ENABLED
 	struct reset_dt_spec reset_spec;
 #endif
+	bool loopback;
 };
 
 /** Device data structure */
@@ -565,7 +571,7 @@ static void set_baud_rate(const struct device *dev, uint32_t baud_rate, uint32_t
 		lcr_cache = ns16550_inbyte(dev, REG_LCR);
 		ns16550_outbyte(dev, REG_LCR, LCR_DLAB | lcr_cache);
 		ns16550_outbyte(dev, REG_BRDL, (uint8_t)(divisor & 0xff));
-		ns16550_outbyte(dev, REG_BRDL, (uint8_t)((divisor >> 8) & 0xff));
+		ns16550_outbyte(dev, REG_BRDH, (uint8_t)((divisor >> 8) & 0xff));
 
 		/* restore the DLAB to access the baud rate divisor registers */
 		ns16550_outbyte(dev, REG_LCR, lcr_cache);
@@ -680,7 +686,10 @@ static int uart_ns16550_configure(const struct device *dev,
 		uart_cfg.parity = LCR_PDIS;
 		break;
 	case UART_CFG_PARITY_EVEN:
-		uart_cfg.parity = LCR_EPS;
+		uart_cfg.parity = LCR_EPS | LCR_PEN;
+		break;
+	case UART_CFG_PARITY_ODD:
+		uart_cfg.parity = LCR_PEN;
 		break;
 	default:
 		ret = -ENOTSUP;
@@ -700,6 +709,10 @@ static int uart_ns16550_configure(const struct device *dev,
 		mdc |= MCR_AFCE;
 	}
 #endif
+
+	if (dev_cfg->loopback) {
+		mdc |= MCR_LOOP;
+	}
 
 	ns16550_outbyte(dev, REG_MDC, mdc);
 
@@ -1144,14 +1157,18 @@ static int uart_ns16550_irq_tx_ready(const struct device *dev)
 	struct uart_ns16550_dev_data *data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
+#ifdef CONFIG_UART_NS16550_DW8250_DW_APB
+	/* Use USR register to check if TX FIFO has space */
+	int ret = ((ns16550_inbyte(dev, REG_USR) & (USR_TFNF | USR_TFE)) &&
+		(ns16550_inbyte(dev, REG_IER) & IER_TBE)) ? 1 : 0;
+#else
 	int ret = ((IIRC(dev) & IIR_ID) == IIR_THRE) ? 1 : 0;
+#endif
 
 #ifdef CONFIG_UART_NS16550_WA_TX_FIFO_EMPTY_INTERRUPT
 	if (ret == 0 && data->sw_tx_irq) {
 		/**< replace resoult when there is a software solution */
-		const struct uart_ns16550_dev_config * const dev_cfg = dev->config;
-
-		if (ns16550_inbyte(dev_cfg, IER(dev)) & IER_TBE) {
+		if (ns16550_inbyte(dev, REG_IER) & IER_TBE) {
 			ret = 1;
 		}
 	}
@@ -1225,7 +1242,13 @@ static int uart_ns16550_irq_rx_ready(const struct device *dev)
 	struct uart_ns16550_dev_data *data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
+#ifdef CONFIG_UART_NS16550_DW8250_DW_APB
+	/* Use USR register to check if RX FIFO has data */
+	int ret = ((ns16550_inbyte(dev, REG_USR) & USR_RFNE) &&
+		(ns16550_inbyte(dev, REG_IER) & IER_RXRDY)) ? 1 : 0;
+#else
 	int ret = ((IIRC(dev) & IIR_ID) == IIR_RBRF) ? 1 : 0;
+#endif
 
 	k_spin_unlock(&data->lock, key);
 
@@ -1278,7 +1301,16 @@ static int uart_ns16550_irq_is_pending(const struct device *dev)
 	struct uart_ns16550_dev_data *data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
+#ifdef CONFIG_UART_NS16550_DW8250_DW_APB
+	/* Use USR register to check if any IRQ is pending */
+	bool tx_pending = ((ns16550_inbyte(dev, REG_USR) & (USR_TFNF | USR_TFE)) &&
+		(ns16550_inbyte(dev, REG_IER) & IER_TBE));
+	bool rx_pending = ((ns16550_inbyte(dev, REG_USR) & USR_RFNE) &&
+		(ns16550_inbyte(dev, REG_IER) & IER_RXRDY));
+	int ret = (tx_pending || rx_pending) ? 1 : 0;
+#else
 	int ret = (!(IIRC(dev) & IIR_NIP)) ? 1 : 0;
+#endif
 
 	k_spin_unlock(&data->lock, key);
 
@@ -2001,7 +2033,8 @@ static DEVICE_API(uart, uart_ns16550_driver_api) = {
 		IF_ENABLED(CONFIG_PINCTRL,                                           \
 			(.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),))              \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),                         \
-			(.reset_spec = RESET_DT_SPEC_INST_GET(n),))
+			(.reset_spec = RESET_DT_SPEC_INST_GET(n),))                  \
+		.loopback = DT_INST_PROP(n, loopback),
 
 #define UART_NS16550_COMMON_DEV_DATA_INITIALIZER(n)                                  \
 		.uart_config.baudrate = DT_INST_PROP_OR(n, current_speed, 0),        \
