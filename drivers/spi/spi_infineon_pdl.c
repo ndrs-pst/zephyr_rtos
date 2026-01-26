@@ -558,7 +558,10 @@ static int ifx_cat1_spi_init(const struct device* dev) {
     }
 
     /* Configure slave select (master) */
-    spi_context_cs_configure_all(&data->ctx);
+    ret = spi_context_cs_configure_all(&data->ctx);
+    if (ret < 0) {
+        return (ret);
+    }
 
     spi_context_unlock_unconditionally(&data->ctx);
 
