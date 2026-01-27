@@ -1876,6 +1876,11 @@ static DEVICE_API(sdhc, sdhc_stm32_api) = {
 			  .max_current_330 = DT_INST_PROP(n, max_current_330),                     \
 			  .max_current_180 = DT_INST_PROP(n, max_current_180),                     \
 			  .power_delay = DT_INST_PROP_OR(n, power_delay_ms, 0),                    \
+			  .bus_4_bit_support =                                                     \
+			      (DT_INST_PROP(n, bus_width) == 4) ? true : false,                    \
+			  .hs200_support = true,                                                   \
+			  .hs400_support = false,                                                  \
+			  .is_spi = false,                                                         \
 			  .host_caps = {.vol_180_support = false,                                  \
 					.vol_300_support = false,                                  \
 					.vol_330_support = true,                                   \
@@ -1888,11 +1893,7 @@ static DEVICE_API(sdhc, sdhc_stm32_api) = {
 					.ddr50_support = true,                                     \
 					.sdr104_support = true,                                    \
 					.sdr50_support = true,                                     \
-					.bus_8_bit_support = false,                                \
-					.bus_4_bit_support =                                       \
-						(DT_INST_PROP(n, bus_width) == 4) ? true : false,  \
-					.hs200_support = true,                                     \
-					.hs400_support = false}}};                                 \
+					.bus_8_bit_support = false}}};                             \
                                                                                                    \
 	static struct sdhc_stm32_data sdhc_stm32_##n##_data = {                                    \
 		.sdmmc = (SDMMC_TypeDef *)DT_REG_ADDR(DT_DRV_INST(n)),                             \

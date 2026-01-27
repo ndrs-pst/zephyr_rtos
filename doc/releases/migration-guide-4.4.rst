@@ -520,6 +520,14 @@ Radio
 
 * Device trees and overlays using the old compatible strings must be updated to use the new names.
 
+SD Host Controller
+==================
+
+* Moved extra fields ``bus_4_bit_support``, ``hs200_support`` and ``hs400_support`` from
+  :c:struct:`sdhc_host_caps` to :c:struct:`sdhc_host_props` as per the
+  `SD Host Controller Specification <https://www.sdcard.org/downloads/pls/pdf/?p=PartA2_SD%20Host_Controller_Simplified_Specification_Ver4.20.jpg>`_.
+  (:github:`91701`)
+
 Shell
 =====
 
@@ -809,6 +817,28 @@ Settings
 Modules
 *******
 
+OpenThread
+==========
+
+* The following Kconfigs options were renamed:
+
+  * ``CONFIG_OPENTHREAD_MBEDTLS_CHOICE`` to
+    :kconfig:option:`CONFIG_OPENTHREAD_SECURITY_DEFAULT_CONFIG`
+  * ``CONFIG_CUSTOM_OPENTHREAD_SECURITY`` to
+    :kconfig:option:`CONFIG_OPENTHREAD_SECURITY_CUSTOM_CONFIG`
+
+* :kconfig:option:`CONFIG_OPENTHREAD_CRYPTO_PSA` no more depends on
+  :kconfig:option:`CONFIG_PSA_CRYPTO_CLIENT`, but instead selects
+  :kconfig:option:`CONFIG_PSA_CRYPTO`.
+
+* In builds without TF-M, :kconfig:option:`CONFIG_SECURE_STORAGE` is now automatically
+  implied if :kconfig:option:`CONFIG_OPENTHREAD_SECURITY_DEFAULT_CONFIG` and
+  :kconfig:option:`CONFIG_OPENTHREAD_CRYPTO_PSA` are set. This
+  guarantees that a PSA ITS implementation is available and it requires a backend
+  for Secure Storage (Settings, ZMS, or a custom one) to be configured.
+
+* :kconfig:option:`CONFIG_OPENTHREAD_CRYPTO_PSA` is now enabled by default.
+
 Trusted Firmware-M
 ==================
 
@@ -823,3 +853,24 @@ Architectures
   the feature is cache related so move it under cache.
 
   * Use :c:func:`sys_cache_is_mem_coherent` instead of :c:func:`arch_mem_coherent`.
+
+* :kconfig:option:`CONFIG_RISCV` now requires, that the :dtcompatible:`riscv` is present in the
+  devicetree.
+
+* The ``riscv,isa-base`` and  ``riscv,isa-extensions`` devicetree properties of
+  :dtcompatible:`riscv` are now used to set the Base Integer Instruction Set and the RISC-V
+  extensions. They are no longer set by the SoC. The devicetree property ``riscv,isa`` has been
+  deprecated in favor of the two new properties. (:github:`97540`)
+
+  * ``CONFIG_SOC_CV64A6_IMAFDC`` and ``CONFIG_SOC_CV64A6_IMAC`` are now combined into
+    :kconfig:option:`CONFIG_SOC_CV64A6`, as the RISC-V extensions are now set by the devicetree.
+
+  * The following options of :kconfig:option:`CONFIG_SOC_SERIES_AE350` had been removed, as they
+    now can be set via the devicetree:
+
+    * ``CONFIG_RV32I_CPU``
+    * ``CONFIG_RV32E_CPU``
+    * ``CONFIG_RV64I_CPU``
+    * ``CONFIG_NO_FPU``
+    * ``CONFIG_SINGLE_PRECISION_FPU``
+    * ``CONFIG_DOUBLE_PRECISION_FPU``
