@@ -458,6 +458,15 @@ static uint32_t counter_stm32_get_freq(const struct device* dev) {
     return (data->freq);
 }
 
+static int counter_stm32_set_value(const struct device* dev, uint32_t ticks) {
+    const struct counter_stm32_config* config = dev->config;
+    TIM_TypeDef* timer = config->timer;
+
+    LL_TIM_SetCounter(timer, ticks);
+
+    return (0);
+}
+
 static void counter_stm32_top_irq_handle(const struct device* dev) {
     struct counter_stm32_data* data = dev->data;
 
@@ -494,6 +503,7 @@ static DEVICE_API(counter, counter_stm32_driver_api) = {
     .stop             = counter_stm32_stop,
     .get_value        = counter_stm32_get_value,
     .reset            = counter_stm32_reset,
+    .set_value        = counter_stm32_set_value,
     .set_alarm        = counter_stm32_set_alarm,
     .cancel_alarm     = counter_stm32_cancel_alarm,
     .set_top_value    = counter_stm32_set_top_value,

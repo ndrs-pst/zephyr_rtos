@@ -417,7 +417,8 @@ int net_ipv4_acd_start(struct net_if *iface, struct net_if_addr *ifaddr)
 	return 0;
 }
 
-void net_ipv4_acd_cancel(struct net_if *iface, struct net_if_addr *ifaddr)
+#if (CONFIG_NET_IPV4_ACD)
+void net_ipv4_acd_cancel(struct net_if *iface, struct net_if_addr* ifaddr)
 {
 	/* Address conflict detection is based on ARP, so can only be done on
 	 * supporting interfaces.
@@ -434,3 +435,4 @@ void net_ipv4_acd_cancel(struct net_if *iface, struct net_if_addr *ifaddr)
 
 	k_mutex_unlock(&lock);
 }
+#endif

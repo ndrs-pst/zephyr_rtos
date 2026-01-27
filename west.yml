@@ -212,7 +212,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 6637e65e96bc0301546857004375dd82896b5f38
+      revision: 8960ce87d60fa963dd53cf7cecf7781449882922
       path: modules/hal/nxp
       groups:
         - hal
@@ -346,7 +346,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 4d11a73d62bf999205f16de21a0ef675501f5b21
+      revision: cf40f6dc7fc441ee6848ea2e177c4522588c1b8c
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: 29afb11a512787bc68e2afd58c9dfde4bb4d5dc4

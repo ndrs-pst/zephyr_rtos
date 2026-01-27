@@ -4442,6 +4442,7 @@ struct net_if_addr* net_if_ipv4_addr_add(struct net_if* iface,
     struct net_if_addr_ipv4* cur;
     struct net_if_ipv4* ipv4;
     bool do_acd = false;
+    bool override = false;
     int idx;
 
     net_if_lock(iface);
@@ -4474,6 +4475,7 @@ struct net_if_addr* net_if_ipv4_addr_add(struct net_if* iface,
             (cur->ipv4.addr_type == NET_ADDR_OVERRIDABLE)) {
             ifaddr = &cur->ipv4;
             idx    = i;
+            override = true;
             break;
         }
 
@@ -4485,6 +4487,21 @@ struct net_if_addr* net_if_ipv4_addr_add(struct net_if* iface,
     }
 
     if (ifaddr) {
+        /* If we are overriding an existing address, remember to cancel
+         * acd and send del event. Without these, mDNS announcement will
+         * send also the old address that is no longer in use.
+         */
+        if (override) {
+            /* But do not send address removal if the address is the same */
+            if (!net_ipv4_addr_cmp(&ifaddr->address.in_addr, addr)) {
+                net_ipv4_acd_cancel(iface, ifaddr);
+                net_mgmt_event_notify_with_info(NET_EVENT_IPV4_ADDR_DEL,
+                                                iface,
+                                                &ifaddr->address.in_addr,
+                                                sizeof(struct net_in_addr));
+            }
+        }
+
         ifaddr->is_used = true;
         ifaddr->is_added = true;
         ifaddr->address.family = NET_AF_INET;
@@ -5290,7 +5307,7 @@ out :
 }
 
 static void remove_ipv4_ifaddr(struct net_if* iface,
-                               struct net_if_addr const* ifaddr) {
+                               struct net_if_addr* ifaddr) {
     struct net_if_ipv4 const* ipv4;
 
     net_if_lock(iface);
@@ -5300,9 +5317,7 @@ static void remove_ipv4_ifaddr(struct net_if* iface,
         goto out;
     }
 
-    #if defined(CONFIG_NET_IPV4_ACD)
     net_ipv4_acd_cancel(iface, ifaddr);
-    #endif
 
     net_mgmt_event_notify_with_info(NET_EVENT_IPV4_ADDR_DEL,
                                     iface,

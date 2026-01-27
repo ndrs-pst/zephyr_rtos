@@ -29,12 +29,35 @@ Build System
   :kconfig:option:`CONFIG_STD_C99` or :kconfig:option:`CONFIG_STD_C11`.
 * The ``full_name`` property of ``board``/``boards`` entries corresponding to new boards in
   board.yml files is now required.
+* The CMake variable ``BOARD_QUALIFIERS`` is aligned with the corresponding
+  :kconfig:option:`CONFIG_BOARD_QUALIFIERS` so that it is no longer prefixed with a ``/``.
+  This means that any use of ``${BOARD}${BOARD_QUALIFIERS}`` must be updated to include ``/``, like
+  this: ``${BOARD}/${BOARD_QUALIFIERS}``.
 
 Kernel
 ******
 
 Boards
 ******
+
+* The OpenOCD runner now uses the standard ``--file`` and ``--file-type`` interface for specifying
+  flash files, aligning with other runners like JLink. The following changes apply:
+
+  * The ``--use-hex``, ``--use-elf``, and ``--use-bin`` flags are deprecated. Use ``--file-type``
+    instead:
+
+    * ``--use-elf`` → ``--file-type=elf``
+    * ``--use-bin`` → ``--file-type=bin``
+    * ``--use-hex`` → ``--file-type=hex`` (or omit, as hex is the default)
+
+  * The ``--file`` option is now supported to specify a custom file path, similar to the JLink
+    runner.
+
+  * Board cmake files using the deprecated flags will continue to work but will emit a deprecation
+    warning.
+
+  * The ``--file-type`` option can now be used without ``--file`` to select between build artifacts
+    (hex, elf, bin).
 
 * m5stack_fire: Removed unused pinctrl entries for UART2, and updated the UART1
   pin mapping from GPIO32/GPIO33 to GPIO16/GPIO17 to match the documented Grove
@@ -162,6 +185,10 @@ Controller Area Network (CAN)
 
 Counter
 =======
+
+* Drivers that implement ``get_value_64`` API will now need to select
+  :kconfig:option:`CONFIG_COUNTER_SUPPORTS_64BITS_TICKS` and applications will need
+  :kconfig:option:`CONFIG_COUNTER_64BITS_TICKS` to enable the API. (:github:`94189`).
 
 * The NXP LPTMR driver (:dtcompatible:`nxp,lptmr`) has been updated to fix incorrect
   prescaler and glitch filter configuration:
@@ -715,6 +742,13 @@ Networking
 * The protocol version passed to :c:func:`zsock_socket` when creating a secure socket is now
   enforced as the minimum TLS version to use for the TLS session.
 
+* Automatic selection of crypto Kconfigs has been removed from :kconfig:option:`NET_SOCKETS_SOCKOPT_TLS`
+  as they strongly depend on the final application's needs. As a consequence the desired TLS protocol
+  version and ciphersuite(s) must be explicitly selected.
+  Available :kconfig:option-regex:`CONFIG_MBEDTLS_CIPHERSUITE_TLS_.*` Kconfig helpers can be used
+  to automatically enable all the dependencies of a given ciphersuite, and more can be added as
+  needed following the same pattern.
+
 Modem
 *****
 
@@ -754,6 +788,7 @@ LoRaWAN
 
 Other subsystems
 ****************
+
 * The DAP subsystem initialization and configuration has changed. Please take a look at
   :zephyr:code-sample:`cmsis-dap` sample on how to initialize Zephyr DAP Link with USB backend.
 
@@ -816,6 +851,12 @@ Settings
 
 Modules
 *******
+
+HostAP
+======
+
+* Kconfig :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA` is now
+  enabled by default.
 
 OpenThread
 ==========

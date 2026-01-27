@@ -1870,30 +1870,34 @@ static DEVICE_API(sdhc, sdhc_stm32_api) = {
 		.pwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, pwr_gpios, {0}),                           \
 		.reset = RESET_DT_SPEC_INST_GET(n),                                                \
 		.use_dma = DT_INST_PROP(n, idma),                                                  \
-		.props = {.is_spi = false,                                                         \
-			  .f_max = DT_INST_PROP(n, max_bus_freq),                                  \
-			  .f_min = DT_INST_PROP(n, min_bus_freq),                                  \
-			  .max_current_330 = DT_INST_PROP(n, max_current_330),                     \
-			  .max_current_180 = DT_INST_PROP(n, max_current_180),                     \
-			  .power_delay = DT_INST_PROP_OR(n, power_delay_ms, 0),                    \
-			  .bus_4_bit_support =                                                     \
-			      (DT_INST_PROP(n, bus_width) == 4) ? true : false,                    \
-			  .hs200_support = true,                                                   \
-			  .hs400_support = false,                                                  \
-			  .is_spi = false,                                                         \
-			  .host_caps = {.vol_180_support = false,                                  \
-					.vol_300_support = false,                                  \
-					.vol_330_support = true,                                   \
-					.suspend_res_support = false,                              \
-					.sdma_support = true,                                      \
-					.high_spd_support =                                        \
-						(DT_INST_PROP(n, bus_width) == 4) ? true : false,  \
-					.adma_2_support = false,                                   \
-					.max_blk_len = 0,                                          \
-					.ddr50_support = true,                                     \
-					.sdr104_support = true,                                    \
-					.sdr50_support = true,                                     \
-					.bus_8_bit_support = false}}};                             \
+		.props = {                                                                         \
+			.f_max = DT_INST_PROP(n, max_bus_freq),                                    \
+			.f_min = DT_INST_PROP(n, min_bus_freq),                                    \
+			.max_current_330 = DT_INST_PROP(n, max_current_330),                       \
+			.max_current_180 = DT_INST_PROP(n, max_current_180),                       \
+			.power_delay = DT_INST_PROP_OR(n, power_delay_ms, 0),                      \
+			.bus_4_bit_support =                                                       \
+				(DT_INST_PROP(n, bus_width) == 4) ? true : false,                  \
+			.hs200_support = true,                                                     \
+			.hs400_support = false,                                                    \
+			.is_spi = false,                                                           \
+			.host_caps = {                                                             \
+				.vol_180_support = false,                                          \
+				.vol_300_support = false,                                          \
+				.vol_330_support = true,                                           \
+				.suspend_res_support = false,                                      \
+				.sdma_support = true,                                              \
+				.high_spd_support =                                                \
+					(DT_INST_PROP(n, bus_width) == 4) ? true : false,          \
+				.adma_2_support = false,                                           \
+				.max_blk_len = 0,                                                  \
+				.ddr50_support = true,                                             \
+				.sdr104_support = true,                                            \
+				.sdr50_support = true,                                             \
+				.bus_8_bit_support = false                                         \
+			}                                                                          \
+		}                                                                                  \
+	};                                                                                         \
                                                                                                    \
 	static struct sdhc_stm32_data sdhc_stm32_##n##_data = {                                    \
 		.sdmmc = (SDMMC_TypeDef *)DT_REG_ADDR(DT_DRV_INST(n)),                             \

@@ -866,33 +866,18 @@ static inline bool net_eth_is_addr_unspecified(struct net_eth_addr* addr) {
  * @return true if address is a multicast address, false if not
  */
 static inline bool net_eth_is_addr_multicast(struct net_eth_addr* addr) {
-    #if defined(CONFIG_NET_IPV6)
-    if ((addr->addr[0] == 0x33) &&
-        (addr->addr[1] == 0x33)) {
-        return (true);
-    }
-    #endif
-
-    #if defined(CONFIG_NET_IPV4)
-    if ((addr->addr[0] == 0x01) &&
-        (addr->addr[1] == 0x00) &&
-        (addr->addr[2] == 0x5E)) {
-        return (true);
-    }
-    #endif
-
-    return (false);
+    return (addr->addr[0] & 0x01);
 }
 
 /**
- * @brief Check if the Ethernet MAC address is a group address.
+ * @brief Check if the Ethernet MAC address is an unicast address.
  *
  * @param addr A valid pointer to a Ethernet MAC address.
  *
- * @return true if address is a group address, false if not
+ * @return true if address is an unicast address, false if not
  */
-static inline bool net_eth_is_addr_group(struct net_eth_addr* addr) {
-    return (addr->addr[0] & 0x01);
+static inline bool net_eth_is_addr_unicast(struct net_eth_addr* addr) {
+    return !net_eth_is_addr_unspecified(addr) && !net_eth_is_addr_multicast(addr);
 }
 
 /**
@@ -903,7 +888,7 @@ static inline bool net_eth_is_addr_group(struct net_eth_addr* addr) {
  * @return true if address is valid, false if not
  */
 static inline bool net_eth_is_addr_valid(struct net_eth_addr* addr) {
-    return !net_eth_is_addr_unspecified(addr) && !net_eth_is_addr_group(addr);
+    return !net_eth_is_addr_unspecified(addr) && !net_eth_is_addr_multicast(addr);
 }
 
 /**
@@ -914,7 +899,6 @@ static inline bool net_eth_is_addr_valid(struct net_eth_addr* addr) {
  * @return true if address is a LLDP multicast address, false if not
  */
 static inline bool net_eth_is_addr_lldp_multicast(struct net_eth_addr* addr) {
-    #if defined(CONFIG_NET_GPTP) || defined(CONFIG_NET_LLDP)
     if ((addr->addr[0] == 0x01) &&
         (addr->addr[1] == 0x80) &&
         (addr->addr[2] == 0xC2) &&
@@ -923,9 +907,6 @@ static inline bool net_eth_is_addr_lldp_multicast(struct net_eth_addr* addr) {
         (addr->addr[5] == 0x0E)) {
         return (true);
     }
-    #else
-    ARG_UNUSED(addr);
-    #endif
 
     return (false);
 }
@@ -938,7 +919,6 @@ static inline bool net_eth_is_addr_lldp_multicast(struct net_eth_addr* addr) {
  * @return true if address is a PTP multicast address, false if not
  */
 static inline bool net_eth_is_addr_ptp_multicast(struct net_eth_addr* addr) {
-    #if defined(CONFIG_NET_GPTP)
     if ((addr->addr[0] == 0x01) &&
         (addr->addr[1] == 0x1B) &&
         (addr->addr[2] == 0x19) &&
@@ -947,9 +927,6 @@ static inline bool net_eth_is_addr_ptp_multicast(struct net_eth_addr* addr) {
         (addr->addr[5] == 0x00)) {
         return (true);
     }
-    #else
-    ARG_UNUSED(addr);
-    #endif
 
     return (false);
 }

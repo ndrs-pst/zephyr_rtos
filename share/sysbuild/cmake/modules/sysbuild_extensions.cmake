@@ -146,9 +146,9 @@ function(sysbuild_cache)
     endif()
   endforeach()
   if(DEFINED BOARD_REVISION)
-    list(APPEND sysbuild_cache_strings "BOARD:STRING=${BOARD}@${BOARD_REVISION}${BOARD_QUALIFIERS}\n")
+    list(APPEND sysbuild_cache_strings "BOARD:STRING=${BOARD}@${BOARD_REVISION}/${BOARD_QUALIFIERS}\n")
   else()
-    list(APPEND sysbuild_cache_strings "BOARD:STRING=${BOARD}${BOARD_QUALIFIERS}\n")
+    list(APPEND sysbuild_cache_strings "BOARD:STRING=${BOARD}/${BOARD_QUALIFIERS}\n")
   endif()
   list(APPEND sysbuild_cache_strings "SYSBUILD_NAME:STRING=${SB_CACHE_APPLICATION}\n")
 
@@ -341,24 +341,6 @@ function(ExternalZephyrProject_Add)
            "-D${shared_var}:${var_type}=$CACHE{${shared_var}}"
       )
     endif()
-  endforeach()
-
-  foreach(kconfig_target
-      menuconfig
-      hardenconfig
-      guiconfig
-      $CACHE{EXTRA_KCONFIG_TARGETS}
-      )
-
-    if(NOT ZBUILD_APP_TYPE STREQUAL "MAIN")
-      set(image_prefix "${ZBUILD_APPLICATION}_")
-    endif()
-
-    add_custom_target(${image_prefix}${kconfig_target}
-      ${CMAKE_MAKE_PROGRAM} ${kconfig_target}
-      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/${ZBUILD_APPLICATION}
-      USES_TERMINAL
-      )
   endforeach()
 
   set(list_separator ",")
@@ -760,6 +742,25 @@ function(ExternalZephyrProject_Cmake)
                     BYPRODUCTS ${${ZCMAKE_APPLICATION}_byproducts}
                     DEPENDS ${ZCMAKE_APPLICATION}
   )
+
+  get_target_property(${ZCMAKE_APPLICATION}_shared_targets
+    ${ZCMAKE_APPLICATION}_cache
+    ZEPHYR_SHARED_TARGETS
+  )
+
+  get_target_property(${ZCMAKE_APPLICATION}_MAIN_APP ${ZCMAKE_APPLICATION} MAIN_APP)
+  foreach(shared_target ${${ZCMAKE_APPLICATION}_shared_targets})
+    if(NOT ${ZCMAKE_APPLICATION}_MAIN_APP)
+      set(image_prefix "${ZCMAKE_APPLICATION}_")
+    endif()
+
+    add_custom_target(${image_prefix}${shared_target}
+      ${CMAKE_MAKE_PROGRAM} ${shared_target}
+      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/${ZCMAKE_APPLICATION}
+      USES_TERMINAL
+    )
+  endforeach()
+
 endfunction()
 
 # Usage:
