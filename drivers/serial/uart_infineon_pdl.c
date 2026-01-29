@@ -308,7 +308,7 @@ cy_rslt_t ifx_cat1_uart_set_baud(const struct device* dev, uint32_t baudrate) {
     peri_frequency = Cy_SysClk_ClkHfGetFrequency();
     #endif
 
-    for (uint8_t i = IFX_UART_OVERSAMPLE_MIN; i < IFX_UART_OVERSAMPLE_MAX + 1; i++) {
+    for (size_t i = IFX_UART_OVERSAMPLE_MIN; i < (IFX_UART_OVERSAMPLE_MAX + 1); i++) {
         uint32_t tmp_divider = ((peri_frequency + ((baudrate * i) / 2))) / (baudrate * i);
 
         uint32_t actual_baud = (peri_frequency / (tmp_divider * i));
@@ -465,7 +465,7 @@ static int ifx_cat1_uart_config_get(const struct device* dev, struct uart_config
 /* Fill FIFO with data */
 static int ifx_cat1_uart_fifo_fill(const struct device* dev, uint8_t const* tx_data, int size) {
     const struct ifx_cat1_uart_config* const config = dev->config;
-    size_t tx_length;
+    uint32_t tx_length;
 
     tx_length = Cy_SCB_UART_PutArray(config->reg_addr, (void*)tx_data, size);
     return (int)tx_length;
@@ -474,7 +474,7 @@ static int ifx_cat1_uart_fifo_fill(const struct device* dev, uint8_t const* tx_d
 /* Read data from FIFO */
 static int ifx_cat1_uart_fifo_read(const struct device* dev, uint8_t* rx_data, int const size) {
     const struct ifx_cat1_uart_config* const config = dev->config;
-    size_t rx_length;
+    uint32_t rx_length;
 
     rx_length = Cy_SCB_UART_GetArray(config->reg_addr, rx_data, size);
 
@@ -622,7 +622,7 @@ static int ifx_cat1_uart_irq_update(const struct device* dev) {
     uint32_t rx_intr_pending = ((ifx_cat1_uart_irq_is_pending(dev) & CY_SCB_RX_INTR));
     uint32_t num_in_rx_fifo  = Cy_SCB_UART_GetNumInRxFifo(config->reg_addr);
 
-    if ((rx_intr_pending != 0u) && (num_in_rx_fifo == 0u)) {
+    if ((rx_intr_pending != 0U) && (num_in_rx_fifo == 0U)) {
         return 0;
     }
 
@@ -718,7 +718,7 @@ static int ifx_cat1_uart_async_callback_set(const struct device* dev, uart_callb
                                             void* user_data) {
     struct ifx_cat1_uart_data* const data = dev->data;
 
-    data->async.cb        = callback;
+    data->async.cb = callback;
     data->async.user_data = user_data;
 
     return 0;
@@ -761,39 +761,38 @@ static int ifx_cat1_uart_async_tx(const struct device* dev, uint8_t const* tx_da
                                   size_t tx_data_size, int32_t timeout) {
     struct ifx_cat1_uart_data* const data = dev->data;
     struct ifx_cat1_dma_stream_tx* dma_tx = &data->async.dma_tx;
-    int err;
+    int ret;
 
     if (dma_tx->dma_dev == NULL) {
-        return -ENODEV;
+        ret = -ENODEV;
+    }
+    else if ((tx_data == NULL) || (tx_data_size == 0)) {
+        ret = -EINVAL;
+    }
+    else {
+        unsigned int key = irq_lock();
+
+        /* Store information about data buffer need to send */
+        dma_tx->buf                   = tx_data;
+        dma_tx->buf_len               = tx_data_size;
+        dma_tx->blk_cfg.block_size    = 0;
+        dma_tx->dma_transmitted_bytes = 0;
+
+        /* Configure dma to transfer */
+        ret = ifx_cat1_uart_async_dma_config_buffer(dev, true);
+        if ((ret == 0) &&
+            ((timeout != SYS_FOREVER_US) && (timeout != 0))) {
+            /* Configure timeout */
+            k_work_reschedule(&dma_tx->timeout_work, K_USEC(timeout));
+        }
+        else {
+            LOG_ERR("Error Tx DMA configure (%d)", ret);
+        }
+
+        irq_unlock(key);
     }
 
-    if (tx_data == NULL || tx_data_size == 0) {
-        return -EINVAL;
-    }
-
-    unsigned int key = irq_lock();
-
-    /* Store information about data buffer need to send */
-    dma_tx->buf                   = tx_data;
-    dma_tx->buf_len               = tx_data_size;
-    dma_tx->blk_cfg.block_size    = 0;
-    dma_tx->dma_transmitted_bytes = 0;
-
-    /* Configure dma to transfer */
-    err = ifx_cat1_uart_async_dma_config_buffer(dev, true);
-    if (err) {
-        LOG_ERR("Error Tx DMA configure (%d)", err);
-        goto exit;
-    }
-
-    /* Configure timeout */
-    if ((timeout != SYS_FOREVER_US) && (timeout != 0)) {
-        k_work_reschedule(&dma_tx->timeout_work, K_USEC(timeout));
-    }
-
-exit:
-    irq_unlock(key);
-    return err;
+    return ret;
 }
 
 static int ifx_cat1_uart_async_tx_abort(const struct device* dev) {
@@ -801,35 +800,33 @@ static int ifx_cat1_uart_async_tx_abort(const struct device* dev) {
     struct ifx_cat1_dma_stream_tx* dma_tx = &data->async.dma_tx;
     struct uart_event evt = {0};
     struct dma_status stat;
-    int err = 0;
+    int ret;
 
     unsigned int key = irq_lock();
 
     k_work_cancel_delayable(&dma_tx->timeout_work);
 
-    err = dma_stop(dma_tx->dma_dev, dma_tx->dma_channel);
-    if (err) {
-        LOG_ERR("Error stopping Tx DMA (%d)", err);
-        goto unlock;
+    ret = dma_stop(dma_tx->dma_dev, dma_tx->dma_channel);
+    if (ret == 0) {
+        ret = dma_get_status(dma_tx->dma_dev, dma_tx->dma_channel, &stat);
     }
 
-    err = dma_get_status(dma_tx->dma_dev, dma_tx->dma_channel, &stat);
-    if (err) {
-        LOG_ERR("Error stopping Tx DMA (%d)", err);
-        goto unlock;
+    if (ret == 0) {
+        evt.type        = UART_TX_ABORTED;
+        evt.data.tx.buf = dma_tx->buf;
+        evt.data.tx.len = 0;
+
+        if (data->async.cb) {
+            data->async.cb(dev, &evt, data->async.user_data);
+        }
+    }
+    else {
+        LOG_ERR("Error stopping Tx DMA (%d)", ret);
     }
 
-    evt.type        = UART_TX_ABORTED;
-    evt.data.tx.buf = dma_tx->buf;
-    evt.data.tx.len = 0;
-
-    if (data->async.cb) {
-        data->async.cb(dev, &evt, data->async.user_data);
-    }
-
-unlock:
     irq_unlock(key);
-    return err;
+
+    return ret;
 }
 
 /* This callback is called when the dma's tx is done */
@@ -888,7 +885,7 @@ static inline void async_evt_rx_rdy(struct ifx_cat1_uart_data* data) {
 
     dma_rx->offset = dma_rx->counter;
 
-    if (event.data.rx.len > 0 && async->cb) {
+    if ((event.data.rx.len > 0) && async->cb) {
         async->cb(async->uart_dev, &event, async->user_data);
     }
 }
@@ -961,21 +958,19 @@ static inline void async_evt_rx_stopped(struct ifx_cat1_uart_data* data,
     struct ifx_cat1_dma_stream_rx* dma_rx = &async->dma_rx;
     struct dma_status stat;
 
-    if ((dma_rx->buf_len == 0) || (async->cb == NULL)) {
-        return;
+    if ((dma_rx->buf_len != 0) && (async->cb != NULL)) {
+        rx->buf = dma_rx->buf;
+        if (dma_get_status(dma_rx->dma_dev,
+                           dma_rx->dma_channel,
+                           &stat) == 0) {
+            dma_rx->counter = dma_rx->buf_len - stat.pending_length;
+        }
+
+        rx->len    = dma_rx->counter - dma_rx->offset;
+        rx->offset = dma_rx->counter;
+
+        async->cb(async->uart_dev, &event, async->user_data);
     }
-
-    rx->buf = dma_rx->buf;
-    if (dma_get_status(dma_rx->dma_dev,
-                       dma_rx->dma_channel,
-                       &stat) == 0) {
-        dma_rx->counter = dma_rx->buf_len - stat.pending_length;
-    }
-
-    rx->len    = dma_rx->counter - dma_rx->offset;
-    rx->offset = dma_rx->counter;
-
-    async->cb(async->uart_dev, &event, async->user_data);
 }
 
 static int ifx_cat1_uart_async_rx_enable(const struct device* dev, uint8_t* rx_data,
@@ -983,54 +978,46 @@ static int ifx_cat1_uart_async_rx_enable(const struct device* dev, uint8_t* rx_d
     struct ifx_cat1_uart_data* const data = dev->data;
     struct ifx_cat1_dma_stream_rx* dma_rx = &data->async.dma_rx;
     struct dma_status dma_status = {0};
-    int err = 0;
+    int ret;
 
-    if (dma_rx->dma_dev == NULL) {
-        return -ENODEV;
+    if ((dma_rx->dma_dev == NULL) || (dma_rx->buf_len != 0)) {
+        ret = -ENODEV;
+    }
+    else {
+        ret = dma_get_status(dma_rx->dma_dev, dma_rx->dma_channel, &dma_status);
+        if ((ret == 0) && (dma_status.busy)) {
+            ret = -EBUSY;
+        }
     }
 
-    err = dma_get_status(dma_rx->dma_dev, dma_rx->dma_channel,
-                         &dma_status);
-    if (err) {
-        return err;
+    if (ret == 0) {
+        unsigned int key = irq_lock();
+
+        /* Store information about data buffer need to send */
+        dma_rx->buf                   = rx_data;
+        dma_rx->buf_len               = rx_data_size;
+        dma_rx->blk_cfg.block_size    = 0;
+        dma_rx->dma_transmitted_bytes = 0;
+        dma_rx->timeout               = timeout;
+
+        /* Request buffers before enabling rx */
+        async_evt_rx_buf_request(data);
+
+        /* Configure dma to transfer */
+        ret = ifx_cat1_uart_async_dma_config_buffer(dev, false);
+        if ((ret == 0) &&
+            ((timeout != SYS_FOREVER_US) && (timeout != 0))) {
+            /* Configure timeout */
+            k_work_reschedule(&dma_rx->timeout_work, K_USEC(timeout));
+        }
+        else {
+            LOG_ERR("Error Rx DMA configure (%d)", ret);
+        }
+
+        irq_unlock(key);
     }
 
-    if (dma_status.busy) {
-        return -EBUSY;
-    }
-
-    unsigned int key = irq_lock();
-
-    if (dma_rx->buf_len != 0) {
-        err = -ENODEV;
-        goto unlock;
-    }
-
-    /* Store information about data buffer need to send */
-    dma_rx->buf                   = rx_data;
-    dma_rx->buf_len               = rx_data_size;
-    dma_rx->blk_cfg.block_size    = 0;
-    dma_rx->dma_transmitted_bytes = 0;
-    dma_rx->timeout               = timeout;
-
-    /* Request buffers before enabling rx */
-    async_evt_rx_buf_request(data);
-
-    /* Configure dma to transfer */
-    err = ifx_cat1_uart_async_dma_config_buffer(dev, false);
-    if (err) {
-        LOG_ERR("Error Rx DMA configure (%d)", err);
-        goto unlock;
-    }
-
-    /* Configure timeout */
-    if ((timeout != SYS_FOREVER_US) && (timeout != 0)) {
-        k_work_reschedule(&dma_rx->timeout_work, K_USEC(timeout));
-    }
-
-unlock:
-    irq_unlock(key);
-    return err;
+    return ret;
 }
 
 /* This callback is called when the dma's rx is ready */
@@ -1056,27 +1043,27 @@ static void dma_callback_rx_rdy(const struct device* dma_dev, void* arg, uint32_
         dma_rx->blk_cfg.block_size    = 0;
         dma_rx->dma_transmitted_bytes = 0;
 
-        if (!async->rx_next_buf) {
+        if (async->rx_next_buf == NULL) {
             dma_stop(dma_rx->dma_dev, dma_rx->dma_channel);
             async_evt_rx_disabled(data);
-            goto unlock;
         }
+        else {
+            dma_rx->buf            = async->rx_next_buf;
+            dma_rx->buf_len        = async->rx_next_buf_len;
+            dma_rx->offset         = 0;
+            dma_rx->counter        = 0;
+            async->rx_next_buf     = NULL;
+            async->rx_next_buf_len = 0;
 
-        dma_rx->buf      = async->rx_next_buf;
-        dma_rx->buf_len  = async->rx_next_buf_len;
-        dma_rx->offset   = 0;
-        dma_rx->counter  = 0;
-        async->rx_next_buf     = NULL;
-        async->rx_next_buf_len = 0;
+            ifx_cat1_uart_async_dma_config_buffer(uart_dev, false);
 
-        ifx_cat1_uart_async_dma_config_buffer(uart_dev, false);
+            async_evt_rx_buf_request(data);
 
-        async_evt_rx_buf_request(data);
-
-        if ((dma_rx->timeout != SYS_FOREVER_US) &&
-            (dma_rx->timeout != 0)) {
-            k_work_reschedule(&dma_rx->timeout_work,
-                              K_USEC(dma_rx->timeout));
+            if ((dma_rx->timeout != SYS_FOREVER_US) &&
+                (dma_rx->timeout != 0)) {
+                k_work_reschedule(&dma_rx->timeout_work,
+                                K_USEC(dma_rx->timeout));
+            }
         }
     }
     else {
@@ -1087,10 +1074,8 @@ static void dma_callback_rx_rdy(const struct device* dma_dev, void* arg, uint32_
         async_evt_rx_release_buffer(data, CURRENT_BUFFER);
         async_evt_rx_release_buffer(data, NEXT_BUFFER);
         async_evt_rx_disabled(data);
-        goto unlock;
     }
 
-unlock:
     irq_unlock(key);
 }
 
@@ -1105,25 +1090,22 @@ static void ifx_cat1_uart_async_rx_timeout(struct k_work* work) {
 
     unsigned int key = irq_lock();
 
-    if (dma_rx->buf_len == 0) {
-        irq_unlock(key);
-        return;
-    }
+    if (dma_rx->buf_len > 0) {
+        if (dma_get_status(dma_rx->dma_dev, dma_rx->dma_channel, &stat) == 0) {
+            size_t rx_rcv_len = dma_rx->buf_len - stat.pending_length;
 
-    if (dma_get_status(dma_rx->dma_dev, dma_rx->dma_channel, &stat) == 0) {
-        size_t rx_rcv_len = dma_rx->buf_len - stat.pending_length;
-
-        if ((rx_rcv_len > 0) && (rx_rcv_len == dma_rx->counter)) {
-            dma_rx->counter = rx_rcv_len;
-            async_evt_rx_rdy(data);
+            if ((rx_rcv_len > 0) && (rx_rcv_len == dma_rx->counter)) {
+                dma_rx->counter = rx_rcv_len;
+                async_evt_rx_rdy(data);
+            }
+            else {
+                dma_rx->counter = rx_rcv_len;
+            }
         }
-        else {
-            dma_rx->counter = rx_rcv_len;
-        }
-    }
 
-    if ((dma_rx->timeout != SYS_FOREVER_US) && (dma_rx->timeout != 0)) {
-        k_work_reschedule(&dma_rx->timeout_work, K_USEC(dma_rx->timeout));
+        if ((dma_rx->timeout != SYS_FOREVER_US) && (dma_rx->timeout != 0)) {
+            k_work_reschedule(&dma_rx->timeout_work, K_USEC(dma_rx->timeout));
+        }
     }
 
     irq_unlock(key);
@@ -1133,63 +1115,62 @@ static int ifx_cat1_uart_async_rx_disable(const struct device* dev) {
     struct ifx_cat1_uart_data* data = dev->data;
     struct ifx_cat1_dma_stream_rx* dma_rx = &data->async.dma_rx;
     struct dma_status stat = {0};
-    unsigned int key;
+    int ret;
 
-    key = irq_lock();
+    unsigned int key = irq_lock();
 
     k_work_cancel_delayable(&dma_rx->timeout_work);
 
     if (dma_rx->buf_len == 0) {
         __ASSERT_NO_MSG(dma_rx->buf == NULL);
-        irq_unlock(key);
-        return -EINVAL;
+        ret = -EINVAL;
     }
+    else {
+        dma_stop(dma_rx->dma_dev, dma_rx->dma_channel);
 
-    dma_stop(dma_rx->dma_dev, dma_rx->dma_channel);
+        if (dma_get_status(dma_rx->dma_dev,
+                           dma_rx->dma_channel,
+                           &stat) == 0) {
+            size_t rx_rcv_len = dma_rx->buf_len - stat.pending_length;
 
-    if (dma_get_status(dma_rx->dma_dev,
-                       dma_rx->dma_channel,
-                       &stat) == 0) {
-        size_t rx_rcv_len = dma_rx->buf_len - stat.pending_length;
-
-        if (rx_rcv_len > dma_rx->offset) {
-            dma_rx->counter = rx_rcv_len;
-            async_evt_rx_rdy(data);
+            if (rx_rcv_len > dma_rx->offset) {
+                dma_rx->counter = rx_rcv_len;
+                async_evt_rx_rdy(data);
+            }
         }
-    }
 
-    async_evt_rx_release_buffer(data, CURRENT_BUFFER);
-    async_evt_rx_release_buffer(data, NEXT_BUFFER);
-    async_evt_rx_disabled(data);
+        async_evt_rx_release_buffer(data, CURRENT_BUFFER);
+        async_evt_rx_release_buffer(data, NEXT_BUFFER);
+        async_evt_rx_disabled(data);
+        ret = 0;
+    }
 
     irq_unlock(key);
 
-    return 0;
+    return ret;
 }
 
 static int ifx_cat1_uart_async_rx_buf_rsp(const struct device* dev, uint8_t* buf, size_t len) {
     struct ifx_cat1_uart_data* data = dev->data;
     struct ifx_cat1_uart_async* async = &data->async;
-    unsigned int key;
-    int ret = 0;
+    int ret;
 
-    key = irq_lock();
+    unsigned int key = irq_lock();
 
     if (async->dma_rx.buf_len == 0U) {
         ret = -EACCES;
-        goto unlock;
     }
-
-    if (async->rx_next_buf_len != 0U) {
+    else if (async->rx_next_buf_len != 0U) {
         ret = -EBUSY;
-        goto unlock;
+    }
+    else {
+        async->rx_next_buf     = buf;
+        async->rx_next_buf_len = len;
+        ret = 0;
     }
 
-    async->rx_next_buf     = buf;
-    async->rx_next_buf_len = len;
-
-unlock:
     irq_unlock(key);
+
     return ret;
 }
 
