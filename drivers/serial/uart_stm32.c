@@ -1946,32 +1946,32 @@ static void uart_stm32_async_tx_timeout(struct k_work* work) {
 static int uart_stm32_async_rx_buf_rsp(const struct device* dev, uint8_t* buf,
                                        size_t len) {
     struct uart_stm32_data* data = dev->data;
-    unsigned int key;
-    int err = 0;
+    int ret;
 
     LOG_DBG("replace buffer (%d)", len);
 
-    key = irq_lock();
+    if (!stm32_buf_in_nocache((uintptr_t)buf, len)) {
+        LOG_ERR("Rx buffer should be placed in a nocache memory region");
+        return (-EFAULT);
+    }
+
+    unsigned int key = irq_lock();
 
     if (data->rx_next_buffer != NULL) {
-        err = -EBUSY;
+        ret = -EBUSY;
     }
     else if (!data->dma_rx.enabled) {
-        err = -EACCES;
+        ret = -EACCES;
     }
     else {
-        if (!stm32_buf_in_nocache((uintptr_t)buf, len)) {
-            LOG_ERR("Rx buffer should be placed in a nocache memory region");
-            return (-EFAULT);
-        }
-
         data->rx_next_buffer = buf;
         data->rx_next_buffer_len = len;
+        ret = 0;
     }
 
     irq_unlock(key);
 
-    return (err);
+    return (ret);
 }
 
 static int uart_stm32_async_init(const struct device* dev) {
