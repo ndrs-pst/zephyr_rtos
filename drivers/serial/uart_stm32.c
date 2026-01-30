@@ -144,8 +144,7 @@ static void uart_stm32_pm_enable_wakeup_line(uint32_t wakeup_line) {
 }
 #endif /* CONFIG_PM && IS_UART_WAKEUP_FROMSTOP_INSTANCE */
 
-static void uart_stm32_pm_policy_state_lock_get(const struct device *dev)
-{
+static void uart_stm32_pm_policy_state_lock_get(const struct device* dev) {
     struct uart_stm32_data* data = dev->data;
 
     if (!data->pm_policy_state_on) {
@@ -1247,29 +1246,58 @@ static void uart_stm32_dma_rx_flush(const struct device *dev, int status) {
     struct dma_status stat;
     struct uart_stm32_data* data = dev->data;
     struct uart_dma_stream* dma_rx = &data->dma_rx;
-
     size_t rx_rcv_len = 0;
 
     switch (status) {
         case DMA_STATUS_COMPLETE :
             /* fully complete */
+
+            /* If offset is already at the end, just reset for next lap and return. */
+            if (dma_rx->offset >= dma_rx->buffer_length) {
+                dma_rx->offset = 0;
+                return;
+            }
+
             dma_rx->counter = dma_rx->buffer_length;
             break;
 
         case DMA_STATUS_BLOCK :
             /* half complete */
-            dma_rx->counter = dma_rx->buffer_length / 2;
+            uint32_t half_pos = dma_rx->buffer_length / 2;
+
+            /* Already handled by timeout path has already dealt with this data.
+             * Return immediately.
+             */
+            if (dma_rx->offset >= half_pos) {
+                return;
+            }
+
+            dma_rx->counter = half_pos;
             break;
 
         default : /* likely STM32_ASYNC_STATUS_TIMEOUT */
             if (dma_get_status(dma_rx->dma_dev, dma_rx->dma_channel, &stat) == 0) {
                 rx_rcv_len = dma_rx->buffer_length - stat.pending_length;
+
+                /* If DMA wrapped: emit tail [offset..end), then head [0..counter). */
+                if (rx_rcv_len < dma_rx->offset) {
+                    /* tail end and emit*/
+                    dma_rx->counter = dma_rx->buffer_length;
+                    async_evt_rx_rdy(data);
+
+                    /* prepare head */
+                    dma_rx->offset = 0;
+                }
+
                 dma_rx->counter = rx_rcv_len;
             }
             break;
     }
 
-    async_evt_rx_rdy(data);
+    /* Emit contiguous segment if any (BLOCK/COMPLETE or non-wrapping TIMEOUT).*/
+    if (dma_rx->counter > dma_rx->offset) {
+        async_evt_rx_rdy(data);
+    }
 
     switch (status) { /* update offset*/
         case DMA_STATUS_COMPLETE :
@@ -1283,7 +1311,7 @@ static void uart_stm32_dma_rx_flush(const struct device *dev, int status) {
             break;
 
         default : /* likely STM32_ASYNC_STATUS_TIMEOUT */
-            dma_rx->offset += rx_rcv_len - dma_rx->offset;
+            dma_rx->offset = rx_rcv_len;
             break;
     }
 }

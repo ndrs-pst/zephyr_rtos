@@ -1578,6 +1578,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - finikorg
+  collaborators:
+    - yvesll
   files:
     - drivers/edac/
     - dts/bindings/edac/
@@ -2778,6 +2780,7 @@ Filesystems:
   collaborators:
     - Laczen
     - nashif
+    - rghaddab
   files:
     - include/zephyr/fs/
     - samples/subsys/fs/
@@ -5815,10 +5818,9 @@ West:
   maintainers:
     - anangl
     - nika-nordic
-    - masz-nordic
+    - nordic-krch
     - carlescufi
   collaborators:
-    - nordic-krch
     - kl-cruz
     - magp-nordic
     - jaz1-nordic
@@ -6249,7 +6251,6 @@ West:
   status: maintained
   maintainers:
     - eriktamlin
-    - aronlander-pe
   files:
     - modules/percepio/
   labels:
@@ -6528,7 +6529,7 @@ nRF Platforms:
   status: maintained
   maintainers:
     - anangl
-    - masz-nordic
+    - nordic-krch
     - bjarki-andreasen
   collaborators:
     - jaz1-nordic
