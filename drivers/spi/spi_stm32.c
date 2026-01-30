@@ -109,6 +109,10 @@ static const uint32_t table_datawidth[] = {
 
 #endif /* ANY FULL_32 || FULL_16 */
 
+/* #CUSTOM@NDRS */
+#define DT_HAS_ANY_STPM3X_SPI_ISR \
+    DT_ANY_INST_HAS_PROP_STATUS_OKAY(stpm3x_isr)
+
 static bool spi_stm32_is_data_width_supported(const struct device* dev, uint32_t width) {
     const struct spi_stm32_config* cfg = dev->config;
 
@@ -397,8 +401,7 @@ static void spi_dma_enable_requests(SPI_TypeDef* spi) {
     uint32_t transfer_dir = LL_SPI_GetTransferDirection(spi);
 
     if (transfer_dir == LL_SPI_FULL_DUPLEX) {
-        LL_SPI_EnableDMAReq_RX(spi);
-        LL_SPI_EnableDMAReq_TX(spi);
+        LL_SPI_EnableDMAReq_TX_RX(spi);
     }
     else if (transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
         LL_SPI_EnableDMAReq_TX(spi);
@@ -936,6 +939,7 @@ static void /**/spi_stm32_isr(const struct device* dev) {
 #define SPI_EVENT_ALL         (SPI_EVENT_ERROR | SPI_EVENT_COMPLETE | SPI_EVENT_RX_OVERFLOW)
 #define SPI_EVENT_INTERNAL_TRANSFER_COMPLETE (1UL << 30U)   /* Internal flag to report that an event occurred */
 
+#if DT_HAS_ANY_STPM3X_SPI_ISR
 /**
  * @brief Receive data in 32 Bit mode
  * @param[in] spi  SPI peripheral
@@ -1162,6 +1166,7 @@ __maybe_unused static void /**/spi_stpm3x_isr(const struct device* dev) {
         ctx->callback(dev, (event & SPI_EVENT_ALL), ctx->callback_data);
     }
 }
+#endif /* DT_HAS_ANY_STPM3X_SPI_ISR */
 #endif /* CONFIG_SPI_STM32_INTERRUPT */
 
 /**
@@ -1930,8 +1935,7 @@ static int spi_stm32_ll_transceive_dma(const struct device* dev,
 
         #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
         /* toggle the DMA transfer request */
-        LL_SPI_DisableDMAReq_TX(spi);
-        LL_SPI_DisableDMAReq_RX(spi);
+        LL_SPI_DisableDMAReq_TX_RX(spi);
         #endif /* !st_stm32h7_spi */
 
         if (transfer_dir == LL_SPI_FULL_DUPLEX) {
@@ -1971,8 +1975,7 @@ static int spi_stm32_ll_transceive_dma(const struct device* dev,
     /* disable spi instance after completion */
     LL_SPI_Disable(spi);
     /* The Config. Reg. on some mcus is write un-protected when SPI is disabled */
-    LL_SPI_DisableDMAReq_TX(spi);
-    LL_SPI_DisableDMAReq_RX(spi);
+    LL_SPI_DisableDMAReq_TX_RX(spi);
 
     err = dma_stop(data->dma_rx.dma_dev, data->dma_rx.channel);
     if (err != 0) {
