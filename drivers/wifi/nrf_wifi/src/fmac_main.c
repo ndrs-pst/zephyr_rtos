@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,9 @@
 #include <util.h>
 #include "common/fmac_util.h"
 #include <fmac_main.h>
+#ifndef CONFIG_NRF71_ON_IPC
+#include <zephyr/drivers/wifi/nrf_wifi/bus/rpu_hw_if.h>
+#endif /* !CONFIG_NRF71_ON_IPC */
 
 #ifndef CONFIG_NRF70_RADIO_TEST
 #ifdef CONFIG_NRF70_STA_MODE
@@ -166,9 +169,7 @@ void nrf_wifi_event_proc_scan_done_zep(void *vif_ctx,
 				       unsigned int event_len)
 {
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
-	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
-
-	vif_ctx_zep = vif_ctx;
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = vif_ctx;
 
 	if (!vif_ctx_zep) {
 		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
@@ -273,8 +274,6 @@ static void nrf_wifi_process_rssi_from_rx(void *vif_ctx,
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
 
-	vif_ctx_zep = vif_ctx;
-
 	if (!vif_ctx_zep) {
 		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
 		return;
@@ -300,14 +299,13 @@ void nrf_wifi_event_get_reg_zep(void *vif_ctx,
 				struct nrf_wifi_reg *get_reg_event,
 				unsigned int event_len)
 {
-	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = vif_ctx;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
 
 	LOG_DBG("%s: alpha2 = %c%c", __func__,
 		   get_reg_event->nrf_wifi_alpha2[0],
 		   get_reg_event->nrf_wifi_alpha2[1]);
-	vif_ctx_zep = vif_ctx;
 
 	if (!vif_ctx_zep) {
 		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
@@ -428,11 +426,9 @@ void nrf_wifi_event_proc_cookie_rsp(void *vif_ctx,
 				    struct nrf_wifi_umac_event_cookie_rsp *cookie_rsp_event,
 				    unsigned int event_len)
 {
-	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = vif_ctx;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
-
-	vif_ctx_zep = vif_ctx;
 
 	if (!vif_ctx_zep) {
 		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
@@ -468,13 +464,11 @@ void reg_change_callbk_fn(void *vif_ctx,
 			  struct nrf_wifi_event_regulatory_change *reg_change_event,
 			  unsigned int event_len)
 {
-	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = vif_ctx;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
 
 	LOG_DBG("%s: Regulatory change event received", __func__);
-
-	vif_ctx_zep = vif_ctx;
 
 	if (!vif_ctx_zep) {
 		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
@@ -794,6 +788,23 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 		/* FMAC is already initialized for VIF-0 */
 		return 0;
 	}
+
+#ifndef CONFIG_NRF71_ON_IPC
+	int ret;
+
+	/* Configure all nRF70 GPIO pins to OUTPUT_INACTIVE state early
+	 * during driver initialization to prevent floating pins from
+	 * accidentally powering the module or affecting RF switch. This is
+	 * done before any other RPU initialization to ensure pins are in a
+	 * known state.
+	 */
+	ret = nrf_wifi_gpio_config_early();
+	if (ret) {
+		LOG_ERR("%s: nrf_wifi_gpio_config_early failed with error %d",
+			__func__, ret);
+		return ret;
+	}
+#endif /* !CONFIG_NRF71_ON_IPC */
 
 #ifdef CONFIG_NRF70_DATA_TX
 	data_config.aggregation = aggregation;

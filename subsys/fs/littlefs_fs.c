@@ -1140,47 +1140,48 @@ struct fs_mount_t FS_FSTAB_ENTRY(DT_DRV_INST(inst)) = { \
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_FS)
 
-#define REFERENCE_MOUNT(inst) (&FS_FSTAB_ENTRY(DT_DRV_INST(inst))),
+#ifdef CONFIG_FS_LITTLEFS_FSTAB_AUTOMOUNT
+#define REFERENCE_MOUNT(inst)                                                                      \
+	IF_ENABLED(DT_INST_PROP(inst, automount), ((&FS_FSTAB_ENTRY(DT_DRV_INST(inst))),))
 
-static void mount_init(struct fs_mount_t *mp)
+static void automount_if_enabled(struct fs_mount_t *mountp)
 {
+	int ret;
 
-	LOG_INF("littlefs partition at %s", mp->mnt_point);
-	if ((mp->flags & FS_MOUNT_FLAG_AUTOMOUNT) != 0) {
-		int rc = fs_mount(mp);
+	/* We already filter it during build. */
+	__ASSERT_NO_MSG((mountp->flags & FS_MOUNT_FLAG_AUTOMOUNT) != 0);
 
-		if (rc < 0) {
-			LOG_ERR("Automount %s failed: %d",
-				mp->mnt_point, rc);
+	ret = fs_mount(mountp);
+	if (ret < 0) {
+		LOG_ERR("Error mounting filesystem: at %s: %d", mountp->mnt_point, ret);
 		} else {
-			LOG_INF("Automount %s succeeded",
-				mp->mnt_point);
+		LOG_DBG("LITTLEFS Filesystem \"%s\" initialized", mountp->mnt_point);
 		}
 	}
-}
+#endif /* CONFIG_FS_LITTLEFS_FSTAB_AUTOMOUNT */
 
 #if (__GTEST == 0U)
 static
 #endif
 int littlefs_init(void)
 {
-	int rc;
-	#if (__GTEST == 0U)
-	static struct fs_mount_t *partitions[] = {
-		DT_INST_FOREACH_STATUS_OKAY(REFERENCE_MOUNT)
-	};
-	#endif
+	int rc = fs_register(FS_LITTLEFS, &littlefs_fs);
 
-	rc = fs_register(FS_LITTLEFS, &littlefs_fs);
+#ifdef CONFIG_FS_LITTLEFS_FSTAB_AUTOMOUNT
 	if (rc == 0) {
 		#if (__GTEST == 0U)
-		struct fs_mount_t **mpi = partitions;
+		struct fs_mount_t *partitions[] = {
+			DT_INST_FOREACH_STATUS_OKAY(REFERENCE_MOUNT)
+		};
 
-		while (mpi < (partitions + ARRAY_SIZE(partitions))) {
-			mount_init(*mpi++);
+		for (size_t i = 0; i < ARRAY_SIZE(partitions); i++) {
+			struct fs_mount_t *mpi = partitions[i];
+
+			automount_if_enabled(mpi);
 		}
 		#endif
 	}
+#endif /* CONFIG_FS_LITTLEFS_FSTAB_AUTOMOUNT */
 
 	return rc;
 }
