@@ -247,7 +247,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 8a4c8d3572731757a0a8d9c66cda27bb9343b588
+      revision: ea72a5dd0fa0ed5254a27e9181abf42ae21782f7
       path: modules/hal/silabs
       groups:
         - hal
@@ -328,7 +328,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: bd0a1e5f2d45a974148b69ec22ae34efb4b41220
+      revision: 7f4e2f6e6f110bde300be64df5d12b0c51346ab0
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -366,7 +366,7 @@ manifest:
       path: modules/lib/picolibc
       revision: ca8b6ebba5226a75545e57a140443168a26ba664
     - name: psa-arch-tests
-      revision: d70b2c7072cedf0f14724211d2122ef07b98720c
+      revision: 6e8219237435112df33bbcf37b7f5657fcfb9cff
       path: modules/tee/tf-m/psa-arch-tests
       groups:
         - testing

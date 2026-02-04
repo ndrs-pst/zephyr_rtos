@@ -95,14 +95,15 @@ typedef unsigned long timer_t;
 #endif
 
 /* Thread attributes */
-struct pthread_attr {
+#if !defined(CONFIG_NEWLIB_LIBC)
+#if !defined(_PTHREAD_ATTR_T_DECLARED) && !defined(__pthread_attr_t_defined)
+typedef struct {
     void* stack;
-    uint32_t details[2];
-};
-
-#if !defined(CONFIG_NEWLIB_LIBC) || defined(_MSC_VER) /* #CUSTOM@NDRS */
-typedef struct pthread_attr pthread_attr_t;
-BUILD_ASSERT(sizeof(pthread_attr_t) >= sizeof(struct pthread_attr), "sizeof error !!!");
+    unsigned int details[2];
+} pthread_attr_t;
+#define _PTHREAD_ATTR_T_DECLARED
+#define __pthread_attr_t_defined
+#endif
 #endif
 
 typedef uint32_t pthread_t;
