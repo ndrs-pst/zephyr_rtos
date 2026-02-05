@@ -685,7 +685,7 @@ void z_unpend_thread(struct k_thread* thread) {
 TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
 #endif
 bool z_thread_prio_set(struct k_thread* thread, int prio) {
-    bool need_sched = 0;
+    bool need_sched = false;
     int old_prio = thread->base.prio;
 
     K_SPINLOCK(&_sched_spinlock) {
