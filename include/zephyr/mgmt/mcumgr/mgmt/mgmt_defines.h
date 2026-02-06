@@ -37,9 +37,9 @@ enum mcumgr_op_t {
     MGMT_OP_WRITE,
 
     /** Write response op-code */
-    MGMT_OP_WRITE_RSP
+    MGMT_OP_WRITE_RSP,
 
-    MGMT_OP_COUNT,
+    MGMT_OP_COUNT
 };
 
 /**
