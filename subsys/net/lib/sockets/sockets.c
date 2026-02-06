@@ -1379,7 +1379,7 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *message, int flags,
 	size_t total_len = 0;
 	size_t offset = 0;
 	k_timepoint_t end;
-	int ret, i, opt;
+	int ret, opt;
 
 	if (sent_len != NULL) {
 		*sent_len = 0;
@@ -1396,7 +1396,7 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *message, int flags,
 		return -EOPNOTSUPP;
 	}
 
-	for (i = 0; i < message->msg_iovlen; i++) {
+	for (size_t i = 0; i < message->msg_iovlen; i++) {
 		total_len += message->msg_iov[i].iov_len;
 	}
 
@@ -1435,8 +1435,8 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *message, int flags,
 		}
 
 		/* Update msghdr for the next iteration. */
-		for (i = 0; i < message->msg_iovlen; i++) {
-			if (ret < message->msg_iov[i].iov_len) {
+		for (size_t i = 0; i < message->msg_iovlen; i++) {
+			if (ret < (int)message->msg_iov[i].iov_len) {
 				message->msg_iov[i].iov_len -= ret;
 				message->msg_iov[i].iov_base =
 					(uint8_t *)message->msg_iov[i].iov_base + ret;

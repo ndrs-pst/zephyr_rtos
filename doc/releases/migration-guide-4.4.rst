@@ -582,6 +582,34 @@ MEMC
   Hard-coded default values in drivers, of 320 (:dtcompatible:`st,stm32-xspi-psram`) and 129
   (:dtcompatible:`st,stm32-ospi-psram`), have been removed.
 
+NXP
+===
+
+* NXP DTSI files were moved into family-specific subdirectories under ``dts/arm/nxp``
+  to improve maintainability and discoverability and to match the structure under
+  ``soc/nxp``. Devicetree include paths must be updated for moved files. Update
+  includes of the form ``#include <nxp/nxp_*.dtsi>`` to use the correct family
+  subdirectory. (:github:`101243`).
+
+  Example:
+
+  .. code-block:: dts
+
+    /* Before */
+    #include <nxp/nxp_rt1060.dtsi>
+
+    /* After */
+    #include <nxp/imxrt/nxp_rt1060.dtsi>
+
+  This change only applies to NXP ARM SoC include files that were moved from ``dts/arm/nxp``.
+  Do not change includes for DTSI files that live elsewhere (for example under ``dts/arm64/nxp``).
+
+  To locate affected includes, you can search for the old include prefix:
+
+  .. code-block:: console
+
+    git grep "#include <nxp/nxp_" -- '*.dtsi' '*.dts' '*.overlay'
+
 QSPI
 ====
 
@@ -834,10 +862,17 @@ Networking
   to automatically enable all the dependencies of a given ciphersuite, and more can be added as
   needed following the same pattern.
 
+CoAP
+====
+
 * Resource-related metadata for CoAP ``.well-known/core`` responses is now configured with a dedicated
   :c:member:`coap_resource.metadata` pointer instead of :c:member:`coap_resource.user_data`, which
   should remain for the application to use exclusively. Applications implementing CoAP
   ``.well-known/core`` handling should be updated to use the new pointer.
+
+* ``COAP_RESPONSE_CODE_OK`` 2.00 response code definition has been removed as it's not a valid
+  response code - it's not defined in :rfc:`7252` and is not assigned in the IANA registry
+  (https://www.iana.org/assignments/core-parameters/core-parameters.xhtml#response-codes).
 
 Modem
 *****

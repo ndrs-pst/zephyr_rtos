@@ -766,11 +766,10 @@ static int cmd_flash_shell_page_info(const struct shell* sh, size_t argc, char* 
     shell_print(sh, "%-32s %-15s 0x%08x %d KiB", DT_NODE_FULL_NAME(part), \
                 DT_PROP_OR(part, label, ""), DT_REG_ADDR(part), DT_REG_SIZE(part) / 1024);
 
-#define PRINT_PARTITIONS_FOREACH_CHILD(node_id)                 \
-    DT_FOREACH_CHILD(node_id, PRINT_PARTITION_INFO)
+#define PRINT_ALL_PARTITIONS(parts) DT_FOREACH_CHILD(parts, PRINT_PARTITION_INFO);
 
 static int cmd_partitions(const struct shell* sh, size_t argc, char* argv[]) {
-    DT_FOREACH_STATUS_OKAY(fixed_partitions, PRINT_PARTITIONS_FOREACH_CHILD);
+    DT_FOREACH_STATUS_OKAY(fixed_partitions, PRINT_ALL_PARTITIONS);
 
     return (0);
 }
