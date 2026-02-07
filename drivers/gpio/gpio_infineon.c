@@ -365,12 +365,17 @@ static void gpio_psoc4_register_irq(const struct device* dev) {
 
 #else
 
-#define INTR_PRIORITY(n) .intr_priority = DT_INST_IRQ_BY_IDX(n, 0, priority),
+#define INTR_PRIORITY(n)                    \
+    COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, 0),  \
+    (.intr_priority = DT_INST_IRQ_BY_IDX(n, 0, priority)), \
+    (.intr_priority = 0))
 
 #define ENABLE_INT(n)                       \
-    IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_cat1_isr, \
-                DEVICE_DT_INST_GET(n), 0);  \
-    irq_enable(DT_INST_IRQN(n));
+    COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, 0),  \
+    (IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_cat1_isr, \
+                 DEVICE_DT_INST_GET(n), 0); \
+     irq_enable(DT_INST_IRQN(n));),         \
+    ())
 
 #endif
 

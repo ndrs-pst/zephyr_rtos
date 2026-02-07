@@ -48,20 +48,11 @@ BUILD_ASSERT(BUF_ARRAY_CNT >= 1);
 static const struct device* const zephyr_flash_controller =
     DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_flash_controller));
 
-static uint8_t __aligned(4) m_test_arr[CONFIG_FLASH_SHELL_BUFFER_SIZE]
-__attribute__((__section__(".nocache")));
-
-static uint8_t __aligned(4) m_cmp_arr[CONFIG_FLASH_SHELL_BUFFER_SIZE]
-__attribute__((__section__(".nocache")));
-
-static uint8_t __aligned(4) m_flash_buf[SHELL_HEXDUMP_BYTES_IN_LINE]
-__attribute__((__section__(".nocache")));
-
-static uint32_t __aligned(4) m_check_arr[BUF_ARRAY_CNT]
-__attribute__((__section__(".nocache")));
-
-static uint32_t __aligned(4) m_buf_arr[BUF_ARRAY_CNT]
-__attribute__((__section__(".nocache")));
+static __nocache __aligned(4) uint8_t m_test_arr[CONFIG_FLASH_SHELL_BUFFER_SIZE];
+static __nocache __aligned(4) uint8_t m_cmp_arr[CONFIG_FLASH_SHELL_BUFFER_SIZE];
+static __nocache __aligned(4) uint8_t m_flash_buf[SHELL_HEXDUMP_BYTES_IN_LINE];
+static __nocache __aligned(4) uint32_t m_check_arr[BUF_ARRAY_CNT];
+static __nocache __aligned(4) uint32_t m_buf_arr[BUF_ARRAY_CNT];
 
 static int parse_helper(const struct shell* sh, size_t* argc, char** argv[],
                         const struct device** flash_dev, uint32_t* addr) {

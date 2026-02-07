@@ -22,7 +22,13 @@
 #if defined(CONFIG_CPU_CORTEX_M33)
 
 #if defined(CONFIG_TRUSTED_EXECUTION_SECURE)
+/* #CUSTOM@NDRS When COMPONENT_SECURE_DEVICE has been added by 
+ * zephyr_library_compile_definitions(COMPONENT_SECURE_DEVICE) in CMakeLists.txt
+ * skip this #define
+ */
+#if !defined(COMPONENT_SECURE_DEVICE)
 #define COMPONENT_SECURE_DEVICE
+#endif
 #endif /* CONFIG_TRUSTED_EXECUTION_SECURE* */
 
 #ifndef COMPONENT_CM33
