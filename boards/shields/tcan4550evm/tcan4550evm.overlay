@@ -24,11 +24,13 @@
 		spi-max-frequency = <2000000>;
 		status = "okay";
 		clock-frequency = <40000000>;
-		device-state-gpios = <&arduino_header ARDUINO_HEADER_R3_D6 GPIO_ACTIVE_HIGH>;
+		device-state-gpios = <&arduino_header ARDUINO_HEADER_R3_D6
+				      (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
 		device-wake-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_HIGH>;
 		reset-gpios = <&arduino_header ARDUINO_HEADER_R3_D8 GPIO_ACTIVE_HIGH>;
 		int-gpios = <&arduino_header ARDUINO_HEADER_R3_D9 GPIO_ACTIVE_LOW>;
 		bosch,mram-cfg = <0x0 15 15 7 7 0 10 10>;
+		ti,nwkrq-voltage-vio;
 		status = "okay";
 
 		can-transceiver {

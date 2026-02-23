@@ -225,6 +225,10 @@ Controller Area Network (CAN)
   :kconfig:option:`CONFIG_CAN_NXP_LPC_MCAN` as this driver is not based on the NXP MCUXpresso HAL
   (:github:`103679`).
 
+* Added devicetree property ``ti,nwkrq-voltage-vio`` to :dtcompatible:`ti,tcan4x5x` to allow
+  configuring the voltage rail used for the ``nWKRQ`` pin. To maintain previous driver default of
+  using VIO, this property must be set (:github:`104182`).
+
 Counter
 =======
 
@@ -762,6 +766,10 @@ STM32
   Besides, when applicable to the SoC, these properties need to be defined if the corresponding
   ``div-q`` or ``div-r`` properties are used.
 
+* For STM32L4x, the :dtcompatible:`st,stm32l4-pllsai-clock` binding has been replaced by the
+  existing :dtcompatible:`st,stm32l4-pll-clock`. This replacement brings a renaming of the
+  ``div-divr`` property to ``post-div-r``.
+
 * The MAC address generation in :zephyr_file:`drivers/ethernet/eth_stm32_hal_common.c` for STM32
   platforms now use :c:struct:`net_eth_mac_config` when one of these properties are used in the MAC
   device-tree node:
@@ -858,6 +866,9 @@ Bluetooth Audio
 * :kconfig:option:`CONFIG_BT_AUDIO` now depends on :kconfig:option:`CONFIG_UTF8`.
   Applications that enable :kconfig:option:`CONFIG_BT_AUDIO` must also have
   :kconfig:option:`CONFIG_UTF8` enabled. (:github:`102350`)
+* :c:func:`bt_tbs_set_uri_scheme_list` now only takes a single string value,
+  instead of a list/array of URIs. Applications will need to modify any current input
+  from e.g. ``{"tel", "skype"}`` to ``"tel,skype"``. (:github:`102724`)
 
 Bluetooth Mesh
 ==============

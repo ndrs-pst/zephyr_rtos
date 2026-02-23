@@ -212,7 +212,8 @@ void z_arm64_el2_init(void)
 #endif
 
 	zero_cntvoff_el2();		/* Set 64-bit virtual timer offset to 0 */
-	zero_cnthctl_el2();
+	reg = CNTHCTL_EL2_EL1PCEN | CNTHCTL_EL2_EL1PCTEN;
+	write_cnthctl_el2(reg);
 #ifdef CONFIG_CPU_AARCH64_CORTEX_R
 	zero_cnthps_ctl_el2();
 #else
@@ -287,9 +288,9 @@ void z_arm64_el1_init(void)
 	barrier_isync_fence_full();
 
 	write_cntv_cval_el0(~(uint64_t)0);
+	write_cntp_cval_el0(~(uint64_t)0);
 	/*
-	 * Enable these if/when we use the corresponding timers.
-	 * write_cntp_cval_el0(~(uint64_t)0);
+	 * Enable secure cntps if/when we use the corresponding timer.
 	 * write_cntps_cval_el1(~(uint64_t)0);
 	 */
 

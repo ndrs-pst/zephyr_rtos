@@ -197,7 +197,7 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: 14bc95d3885e6c7b2303f93a3bf6a5506bbd943a
+      revision: 10920fe424f320067e95ae9480a30df9bbe63684
       path: modules/hal/microchip
       groups:
         - hal
@@ -388,7 +388,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 3a128df2bdebedf5a01726e86de3880991d6bb63
+      revision: 3ddfef0edd4fe5672cd63afbe3538509568170df
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

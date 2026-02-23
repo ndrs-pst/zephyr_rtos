@@ -438,7 +438,7 @@ static int nvs_flash_block_move(struct nvs_fs* fs, uint32_t addr,
     if (tail_len) {
         rc = nvs_flash_rd(fs, addr, ctx->buffer + ctx->buffer_pos,
                           tail_len - ctx->buffer_pos);
-        if (rc) {
+        if (rc != 0) {
             return (rc);
         }
 
@@ -611,7 +611,7 @@ static int nvs_recover_last_ate(struct nvs_fs* fs, uint32_t* addr) {
     data_end_addr = (*addr & ADDR_SECT_MASK);
 
     rc = 0;
-    while (ate_end_addr > data_end_addr) {
+    while ((ate_end_addr >= data_end_addr) && (ate_end_addr & ADDR_OFFS_MASK) != 0U) {
         rc = nvs_flash_ate_rd(fs, ate_end_addr, &end_ate);
         if (rc != 0) {
             break;
@@ -1065,7 +1065,7 @@ static int nvs_startup(struct nvs_fs* fs) {
         }
 
         rc = nvs_ate_cmp_const(&last_ate, erase_value);
-        if (!rc) {
+        if (rc == 0) {
             /* found ff empty location */
             break;
         }
@@ -1361,7 +1361,7 @@ ssize_t nvs_write(struct nvs_fs* fs, uint16_t id, void const* data, size_t len) 
     while (true) {
         rd_addr = wlk_addr;
         rc = nvs_prev_ate(fs, &wlk_addr, &wlk_ate);
-        if (rc) {
+        if (rc != 0) {
             return (rc);
         }
 

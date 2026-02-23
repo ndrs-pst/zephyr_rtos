@@ -20,17 +20,10 @@
 #include <stm32_backup_domain.h>
 
 /* Macros to fill up prescaler values */
-#define z_ahb_prescaler(v) LL_RCC_SYSCLK_DIV_##v
-#define ahb_prescaler(v)   z_ahb_prescaler(v)
-
-#define z_apb1_prescaler(v) LL_RCC_APB1_DIV_##v
-#define apb1_prescaler(v)   z_apb1_prescaler(v)
-
-#define z_apb2_prescaler(v) LL_RCC_APB2_DIV_##v
-#define apb2_prescaler(v)   z_apb2_prescaler(v)
-
-#define z_apb3_prescaler(v) LL_RCC_APB3_DIV_##v
-#define apb3_prescaler(v)   z_apb3_prescaler(v)
+#define ahb_prescaler(v) CONCAT(LL_RCC_SYSCLK_DIV_, v)
+#define apb1_prescaler(v) CONCAT(LL_RCC_APB1_DIV_, v)
+#define apb2_prescaler(v) CONCAT(LL_RCC_APB2_DIV_, v)
+#define apb3_prescaler(v) CONCAT(LL_RCC_APB3_DIV_, v)
 
 #define PLL1_ID     1
 #define PLL2_ID     2
@@ -209,6 +202,9 @@ static int stm32_clock_control_configure(const struct device* dev,
                                          clock_control_subsys_t sub_system,
                                          void* data) {
     struct stm32_pclken* pclken = (struct stm32_pclken*)(sub_system);
+    uint32_t enr = pclken->enr;
+    uint32_t reg = STM32_DT_CLKSEL_REG_GET(enr);
+    uint32_t shift = STM32_DT_CLKSEL_SHIFT_GET(enr);
     int err;
 
     ARG_UNUSED(dev);
@@ -225,12 +221,9 @@ static int stm32_clock_control_configure(const struct device* dev,
         return 0;
     }
 
-    sys_clear_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
-                   STM32_DT_CLKSEL_MASK_GET(pclken->enr) <<
-                   STM32_DT_CLKSEL_SHIFT_GET(pclken->enr));
-    sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
-                 STM32_DT_CLKSEL_VAL_GET(pclken->enr) <<
-                 STM32_DT_CLKSEL_SHIFT_GET(pclken->enr));
+    stm32_reg_modify_bits((uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + reg),
+                          STM32_DT_CLKSEL_MASK_GET(enr) << shift,
+                          STM32_DT_CLKSEL_VAL_GET(enr) << shift);
 
     return (0);
 }
