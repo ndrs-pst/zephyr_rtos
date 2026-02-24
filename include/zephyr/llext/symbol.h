@@ -124,6 +124,7 @@ struct z_llext_discarded_const_symbol {
 
 #define Z_LLEXT_DISCARD_STRTAB Z_GENERIC_SECTION(llext_discarded_exports_strtab)
 
+#ifdef CONFIG_LLEXT
 #define Z_MARKUP_NOT_EXPORTED_SYMBOL(grp, sym_ident, sym_name)		\
 	static const char Z_LLEXT_DISCARD_STRTAB __used				\
 		__llext_sym_name_ ## sym_name[] = STRINGIFY(sym_name);		\
@@ -135,6 +136,11 @@ struct z_llext_discarded_const_symbol {
 			.name = __llext_sym_name_ ## sym_name,			\
 			.group = __llext_sym_group_ ## sym_name,		\
 	};
+#else /* CONFIG_LLEXT */
+/* No extension support in this build */
+#define Z_MARKUP_NOT_EXPORTED_SYMBOL(grp, sym_ident, sym_name)
+#endif /* CONFIG_LLEXT */
+
 /** @endcond */
 
 /** @cond ignore */

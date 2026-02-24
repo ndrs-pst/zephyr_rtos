@@ -480,6 +480,10 @@ static int nvs_flash_erase_sector(struct nvs_fs* fs, uint32_t addr) {
     return (rc);
 }
 
+static inline uint16_t nvs_data_len_with_crc(size_t len) {
+    return (uint16_t)((len > 0) ? (len + NVS_DATA_CRC_SIZE) : 0U);
+}
+
 /* crc update on allocation entry */
 static void nvs_ate_crc8_update(struct nvs_ate* entry) {
     uint8_t crc8;
@@ -565,7 +569,7 @@ static int nvs_flash_wrt_entry(struct nvs_fs* fs, uint16_t id, void const* data,
 
     entry.id     = id;
     entry.offset = (uint16_t)(fs->data_wra & ADDR_OFFS_MASK);
-    entry.len    = (uint16_t)len;
+    entry.len    = nvs_data_len_with_crc(len);
     entry.part   = 0xFFU;
 
     rc = nvs_flash_data_wrt(fs, data, len, true);
@@ -573,12 +577,6 @@ static int nvs_flash_wrt_entry(struct nvs_fs* fs, uint16_t id, void const* data,
         return (rc);
     }
 
-    #ifdef CONFIG_NVS_DATA_CRC
-    /* No CRC has been added if this is a deletion write request */
-    if (len > 0) {
-        entry.len += NVS_DATA_CRC_SIZE;
-    }
-    #endif
     nvs_ate_crc8_update(&entry);
 
     rc = nvs_flash_ate_wrt(fs, &entry);
@@ -760,7 +758,7 @@ static int nvs_gc_flush_and_try_write(struct nvs_fs* fs,
 
     if (entry) {
         required_space = ate_size +
-            nvs_al_size(fs, bm_ctx->buffer_pos + entry->len + NVS_DATA_CRC_SIZE);
+            nvs_al_size(fs, bm_ctx->buffer_pos + nvs_data_len_with_crc(entry->len));
     }
 
     if (!entry || (fs->ate_wra < (fs->data_wra + required_space))) {
@@ -790,7 +788,7 @@ static int nvs_gc_flush_and_try_write(struct nvs_fs* fs,
     }
 
     wrt_ate.id   = entry->id;
-    wrt_ate.len  = entry->len + NVS_DATA_CRC_SIZE;
+    wrt_ate.len  = nvs_data_len_with_crc(entry->len);
     wrt_ate.part = 0xff;
 
     nvs_ate_crc8_update(&wrt_ate);
@@ -913,7 +911,7 @@ static int nvs_gc(struct nvs_fs* fs, struct nvs_gc_write_entry* entry) {
              * flush.
              */
             if (entry && (entry->id == gc_ate.id) &&
-                ((entry->len + NVS_DATA_CRC_SIZE) <= gc_ate.len)) {
+                (nvs_data_len_with_crc(entry->len) <= gc_ate.len)) {
                 LOG_DBG("Skipping entry id %d, len %d; will write later",
                         gc_ate.id, gc_ate.len);
                 continue;
@@ -1334,7 +1332,7 @@ ssize_t nvs_write(struct nvs_fs* fs, uint16_t id, void const* data, size_t len) 
     }
 
     ate_size  = nvs_al_size(fs, sizeof(struct nvs_ate));
-    data_size = nvs_al_size(fs, (len > 0) ? (len + NVS_DATA_CRC_SIZE) : 0U);
+    data_size = nvs_al_size(fs, nvs_data_len_with_crc(len));
 
     /* The maximum data size is sector size - 4 ate
      * where: 1 ate for data, 1 ate for sector close, 1 ate for gc done,

@@ -78,7 +78,7 @@ static uint32_t get_pll_div_frequency(uint32_t pllsrc_freq,
                                       int pllout_div) {
     __ASSERT_NO_MSG(pllm_div && pllout_div);
 
-    return (pllsrc_freq / pllm_div * plln_mul / pllout_div);
+    return (((pllsrc_freq / pllm_div) * plln_mul) / pllout_div);
 }
 
 static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler) {
@@ -1080,7 +1080,6 @@ static void set_up_fixed_clock_sources(void) {
         #endif
     }
 
-
     if (IS_ENABLED(STM32_LSI_ENABLED)) {
         #if defined(CONFIG_SOC_SERIES_STM32WBX)
         LL_RCC_LSI1_Enable();
@@ -1107,8 +1106,20 @@ static void set_up_fixed_clock_sources(void) {
         stm32_backup_domain_enable_access();
 
         #if STM32_LSE_DRIVING
+        /*
+         * Most series have LSEDRV field in RCC_BDCR register,
+         * but a few series have it in a different one yet are
+         * handled by this driver. Pick proper register name:
+         */
+        #define LSE_DRIVING_SHIFT                               \
+            COND_CODE_1(IS_ENABLED(CONFIG_SOC_SERIES_STM32C0X), \
+                        (RCC_CSR1_LSEDRV_Pos),                  \
+            (COND_CODE_1(IS_ENABLED(CONFIG_SOC_SERIES_STM32L0X),\
+            (RCC_CSR_LSEDRV_Pos),                               \
+            (RCC_BDCR_LSEDRV_Pos))))
+
         /* Configure driving capability */
-        LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR_LSEDRV_Pos);
+        LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << LSE_DRIVING_SHIFT);
         #endif
 
         if (IS_ENABLED(STM32_LSE_BYPASS)) {

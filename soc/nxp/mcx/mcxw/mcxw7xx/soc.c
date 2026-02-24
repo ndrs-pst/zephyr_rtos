@@ -105,11 +105,20 @@ __weak void clock_init(void)
 
 	CLOCK_SetXtal32Freq(32768U);
 
+	const scg_firc_trim_config_t scg_firc_trim_config = {
+		.trimMode = kSCG_FircTrimUpdate,   /* FIRC trim is enabled and */
+						   /* trim value update is enabled */
+		.trimSrc = kSCG_FircTrimSrcSysOsc, /* Trim source is System OSC */
+		.trimDiv = 31U,                    /* Divided by 32 */
+		.trimCoar = 0U, /* Trim value, see Reference Manual for more information */
+		.trimFine = 0U, /* Trim value, see Reference Manual for more information */
+	};
+
 	/* Configuration to set FIRC to maximum frequency */
 	scg_firc_config_t scg_firc_config = {
 		.enableMode = kSCG_FircEnable, /* Fast IRC is enabled */
 		.range = kSCG_FircRange96M,    /* 96 Mhz FIRC clock selected */
-		.trimConfig = NULL,
+		.trimConfig = &scg_firc_trim_config,
 	};
 
 	scg_sys_clk_config_t sys_clk_safe_config_source = {
@@ -303,8 +312,39 @@ void soc_early_init_hook(void)
 
 	/* restore interrupt state */
 	irq_unlock(oldLevel);
+}
 
+static int soc_nbu_init(void)
+{
 #if defined(CONFIG_NXP_NBU)
 	nxp_nbu_init();
+#else
+	/* Shutdown NBU as not used */
+
+	/* Reset all RFMC registers and put the NBU CM3 in reset */
+	RFMC->CTRL |= RFMC_CTRL_RFMC_RST(0x1U);
+	/* Wait for a few microseconds before releasing the NBU reset,
+	 * without this the system may hang in the loop waiting for FRO clock valid
+	 */
+	k_busy_wait(31U);
+	/* Release NBU reset */
+	RFMC->CTRL &= ~RFMC_CTRL_RFMC_RST_MASK;
+
+	/* NBU was probably in low power before the RFMC reset, so we need to wait for the FRO clock
+	 * to be valid before accessing RF_CMC
+	 */
+	while ((RFMC->RF2P4GHZ_STAT & RFMC_RF2P4GHZ_STAT_FRO_CLK_VLD_STAT_MASK) == 0U) {
+		;
+	}
+
+	/* Force low power entry request to the radio domain */
+	RF_CMC1->RADIO_LP |= RF_CMC1_RADIO_LP_CK(0x2);
+	RFMC->RF2P4GHZ_CTRL |= RFMC_RF2P4GHZ_CTRL_LP_ENTER(0x1U);
 #endif
+	return 0;
 }
+
+/* soc_nbu_init may call k_busy_wait, which requires the system timer to be initialized
+ * (available by early PRE_KERNEL_2).
+ */
+SYS_INIT(soc_nbu_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

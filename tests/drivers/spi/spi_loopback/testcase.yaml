@@ -284,6 +284,7 @@ tests:
     extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_1mhz.overlay"
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
     harness: console
     harness_config:
       fixture: spi_loopback
@@ -295,16 +296,19 @@ tests:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
   drivers.spi.nrf54l_16mhz:
     extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_16mhz.overlay"
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
   drivers.spi.nrf54l_32mhz:
     extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_32mhz.overlay"
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
   drivers.spi.nrf54lm20_16mhz_32mhz:
     harness: ztest
@@ -390,6 +394,7 @@ tests:
       - ek_ra8m1
       - ek_ra8d1
       - mck_ra8t1
+      - fpb_ra8e1
   drivers.spi.loopback.renesas_sci_b_spi.no_async:
     filter: dt_compat_enabled("renesas,ra-spi-sci-b")
     extra_configs:
@@ -403,6 +408,7 @@ tests:
       - ek_ra8m1
       - ek_ra8d1
       - mck_ra8t1
+      - fpb_ra8e1
   drivers.spi.loopback.renesas_sci_b_spi_ra8x2:
     filter: dt_compat_enabled("renesas,ra-spi-sci-b")
     integration_platforms:

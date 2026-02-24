@@ -159,7 +159,7 @@ static inline int put_msg_in_queue(struct k_msgq* msgq, void const* data,
         }
         else {
             __ASSERT_NO_MSG((msgq->write_ptr >= msgq->buffer_start) &&
-                            (msgq->write_ptr < msgq->buffer_end));
+                            (msgq->write_ptr <= (msgq->buffer_end - 1)));
 
             if (put_at_back) {
                 /*
@@ -306,7 +306,7 @@ int z_impl_k_msgq_get(struct k_msgq* msgq, void* data, k_timeout_t timeout) {
 
             /* add thread's message to queue */
             __ASSERT_NO_MSG((msgq->write_ptr >= msgq->buffer_start) &&
-                            (msgq->write_ptr < msgq->buffer_end));
+                            (msgq->write_ptr <= (msgq->buffer_end - 1)));
             (void) memcpy(msgq->write_ptr, (char*)pending_thread->base.swap_data,
                           msgq->msg_size);
             msgq->write_ptr += msgq->msg_size;

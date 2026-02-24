@@ -89,7 +89,7 @@ static inline uint32_t get_port_out(const struct gpio_litex_cfg *gpio_config)
 static inline void set_oe(const struct gpio_litex_cfg *gpio_config, gpio_pin_t pin, bool val)
 {
 	if (GPIO_LITEX_HAS_OE(gpio_config)) {
-		set_bit(gpio_config->oe_addr, pin, 1);
+		set_bit(gpio_config->oe_addr, pin, val);
 	}
 }
 
@@ -249,8 +249,6 @@ static int gpio_litex_pin_interrupt_configure(const struct device *dev,
 		ev_mode = litex_read32(gpio_config->ev_mode_addr);
 		ev_edge = litex_read32(gpio_config->ev_edge_addr);
 
-		litex_write32(ev_enabled | BIT(pin), gpio_config->ev_enable_addr);
-
 		WRITE_BIT(ev_mode, pin, (trig == GPIO_INT_TRIG_BOTH));
 
 		litex_write32(ev_mode, gpio_config->ev_mode_addr);
@@ -267,6 +265,12 @@ static int gpio_litex_pin_interrupt_configure(const struct device *dev,
 		default:
 			break;
 		}
+
+		/* Clear any pending events for this pin, before enabling it */
+		litex_write32(BIT(pin), gpio_config->ev_pending_addr);
+
+		litex_write32(ev_enabled | BIT(pin), gpio_config->ev_enable_addr);
+
 		return 0;
 	}
 
