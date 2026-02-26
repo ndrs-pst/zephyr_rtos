@@ -35,8 +35,6 @@ struct gpio_cat1_config {
     #if !(IS_ENABLED(CONFIG_SOC_FAMILY_INFINEON_CAT1C))
     uint8_t intr_priority;
     #endif
-
-    int irq;
 };
 
 /* Data structure */
@@ -50,19 +48,6 @@ struct gpio_cat1_data {
     /* callbacks list */
     sys_slist_t callbacks;
 };
-
-#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
-typedef struct {
-    int irq;
-    uint8_t priority;
-    uint8_t num_devs;
-    const struct device* devs[DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)];
-} gpio_psoc4_irq_group_t;
-
-static struct k_spinlock gpio_psoc4_irq_lock;
-static gpio_psoc4_irq_group_t gpio_psoc4_irq_groups[DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)];
-static uint8_t gpio_psoc4_irq_group_count;
-#endif
 
 static inline uint32_t gpio_cat1_valid_mask(uint8_t ngpios) {
     #if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
@@ -298,69 +283,9 @@ static DEVICE_API(gpio, gpio_cat1_api) = {
     .get_pending_int         = gpio_cat1_get_pending_int,
 };
 
-#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
-static void gpio_psoc4_shared_isr(const void* arg) {
-    gpio_psoc4_irq_group_t const* group = arg;
-
-    for (uint8_t i = 0U; i < group->num_devs; i++) {
-        gpio_cat1_isr(group->devs[i]);
-    }
-}
-
-static void gpio_psoc4_register_irq(const struct device* dev) {
-    const struct gpio_cat1_config* const cfg = dev->config;
-
-    if (cfg->irq < 0) {
-        return;
-    }
-
-    k_spinlock_key_t key = k_spin_lock(&gpio_psoc4_irq_lock);
-    gpio_psoc4_irq_group_t* group = NULL;
-
-    if (gpio_psoc4_irq_group_count >= ARRAY_SIZE(gpio_psoc4_irq_groups)) {
-        k_spin_unlock(&gpio_psoc4_irq_lock, key);
-        return;
-    }
-
-    if (gpio_psoc4_irq_group_count > 0U) {
-        for (uint8_t i = 0U; i < gpio_psoc4_irq_group_count; i++) {
-            if (gpio_psoc4_irq_groups[i].irq == cfg->irq) {
-                group = &gpio_psoc4_irq_groups[i];
-                break;
-            }
-        }
-    }
-
-    if (group == NULL) {
-        __ASSERT(gpio_psoc4_irq_group_count < ARRAY_SIZE(gpio_psoc4_irq_groups),
-                 "Too many GPIO IRQ groups");
-        group           = &gpio_psoc4_irq_groups[gpio_psoc4_irq_group_count++];
-        group->irq      = cfg->irq;
-        group->priority = cfg->intr_priority;
-        group->num_devs = 0U;
-
-        irq_connect_dynamic(cfg->irq, cfg->intr_priority, gpio_psoc4_shared_isr, group, 0);
-        irq_enable(cfg->irq);
-    }
-
-    group->devs[group->num_devs++] = dev;
-
-    k_spin_unlock(&gpio_psoc4_irq_lock, key);
-}
-#endif
-
 #if defined(CONFIG_SOC_FAMILY_INFINEON_CAT1C)
 
 #define INTR_PRIORITY(n)
-#define ENABLE_INT(n)
-
-#elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
-
-#define INTR_PRIORITY(n)                    \
-    COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, 0),  \
-    (.irq = DT_INST_IRQN(n),                \
-     .intr_priority = DT_INST_IRQ(n, priority)), \
-    (.irq = -1, .intr_priority = 0))
 #define ENABLE_INT(n)
 
 #else
@@ -369,7 +294,6 @@ static void gpio_psoc4_register_irq(const struct device* dev) {
     COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, 0),  \
     (.intr_priority = DT_INST_IRQ_BY_IDX(n, 0, priority)), \
     (.intr_priority = 0))
-
 #define ENABLE_INT(n)                       \
     COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, 0),  \
     (IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_cat1_isr, \
@@ -379,19 +303,11 @@ static void gpio_psoc4_register_irq(const struct device* dev) {
 
 #endif
 
-#if (CONFIG_SOC_FAMILY_INFINEON_PSOC4)
-#define GPIO_CAT1_INIT_FUNC(n)              \
-    static int gpio_ifx##n##_init(const struct device* dev) { \
-        gpio_psoc4_register_irq(dev);       \
-        return 0;                           \
-    }
-#else
 #define GPIO_CAT1_INIT_FUNC(n)              \
     static int gpio_ifx##n##_init(const struct device* dev) { \
         ENABLE_INT(n)                       \
         return 0;                           \
     }
-#endif
 #define GPIO_CAT1_INIT(n)                   \
     static struct gpio_cat1_config DT_CONST gpio_cat1_config_##n = {    \
         .common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                   \

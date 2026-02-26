@@ -16,6 +16,15 @@
 extern "C" {
 #endif
 
+static ALWAYS_INLINE void z_barrier_sync_synchronize(void)
+{
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	/* pass */
+	#else
+	__sync_synchronize();
+	#endif
+}
+
 static ALWAYS_INLINE void z_barrier_dmem_fence_full(void)
 {
 	__DMB();

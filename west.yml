@@ -127,7 +127,7 @@ manifest:
       revision: 97512610ec92058f0119450b9e743eeb7e95b5c8
       path: modules/lib/cmsis-dsp
     - name: cmsis-nn
-      revision: e9328d612ea3ea7d0d210d3ac16ea8667c01abdd
+      revision: d20117c9e88cf9018d6fa06744dddac700c3e3a1
       path: modules/lib/cmsis-nn
     - name: cmsis_6
       repo-path: CMSIS_6
@@ -146,7 +146,7 @@ manifest:
       groups:
         - fs
     - name: hal_adi
-      revision: 4a189d5d2d20267084d9066cd0c4548dd730f809
+      revision: 87df40a91ab1bed470f211d55da56b7ef9966ea2
       path: modules/hal/adi
       groups:
         - hal
@@ -171,7 +171,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 2e6348fd9534226fc0829915e0c15d780855a012
+      revision: 928f0184a9fd68e71c6fbd7e58b28dbbccd632aa
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -233,7 +233,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: cbdd770228abf5eb698a941e0c99065d75aa1432
+      revision: 9c6c922fe1f3a814eb07a4469fb66b00d694610f
       groups:
         - hal
     - name: hal_rpi_pico
@@ -287,7 +287,7 @@ manifest:
       groups:
         - hal
     - name: hal_xtensa
-      revision: 3cc9e3a9360be5c96c956dce84064b85439b6769
+      revision: 0495a1afd300b644d3ec8dd2c3bd11007e69a892
       path: modules/hal/xtensa
       groups:
         - hal
