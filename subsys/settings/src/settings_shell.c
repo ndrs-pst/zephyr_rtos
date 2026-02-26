@@ -230,7 +230,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(settings_cmds,
                              "type: string or hex (default: hex)"),
                   cmd_write, 3, 1),
     SHELL_CMD_ARG(delete, NULL,
-                  SHELL_HELP("Delete a specific setting", "<name>"), cmd_delete,
+                  SHELL_HELP("Delete a specific setting", "<name>"),
                   cmd_delete, 2, 0),
     SHELL_SUBCMD_SET_END /* Array terminated. */
 );

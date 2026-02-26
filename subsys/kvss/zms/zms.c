@@ -123,7 +123,7 @@ static int zms_lookup_cache_rebuild(struct zms_fs *fs)
 			if (zms_ate_valid_different_sector(fs, &ate, current_cycle)) {
 				*cache_entry = ate_addr;
 			}
-			previous_sector_num = SECTOR_NUM(ate_addr);
+			previous_sector_num = (int)SECTOR_NUM(ate_addr);
 		}
 
 		if (addr == fs->ate_wra) {
@@ -151,7 +151,7 @@ static void zms_lookup_cache_invalidate(struct zms_fs *fs, uint32_t sector)
 /* Helper to compute offset given the address */
 static inline off_t zms_addr_to_offset(struct zms_fs *fs, uint64_t addr)
 {
-	return fs->offset + (fs->sector_size * SECTOR_NUM(addr)) + SECTOR_OFFSET(addr);
+	return fs->offset + (fs->sector_size * (uint32_t)SECTOR_NUM(addr)) + SECTOR_OFFSET(addr);
 }
 
 /* Helper to round down len to the closest multiple of write_block_size  */
@@ -388,7 +388,7 @@ static int zms_flash_erase_sector(struct zms_fs *fs, uint64_t addr)
 		fs->sector_size);
 
 #ifdef CONFIG_ZMS_LOOKUP_CACHE
-	zms_lookup_cache_invalidate(fs, SECTOR_NUM(addr));
+	zms_lookup_cache_invalidate(fs, (uint32_t)SECTOR_NUM(addr));
 #endif
 	rc = flash_erase(fs->flash_device, offset, fs->sector_size);
 
@@ -975,7 +975,7 @@ static int zms_find_ate_with_id(struct zms_fs *fs, zms_id_t id, uint64_t start_a
 				prev_found = 1;
 				break;
 			}
-			previous_sector_num = SECTOR_NUM(wlk_prev_addr);
+			previous_sector_num = (int)SECTOR_NUM(wlk_prev_addr);
 		}
 	} while (wlk_addr != end_addr);
 
@@ -1828,7 +1828,7 @@ ssize_t zms_read(struct zms_fs *fs, zms_id_t id, void *data, size_t len)
 	}
 
 	/* returns the minimum between ATE data length and requested length */
-	return MIN(rc, len);
+	return MIN(rc, (int)len);
 }
 
 ssize_t zms_get_data_length(struct zms_fs *fs, zms_id_t id)
