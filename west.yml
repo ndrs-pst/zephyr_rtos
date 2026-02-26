@@ -131,7 +131,7 @@ manifest:
       path: modules/lib/cmsis-nn
     - name: cmsis_6
       repo-path: CMSIS_6
-      revision: f2ab7afafd0fc33d093e5e2786c989fce10e311f
+      revision: 88c76b4b4637020708cb68a8d01ceadb5ccf5344
       path: modules/hal/cmsis_6
       groups:
         - hal
@@ -212,7 +212,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 4b484360c2dadc0be22f09845ed58c05e5e02745
+      revision: ea4490e20d17053966f2128dd2f245e3d87dcd81
       path: modules/hal/nxp
       groups:
         - hal
