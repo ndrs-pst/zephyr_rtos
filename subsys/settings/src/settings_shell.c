@@ -14,7 +14,7 @@
 #include <stddef.h>
 
 struct settings_list_callback_params {
-    const struct shell* shell_ptr;
+    const struct shell* sh;
     char const* subtree;
 };
 
@@ -30,26 +30,26 @@ static int settings_list_callback(char const* key,
     struct settings_list_callback_params* params = param;
 
     if (params->subtree != NULL) {
-        shell_print(params->shell_ptr, "%s/%s", params->subtree, key);
+        shell_print(params->sh, "%s/%s", params->subtree, key);
     }
     else {
-        shell_print(params->shell_ptr, "%s", key);
+        shell_print(params->sh, "%s", key);
     }
 
     return (0);
 }
 
-static int cmd_list(const struct shell* shell_ptr, size_t argc, char* argv[]) {
+static int cmd_list(const struct shell* sh, size_t argc, char* argv[]) {
     int err;
 
     struct settings_list_callback_params params = {
-        .shell_ptr = shell_ptr,
-        .subtree   = (argc == 2 ? argv[1] : NULL)
+        .sh = sh,
+        .subtree = (argc == 2 ? argv[1] : NULL)
     };
 
     err = settings_load_subtree_direct(params.subtree, settings_list_callback, &params);
     if (err != 0) {
-        shell_error(shell_ptr, "Failed to load settings: %d", err);
+        shell_error(sh, "Failed to load settings: %d", err);
         err = -ENOEXEC;
     }
 
@@ -62,7 +62,7 @@ enum settings_value_types {
 };
 
 struct settings_read_callback_params {
-    const struct shell* shell_ptr;
+    const struct shell* sh;
     const enum settings_value_types value_type;
     bool value_found;
 };
@@ -86,33 +86,33 @@ static int settings_read_callback(char const* key,
     num_read_bytes = read_cb(cb_arg, buffer, num_read_bytes);
 
     if (num_read_bytes < 0) {
-        shell_error(params->shell_ptr, "Failed to read value: %d", (int)num_read_bytes);
+        shell_error(params->sh, "Failed to read value: %d", (int)num_read_bytes);
         return (0);
     }
 
     if (num_read_bytes == 0) {
-        shell_warn(params->shell_ptr, "Value is empty");
+        shell_warn(params->sh, "Value is empty");
         return (0);
     }
 
     switch (params->value_type) {
         case SETTINGS_VALUE_HEX :
-            shell_hexdump(params->shell_ptr, buffer, num_read_bytes);
+            shell_hexdump(params->sh, buffer, num_read_bytes);
             break;
 
         case SETTINGS_VALUE_STRING :
             for (i = 0; i < num_read_bytes; i++) {
                 if (!isprint(buffer[i])) {
-                    shell_error(params->shell_ptr, "Value is not a string");
+                    shell_error(params->sh, "Value is not a string");
                     return 0;
                 }
             }
-            shell_print(params->shell_ptr, "%.*s", (int)num_read_bytes, buffer);
+            shell_print(params->sh, "%.*s", (int)num_read_bytes, buffer);
             break;
     }
 
     if (len > SETTINGS_MAX_VAL_LEN) {
-        shell_print(params->shell_ptr, "(The output has been truncated)");
+        shell_print(params->sh, "(The output has been truncated)");
     }
 
     return (0);
@@ -132,7 +132,7 @@ static int settings_parse_type(char const* type, enum settings_value_types* valu
     return (0);
 }
 
-static int cmd_read(const struct shell* shell_ptr, size_t argc, char* argv[]) {
+static int cmd_read(const struct shell* sh, size_t argc, char* argv[]) {
     int err;
 
     enum settings_value_types value_type = SETTINGS_VALUE_HEX;
@@ -140,31 +140,31 @@ static int cmd_read(const struct shell* shell_ptr, size_t argc, char* argv[]) {
     if (argc > 2) {
         err = settings_parse_type(argv[1], &value_type);
         if (err) {
-            shell_error(shell_ptr, "Invalid type: %s", argv[1]);
+            shell_error(sh, "Invalid type: %s", argv[1]);
             return (-EINVAL);
         }
     }
 
     struct settings_read_callback_params params = {
-        .shell_ptr  = shell_ptr,
+        .sh = sh,
         .value_type = value_type,
         .value_found = false
     };
 
     err = settings_load_subtree_direct(argv[argc - 1], settings_read_callback, &params);
     if (err != 0) {
-        shell_error(shell_ptr, "Failed to load setting: %d", err);
+        shell_error(sh, "Failed to load setting: %d", err);
         err = -ENOEXEC;
     }
     else if (!params.value_found) {
-        shell_error(shell_ptr, "Setting not found");
+        shell_error(sh, "Setting not found");
         err = -ENOEXEC;
     }
 
     return (err);
 }
 
-static int cmd_write(const struct shell* shell_ptr, size_t argc, char* argv[]) {
+static int cmd_write(const struct shell* sh, size_t argc, char* argv[]) {
     int err;
     uint8_t buffer[CONFIG_SHELL_CMD_BUFF_SIZE / 2];
     void const* value;
@@ -174,42 +174,43 @@ static int cmd_write(const struct shell* shell_ptr, size_t argc, char* argv[]) {
     if (argc > 3) {
         err = settings_parse_type(argv[1], &value_type);
         if (err) {
-            shell_error(shell_ptr, "Invalid type: %s", argv[1]);
+            shell_error(sh, "Invalid type: %s", argv[1]);
             return (-EINVAL);
         }
     }
 
     switch (value_type) {
-        case SETTINGS_VALUE_HEX:
+        case SETTINGS_VALUE_HEX :
             value = buffer;
             value_len = hex2bin(argv[argc - 1], strlen(argv[argc - 1]), buffer, sizeof(buffer));
             break;
-        case SETTINGS_VALUE_STRING:
+
+        case SETTINGS_VALUE_STRING :
             value = argv[argc - 1];
             value_len = strlen(argv[argc - 1]);
             break;
     }
 
     if (value_len == 0) {
-        shell_error(shell_ptr, "Failed to parse value");
+        shell_error(sh, "Failed to parse value");
         return (-EINVAL);
     }
 
     err = settings_save_one(argv[argc - 2], value, value_len);
     if (err != 0) {
-        shell_error(shell_ptr, "Failed to write setting: %d", err);
+        shell_error(sh, "Failed to write setting: %d", err);
         err = -ENOEXEC;
     }
 
     return (err);
 }
 
-static int cmd_delete(const struct shell* shell_ptr, size_t argc, char* argv[]) {
+static int cmd_delete(const struct shell* sh, size_t argc, char* argv[]) {
     int err;
 
     err = settings_delete(argv[1]);
     if (err != 0) {
-        shell_error(shell_ptr, "Failed to delete setting: %d", err);
+        shell_error(sh, "Failed to delete setting: %d", err);
         err = -ENOEXEC;
     }
 
@@ -218,11 +219,13 @@ static int cmd_delete(const struct shell* shell_ptr, size_t argc, char* argv[]) 
 
 SHELL_STATIC_SUBCMD_SET_CREATE(settings_cmds,
     SHELL_CMD_ARG(list, NULL,
-                  SHELL_HELP("List all settings in a subtree (omit to list all)", "[subtree]"),
+                  SHELL_HELP("List all settings in a subtree (omit to list all)",
+                             "[subtree]"),
                   cmd_list, 1, 1),
     SHELL_CMD_ARG(read, NULL,
-                  SHELL_HELP("Read a specific setting", "[type] <name>\n"
-                                                        "type: string or hex (default: hex)"),
+                  SHELL_HELP("Read a specific setting",
+                             "[type] <name>\n"
+                             "type: string or hex (default: hex)"),
                   cmd_read, 2, 1),
     SHELL_CMD_ARG(write, NULL,
                   SHELL_HELP("Write to a specific setting",
