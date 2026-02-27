@@ -33,6 +33,7 @@ struct ifx_cat1_dma_channel {
     uint32_t channel_direction    : 3;
     uint32_t complete_callback_en : 1;
     uint32_t error_callback_dis   : 1;
+    uint32_t sw_triggered         : 1;
 
     cy_stc_dma_descriptor_t descr;
     IRQn_Type irq;
@@ -72,13 +73,8 @@ int ifx_cat1_dma_trig(const struct device* dev, uint32_t channel) {
     const struct ifx_cat1_dma_config* const cfg = dev->config;
     struct ifx_cat1_dma_data* data = dev->data;
 
-    /* In general, we do SW trigger in the beginning if src comes from memory.
-     * The reason is if src comes from peripheral, trigger signal from peripheral
-     * will trigger DMA in the beginning.
-     */
-    if ((data->channels[channel].channel_direction == MEMORY_TO_MEMORY) ||
-        (data->channels[channel].channel_direction == MEMORY_TO_PERIPHERAL)) {
-        /* Set SW trigger for the channel */
+    /* Set SW trigger for the channel */
+    if (data->channels[channel].sw_triggered) {
         Cy_DMA_Channel_SetSWTrigger(cfg->regs, channel);
     }
 
@@ -142,12 +138,6 @@ static int ifx_cat1_dma_config(const struct device* dev, uint32_t channel,
         return -EINVAL;
     }
 
-    /* Support only the same burst_length for source and dest */
-    if (config->dest_burst_length != config->source_burst_length) {
-        LOG_ERR("Source and dest burst_length differ.");
-        return -EINVAL;
-    }
-
     /* DataWire only supports <=256 byte burst and <=256 bytes per burst */
     if ((config->dest_burst_length > 256) ||
         ((config->dest_burst_length <= 1) && (config->head_block->block_size > 256)) ||
@@ -170,6 +160,12 @@ static int ifx_cat1_dma_config(const struct device* dev, uint32_t channel,
     data->channels[channel].channel_direction    = config->channel_direction;
     data->channels[channel].complete_callback_en = config->complete_callback_en;
     data->channels[channel].error_callback_dis   = config->error_callback_dis;
+    if (config->channel_direction == MEMORY_TO_MEMORY) {
+        data->channels[channel].sw_triggered = 1;
+    }
+    else {
+        data->channels[channel].sw_triggered = config->source_handshake;
+    }
 
     /* Get first descriptor */
     descriptor = &data->channels[channel].descr;
@@ -198,11 +194,12 @@ static int ifx_cat1_dma_config(const struct device* dev, uint32_t channel,
 
     descriptor_config.triggerOutType = CY_DMA_DESCR_CHAIN;
 
-    if (config->channel_direction == MEMORY_TO_MEMORY) {
-        descriptor_config.triggerInType = CY_DMA_DESCR_CHAIN;
+    if ((config->source_burst_length == 1) &&
+        (config->channel_direction != MEMORY_TO_MEMORY)) {
+        descriptor_config.triggerInType = CY_DMA_1ELEMENT;
     }
     else {
-        descriptor_config.triggerInType = CY_DMA_1ELEMENT;
+        descriptor_config.triggerInType = CY_DMA_DESCR_CHAIN;
     }
 
     /* Set data size byte / 2 bytes / word */

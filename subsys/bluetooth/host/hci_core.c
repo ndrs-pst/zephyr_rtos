@@ -2086,8 +2086,8 @@ static void le_conn_update_complete(struct net_buf *buf)
 					LOG_WRN("latency exceeds the valid range 0x%04x",
 						conn->le.latency);
 				}
-				if (!IN_RANGE(conn->le.timeout, BT_HCI_LE_SUPERVISON_TIMEOUT_MIN,
-					      BT_HCI_LE_SUPERVISON_TIMEOUT_MAX)) {
+				if (!IN_RANGE(conn->le.timeout, BT_HCI_LE_SUPERVISION_TIMEOUT_MIN,
+					      BT_HCI_LE_SUPERVISION_TIMEOUT_MAX)) {
 					LOG_WRN("supv_timeout exceeds the valid range 0x%04x",
 						conn->le.timeout);
 				}
@@ -2799,8 +2799,8 @@ void bt_hci_le_subrate_change_event(struct net_buf *buf)
 				LOG_WRN("continuation_number exceeds the valid range %d",
 					conn->le.subrate.continuation_number);
 			}
-			if (!IN_RANGE(conn->le.timeout, BT_HCI_LE_SUPERVISON_TIMEOUT_MIN,
-				      BT_HCI_LE_SUPERVISON_TIMEOUT_MAX)) {
+			if (!IN_RANGE(conn->le.timeout, BT_HCI_LE_SUPERVISION_TIMEOUT_MIN,
+				      BT_HCI_LE_SUPERVISION_TIMEOUT_MAX)) {
 				LOG_WRN("supervision_timeout exceeds the valid range 0x%04x",
 					conn->le.timeout);
 			}
@@ -2863,8 +2863,8 @@ void bt_hci_le_conn_rate_change_event(struct net_buf *buf)
 				LOG_WRN("continuation_number exceeds the valid range %d",
 					conn->le.subrate.continuation_number);
 			}
-			if (!IN_RANGE(conn->le.timeout, BT_HCI_LE_SUPERVISON_TIMEOUT_MIN,
-				      BT_HCI_LE_SUPERVISON_TIMEOUT_MAX)) {
+			if (!IN_RANGE(conn->le.timeout, BT_HCI_LE_SUPERVISION_TIMEOUT_MIN,
+				      BT_HCI_LE_SUPERVISION_TIMEOUT_MAX)) {
 				LOG_WRN("supervision_timeout exceeds the valid range 0x%04x",
 					conn->le.timeout);
 			}
@@ -3086,17 +3086,21 @@ static const struct event_handler meta_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE,
 		      bt_hci_le_cs_read_remote_supported_capabilities_complete,
 		      sizeof(struct bt_hci_evt_le_cs_read_remote_supported_capabilities_complete)),
+	EVENT_HANDLER(BT_HCI_EVT_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE_V2,
+		      bt_hci_le_cs_read_remote_supported_capabilities_complete_v2,
+		      sizeof(
+		      struct bt_hci_evt_le_cs_read_remote_supported_capabilities_complete_v2)),
 	EVENT_HANDLER(BT_HCI_EVT_LE_CS_READ_REMOTE_FAE_TABLE_COMPLETE,
 		      bt_hci_le_cs_read_remote_fae_table_complete,
 		      sizeof(struct bt_hci_evt_le_cs_read_remote_fae_table_complete)),
 	EVENT_HANDLER(BT_HCI_EVT_LE_CS_CONFIG_COMPLETE, bt_hci_le_cs_config_complete_event,
 		      sizeof(struct bt_hci_evt_le_cs_config_complete)),
 	EVENT_HANDLER(BT_HCI_EVT_LE_CS_SECURITY_ENABLE_COMPLETE,
-			  bt_hci_le_cs_security_enable_complete,
-			  sizeof(struct bt_hci_evt_le_cs_security_enable_complete)),
+		      bt_hci_le_cs_security_enable_complete,
+		      sizeof(struct bt_hci_evt_le_cs_security_enable_complete)),
 	EVENT_HANDLER(BT_HCI_EVT_LE_CS_PROCEDURE_ENABLE_COMPLETE,
-			  bt_hci_le_cs_procedure_enable_complete,
-			  sizeof(struct bt_hci_evt_le_cs_procedure_enable_complete)),
+		      bt_hci_le_cs_procedure_enable_complete,
+		      sizeof(struct bt_hci_evt_le_cs_procedure_enable_complete)),
 	EVENT_HANDLER(BT_HCI_EVT_LE_CS_SUBEVENT_RESULT,
 		      bt_hci_le_cs_subevent_result,
 		      BT_HCI_EVT_LE_CS_SUBEVENT_RESULT_SZ),
@@ -3739,6 +3743,13 @@ static int le_set_event_mask(void)
 	if (IS_ENABLED(CONFIG_BT_CHANNEL_SOUNDING) &&
 	    BT_FEAT_LE_CHANNEL_SOUNDING(bt_dev.le.features)) {
 		mask |= BT_EVT_MASK_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE;
+		/* Only set v2 event mask if controller supports it; v1-only CS controllers
+		 * may reject the Set Event Mask command if an unknown bit is set.
+		 */
+		if (BT_LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES_V2_SUPPORTED(
+				bt_dev.supported_commands)) {
+			mask |= BT_EVT_MASK_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE_V2;
+		}
 		mask |= BT_EVT_MASK_LE_CS_READ_REMOTE_FAE_TABLE_COMPLETE;
 		mask |= BT_EVT_MASK_LE_CS_CONFIG_COMPLETE;
 		mask |= BT_EVT_MASK_LE_CS_SECURITY_ENABLE_COMPLETE;

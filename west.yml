@@ -212,7 +212,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: ea4490e20d17053966f2128dd2f245e3d87dcd81
+      revision: 11f86ed0d80c0ffff98ae5efce8ee9e952771104
       path: modules/hal/nxp
       groups:
         - hal
@@ -247,7 +247,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 4db87e248dba7ebcb113c4d9e3d096dd4df22de6
+      revision: d375743bceb892a12b8ce6a22d23438353d500cb
       path: modules/hal/silabs
       groups:
         - hal
@@ -293,7 +293,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: f5708c522793b0de59f467080a33caac769cd525
+      revision: 8fa6fe8b1df12a727e86048f587161b241590ca0
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -393,7 +393,7 @@ manifest:
       groups:
         - tee
     - name: uoscore-uedhoc
-      revision: ac80c3bf2b88deec86d129654fbde09761582342
+      revision: e47f6465a96d12a54b875e5f6e5b2a203fb0d61d
       path: modules/lib/uoscore-uedhoc
     - name: zcbor
       revision: 0d1452440356637a0a727f7f10b442b60977e930

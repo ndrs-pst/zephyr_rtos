@@ -9,3 +9,5 @@ supported:
   - gpio
   - i2c
   - uart
+  - watchdog
+  - entropy

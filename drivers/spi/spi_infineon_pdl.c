@@ -185,10 +185,9 @@ static void spi_ifx_transfer_chunk(const struct device* dev) {
         Cy_SCB_SetRxFifoLevel(config->reg_addr, 0U);
 
         if (chunk_len > SPI_IFX_DMA_BURST_SIZE) {
-            rx_cfg->source_burst_length = tx_cfg->source_burst_length =
-                SPI_IFX_DMA_BURST_SIZE;
-            rx_cfg->dest_burst_length = tx_cfg->dest_burst_length =
-                SPI_IFX_DMA_BURST_SIZE;
+            rx_cfg->source_burst_length = tx_cfg->source_burst_length = 1;
+            rx_cfg->dest_burst_length   = tx_cfg->dest_burst_length   = SPI_IFX_DMA_BURST_SIZE;
+
             if ((chunk_len % SPI_IFX_DMA_BURST_SIZE) != 0) {
                 LOG_ERR("DMA (DW) only supports lengths is multiple of burst "
                         "length (%d)",
@@ -198,9 +197,9 @@ static void spi_ifx_transfer_chunk(const struct device* dev) {
             rx_cfg->block_count = tx_cfg->block_count = 1;
         }
         else {
-            rx_cfg->source_burst_length = tx_cfg->source_burst_length = 0;
-            rx_cfg->dest_burst_length = tx_cfg->dest_burst_length = 0;
-            rx_cfg->block_count = tx_cfg->block_count = 1;
+            rx_cfg->source_burst_length = tx_cfg->source_burst_length = 1;
+            rx_cfg->dest_burst_length   = tx_cfg->dest_burst_length   = 0;
+            rx_cfg->block_count         = tx_cfg->block_count         = 1;
         }
 
         struct dma_block_config* rx_blk = &dma_rx->blk_cfg;
@@ -524,6 +523,7 @@ static int spi_ifx_init(const struct device* dev) {
         data->dma_rx.dma_cfg.user_data       = (void*)dev;
         data->dma_rx.dma_cfg.dma_callback    = spi_ifx_dma_callback;
 
+        data->dma_rx.dma_cfg.source_handshake = 0;
         #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
         Cy_TrigMux_Connect(PERI_0_TRIG_IN_MUX_0_SCB_RX_TR_OUT0 + data->resource.block_num,
                            PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->dma_rx.dma_channel,
@@ -542,6 +542,7 @@ static int spi_ifx_init(const struct device* dev) {
         data->dma_tx.dma_cfg.user_data       = (void*)dev;
         data->dma_tx.dma_cfg.dma_callback    = spi_ifx_dma_callback;
 
+        data->dma_tx.dma_cfg.source_handshake = 1;
         #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
         Cy_TrigMux_Connect(PERI_0_TRIG_IN_MUX_0_SCB_TX_TR_OUT0 + data->resource.block_num,
                            PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->dma_tx.dma_channel,
@@ -581,7 +582,7 @@ static int spi_ifx_init(const struct device* dev) {
         .channel_direction    = ch_dir,                         \
         .source_data_size     = src_data_size,                  \
         .dest_data_size       = dst_data_size,                  \
-        .source_burst_length  = 0,                              \
+        .source_burst_length  = 1,                              \
         .dest_burst_length    = 0,                              \
         .block_count          = 1,                              \
         .complete_callback_en = 1,                              \
