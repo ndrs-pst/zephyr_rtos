@@ -9,7 +9,7 @@
 
 #include <zephyr/sys/util.h>
 
-#define SPI_NOR_MAX_ID_LEN	3
+#define SPI_NOR_MAX_ID_LEN      3
 
 /* Status register bits */
 #define SPI_NOR_WIP_BIT         BIT(0)  /* Write in progress */
@@ -63,21 +63,27 @@
 #define SPI_NOR_CMD_RESET_EN    0x66    /* Reset Enable */
 #define SPI_NOR_CMD_RESET_MEM   0x99    /* Reset Memory */
 #define SPI_NOR_CMD_BULKE       0x60    /* Bulk Erase */
-#define SPI_NOR_CMD_READ_4B      0x13  /* Read data 4 Byte Address */
-#define SPI_NOR_CMD_READ_FAST_4B 0x0C  /* Fast Read 4 Byte Address */
-#define SPI_NOR_CMD_DREAD_4B     0x3C  /* Read data (1-1-2) 4 Byte Address */
-#define SPI_NOR_CMD_2READ_4B     0xBC  /* Read data (1-2-2) 4 Byte Address */
-#define SPI_NOR_CMD_QREAD_4B     0x6C  /* Read data (1-1-4) 4 Byte Address */
-#define SPI_NOR_CMD_4READ_4B     0xEC  /* Read data (1-4-4) 4 Byte Address */
-#define SPI_NOR_CMD_PP_4B        0x12  /* Page Program 4 Byte Address */
-#define SPI_NOR_CMD_PP_1_1_4_4B  0x34  /* Quad Page program (1-1-4) 4 Byte Address */
-#define SPI_NOR_CMD_PP_1_4_4_4B  0x3e  /* Quad Page program (1-4-4) 4 Byte Address */
-#define SPI_NOR_CMD_PP_1_1_8_4B  0x84  /* Octal Page program (1-1-8) 4 Byte Address */
-#define SPI_NOR_CMD_PP_1_8_8_4B  0x8E  /* Extended Octal Page program (1-8-8) 4 Byte Address */
-#define SPI_NOR_CMD_RDFLSR       0x70  /* Read Flag Status Register */
-#define SPI_NOR_CMD_CLRFLSR      0x50  /* Clear Flag Status Register */
-#define SPI_NOR_CMD_WR_VCFGREG   0x81  /* Octal Write volatile configuration Register */
-#define SPI_NOR_OCMD_READ        0xFD  /* Octal IO read command */
+#define SPI_NOR_CMD_READ_4B      0x13   /* Read data 4 Byte Address */
+#define SPI_NOR_CMD_READ_FAST_4B 0x0C   /* Fast Read 4 Byte Address */
+#define SPI_NOR_CMD_DREAD_4B     0x3C   /* Read data (1-1-2) 4 Byte Address */
+#define SPI_NOR_CMD_2READ_4B     0xBC   /* Read data (1-2-2) 4 Byte Address */
+#define SPI_NOR_CMD_QREAD_4B     0x6C   /* Read data (1-1-4) 4 Byte Address */
+#define SPI_NOR_CMD_4READ_4B     0xEC   /* Read data (1-4-4) 4 Byte Address */
+#define SPI_NOR_CMD_PP_4B        0x12   /* Page Program 4 Byte Address */
+#define SPI_NOR_CMD_PP_1_1_4_4B  0x34   /* Quad Page program (1-1-4) 4 Byte Address */
+#define SPI_NOR_CMD_PP_1_4_4_4B  0x3e   /* Quad Page program (1-4-4) 4 Byte Address */
+#define SPI_NOR_CMD_PP_1_1_8_4B  0x84   /* Octal Page program (1-1-8) 4 Byte Address */
+#define SPI_NOR_CMD_PP_1_8_8_4B  0x8E   /* Extended Octal Page program (1-8-8) 4 Byte Address */
+#define SPI_NOR_CMD_RDFLSR       0x70   /* Read Flag Status Register */
+#define SPI_NOR_CMD_CLRFLSR      0x50   /* Clear Flag Status Register */
+#define SPI_NOR_CMD_WR_VCFGREG   0x81   /* Octal Write volatile configuration Register */
+#define SPI_NOR_OCMD_READ        0xFD   /* Octal IO read command */
+
+/* Infineon's specific SEMPER flash command */
+#define SPI_NOR_CMD_SEMPER_RDARG 0x65   /* Read any register */
+#define SPI_NOR_CMD_SEMPER_WRARG 0x71   /* Write any register */
+#define SPI_NOR_CMD_WRENV       0x50    /* Write enable for volatile register write */
+#define SPI_NOR_CMD_RDPLB       0xA7    /* Read Protection Lock Bit */
 
 /* Flash octal opcodes */
 #define SPI_NOR_OCMD_SE         0x21DE  /* Octal Sector erase */
@@ -119,13 +125,19 @@
 #define SPI_NOR_DUMMY_REG_OCTAL         4U
 #define SPI_NOR_DUMMY_REG_OCTAL_DTR     5U
 
-
 /* Memory registers address */
 #define SPI_NOR_REG2_ADDR1              0x0000000
 #define SPI_NOR_CR2_STR_OPI_EN          0x01
 #define SPI_NOR_CR2_DTR_OPI_EN          0x02
 #define SPI_NOR_REG2_ADDR3              0x00000300
 #define SPI_NOR_CR2_DUMMY_CYCLES_66MHZ  0x07
+
+/* Infineon's specific SEMPER flash registers address */
+#define SPI_NOR_SEMPER_CFR2N_ADDR       0x00000003  /* Non-volatile Configuration Register 2 address */
+#define SPI_NOR_SEMPER_CFR3N_ADDR       0x00000004  /* Non-volatile Configuration Register 3 address */
+
+#define SPI_NOR_SEMPER_CFR2N_ADRBYT     BIT(7)      /* Address Byte Length selection between 3 or 4 bytes for Instructions */
+#define SPI_NOR_SEMPER_CFR3N_UNHYSA     BIT(3)      /* Uniform or Hybrid Sector Architecture selection CFR3N[3] */
 
 /* Test whether offset is aligned to a given number of bits. */
 #define SPI_NOR_IS_ALIGNED(_ofs, _bits) (((_ofs) & BIT_MASK(_bits)) == 0)

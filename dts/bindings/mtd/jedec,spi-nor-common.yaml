@@ -103,6 +103,17 @@ properties:
 
       Only supported on Macronix MX25R Ultra Low Power series.
 
+  # CUSTOM@NDRS
+  infineon,s25hl512:
+    type: boolean
+    description: |
+      Indicates the device is an Infineon SEMPER FLASH with 512 Mb memory.
+
+      This property identifies Infineon S25HL512 SPI NOR flash devices,
+      which are part of the SEMPER FLASH family.
+      When set to true, this flag enables support Uniform Sector Architecture
+      (all 256 KB sectors).
+
   use-4b-addr-opcodes:
     type: boolean
     description: |

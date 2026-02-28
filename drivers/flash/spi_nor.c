@@ -152,6 +152,7 @@ struct spi_nor_config {
     bool dpd_exist                    : 1;
     bool dpd_wakeup_sequence_exist    : 1;
     bool mxicy_mx25r_power_mode_exist : 1;
+    bool infineon_s25hl512_exist      : 1;
     bool reset_gpios_exist            : 1;
     bool requires_ulbpr_exist         : 1;
     bool wp_gpios_exist               : 1;
@@ -244,6 +245,10 @@ static const struct jesd216_erase_type minimal_erase_types_4b[JESD216_NUM_ERASE_
 
 static int spi_nor_write_protection_set(const struct device* dev,
                                         bool write_protect);
+static int spi_nor_semper_read_register(const struct device* dev,
+                                        uint32_t addr, uint8_t* value);
+static int spi_nor_semper_write_register(const struct device* dev,
+                                         uint32_t addr, uint8_t value);
 
 /* Get pointer to array of supported erase types.  Static const for
  * minimal, data for runtime and devicetree.
@@ -1172,6 +1177,29 @@ static int spi_nor_write_protection_set(const struct device* dev,
     return (ret);
 }
 
+static int spi_nor_semper_read_register(const struct device* dev,
+                                        uint32_t addr, uint8_t* value) {
+    int rc;
+
+    rc = spi_nor_cmd_addr_read_4b(dev, SPI_NOR_CMD_SEMPER_RDARG, addr, value, 1);
+
+    return (rc);
+}
+
+static int spi_nor_semper_write_register(const struct device* dev,
+                                         uint32_t addr, uint8_t value) {
+    uint8_t buf[1];
+    int rc;
+
+    rc = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+    if (rc == 0) {
+        buf[0] = value;
+        rc = spi_nor_cmd_addr_write_4b(dev, SPI_NOR_CMD_SEMPER_WRARG, addr, &buf[0], 1);
+    }
+
+    return (rc);
+}
+
 #if defined(CONFIG_FLASH_JESD216_API) || defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
 
 static int spi_nor_sfdp_read(const struct device* dev, off_t addr,
@@ -1540,6 +1568,33 @@ static int setup_pages_layout(const struct device* dev) {
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 #endif /* CONFIG_SPI_NOR_SFDP_MINIMAL */
 
+/* SEMPER flash with large memory specific setting
+ * to make uniform sector architecture of (256 kB)
+ */
+static int spi_nor_configure_semper_flash(const struct device* dev) {
+    uint8_t reg;
+    int rc;
+
+    /* Set Address Byte Length selection to 4 bytes for instructions */
+    rc = spi_nor_semper_read_register(dev, SPI_NOR_SEMPER_CFR2N_ADDR, &reg);
+    if ((rc == 0) &&
+        ((reg & SPI_NOR_SEMPER_CFR2N_ADRBYT) == 0)) {
+        reg |= SPI_NOR_SEMPER_CFR2N_ADRBYT;
+        rc = spi_nor_semper_write_register(dev, SPI_NOR_SEMPER_CFR2N_ADDR, reg);
+    }
+
+    if (rc == 0) {
+        rc = spi_nor_semper_read_register(dev, SPI_NOR_SEMPER_CFR3N_ADDR, &reg);
+        if ((rc == 0) &&
+            ((reg & SPI_NOR_SEMPER_CFR3N_UNHYSA) == 0)) {
+            reg |= SPI_NOR_SEMPER_CFR3N_UNHYSA;
+            rc = spi_nor_semper_write_register(dev, SPI_NOR_SEMPER_CFR3N_ADDR, reg);
+        }
+    }
+
+    return rc;
+}
+
 /**
  * @brief Configure the flash
  *
@@ -1558,7 +1613,6 @@ static int spi_nor_configure(const struct device* dev) {
     }
 
     #if ANY_INST_HAS_RESET_GPIOS
-
     if (cfg->reset_gpios_exist) {
         if (!gpio_is_ready_dt(&cfg->reset)) {
             LOG_ERR("Reset pin not ready");
@@ -1688,7 +1742,11 @@ static int spi_nor_configure(const struct device* dev) {
     }
     #endif /* ANY_INST_HAS_MXICY_MX25R_POWER_MODE */
 
-    return (0);
+    if (cfg->infineon_s25hl512_exist) {
+        rc = spi_nor_configure_semper_flash(dev);
+    }
+
+    return (rc);
 }
 
 static int spi_nor_pm_control(const struct device* dev, enum pm_device_action action) {
@@ -1919,12 +1977,13 @@ static DEVICE_API(flash, spi_nor_api) = {
          .bfp = (const struct jesd216_bfp *)bfp_##idx##_data,))
 
 #define GENERATE_CONFIG_STRUCT(idx)                                     \
-    static const struct spi_nor_config spi_nor_##idx##_config = {       \
+    static struct spi_nor_config DT_CONST spi_nor_##idx##_config = {    \
         .spi = SPI_DT_SPEC_INST_GET(idx, SPI_WORD_SET(8)),              \
         .dpd_exist = DT_INST_PROP(idx, has_dpd),                        \
         .dpd_wakeup_sequence_exist = DT_INST_NODE_HAS_PROP(idx, dpd_wakeup_sequence), \
         .mxicy_mx25r_power_mode_exist =                                 \
             DT_INST_NODE_HAS_PROP(idx, mxicy_mx25r_power_mode),         \
+        .infineon_s25hl512_exist = DT_INST_NODE_HAS_PROP(idx, infineon_s25hl512), \
         .reset_gpios_exist = DT_INST_NODE_HAS_PROP(idx, reset_gpios),   \
         .requires_ulbpr_exist = DT_INST_PROP(idx, requires_ulbpr),      \
         .wp_gpios_exist = DT_INST_NODE_HAS_PROP(idx, wp_gpios),         \
