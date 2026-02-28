@@ -512,40 +512,43 @@ static int spi_ifx_init(const struct device* dev) {
     }
 
     #ifdef CONFIG_SPI_INFINEON_DMA
-    if (data->dma_rx.dev_dma != NULL) {
-        if (!device_is_ready(data->dma_rx.dev_dma)) {
+    struct ifx_cat1_dma_stream* dma_rx = &data->dma_rx;
+    struct ifx_cat1_dma_stream* dma_tx = &data->dma_tx;
+
+    if (dma_rx->dev_dma != NULL) {
+        if (!device_is_ready(dma_rx->dev_dma)) {
             return (-ENODEV);
         }
-        data->dma_rx.blk_cfg.source_address  = (uint32_t)(&(config->reg_addr->RX_FIFO_RD));
-        data->dma_rx.blk_cfg.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-        data->dma_rx.blk_cfg.dest_addr_adj   = DMA_ADDR_ADJ_INCREMENT;
-        data->dma_rx.dma_cfg.head_block      = &data->dma_rx.blk_cfg;
-        data->dma_rx.dma_cfg.user_data       = (void*)dev;
-        data->dma_rx.dma_cfg.dma_callback    = spi_ifx_dma_callback;
+        dma_rx->blk_cfg.source_address  = (uint32_t)&config->reg_addr->RX_FIFO_RD;
+        dma_rx->blk_cfg.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+        dma_rx->blk_cfg.dest_addr_adj   = DMA_ADDR_ADJ_INCREMENT;
+        dma_rx->dma_cfg.head_block      = &dma_rx->blk_cfg;
+        dma_rx->dma_cfg.user_data       = (void*)dev;
+        dma_rx->dma_cfg.dma_callback    = spi_ifx_dma_callback;
 
-        data->dma_rx.dma_cfg.source_handshake = 0;
+        dma_rx->dma_cfg.source_handshake = 0;
         #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
         Cy_TrigMux_Connect(PERI_0_TRIG_IN_MUX_0_SCB_RX_TR_OUT0 + data->resource.block_num,
-                           PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->dma_rx.dma_channel,
+                           PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + dma_rx->dma_channel,
                            false, TRIGGER_TYPE_LEVEL);
         #endif
     }
 
-    if (data->dma_tx.dev_dma != NULL) {
-        if (!device_is_ready(data->dma_tx.dev_dma)) {
+    if (dma_tx->dev_dma != NULL) {
+        if (!device_is_ready(dma_tx->dev_dma)) {
             return (-ENODEV);
         }
-        data->dma_tx.blk_cfg.dest_address    = (uint32_t)(&(config->reg_addr->TX_FIFO_WR));
-        data->dma_tx.blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
-        data->dma_tx.blk_cfg.dest_addr_adj   = DMA_ADDR_ADJ_NO_CHANGE;
-        data->dma_tx.dma_cfg.head_block      = &data->dma_tx.blk_cfg;
-        data->dma_tx.dma_cfg.user_data       = (void*)dev;
-        data->dma_tx.dma_cfg.dma_callback    = spi_ifx_dma_callback;
+        dma_tx->blk_cfg.dest_address    = (uint32_t)&config->reg_addr->TX_FIFO_WR;
+        dma_tx->blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+        dma_tx->blk_cfg.dest_addr_adj   = DMA_ADDR_ADJ_NO_CHANGE;
+        dma_tx->dma_cfg.head_block      = &dma_tx->blk_cfg;
+        dma_tx->dma_cfg.user_data       = (void*)dev;
+        dma_tx->dma_cfg.dma_callback    = spi_ifx_dma_callback;
 
-        data->dma_tx.dma_cfg.source_handshake = 1;
+        dma_tx->dma_cfg.source_handshake = 1;
         #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
         Cy_TrigMux_Connect(PERI_0_TRIG_IN_MUX_0_SCB_TX_TR_OUT0 + data->resource.block_num,
-                           PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->dma_tx.dma_channel,
+                           PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + dma_tx->dma_channel,
                            false, TRIGGER_TYPE_EDGE);
         #endif
     }
@@ -810,7 +813,7 @@ cy_rslt_t spi_ifx_abort_async(const struct device* dev) {
     struct spi_ifx_data* const data = dev->data;
     const struct spi_ifx_config* const config = dev->config;
 
-    Cy_SCB_SPI_AbortTransfer(config->reg_addr, &(data->context));
+    Cy_SCB_SPI_AbortTransfer(config->reg_addr, &data->context);
     data->pending = IFX_SPI_PENDING_NONE;
     return (CY_RSLT_SUCCESS);
 }
@@ -914,12 +917,11 @@ static cy_rslt_t spi_ifx_int_frequency(const struct device* dev, uint32_t hz,
     struct spi_ifx_data* const data = dev->data;
     const struct spi_ifx_config* const config = dev->config;
 
-    cy_rslt_t result = CY_RSLT_SUCCESS;
-    uint8_t  oversample_value;
+    cy_rslt_t result;
     uint32_t divider_value;
-    uint32_t last_diff        = 0xFFFFFFFFU;
-    uint8_t  last_ovrsmpl_val = 0;
-    uint32_t last_dvdr_val    = 0;
+    uint32_t last_diff = 0xFFFFFFFFU;
+    __maybe_unused uint32_t last_ovrsmpl_val = 0;
+    uint32_t last_dvdr_val = 0;
     uint32_t oversampled_freq;
     uint32_t divided_freq;
     uint32_t diff;
@@ -936,7 +938,7 @@ static cy_rslt_t spi_ifx_int_frequency(const struct device* dev, uint32_t hz,
     #endif
 
     if (!data->is_slave) {
-        for (oversample_value = IFX_SPI_OVERSAMPLE_MIN;
+        for (uint32_t oversample_value = IFX_SPI_OVERSAMPLE_MIN;
              oversample_value <= IFX_SPI_OVERSAMPLE_MAX;
              oversample_value++) {
             oversampled_freq = (hz * oversample_value);
@@ -963,7 +965,7 @@ static cy_rslt_t spi_ifx_int_frequency(const struct device* dev, uint32_t hz,
             }
         }
 
-        *over_sample_val = last_ovrsmpl_val;
+        *over_sample_val = (uint8_t)last_ovrsmpl_val;
     }
     else {
         /* Slave requires such frequency: required_frequency = N / ((0.5 * desired_period)
@@ -981,15 +983,14 @@ static cy_rslt_t spi_ifx_int_frequency(const struct device* dev, uint32_t hz,
         }
 
         last_dvdr_val = 1;
-        CY_UNUSED_PARAMETER(last_ovrsmpl_val);
     }
 
     if ((data->clock.block & 0x02) == 0) {
-        result = ifx_cat1_utils_peri_pclk_set_divider(config->clk_dst, &(data->clock),
+        result = ifx_cat1_utils_peri_pclk_set_divider(config->clk_dst, &data->clock,
                                                       last_dvdr_val - 1);
     }
     else {
-        result = ifx_cat1_utils_peri_pclk_set_frac_divider(config->clk_dst, &(data->clock),
+        result = ifx_cat1_utils_peri_pclk_set_frac_divider(config->clk_dst, &data->clock,
                                                            last_dvdr_val - 1, 0);
     }
 
@@ -1000,9 +1001,9 @@ static cy_rslt_t spi_ifx_set_frequency(const struct device* dev, uint32_t hz) {
     struct spi_ifx_data* const data = dev->data;
     const struct spi_ifx_config* const config = dev->config;
 
-    cy_rslt_t result = CY_RSLT_SUCCESS;
+    cy_rslt_t result;
     cy_rslt_t scb_init_result = CY_RSLT_SUCCESS;
-    uint8_t   ovr_sample_val;
+    uint8_t ovr_sample_val;
 
     Cy_SCB_SPI_Disable(config->reg_addr, &data->context);
     result = spi_ifx_int_frequency(dev, hz, &ovr_sample_val);
@@ -1035,9 +1036,9 @@ static cy_rslt_t spi_ifx_set_frequency(const struct device* dev, uint32_t hz) {
 }
 
 static cy_rslt_t spi_init_hw(const struct device* dev, cy_stc_scb_spi_config_t* cfg) {
-    cy_rslt_t result = CY_RSLT_SUCCESS;
     struct spi_ifx_data* const data = dev->data;
     const struct spi_ifx_config* const config = dev->config;
+    cy_rslt_t result;
 
     data->oversample_value = cfg->oversample;
     data->data_bits = cfg->txDataWidth;
@@ -1062,11 +1063,10 @@ static cy_rslt_t spi_init_hw(const struct device* dev, cy_stc_scb_spi_config_t* 
 
 static cy_rslt_t spi_ifx_init_cfg(const struct device* dev, cy_stc_scb_spi_config_t* scb_spi_config) {
     struct spi_ifx_data* const data = dev->data;
-
     cy_stc_scb_spi_config_t cfg_local = *scb_spi_config;
 
-    cy_rslt_t result = CY_RSLT_SUCCESS;
     bool is_slave = (cfg_local.spiMode == CY_SCB_SPI_SLAVE);
+    cy_rslt_t result;
 
     data->is_slave   = is_slave;
     data->write_fill = (uint8_t)CY_SCB_SPI_DEFAULT_TX;
@@ -1188,7 +1188,7 @@ static void spi_ifx_cb_wrapper(const struct device* dev, uint32_t event) {
      */
     if ((anded_events &
          (CY_SCB_SPI_TRANSFER_IN_FIFO_EVENT | CY_SCB_SPI_TRANSFER_CMPLT_EVENT)) &&
-        !(data->rx_buffer == NULL && data->tx_buffer == NULL)) {
+        !((data->rx_buffer == NULL) && (data->tx_buffer == NULL))) {
         return;
     }
 

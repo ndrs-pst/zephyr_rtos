@@ -416,18 +416,19 @@ static int ifx_cat1_uart_configure(const struct device* dev, const struct uart_c
     cy_rslt_t result;
     struct ifx_cat1_uart_data* data = dev->data;
     const struct ifx_cat1_uart_config* const config = dev->config;
+    cy_stc_scb_uart_config_t* scb_config = &data->scb_config;
 
     /* Store Uart Zephyr configuration (uart config) into data structure */
     data->cfg = *cfg;
 
     /* Configure parity, data and stop bits */
     Cy_SCB_UART_Disable(config->reg_addr, NULL);
-    data->scb_config.dataWidth = convert_uart_data_bits_z_to_cy(cfg->data_bits);
-    data->scb_config.stopBits  = convert_uart_stop_bits_z_to_cy(cfg->stop_bits);
-    data->scb_config.parity    = convert_uart_parity_z_to_cy(cfg->parity);
-    data->scb_config.enableCts = data->cts_enabled;
+    scb_config->dataWidth = convert_uart_data_bits_z_to_cy(cfg->data_bits);
+    scb_config->stopBits  = convert_uart_stop_bits_z_to_cy(cfg->stop_bits);
+    scb_config->parity    = convert_uart_parity_z_to_cy(cfg->parity);
+    scb_config->enableCts = data->cts_enabled;
 
-    Cy_SCB_UART_Init(config->reg_addr, &(data->scb_config), NULL);
+    Cy_SCB_UART_Init(config->reg_addr, scb_config, NULL);
     Cy_SCB_UART_Enable(config->reg_addr);
     /* Configure the baud rate */
     result = ifx_cat1_uart_set_baud(dev, cfg->baudrate);
@@ -461,6 +462,7 @@ static int ifx_cat1_uart_fifo_fill(const struct device* dev, uint8_t const* tx_d
     uint32_t tx_length;
 
     tx_length = Cy_SCB_UART_PutArray(config->reg_addr, (void*)tx_data, size);
+
     return (int)tx_length;
 }
 
@@ -884,12 +886,13 @@ static inline void async_evt_rx_rdy(struct ifx_cat1_uart_data* data) {
 }
 
 static inline void async_evt_rx_buf_request(struct ifx_cat1_uart_data* data) {
+    struct ifx_cat1_uart_async* async = &data->async;
     struct uart_event evt = {
         .type = UART_RX_BUF_REQUEST
     };
 
-    if (data->async.cb) {
-        data->async.cb(data->async.uart_dev, &evt, data->async.user_data);
+    if (async->cb) {
+        async->cb(async->uart_dev, &evt, async->user_data);
     }
 }
 

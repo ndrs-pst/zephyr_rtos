@@ -57,10 +57,9 @@ struct ifx_cat1_dma_config {
 };
 
 static cy_stc_dma_descriptor_t* ifx_cat1_dma_alloc_descriptor(const struct device* dev) {
-    uint32_t i;
     struct ifx_cat1_dma_data* data = dev->data;
 
-    for (i = 0u; i < CONFIG_INFINEON_DESCRIPTOR_POOL_SIZE; i++) {
+    for (uint32_t i = 0U; i < CONFIG_INFINEON_DESCRIPTOR_POOL_SIZE; i++) {
         if (!atomic_test_and_set_bit(data->desc_allocated, i)) {
             return &data->descriptor_pool[i];
         }
@@ -120,12 +119,11 @@ static int convert_dma_xy_increment_z_to_pdl(uint32_t addr_adj) {
 /* Configure a channel */
 static int ifx_cat1_dma_config(const struct device* dev, uint32_t channel,
                                struct dma_config* config) {
-    cy_en_dma_status_t dma_status;
     struct ifx_cat1_dma_data* data = dev->data;
     const struct ifx_cat1_dma_config* const cfg = dev->config;
     cy_stc_dma_channel_config_t channel_config = {0u};
     cy_stc_dma_descriptor_config_t descriptor_config = {0u};
-    cy_stc_dma_descriptor_t* descriptor = NULL;
+    cy_en_dma_status_t dma_status;
 
     if (channel >= cfg->num_channels) {
         LOG_ERR("Unsupported channel");
@@ -155,20 +153,22 @@ static int ifx_cat1_dma_config(const struct device* dev, uint32_t channel,
     }
 
     /* Update callback configuration while we have the lock - ISR reads these fields */
-    data->channels[channel].callback             = config->dma_callback;
-    data->channels[channel].user_data            = config->user_data;
-    data->channels[channel].channel_direction    = config->channel_direction;
-    data->channels[channel].complete_callback_en = config->complete_callback_en;
-    data->channels[channel].error_callback_dis   = config->error_callback_dis;
+    struct ifx_cat1_dma_channel* channels = &data->channels[channel];
+
+    channels->callback             = config->dma_callback;
+    channels->user_data            = config->user_data;
+    channels->channel_direction    = config->channel_direction;
+    channels->complete_callback_en = config->complete_callback_en;
+    channels->error_callback_dis   = config->error_callback_dis;
     if (config->channel_direction == MEMORY_TO_MEMORY) {
-        data->channels[channel].sw_triggered = 1;
+        channels->sw_triggered = 1;
     }
     else {
-        data->channels[channel].sw_triggered = config->source_handshake;
+        channels->sw_triggered = config->source_handshake;
     }
 
     /* Get first descriptor */
-    descriptor = &data->channels[channel].descr;
+    cy_stc_dma_descriptor_t* descriptor = &channels->descr;
 
     /* Retrigger descriptor immediately */
     descriptor_config.retrigger = CY_DMA_RETRIG_IM;
@@ -221,7 +221,7 @@ static int ifx_cat1_dma_config(const struct device* dev, uint32_t channel,
 
     struct dma_block_config* block_config = config->head_block;
 
-    for (uint32_t i = 0u; i < config->block_count; i++) {
+    for (uint32_t i = 0U; i < config->block_count; i++) {
         /* Setup destination increment for X source loop */
         descriptor_config.srcXincrement =
             convert_dma_xy_increment_z_to_pdl(block_config->source_addr_adj);
@@ -262,7 +262,7 @@ static int ifx_cat1_dma_config(const struct device* dev, uint32_t channel,
             (void*)CY_REMAP_ADDRESS_CBUS_TO_SAHB((void*)block_config->dest_address);
 
         /* Allocate next descriptor if need */
-        if (i + 1u < config->block_count) {
+        if ((i + 1U) < config->block_count) {
             descriptor_config.nextDescriptor = ifx_cat1_dma_alloc_descriptor(dev);
             if (descriptor_config.nextDescriptor == NULL) {
                 LOG_ERR("ERROR: can not allocate DMA descriptor");
@@ -288,7 +288,7 @@ static int ifx_cat1_dma_config(const struct device* dev, uint32_t channel,
     }
 
     /* Set a descriptor for the specified DMA channel */
-    channel_config.descriptor = &data->channels[channel].descr;
+    channel_config.descriptor = &channels->descr;
 
     /* Set a priority for the DMA channel */
     Cy_DMA_Channel_SetPriority(cfg->regs, channel, config->channel_priority);
@@ -303,7 +303,7 @@ static int ifx_cat1_dma_config(const struct device* dev, uint32_t channel,
     Cy_DMA_Channel_SetInterruptMask(cfg->regs, channel, CY_DMA_INTR_MASK);
 
     /* Enable the interrupt  */
-    irq_enable(data->channels[channel].irq);
+    irq_enable(channels->irq);
 
     return 0;
 }
@@ -367,9 +367,9 @@ int ifx_cat1_dma_reload(const struct device* dev, uint32_t channel, uint32_t src
     /* Flush the cache before starting DMA to ensure that the modifications made in cache
      * are written back to the memory.
      */
-#ifdef CONFIG_CPU_HAS_DCACHE
+    #ifdef CONFIG_CPU_HAS_DCACHE
     sys_cache_data_flush_and_invd_range((void*)src, size);
-#endif
+    #endif
 
     /* Initialize channel */
     Cy_DMA_Channel_Enable(cfg->regs, channel);
@@ -410,18 +410,19 @@ static uint32_t get_total_size(const struct device* dev, uint32_t channel) {
 static uint32_t get_transferred_size(const struct device* dev, uint32_t channel) {
     const struct ifx_cat1_dma_config* const cfg = dev->config;
     struct ifx_cat1_dma_data* data = dev->data;
+    struct ifx_cat1_dma_channel* channels = &data->channels[channel];
     uint32_t transferred_data_size = 0;
-    uint32_t x_size = 0;
-    uint32_t y_size = 0;
+    uint32_t x_size;
+    uint32_t y_size;
 
     /* head descriptor for the channel */
-    cy_stc_dma_descriptor_t* next_descr = &data->channels[channel].descr;
+    cy_stc_dma_descriptor_t* next_descr = &channels->descr;
     /* current descriptor from PDL */
     cy_stc_dma_descriptor_t* curr_descr =
         Cy_DMA_Channel_GetCurrentDescriptor(cfg->regs, channel);
 
     /* Sanity */
-    if (next_descr == NULL || curr_descr == NULL) {
+    if ((next_descr == NULL) || (curr_descr == NULL)) {
         return 0;
     }
 
@@ -463,9 +464,10 @@ static int ifx_cat1_dma_get_status(const struct device* dev, uint32_t channel,
                  ? true : false;
 
     /* Check if the channel has a configured head descriptor by inspecting its src/dst */
-    cy_stc_dma_descriptor_t* head = &data->channels[channel].descr;
+    struct ifx_cat1_dma_channel* channels = &data->channels[channel];
+    cy_stc_dma_descriptor_t* head = &channels->descr;
 
-    if (head != NULL && (head->src != 0 || head->dst != 0)) {
+    if ((head != NULL) && ((head->src != 0) || (head->dst != 0))) {
         uint32_t total_transfer_size = get_total_size(dev, channel);
         uint32_t transferred_size    = get_transferred_size(dev, channel);
 
@@ -478,7 +480,7 @@ static int ifx_cat1_dma_get_status(const struct device* dev, uint32_t channel,
     }
 
     /* direction info */
-    stat->dir = data->channels[channel].channel_direction;
+    stat->dir = channels->channel_direction;
 
     return 0;
 }
@@ -498,14 +500,15 @@ static int ifx_cat1_dma_init(const struct device* dev) {
 /* Handles DMA interrupts and dispatches to the individual channel */
 struct ifx_cat1_dma_irq_context {
     const struct device* dev;
-    uint32_t             channel;
+    uint32_t channel;
 };
 
 static void ifx_cat1_dma_isr(struct ifx_cat1_dma_irq_context* irq_context) {
     uint32_t channel = irq_context->channel;
     struct ifx_cat1_dma_data* data = irq_context->dev->data;
     const struct ifx_cat1_dma_config* cfg = irq_context->dev->config;
-    dma_callback_t callback = data->channels[channel].callback;
+    struct ifx_cat1_dma_channel* channels = &data->channels[channel];
+    dma_callback_t callback = channels->callback;
     int status = -EIO;
 
     /* Get interrupt type and call users event callback if they have enabled that event */
@@ -566,11 +569,11 @@ static void ifx_cat1_dma_isr(struct ifx_cat1_dma_irq_context* irq_context) {
     }
 
     /* Give callback with error status only if enabled */
-    if (status != 0 && !data->channels[channel].error_callback_dis) {
+    if (status != 0 && !channels->error_callback_dis) {
         return;
     }
 
-    callback(irq_context->dev, data->channels[channel].user_data, channel, status);
+    callback(irq_context->dev, channels->user_data, channel, status);
 }
 
 static DEVICE_API(dma, ifx_cat1_dma_api) = {

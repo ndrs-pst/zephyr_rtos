@@ -81,7 +81,7 @@ static int ifx_cat1_peri_clock_init(const struct device* dev) {
     }
     else {
         err = ifx_cat1_utils_peri_pclk_set_frac_divider(clk_dst, &data->clock,
-                                                        data->divider - 1, data->frac_divider)
+                                                        data->divider - 1, data->frac_divider);
         if (err != CY_RSLT_SUCCESS) {
             return -EIO;
         }
