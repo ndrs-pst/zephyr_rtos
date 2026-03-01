@@ -301,14 +301,17 @@ static int zms_flash_block_cmp(struct zms_fs *fs, uint64_t addr, const void *dat
 		if (rc) {
 			return rc;
 		}
+
 		rc = memcmp(data8, buf, bytes_to_cmp);
 		if (rc) {
 			return 1;
 		}
+
 		len -= bytes_to_cmp;
 		addr += bytes_to_cmp;
 		data8 += bytes_to_cmp;
 	}
+
 	return 0;
 }
 
@@ -335,6 +338,7 @@ static int zms_flash_cmp_const(struct zms_fs *fs, uint64_t addr, uint8_t value, 
 		len -= bytes_to_cmp;
 		addr += bytes_to_cmp;
 	}
+
 	return 0;
 }
 
@@ -356,13 +360,16 @@ static int zms_flash_block_move(struct zms_fs *fs, uint64_t addr, size_t len)
 		if (rc) {
 			return rc;
 		}
+
 		rc = zms_flash_data_wrt(fs, buf, bytes_to_copy);
 		if (rc) {
 			return rc;
 		}
+
 		len -= bytes_to_copy;
 		addr += bytes_to_copy;
 	}
+
 	return 0;
 }
 
@@ -390,8 +397,8 @@ static int zms_flash_erase_sector(struct zms_fs *fs, uint64_t addr)
 #ifdef CONFIG_ZMS_LOOKUP_CACHE
 	zms_lookup_cache_invalidate(fs, (uint32_t)SECTOR_NUM(addr));
 #endif
-	rc = flash_erase(fs->flash_device, offset, fs->sector_size);
 
+	rc = flash_erase(fs->flash_device, offset, fs->sector_size);
 	if (rc) {
 		return rc;
 	}
@@ -611,11 +618,13 @@ static int zms_wipe_partition(struct zms_fs *fs)
 		if (rc) {
 			return rc;
 		}
+
 		rc = zms_add_empty_ate(fs, addr);
 		if (rc) {
 			return rc;
 		}
 	}
+
 	return 0;
 }
 
@@ -645,6 +654,7 @@ static int zms_recover_last_ate(struct zms_fs *fs, uint64_t *addr, uint64_t *dat
 		if (rc) {
 			return rc;
 		}
+
 		if (zms_ate_valid(fs, &end_ate)) {
 			/* found a valid ate, update data_end_addr and *addr */
 			data_end_addr &= ADDR_SECT_MASK;
@@ -837,7 +847,7 @@ static int zms_add_empty_ate(struct zms_fs *fs, uint64_t addr)
 {
 	struct zms_ate empty_ate;
 	uint8_t cycle_cnt;
-	int rc = 0;
+	int rc;
 	uint64_t previous_ate_wra;
 
 	/* Initialize all members to 0 */
@@ -1013,11 +1023,13 @@ static int zms_gc(struct zms_fs *fs)
 		if (rc) {
 			return rc;
 		}
+
 		/* sector never used */
 		rc = zms_add_empty_ate(fs, fs->ate_wra);
 		if (rc) {
 			return rc;
 		}
+
 		/* At this step we are sure that empty ATE exist.
 		 * If not, then there is an I/O problem.
 		 */
@@ -1193,7 +1205,6 @@ static int zms_init(struct zms_fs *fs)
 	/* step through the sectors to find a open sector following
 	 * a closed sector, this is where zms can write.
 	 */
-
 	for (i = 0; i < fs->sector_count; i++) {
 		addr = zms_close_ate_addr(fs, ((uint64_t)i << ADDR_SECT_SHIFT));
 
@@ -1268,9 +1279,11 @@ static int zms_init(struct zms_fs *fs)
 		if (rc) {
 			goto end;
 		}
+
 		if (!zms_ate_valid(fs, &first_ate)) {
 			zms_sector_advance(fs, &addr);
 		}
+
 		rc = zms_get_sector_header(fs, addr, &empty_ate, &close_ate);
 		if (rc) {
 			goto end;
@@ -1293,11 +1306,13 @@ static int zms_init(struct zms_fs *fs)
 			if (rc) {
 				goto end;
 			}
+
 			rc = zms_add_empty_ate(fs, addr);
 			if (rc) {
 				goto end;
 			}
 		}
+
 		rc = zms_get_sector_cycle(fs, addr, &fs->sector_cycle);
 		if (rc == -ENOENT) {
 			/* sector never used */
@@ -1421,6 +1436,7 @@ static int zms_init(struct zms_fs *fs)
 			if (rc < 0) {
 				goto end;
 			}
+
 			rc = zms_add_empty_ate(fs, addr);
 			goto end;
 		}
@@ -1429,6 +1445,7 @@ static int zms_init(struct zms_fs *fs)
 		if (rc) {
 			goto end;
 		}
+
 		rc = zms_add_empty_ate(fs, fs->ate_wra);
 		if (rc) {
 			goto end;
@@ -1506,6 +1523,7 @@ static int zms_mount_internal(struct zms_fs *fs, bool wipe_on_failure)
 			LOG_ERR("Unable to get page info");
 			return -EINVAL;
 		}
+
 		if (!fs->sector_size || fs->sector_size % info.size) {
 			LOG_ERR("Invalid sector size");
 			return -EINVAL;
@@ -1670,7 +1688,7 @@ no_cached_entry:
 	k_mutex_lock(&fs->zms_lock, K_FOREVER);
 
 	gc_count = 0;
-	while (1) {
+	while (true) {
 		if (gc_count == fs->sector_count) {
 			/* gc'ed all sectors, no extra space will be created
 			 * by extra gc.
@@ -1760,6 +1778,7 @@ ssize_t zms_read_hist(struct zms_fs *fs, zms_id_t id, void *data, size_t len, ui
 		if (prev_found < 0) {
 			return prev_found;
 		}
+
 		if (prev_found) {
 			cnt_his++;
 			/* wlk_prev_addr contain the ATE address of the previous found ATE. */
@@ -1868,6 +1887,7 @@ static ssize_t zms_free_space(struct zms_fs *fs, uint32_t data_wra, uint32_t ate
 		/* not enough room for an ATE */
 		return 0;
 	}
+
 	if (free_space < ZMS_DATA_IN_ATE_SIZE) {
 		/* more data can be stored inside an ATE */
 		return ZMS_DATA_IN_ATE_SIZE;
@@ -1909,7 +1929,7 @@ ssize_t zms_calc_free_space(struct zms_fs *fs)
 	/* there is always one reserved sector for garbage collection */
 	remaining_sectors = fs->sector_count - 1;
 
-	while (1) {
+	while (true) {
 		/* Count entries in the current sector as if it were garbage-collected.
 		 * Initialize data_wra and ate_wra as they would be in an empty sector
 		 * (with bottom space reserved for empty ATE, close ATE, and GC_done ATE).
