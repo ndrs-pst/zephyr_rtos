@@ -869,9 +869,9 @@ static struct net_if_router* iface_router_add(struct net_if* iface,
         router->is_used        = true;
         router->iface          = iface;
         router->address.family = family;
+        router->is_default     = is_default;
 
         if (lifetime) {
-            router->is_default  = true;
             router->is_infinite = false;
             router->lifetime    = lifetime;
             router->life_start  = k_uptime_get_32();
@@ -882,7 +882,6 @@ static struct net_if_router* iface_router_add(struct net_if* iface,
             iface_router_update_timer(router->life_start);
         }
         else {
-            router->is_default  = false;
             router->is_infinite = true;
             router->lifetime    = 0;
         }
@@ -903,7 +902,6 @@ static struct net_if_router* iface_router_add(struct net_if* iface,
         else if (IS_ENABLED(CONFIG_NET_IPV4) && (family == NET_AF_INET)) {
             memcpy(net_if_router_ipv4(router), addr,
                    sizeof(struct net_in_addr));
-            router->is_default = is_default;
 
             net_mgmt_event_notify_with_info(
                             NET_EVENT_IPV4_ROUTER_ADD, iface,
@@ -2968,8 +2966,9 @@ void net_if_ipv6_router_update_lifetime(struct net_if_router* router,
 
 struct net_if_router* net_if_ipv6_router_add(struct net_if* iface,
                                              struct net_in6_addr const* addr,
+                                             bool is_default,
                                              uint16_t lifetime) {
-    return iface_router_add(iface, NET_AF_INET6, addr, false, lifetime);
+    return iface_router_add(iface, NET_AF_INET6, addr, is_default, lifetime);
 }
 
 bool net_if_ipv6_router_rm(struct net_if_router* router) {
