@@ -92,7 +92,7 @@ struct dma_mcux_edma_data {
 };
 
 #define DEV_CFG(dev) \
-	((const struct dma_mcux_edma_config *const)dev->config)
+	((struct dma_mcux_edma_config DT_CONST*)dev->config)
 #define DEV_DATA(dev) ((struct dma_mcux_edma_data *)dev->data)
 #define DEV_BASE(dev) ((DMA_Type *)DEVICE_MMIO_NAMED_GET(dev, edma_mmio))
 
@@ -550,7 +550,7 @@ static inline int dma_mcux_edma_validate_cfg(const struct device *dev,
 	}
 
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
-	struct dma_block_config *block_config = config->head_block;
+	struct dma_block_config const* block_config = config->head_block;
 	uint32_t slot = config->dma_slot;
 	edma_transfer_type_t *type = &data->transfer_settings.transfer_type;
 
@@ -739,7 +739,7 @@ static int dma_mcux_edma_stop(const struct device *dev, uint32_t channel)
 
 static int dma_mcux_edma_suspend(const struct device *dev, uint32_t channel)
 {
-	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+	struct call_back const* data = DEV_CHANNEL_DATA(dev, channel);
 
 #if defined(CONFIG_DMA_MCUX_EDMA_V3) && \
 	(!defined(FSL_FEATURE_SOC_DMAMUX_COUNT) || (FSL_FEATURE_SOC_DMAMUX_COUNT == 0))
@@ -760,7 +760,7 @@ static int dma_mcux_edma_suspend(const struct device *dev, uint32_t channel)
 
 static int dma_mcux_edma_resume(const struct device *dev, uint32_t channel)
 {
-	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+	struct call_back const* data = DEV_CHANNEL_DATA(dev, channel);
 
 	if (!data->busy) {
 		return -EINVAL;
@@ -786,7 +786,8 @@ static int edma_reload_loop(const struct device *dev, uint32_t channel,
 	edma_tcd_t *tcd = NULL;
 	edma_tcd_t *pre_tcd = NULL;
 	uint32_t hw_channel;
-	uint32_t hw_id, sw_id;
+	uint32_t hw_id;
+	uint32_t sw_id;
 	uint8_t pre_idx;
 
 	hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
@@ -917,7 +918,7 @@ static int edma_reload_dynamic(const struct device *dev, uint32_t channel,
 static int dma_mcux_edma_reload(const struct device *dev, uint32_t channel,
 				uint32_t src, uint32_t dst, size_t size)
 {
-	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+	struct call_back const* data = DEV_CHANNEL_DATA(dev, channel);
 	int ret = 0;
 
 	/* Lock the channel configuration */
@@ -994,7 +995,7 @@ static int dma_mcux_edma_get_status(const struct device *dev, uint32_t channel,
 static bool dma_mcux_edma_channel_filter(const struct device *dev,
 					 int channel_id, void *param)
 {
-	enum dma_channel_filter *filter = (enum dma_channel_filter *)param;
+	enum dma_channel_filter const* filter = (enum dma_channel_filter const*)param;
 
 	if (filter && *filter == DMA_CHANNEL_PERIODIC) {
 		if (channel_id > 3) {
@@ -1216,6 +1217,8 @@ static void zephyr_gtest_dma_s32k3_reg_init(const struct device* dev, struct dma
     switch (base_addr) {
         case IP_EDMA_BASE: {
             cfg->edma_mmio.addr = (mm_reg_t)ut_mcu_edma_area;
+            dmamux_base_0[0] = (DMAMUX_Type*)ut_mcu_dmamux_0_area;
+            dmamux_base_0[1] = (DMAMUX_Type*)ut_mcu_dmamux_1_area;
             break;
         }
 
