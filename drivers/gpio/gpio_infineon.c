@@ -58,6 +58,71 @@ static inline uint32_t gpio_cat1_valid_mask(uint8_t ngpios) {
     #endif
 }
 
+/**
+ * @brief Select the PDL drive mode for an input pin.
+ *
+ * @param[in]  flags      GPIO configuration flags.
+ * @param[out] drive_mode PDL drive mode constant.
+ */
+static void gpio_cat1_select_input_drive_mode(gpio_flags_t flags, uint32_t* drive_mode) {
+    if ((flags & GPIO_PULL_UP) && (flags & GPIO_PULL_DOWN)) {
+        *drive_mode = CY_GPIO_DM_PULLUP_DOWN;
+    }
+    else if (flags & GPIO_PULL_UP) {
+        *drive_mode = CY_GPIO_DM_PULLUP;
+    }
+    else if (flags & GPIO_PULL_DOWN) {
+        *drive_mode = CY_GPIO_DM_PULLDOWN;
+    }
+    else {
+        *drive_mode = CY_GPIO_DM_HIGHZ;
+    }
+}
+
+/**
+ * @brief Select the PDL drive mode for an output pin.
+ *
+ * Maps push-pull, open-drain, and open-source configurations to the
+ * corresponding PDL drive mode.  Pull-up is only valid with open-drain;
+ * pull-down is only valid with open-source.
+ *
+ * @param[in]  flags      GPIO configuration flags.
+ * @param[out] drive_mode PDL drive mode constant.
+ *
+ * @retval 0        Success.
+ * @retval -ENOTSUP Unsupported pull direction for the requested mode.
+ */
+static int gpio_cat1_select_output_drive_mode(gpio_flags_t flags, uint32_t* drive_mode) {
+    if (!(flags & GPIO_SINGLE_ENDED)) {
+        if (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) {
+            LOG_WRN("Pull-up/pull-down flags ignored"
+                    " in push-pull output mode");
+        }
+
+        *drive_mode = CY_GPIO_DM_STRONG;
+        return 0;
+    }
+
+    if (flags & GPIO_LINE_OPEN_DRAIN) {
+        if (flags & GPIO_PULL_DOWN) {
+            return -ENOTSUP;
+        }
+
+        *drive_mode = (flags & GPIO_PULL_UP) ? CY_GPIO_DM_PULLUP : CY_GPIO_DM_OD_DRIVESLOW;
+    }
+    else {
+        /* Open-source */
+        if (flags & GPIO_PULL_UP) {
+            return -ENOTSUP;
+        }
+
+        *drive_mode =
+            (flags & GPIO_PULL_DOWN) ? CY_GPIO_DM_PULLDOWN : CY_GPIO_DM_OD_DRIVESHIGH;
+    }
+
+    return 0;
+}
+
 static int gpio_cat1_configure(const struct device* dev, gpio_pin_t pin, gpio_flags_t flags) {
     uint32_t drive_mode = CY_GPIO_DM_HIGHZ;
     bool pin_val = false;
@@ -70,35 +135,35 @@ static int gpio_cat1_configure(const struct device* dev, gpio_pin_t pin, gpio_fl
 
     switch (flags & (GPIO_INPUT | GPIO_OUTPUT | GPIO_DISCONNECTED)) {
         case GPIO_INPUT :
-            if ((flags & GPIO_PULL_UP) && (flags & GPIO_PULL_DOWN)) {
-                drive_mode = CY_GPIO_DM_PULLUP_DOWN;
-            }
-            else if (flags & GPIO_PULL_UP) {
-                drive_mode = CY_GPIO_DM_PULLUP;
-                pin_val = true;
-            }
-            else if (flags & GPIO_PULL_DOWN) {
-                drive_mode = CY_GPIO_DM_PULLDOWN;
-            }
-            else {
-                drive_mode = CY_GPIO_DM_HIGHZ;
-            }
+            gpio_cat1_select_input_drive_mode(flags, &drive_mode);
+
+            /*
+             * The data register must match the pull direction for resistive pull-up/pull-down
+             * modes to work correctly: DR=1 for pull-up, DR=0 for pull-down.
+             * For high-Z, DR is don't-care.
+             */
+            pin_val = (flags & GPIO_PULL_UP) ? true : false;
             break;
 
+        case (GPIO_INPUT | GPIO_OUTPUT):
+            __fallthrough;
         case GPIO_OUTPUT :
-            if (flags & GPIO_SINGLE_ENDED) {
-                if (flags & GPIO_LINE_OPEN_DRAIN) {
-                    drive_mode = CY_GPIO_DM_OD_DRIVESLOW;
-                    pin_val = true;
-                }
-                else {
-                    drive_mode = CY_GPIO_DM_OD_DRIVESHIGH;
-                    pin_val = false;
-                }
+            if (gpio_cat1_select_output_drive_mode(flags, &drive_mode) != 0) {
+                return -ENOTSUP;
+            }
+
+            if (flags & GPIO_OUTPUT_INIT_HIGH) {
+                pin_val = true;
+            }
+            else if (flags & GPIO_OUTPUT_INIT_LOW) {
+                pin_val = false;
             }
             else {
-                drive_mode = CY_GPIO_DM_STRONG;
-                pin_val = ((flags & GPIO_OUTPUT_INIT_HIGH) != 0);
+                /*
+                 * If high or low init is not specified, the API expects the current output
+                 * pin state to be retained.
+                 */
+                pin_val = Cy_GPIO_ReadOut(base, pin);
             }
             break;
 
@@ -294,6 +359,7 @@ static DEVICE_API(gpio, gpio_cat1_api) = {
     COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, 0),  \
     (.intr_priority = DT_INST_IRQ_BY_IDX(n, 0, priority)), \
     (.intr_priority = 0))
+
 #define ENABLE_INT(n)                       \
     COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, 0),  \
     (IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_cat1_isr, \
