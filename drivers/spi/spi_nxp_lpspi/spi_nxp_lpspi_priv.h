@@ -29,7 +29,7 @@
 #define LPSPI_INTERRUPT_BITS GENMASK(13, 8)
 
 /* Required by DEVICE_MMIO_NAMED_* macros */
-#define DEV_CFG(_dev)  ((const struct lpspi_config*)(_dev)->config)
+#define DEV_CFG(_dev)  ((struct lpspi_config DT_CONST*)(_dev)->config)
 #define DEV_DATA(_dev) ((struct lpspi_data*)(_dev)->data)
 
 struct lpspi_config {
@@ -108,7 +108,7 @@ int lpspi_wait_tx_fifo_empty(const struct device* dev, spi_operation_t operation
                 (DT_IRQN(DT_INST_PARENT(n))), (DT_INST_IRQN(n)))
 
 #define SPI_LPSPI_CONFIG_INIT(n)                                                \
-    static const struct lpspi_config lpspi_config_##n = {                       \
+    static struct lpspi_config DT_CONST lpspi_config_##n = {                    \
         DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),                   \
         .clock_dev       = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),               \
         .clock_subsys    = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\

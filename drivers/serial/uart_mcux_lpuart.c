@@ -1646,43 +1646,43 @@ static void zephyr_gtest_uart_s32k3_reg_init(const struct device* dev,
     int rc = 0;
 
     switch (base_addr) {
-        case LPUART0_BASE: {
+        case LPUART0_BASE : {
             cfg->base = (LPUART_Type*)ut_mcu_lpuart_0_area;
             IP_MC_ME->PRTN1_COFB2_STAT |= MC_ME_PRTN1_COFB2_STAT_BLOCK74(1);
             break;
         }
 
-        case LPUART1_BASE: {
+        case LPUART1_BASE : {
             cfg->base = (LPUART_Type*)ut_mcu_lpuart_1_area;
             IP_MC_ME->PRTN1_COFB2_STAT |= MC_ME_PRTN1_COFB2_STAT_BLOCK75(1);
             break;
         }
 
-        case LPUART2_BASE: {
-            cfg->base = (LPUART_Type *)ut_mcu_lpuart_2_area;
+        case LPUART2_BASE : {
+            cfg->base = (LPUART_Type*)ut_mcu_lpuart_2_area;
             IP_MC_ME->PRTN1_COFB2_STAT |= MC_ME_PRTN1_COFB2_STAT_BLOCK76(1);
             break;
         }
 
-        case LPUART3_BASE: {
-            cfg->base = (LPUART_Type *)ut_mcu_lpuart_3_area;
+        case LPUART3_BASE : {
+            cfg->base = (LPUART_Type*)ut_mcu_lpuart_3_area;
             IP_MC_ME->PRTN1_COFB2_STAT |= MC_ME_PRTN1_COFB2_STAT_BLOCK77(1);
             break;
         }
 
-        case LPUART4_BASE: {
-            cfg->base = (LPUART_Type *)ut_mcu_lpuart_4_area;
+        case LPUART4_BASE : {
+            cfg->base = (LPUART_Type*)ut_mcu_lpuart_4_area;
             IP_MC_ME->PRTN1_COFB2_STAT |= MC_ME_PRTN1_COFB2_STAT_BLOCK78(1);
             break;
         }
 
-        case LPUART5_BASE: {
-            cfg->base = (LPUART_Type *)ut_mcu_lpuart_5_area;
+        case LPUART5_BASE : {
+            cfg->base = (LPUART_Type*)ut_mcu_lpuart_5_area;
             IP_MC_ME->PRTN1_COFB2_STAT |= MC_ME_PRTN1_COFB2_STAT_BLOCK79(1);
             break;
         }
 
-        default: {
+        default : {
             rc = -EINVAL;
             break;
         }
@@ -1723,7 +1723,7 @@ void zephyr_uart_s32k3_isr(const struct device* dev) {
 LPUART_Type* zephyr_uart_s32k3_get_reg(const struct device* dev) {
     struct mcux_lpuart_config const* config = dev->config;
 
-    return (LPUART_Type*)(config->base);
+    return (config->base);
 }
 
 #endif

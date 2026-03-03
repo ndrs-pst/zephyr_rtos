@@ -471,3 +471,69 @@ static void lpspi_isr(const struct device* dev) {
 #define SPI_NXP_LPSPI_DMA_INIT(n) IF_ENABLED(SPI_NXP_LPSPI_HAS_DMAS(n), (LPSPI_DMA_INIT(n)))
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_NXP_LPSPI_DMA_INIT)
+
+#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+#define NXP_LPSPI_DMA_CFG_REG_INIT(n)       \
+    IF_ENABLED(SPI_NXP_LPSPI_HAS_DMAS(n),   \
+               (zephyr_gtest_spi_nxp_dma_reg_init(DEVICE_DT_GET(DT_DRV_INST(n)), \
+                                                  &lpspi_data_##n, &lpspi_config_##n);))
+
+static void zephyr_gtest_spi_nxp_dma_reg_init(const struct device* dev,
+                                              struct lpspi_data* data,
+                                              struct lpspi_config* cfg) {
+    uintptr_t base_addr = DEVICE_MMIO_NAMED_GET(dev, reg_base);
+    int rc = 0;
+
+    switch (base_addr) {
+        case IP_LPSPI_0_BASE : {
+            DEVICE_MMIO_NAMED_GET(dev, reg_base) = (mm_reg_t)ut_mcu_lpspi_0_area;
+            break;
+        }
+
+        case IP_LPSPI_1_BASE : {
+            DEVICE_MMIO_NAMED_GET(dev, reg_base) = (mm_reg_t)ut_mcu_lpspi_1_area;
+            break;
+        }
+
+        case IP_LPSPI_2_BASE : {
+            DEVICE_MMIO_NAMED_GET(dev, reg_base) = (mm_reg_t)ut_mcu_lpspi_2_area;
+            break;
+        }
+
+        case IP_LPSPI_3_BASE : {
+            DEVICE_MMIO_NAMED_GET(dev, reg_base) = (mm_reg_t)ut_mcu_lpspi_3_area;
+            break;
+        }
+
+        case IP_LPSPI_4_BASE : {
+            DEVICE_MMIO_NAMED_GET(dev, reg_base) = (mm_reg_t)ut_mcu_lpspi_4_area;
+            break;
+        }
+
+        case IP_LPSPI_5_BASE : {
+            DEVICE_MMIO_NAMED_GET(dev, reg_base) = (mm_reg_t)ut_mcu_lpspi_5_area;
+            break;
+        }
+
+        default : {
+            rc = -EINVAL;
+            break;
+        }
+    }
+
+    if (rc == 0) {
+        rc = dev->ops.init(dev);
+        if (rc == 0) {
+            dev->state->initialized = true;
+            dev->state->init_res = 0U;
+        }
+    }
+}
+
+void zephyr_gtest_spi_s32k3_dma(void) {
+    DT_INST_FOREACH_STATUS_OKAY(NXP_LPSPI_DMA_CFG_REG_INIT)
+}
+
+#endif /* (__GTEST == 1U) */
