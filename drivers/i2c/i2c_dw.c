@@ -142,8 +142,11 @@ static int i2c_dw_error_chk(const struct device *dev)
 			LOG_ERR("User Abort on %s", dev->name);
 		}
 
-		/* Clear RTS5912_INTR_STAT_TX_ABRT */
-		(void) read_clr_tx_abrt(reg_base);
+		/* TX abrt because STOP */
+		if (intr_stat.bits.stop_det) {
+			dw->state |= I2C_DW_USER_ABRT;
+			LOG_ERR_RATELIMIT("ABR and STOP on %s", dev->name);
+		}
 	}
 
 	/* Check SCL stuck low */
@@ -523,6 +526,7 @@ static void i2c_dw_isr(const struct device *port)
 		    intr_stat.raw) {
 			dw->state = I2C_DW_CMD_ERROR;
 			i2c_dw_error_chk(port);
+			(void) read_clr_tx_abrt(reg_base);
 #if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
 			dw->need_setup = true;
 #endif
@@ -632,7 +636,7 @@ done:
 
 static int i2c_dw_setup(const struct device *dev, uint16_t slave_address)
 {
-	const struct i2c_dw_rom_config * const rom = dev->config;
+	const struct i2c_dw_rom_config *const rom = dev->config;
 	struct i2c_dw_dev_config *const dw = dev->data;
 	union ic_con_register ic_con;
 	union ic_tar_register ic_tar;
@@ -1466,7 +1470,7 @@ static int i2c_dw_initialize(const struct device *dev)
 		I2C_CONFIG_REG_INIT(n).config_func = i2c_config_##n,                               \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
 		.sda_hold_tx = DT_INST_PROP_OR(n, sda_hold_tx, SDA_HOLD_INVALID),                  \
-		.sda_hold_rx = DT_INST_PROP_OR(n, scl_hold_rx, SDA_HOLD_INVALID),                  \
+		.sda_hold_rx = DT_INST_PROP_OR(n, sda_hold_rx, SDA_HOLD_INVALID),                  \
 		.irqnumber = DT_INST_IRQN(n),                                                      \
 		.lcnt_offset = (int16_t)DT_INST_PROP_OR(n, lcnt_offset, 0),                        \
 		.hcnt_offset = (int16_t)DT_INST_PROP_OR(n, hcnt_offset, 0),                        \

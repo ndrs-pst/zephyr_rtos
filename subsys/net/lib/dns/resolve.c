@@ -165,7 +165,7 @@ static void join_ipv4_mcast_group(struct net_if *iface, void *user_data)
 	int ret;
 
 	ret = net_ipv4_igmp_join(iface, &net_sin(addr)->sin_addr, NULL);
-	if (ret < 0 && ret != -EALREADY) {
+	if (ret < 0) {
 		NET_DBG("Cannot join %s mDNS group (%d)", "IPv4", ret);
 	} else {
 		NET_DBG("Joined %s mDNS group %s", "IPv4",
@@ -179,7 +179,7 @@ static void join_ipv6_mcast_group(struct net_if *iface, void *user_data)
 	int ret;
 
 	ret = net_ipv6_mld_join(iface, &net_sin6(addr)->sin6_addr);
-	if (ret < 0 && ret != -EALREADY) {
+	if (ret < 0) {
 		NET_DBG("Cannot join %s mDNS group (%d)", "IPv6", ret);
 	} else {
 		NET_DBG("Joined %s mDNS group %s", "IPv6",

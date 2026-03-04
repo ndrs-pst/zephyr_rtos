@@ -163,11 +163,18 @@ New APIs and options
     * :c:func:`bt_bap_ep_get_conn`
     * :c:member:`bt_ccp_call_control_client_cb.user_data`
     * :kconfig:option:`CONFIG_BT_TBS_MAX_FRIENDLY_NAME_LENGTH`
+    * :c:member:`bt_cap_handover_cb.unicast_to_broadcast_created`
 
   * Host
 
     * :c:func:`bt_gatt_cb_unregister` Added an API to unregister GATT callback handlers.
     * :c:func:`bt_le_per_adv_sync_cb_unregister`
+
+  * ISO
+
+    * :c:member:`bt_iso_chan_ops.disconnected` will now always be called before
+      :c:member:`bt_conn_cb.disconnected` for unicast (CIS) channels,
+      to provide a more deterministic order of callback events. (:github:`104695`).
 
   * Mesh
 
@@ -390,6 +397,7 @@ New Samples
 
 * :zephyr:code-sample:`ble_peripheral_ans`
 * :zephyr:code-sample:`cpu_freq_pressure`
+* :zephyr:code-sample:`6dof_fifo_stream` (renamed from ``stream_fifo``)
 
 ..
   Same as above, this will also be recomputed at the time of the release.
