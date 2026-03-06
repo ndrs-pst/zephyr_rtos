@@ -221,7 +221,7 @@ static inline bool is_center_aligned(uint32_t const ll_countermode) {
 }
 
 static void ll_tim_set_trigger_output(TIM_TypeDef* timer, uint32_t mode) {
-    #ifdef HAS_MASTERMODE_SUPPORT
+    #if HAS_MASTERMODE_SUPPORT
     LL_TIM_SetTriggerOutput(timer, mode);
     #else
     ARG_UNUSED(timer);

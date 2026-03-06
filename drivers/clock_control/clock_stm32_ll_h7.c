@@ -260,17 +260,22 @@ static uint32_t get_hclk_frequency(void) {
 static int32_t prepare_regulator_voltage_scale(void) {
     /* Make sure to put the CPU in highest Voltage scale during clock configuration */
     /* Highest voltage is SCALE0 */
-    LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
 
     #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+    LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
     while (LL_PWR_IsActiveFlag_VOSRDY() == 0) {
-    #else
-    while (LL_PWR_IsActiveFlag_VOS() == 0) {
-    #endif
         if (IS_ENABLED(__GTEST)) {
             break;
         }
     }
+    #else
+    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE0);
+    while (LL_PWR_IsActiveFlag_VOS() == 0) {
+        if (IS_ENABLED(__GTEST)) {
+            break;
+        }
+    }
+    #endif
 
     return (0);
 }

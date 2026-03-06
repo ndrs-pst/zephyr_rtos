@@ -9,6 +9,7 @@
 #include <nxp/imxrt/nxp_rt118x_cm33.dtsi>
 #include <nxp/imxrt/nxp_rt1186.dtsi>
 #include "frdm_imxrt1186.dtsi"
+#include <freq.h>
 
 / {
 	model = "NXP FRDM-IMXRT1186 board";
@@ -45,6 +46,10 @@
 	};
 };
 
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(240)>;
+};
+
 &lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
@@ -55,5 +60,9 @@
 };
 
 &systick {
+	status = "okay";
+};
+
+&lpadc1 {
 	status = "okay";
 };
