@@ -46,6 +46,9 @@ The following CVEs are addressed by this release:
 * :cve:`2025-53022` `(TF-M) FWU does not check the length of the TLV’s payload
   <https://trustedfirmware-m.readthedocs.io/en/latest/security/security_advisories/fwu_tlv_payload_out_of_bounds_vulnerability.html>`_
 
+* :cve:`2026-1678` `Zephyr project bug tracker GHSA-536f-h63g-hj42
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-536f-h63g-hj42>`_
+
 API Changes
 ***********
 
@@ -364,6 +367,11 @@ New Shields
 ..
   Same as above, this will also be recomputed at the time of the release.
 
+
+* Nordic Semiconductor ASA
+
+  * :ref:`nrf7002eb2 <nrf7002eb2>` (nRF7002 EB II)
+
 New Drivers
 ***********
 
@@ -406,6 +414,9 @@ New Samples
 DeviceTree
 **********
 
+* Migration guide: :ref:`migration_4.4_devicetree`
+* Bindings are no longer allowed to specify any default values for the
+  ``#address-cells`` and ``#size-cells`` properties.
 * :c:macro:`DT_CHILD_BY_UNIT_ADDR_INT`
 * :c:macro:`DT_INST_CHILD_BY_UNIT_ADDR_INT`
 

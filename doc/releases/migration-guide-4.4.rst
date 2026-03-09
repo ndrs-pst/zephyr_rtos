@@ -68,6 +68,9 @@ Boards
   * The ``--file-type`` option can now be used without ``--file`` to select between build artifacts
     (hex, elf, bin).
 
+* native_sim: host FUSE access: Defaults to using libfusev3 now instead of v2. But can be chosen
+  with :kconfig:option:`CONFIG_FUSE_LIBRARY_VERSION` (:github:`104965`).
+
 * m5stack_fire: Removed unused pinctrl entries for UART2, and updated the UART1
   pin mapping from GPIO32/GPIO33 to GPIO16/GPIO17 to match the documented Grove
   PORT.C wiring.
@@ -409,6 +412,31 @@ Counter
      GPT now uses explicit devicetree properties rather than hardcoded values, allowing
      per-instance customization.
 
+.. _migration_4.4_devicetree:
+
+Devicetree
+==========
+
+* :ref:`dt-bindings` are no longer allowed to specify any default values for
+  the ``#address-cells`` and ``#size-cells`` properties. The semantics for
+  these properties are defined in Devicetree `Specification
+  <https://www.devicetree.org/specifications>`_ section 2.3.5 and users should
+  not try to override them with their own defaults.
+
+  The following bindings syntax now causes build errors:
+
+  .. code-block:: yaml
+
+     properties:
+       "#address-cells":
+         default: ...             <---- any default is a build error
+       "#size-cells":
+         default: ...             <---- any default is a build error
+
+  If you were relying on default values in your bindings, you now must
+  explicitly specify the values in your devicetree source to fix these build
+  errors.
+
 Display
 =======
 
@@ -745,6 +773,18 @@ Stepper
 
 * :dtcompatible:`adi,tmc50xx` and :dtcompatible:`adi,tmc51xx` devices are now modeled as MFDs.
 
+* Removed the Kconfig.stepper_event_template template used to generate the
+  :kconfig:option:`CONFIG_STEPPER_*_GENERATE_ISR_SAFE_EVENTS` and
+  :kconfig:option:`CONFIG_STEPPER_*_EVENT_QUEUE_LEN` symbols
+
+* :kconfig:option:`CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS` is replaced by
+  :kconfig:option:`CONFIG_STEPPER_CTRL_ISR_SAFE_EVENTS`
+
+* :kconfig:option:`CONFIG_STEPPER_STEP_DIR_EVENT_QUEUE_LEN` is replaced by
+  :kconfig:option:`CONFIG_STEPPER_CTRL_EVENT_QUEUE_LEN`
+
+* :kconfig:option:`CONFIG_STEPPER_CTRL_ISR_SAFE_EVENTS` is now enabled by default
+
 STM32
 =====
 
@@ -839,6 +879,7 @@ USB
 Video
 =====
 
+* ``CONFIG_VIDEO_HIMAX_HM01B0`` has been renamed into :kconfig:option:`CONFIG_VIDEO_HM01B0`.
 * CONFIG_VIDEO_OV7670 is now gone and replaced by CONFIG_VIDEO_OV767X.  This allows supporting both the OV7670 and 0V7675.
 * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_SZ_MAX` is replaced by
   :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE` which represent the
