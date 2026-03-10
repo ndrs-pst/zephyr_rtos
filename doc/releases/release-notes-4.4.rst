@@ -167,6 +167,7 @@ New APIs and options
     * :c:member:`bt_ccp_call_control_client_cb.user_data`
     * :kconfig:option:`CONFIG_BT_TBS_MAX_FRIENDLY_NAME_LENGTH`
     * :c:member:`bt_cap_handover_cb.unicast_to_broadcast_created`
+    * :c:func:`bt_tbs_client_get_by_index`
 
   * Host
 
@@ -422,6 +423,9 @@ DeviceTree
 
 Kernel
 ******
+
+* Dropped CONFIG_SCHED_DUMB and CONFIG_WAITQ_DUMB options which were deprecated
+  in Zephyr 4.2.0
 
 * :ref:`cleanup_api`
 

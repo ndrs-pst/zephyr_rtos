@@ -205,6 +205,46 @@ struct net_sockaddr_ll {
     uint8_t  sll_addr[8];                   /**< Physical-layer address, big endian */
 };
 
+/** struct net_sockaddr_can - The net_sockaddr structure for CAN sockets. */
+struct net_sockaddr_can {
+    net_sa_family_t can_family;             /**< Address family */
+    int can_ifindex;                        /**< SocketCAN network interface index */
+};
+
+/**
+ * struct net_sockaddr_nm - The net_sockaddr structure for NET_MGMT sockets
+ *
+ * Similar concepts are used as in Linux AF_NETLINK. The NETLINK name is not
+ * used in order to avoid confusion between Zephyr and Linux as the
+ * implementations are different.
+ *
+ * The socket domain (address family) is AF_NET_MGMT, and the type of socket
+ * is either NET_SOCK_RAW or NET_SOCK_DGRAM, because this is a datagram-oriented
+ * service.
+ *
+ * The protocol (protocol type) selects for which feature the socket is used.
+ *
+ * When used with bind(), the nm_pid field of the net_sockaddr_nm can be
+ * filled with the calling thread' own id. The nm_pid serves here as the local
+ * address of this net_mgmt socket. The application is responsible for picking
+ * a unique integer value to fill in nm_pid.
+ */
+struct net_sockaddr_nm {
+    /** AF_NET_MGMT address family. */
+    net_sa_family_t nm_family;
+
+    /** Network interface related to this address */
+    int nm_ifindex;
+
+    /** Thread id or similar that is used to separate the different
+     * sockets. Application can decide how the pid is constructed.
+     */
+    uintptr_t nm_pid;
+
+    /** net_mgmt mask */
+    uint64_t nm_mask;
+};
+
 /** @cond INTERNAL_HIDDEN */
 
 /** Socket address struct for IPv6 where address is a pointer */
@@ -1708,7 +1748,7 @@ static inline bool net_ipv6_addr_is_v4_mapped(const struct net_in6_addr* addr) {
  */
 static inline void net_ipv6_addr_get_v4_mapped(const struct net_in6_addr* addr6,
                                                struct net_in_addr* addr4) {
-	addr4->s_addr_be = UNALIGNED_GET(&addr6->s6_addr32[3]);
+    addr4->s_addr_be = UNALIGNED_GET(&addr6->s6_addr32[3]);
 }
 
 /**
@@ -2132,6 +2172,38 @@ static inline uint8_t net_priority2vlan(enum net_priority priority) {
  * @return Network address family as a string, or NULL if family is unknown.
  */
 char const* net_family2str(net_sa_family_t family);
+
+/**
+ * @brief Return network address size for a given family.
+ *
+ * @param family Network address family code
+ *
+ * @return Network address size, or 0 if family is unknown.
+ */
+static inline size_t net_family2size(net_sa_family_t family) {
+    switch (family) {
+        case NET_AF_INET :
+            return sizeof(struct net_sockaddr_in);
+
+        case NET_AF_INET6 :
+            return sizeof(struct net_sockaddr_in6);
+
+        case NET_AF_PACKET :
+            return sizeof(struct net_sockaddr_ll);
+
+        case NET_AF_UNIX :
+            return sizeof(struct net_sockaddr_un);
+
+        case NET_AF_CAN :
+            return sizeof(struct net_sockaddr_can);
+
+        case NET_AF_NET_MGMT :
+            return sizeof(struct net_sockaddr_nm);
+
+        default :
+            return 0;
+    }
+}
 
 /**
  * @brief Add IPv6 prefix as a privacy extension filter.

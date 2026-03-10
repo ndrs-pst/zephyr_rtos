@@ -171,7 +171,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 928f0184a9fd68e71c6fbd7e58b28dbbccd632aa
+      revision: dff4ebffee46789e6f2153bc1f6f655fd89a7963
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -228,12 +228,12 @@ manifest:
         - hal
     - name: hal_realtek
       path: modules/hal/realtek
-      revision: f0192aa919dd5d16e68cf3a35fc73a1e51356215
+      revision: 2321639d752003b64aafe7b2316262bae4f45260
       groups:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: ca896d22f176a5cea60d826d7d4ad75a14a7e401
+      revision: 365c4215c671c86b9952622fd26469d436db86c8
       groups:
         - hal
     - name: hal_rpi_pico
@@ -293,7 +293,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 8fa6fe8b1df12a727e86048f587161b241590ca0
+      revision: 9a7aef98c8758337b8b83d87ba64dc924769b67a
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -355,7 +355,7 @@ manifest:
       revision: 5efe7974f9546582e99f5a842a816ea4b65f5227
       path: modules/lib/open-amp
     - name: openthread
-      revision: 9a40380a47b2493cfcd172b362704581e9aef47f
+      revision: e4d97681c53ec1cc34af1404ad2960adda4ba691
       path: modules/lib/openthread
     - name: percepio
       path: modules/debug/percepio
