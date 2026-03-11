@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/reset/stm32h5_reset.h>
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/power/stm32h5_iocell.h>
 #include <freq.h>
 #include <mem.h>
 
@@ -692,6 +693,19 @@
 			interrupt-names = "digi_temp";
 			clocks = <&rcc STM32_CLOCK(APB1_2, 3)>;
 			status = "disabled";
+		};
+	};
+
+	iocell: iocell {
+		compatible = "st,stm32h5-iocell", "st,stm32-iocell";
+		status = "disabled";
+
+		vddio {
+			domain = <STM32_DT_IOCELL_VDDIO>;
+		};
+
+		vddio2 {
+			domain = <STM32_DT_IOCELL_VDDIO2>;
 		};
 	};
 

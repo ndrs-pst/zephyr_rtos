@@ -202,7 +202,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 4dea410729da817a464f778533eb721473262e5b
+      revision: 88de866c43b3a4debf04cb9a4dc6a36c9b5d0340
       path: modules/hal/nordic
       groups:
         - hal
@@ -212,7 +212,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 2bcdf61be18170fd62d5459eb26a0f948212d6d8
+      revision: 38e13fc55e75cc07a0c5aa2b5ad7d2c45925a11a
       path: modules/hal/nxp
       groups:
         - hal
@@ -383,7 +383,7 @@ manifest:
         - testing
         - tee
     - name: trusted-firmware-a
-      revision: 0a29cac8fe0f7bdb835b469d9ea11b8e17377a92
+      revision: 44bcc378b6ec4af8693d008f43983e488f1f5740
       path: modules/tee/tf-a/trusted-firmware-a
       groups:
         - tee
