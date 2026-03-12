@@ -483,6 +483,8 @@ EEPROM
 * Added :c:func:`eeprom_target_read_data()` and :c:func:`eeprom_target_write_data()` which takes an
   offset and length and deprecated :c:func:`eeprom_target_program()` for the I2C EEPROM target driver.
 
+* Updated :dtcompatible:`microchip,xec-eeprom` for PCR and GIRQ properties to use new macros (:github:`104591`).
+
 ESP32-S3
 ========
 
@@ -543,6 +545,12 @@ Ethernet
   :kconfig:option:`CONFIG_PTP_CLOCK_INIT_PRIORITY`,  but only if :kconfig:option:`CONFIG_ETH_DRIVER`
   is enabled. This way the priority is based on the dependencies in the devicetree.
   (:github:`104310`)
+
+* Drivers, that support checksum offloading, now need to select the new Kconfig option
+  :kconfig:option:`CONFIG_NET_CHECKSUM_OFFLOAD_SUPPORTED`.
+  :kconfig:option:`CONFIG_NET_CHECKSUM_OFFLOAD` needs to be enabled to use checksum offloading.
+  It is enabled by default if :kconfig:option:`CONFIG_NET_CHECKSUM_OFFLOAD_SUPPORTED` is selected.
+  (:github:`105051`)
 
 File System
 ===========
