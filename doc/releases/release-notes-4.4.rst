@@ -106,6 +106,10 @@ Deprecated APIs and options
     * :c:macro:`BT_HCI_LE_SUPERVISON_TIMEOUT_MIN` and :c:macro:`BT_HCI_LE_SUPERVISON_TIMEOUT_MAX` have been deprecated.
       Use :c:macro:`BT_HCI_LE_SUPERVISION_TIMEOUT_MIN` and :c:macro:`BT_HCI_LE_SUPERVISION_TIMEOUT_MAX` instead.
 
+* Entropy
+
+   * :kconfig:option:`CONFIG_ENTROPY_PSA_CRYPTO_RNG` has been deprecated.
+
 * I2S
 
   * The following macros have been deprecated and are replaced with equivalent macros whose names
@@ -121,6 +125,12 @@ Deprecated APIs and options
 * POSIX
 
   * :kconfig:option:`CONFIG_XOPEN_STREAMS` was deprecated. Instead, use :kconfig:option:`CONFIG_XSI_STREAMS`
+
+* Random
+
+  * :kconfig:option:`CONFIG_CTR_DRBG_CSPRNG_GENERATOR` has been deprecrated. Instead, use
+    :kconfig:option:`CONFIG_PSA_CSPRNG_GENERATOR`.
+
 * Sensors
 
   * NXP
@@ -310,6 +320,10 @@ New APIs and options
     select the voltage scale manually on STM32U5 series via Devicetree. This notably
     enables usage of the USB controller at lower system clock frequencies.
 
+* Random
+
+  * :kconfig:option:`CONFIG_PSA_CSPRNG_GENERATOR`
+
 * Settings
 
   * :kconfig:option:`CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION`
@@ -345,6 +359,7 @@ New APIs and options
   * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE`
   * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION`
   * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION_NAME`
+  * :c:func:`video_transform_cap`
 
 .. zephyr-keep-sorted-stop
 
@@ -397,6 +412,8 @@ New Drivers
 
   * Added new stm32 BSEC driver that provides means to program and read OTP fuses
     (:dtcompatible:`st,stm32-bsec`). (:github:`102403`)
+  * Added new driver that allows reading from OTP/read-only areas of STM32 embedded NVM
+    (:dtcompatible:`st,stm32-nvm-otp`) (:github:`102976`)
   * Added SiFli SF32LB eFuse OTP driver (:dtcompatible:`sifli,sf32lb-efuse`).
     (:github:`101926`)
   * :dtcompatible:`nxp,ocotp` (:github:`102567` & :github:`103089`)

@@ -437,6 +437,9 @@ Devicetree
   explicitly specify the values in your devicetree source to fix these build
   errors.
 
+* The devicetree compatible ``ilitek,ili9806e-dsi`` was renamed.
+  Use :dtcompatible:`ilitek,ili9806e` instead.
+
 Display
 =======
 
@@ -1095,6 +1098,9 @@ Flash
 
 * ``CONFIG_FLASH_AREA_CHECK_INTEGRITY_PSA`` is also removed since there is
   now no alternative for the crypto library backend.
+
+* The flash shell commands ``flash erase`` and ``flash write`` now require an explicit
+  device argument. This avoids accidental corruption of the device's program flash.
 
 JWT
 ===

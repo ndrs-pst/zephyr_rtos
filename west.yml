@@ -39,7 +39,7 @@ manifest:
       remote: babblesim
       repo-path: base
       path: tools/bsim/components
-      revision: f65b51253f401591b0b734905ddb52b8d554a7d1
+      revision: 1cce925c72805cfdbb6341ca8c0755c7d42699d3
       groups:
         - babblesim
     - name: babblesim_ext_2G4_channel_NtNcable
@@ -114,7 +114,7 @@ manifest:
         - babblesim
     - name: bsim
       repo-path: babblesim-manifest
-      revision: dcf997c28b5cc2dc21ae876b64b31ff72b786210
+      revision: 7e10d556b5dd04360756cdf1f4b80d4f5bcac6cf
       path: tools/bsim
       groups:
         - babblesim
@@ -212,7 +212,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 38e13fc55e75cc07a0c5aa2b5ad7d2c45925a11a
+      revision: 593886a8fadb5f25a66b7bb8d40f394f145224dd
       path: modules/hal/nxp
       groups:
         - hal
@@ -228,12 +228,12 @@ manifest:
         - hal
     - name: hal_realtek
       path: modules/hal/realtek
-      revision: 2321639d752003b64aafe7b2316262bae4f45260
+      revision: 5d482b1086d551f07ae331caae7f2b05029068fe
       groups:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 365c4215c671c86b9952622fd26469d436db86c8
+      revision: 966d51da3c2bcb54bed15c127ed8fa0261fc23e7
       groups:
         - hal
     - name: hal_rpi_pico
@@ -320,7 +320,7 @@ manifest:
       revision: 88deb45109317473ac5706e97a6b8bbeb524aab1
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: 94ae6c0535aa6ac4b08a75f4ae2c3a08cacb5c41
+      revision: 85aa60d18b3d5e5588d7b247abf90198f07c8a63
       path: modules/lib/gui/lvgl
     - name: mbedtls
       revision: c5b06d89c9c498d8fc8659ce31f7e53137b6270f
@@ -346,7 +346,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: cf40f6dc7fc441ee6848ea2e177c4522588c1b8c
+      revision: 2b09581c7654f4dfd38681270350c9ae6b0438a2
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: cebea8e27ceb91a7d4580d17db65f93669befe72
@@ -393,7 +393,7 @@ manifest:
       groups:
         - tee
     - name: uoscore-uedhoc
-      revision: e47f6465a96d12a54b875e5f6e5b2a203fb0d61d
+      revision: dc0ab6345450668de3f9597320a48c5a2d409bb6
       path: modules/lib/uoscore-uedhoc
     - name: zcbor
       revision: 0d1452440356637a0a727f7f10b442b60977e930
