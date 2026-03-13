@@ -107,22 +107,6 @@ static int cmd_flash_shell_erase(const struct shell* sh, size_t argc, char* argv
     const struct device* flash_dev;
     uint32_t page_addr;
     uint32_t size;
-    char *endptr;
-
-    /* For safety, require explicit device name for erase operations */
-    if (argc < 2) {
-        shell_error(sh, "Missing argument");
-        return -EINVAL;
-    }
-
-    /* Check if first argument is a device name (not a number) */
-    (void)strtoul(argv[1], &endptr, 16);
-    if (*endptr == '\0') {
-        /* First argument is a number, not a device name */
-        shell_error(sh, "Incorrect device name");
-        shell_print(sh, "Usage: flash erase <device> <address> [size]");
-        return -EINVAL;
-    }
 
     result = parse_helper(sh, &argc, &argv, &flash_dev, &page_addr);
     if (result != 0) {
@@ -167,22 +151,6 @@ static int cmd_flash_shell_write(const struct shell* sh, size_t argc, char* argv
     uint32_t w_addr;
     int ret;
     size_t op_size;
-    char *endptr;
-
-    /* For safety, require explicit device name for write operations */
-    if (argc < 3) {
-        shell_error(sh, "Missing argument");
-        return -EINVAL;
-    }
-
-    /* Check if first argument is a device name (not a number) */
-    (void) strtoul(argv[1], &endptr, 16);
-    if (*endptr == '\0') {
-        /* First argument is a number, not a device name */
-        shell_error(sh, "Incorrect device name");
-        shell_print(sh, "Usage: flash write <device> <address> <data>...");
-        return -EINVAL;
-    }
 
     ret = parse_helper(sh, &argc, &argv, &flash_dev, &w_addr);
     if (ret != 0) {
