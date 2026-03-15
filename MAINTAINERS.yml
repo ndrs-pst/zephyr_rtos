@@ -777,6 +777,7 @@ Bouffalolab Platforms:
     - VynDragon
   collaborators:
     - josuah
+    - will-tm
   files:
     - boards/aithinker/ai_*/
     - boards/bflb/
@@ -1332,6 +1333,7 @@ Documentation Infrastructure:
     - lgirdwood
     - kv2019i
     - TomasBarakNXP
+    - Peterson-Brett
   files:
     - drivers/audio/
     - include/zephyr/audio/
@@ -1921,6 +1923,7 @@ Documentation Infrastructure:
   collaborators:
     - TomasBarakNXP
     - anangl
+    - Peterson-Brett
   files:
     - doc/hardware/peripherals/audio/i2s.rst
     - drivers/i2s/
@@ -2985,6 +2988,7 @@ Infineon Platforms:
     - talih0
     - billwatersiii
     - jsbatch
+    - Peterson-Brett
   files:
     - boards/cypress/
     - boards/infineon/
@@ -4472,6 +4476,7 @@ Power management:
     - tmleman
     - JordanYates
     - ZhaoxiangJin
+    - yongxu-wang15
   files:
     - include/zephyr/pm/
     - samples/subsys/pm/
@@ -4632,7 +4637,23 @@ Realtek Ameba Platforms:
     - dts/arm/realtek/ameba*/
     - dts/bindings/*/*ameba*
   labels:
-    - "platform: Ameba"
+    - "platform: Realtek Ameba"
+
+Realtek Bee Platforms:
+  status: maintained
+  maintainers:
+    - ZhiyuanTang17
+  files:
+    - boards/realtek/rtl87x2g*/
+    - boards/realtek/rtl8752h*/
+    - drivers/*/*bee*
+    - dts/arm/realtek/bee/
+    - dts/bindings/*/*bee*
+    - soc/realtek/bee/
+    - tests/boards/realtek/
+    - modules/hal_realtek/bee/
+  labels:
+    - "platform: Realtek Bee"
 
 Realtek EC Platforms:
   status: maintained
@@ -4651,6 +4672,19 @@ Realtek EC Platforms:
     - soc/realtek/ec/
   labels:
     - "platform: Realtek EC"
+
+Realtek Fingerprint Platforms:
+  status: maintained
+  maintainers:
+    - RtkFP
+  files:
+    - boards/realtek/rts5817_maa_evb/
+    - drivers/*/*rts5817*
+    - dts/bindings/*/*rts5817*
+    - dts/arm/realtek/fingerprint/
+    - soc/realtek/fingerprint/
+  labels:
+    - "platform: Realtek Fingerprint"
 
 Release:
   status: maintained
@@ -5879,6 +5913,7 @@ West:
     - VynDragon
   collaborators:
     - josuah
+    - will-tm
   files:
     - modules/hal_bouffalolab/
   labels:
@@ -5945,6 +5980,7 @@ West:
     - mcatee-infineon
     - billwatersiii
     - jsbatch
+    - Peterson-Brett
   files:
     - modules/Kconfig.infineon
     - modules/hal_infineon/
