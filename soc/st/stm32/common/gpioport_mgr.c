@@ -26,7 +26,7 @@
  *
  * Entries will be NULL if the GPIO port is not enabled.
  */
-static const struct device* const gpio_ports[] = {
+static struct device const* const gpio_ports[] = {
     DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioa)),
     DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiob)),
     DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioc)),
@@ -79,11 +79,11 @@ static void ll_gpio_set_pin_pull(GPIO_TypeDef* GPIOx, uint32_t Pin, uint32_t Pul
     #endif /* CONFIG_SOC_SERIES_STM32WB0X */
 }
 
-const struct device* stm32_gpioport_get(uint32_t port_index) {
-    const struct device* dev;
+struct device const* stm32_gpioport_get(uint32_t port_index) {
+    struct device const* dev;
 
     if (port_index >= ARRAY_SIZE(gpio_ports)) {
-        return NULL;
+        return (NULL);
     }
 
     dev = gpio_ports[port_index];
@@ -92,14 +92,14 @@ const struct device* stm32_gpioport_get(uint32_t port_index) {
 }
 
 int stm32_gpioport_configure_pin(const struct device* port, gpio_pin_t pin, uint32_t config, uint32_t func) {
-    const struct gpio_stm32_config* dev_cfg = port->config;
+    struct gpio_stm32_config const* dev_cfg = port->config;
     GPIO_TypeDef* gpio = (GPIO_TypeDef*)dev_cfg->base;
     uint32_t pin_ll = stm32_gpiomgr_pinnum_to_ll_val(pin);
 
     #ifdef CONFIG_SOC_SERIES_STM32F1X
     ARG_UNUSED(func);
 
-    uint32_t temp = config & (STM32_MODE_INOUT_MASK << STM32_MODE_INOUT_SHIFT);
+    uint32_t temp = (config & (STM32_MODE_INOUT_MASK << STM32_MODE_INOUT_SHIFT));
 
     if (temp == STM32_MODE_INPUT) {
         temp = config & (STM32_CNF_IN_MASK << STM32_CNF_IN_SHIFT);
@@ -114,12 +114,10 @@ int stm32_gpioport_configure_pin(const struct device* port, gpio_pin_t pin, uint
             temp = config & (STM32_PUPD_MASK << STM32_PUPD_SHIFT);
 
             if (temp == STM32_PUPD_PULL_UP) {
-                ll_gpio_set_pin_pull(gpio, pin_ll,
-                                     LL_GPIO_PULL_UP);
+                ll_gpio_set_pin_pull(gpio, pin_ll, LL_GPIO_PULL_UP);
             }
             else {
-                ll_gpio_set_pin_pull(gpio, pin_ll,
-                                     LL_GPIO_PULL_DOWN);
+                ll_gpio_set_pin_pull(gpio, pin_ll, LL_GPIO_PULL_DOWN);
             }
 
             LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_INPUT);
@@ -132,43 +130,35 @@ int stm32_gpioport_configure_pin(const struct device* port, gpio_pin_t pin, uint
             LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_OUTPUT);
         }
         else {
-            LL_GPIO_SetPinMode(gpio, pin_ll,
-                               LL_GPIO_MODE_ALTERNATE);
+            LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_ALTERNATE);
         }
 
         temp = config & (STM32_CNF_OUT_0_MASK << STM32_CNF_OUT_0_SHIFT);
 
         if (temp == STM32_CNF_PUSH_PULL) {
-            LL_GPIO_SetPinOutputType(gpio, pin_ll,
-                                     LL_GPIO_OUTPUT_PUSHPULL);
+            LL_GPIO_SetPinOutputType(gpio, pin_ll, LL_GPIO_OUTPUT_PUSHPULL);
         }
         else {
-            LL_GPIO_SetPinOutputType(gpio, pin_ll,
-                                     LL_GPIO_OUTPUT_OPENDRAIN);
+            LL_GPIO_SetPinOutputType(gpio, pin_ll, LL_GPIO_OUTPUT_OPENDRAIN);
         }
 
         temp = config & (STM32_MODE_OSPEED_MASK << STM32_MODE_OSPEED_SHIFT);
 
         if (temp == STM32_MODE_OUTPUT_MAX_2) {
-            LL_GPIO_SetPinSpeed(gpio, pin_ll,
-                                LL_GPIO_SPEED_FREQ_LOW);
+            LL_GPIO_SetPinSpeed(gpio, pin_ll, LL_GPIO_SPEED_FREQ_LOW);
         }
         else if (temp == STM32_MODE_OUTPUT_MAX_10) {
-            LL_GPIO_SetPinSpeed(gpio, pin_ll,
-                                LL_GPIO_SPEED_FREQ_MEDIUM);
+            LL_GPIO_SetPinSpeed(gpio, pin_ll, LL_GPIO_SPEED_FREQ_MEDIUM);
         }
         else {
-            LL_GPIO_SetPinSpeed(gpio, pin_ll,
-                                LL_GPIO_SPEED_FREQ_HIGH);
+            LL_GPIO_SetPinSpeed(gpio, pin_ll, LL_GPIO_SPEED_FREQ_HIGH);
         }
     }
     #else
-    uint32_t mode, otype, ospeed, pupd;
-
-    mode   = config & (STM32_MODER_MASK   << STM32_MODER_SHIFT  );
-    otype  = config & (STM32_OTYPER_MASK  << STM32_OTYPER_SHIFT );
-    ospeed = config & (STM32_OSPEEDR_MASK << STM32_OSPEEDR_SHIFT);
-    pupd   = config & (STM32_PUPDR_MASK   << STM32_PUPDR_SHIFT  );
+    uint32_t mode   = config & (STM32_MODER_MASK   << STM32_MODER_SHIFT  );
+    uint32_t otype  = config & (STM32_OTYPER_MASK  << STM32_OTYPER_SHIFT );
+    uint32_t ospeed = config & (STM32_OSPEEDR_MASK << STM32_OSPEEDR_SHIFT);
+    uint32_t pupd   = config & (STM32_PUPDR_MASK   << STM32_PUPDR_SHIFT  );
 
     z_stm32_hsem_lock(CFG_HW_GPIO_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
@@ -202,7 +192,7 @@ int stm32_gpioport_configure_pin(const struct device* port, gpio_pin_t pin, uint
     z_stm32_hsem_unlock(CFG_HW_GPIO_SEMID);
     #endif /* CONFIG_SOC_SERIES_STM32F1X */
 
-    return 0;
+    return (0);
 }
 
 static int stm32_gpioport_pm_action(const struct device* dev,
@@ -223,14 +213,16 @@ static int stm32_gpioport_pm_action(const struct device* dev,
             break;
 
         default :
-            return -ENOTSUP;
+            return (-ENOTSUP);
     }
 
-    return 0;
+    return (0);
 }
 
 __maybe_unused
 static int stm32_gpioport_init(const struct device* dev) {
+    int ret;
+
     #if (defined(PWR_CR2_IOSV) || defined(PWR_SVMCR_IO2SV)) && \
         DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpiog))
     z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
@@ -244,7 +236,9 @@ static int stm32_gpioport_init(const struct device* dev) {
     z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
     #endif
 
-    return pm_device_driver_init(dev, stm32_gpioport_pm_action);
+    ret = pm_device_driver_init(dev, stm32_gpioport_pm_action);
+
+    return (ret);
 }
 
 #if defined(CONFIG_GPIO)
