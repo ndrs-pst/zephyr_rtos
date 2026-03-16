@@ -201,16 +201,19 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t* pins, uint8_t pin_cnt,
         pinctrl_soc_pin_t const* soc_pin = &pins[i];
         mux = soc_pin->pinmux;
 
+        line = STM32_DT_PINMUX_LINE(mux);
+        func = STM32_DT_PINMUX_FUNC(mux);
+
         #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
         uint32_t pupd;
 
-        if (STM32_DT_PINMUX_FUNC(mux) == ALTERNATE) {
+        if (func == ALTERNATE) {
             pin_cfg = soc_pin->pincfg | STM32_MODE_OUTPUT | STM32_CNF_ALT_FUNC;
         }
-        else if (STM32_DT_PINMUX_FUNC(mux) == ANALOG) {
+        else if (func == ANALOG) {
             pin_cfg = soc_pin->pincfg | STM32_MODE_INPUT | STM32_CNF_IN_ANALOG;
         }
-        else if (STM32_DT_PINMUX_FUNC(mux) == GPIO_IN) {
+        else if (func == GPIO_IN) {
             pin_cfg = soc_pin->pincfg | STM32_MODE_INPUT;
             pupd = pin_cfg & (STM32_PUPD_MASK << STM32_PUPD_SHIFT);
             if (pupd == STM32_PUPD_NO_PULL) {
@@ -220,28 +223,29 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t* pins, uint8_t pin_cnt,
                 pin_cfg = pin_cfg | STM32_CNF_IN_PUPD;
             }
         }
-        else if (STM32_DT_PINMUX_FUNC(mux) == GPIO_OUT) {
+        else if (func == GPIO_OUT) {
             pin_cfg = soc_pin->pincfg | STM32_MODE_OUTPUT | STM32_CNF_GP_OUTPUT;
         }
         else {
             /* Not supported */
-            __ASSERT_NO_MSG(STM32_DT_PINMUX_FUNC(mux));
+            __ASSERT_NO_MSG(func);
         }
         #else
-        if (STM32_DT_PINMUX_FUNC(mux) < STM32_ANALOG) {
+        if (func < STM32_ANALOG) {
             pin_cfg = soc_pin->pincfg | STM32_MODER_ALT_MODE;
         }
-        else if (STM32_DT_PINMUX_FUNC(mux) == STM32_ANALOG) {
+        else if (func == STM32_ANALOG) {
             pin_cfg = STM32_MODER_ANALOG_MODE;
         }
-        else if (STM32_DT_PINMUX_FUNC(mux) == STM32_GPIO) {
+        else if (func == STM32_GPIO) {
             pin_cfg = soc_pin->pincfg;
         }
         else {
             /* Not supported */
-            __ASSERT_NO_MSG(STM32_DT_PINMUX_FUNC(mux));
+            __ASSERT_NO_MSG(func);
         }
         #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
+
         port = stm32_gpioport_get(STM32_DT_PINMUX_PORT(mux));
         if (port == NULL) {
             return (-ENODEV);
@@ -251,9 +255,6 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t* pins, uint8_t pin_cnt,
         if (ret < 0) {
             return (ret);
         }
-
-        line = STM32_DT_PINMUX_LINE(mux);
-        func = STM32_DT_PINMUX_FUNC(mux);
 
         cfg_ret = stm32_gpioport_configure_pin(port, (gpio_pin_t)line, pin_cfg, func);
         if ((cfg_ret >= 0) && (func == IS_GPIO_OUT)) {
