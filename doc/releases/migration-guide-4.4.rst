@@ -199,6 +199,13 @@ ADC
   if 14 or 12-bit resolutions are used. Previously, power-optimized values were used, now the
   standard values (not power-optimized but better accuracy) are used. No impact on other series.
 
+Clock Control
+=============
+
+* ``bflb,bl60x-pll``, ``bflb,bl61x-root-clk``, ``bflb,bl60x-root-clk``, ``bflb,bl61x-wifipll``,
+  ``bflb,bl70x-root-clk`` and ``bflb,bl61x-flash-clk`` got respectively replaced with
+  :dtcompatible:`bflb,flash-clk`, :dtcompatible:`bflb,pll` and :dtcompatible:`bflb,root-clk`.
+
 Controller Area Network (CAN)
 =============================
 
@@ -1083,6 +1090,13 @@ LoRaWAN
 
 Other subsystems
 ****************
+
+CFB
+===
+
+* Change using signed values to represent the coordinates.
+  As a result, :c:func:`cfb_print`, :c:func:`cfb_invert_area`,
+  and :c:struct:`cfb_position` definitions are changed.
 
 * The DAP subsystem initialization and configuration has changed. Please take a look at
   :zephyr:code-sample:`cmsis-dap` sample on how to initialize Zephyr DAP Link with USB backend.

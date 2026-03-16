@@ -46,9 +46,9 @@ struct video_control;
  */
 enum video_buf_type {
 	/** input buffer type */
-	VIDEO_BUF_TYPE_INPUT,
+	VIDEO_BUF_TYPE_INPUT = 1,
 	/** output buffer type */
-	VIDEO_BUF_TYPE_OUTPUT,
+	VIDEO_BUF_TYPE_OUTPUT = 2,
 };
 
 /**
@@ -139,8 +139,8 @@ struct video_buffer {
 	enum video_buf_type type;
 	/** pointer to the start of the buffer. */
 	uint8_t *buffer;
-	/** index of the buffer, optionally set by the application */
-	uint8_t index;
+	/** index of the buffer in the video buffer pool */
+	uint16_t index;
 	/** size of the buffer in bytes. */
 	uint32_t size;
 	/** number of bytes occupied by the valid data in the buffer. */
