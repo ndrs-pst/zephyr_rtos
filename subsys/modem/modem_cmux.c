@@ -107,6 +107,22 @@ struct modem_cmux_msc_addr {
     uint8_t dlci_address : 6;   /**< DLCI channel address */
 };
 
+static struct modem_cmux_command const cmux_command_cld = {
+    .type.ea = 1,
+    .type.cr = 1,
+    .type.value = MODEM_CMUX_COMMAND_CLD,
+    .length.ea = 1,
+    .length.value = 0,
+};
+
+static struct modem_cmux_command const cmux_command_psc = {
+    .type.ea = 1,
+    .type.cr = 1,
+    .type.value = MODEM_CMUX_COMMAND_PSC,
+    .length.ea = 1,
+    .length.value = 0,
+};
+
 static struct modem_cmux_dlci* modem_cmux_find_dlci(struct modem_cmux* cmux, uint8_t dlci_address);
 static void modem_cmux_dlci_notify_transmit_idle(struct modem_cmux* cmux);
 static void modem_cmux_tx_bypass(struct modem_cmux* cmux, const uint8_t* data, size_t len);
@@ -285,7 +301,7 @@ static struct modem_cmux_command modem_cmux_command_decode(const uint8_t* data, 
  * @param len encoded length of the command is written here
  * @return pointer to encoded command buffer on success, NULL on failure
  */
-static uint8_t* modem_cmux_command_encode(struct modem_cmux_command* command, uint16_t* len) {
+static uint8_t* modem_cmux_command_encode(struct modem_cmux_command const* command, uint16_t* len) {
     static uint8_t buf[MODEM_CMUX_CMD_DATA_SIZE_MAX];
 
     __ASSERT_NO_MSG(len != NULL);
@@ -590,55 +606,50 @@ static bool modem_cmux_transmit_cmd_frame(struct modem_cmux* cmux,
                                           struct modem_cmux_frame const* frame) {
     uint16_t space;
     struct modem_cmux_command command;
+    bool is_transmit;
 
     k_mutex_lock(&cmux->transmit_rb_lock, K_FOREVER);
     space = ring_buf_space_get(&cmux->transmit_rb);
+    if (space >= MODEM_CMUX_CMD_FRAME_SIZE_MAX) {
+        modem_cmux_log_transmit_frame(frame);
+        command = modem_cmux_command_decode(frame->data, frame->data_len);
+        if (modem_cmux_command_is_valid(&command)) {
+            modem_cmux_log_transmit_command(&command);
+        }
 
-    if (space < MODEM_CMUX_CMD_FRAME_SIZE_MAX) {
-        k_mutex_unlock(&cmux->transmit_rb_lock);
+        modem_cmux_transmit_frame(cmux, frame);
+        is_transmit = true;
+    }
+    else {
         LOG_WRN("CMD buffer overflow");
-        return (false);
+        is_transmit = false;
     }
-
-    modem_cmux_log_transmit_frame(frame);
-    command = modem_cmux_command_decode(frame->data, frame->data_len);
-    if (modem_cmux_command_is_valid(&command)) {
-        modem_cmux_log_transmit_command(&command);
-    }
-
-    modem_cmux_transmit_frame(cmux, frame);
     k_mutex_unlock(&cmux->transmit_rb_lock);
-    return (true);
+
+    return is_transmit;
 }
 
 static int16_t modem_cmux_transmit_data_frame(struct modem_cmux* cmux,
                                               struct modem_cmux_frame const* frame) {
-    uint16_t space;
-    int ret;
+    int ret = 0;
 
     k_mutex_lock(&cmux->transmit_rb_lock, K_FOREVER);
+    if (cmux->flow_control_on && (is_transitioning_to_powersave(cmux) == false)) {
+        uint16_t const space = ring_buf_space_get(&cmux->transmit_rb);
 
-    if (cmux->flow_control_on == false || is_transitioning_to_powersave(cmux)) {
-        k_mutex_unlock(&cmux->transmit_rb_lock);
-        return (0);
+        /*
+         * One command frame is reserved for command channel, and we shall prefer
+         * waiting for more than MODEM_CMUX_DATA_FRAME_SIZE_MIN bytes available in the
+         * transmit buffer rather than transmitting a few bytes at a time. This avoids
+         * excessive wrapping overhead, since transmitting a single byte will require 8
+         * bytes of wrapping.
+         */
+        if (space >= (MODEM_CMUX_CMD_FRAME_SIZE_MAX + MODEM_CMUX_DATA_FRAME_SIZE_MIN)) {
+            modem_cmux_log_transmit_frame(frame);
+            ret = modem_cmux_transmit_frame(cmux, frame);
+        }
     }
 
-    space = ring_buf_space_get(&cmux->transmit_rb);
-
-    /*
-     * One command frame is reserved for command channel, and we shall prefer
-     * waiting for more than MODEM_CMUX_DATA_FRAME_SIZE_MIN bytes available in the
-     * transmit buffer rather than transmitting a few bytes at a time. This avoids
-     * excessive wrapping overhead, since transmitting a single byte will require 8
-     * bytes of wrapping.
-     */
-    if (space < (MODEM_CMUX_CMD_FRAME_SIZE_MAX + MODEM_CMUX_DATA_FRAME_SIZE_MIN)) {
-        k_mutex_unlock(&cmux->transmit_rb_lock);
-        return (0);
-    }
-
-    modem_cmux_log_transmit_frame(frame);
-    ret = modem_cmux_transmit_frame(cmux, frame);
     k_mutex_unlock(&cmux->transmit_rb_lock);
 
     return (int16_t)(ret);
@@ -669,13 +680,7 @@ static void modem_cmux_acknowledge_received_frame(struct modem_cmux* cmux) {
 
 static void modem_cmux_send_psc(struct modem_cmux* cmux) {
     uint16_t len;
-    uint8_t* data = modem_cmux_command_encode(&(struct modem_cmux_command){
-        .type.ea = 1,
-        .type.cr = 1,
-        .type.value = MODEM_CMUX_COMMAND_PSC,
-        .length.ea = 1,
-        .length.value = 0
-    }, &len);
+    uint8_t* data = modem_cmux_command_encode(&cmux_command_psc, &len);
 
     if (data == NULL) {
         return;
@@ -728,7 +733,7 @@ static void modem_cmux_send_msc(struct modem_cmux* cmux, struct modem_cmux_dlci*
     };
 
     uint16_t len;
-    uint8_t *data = modem_cmux_command_encode(&cmd, &len);
+    uint8_t* data = modem_cmux_command_encode(&cmd, &len);
 
     if (data == NULL) {
         return;
@@ -899,8 +904,8 @@ static void modem_cmux_on_psc_command(struct modem_cmux* cmux) {
 
     k_mutex_lock(&cmux->transmit_rb_lock, K_FOREVER);
     set_state(cmux, MODEM_CMUX_STATE_CONFIRM_POWERSAVE);
-    modem_cmux_acknowledge_received_frame(cmux);
     k_mutex_unlock(&cmux->transmit_rb_lock);
+    modem_cmux_acknowledge_received_frame(cmux);
 }
 
 static void modem_cmux_on_psc_response(struct modem_cmux* cmux) {
@@ -1268,7 +1273,7 @@ static void modem_cmux_drop_frame(struct modem_cmux* cmux) {
 }
 
 static bool is_valid_addess(uint8_t addr) {
-    return ((addr >= 0) && (addr <= 63));
+    return (addr <= 63);
 }
 
 static bool is_valid_type(uint8_t type) {
@@ -1780,16 +1785,8 @@ static void modem_cmux_disconnect_handler(struct k_work* item) {
         return;
     }
 
-    struct modem_cmux_command command = {
-        .type.ea = 1,
-        .type.cr = 1,
-        .type.value = MODEM_CMUX_COMMAND_CLD,
-        .length.ea = 1,
-        .length.value = 0,
-    };
-
     uint16_t len;
-    uint8_t* data = modem_cmux_command_encode(&command, &len);
+    uint8_t* data = modem_cmux_command_encode(&cmux_command_cld, &len);
 
     if (data == NULL) {
         return;
