@@ -2897,7 +2897,8 @@ static const struct event_handler vs_events[] = {
 #endif /* CONFIG_BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES */
 
 #if !defined(CONFIG_BT_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES) && \
-    !defined(CONFIG_BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES)
+	!defined(CONFIG_BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES) && \
+	defined(_MSC_VER)
 	/* #CUSTOM@NDRS Add dummy event handler */
 	EVENT_HANDLER(BT_HCI_EVT_VS_LE_CONNECTIONLESS_IQ_REPORT,
 		      bt_hci_le_vs_df_connectionless_iq_report,

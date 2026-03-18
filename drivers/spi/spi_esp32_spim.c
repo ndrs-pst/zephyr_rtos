@@ -421,6 +421,7 @@ static int spi_esp32_init_dma(const struct device* dev) {
 static int spi_esp32_init(const struct device* dev) {
     const struct spi_esp32_config* cfg = dev->config;
     struct spi_esp32_data* data = dev->data;
+    int err;
 
     if (!cfg->clock_dev) {
         return (-EINVAL);
