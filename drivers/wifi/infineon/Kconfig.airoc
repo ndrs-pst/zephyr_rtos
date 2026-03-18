@@ -249,6 +249,12 @@ config CYW55513IUBG_SM
 	bool "CYW55513IUBG_SM"
 	help
 	  Infineon CYW55513IUBG (SM) module
+
+config CYW55513_MURATA_2FY
+	bool "CYW55513_MURATA_2FY"
+	help
+	  Murata LBEE5HY2FY-922 module
+
 endchoice
 
 choice CYW55572_MODULE
