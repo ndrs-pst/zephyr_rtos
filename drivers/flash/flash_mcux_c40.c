@@ -333,15 +333,18 @@ static DEVICE_API(flash, mcux_c40_api) = {
 
 /* Get the partition table properties of this instance's flash */
 #define C40_PROT_ENTRY(lbl, inst)                               \
-    COND_CODE_1(DT_NODE_HAS_STATUS(DT_NODELABEL(lbl), okay),    \
-                (COND_CODE_1(DT_SAME_NODE(DT_GPARENT(DT_NODELABEL(lbl)), C40_FLASH_NODE(inst)), \
-                             ({                                 \
-                                .off  = (uint32_t)FIXED_PARTITION_OFFSET(lbl), \
-                                .len  = (uint32_t)FIXED_PARTITION_SIZE(lbl), \
-                                .name = #lbl}, ),               \
-                             ())                                \
-                ),                                              \
-                ())
+    COND_CODE_1(                                                \
+        DT_NODE_HAS_STATUS(DT_NODELABEL(lbl), okay),            \
+        (COND_CODE_1(                                           \
+            DT_SAME_NODE(                                       \
+                DT_GPARENT(DT_NODELABEL(lbl)),                  \
+                C40_FLASH_NODE(inst)),                          \
+            ({ .off  = (uint32_t)PARTITION_OFFSET(lbl),         \
+               .len  = (uint32_t)PARTITION_SIZE(lbl),           \
+               .name = #lbl },),                                \
+            ())                                                 \
+        ),                                                      \
+        ())
 
 #if defined(CONFIG_SOC_FLASH_MCUX_C40_APPLY_PROTECTION)
 #define C40_MAKE_PROT_TBL(inst)                                 \

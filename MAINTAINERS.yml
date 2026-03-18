@@ -485,7 +485,6 @@ Bluetooth Audio:
     - pin-zephyr
     - niym-ot
     - jthm-ot
-    - babrsn
   files:
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/
@@ -3345,6 +3344,7 @@ LoRa and LoRaWAN:
   collaborators:
     - martinjaeger
     - mniestroj
+    - carlocaione
   files:
     - drivers/lora/
     - include/zephyr/drivers/lora.h

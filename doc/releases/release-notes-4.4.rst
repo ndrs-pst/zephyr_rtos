@@ -46,8 +46,14 @@ The following CVEs are addressed by this release:
 * :cve:`2025-53022` `(TF-M) FWU does not check the length of the TLV’s payload
   <https://trustedfirmware-m.readthedocs.io/en/latest/security/security_advisories/fwu_tlv_payload_out_of_bounds_vulnerability.html>`_
 
+* :cve:`2026-0849` `Zephyr project bug tracker GHSA-ff4p-3ggg-prp6
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-ff4p-3ggg-prp6>`_
+
 * :cve:`2026-1678` `Zephyr project bug tracker GHSA-536f-h63g-hj42
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-536f-h63g-hj42>`_
+
+* :cve:`2026-4179` `Zephyr project bug tracker GHSA-9xg7-g3q3-9prf
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-9xg7-g3q3-9prf>`_
 
 API Changes
 ***********
@@ -66,8 +72,18 @@ API Changes
       * :kconfig:option:`CONFIG_XTENSA_CACHED_REGION`
       * :kconfig:option:`CONFIG_XTENSA_UNCACHED_REGION`
 
+* Bluetooth
+
+  * Controller
+
+    * :kconfig:option:`CONFIG_BT_CTLR_ADV_AUX_SET`, :kconfig:option:`CONFIG_BT_CTLR_ADV_SYNC_SET`
+      and :kconfig:option:`CONFIG_BT_CTLR_ADV_DATA_BUF_MAX` no longer require
+      :kconfig:option:`CONFIG_BT_CTLR_ADVANCED_FEATURES`
+
 Removed APIs and options
 ========================
+
+* ``CONFIG_BT_TBS_SUPPORTED_FEATURES``
 
 Deprecated APIs and options
 ===========================
@@ -373,6 +389,39 @@ New APIs and options
   * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION`
   * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION_NAME`
   * :c:func:`video_transform_cap`
+  * :c:macro:`VIDEO_PIX_FMT_SBGGR8P16`
+  * :c:macro:`VIDEO_PIX_FMT_SGBRG8P16`
+  * :c:macro:`VIDEO_PIX_FMT_SGRBG8P16`
+  * :c:macro:`VIDEO_PIX_FMT_SRGGB8P16`
+  * :c:macro:`VIDEO_PIX_FMT_Y8P16`
+  * :c:macro:`VIDEO_FMT_IS_SEMI_PLANAR`
+  * :c:macro:`VIDEO_FMT_IS_PLANAR`
+  * :c:macro:`VIDEO_FMT_IS_GRAYSCALE`
+  * :c:macro:`VIDEO_FMT_IS_BAYER`
+  * :c:macro:`VIDEO_FMT_IS_RGB`
+  * :c:macro:`VIDEO_FMT_IS_YUV`
+  * :c:macro:`VIDEO_FMT_IS_MIPI_PACKED`
+  * :c:macro:`VIDEO_FMT_IS_PADDED`
+  * :c:macro:`VIDEO_FMT_IS_SEMI_PLANAR`
+  * :c:macro:`VIDEO_FMT_IS_FULL_PLANAR`
+  * :c:macro:`VIDEO_FOREACH_BAYER`
+  * :c:macro:`VIDEO_FOREACH_BAYER_PADDED`
+  * :c:macro:`VIDEO_FOREACH_BAYER_MIPI_PACKED`
+  * :c:macro:`VIDEO_FOREACH_BAYER_NON_PACKED`
+  * :c:macro:`VIDEO_FOREACH_GRAYSCALE`
+  * :c:macro:`VIDEO_FOREACH_GRAYSCALE_NON_PACKED`
+  * :c:macro:`VIDEO_FOREACH_GRAYSCALE_PADDED`
+  * :c:macro:`VIDEO_FOREACH_GRAYSCALE_MIPI_PACKED`
+  * :c:macro:`VIDEO_FOREACH_RGB`
+  * :c:macro:`VIDEO_FOREACH_RGB_PACKED`
+  * :c:macro:`VIDEO_FOREACH_RGB_NON_PACKED`
+  * :c:macro:`VIDEO_FOREACH_RGB_ALPHA`
+  * :c:macro:`VIDEO_FOREACH_RGB_PADDED`
+  * :c:macro:`VIDEO_FOREACH_YUV`
+  * :c:macro:`VIDEO_FOREACH_YUV_NON_PLANAR`
+  * :c:macro:`VIDEO_FOREACH_YUV_SEMI_PLANAR`
+  * :c:macro:`VIDEO_FOREACH_YUV_FULL_PLANAR`
+  * :c:macro:`VIDEO_FOREACH_COMPRESSED`
 
 .. zephyr-keep-sorted-stop
 
@@ -430,6 +479,11 @@ New Drivers
   * Added SiFli SF32LB eFuse OTP driver (:dtcompatible:`sifli,sf32lb-efuse`).
     (:github:`101926`)
   * :dtcompatible:`nxp,ocotp` (:github:`102567` & :github:`103089`)
+
+* Partitions
+
+  * Added new :dtcompatible:`zephyr,mapped-partition` compatible for memory-mapped partitions
+    (:github:`104398`).
 
 New Samples
 ***********

@@ -146,7 +146,7 @@ manifest:
       groups:
         - fs
     - name: hal_adi
-      revision: f24186100783b7633594e7114b4b1d98e55a080d
+      revision: fc36ee1f5118caa62d9c151cf2e47c193d18d926
       path: modules/hal/adi
       groups:
         - hal
@@ -187,7 +187,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 4de11f1dafa9f23af72bf8c5c9c2368fc4207abd
+      revision: 0271951a695d43d1cd06e65d08e8c5c61131375f
       path: modules/hal/infineon
       groups:
         - hal
@@ -202,7 +202,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 3e5403c9cc91fdfb11b6712ae9816674791f9f87
+      revision: 70c1b32dd68753b0604beab377392ed5ebc19176
       path: modules/hal/nordic
       groups:
         - hal
@@ -212,7 +212,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 593886a8fadb5f25a66b7bb8d40f394f145224dd
+      revision: 6ba788996552f2b2edf710616a695dd56b35875f
       path: modules/hal/nxp
       groups:
         - hal
@@ -257,7 +257,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 8e251c81765e571c4bc4cf66826cbfedf6927987
+      revision: 5c0c88277a4cf4b9c694e80f705b00a0b1c7cef0
       path: modules/hal/stm32
       groups:
         - hal
@@ -272,7 +272,7 @@ manifest:
       groups:
         - hal
     - name: hal_ti
-      revision: b141deb61a34e257afa16381c5d25e2f3d56d5a5
+      revision: b0347dba143798dafa3b57babfb754228398e5c5
       path: modules/hal/ti
       groups:
         - hal
@@ -293,7 +293,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 9a7aef98c8758337b8b83d87ba64dc924769b67a
+      revision: 675f62d32902201d0da15c125dd94eb7667518b0
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -328,7 +328,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 4f820a9d874aa665838f3060d340287b75b1c182
+      revision: ce09c367aa43385c4b672d01344eaafaaa63b8b9
       path: bootloader/mcuboot
       groups:
         - bootloader
