@@ -215,7 +215,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 5bd070e9f20414bf1aa83a8340c3284d164bf910
+      revision: c1e06bcfb39e4612d5f659d1754727f4ceae423b
       path: modules/hal/nxp
       groups:
         - hal
@@ -231,12 +231,12 @@ manifest:
         - hal
     - name: hal_realtek
       path: modules/hal/realtek
-      revision: ba2729361aaeb830434a069dcb12f5a8d4a9f22e
+      revision: c8f99f7de0b8ea5817dd1873e0b31208be3fb63b
       groups:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: c92be1e7442b01e02d0f56a3b0ee090d8d068467
+      revision: 59414fee28d89de23673d2e6b3789d711942436d
       groups:
         - hal
     - name: hal_rpi_pico
@@ -260,7 +260,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 79bfa2f1a475176a5d5a33db7d53b9bff44e671e
+      revision: 2516c3ff1fb58d8c934d0ab26e34c7be378a8376
       path: modules/hal/stm32
       groups:
         - hal
@@ -367,7 +367,7 @@ manifest:
         - debug
     - name: picolibc
       path: modules/lib/picolibc
-      revision: ca8b6ebba5226a75545e57a140443168a26ba664
+      revision: 01254932e8e81085817ed61fd858648584ffe37c
     - name: psa-arch-tests
       revision: 6e8219237435112df33bbcf37b7f5657fcfb9cff
       path: modules/tee/tf-m/psa-arch-tests

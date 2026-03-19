@@ -101,6 +101,7 @@ static struct adc_hdl adc_list[] = {
                        maxim_max11117,
                        maxim_max11253,
                        maxim_max11254,
+                       maxim_max2253x,
                        microchip_mcp3204,
                        microchip_mcp3208,
                        microchip_xec_adc,
