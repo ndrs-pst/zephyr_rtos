@@ -51,6 +51,21 @@
 	};
 };
 
+&edma3 {
+	status = "okay";
+};
+
+&edma4 {
+	status = "okay";
+};
+
+&lpspi2 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpspi2>;
+	pinctrl-1 = <&pinmux_lpspi2_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
 &lpuart1 {
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart1>;
@@ -109,6 +124,8 @@
 	 * corresponding MPU settings.
 	 */
 	status = "disabled";
+	pinctrl-0 = <&pinmux_flexspi2>;
+	pinctrl-names = "default";
 	ahb-prefetch;
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
@@ -119,7 +136,7 @@
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(133)>;
 		status = "okay";
-		jedec-id = [ef 60 18];
+		jedec-id = [ef 40 18];
 		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>;
 

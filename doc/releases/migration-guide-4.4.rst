@@ -212,6 +212,12 @@ Clock Control
   ``bflb,bl70x-root-clk`` and ``bflb,bl61x-flash-clk`` got respectively replaced with
   :dtcompatible:`bflb,flash-clk`, :dtcompatible:`bflb,pll` and :dtcompatible:`bflb,root-clk`.
 
+* The :dtcompatible:`infineon,peri-div` clock control binding has removed the ``resource-type``,
+  ``resource-instance``, and ``resource-channel`` properties. These properties are no longer used by
+  the driver and the corresponding fields have been removed from the driver's internal data structures.
+  Out-of-tree boards using this compatible must remove these properties from their devicetree nodes.
+  (:github:`105393`)
+
 Controller Area Network (CAN)
 =============================
 
@@ -931,6 +937,17 @@ Video
 
 * The :dtcompatible:`ovti,ov2640` reset pin handling has been corrected, resulting in an inverted
   active level compared to before, to match the active level expected by the sensor.
+
+* The following pixel formats were renamed to keep consistency with the data ():github:`105522`):
+
+  * :c:macro:`VIDEO_PIX_FMT_ARGB32` (swapped with :c:macro:`VIDEO_PIX_FMT_BGRA32`)
+  * :c:macro:`VIDEO_PIX_FMT_BGRA32` (swapped with :c:macro:`VIDEO_PIX_FMT_ARGB32`)
+  * :c:macro:`VIDEO_PIX_FMT_RGBA32` (unchanged)
+  * :c:macro:`VIDEO_PIX_FMT_ABGR32` (unchanged)
+  * :c:macro:`VIDEO_PIX_FMT_XRGB32` (unchanged)
+  * :c:macro:`VIDEO_PIX_FMT_XBGR32` (newly introduced)
+  * :c:macro:`VIDEO_PIX_FMT_BGRX32` (newly introduced)
+  * :c:macro:`VIDEO_PIX_FMT_RGBX32` (newly introduced)
 
 Watchdog
 ========
