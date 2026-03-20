@@ -170,11 +170,11 @@ manifest:
         - hal
     - name: hal_bouffalolab
       path: modules/hal/bouffalolab
-      revision: af6758a0d500bd2cb1c0e85574bb89de22d3828d
+      revision: c71e1197e7e9e0fd7be801844e09533c030b56a9
       groups:
         - hal
     - name: hal_espressif
-      revision: d73843b864463def35d99b29e61001874151d8a6
+      revision: a9b1991ad956e24468ebc841d3f90398729d46b5
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -250,7 +250,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 12fa7580a4a5c216c33916e27e0034265154afee
+      revision: b2e1724a44552c54e141b4ee03bcb461c5b18fa4
       path: modules/hal/silabs
       groups:
         - hal
@@ -296,7 +296,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 675f62d32902201d0da15c125dd94eb7667518b0
+      revision: c801f15ce8b9dfd363fcc4e45d500ad8d787b4af
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -331,7 +331,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: ce09c367aa43385c4b672d01344eaafaaa63b8b9
+      revision: 3320692dfdcfb5567d31060dfa00d3e1bacac8c4
       path: bootloader/mcuboot
       groups:
         - bootloader

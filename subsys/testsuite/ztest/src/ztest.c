@@ -1447,6 +1447,9 @@ int ztest_main(void) /* #CUSTOM@NDRS */ {
 	z_init_mock();
 #ifndef CONFIG_ZTEST_SHELL
 	test_main();
+#ifdef CONFIG_ZTEST_BENCHMARK
+	benchmark_main();
+#endif
 	end_report();
 	log_flush();
 	LOG_PANIC();

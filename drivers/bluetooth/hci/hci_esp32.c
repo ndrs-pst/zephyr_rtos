@@ -20,7 +20,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci_driver_esp32);
 
-#if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32S3) ||                      \
+#if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32S3) || \
     defined(CONFIG_SOC_SERIES_ESP32C3)
 extern const char* btdm_controller_get_compile_version(void);
 #define esp32_get_controller_version() btdm_controller_get_compile_version()
@@ -435,6 +435,8 @@ static uint16_t bt_esp32_get_hw_variant(void) {
     return BT_HCI_VS_HW_VAR_ESP32C2;
     #elif defined(CONFIG_SOC_SERIES_ESP32C3)
     return BT_HCI_VS_HW_VAR_ESP32C3;
+    #elif defined(CONFIG_SOC_SERIES_ESP32C5)
+    return BT_HCI_VS_HW_VAR_ESP32C5;
     #elif defined(CONFIG_SOC_SERIES_ESP32C6)
     return BT_HCI_VS_HW_VAR_ESP32C6;
     #elif defined(CONFIG_SOC_SERIES_ESP32H2)
