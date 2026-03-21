@@ -32,6 +32,22 @@
 		status = "okay";
 	};
 
+	clk_eco: clk_eco {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-clock";
+		clock-frequency = <17203000>;
+		system-clock = <IFX_ECO>;
+		status = "disabled";
+	};
+
+	clk_ext: clk_ext {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-clock";
+		clock-frequency = <24000000>;
+		system-clock = <IFX_EXT>;
+		status = "disabled";
+	};
+
 	dpll_hp: dpll_hp {
 		#clock-cells = <0>;
 		compatible = "infineon,fixed-clock";

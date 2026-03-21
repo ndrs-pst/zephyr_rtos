@@ -144,6 +144,32 @@ static void clk_wco_init(void) {
 }
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_eco))
+static const cy_stc_clk_eco_config_t srss_0_clock_0_eco_0_config = {
+    .ecoClkfreq = 17203200U,
+    .ecoCtrim   = 6U,
+    .ecoGtrim   = 2U,
+    .ecoIboost  = 1U,
+};
+
+#define CY_CFG_SYSCLK_ECO_FREQ 17203200UL
+#define CY_CFG_SYSCLK_ECO_ERROR 1
+
+void clk_eco_init(void) {
+    (void) Cy_GPIO_Pin_FastInit(GPIO_PRT19, 0, CY_GPIO_DM_ANALOG, 0UL, HSIOM_SEL_GPIO);
+    (void) Cy_GPIO_Pin_FastInit(GPIO_PRT19, 1, CY_GPIO_DM_ANALOG, 0UL, HSIOM_SEL_GPIO);
+
+    if (CY_SYSCLK_BAD_PARAM == Cy_SysClk_EcoManualConfigure(&srss_0_clock_0_eco_0_config)) {
+        clock_startup_error(CY_CFG_SYSCLK_ECO_ERROR);
+    }
+
+    if (CY_SYSCLK_TIMEOUT == Cy_SysClk_EcoEnable(3000UL)) {
+        clock_startup_error(CY_CFG_SYSCLK_ECO_ERROR);
+    }
+    Cy_SysClk_EcoSetFrequency(CY_CFG_SYSCLK_ECO_FREQ);
+}
+#endif
+
 static int fixed_rate_clk_init(const struct device* dev) {
     const struct fixed_rate_clock_config* const config = dev->config;
 
@@ -183,6 +209,12 @@ static int fixed_rate_clk_init(const struct device* dev) {
         case IFX_FLL :
             break;
 
+        #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_eco))
+        case IFX_ECO :
+            clk_eco_init();
+            break;
+        #endif
+
         #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_iho))
         case IFX_IHO :
             Cy_SysClk_IhoEnable();
@@ -203,6 +235,7 @@ static int fixed_rate_clk_init(const struct device* dev) {
 
         #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_ext))
         case IFX_EXT :
+           (void) Cy_GPIO_Pin_SecFastInit(GPIO_PRT7, 4, CY_GPIO_DM_HIGHZ, 0UL, P7_4_SRSS_EXT_CLK);
             Cy_SysClk_ExtClkSetFrequency(config->rate);
             break;
         #endif

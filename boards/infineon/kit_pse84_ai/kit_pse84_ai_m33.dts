@@ -40,20 +40,61 @@
  * entered into the devicetree dpll_* block.
  */
 
-/* This dpll_lp0 is on "clock path" 0. So HF clocks sourced
- * from *_CLKPATH0 will receive this frequency, when the
- * dpll_lp0 is set to "okay".
+&clk_eco {
+	clock-frequency = <17203200>;
+	system-clock = <IFX_ECO>;
+	status = "disabled";
+};
+
+&clk_ext {
+	clock-frequency = <24000000>;
+	system-clock = <IFX_EXT>;
+	status = "disabled";
+};
+
+/*
+ * dpll_lp0 — 320 MHz output, three source options.
+ * Fout = (Fref / Q) * (P + frac_div / 2^24) / N
+ *
+ * [1] IHO  50.0000 MHz: (50M/7) * (44 + 13421772/2^24) / 1     = 319.999 MHz  ACTIVE
+ * [2] ECO  17.2032 MHz: (17.2032M/2) * (37 + 3395389/2^24) / 1 ≈ 320.000 MHz
+ * [3] EXT  24.0000 MHz: (24M/3) * (40 + 0) / 1                 = 320.000 MHz
+ *
+ * To switch: uncomment desired block, comment out the active one.
  */
+
+/* [1] ACTIVE — IHO 50 MHz, fractional mode */
 &dpll_lp0 {
 	status = "okay";
-	clock-frequency = <400000000>;
-
-	feedback-div = <56>;
-	reference-div = <7>;
-	output-div = <1>;
-	fraction-div = <0>;
-	dco-mode-enable;
+	clock-frequency = <320000000>;
+	feedback-div    = <44>;       /* P */
+	reference-div   = <7>;        /* Q */
+	output-div      = <1>;        /* N */
+	fraction-div    = <13421772>;
+	fraction-div    = <0>;
 };
+
+/* [2] ECO 17.2032 MHz, fractional mode
+&dpll_lp0 {
+	status = "okay";
+	clock-frequency = <320000000>;
+	feedback-div    = <37>;
+	reference-div   = <2>;
+	output-div      = <1>;
+	fraction-div    = <3395389>;
+};
+*/
+
+/* [3] EXT 24 MHz, integer mode
+&dpll_lp0 {
+	status = "okay";
+	clock-frequency = <320000000>;
+	feedback-div    = <40>;
+	reference-div   = <3>;
+	output-div      = <1>;
+	fraction-div    = <0>;
+};
+*/
 
 /* This dpll_lp1 is on "clock path" 1. So HF clocks sourced
  * from *_CLKPATH1 will receive this frequency instead, when the
@@ -63,10 +104,10 @@
 	status = "okay";
 	clock-frequency = <49152000>;
 
-	feedback-div = <27>;
+	feedback-div  = <27>;
 	reference-div = <7>;
-	output-div = <4>;
-	fraction-div = <8810051>;
+	output-div    = <4>;
+	fraction-div  = <8810051>;
 };
 
 /* This dpll_hp is on "clock path" 2. So HF clocks sourced
@@ -87,6 +128,7 @@
 };
 
 &path_mux0 {
+	source-path = <IFX_CAT1_CLKPATH_IN_IHO>; /* CHOICE: IHO, ECO, EXT */
 	status = "okay";
 };
 

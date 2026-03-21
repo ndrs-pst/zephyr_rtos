@@ -1130,12 +1130,12 @@ static DEVICE_API(sdhc, sdhc_infineon_api) = {
 					.sdr104_support = false,                                   \
 					.sdr50_support = true,                                     \
 					.bus_8_bit_support = false},                               \
-			  .bus_4_bit_support = (DT_INST_PROP(n, bus_width) == 4),		   \
-			  .hs200_support = false,						   \
+			  .bus_4_bit_support = (DT_INST_PROP(n, bus_width) == 4),                  \
+			  .hs200_support = false,                                                  \
 			  .hs400_support = false},                                                 \
 		IFX_SDHC_PERI_CLOCK_INIT(n)};                                                      \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &sdhc_infineon_init##n, NULL, &sdhc_infineon_##n##_data,          \
+	DEVICE_DT_INST_DEFINE(n, sdhc_infineon_init##n, NULL, &sdhc_infineon_##n##_data,           \
 			      &sdhc_infineon_##n##_config, POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY, \
 			      &sdhc_infineon_api);
 
