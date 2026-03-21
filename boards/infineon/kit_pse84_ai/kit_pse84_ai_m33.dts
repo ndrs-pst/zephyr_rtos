@@ -39,62 +39,66 @@
  * frequencies, they need to be calculated separately and
  * entered into the devicetree dpll_* block.
  */
-
 &clk_eco {
 	clock-frequency = <17203200>;
 	system-clock = <IFX_ECO>;
-	status = "disabled";
+	status = "okay";
 };
 
 &clk_ext {
 	clock-frequency = <24000000>;
 	system-clock = <IFX_EXT>;
-	status = "disabled";
+	status = "okay";
 };
 
 /*
- * dpll_lp0 — 320 MHz output, three source options.
- * Fout = (Fref / Q) * (P + frac_div / 2^24) / N
+ * Clock source selection — change exactly ONE line to switch:
  *
- * [1] IHO  50.0000 MHz: (50M/7) * (44 + 13421772/2^24) / 1     = 319.999 MHz  ACTIVE
- * [2] ECO  17.2032 MHz: (17.2032M/2) * (37 + 3395389/2^24) / 1 ≈ 320.000 MHz
- * [3] EXT  24.0000 MHz: (24M/3) * (40 + 0) / 1                 = 320.000 MHz
+ *   #define DPLL_LP0_CLKSRC_IHO -> IHO  50.0000 MHz (fractional)
+ *   #define DPLL_LP0_CLKSRC_ECO -> ECO  17.2032 MHz (fractional)
+ *   #define DPLL_LP0_CLKSRC_EXT -> EXT  24.0000 MHz (integer) <- ACTIVE
  *
- * To switch: uncomment desired block, comment out the active one.
+ * Fout = (Fref / Q) * (P + frac_div / 2^24) / N,  target = 320 MHz
  */
+#define DPLL_LP0_CLKSRC_IHO
 
-/* [1] ACTIVE — IHO 50 MHz, fractional mode */
+/* ── dpll_lp0 — clock path 0, 320 MHz ─────────────────────────────────── */
+#if defined(DPLL_LP0_CLKSRC_IHO)
+/* IHO 50 MHz: (50M/7) * (44 + 13421772/2^24) / 1 ≈ 320.000 MHz */
 &dpll_lp0 {
 	status = "okay";
 	clock-frequency = <320000000>;
-	feedback-div    = <44>;       /* P */
-	reference-div   = <7>;        /* Q */
-	output-div      = <1>;        /* N */
+	feedback-div    = <44>;         /* P */
+	reference-div   = <7>;          /* Q */
+	output-div      = <1>;          /* N */
 	fraction-div    = <13421772>;
-	fraction-div    = <0>;
 };
 
-/* [2] ECO 17.2032 MHz, fractional mode
+#elif defined(DPLL_LP0_CLKSRC_ECO)
+/* ECO 17.2032 MHz: (17.2032M/2) * (37 + 3395389/2^24) / 1 ≈ 320.000 MHz */
 &dpll_lp0 {
 	status = "okay";
 	clock-frequency = <320000000>;
-	feedback-div    = <37>;
-	reference-div   = <2>;
-	output-div      = <1>;
+	feedback-div    = <37>;         /* P */
+	reference-div   = <2>;          /* Q */
+	output-div      = <1>;          /* N */
 	fraction-div    = <3395389>;
 };
-*/
 
-/* [3] EXT 24 MHz, integer mode
+#elif defined(DPLL_LP0_CLKSRC_EXT)
+/* EXT 24 MHz: (24M/3) * (40 + 0) / 1 = 320.000 MHz */
 &dpll_lp0 {
 	status = "okay";
 	clock-frequency = <320000000>;
-	feedback-div    = <40>;
-	reference-div   = <3>;
-	output-div      = <1>;
+	feedback-div    = <40>;         /* P */
+	reference-div   = <3>;          /* Q */
+	output-div      = <1>;          /* N */
 	fraction-div    = <0>;
 };
-*/
+
+#else
+#error "No clock source defined. Set CLKSRC_IHO, CLKSRC_ECO, or CLKSRC_EXT."
+#endif
 
 /* This dpll_lp1 is on "clock path" 1. So HF clocks sourced
  * from *_CLKPATH1 will receive this frequency instead, when the
@@ -127,8 +131,16 @@
 	lf-beta-value = <20>;
 };
 
+/* path_mux0 must match the selected source above */
 &path_mux0 {
-	source-path = <IFX_CAT1_CLKPATH_IN_IHO>; /* CHOICE: IHO, ECO, EXT */
+	#if defined(DPLL_LP0_CLKSRC_IHO)
+	source-path = <IFX_CAT1_CLKPATH_IN_IHO>;
+	#elif defined(DPLL_LP0_CLKSRC_ECO)
+	source-path = <IFX_CAT1_CLKPATH_IN_ECO>;
+	#elif defined(DPLL_LP0_CLKSRC_EXT)
+	source-path = <IFX_CAT1_CLKPATH_IN_EXT>;
+	#endif
+
 	status = "okay";
 };
 
@@ -179,7 +191,7 @@
 	status = "okay";
 };
 
-&clk_hf5 {
+&clk_hf5 { /* DPLL_LP0 (320 MHz) / 2 = HF5 (160 MHz) */
 	source-path = <IFX_CLK_HF_IN_CLKPATH0>;
 	clock-div = <IFX_CLK_HF_DIVIDE_BY_2>;
 	status = "okay";

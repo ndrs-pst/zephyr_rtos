@@ -41,7 +41,7 @@
 	clock-div = <1>;
 };
 
-&peri1_group2_8bit_0 {
+&peri1_group2_8bit_0 { /* HF5 (160 MHz) / 2 = 80 MHz */
 	status = "okay";
 	clock-div = <2>;
 };
@@ -57,7 +57,7 @@
 
 	clocks = <&peri1_group2_8bit_0>;
 	bus-width = <4>;
-	max-bus-freq = <50000000>;
+	max-bus-freq = <40000000>;
 	min-bus-freq = <400000>;
 	power-delay-ms = <1000>;
 	no-1-8-v;
