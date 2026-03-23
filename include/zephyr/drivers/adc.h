@@ -446,8 +446,8 @@ struct adc_dt_spec {
  * @see ADC_DT_SPEC_INST_GET_BY_NAME_OR
  */
 #define ADC_DT_SPEC_GET_BY_NAME_OR(node_id, name, default_value) \
-	COND_CODE_1(DT_PROP_HAS_NAME(node_id, io_channels, name), \
-		    (ADC_DT_SPEC_GET_BY_NAME(node_id, name)), (default_value))
+    COND_CODE_1(DT_PROP_HAS_NAME(node_id, io_channels, name), \
+            (ADC_DT_SPEC_GET_BY_NAME(node_id, name)), (default_value))
 
 /** @brief Get ADC io-channel information from a DT_DRV_COMPAT devicetree
  *         instance by name.
@@ -475,7 +475,7 @@ struct adc_dt_spec {
  * @see ADC_DT_SPEC_GET_BY_NAME_OR
  */
 #define ADC_DT_SPEC_INST_GET_BY_NAME_OR(inst, name, default_value) \
-	ADC_DT_SPEC_GET_BY_NAME_OR(DT_DRV_INST(inst), name, default_value)
+    ADC_DT_SPEC_GET_BY_NAME_OR(DT_DRV_INST(inst), name, default_value)
 
 /**
  * @brief Get ADC io-channel information from devicetree.
@@ -563,8 +563,8 @@ struct adc_dt_spec {
  * @see ADC_DT_SPEC_INST_GET_BY_IDX_OR
  */
 #define ADC_DT_SPEC_GET_BY_IDX_OR(node_id, idx, default_value) \
-	COND_CODE_1(DT_PROP_HAS_IDX(node_id, io_channels, idx), \
-		    (ADC_DT_SPEC_GET_BY_IDX(node_id, idx)), (default_value))
+    COND_CODE_1(DT_PROP_HAS_IDX(node_id, io_channels, idx), \
+            (ADC_DT_SPEC_GET_BY_IDX(node_id, idx)), (default_value))
 
 /** @brief Get ADC io-channel information from a DT_DRV_COMPAT devicetree
  *         instance.
@@ -592,7 +592,7 @@ struct adc_dt_spec {
  * @see ADC_DT_SPEC_GET_BY_IDX_OR
  */
 #define ADC_DT_SPEC_INST_GET_BY_IDX_OR(inst, idx, default_value) \
-	ADC_DT_SPEC_GET_BY_IDX_OR(DT_DRV_INST(inst), idx, default_value)
+    ADC_DT_SPEC_GET_BY_IDX_OR(DT_DRV_INST(inst), idx, default_value)
 /**
  * @brief Equivalent to ADC_DT_SPEC_GET_BY_IDX(node_id, 0).
  *
@@ -616,7 +616,7 @@ struct adc_dt_spec {
  *         or @p default_value if the node or property do not exist.
  */
 #define ADC_DT_SPEC_GET_OR(node_id, default_value) \
-	ADC_DT_SPEC_GET_BY_IDX_OR(node_id, 0, default_value)
+    ADC_DT_SPEC_GET_BY_IDX_OR(node_id, 0, default_value)
 
 /**
  * @brief Equivalent to ADC_DT_SPEC_INST_GET_BY_IDX(inst, 0).
@@ -641,7 +641,7 @@ struct adc_dt_spec {
  *         or @p default_value if the node or property do not exist.
  */
 #define ADC_DT_SPEC_INST_GET_OR(inst, default_value) \
-	ADC_DT_SPEC_GET_OR(DT_DRV_INST(inst), default_value)
+    ADC_DT_SPEC_GET_OR(DT_DRV_INST(inst), default_value)
 
 /* Forward declaration of the adc_sequence structure. */
 struct adc_sequence;
@@ -759,6 +759,20 @@ struct adc_sequence {
      * turns out to be not large enough to hold all the requested samples.
      */
     size_t buffer_size;
+
+    #if defined(CONFIG_ADC_SEQUENCE_PRIORITY) || defined(__DOXYGEN__)
+    /**
+     * Channel priority for arbitration.
+     * 0 represents the default/lowest priority; higher numerical values
+     * indicate higher priority; equal values indicate no preference.
+     * No guarantee of kernel-style semantics like preemption/complete
+     * blocking, it serves only as a hint for hardware/driver arbitration.
+     * Number of possible priorities is HW specific.
+     *
+     * @kconfig_dep{CONFIG_ADC_SEQUENCE_PRIORITY}
+     */
+    uint32_t priority;
+    #endif
 
     /**
      * ADC resolution.

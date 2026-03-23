@@ -1047,8 +1047,8 @@ static void set_up_fixed_clock_sources(void) {
             }
         }
 
-        /* Check if we need to enable HSE clock security system or not */
-        #if STM32_HSE_CSS
+        #ifdef STM32_HSE_CSS
+        /* Enable HSE clock security system */
         z_arm_nmi_set_handler(HAL_RCC_NMI_IRQHandler);
         LL_RCC_HSE_EnableCSS();
         #endif /* STM32_HSE_CSS */
@@ -1357,7 +1357,7 @@ void __weak stm32_hse_css_callback(void) {}
 void HAL_RCC_CSSCallback(void) {
     stm32_hse_css_callback();
 }
-#endif
+#endif /* STM32_HSE_CSS */
 
 void __weak config_regulator_voltage(uint32_t hclk_freq) {}
 /**

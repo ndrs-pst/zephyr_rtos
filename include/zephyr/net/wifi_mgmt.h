@@ -42,13 +42,13 @@ extern "C" {
 #ifdef CONFIG_WIFI_MGMT_SCAN_SSID_FILT_MAX
 #define WIFI_MGMT_SCAN_SSID_FILT_MAX    CONFIG_WIFI_MGMT_SCAN_SSID_FILT_MAX
 #else
-#define WIFI_MGMT_SCAN_SSID_FILT_MAX    8
+#define WIFI_MGMT_SCAN_SSID_FILT_MAX    1
 #endif /* CONFIG_WIFI_MGMT_SCAN_SSID_FILT_MAX */
 
 #ifdef CONFIG_WIFI_MGMT_SCAN_CHAN_MAX_MANUAL
 #define WIFI_MGMT_SCAN_CHAN_MAX_MANUAL  CONFIG_WIFI_MGMT_SCAN_CHAN_MAX_MANUAL
 #else
-#define WIFI_MGMT_SCAN_CHAN_MAX_MANUAL  32
+#define WIFI_MGMT_SCAN_CHAN_MAX_MANUAL  1
 #endif /* CONFIG_WIFI_MGMT_SCAN_CHAN_MAX_MANUAL */
 
 #ifdef CONFIG_WIFI_ENT_IDENTITY_MAX_USERS
@@ -1414,8 +1414,14 @@ struct wifi_filter_info {
 
 /** @brief Wi-Fi channel setting for monitor and TX-injection modes */
 struct wifi_channel_info {
-    /** Channel value to set */
+    /** Channel value to set or get */
     uint16_t channel;
+
+    /** Frequency band for the channel (2.4 / 5 / 6 GHz). Use WIFI_FREQ_BAND_UNKNOWN
+     *  to let the driver infer when unambiguous (e.g. 36-165 is 5 GHz). Required
+     *  when channel is ambiguous (e.g. 1-14 can be 2.4 or 6 GHz).
+     */
+    enum wifi_frequency_bands band;
 
     /** Interface index */
     uint8_t if_index;

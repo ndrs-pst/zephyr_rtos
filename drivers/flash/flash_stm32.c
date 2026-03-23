@@ -40,8 +40,7 @@ LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
 /* Let's wait for double the max erase time to be sure that the operation is
  * completed.
  */
-#define STM32_FLASH_TIMEOUT     \
-    (2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
+#define STM32_FLASH_TIMEOUT (2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
 
 static const struct flash_parameters flash_stm32_parameters = {
     .write_block_size = FLASH_STM32_WRITE_BLOCK_SIZE,
@@ -56,8 +55,8 @@ static const struct flash_parameters flash_stm32_parameters = {
 };
 
 #if !defined(_MSC_VER) /* #CUSTOM@NDRS */
-bool __weak flash_stm32_valid_range(struct device const* dev, off_t offset,
-                                    uint32_t len, bool write) {
+bool __weak flash_stm32_valid_range(struct device const* dev, off_t offset, uint32_t len,
+                                    bool write) {
     if (write && !flash_stm32_valid_write(offset, len)) {
         return (false);
     }
@@ -73,17 +72,15 @@ int __weak flash_stm32_check_configuration(void) {
 extern int flash_stm32_check_configuration(void);
 #endif
 
-
 #if !defined(CONFIG_SOC_SERIES_STM32WBX)
 static int flash_stm32_check_status(struct device const* dev) {
 
     if (FLASH_STM32_REGS(dev)->FLASH_STM32_SR & FLASH_STM32_SR_ERRORS) {
-        LOG_DBG("Status: 0x%08lx",
-                (unsigned long)FLASH_STM32_REGS(dev)->FLASH_STM32_SR &
-                                                FLASH_STM32_SR_ERRORS);
+        LOG_DBG("Status: 0x%08lx", (unsigned long)FLASH_STM32_REGS(dev)->FLASH_STM32_SR &
+                FLASH_STM32_SR_ERRORS);
         /* Clear errors to unblock usage of the flash */
-        FLASH_STM32_REGS(dev)->FLASH_STM32_CCR = FLASH_STM32_REGS(dev)->FLASH_STM32_SR &
-                                                 FLASH_STM32_SR_ERRORS;
+        FLASH_STM32_REGS(dev)->FLASH_STM32_CCR =
+            FLASH_STM32_REGS(dev)->FLASH_STM32_SR & FLASH_STM32_SR_ERRORS;
         return (-EIO);
     }
 
@@ -125,8 +122,7 @@ int flash_stm32_wait_flash_idle(struct device const* dev) {
     return (0);
 }
 
-static void flash_stm32_flush_caches(struct device const* dev,
-                                     off_t offset, size_t len) {
+static void flash_stm32_flush_caches(struct device const* dev, off_t offset, size_t len) {
     #if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F3X) || \
         defined(CONFIG_SOC_SERIES_STM32G0X) || defined(CONFIG_SOC_SERIES_STM32L5X) || \
         defined(CONFIG_SOC_SERIES_STM32U3X) || defined(CONFIG_SOC_SERIES_STM32U5X) || \
@@ -134,10 +130,8 @@ static void flash_stm32_flush_caches(struct device const* dev,
     ARG_UNUSED(dev);
     ARG_UNUSED(offset);
     ARG_UNUSED(len);
-    #elif defined(CONFIG_SOC_SERIES_STM32F4X) || \
-          defined(CONFIG_SOC_SERIES_STM32L4X) || \
-          defined(CONFIG_SOC_SERIES_STM32WBX) || \
-          defined(CONFIG_SOC_SERIES_STM32G4X)
+    #elif defined(CONFIG_SOC_SERIES_STM32F4X) || defined(CONFIG_SOC_SERIES_STM32L4X) || \
+          defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_SERIES_STM32G4X)
     ARG_UNUSED(offset);
     ARG_UNUSED(len);
 
@@ -150,17 +144,13 @@ static void flash_stm32_flush_caches(struct device const* dev,
         regs->ACR |= FLASH_ACR_DCEN;
     }
     #elif defined(CONFIG_SOC_SERIES_STM32F7X)
-    SCB_InvalidateDCache_by_Addr((uint32_t*)(FLASH_STM32_BASE_ADDRESS
-                                 + offset), len);
+    SCB_InvalidateDCache_by_Addr((uint32_t*)(FLASH_STM32_BASE_ADDRESS + offset), len);
     #endif
 }
 
-static int flash_stm32_read(struct device const* dev, off_t offset,
-                            void* data,
-                            size_t len) {
+static int flash_stm32_read(struct device const* dev, off_t offset, void* data, size_t len) {
     if (!flash_stm32_valid_range(dev, offset, len, false)) {
-        LOG_ERR("Read range invalid. Offset: %ld, len: %zu",
-                (long int)offset, len);
+        LOG_ERR("Read range invalid. Offset: %ld, len: %zu", (long)offset, len);
         return (-EINVAL);
     }
 
@@ -168,20 +158,18 @@ static int flash_stm32_read(struct device const* dev, off_t offset,
         return (0);
     }
 
-    LOG_DBG("Read offset: %ld, len: %zu", (long int)offset, len);
+    LOG_DBG("Read offset: %ld, len: %zu", (long)offset, len);
 
-    memcpy(data, (uint8_t*)FLASH_STM32_BASE_ADDRESS + offset, len);
+    memcpy(data, (uint8_t *)FLASH_STM32_BASE_ADDRESS + offset, len);
 
     return (0);
 }
 
-static int flash_stm32_erase(struct device const* dev, off_t offset,
-                             size_t len) {
+static int flash_stm32_erase(struct device const* dev, off_t offset, size_t len) {
     int rc;
 
     if (!flash_stm32_valid_range(dev, offset, len, true)) {
-        LOG_ERR("Erase range invalid. Offset: %ld, len: %zu",
-                (long int)offset, len);
+        LOG_ERR("Erase range invalid. Offset: %ld, len: %zu", (long)offset, len);
         return (-EINVAL);
     }
 
@@ -191,7 +179,7 @@ static int flash_stm32_erase(struct device const* dev, off_t offset,
 
     flash_stm32_sem_take(dev);
 
-    LOG_DBG("Erase offset: %ld, len: %zu", (long int)offset, len);
+    LOG_DBG("Erase offset: %ld, len: %zu", (long)offset, len);
 
     rc = flash_stm32_cr_lock(dev, false);
     if (rc == 0) {
@@ -211,13 +199,11 @@ static int flash_stm32_erase(struct device const* dev, off_t offset,
     return (rc);
 }
 
-static int flash_stm32_write(struct device const* dev, off_t offset,
-                             void const* data, size_t len) {
+static int flash_stm32_write(struct device const* dev, off_t offset, void const* data, size_t len) {
     int rc;
 
     if (!flash_stm32_valid_range(dev, offset, len, true)) {
-        LOG_ERR("Write range invalid. Offset: %ld, len: %zu",
-                (long int)offset, len);
+        LOG_ERR("Write range invalid. Offset: %ld, len: %zu", (long)offset, len);
         return (-EINVAL);
     }
 
@@ -227,7 +213,7 @@ static int flash_stm32_write(struct device const* dev, off_t offset,
 
     flash_stm32_sem_take(dev);
 
-    LOG_DBG("Write offset: %ld, len: %zu", (long int)offset, len);
+    LOG_DBG("Write offset: %ld, len: %zu", (long)offset, len);
 
     rc = flash_stm32_cr_lock(dev, false);
     if (rc == 0) {
@@ -243,6 +229,106 @@ static int flash_stm32_write(struct device const* dev, off_t offset,
 
     return (rc);
 }
+
+#ifdef CONFIG_FLASH_STM32_ACCEPT_UNALIGNED_WRITES
+static int write_unaligned(const struct device* dev, off_t offset, const uint8_t* data, size_t len) {
+    uint8_t temp_data[FLASH_STM32_WRITE_BLOCK_SIZE];
+    off_t cur_offset_addr;
+    size_t local_offset;
+
+    BUILD_ASSERT(FLASH_STM32_WRITE_BLOCK_SIZE <= 128, "Write block size is above the limit.");
+    __ASSERT(len <= FLASH_STM32_WRITE_BLOCK_SIZE, "Length too big.");
+
+    memset(temp_data, flash_stm32_parameters.erase_value, FLASH_STM32_WRITE_BLOCK_SIZE);
+
+    cur_offset_addr = ROUND_DOWN(offset, FLASH_STM32_WRITE_BLOCK_SIZE);
+    local_offset = offset - cur_offset_addr;
+
+    __ASSERT(len == (FLASH_STM32_WRITE_BLOCK_SIZE - local_offset), "Length error.");
+
+    memcpy(temp_data + local_offset, data, len);
+
+    return flash_stm32_write(dev, cur_offset_addr, temp_data, FLASH_STM32_WRITE_BLOCK_SIZE);
+}
+
+static int flash_stm32_no_align_write(struct device const* dev, off_t offset, void const* data,
+                                      size_t len) {
+    const uint8_t* data_ptr = data;
+    size_t chunk_size, local_offset;
+    off_t off = offset;
+    size_t remaining = len;
+    int rc;
+
+    BUILD_ASSERT(FLASH_STM32_WRITE_BLOCK_SIZE >= 4, "Invalid write size.");
+
+    if (!remaining) {
+        return (0);
+    }
+
+    if (!flash_stm32_range_exists(dev, off, remaining)) {
+        return (-EINVAL);
+    }
+
+    if (off % FLASH_STM32_WRITE_BLOCK_SIZE != 0) {
+        local_offset = off % FLASH_STM32_WRITE_BLOCK_SIZE;
+        chunk_size = MIN(remaining, FLASH_STM32_WRITE_BLOCK_SIZE - local_offset);
+
+        rc = write_unaligned(dev, off, data, chunk_size);
+        if (rc != 0) {
+            return (rc);
+        }
+
+        remaining -= chunk_size;
+        off += chunk_size;
+        data_ptr += chunk_size;
+    }
+
+    chunk_size = ROUND_DOWN(remaining, FLASH_STM32_WRITE_BLOCK_SIZE);
+    if (chunk_size != 0) {
+        if (IS_ALIGNED(data_ptr, 4)) {
+            rc = flash_stm32_write(dev, off, data_ptr, chunk_size);
+            if (rc != 0) {
+                return (rc);
+            }
+
+            off += chunk_size;
+            data_ptr += chunk_size;
+            remaining -= chunk_size;
+        }
+        else {
+            /* Workaround for some SOCs (H7, U3 etc.) which requires word-aligned
+             * input buffer. This should not be necessary once this bug is fixed in
+             * the flash driver.
+             */
+            size_t temp_chunk_size = chunk_size;
+
+            while (temp_chunk_size > 0) {
+                size_t step = MIN(temp_chunk_size, FLASH_STM32_WRITE_BLOCK_SIZE);
+
+                rc = write_unaligned(dev, off, data_ptr, step);
+                if (rc != 0) {
+                    return (rc);
+                }
+
+                data_ptr += step;
+                off += step;
+                temp_chunk_size -= step;
+            }
+            remaining -= chunk_size;
+        }
+    }
+
+    /* Write tail for any leftover bytes. */
+    if (remaining > 0) {
+        rc = write_unaligned(dev, off, data_ptr, remaining);
+        if (rc != 0) {
+            return (rc);
+        }
+    }
+
+    return (0);
+}
+#endif /* CONFIG_FLASH_STM32_ACCEPT_UNALIGNED_WRITES */
 
 int flash_stm32_cr_lock(struct device const* dev, bool enable) {
     FLASH_TypeDef* regs = FLASH_STM32_REGS(dev);
@@ -365,8 +451,7 @@ int flash_stm32_option_bytes_disable(struct device const* dev) {
 }
 #endif /* CONFIG_FLASH_STM32_BLOCK_REGISTERS */
 
-static const struct flash_parameters*
-flash_stm32_get_parameters(struct device const* dev) {
+static const struct flash_parameters* flash_stm32_get_parameters(struct device const* dev) {
     ARG_UNUSED(dev);
 
     return &flash_stm32_parameters;
@@ -400,6 +485,7 @@ static int flash_stm32_get_size(struct device const* dev, uint64_t* size) {
 
 static struct flash_stm32_priv flash_data = {
     .regs = (FLASH_TypeDef*)DT_INST_REG_ADDR(0),
+
     /* Getting clocks information from device tree description depending
      * on the presence of 'clocks' property.
      */
@@ -410,7 +496,13 @@ static struct flash_stm32_priv flash_data = {
 
 static DEVICE_API(flash, flash_stm32_api) = {
     .erase = flash_stm32_erase,
+
+    #ifndef CONFIG_FLASH_STM32_ACCEPT_UNALIGNED_WRITES
     .write = flash_stm32_write,
+    #else
+    .write = flash_stm32_no_align_write,
+    #endif
+
     .read  = flash_stm32_read,
     .get_parameters = flash_stm32_get_parameters,
     .get_size = flash_stm32_get_size,
@@ -436,10 +528,8 @@ static int stm32_flash_init(struct device const* dev) {
      * On STM32 F0, F1, F3 & L1 series, flash interface clock source is
      * always HSI, so statically enable HSI here.
      */
-    #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
-        defined(CONFIG_SOC_SERIES_STM32F1X) || \
-        defined(CONFIG_SOC_SERIES_STM32F3X) || \
-        defined(CONFIG_SOC_SERIES_STM32L1X)
+    #if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F1X) || \
+        defined(CONFIG_SOC_SERIES_STM32F3X) || defined(CONFIG_SOC_SERIES_STM32L1X)
     LL_RCC_HSI_Enable();
 
     while (!LL_RCC_HSI_IsReady()) {
@@ -460,8 +550,7 @@ static int stm32_flash_init(struct device const* dev) {
 
     flash_stm32_sem_init(dev);
 
-    LOG_DBG("Flash @0x%x initialized. BS: %zu",
-            FLASH_STM32_BASE_ADDRESS,
+    LOG_DBG("Flash @0x%x initialized. BS: %zu", FLASH_STM32_BASE_ADDRESS,
             flash_stm32_parameters.write_block_size);
 
     /* Check Flash configuration */
@@ -476,16 +565,15 @@ static int stm32_flash_init(struct device const* dev) {
 
     flash_stm32_page_layout(dev, &layout, &layout_size);
     for (size_t i = 0; i < layout_size; i++) {
-        LOG_DBG("Block %zu: bs: %zu count: %zu", i,
-                layout[i].pages_size, layout[i].pages_count);
+        LOG_DBG("Block %zu: bs: %zu count: %zu", i, layout[i].pages_size,
+                layout[i].pages_count);
     }
     #endif
 
     return (0);
 }
 
-DEVICE_DT_INST_DEFINE(0, stm32_flash_init, NULL,
-                      &flash_data, NULL, POST_KERNEL,
+DEVICE_DT_INST_DEFINE(0, stm32_flash_init, NULL, &flash_data, NULL, POST_KERNEL,
                       CONFIG_FLASH_INIT_PRIORITY, &flash_stm32_api);
 
 #if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
