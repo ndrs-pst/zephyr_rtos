@@ -126,6 +126,25 @@ static inline uint32_t ll_spi_dma_busy(SPI_TypeDef* spi) {
 }
 #endif /* st_stm32h7_spi */
 
+static inline void ll_set_transfer_direction(SPI_TypeDef* spi, uint32_t direction) {
+    LL_SPI_SetTransferDirection(spi, direction);
+
+    #if defined(CONFIG_STM32_HAL2)
+    LL_SPI_SetHalfDuplexDirection(spi, direction);
+    #endif /* CONFIG_STM32_HAL2 */
+}
+
+static inline uint32_t ll_get_transfer_direction(SPI_TypeDef* spi) {
+    #if defined(CONFIG_STM32_HAL2)
+    uint32_t xfer_dir = LL_SPI_GetTransferDirection(spi);
+    uint32_t hd_dir   = LL_SPI_GetHalfDuplexDirection(spi);
+
+    return (hd_dir | xfer_dir);
+    #else
+    return LL_SPI_GetTransferDirection(spi);
+    #endif /* CONFIG_STM32_HAL2 */
+}
+
 static inline uint32_t ll_tx_is_not_full(SPI_TypeDef* spi) {
     #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
     return LL_SPI_IsActiveFlag_TXP(spi);
@@ -259,5 +278,15 @@ static inline uint32_t LL_SPI_ReceiveData32(SPI_TypeDef* SPIx) {
 }
 
 #endif
+
+#if defined(SPI_CFG2_IOSWP)
+static inline void ll_spi_swap_mosi_miso(SPI_TypeDef *spi) {
+    #if defined(CONFIG_STM32_HAL2)
+    LL_SPI_EnableMosiMisoSwap(spi);
+    #else /* CONFIG_STM32_HAL2 */
+    LL_SPI_EnableIOSwap(spi);
+    #endif /* CONFIG_STM32_HAL2 */
+}
+#endif /* SPI_CFG2_IOSWP */
 
 #endif /* ZEPHYR_DRIVERS_SPI_SPI_STM32_H_ */

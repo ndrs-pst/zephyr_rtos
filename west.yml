@@ -200,7 +200,7 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: f35096e9b10a002bc4f319ac22382c1abaaf6af7
+      revision: 86f3ea6b389d860332bd81ae8b97543def619395
       path: modules/hal/microchip
       groups:
         - hal
@@ -210,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nuvoton
-      revision: 8f1bf948a94cf59926ea7b686985e1d6c6f954c7
+      revision: fe26f3a5b3b85fb6b61cc3f744f195e3ab391194
       path: modules/hal/nuvoton
       groups:
         - hal
@@ -360,7 +360,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 2b09581c7654f4dfd38681270350c9ae6b0438a2
+      revision: 63ccab2988bf4c144b3cd324a0277e03206fa413
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: cebea8e27ceb91a7d4580d17db65f93669befe72
@@ -402,12 +402,12 @@ manifest:
       groups:
         - crypto
     - name: trusted-firmware-a
-      revision: 44bcc378b6ec4af8693d008f43983e488f1f5740
+      revision: 4aef38a5bf03edfa615c1f8af5a49e7065f9fb3f
       path: modules/tee/tf-a/trusted-firmware-a
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 7e8bf231496cc4d43b2fab0bc133425b47756065
+      revision: 6e2e07aa785cb69354272fcc95eb36bf85c4a9d3
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

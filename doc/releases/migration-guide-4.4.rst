@@ -23,6 +23,7 @@ the :ref:`release notes<zephyr_4.4>`.
 Common
 ******
 
+* The minimum required Zephyr SDK version is now 1.0.0.
 * The minimum required Python version is now 3.12 (from 3.10).
 
 Build System
@@ -590,6 +591,10 @@ Ethernet
 
 * The ``phy-handle`` property of :dtcompatible:`microchip,lan865x` must now be set to the phy node.
 
+* ``CONFIG_NET_DSA_DEPRECATED`` has been removed. The drivers for the compatibles
+  ``microchip,ksz8463``, ``microchip,ksz8794`` and ``microchip,ksz8863`` were removed, as they
+  haven't been migrated to the new DSA subsystem. (:github:`105926`)
+
 File System
 ===========
 
@@ -1015,6 +1020,8 @@ USB
 ===
 
 * :dtcompatible:`maxim,max3421e_spi` has been renamed to :dtcompatible:`maxim,max3421e-spi`.
+* USB control transfer buffer allocation has been moved away from UDC to USB device_next.
+  Out-of-tree UDC drivers will have to be reworked. (:github:`103493`).
 
 * UVC device application API got modified:
 
