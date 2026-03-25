@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(smf);
 #define SMF_IS_EXIT     BIT(2)
 #define SMF_HANDLED     BIT(3)
 
-#ifdef CONFIG_SMF_INSTRUMENTATION
+#if defined(CONFIG_SMF_INSTRUMENTATION)
 static inline void invoke_action_hook(struct smf_ctx* ctx, const struct smf_state* state,
                                       enum smf_action_type type) {
     if (ctx->hooks && ctx->hooks->on_action) {
@@ -65,7 +65,7 @@ static inline void invoke_error_hook(struct smf_ctx* ctx, int code) {
 
 #endif /* CONFIG_SMF_INSTRUMENTATION */
 
-#ifdef CONFIG_SMF_ANCESTOR_SUPPORT
+#if defined(CONFIG_SMF_ANCESTOR_SUPPORT)
 static bool is_descendant_of(struct smf_state const* test_state,
                              struct smf_state const* target_state) {
     for (struct smf_state const* state = test_state;
@@ -127,7 +127,6 @@ static const struct smf_state* get_lca_of(struct smf_state const* source,
 static bool smf_execute_all_entry_actions(struct smf_ctx* const ctx,
                                           struct smf_state const* new_state,
                                           struct smf_state const* topmost) {
-
     if (new_state == topmost) {
         /* There are no child states, so do nothing */
         return (false);
@@ -180,6 +179,7 @@ static bool smf_execute_all_entry_actions(struct smf_ctx* const ctx,
  */
 static bool smf_execute_ancestor_run_actions(struct smf_ctx* const ctx) {
     /* Execute all run actions in reverse order */
+    enum smf_state_result rc;
 
     /* Return if the current state terminated */
     if ((ctx->internal & SMF_TERMINATE) != 0) {
@@ -200,8 +200,8 @@ static bool smf_execute_ancestor_run_actions(struct smf_ctx* const ctx) {
         /* Execute parent run action */
         if (tmp_state->run) {
             INVOKE_ACTION_HOOK(ctx, tmp_state, SMF_ACTION_RUN);
-            enum smf_state_result rc = tmp_state->run(ctx);
 
+            rc = tmp_state->run(ctx);
             if (rc == SMF_EVENT_HANDLED) {
                 ctx->internal |= SMF_HANDLED;
             }
@@ -269,7 +269,7 @@ static void smf_clear_internal_state(struct smf_ctx* const ctx) {
 }
 
 void smf_set_initial(struct smf_ctx* const ctx, const struct smf_state* init_state) {
-    #ifdef CONFIG_SMF_INITIAL_TRANSITION
+    #if defined(CONFIG_SMF_INITIAL_TRANSITION)
     /*
      * The final target will be the deepest leaf state that
      * the target contains. Set that as the real target.
@@ -284,11 +284,11 @@ void smf_set_initial(struct smf_ctx* const ctx, const struct smf_state* init_sta
     ctx->previous       = NULL;
     ctx->terminate_val  = 0;
 
-    #ifdef CONFIG_SMF_INSTRUMENTATION
+    #if defined(CONFIG_SMF_INSTRUMENTATION)
     ctx->hooks = NULL;
     #endif /* CONFIG_SMF_INSTRUMENTATION */
 
-    #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
+    #if defined(CONFIG_SMF_ANCESTOR_SUPPORT)
     ctx->executing = init_state;
     /* topmost is the root ancestor of init_state, its parent == NULL */
     struct smf_state const* topmost = get_child_of(init_state, NULL);
@@ -338,7 +338,7 @@ void smf_set_state(struct smf_ctx* const ctx, const struct smf_state* new_state)
         return;
     }
 
-    #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
+    #if defined(CONFIG_SMF_ANCESTOR_SUPPORT)
     const struct smf_state* topmost;
 
     if ((ctx->executing != new_state) && (ctx->executing->parent == new_state->parent)) {
@@ -390,7 +390,7 @@ void smf_set_state(struct smf_ctx* const ctx, const struct smf_state* new_state)
         }
     }
 
-    #ifdef CONFIG_SMF_INITIAL_TRANSITION
+    #if defined(CONFIG_SMF_INITIAL_TRANSITION)
     /*
      * The final target will be the deepest leaf state that
      * the target contains. Set that as the real target.
@@ -447,6 +447,8 @@ void smf_set_terminate(struct smf_ctx* const ctx, int32_t val) {
 }
 
 int32_t smf_run_state(struct smf_ctx* const ctx) {
+    enum smf_state_result rc;
+
     /* No need to continue if terminate was set */
     if ((ctx->internal & SMF_TERMINATE) != 0) {
         return (ctx->terminate_val);
@@ -457,12 +459,12 @@ int32_t smf_run_state(struct smf_ctx* const ctx) {
      */
     smf_clear_internal_state(ctx);
 
-    #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
+    #if defined(CONFIG_SMF_ANCESTOR_SUPPORT)
     ctx->executing = ctx->current;
     if (ctx->current->run) {
         INVOKE_ACTION_HOOK(ctx, ctx->current, SMF_ACTION_RUN);
-        enum smf_state_result rc = ctx->current->run(ctx);
 
+        rc = ctx->current->run(ctx);
         if (rc == SMF_EVENT_HANDLED) {
             ctx->internal |= SMF_HANDLED;
         }
@@ -481,7 +483,7 @@ int32_t smf_run_state(struct smf_ctx* const ctx) {
     return (0);
 }
 
-#ifdef CONFIG_SMF_INSTRUMENTATION
+#if defined(CONFIG_SMF_INSTRUMENTATION)
 void smf_set_hooks(struct smf_ctx* const ctx, const struct smf_hooks* hooks) {
     ctx->hooks = hooks;
 }

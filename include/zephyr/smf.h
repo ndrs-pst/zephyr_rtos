@@ -156,7 +156,7 @@ struct smf_state {
     /** Optional method that will be run when this state exists */
     const state_method exit;
 
-    #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
+    #if defined(CONFIG_SMF_ANCESTOR_SUPPORT)
     /**
      * Optional parent state that contains common entry/run/exit
      * implementation among various child states.
@@ -169,7 +169,7 @@ struct smf_state {
      */
     const struct smf_state* parent;
 
-    #ifdef CONFIG_SMF_INITIAL_TRANSITION
+    #if defined(CONFIG_SMF_INITIAL_TRANSITION)
     /**
      * Optional initial transition state. NULL for leaf states.
      */
@@ -185,7 +185,7 @@ struct smf_ctx {
     /** Previous state the state machine executed */
     const struct smf_state* previous;
 
-    #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
+    #if defined(CONFIG_SMF_ANCESTOR_SUPPORT)
     /** Currently executing state (which may be a parent) */
     const struct smf_state* executing;
     #endif /* CONFIG_SMF_ANCESTOR_SUPPORT */
@@ -204,7 +204,7 @@ struct smf_ctx {
      */
     uint32_t internal;
 
-    #ifdef CONFIG_SMF_INSTRUMENTATION
+    #if defined(CONFIG_SMF_INSTRUMENTATION)
     /** Optional instrumentation hooks for testing and debugging */
     const struct smf_hooks* hooks;
     #endif /* CONFIG_SMF_INSTRUMENTATION */
@@ -237,7 +237,7 @@ void smf_set_state(struct smf_ctx* ctx, const struct smf_state* new_state);
  */
 void smf_set_terminate(struct smf_ctx* ctx, int32_t val);
 
-#ifdef CONFIG_SMF_INSTRUMENTATION
+#if defined(CONFIG_SMF_INSTRUMENTATION)
 /**
  * @brief Set instrumentation hooks on a state machine context.
  *
@@ -285,7 +285,7 @@ static inline const struct smf_state* smf_get_current_leaf_state(const struct sm
  */
 static inline const struct smf_state*
 smf_get_current_executing_state(const struct smf_ctx* const ctx) {
-    #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
+    #if defined(CONFIG_SMF_ANCESTOR_SUPPORT)
     return ctx->executing;
     #else
     return ctx->current;
