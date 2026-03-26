@@ -761,9 +761,6 @@ int eth_stm32_hal_set_config(const struct device *dev,
 			(ctx->mac_addr[2] << 16) |
 			(ctx->mac_addr[1] << 8) |
 			ctx->mac_addr[0];
-		net_if_set_link_addr(ctx->iface, ctx->mac_addr,
-				     sizeof(ctx->mac_addr),
-				     NET_LINK_ETHERNET);
 		return 0;
 
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
