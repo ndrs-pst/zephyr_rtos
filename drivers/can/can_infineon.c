@@ -52,80 +52,80 @@ struct canfd_ifx_ctrl_config {
 
 static int can_infineon_read_reg(const struct device* dev, uint16_t reg, uint32_t* val) {
     const struct can_mcan_config* mcan_cfg = dev->config;
-    const struct can_infineon_config* infineon_cfg = mcan_cfg->custom;
+    const struct can_infineon_config* ifx_cfg = mcan_cfg->custom;
 
-    return can_mcan_sys_read_reg(infineon_cfg->base, reg, val);
+    return can_mcan_sys_read_reg(ifx_cfg->base, reg, val);
 }
 
 static int can_infineon_write_reg(const struct device* dev, uint16_t reg, uint32_t val) {
     const struct can_mcan_config* mcan_cfg = dev->config;
-    const struct can_infineon_config* infineon_cfg = mcan_cfg->custom;
+    const struct can_infineon_config* ifx_cfg = mcan_cfg->custom;
 
-    return can_mcan_sys_write_reg(infineon_cfg->base, reg, val);
+    return can_mcan_sys_write_reg(ifx_cfg->base, reg, val);
 }
 
 static int can_infineon_read_mram(const struct device* dev, uint16_t offset, void* dst, size_t len) {
     const struct can_mcan_config* mcan_cfg = dev->config;
-    const struct can_infineon_config* infineon_cfg = mcan_cfg->custom;
+    const struct can_infineon_config* ifx_cfg = mcan_cfg->custom;
 
-    return can_mcan_sys_read_mram(infineon_cfg->mram, offset, dst, len);
+    return can_mcan_sys_read_mram(ifx_cfg->mram, offset, dst, len);
 }
 
 static int can_infineon_write_mram(const struct device* dev, uint16_t offset, void const* src,
                                    size_t len) {
     const struct can_mcan_config* mcan_cfg = dev->config;
-    const struct can_infineon_config* infineon_cfg = mcan_cfg->custom;
+    const struct can_infineon_config* ifx_cfg = mcan_cfg->custom;
 
-    return can_mcan_sys_write_mram(infineon_cfg->mram, offset, src, len);
+    return can_mcan_sys_write_mram(ifx_cfg->mram, offset, src, len);
 }
 
 static int can_infineon_clear_mram(const struct device* dev, uint16_t offset, size_t len) {
     const struct can_mcan_config* mcan_cfg = dev->config;
-    const struct can_infineon_config* infineon_cfg = mcan_cfg->custom;
+    const struct can_infineon_config* ifx_cfg = mcan_cfg->custom;
 
-    return can_mcan_sys_clear_mram(infineon_cfg->mram, offset, len);
+    return can_mcan_sys_clear_mram(ifx_cfg->mram, offset, len);
 }
 
 static int can_infineon_get_core_clock(const struct device* dev, uint32_t* rate) {
     const struct can_mcan_config* mcan_cfg = dev->config;
-    const struct can_infineon_config* infineon_cfg = mcan_cfg->custom;
+    const struct can_infineon_config* ifx_cfg = mcan_cfg->custom;
     struct can_mcan_data* mcan_data = dev->data;
     struct can_infineon_data* data = mcan_data->custom;
 
-    *rate = ifx_cat1_utils_peri_pclk_get_frequency(infineon_cfg->clk_dst, &data->clock);
+    *rate = ifx_cat1_utils_peri_pclk_get_frequency(ifx_cfg->clk_dst, &data->clock);
 
     return (0);
 }
 
 static int can_infineon_init(const struct device* dev) {
     const struct can_mcan_config* mcan_cfg = dev->config;
-    const struct can_infineon_config* infineon_cfg = mcan_cfg->custom;
+    const struct can_infineon_config* ifx_cfg = mcan_cfg->custom;
     struct can_mcan_data* mcan_data = dev->data;
     struct can_infineon_data* data = mcan_data->custom;
     cy_rslt_t result;
     int ret;
 
     /* Ensure the parent controller (MRAM + channel clocks) is ready */
-    if (!device_is_ready(infineon_cfg->ctrl_dev)) {
+    if (!device_is_ready(ifx_cfg->ctrl_dev)) {
         LOG_ERR("CAN FD controller device not ready");
         return (-ENODEV);
     }
 
     /* Configure dt provided device signals when available */
-    ret = pinctrl_apply_state(infineon_cfg->pcfg, PINCTRL_STATE_DEFAULT);
+    ret = pinctrl_apply_state(ifx_cfg->pcfg, PINCTRL_STATE_DEFAULT);
     if (ret != 0) {
         LOG_ERR("CAN pinctrl setup failed (%d)", ret);
         return (ret);
     }
 
     /* Connect this CAN instance to the peripheral clock divider */
-    result = ifx_cat1_utils_peri_pclk_assign_divider(infineon_cfg->clk_dst, &data->clock);
+    result = ifx_cat1_utils_peri_pclk_assign_divider(ifx_cfg->clk_dst, &data->clock);
     if (result != CY_RSLT_SUCCESS) {
         LOG_ERR("CAN clock assign failed (%d)", (int)result);
         return (-EIO);
     }
 
-    ret = can_mcan_configure_mram(dev, infineon_cfg->mrba, infineon_cfg->mram);
+    ret = can_mcan_configure_mram(dev, ifx_cfg->mrba, ifx_cfg->mram);
     if (ret != 0) {
         return (ret);
     }
@@ -142,7 +142,7 @@ static int can_infineon_init(const struct device* dev) {
      * select the external timestamp source (TSS = 2) in the M_CAN core.
      * This must be done after can_mcan_init() which sets TSS = 1.
      */
-    const struct canfd_ifx_ctrl_config* ctrl_cfg = infineon_cfg->ctrl_dev->config;
+    const struct canfd_ifx_ctrl_config* ctrl_cfg = ifx_cfg->ctrl_dev->config;
 
     if (ctrl_cfg->timestamp_counter) {
         ret = can_mcan_write_reg(dev, CAN_MCAN_TSCC, FIELD_PREP(CAN_MCAN_TSCC_TSS, 2U));
@@ -152,9 +152,8 @@ static int can_infineon_init(const struct device* dev) {
     }
     #endif /* CONFIG_CAN_RX_TIMESTAMP */
 
-    if (infineon_cfg->config_irq != NULL) {
-        infineon_cfg->config_irq();
-    }
+    /* No need null check since config_irq is always provided */
+    ifx_cfg->config_irq();
 
     return (0);
 }
@@ -269,12 +268,9 @@ DT_INST_FOREACH_STATUS_OKAY(CAN_INFINEON_MCAN_INIT);
 
 static int canfd_ifx_ctrl_init(const struct device* dev) {
     const struct canfd_ifx_ctrl_config* cfg = dev->config;
-    uint32_t ctl;
 
     /* Power on MRAM (clear CTL.MRAM_OFF) */
-    ctl = cfg->base->CTL;
-    ctl &= ~CANFD_CTL_MRAM_OFF_Msk;
-    cfg->base->CTL = ctl;
+    cfg->base->CTL &= ~CANFD_CTL_MRAM_OFF_Msk;
 
     /*
      * Wait for MRAM power-up.  The PDL recommends 150 CPU cycles
