@@ -616,7 +616,7 @@ static int rtc_stm32_set_time(const struct device* dev, const struct rtc_time* t
     uint32_t minutes = bin2bcd(timeptr->tm_min);
     uint32_t seconds = bin2bcd(timeptr->tm_sec);
 
-    /* Set Date after Time to be sure the DR is correctly updated on stm32F2 serie. */
+    /* Set Date after Time to be sure the DR is correctly updated on stm32F2 series. */
     uint32_t year    = bin2bcd((real_year - RTC_YEAR_REF));
     uint32_t month   = bin2bcd((timeptr->tm_mon + 1));
     uint32_t day     = bin2bcd(timeptr->tm_mday);
@@ -653,7 +653,7 @@ static int rtc_stm32_set_time(const struct device* dev, const struct rtc_time* t
 
     #ifdef CONFIG_SOC_SERIES_STM32F2X
     /*
-     * Because stm32F2 serie has no shadow registers,
+     * Because stm32F2 series has no shadow registers,
      * wait until TR and DR registers are synchronised : flag RS
      */
     while (LL_RTC_IsActiveFlag_RS(STM32_ARG(RTC)) != 1) {

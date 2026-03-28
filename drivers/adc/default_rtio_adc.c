@@ -74,7 +74,7 @@ static inline uint32_t compute_read_buf_size(const struct adc_dt_spec *adc_spec,
  */
 static inline uint32_t compute_header_size(int num_output_samples)
 {
-	uint32_t size = sizeof(struct adc_data_generic_header) +
+	uint32_t size = ADC_DATA_GENERIC_HEADER_SIZE +
 			(num_output_samples * sizeof(struct adc_chan_spec));
 	return (size + 3) & ~0x3;
 }

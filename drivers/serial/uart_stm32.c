@@ -1514,7 +1514,7 @@ static inline void uart_stm32_dma_tx_disable(const struct device* dev) {
     /*
      * Errata Sheet ES0499 : STM32U575xx and STM32U585xx device errata
      * USART does not generate DMA requests after setting/clearing DMAT bit
-     * (also seen on stm32H5 serie)
+     * (also seen on stm32H5 series)
      */
     #else
     USART_TypeDef* usart = DEVICE_STM32_GET_USART(dev);

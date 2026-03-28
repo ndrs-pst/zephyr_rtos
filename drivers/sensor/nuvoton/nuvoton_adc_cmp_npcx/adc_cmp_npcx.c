@@ -26,7 +26,7 @@ struct adc_cmp_npcx_data {
 struct adc_cmp_npcx_config {
 	/*
 	 * Pointer of ADC device that will be performing measurement, this
-	 * must be provide by device tree.
+	 * must be provided by device tree.
 	 */
 	const struct device *adc;
 	/*

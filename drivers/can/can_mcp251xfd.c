@@ -298,7 +298,7 @@ static int mcp251xfd_reg_check_value_wtimeout(const struct device* dev, uint16_t
         }
 
         if (--retries < 0) {
-            LOG_ERR("Timeout validing 0x%x", addr);
+            LOG_ERR("Timeout validating 0x%x", addr);
             return (-EIO);
         }
 
@@ -577,13 +577,13 @@ static int mcp251xfd_add_rx_filter(const struct device* dev, can_rx_callback_t r
 
     k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
-	for (filter_idx = 0; filter_idx < CONFIG_CAN_MCP251XFD_MAX_FILTERS ; filter_idx++) {
+    for (filter_idx = 0; filter_idx < CONFIG_CAN_MCP251XFD_MAX_FILTERS ; filter_idx++) {
         if ((BIT(filter_idx) & dev_data->filter_usage) == 0) {
             break;
         }
     }
 
-	if (filter_idx >= CONFIG_CAN_MCP251XFD_MAX_FILTERS) {
+    if (filter_idx >= CONFIG_CAN_MCP251XFD_MAX_FILTERS) {
         filter_idx = -ENOSPC;
         goto done;
     }
