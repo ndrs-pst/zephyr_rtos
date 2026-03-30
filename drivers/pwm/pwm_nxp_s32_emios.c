@@ -609,12 +609,11 @@ static int pwm_nxp_s32_pulse_gen_init(const struct device* dev) {
     struct pwm_nxp_s32_channel_data* ch_data;
     Emios_Pwm_Ip_ChannelConfigType pwm_info;
 
-    uint8_t ch_id;
     static uint8_t logic_ch;
 
     data->start_pwm_ch = logic_ch;
 
-    for (ch_id = 0; ch_id < config->pulse_info->pwm_pulse_channels; ch_id++) {
+    for (uint8_t ch_id = 0; ch_id < config->pulse_info->pwm_pulse_channels; ch_id++) {
         memcpy(&pwm_info, &config->pulse_info->pwm_info[ch_id],
                sizeof(Emios_Pwm_Ip_ChannelConfigType));
 
@@ -944,6 +943,7 @@ static DEVICE_API(pwm, pwm_nxp_s32_driver_api) = {
         .eMiosOverflowNotification = NULL_PTR,                  \
     }, ))
 
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 #define EMIOS_PWM_PULSE_CAPTURE_CONFIG(n)                       \
     DT_INST_FOREACH_CHILD_STATUS_OKAY_VARGS(n, EMIOS_PWM_CALLBACK_DECLARE, n) \
     const eMios_Icu_Ip_ChannelConfigType emios_pwm_##n##_capture_init[] = {   \
@@ -953,6 +953,19 @@ static DEVICE_API(pwm, pwm_nxp_s32_driver_api) = {
         .nNumChannels    = ARRAY_SIZE(emios_pwm_##n##_capture_init),    \
         .pChannelsConfig = (const eMios_Icu_Ip_ChannelConfigType(*)[])&emios_pwm_##n##_capture_init, \
     };
+#else
+#define EMIOS_PWM_PULSE_CAPTURE_CONFIG(n)                       \
+    DT_INST_FOREACH_CHILD_STATUS_OKAY_VARGS(n, EMIOS_PWM_CALLBACK_DECLARE, n) \
+    const eMios_Icu_Ip_ChannelConfigType emios_pwm_##n##_capture_init[] = {   \
+        DT_INST_FOREACH_CHILD_STATUS_OKAY_VARGS(n, _EMIOS_PWM_PULSE_CAPTURE_CONFIG, n) \
+        /* fallback dummy if empty: */                          \
+        {0}                                                     \
+    };                                                          \
+    const eMios_Icu_Ip_ConfigType emios_pwm_##n##_capture_info = {      \
+        .nNumChannels    = ARRAY_SIZE(emios_pwm_##n##_capture_init),    \
+        .pChannelsConfig = (const eMios_Icu_Ip_ChannelConfigType(*)[])&emios_pwm_##n##_capture_init, \
+    };
+#endif
 
 #define EMIOS_PWM_PULSE_CAPTURE_GET_CONFIG(n) \
     .icu_cfg = (eMios_Icu_Ip_ConfigType*)&emios_pwm_##n##_capture_info,
