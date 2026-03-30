@@ -377,12 +377,24 @@ static inline bool shell_help_is_structured(const char* help) {
  *                Additional lines may be used to provide additional details, e.g.
  *                explain the meaning of each argument, allowed values, etc.
  */
+#ifdef __cplusplus /* #CUSTOM@NDRS */
+#define SHELL_HELP(_description, _usage)            \
+    ([]() -> const char* {                          \
+        static const struct shell_cmd_help _help = { \
+            .magic = SHELL_STRUCTURED_HELP_MAGIC,   \
+            .description = (_description),          \
+            .usage = (_usage),                      \
+        };                                          \
+        return (const char*)&_help;                 \
+    })()
+#else
 #define SHELL_HELP(_description, _usage)            \
     ((const char *)&(const struct shell_cmd_help) { \
         .magic = SHELL_STRUCTURED_HELP_MAGIC,       \
         .description = (_description),              \
         .usage = (_usage),                          \
     })
+#endif /* __cplusplus */
 #else
 #define SHELL_HELP(_description, _usage) NULL
 #endif /* CONFIG_SHELL_HELP */
