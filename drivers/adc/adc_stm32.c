@@ -1010,8 +1010,14 @@ static int adc_stm32_preselection_setup(const struct device* dev, uint32_t chann
     uint32_t channel = STM32_ADC_DECIMAL_NB_TO_CHANNEL(channel_id);
     int err;
 
+    #ifdef STM32H72X_ADC
+    volatile uint32_t* pcsel_reg = &adc->PCSEL_RES0;
+    #else /* STM32H72X_ADC */
+    volatile uint32_t* pcsel_reg = &adc->PCSEL;
+    #endif /* STM32H72X_ADC */
+
     if (!config->has_channel_preselection ||
-        (stm32_reg_read(&adc->PCSEL) & channel) == channel) {
+        (stm32_reg_read(pcsel_reg) & channel) == channel) {
         /* Nothing to configure */
         return (0);
     }

@@ -447,7 +447,6 @@ void smf_set_terminate(struct smf_ctx* const ctx, int32_t val) {
 }
 
 int32_t smf_run_state(struct smf_ctx* const ctx) {
-    enum smf_state_result rc;
 
     /* No need to continue if terminate was set */
     if ((ctx->internal & SMF_TERMINATE) != 0) {
@@ -462,6 +461,8 @@ int32_t smf_run_state(struct smf_ctx* const ctx) {
     #if defined(CONFIG_SMF_ANCESTOR_SUPPORT)
     ctx->executing = ctx->current;
     if (ctx->current->run) {
+        enum smf_state_result rc;
+
         INVOKE_ACTION_HOOK(ctx, ctx->current, SMF_ACTION_RUN);
 
         rc = ctx->current->run(ctx);

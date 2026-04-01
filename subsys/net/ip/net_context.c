@@ -600,6 +600,7 @@ int net_context_get(net_sa_family_t family, enum net_sock_type type, uint16_t pr
 			if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6) {
 				struct net_sockaddr_in6 *addr6 =
 					(struct net_sockaddr_in6 *)&contexts[i].local;
+				addr6->sin6_family = NET_AF_INET6;
 				addr6->sin6_port =
 					find_available_port(&contexts[i],
 							    (struct net_sockaddr *)addr6);
@@ -620,6 +621,7 @@ int net_context_get(net_sa_family_t family, enum net_sock_type type, uint16_t pr
 			if (IS_ENABLED(CONFIG_NET_IPV4) && (family == NET_AF_INET)) {
 				struct net_sockaddr_in *addr = (struct net_sockaddr_in *)&contexts[i].local;
 
+				addr->sin_family = NET_AF_INET;
 				addr->sin_port =
 					find_available_port(&contexts[i],
 							    (struct net_sockaddr *)addr);

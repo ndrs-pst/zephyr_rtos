@@ -38,7 +38,8 @@ config TIMER_RANDOM_INITIAL_STATE
 
 choice RNG_GENERATOR_CHOICE
 	prompt "Random generator"
-	default ENTROPY_DEVICE_RANDOM_GENERATOR if ENTROPY_HAS_DRIVER
+	default ENTROPY_DEVICE_RANDOM_GENERATOR if ENTROPY_HAS_DRIVER && !ENTROPY_NEEDS_PRNG
+	default XOSHIRO_RANDOM_GENERATOR if ENTROPY_HAS_DRIVER && ENTROPY_NEEDS_PRNG
 	default TIMER_RANDOM_GENERATOR if TEST_RANDOM_GENERATOR
 	depends on ENTROPY_HAS_DRIVER || TEST_RANDOM_GENERATOR
 	help
@@ -158,6 +159,7 @@ config PSA_CSPRNG_GENERATOR
 	  entropy sources when available. The PSA CSPRNG provides
 	  cryptographically secure random numbers suitable for
 	  security-sensitive applications.
+
 
 config TEST_CSPRNG_GENERATOR
 	bool "Use insecure CSPRNG for testing purposes"

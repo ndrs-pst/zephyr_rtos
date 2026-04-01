@@ -587,7 +587,7 @@ static inline int dac_millivolts_to_raw(uint32_t ref_mv, uint8_t resolution, uin
 {
 	uint64_t dac_mv = (((uint64_t)*valp) << resolution) / (uint64_t)ref_mv;
 
-	if (dac_mv > (1UL << resolution)) {
+	if (dac_mv > (1ULL << resolution)) {
 		__ASSERT_MSG_INFO("conversion result is out of range");
 		return -ERANGE;
 	}
@@ -606,7 +606,7 @@ static inline int dac_microvolts_to_raw(uint32_t ref_mv, uint8_t resolution, uin
 {
 	uint64_t dac_uv = (((uint64_t)*valp) << resolution) / (uint64_t)ref_mv / (uint64_t)1000;
 
-	if (dac_uv > (1UL << resolution)) {
+	if (dac_uv > (1ULL << resolution)) {
 		__ASSERT_MSG_INFO("conversion result is out of range");
 		return -ERANGE;
 	}

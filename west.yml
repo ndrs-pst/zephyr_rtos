@@ -149,7 +149,7 @@ manifest:
       groups:
         - fs
     - name: hal_adi
-      revision: fc36ee1f5118caa62d9c151cf2e47c193d18d926
+      revision: 44545c0b31a765c702132f22e797271c3f111eae
       path: modules/hal/adi
       groups:
         - hal
@@ -174,7 +174,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: cbf74978350266a45edbfb4508553a3990341dd2
+      revision: eca591aa3b46875edad9956de8882803b2d33ff3
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -205,7 +205,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 70c1b32dd68753b0604beab377392ed5ebc19176
+      revision: 72b2bca6488dda83f99ca1daea6916d0235e5d25
       path: modules/hal/nordic
       groups:
         - hal
@@ -215,7 +215,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: ed43f1d235f0420833237993d45c78cb475206e6
+      revision: 13977dde7160d997e1c1ce310e80507ea8b5c5f8
       path: modules/hal/nxp
       groups:
         - hal
@@ -296,7 +296,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 849cff2b2eb3532cfa829df9003f194ba3bd1919
+      revision: aa993679725360c1e370c9695960c6730cb07e8b
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -337,7 +337,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: d1ff9c1dd2bf4474493047dcf8ab05554a5c08cb
+      revision: f292d7fb988fe470d999d43d794d3f284539c0dd
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -407,7 +407,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 6e2e07aa785cb69354272fcc95eb36bf85c4a9d3
+      revision: 9a4cb1a280b63a5e66bd469e82eb75f2b3e05a78
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

@@ -304,8 +304,8 @@ error:
 }
 
 static int lpspi_ll_transceive_dma(const struct device* dev, const struct spi_config* spi_cfg,
-                          const struct spi_buf_set* tx_bufs, const struct spi_buf_set* rx_bufs,
-                          bool asynchronous, spi_callback_t cb, void* userdata) {
+                                   const struct spi_buf_set* tx_bufs, const struct spi_buf_set* rx_bufs,
+                                   bool asynchronous, spi_callback_t cb, void* userdata) {
     LPSPI_Type* lpspi = (LPSPI_Type*)DEVICE_MMIO_NAMED_GET(dev, reg_base);
     struct lpspi_data* data = dev->data;
     struct spi_nxp_dma_data* dma_data = (struct spi_nxp_dma_data*)data->driver_data;
