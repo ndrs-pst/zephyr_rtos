@@ -901,7 +901,7 @@ DMA_STM32_INIT_DEV(1);
 
 #endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(1)) */
 
-#if (__GTEST == 1U) /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 #define STM32_DMA_CFG_REG_INIT(id) \

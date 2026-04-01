@@ -500,7 +500,7 @@ static int lpspi_init(const struct device* dev) {
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_LPSPI_INIT)
 
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 #define NXP_LPSPI_CFG_REG_INIT(n)           \

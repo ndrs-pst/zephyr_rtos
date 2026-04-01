@@ -427,7 +427,7 @@ static DEVICE_API(counter, counter_sam0_rtc_driver_api) = {
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_SAM0_RTC_DEVICE)
 
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 void zephyr_gtest_rtc_sam0(void) {

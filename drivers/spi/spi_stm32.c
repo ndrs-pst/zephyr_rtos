@@ -288,7 +288,7 @@ static bool spi_stm32_is_data_width_supported(const struct device* dev, uint32_t
     }
 }
 
-#if (__GTEST == 1U) /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 extern void bsp_hal_spi_tx_rx_cplt_callback(SPI_TypeDef* spi);
 extern void bsp_hal_spi_err_callback(SPI_TypeDef* spi, uint32_t sr);
 #else
@@ -3013,7 +3013,7 @@ static int spi_stm32_init(const struct device* dev) {
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_SPI_INIT)
 
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 #define STM32_SPI_CFG_REG_INIT(id)       \

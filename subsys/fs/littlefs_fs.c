@@ -1160,7 +1160,7 @@ static void automount_if_enabled(struct fs_mount_t *mountp)
 	}
 #endif /* CONFIG_FS_LITTLEFS_FSTAB_AUTOMOUNT */
 
-#if (__GTEST == 0U)
+#if (__GTEST == 0) /* #CUSTOM@NDRS */
 static
 #endif
 int littlefs_init(void)
@@ -1169,7 +1169,7 @@ int littlefs_init(void)
 
 #ifdef CONFIG_FS_LITTLEFS_FSTAB_AUTOMOUNT
 	if (rc == 0) {
-		#if (__GTEST == 0U)
+		#if (__GTEST == 0) /* #CUSTOM@NDRS */
 		struct fs_mount_t *partitions[] = {
 			DT_INST_FOREACH_STATUS_OKAY(REFERENCE_MOUNT)
 		};
@@ -1186,7 +1186,7 @@ int littlefs_init(void)
 	return rc;
 }
 
-#if (__GTEST == 1U)
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 int ut_littlefs_init_mem_slab(void) {
 	int rc;
 

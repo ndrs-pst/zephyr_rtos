@@ -1616,7 +1616,7 @@ static int spi_nor_configure(const struct device* dev) {
     }
     #endif
 
-    #if (__GTEST == 0U)                     /* #CUSTOM@NDRS */
+    #if (__GTEST == 0) /* #CUSTOM@NDRS */
     /* After a soft-reset the flash might be in DPD or busy writing/erasing.
      * Exit DPD and wait until flash is ready.
      */
@@ -2001,7 +2001,7 @@ static DEVICE_API(flash, spi_nor_api) = {
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_NOR_INST)
 
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include <cmsis_core.h>
 
 #if defined(CONFIG_SOC_SERIES_SAMV71)

@@ -1127,7 +1127,7 @@ static void spi_ifx_cb_wrapper(const struct device* dev, uint32_t event) {
     }
 }
 
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 #define SPI_IFX_CFG_REG_INIT(n) \

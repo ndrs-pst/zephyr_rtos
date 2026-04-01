@@ -1132,7 +1132,7 @@ struct net_buf_pool {
     IF_ENABLED(CONFIG_NET_BUF_POOL_USAGE, (.max_used = 0,)) \
     IF_ENABLED(CONFIG_NET_BUF_POOL_USAGE, (.name = STRINGIFY(_pool),))
 
-#if (__GTEST == 0U)
+#if (__GTEST == 0) /* #CUSTOM@NDRS */
 #define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _ud_size, _destroy) \
     {                                                           \
         .free = Z_LIFO_INITIALIZER(_pool.free),                 \

@@ -1614,7 +1614,7 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 
 DT_INST_FOREACH_STATUS_OKAY(FLEXCAN_DEVICE_INIT_MCUX)
 
-#if (__GTEST == 1U) /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 #define S32K3_CAN_CFG_REG_INIT(id) \

@@ -869,7 +869,7 @@ static DEVICE_API(i2c, i2c_cat1_driver_api) = {
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_I2C_INIT)
 
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 #define IFX_CAT1_I2C_CFG_REG_INIT(n) \

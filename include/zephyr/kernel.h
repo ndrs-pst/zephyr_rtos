@@ -2274,7 +2274,7 @@ struct k_queue {
 /**
  * @cond INTERNAL_HIDDEN
  */
-#if (__GTEST == 0U)
+#if (__GTEST == 0) /* #CUSTOM@NDRS */
 #define Z_QUEUE_INITIALIZER(obj)    \
     {                               \
         .data_q = SYS_SFLIST_STATIC_INIT(&obj.data_q), \
@@ -5912,7 +5912,7 @@ struct k_mem_slab {
     #endif
 };
 
-#if (__GTEST == 0U)
+#if (__GTEST == 0) /* #CUSTOM@NDRS */
 #define Z_MEM_SLAB_INITIALIZER(_slab, _slab_buffer, _slab_block_size, \
                                _slab_num_blocks)                \
     {                                                           \

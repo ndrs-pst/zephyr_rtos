@@ -9,7 +9,7 @@
 #include <zephyr/device.h>
 #include <soc.h>
 #include <zephyr/drivers/dma.h>
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 #endif
 
@@ -17,7 +17,7 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(dma_sam0, CONFIG_DMA_LOG_LEVEL);
 
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #define DMA_REGS    ((Dmac*)ut_mcu_dmac_ptr)
 #else
 #define DMA_REGS    ((Dmac*)DT_INST_REG_ADDR(0))
@@ -496,7 +496,7 @@ DEVICE_DT_INST_DEFINE(0, dma_sam0_init, NULL,
                       CONFIG_DMA_INIT_PRIORITY, &dma_sam0_api);
 
 
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 void zephyr_dma_sam0_init(const struct device* dev) {

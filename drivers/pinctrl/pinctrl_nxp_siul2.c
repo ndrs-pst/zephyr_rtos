@@ -61,7 +61,7 @@ int pinctrl_configure_pins(pinctrl_soc_pin_t const* pins, uint8_t pin_cnt, uintp
     return 0;
 }
 
-#if (__GTEST == 1U) /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 void zephyr_gtest_pinctrl_s32k3(void) {

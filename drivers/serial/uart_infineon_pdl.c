@@ -1359,7 +1359,7 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_UART_INIT)
 
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 #define IFX_CAT1_UART_CFG_REG_INIT(n) \

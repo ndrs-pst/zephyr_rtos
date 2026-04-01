@@ -130,7 +130,7 @@ void z_irq_spurious(const void *unused)
 }
 
 #ifdef CONFIG_PM
-#if (__GTEST == 0U) /* #CUSTOM@NDRS */
+#if (__GTEST == 0) /* #CUSTOM@NDRS */
 void _arch_isr_direct_pm(void)
 {
 	unsigned int key;

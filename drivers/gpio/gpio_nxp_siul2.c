@@ -599,7 +599,7 @@ static DEVICE_API(gpio, gpio_nxp_siul2_driver_api) = {
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_NXP_SIUL2_DEVICE_INIT)
 
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 #define S32K3_GPIO_CFG_REG_INIT(id) \

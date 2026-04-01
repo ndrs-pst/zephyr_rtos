@@ -3060,7 +3060,7 @@ static int cmd_wifi_version(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-#if (__GTEST == 0U) /* #CUSTOM@NDRS */
+#if (__GTEST == 0) /* #CUSTOM@NDRS */
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 static int parse_dpp_args_auth_init(const struct shell *sh, size_t argc, char *argv[],
 				    struct wifi_dpp_params *params)

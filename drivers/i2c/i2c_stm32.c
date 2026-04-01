@@ -563,7 +563,7 @@ void i2c_stm32_dma_rx_cb(const struct device* dma_dev, void* user_data,
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_STM32_INIT)
 
-#if (__GTEST == 1U) /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 #define STM32_I2C_CFG_REG_INIT(index) \

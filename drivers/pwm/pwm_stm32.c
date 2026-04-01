@@ -847,7 +847,7 @@ static void pwm_stm32_irq_config_func_##index(const struct device* dev) { \
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_INIT)
 
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 #define STM32_PWR_CFG_REG_INIT(index)       \

@@ -271,7 +271,7 @@ static int nxp_siul2_eirq_init(const struct device* dev) {
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_SIUl2_EIRQ_INIT_DEVICE)
 
-#if (__GTEST == 1U) /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 #define S32K3_INTC_CFG_REG_INIT(id) \

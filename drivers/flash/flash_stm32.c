@@ -576,7 +576,7 @@ static int stm32_flash_init(struct device const* dev) {
 DEVICE_DT_INST_DEFINE(0, stm32_flash_init, NULL, &flash_data, NULL, POST_KERNEL,
                       CONFIG_FLASH_INIT_PRIORITY, &flash_stm32_api);
 
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 void zephyr_gtest_flash_stm32(void) {

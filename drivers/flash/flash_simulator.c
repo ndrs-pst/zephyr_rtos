@@ -487,7 +487,7 @@ static int flash_init(const struct device *dev)
 	return rc;
 }
 
-#if (__GTEST == 1U)
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 int flash_simulator_init(const struct device *dev) {
 	return flash_init(dev);
 }
@@ -716,7 +716,7 @@ NATIVE_TASK(flash_native_cleanup, ON_EXIT, 1);
 
 #endif /* CONFIG_ARCH_POSIX */
 
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 
 #define FLASH_SIMULATOR_DEV_INIT(n)       \
 	zephyr_gtest_flash_simulator_dev_init(DEVICE_DT_GET(DT_DRV_INST(n)), \

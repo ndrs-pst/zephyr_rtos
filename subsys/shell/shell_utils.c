@@ -394,7 +394,7 @@ const struct shell_static_entry* z_shell_get_last_command(
     return (entry);
 }
 
-#if (__GTEST == 0U) /* #CUSTOM@NDRS */
+#if (__GTEST == 0) /* #CUSTOM@NDRS */
 int shell_set_root_cmd(char const* cmd) {
     const struct shell_static_entry* entry;
 

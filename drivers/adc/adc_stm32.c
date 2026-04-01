@@ -2446,7 +2446,7 @@ DT_INST_FOREACH_STATUS_OKAY(GENERATE_ISR)
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_STM32_INIT)
 
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 #define STM32_ADC_CFG_REG_INIT(id) \

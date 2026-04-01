@@ -418,7 +418,7 @@ SENSOR_DEVICE_DT_INST_DEFINE(0, stm32_temp_init, NULL,
 
 #endif /* !DT_NODE_HAS_STATUS_OKAY(DT_INST_IO_CHANNELS_CTLR(0)) */
 
-#if (__GTEST == 1U) /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 static uint16_t ts_cal1_reg = 948;

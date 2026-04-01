@@ -1204,7 +1204,7 @@ static int dma_mcux_edma_init(const struct device *dev)
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_INIT)
 
-#if (__GTEST == 1U) /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 #include "S32K358_device.h"
 

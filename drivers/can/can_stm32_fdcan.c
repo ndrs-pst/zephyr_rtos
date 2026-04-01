@@ -648,7 +648,7 @@ CAN_STM32FD_DEVICE_INST(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_STM32FD_INST)
 
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 void zephyr_gtest_can_stm32(void) {

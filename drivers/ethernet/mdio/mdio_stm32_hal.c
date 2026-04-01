@@ -184,7 +184,7 @@ static DEVICE_API(mdio, mdio_stm32_api) = {
 
 DT_INST_FOREACH_STATUS_OKAY(MDIO_STM32_HAL_DEVICE)
 
-#if (__GTEST == 1U) /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 void zephyr_gtest_mdio_stm32(void) {

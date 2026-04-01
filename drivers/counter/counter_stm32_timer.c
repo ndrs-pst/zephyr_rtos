@@ -646,7 +646,7 @@ __maybe_unused static void counter_stm32_irq_handler_global(const struct device*
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_DEVICE_INIT)
 
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 #define STM32_COUNTER_CFG_REG_INIT(idx)     \

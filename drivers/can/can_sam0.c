@@ -344,7 +344,7 @@ static void config_can_##inst##_irq(void) {                                     
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_SAM0_INST)
 
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 void zephyr_gtest_can_sam0(void) {

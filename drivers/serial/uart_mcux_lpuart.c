@@ -1683,7 +1683,7 @@ static DEVICE_API(uart, mcux_lpuart_driver_api) = {
 
 DT_INST_FOREACH_STATUS_OKAY(LPUART_MCUX_INIT)
 
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 #include "S32K358_MC_ME.h"
 

@@ -370,7 +370,7 @@ DEVICE_DT_DEFINE(DT_NODELABEL(portd),
                  &gpio_sam0_api);
 #endif
 
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 void zephyr_gtest_gpio_sam0(void) {

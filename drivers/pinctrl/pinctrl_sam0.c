@@ -13,7 +13,7 @@
 		   (DT_REG_ADDR(DT_NODELABEL(nodelabel)),))
 
 /** SAM0 port addresses */
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 static uintptr_t sam_port_addrs[2];

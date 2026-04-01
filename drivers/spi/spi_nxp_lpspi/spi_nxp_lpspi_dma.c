@@ -472,7 +472,7 @@ static void lpspi_isr(const struct device* dev) {
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_NXP_LPSPI_DMA_INIT)
 
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 #define NXP_LPSPI_DMA_CFG_REG_INIT(n)       \

@@ -785,7 +785,7 @@ void z_reschedule_irqlock(uint32_t key) {
     }
 }
 
-#if (__GTEST == 0U) /* #CUSTOM@NDRS */
+#if (__GTEST == 0) /* #CUSTOM@NDRS */
 void k_sched_lock(void) {
     LOG_DBG("scheduler locked (%p:%d)",
             _current, _current->base.sched_locked);

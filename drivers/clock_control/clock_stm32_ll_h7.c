@@ -1352,7 +1352,7 @@ DEVICE_DT_DEFINE(DT_NODELABEL(rcc),
                  CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
                  &stm32_clock_control_api);
 
-#if (__GTEST == 1U) /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 void zephyr_gtest_clock_stm32(void) {

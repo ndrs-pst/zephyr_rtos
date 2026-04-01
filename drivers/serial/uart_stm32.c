@@ -2722,7 +2722,7 @@ static struct uart_stm32_config DT_CONST uart_stm32_cfg_##index = { \
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_UART_INIT)
 
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 #define STM32_UART_CFG_REG_INIT(id) \

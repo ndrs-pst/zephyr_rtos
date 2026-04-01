@@ -1415,7 +1415,7 @@ static struct rtc_stm32_data rtc_data;
 DEVICE_DT_INST_DEFINE(0, rtc_stm32_init, NULL, &rtc_data, &rtc_config, PRE_KERNEL_1,
                       CONFIG_RTC_INIT_PRIORITY, &rtc_stm32_driver_api);
 
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 void zephyr_gtest_rtc_stm32(void) {

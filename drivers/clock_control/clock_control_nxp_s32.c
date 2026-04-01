@@ -84,7 +84,7 @@ DEVICE_DT_INST_DEFINE(0,
 		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		      &nxp_s32_clock_driver_api);
 
-#if (__GTEST == 1U) /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 void zephyr_gtest_clock_s32k3(void) {
