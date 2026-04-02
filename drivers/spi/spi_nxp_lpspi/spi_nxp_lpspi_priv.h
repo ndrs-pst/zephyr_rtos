@@ -14,6 +14,15 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/irq.h>
 
+#ifdef CONFIG_SPI_NXP_LPSPI_DMA
+#include <zephyr/drivers/dma.h>
+#endif
+
+#ifdef CONFIG_SPI_NXP_LPSPI_STREAM
+#include <zephyr/drivers/spi_stream.h>
+#include <zephyr/sys/atomic.h>
+#endif
+
 #include "../spi_context.h"
 
 #if CONFIG_NXP_LP_FLEXCOMM
@@ -55,7 +64,85 @@ struct lpspi_data {
     size_t transfer_len;
     uint32_t clock_freq;
     uint8_t major_version;
+#ifdef CONFIG_SPI_NXP_LPSPI_STREAM
+    /** Streaming state — NULL when streaming is not configured. */
+    struct spi_nxp_stream_data *stream_data;
+#endif
 };
+
+#ifdef CONFIG_SPI_NXP_LPSPI_DMA
+/* Transfer-state machine used by the DMA callback. */
+typedef enum {
+    LPSPI_TRANSFER_STATE_NULL,
+    LPSPI_TRANSFER_STATE_ONGOING,
+    LPSPI_TRANSFER_STATE_NEXT_DMA_SIZE_UPDATED,
+    LPSPI_TRANSFER_STATE_TX_DONE,
+    LPSPI_TRANSFER_STATE_RX_DONE,
+    LPSPI_TRANSFER_STATE_RX_TX_DONE,
+    LPSPI_TRANSFER_STATE_INVALID = 0xFFFFFFFFUL,
+} lpspi_transfer_state_t;
+
+struct spi_dma_stream {
+    const struct device *dma_dev;
+    uint32_t channel;
+    struct dma_config dma_cfg;
+    struct dma_block_config dma_blk_cfg;
+};
+
+struct spi_nxp_dma_data {
+    struct spi_dma_stream dma_rx;
+    struct spi_dma_stream dma_tx;
+    lpspi_transfer_state_t state;
+    /* Synchronized DMA size for RX/TX interleaving on v1 LPSPI. */
+    size_t synchronize_dma_size;
+};
+#endif /* CONFIG_SPI_NXP_LPSPI_DMA */
+
+#ifdef CONFIG_SPI_NXP_LPSPI_STREAM
+/**
+ * Streaming state for CONFIG_SPI_NXP_LPSPI_STREAM.
+ *
+ * Allocated statically per device instance when CONFIG_SPI_NXP_LPSPI_STREAM=y.
+ * Hung off lpspi_data.stream_data (pointer, NULL when stream not configured).
+ *
+ * Lifetime: zero-initialised at compile time; populated by spi_read_stream_async()
+ * and cleared by spi_stream_stop().
+ */
+struct spi_nxp_stream_data {
+    /* ------------------------------------------------------------------ */
+    /* Streaming configuration (set at stream_start, NULLed at stop)      */
+    /* ------------------------------------------------------------------ */
+    const struct spi_stream_cfg *cfg;
+
+    /* ------------------------------------------------------------------ */
+    /* RX-only DMA channel                                                 */
+    /* ------------------------------------------------------------------ */
+    struct dma_block_config dma_blk;    /**< eDMA block config (cyclic, single block) */
+    struct dma_config dma_cfg;          /**< eDMA channel config */
+
+    /* ------------------------------------------------------------------ */
+    /* Ring buffer write pointer (software-tracked per FCF event)          */
+    /* Advanced by frame_size bytes on every FCF interrupt.               */
+    /* ------------------------------------------------------------------ */
+    uint32_t write_pos; /**< Byte offset of next frame start in ring_buf */
+
+    /* ------------------------------------------------------------------ */
+    /* Frame descriptor pool state                                         */
+    /* ------------------------------------------------------------------ */
+    uint32_t desc_pool_head; /**< Next pool slot to use (mod frame_pool_count) */
+    uint32_t overrun_count;  /**< Descriptors dropped due to pool exhaustion */
+
+    /* ------------------------------------------------------------------ */
+    /* Monotonic frame counter                                             */
+    /* ------------------------------------------------------------------ */
+    atomic_t frame_idx;
+
+    /* ------------------------------------------------------------------ */
+    /* Lifecycle guard: 1 = streaming active, 0 = idle                    */
+    /* ------------------------------------------------------------------ */
+    atomic_t active;
+};
+#endif /* CONFIG_SPI_NXP_LPSPI_STREAM */
 
 /* Common helper functions used to interact with LPSPI FIFOs (TX and RX) when dealing
  * with cpu-based implementation.
@@ -138,5 +225,32 @@ int lpspi_wait_tx_fifo_empty(const struct device* dev, spi_operation_t operation
 
 #define SPI_NXP_LPSPI_HAS_DMAS(n) \
     UTIL_AND(DT_INST_DMAS_HAS_NAME(n, tx), DT_INST_DMAS_HAS_NAME(n, rx))
+
+/* -----------------------------------------------------------------------
+ * Streaming API internals (spi_nxp_lpspi_stream.c)
+ * ----------------------------------------------------------------------- */
+#ifdef CONFIG_SPI_NXP_LPSPI_STREAM
+
+/**
+ * Called from lpspi_isr() in spi_nxp_lpspi_dma.c when FCF (Frame Complete
+ * Flag) is asserted.  Runs at interrupt priority — must not block.
+ */
+void lpspi_stream_isr_fcf_handler(const struct device *dev);
+
+/**
+ * Per-instance static storage declaration — used inside LPSPI_DMA_INIT(n)
+ * in spi_nxp_lpspi_dma.c before the lpspi_data_##n struct initialiser.
+ */
+#define SPI_NXP_LPSPI_STREAM_DATA_DECL(n) \
+    static struct spi_nxp_stream_data lpspi_stream_data_##n;
+
+/**
+ * Per-instance stream_data pointer initialiser — used inside the
+ * lpspi_data_##n compound literal in LPSPI_DMA_INIT(n).
+ */
+#define SPI_NXP_LPSPI_STREAM_DATA_INIT(n) \
+    .stream_data = &lpspi_stream_data_##n,
+
+#endif /* CONFIG_SPI_NXP_LPSPI_STREAM */
 
 #endif /* ZEPHYR_DRIVERS_SPI_SPI_NXP_LPSPI_PRIV_H_ */

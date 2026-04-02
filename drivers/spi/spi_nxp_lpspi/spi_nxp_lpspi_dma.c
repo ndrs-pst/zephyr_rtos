@@ -9,47 +9,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(spi_lpspi, CONFIG_SPI_LOG_LEVEL);
 
-#include <zephyr/drivers/dma.h>
 #include "spi_nxp_lpspi_priv.h"
-
-/* These states indicate what's the status of RX and TX, also synchronization
- * status of DMA size of the next DMA transfer.
- */
-typedef enum {
-    LPSPI_TRANSFER_STATE_NULL,
-    LPSPI_TRANSFER_STATE_ONGOING,
-    LPSPI_TRANSFER_STATE_NEXT_DMA_SIZE_UPDATED,
-    LPSPI_TRANSFER_STATE_TX_DONE,
-    LPSPI_TRANSFER_STATE_RX_DONE,
-    LPSPI_TRANSFER_STATE_RX_TX_DONE,
-    LPSPI_TRANSFER_STATE_INVALID = 0xFFFFFFFFUL,
-} lpspi_transfer_state_t;
 
 /* dummy memory used for transferring NOP when tx buf is null */
 static uint32_t tx_nop_val; /* check compliance says no init to 0, but should be 0 in bss */
 /* dummy memory for transferring to when RX buf is null */
 static uint32_t dummy_buffer;
-
-struct spi_dma_stream {
-    const struct device* dma_dev;
-    uint32_t channel;
-    struct dma_config dma_cfg;
-    struct dma_block_config dma_blk_cfg;
-};
-
-struct spi_nxp_dma_data {
-    struct spi_dma_stream dma_rx;
-    struct spi_dma_stream dma_tx;
-
-    lpspi_transfer_state_t state;
-
-    /* This DMA size is used in callback function for RX and TX context update.
-     * because of old LPSPI IP limitation, RX complete depend on next TX DMA transfer start,
-     * so TX and RX not always start at the same time while we can only calculate DMA transfer
-     * size once and update the buffer pointers at the same time.
-     */
-    size_t synchronize_dma_size;
-};
 
 /*
  * Issue a TCR (Transmit Command Register) command to properly end RX DMA transfers
@@ -423,7 +388,21 @@ static DEVICE_API(spi, lpspi_dma_driver_api) = {
 };
 
 static void lpspi_isr(const struct device* dev) {
-    /* ISR not used for DMA based LPSPI driver */
+#ifdef CONFIG_SPI_NXP_LPSPI_STREAM
+    LPSPI_Type* lpspi = (LPSPI_Type*)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+    uint32_t sr = lpspi->SR;
+
+    /* Frame Complete Flag: PCS deasserted → one full frame received.
+     * Only handle when FCIE is enabled (streaming path).
+     * Clear W1C immediately to prevent re-entry.
+     */
+    if (((sr & LPSPI_SR_FCF_MASK) != 0U) && ((lpspi->IER & LPSPI_IER_FCIE_MASK) != 0U)) {
+        lpspi->SR = LPSPI_SR_FCF_MASK; /* W1C — clear before handler runs */
+        lpspi_stream_isr_fcf_handler(dev);
+    }
+#else
+    ARG_UNUSED(dev);
+#endif /* CONFIG_SPI_NXP_LPSPI_STREAM */
 }
 
 #define LPSPI_DMA_COMMON_CFG(n)             \
@@ -459,9 +438,14 @@ static void lpspi_isr(const struct device* dev) {
                                                                 \
     static struct spi_nxp_dma_data lpspi_dma_data##n = {SPI_DMA_CHANNELS(n)}; \
                                                                 \
+    IF_ENABLED(CONFIG_SPI_NXP_LPSPI_STREAM,                     \
+               (SPI_NXP_LPSPI_STREAM_DATA_DECL(n)))             \
+                                                                \
     static struct lpspi_data lpspi_data_##n = {                 \
         SPI_NXP_LPSPI_COMMON_DATA_INIT(n)                       \
         .driver_data = &lpspi_dma_data##n,                      \
+        IF_ENABLED(CONFIG_SPI_NXP_LPSPI_STREAM,                 \
+                   (SPI_NXP_LPSPI_STREAM_DATA_INIT(n)))         \
     };                                                          \
                                                                 \
     SPI_DEVICE_DT_INST_DEFINE(n, lpspi_dma_init, NULL, &lpspi_data_##n, \
