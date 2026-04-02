@@ -56,10 +56,7 @@ struct spi_stream_frame {
  * All pointed-to memory must remain valid for the lifetime of the stream.
  * Typically these are static or global objects.
  */
-struct spi_stream_cfg {
-    /** SPI configuration — must select peripheral mode (SPI_OP_MODE_SLAVE). */
-    const struct spi_config* spi_cfg;
-
+struct spi_stream_config {
     /**
      * Statically allocated ring buffer.
      * Size must be a multiple of frame_size and at least 2×frame_size.
@@ -106,8 +103,8 @@ struct spi_stream_cfg {
  * @return 0 on success, -EBUSY if already streaming, -ENODEV if DMA not
  *         configured, or negative errno on other error.
  */
-int spi_read_stream_async(const struct device* dev,
-                          const struct spi_stream_cfg* cfg);
+int spi_read_stream_async_dt(struct spi_dt_spec const* spec,
+                             struct spi_stream_config const* cfg);
 
 /**
  * @brief Stop continuous SPI peripheral RX streaming.
@@ -116,20 +113,20 @@ int spi_read_stream_async(const struct device* dev,
  * state.  Any pending descriptors in frame_fifo remain valid until
  * drained by the application.
  *
- * @param dev SPI device node.
+ * @param spec SPI device specification.
  * @return 0 on success, -EALREADY if not streaming.
  */
-int spi_stream_stop(const struct device* dev);
+int spi_stream_stop_dt(struct spi_dt_spec const* spec);
 
 /**
  * @brief Return the number of frames dropped due to descriptor pool exhaustion.
  *
- * Resets to zero on each call to spi_read_stream_async().
+ * Resets to zero on each call to spi_read_stream_async_dt().
  *
- * @param dev SPI device node.
+ * @param spec SPI device specification.
  * @return Overrun count since last stream start.
  */
-uint32_t spi_stream_overrun_count(const struct device* dev);
+uint32_t spi_stream_overrun_count_dt(struct spi_dt_spec const* spec);
 
 #ifdef __cplusplus
 }

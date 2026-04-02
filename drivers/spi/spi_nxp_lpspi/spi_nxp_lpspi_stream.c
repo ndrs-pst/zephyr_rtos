@@ -98,11 +98,12 @@ static void lpspi_stream_dma_callback(const struct device* dma_dev,
  * This ensures the TCD is valid even before any spi_transceive() has run,
  * and guarantees NBYTES == SSIZE (eDMA requirement).
  */
-static int lpspi_stream_dma_configure(const struct device* dev) {
+static int lpspi_stream_dma_configure(struct spi_dt_spec const* spec) {
+    struct device const* dev = spec->bus;
     LPSPI_Type* lpspi = lpspi_base(dev);
     struct lpspi_data* data = dev->data;
-    struct spi_nxp_stream_data* stream = data->stream_data;
-    const struct spi_stream_cfg* cfg = stream->cfg;
+    struct spi_nxp_stream_data* stream = data->stream;
+    const struct spi_stream_config* cfg = stream->cfg;
     struct spi_nxp_dma_data* dma_data = (struct spi_nxp_dma_data*)data->driver_data;
     int rc;
 
@@ -123,7 +124,7 @@ static int lpspi_stream_dma_configure(const struct device* dev) {
      * dma_data->dma_rx.dma_cfg fields are populated only at transceive time
      * and would be zero on first use — invalid for dma_mcux_edma_validate_cfg().
      */
-    uint8_t word_sz_bits = (uint8_t)SPI_WORD_SIZE_GET(cfg->spi_cfg->operation);
+    uint8_t word_sz_bits = (uint8_t)SPI_WORD_SIZE_GET(spec->config.operation);
     uint8_t word_sz;
 
     if (word_sz_bits <= 8U) {
@@ -180,8 +181,8 @@ static int lpspi_stream_dma_configure(const struct device* dev) {
  */
 void lpspi_stream_isr_fcf_handler(const struct device* dev) {
     struct lpspi_data* data = dev->data;
-    struct spi_nxp_stream_data* stream = data->stream_data;
-    const struct spi_stream_cfg* cfg;
+    struct spi_nxp_stream_data* stream = data->stream;
+    const struct spi_stream_config* cfg;
     uint32_t frame_start;
     uint32_t pool_idx;
     struct spi_stream_frame* desc;
@@ -232,10 +233,11 @@ void lpspi_stream_isr_fcf_handler(const struct device* dev) {
 /* -------------------------------------------------------------------------
  * Public API implementation
  * ------------------------------------------------------------------------- */
-int spi_read_stream_async(const struct device* dev, const struct spi_stream_cfg* cfg) {
+int spi_read_stream_async_dt(struct spi_dt_spec const* spec, const struct spi_stream_config* cfg) {
+    struct device const* dev = spec->bus;
     LPSPI_Type* lpspi = lpspi_base(dev);
     struct lpspi_data* data = dev->data;
-    struct spi_nxp_stream_data* stream = data->stream_data;
+    struct spi_nxp_stream_data* stream = data->stream;
     struct spi_nxp_dma_data* dma_data;
     int ret;
 
@@ -245,7 +247,7 @@ int spi_read_stream_async(const struct device* dev, const struct spi_stream_cfg*
     }
 
     /* Validate configuration */
-    if ((cfg == NULL)             || (cfg->spi_cfg == NULL)     ||
+    if ((cfg == NULL) ||
         (cfg->ring_buf == NULL)   || (cfg->frame_pool  == NULL) ||
         (cfg->frame_fifo == NULL) || (cfg->ring_buf_size == 0U) ||
         (cfg->frame_size == 0U)   || (cfg->frame_pool_count == 0U)) {
@@ -268,7 +270,7 @@ int spi_read_stream_async(const struct device* dev, const struct spi_stream_cfg*
     }
 
     /* Only slave mode is supported */
-    if ((cfg->spi_cfg->operation & SPI_OP_MODE_SLAVE) == 0U) {
+    if ((spec->config.operation & SPI_OP_MODE_SLAVE) == 0U) {
         LOG_ERR("stream: slave mode (SPI_OP_MODE_SLAVE) required");
         return (-EINVAL);
     }
@@ -293,7 +295,7 @@ int spi_read_stream_async(const struct device* dev, const struct spi_stream_cfg*
     atomic_set(&stream->frame_idx, 0);
 
     /* Configure LPSPI hardware for slave RX-only streaming */
-    ret = lpspi_configure(dev, cfg->spi_cfg);
+    ret = lpspi_configure(dev, &spec->config);
     if (ret != 0) {
         LOG_ERR("stream: lpspi_configure failed (%d)", ret);
         goto err_clear;
@@ -309,7 +311,7 @@ int spi_read_stream_async(const struct device* dev, const struct spi_stream_cfg*
     lpspi->FCR = LPSPI_FCR_RXWATER(0U);
 
     /* Configure cyclic DMA channel */
-    ret = lpspi_stream_dma_configure(dev);
+    ret = lpspi_stream_dma_configure(spec);
     if (ret != 0) {
         LOG_ERR("stream: DMA configure failed (%d)", ret);
         goto err_clear;
@@ -342,10 +344,11 @@ err_clear :
     return (ret);
 }
 
-int spi_stream_stop(const struct device* dev) {
+int spi_stream_stop_dt(struct spi_dt_spec const* spec) {
+    struct device const* dev = spec->bus;
     LPSPI_Type* lpspi = lpspi_base(dev);
     struct lpspi_data* data = dev->data;
-    struct spi_nxp_stream_data* stream = data->stream_data;
+    struct spi_nxp_stream_data* stream = data->stream;
     struct spi_nxp_dma_data* dma_data;
     int ret;
 
@@ -379,9 +382,10 @@ int spi_stream_stop(const struct device* dev) {
     return (0);
 }
 
-uint32_t spi_stream_overrun_count(const struct device* dev) {
+uint32_t spi_stream_overrun_count_dt(struct spi_dt_spec const* spec) {
+    struct device const* dev = spec->bus;
     struct lpspi_data* data = dev->data;
-    struct spi_nxp_stream_data* stream = data->stream_data;
+    struct spi_nxp_stream_data* stream = data->stream;
 
     if (stream == NULL) {
         return (0U);

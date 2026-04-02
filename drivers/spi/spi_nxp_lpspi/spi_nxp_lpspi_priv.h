@@ -64,10 +64,11 @@ struct lpspi_data {
     size_t transfer_len;
     uint32_t clock_freq;
     uint8_t major_version;
-#ifdef CONFIG_SPI_NXP_LPSPI_STREAM
+
+    #if defined(CONFIG_SPI_NXP_LPSPI_STREAM)
     /** Streaming state — NULL when streaming is not configured. */
-    struct spi_nxp_stream_data *stream_data;
-#endif
+    struct spi_nxp_stream_data* stream;
+    #endif
 };
 
 #ifdef CONFIG_SPI_NXP_LPSPI_DMA
@@ -105,14 +106,14 @@ struct spi_nxp_dma_data {
  * Allocated statically per device instance when CONFIG_SPI_NXP_LPSPI_STREAM=y.
  * Hung off lpspi_data.stream_data (pointer, NULL when stream not configured).
  *
- * Lifetime: zero-initialised at compile time; populated by spi_read_stream_async()
+ * Lifetime: zero-initialised at compile time; populated by spi_read_stream_async_dt()
  * and cleared by spi_stream_stop().
  */
 struct spi_nxp_stream_data {
     /* ------------------------------------------------------------------ */
     /* Streaming configuration (set at stream_start, NULLed at stop)      */
     /* ------------------------------------------------------------------ */
-    const struct spi_stream_cfg *cfg;
+    const struct spi_stream_config* cfg;
 
     /* ------------------------------------------------------------------ */
     /* RX-only DMA channel                                                 */
@@ -249,7 +250,7 @@ void lpspi_stream_isr_fcf_handler(const struct device *dev);
  * lpspi_data_##n compound literal in LPSPI_DMA_INIT(n).
  */
 #define SPI_NXP_LPSPI_STREAM_DATA_INIT(n) \
-    .stream_data = &lpspi_stream_data_##n,
+    .stream = &lpspi_stream_data_##n,
 
 #endif /* CONFIG_SPI_NXP_LPSPI_STREAM */
 
