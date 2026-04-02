@@ -116,12 +116,6 @@ struct spi_nxp_stream_data {
     const struct spi_stream_config* cfg;
 
     /* ------------------------------------------------------------------ */
-    /* RX-only DMA channel                                                 */
-    /* ------------------------------------------------------------------ */
-    struct dma_block_config dma_blk;    /**< eDMA block config (cyclic, single block) */
-    struct dma_config dma_cfg;          /**< eDMA channel config */
-
-    /* ------------------------------------------------------------------ */
     /* Ring buffer write pointer (software-tracked per FCF event)          */
     /* Advanced by frame_size bytes on every FCF interrupt.               */
     /* ------------------------------------------------------------------ */
@@ -136,12 +130,23 @@ struct spi_nxp_stream_data {
     /* ------------------------------------------------------------------ */
     /* Monotonic frame counter                                             */
     /* ------------------------------------------------------------------ */
-    atomic_t frame_idx;
+    uint32_t frame_idx;
 
     /* ------------------------------------------------------------------ */
-    /* Lifecycle guard: 1 = streaming active, 0 = idle                    */
+    /* Spurious-FCF suppression                                            */
+    /* dma_daddr_reg: cached pointer to the eDMA TCD_DADDR MMIO register  */
+    /* for the RX channel.  Populated by lpspi_stream_dma_configure()     */
+    /* after dma_config() succeeds; valid for the streaming session.       */
+    /* Reading DADDR is ISR-safe (MMIO register — no locking needed).      */
+    /*                                                                     */
+    /* A spurious FCF fires when the master deasserts CS with no bytes     */
+    /* clocked.  DADDR hasn't advanced past write_pos in that case, so the */
+    /* handler suppresses the event instead of posting a garbage frame.    */
+    /*                                                                     */
+    /* spurious_count: diagnostic, incremented per suppressed event.       */
     /* ------------------------------------------------------------------ */
-    atomic_t active;
+    volatile uint32_t* dma_daddr_reg;   /**< &TCD_DADDR for RX channel (ISR-safe read) */
+    uint32_t spurious_count;            /**< Suppressed spurious FCF events */
 };
 #endif /* CONFIG_SPI_NXP_LPSPI_STREAM */
 

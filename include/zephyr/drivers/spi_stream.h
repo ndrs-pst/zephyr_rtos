@@ -45,7 +45,7 @@ extern "C" {
  */
 struct spi_stream_frame {
     sys_snode_t node;           /**< k_fifo linkage — MUST be first field */
-    uint8_t* data;              /**< Pointer into ring buffer (zero-copy) */
+    uintptr_t data;             /**< Pointer into ring buffer (zero-copy) */
     size_t   len;               /**< Frame length in bytes */
     uint32_t frame_idx;         /**< Monotonic frame counter (wraps at UINT32_MAX) */
 };
@@ -62,8 +62,8 @@ struct spi_stream_config {
      * Size must be a multiple of frame_size and at least 2×frame_size.
      * Alignment: 4-byte minimum (recommend cache-line for performance).
      */
-    uint8_t* ring_buf;
-    size_t   ring_buf_size;
+    uintptr_t ring_buf;
+    size_t ring_buf_size;
 
     /**
      * Expected bytes per SPI frame.

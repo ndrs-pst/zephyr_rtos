@@ -34,7 +34,6 @@
  *   - Concurrent spi_transceive() on the same device is rejected with EBUSY.
  */
 
-/* (01) LOCAL PREDEFINE */
 #define DT_DRV_COMPAT nxp_lpspi
 
 #include <zephyr/logging/log.h>
@@ -43,11 +42,60 @@ LOG_MODULE_DECLARE(spi_lpspi, CONFIG_SPI_LOG_LEVEL);
 #include <zephyr/sys/slist.h>
 #include "spi_nxp_lpspi_priv.h"
 
+/*
+ * S32K358_DMA_TCD.h (included transitively via S32K358.h) defines:
+ *   IP_TCD_BASE = 0x40210000  — base of the eDMA TCD register region
+ * Each TCD channel occupies 0x4000 bytes; TCD_DADDR resides at offset +0x30.
+ * These constants are used once, at stream-start, to cache the DADDR register
+ * pointer used by the spurious-FCF guard in lpspi_stream_isr_fcf_handler().
+ * @see 15.6.2.13 TCD Destination Address (TCD0_DADDR - TCD31_DADDR)
+ */
+#define LPSPI_STREAM_TCD_STRIDE     (0x4000U)  /* bytes between adjacent TCD channels  */
+#define LPSPI_STREAM_TCD_DADDR_OFF  (0x030U)   /* offset of DADDR within one TCD channel */
+
 /* -------------------------------------------------------------------------
  * Internal helpers
  * ------------------------------------------------------------------------- */
 static inline LPSPI_Type* lpspi_base(const struct device* dev) {
     return (LPSPI_Type*)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+}
+
+static int lpspi_stream_validate_args(struct spi_nxp_stream_data* stream,
+                                      struct spi_dt_spec const* spec,
+                                      const struct spi_stream_config* cfg) {
+    if (stream == NULL) {
+        LOG_ERR("stream: CONFIG_SPI_NXP_LPSPI_STREAM not enabled or stream_data NULL");
+        return (-ENODEV);
+    }
+
+    if ((cfg == NULL) ||
+        (cfg->ring_buf == (uintptr_t)NULL)   || (cfg->frame_pool  == NULL) ||
+        (cfg->frame_fifo == NULL) || (cfg->ring_buf_size == 0U) ||
+        (cfg->frame_size == 0U)   || (cfg->frame_pool_count == 0U)) {
+        return (-EINVAL);
+    }
+
+    if ((cfg->ring_buf_size % cfg->frame_size) != 0U) {
+        LOG_ERR("stream: ring_buf_size must be a multiple of frame_size");
+        return (-EINVAL);
+    }
+
+    if (cfg->ring_buf_size < (2U * cfg->frame_size)) {
+        LOG_ERR("stream: ring_buf_size must be >= 2 × frame_size");
+        return (-EINVAL);
+    }
+
+    if (cfg->frame_pool_count < (cfg->ring_buf_size / cfg->frame_size)) {
+        LOG_ERR("stream: frame_pool_count must be >= ring_buf_size / frame_size");
+        return (-EINVAL);
+    }
+
+    if ((spec->config.operation & SPI_OP_MODE_SLAVE) == 0U) {
+        LOG_ERR("stream: slave mode (SPI_OP_MODE_SLAVE) required");
+        return (-EINVAL);
+    }
+
+    return (0);
 }
 
 /* -------------------------------------------------------------------------
@@ -108,59 +156,52 @@ static int lpspi_stream_dma_configure(struct spi_dt_spec const* spec) {
     int rc;
 
     /* ---- Block config ---- */
-    struct dma_block_config* dma_blk = &stream->dma_blk;
-    memset(dma_blk, 0, sizeof(struct dma_block_config));
-    dma_blk->source_address   = (uint32_t)(uintptr_t)&lpspi->RDR;
-    dma_blk->dest_address     = (uint32_t)(uintptr_t)cfg->ring_buf;
-    dma_blk->block_size       = cfg->ring_buf_size;
-    dma_blk->source_addr_adj  = DMA_ADDR_ADJ_NO_CHANGE;         /* RDR stays fixed */
-    dma_blk->dest_addr_adj    = DMA_ADDR_ADJ_INCREMENT;         /* Advance through ring */
-    dma_blk->dest_reload_en   = 1U;                             /* Belt-and-suspenders: DLAST already set by FSL SDK */
-    dma_blk->source_reload_en = 0U;
+    struct spi_dma_stream* dma_rx = &dma_data->dma_rx;
+    struct dma_block_config* blk_cfg = &dma_rx->dma_blk_cfg;
 
-    /*
-     * Derive word width from SPI configuration so this is independent of
-     * whether a normal spi_transceive() has ever run on this device.
-     * dma_data->dma_rx.dma_cfg fields are populated only at transceive time
-     * and would be zero on first use — invalid for dma_mcux_edma_validate_cfg().
-     */
-    uint8_t word_sz_bits = (uint8_t)SPI_WORD_SIZE_GET(spec->config.operation);
-    uint8_t word_sz;
+    memset(blk_cfg, 0, sizeof(struct dma_block_config));
+    blk_cfg->source_address   = (uint32_t)(uintptr_t)&lpspi->RDR;
+    blk_cfg->dest_address     = (uint32_t)cfg->ring_buf;
+    blk_cfg->block_size       = cfg->ring_buf_size;
+    blk_cfg->dest_reload_en   = 1U;
+    blk_cfg->source_addr_adj  = DMA_ADDR_ADJ_NO_CHANGE;
+    blk_cfg->dest_addr_adj    = DMA_ADDR_ADJ_INCREMENT;
+    blk_cfg->dest_reload_en   = 1U;
+    blk_cfg->source_reload_en = 0U;
 
-    if (word_sz_bits <= 8U) {
-        word_sz = 1U;
-    }
-    else if (word_sz_bits <= 16U) {
-        word_sz = 2U;
-    }
-    else {
-        word_sz = 4U;
-    }
-
-    /* ---- Channel config ---- */
-    struct dma_config* dma_cfg = &stream->dma_cfg;
-    memset(dma_cfg, 0, sizeof(struct dma_config));
-    dma_cfg->channel_direction = PERIPHERAL_TO_MEMORY;
-    dma_cfg->dma_slot          = dma_data->dma_rx.dma_cfg.dma_slot;
-    dma_cfg->source_data_size  = word_sz;
-    dma_cfg->dest_data_size    = word_sz;
-
-    /* NBYTES must equal SSIZE — both derived from word_sz. */
-    dma_cfg->source_burst_length  = word_sz;
-    dma_cfg->dest_burst_length    = word_sz;
+    /* ---- Channel config: streaming-specific overrides ---- */
+    struct dma_config* dma_cfg = &dma_rx->dma_cfg;
+    dma_cfg->channel_direction    = PERIPHERAL_TO_MEMORY;
     dma_cfg->cyclic               = 1U;
-    dma_cfg->complete_callback_en = 1U;
-    dma_cfg->error_callback_dis   = 0U;
-    dma_cfg->block_count          = 1U;
-    dma_cfg->head_block           = &stream->dma_blk;
+    dma_cfg->complete_callback_en = 0U;
+    dma_cfg->head_block           = blk_cfg;
 
     /* Must be non-NULL: nxp_edma_callback calls dma_callback unconditionally. */
     dma_cfg->dma_callback = lpspi_stream_dma_callback;
     dma_cfg->user_data    = (void*)dev;
 
-    rc = dma_config(dma_data->dma_rx.dma_dev, dma_data->dma_rx.channel, dma_cfg);
+    rc = dma_config(dma_rx->dma_dev, dma_rx->channel, dma_cfg);
+    if (rc != 0) {
+        return (rc);
+    }
 
-    return rc;
+    /*
+     * Cache the eDMA TCD_DADDR register address for ISR-context spurious-FCF detection.
+     *
+     * S32K358 eDMA TCD layout (from S32K358_DMA_TCD.h, IP_TCD_BASE = 0x40210000):
+     *   channel N:  base_addr = IP_TCD_BASE + N * LPSPI_STREAM_TCD_STRIDE
+     *   TCD_DADDR:  base_addr + LPSPI_STREAM_TCD_DADDR_OFF
+     *
+     * This assumes channel < 12 (no channel-gap adjustment required on S32K358).
+     * Channels used for LPSPI streaming (ch4-7) satisfy this constraint.
+     * Reading DADDR in the ISR is safe — MMIO register, no locking required.
+     */
+    stream->dma_daddr_reg = (volatile uint32_t *)(uintptr_t)(
+        IP_TCD_BASE +
+        (dma_data->dma_rx.channel * LPSPI_STREAM_TCD_STRIDE) +
+        LPSPI_STREAM_TCD_DADDR_OFF);
+
+    return (0);
 }
 
 /* -------------------------------------------------------------------------
@@ -182,18 +223,33 @@ static int lpspi_stream_dma_configure(struct spi_dt_spec const* spec) {
 void lpspi_stream_isr_fcf_handler(const struct device* dev) {
     struct lpspi_data* data = dev->data;
     struct spi_nxp_stream_data* stream = data->stream;
-    const struct spi_stream_config* cfg;
+    const struct spi_stream_config* cfg = stream->cfg;
     uint32_t frame_start;
+    uint32_t dma_pos;
     uint32_t pool_idx;
     struct spi_stream_frame* desc;
 
-    /* Guard order matters: check stream before dereferencing it for cfg */
-    if (stream == NULL) {
-        return;
-    }
+    /*
+     * Spurious-FCF guard: the master deasserted CS without clocking any data.
+     *
+     * The eDMA TCD_DADDR register reflects the live destination address
+     * i.e. where the DMA will write the NEXT byte.  Normalised to a ring-buffer offset
+     * it equals the byte position up to which data has been written so far.
+     * If it matches write_pos, no new data arrived and we must not advance
+     * write_pos or publish a descriptor.
+     *
+     * dma_daddr_reg is an MMIO register pointer cached at stream-start time
+     * (lpspi_stream_dma_configure).  Reading it here is ISR-safe.
+     *
+     * Note: on the very first FCF after stream start, DADDR == ring_buf base
+     * and write_pos == 0, so (dma_pos == write_pos) correctly suppresses the
+     * spurious event without any special first-call logic.
+     */
+    dma_pos = (*stream->dma_daddr_reg - (uint32_t)cfg->ring_buf) %
+              (uint32_t)cfg->ring_buf_size;
 
-    cfg = stream->cfg;
-    if ((cfg == NULL) || (atomic_get(&stream->active) == 0)) {
+    if (dma_pos == stream->write_pos) {
+        stream->spurious_count++;
         return;
     }
 
@@ -224,7 +280,7 @@ void lpspi_stream_isr_fcf_handler(const struct device* dev) {
     /* Step 4: populate descriptor */
     desc->data = (cfg->ring_buf + frame_start);
     desc->len  = cfg->frame_size;
-    desc->frame_idx = (uint32_t)atomic_inc(&stream->frame_idx);
+    desc->frame_idx += 1U;
 
     /* Step 5: notify consumer thread (ISR-safe, non-blocking) */
     k_fifo_put(cfg->frame_fifo, desc);
@@ -238,53 +294,12 @@ int spi_read_stream_async_dt(struct spi_dt_spec const* spec, const struct spi_st
     LPSPI_Type* lpspi = lpspi_base(dev);
     struct lpspi_data* data = dev->data;
     struct spi_nxp_stream_data* stream = data->stream;
-    struct spi_nxp_dma_data* dma_data;
+    struct spi_nxp_dma_data* dma_data = (struct spi_nxp_dma_data*)data->driver_data;
     int ret;
 
-    if (stream == NULL) {
-        LOG_ERR("stream: CONFIG_SPI_NXP_LPSPI_STREAM not enabled or stream_data NULL");
-        return (-ENODEV);
-    }
-
-    /* Validate configuration */
-    if ((cfg == NULL) ||
-        (cfg->ring_buf == NULL)   || (cfg->frame_pool  == NULL) ||
-        (cfg->frame_fifo == NULL) || (cfg->ring_buf_size == 0U) ||
-        (cfg->frame_size == 0U)   || (cfg->frame_pool_count == 0U)) {
-        return (-EINVAL);
-    }
-
-    if ((cfg->ring_buf_size % cfg->frame_size) != 0U) {
-        LOG_ERR("stream: ring_buf_size must be a multiple of frame_size");
-        return (-EINVAL);
-    }
-
-    if (cfg->ring_buf_size < (2U * cfg->frame_size)) {
-        LOG_ERR("stream: ring_buf_size must be >= 2 × frame_size");
-        return (-EINVAL);
-    }
-
-    if (cfg->frame_pool_count < (cfg->ring_buf_size / cfg->frame_size)) {
-        LOG_ERR("stream: frame_pool_count must be >= ring_buf_size / frame_size");
-        return (-EINVAL);
-    }
-
-    /* Only slave mode is supported */
-    if ((spec->config.operation & SPI_OP_MODE_SLAVE) == 0U) {
-        LOG_ERR("stream: slave mode (SPI_OP_MODE_SLAVE) required");
-        return (-EINVAL);
-    }
-
-    /* Prevent concurrent streaming */
-    if (atomic_cas(&stream->active, 0, 1) == false) {
-        return (-EBUSY);
-    }
-
-    dma_data = (struct spi_nxp_dma_data*)data->driver_data;
-    if (dma_data == NULL) {
-        LOG_ERR("stream: DMA data not initialised (CONFIG_SPI_NXP_LPSPI_DMA required)");
-        atomic_set(&stream->active, 0);
-        return (-ENODEV);
+    ret = lpspi_stream_validate_args(stream, spec, cfg);
+    if (ret != 0) {
+        return (ret);
     }
 
     /* Initialise stream state */
@@ -292,54 +307,46 @@ int spi_read_stream_async_dt(struct spi_dt_spec const* spec, const struct spi_st
     stream->write_pos      = 0U;
     stream->desc_pool_head = 0U;
     stream->overrun_count  = 0U;
-    atomic_set(&stream->frame_idx, 0);
+    stream->frame_idx      = 0U;
+    stream->spurious_count = 0U;
+    /* stream->dma_daddr_reg is set by lpspi_stream_dma_configure() below */
 
     /* Configure LPSPI hardware for slave RX-only streaming */
     ret = lpspi_configure(dev, &spec->config);
-    if (ret != 0) {
-        LOG_ERR("stream: lpspi_configure failed (%d)", ret);
-        goto err_clear;
+    if (ret == 0) {
+        /* 3-state MISO — slave does not drive output in RX-only stream mode.
+        * TXMSK auto-clear only applies in Controller mode; in Peripheral mode
+        * the bit stays set until software clears it (see RM TXMSK description).
+        */
+        lpspi->TCR |= LPSPI_TCR_TXMSK_MASK;
+
+        /* RXWATER=0: DMA request fires per received word (maximum granularity) */
+        lpspi->FCR = LPSPI_FCR_RXWATER(0U);
+
+        /* Configure cyclic DMA channel */
+        ret = lpspi_stream_dma_configure(spec);
+        if (ret == 0) {
+            /* Start DMA — runs continuously; never stopped between frames */
+            ret = dma_start(dma_data->dma_rx.dma_dev, dma_data->dma_rx.channel);
+            if (ret == 0) {
+                /* Enable LPSPI module */
+                lpspi->CR |= LPSPI_CR_MEN_MASK;
+
+                /* Enable RX DMA request and Frame Complete interrupt (order matters) */
+                lpspi->DER |= LPSPI_DER_RDDE_MASK;
+                lpspi->SR   = LPSPI_SR_FCF_MASK;        /* Clear any stale FCF before enabling IRQ */
+                lpspi->IER |= LPSPI_IER_FCIE_MASK;
+
+                LOG_INF("stream: started on %s — ring=%u B, frame=%u B, pool=%u entries",
+                        dev->name, (unsigned)cfg->ring_buf_size,
+                        (unsigned)cfg->frame_size, (unsigned)cfg->frame_pool_count);
+            }
+        }
     }
 
-    /* 3-state MISO — slave does not drive output in RX-only stream mode.
-     * TXMSK auto-clear only applies in Controller mode; in Peripheral mode
-     * the bit stays set until software clears it (see RM TXMSK description).
-     */
-    lpspi->TCR |= LPSPI_TCR_TXMSK_MASK;
-
-    /* RXWATER=0: DMA request fires per received word (maximum granularity) */
-    lpspi->FCR = LPSPI_FCR_RXWATER(0U);
-
-    /* Configure cyclic DMA channel */
-    ret = lpspi_stream_dma_configure(spec);
     if (ret != 0) {
-        LOG_ERR("stream: DMA configure failed (%d)", ret);
-        goto err_clear;
+        LOG_ERR("stream: init failed (%d)", ret);
     }
-
-    /* Start DMA — runs continuously; never stopped between frames */
-    ret = dma_start(dma_data->dma_rx.dma_dev, dma_data->dma_rx.channel);
-    if (ret != 0) {
-        LOG_ERR("stream: dma_start failed (%d)", ret);
-        goto err_clear;
-    }
-
-    /* Enable LPSPI module */
-    lpspi->CR |= LPSPI_CR_MEN_MASK;
-
-    /* Enable RX DMA request and Frame Complete interrupt (order matters) */
-    lpspi->DER |= LPSPI_DER_RDDE_MASK;
-    lpspi->SR   = LPSPI_SR_FCF_MASK;        /* Clear any stale FCF before enabling IRQ */
-    lpspi->IER |= LPSPI_IER_FCIE_MASK;
-
-    LOG_INF("stream: started on %s — ring=%u B, frame=%u B, pool=%u entries",
-            dev->name, (unsigned)cfg->ring_buf_size,
-            (unsigned)cfg->frame_size, (unsigned)cfg->frame_pool_count);
-    return (0);
-
-err_clear :
-    stream->cfg = NULL;
-    atomic_set(&stream->active, 0);
 
     return (ret);
 }
@@ -354,10 +361,6 @@ int spi_stream_stop_dt(struct spi_dt_spec const* spec) {
 
     if (stream == NULL) {
         return (-ENODEV);
-    }
-
-    if (atomic_cas(&stream->active, 1, 0) == false) {
-        return (-EALREADY);
     }
 
     /* Disable interrupt and DMA request first to avoid stray callbacks */
