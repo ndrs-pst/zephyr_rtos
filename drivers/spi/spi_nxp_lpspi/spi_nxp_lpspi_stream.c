@@ -60,7 +60,12 @@ static inline LPSPI_Type* lpspi_base(const struct device* dev) {
     return (LPSPI_Type*)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 }
 
-static int lpspi_stream_validate_args(struct spi_nxp_stream_data* stream,
+static inline volatile uint32_t* lpspi_get_tcd_daddr_reg(uint32_t dma_channel) {
+    return (volatile uint32_t*)(IP_TCD_BASE +
+                                ((dma_channel * LPSPI_STREAM_TCD_STRIDE) + LPSPI_STREAM_TCD_DADDR_OFF));
+}
+
+static int lpspi_stream_validate_args(struct spi_nxp_stream_data const* stream,
                                       struct spi_dt_spec const* spec,
                                       const struct spi_stream_config* cfg) {
     if (stream == NULL) {
@@ -151,7 +156,7 @@ static int lpspi_stream_dma_configure(struct spi_dt_spec const* spec) {
     LPSPI_Type* lpspi = lpspi_base(dev);
     struct lpspi_data* data = dev->data;
     struct spi_nxp_stream_data* stream = data->stream;
-    const struct spi_stream_config* cfg = stream->cfg;
+    struct spi_stream_config const* cfg = stream->cfg;
     struct spi_nxp_dma_data* dma_data = (struct spi_nxp_dma_data*)data->driver_data;
     int rc;
 
@@ -160,8 +165,8 @@ static int lpspi_stream_dma_configure(struct spi_dt_spec const* spec) {
     struct dma_block_config* blk_cfg = &dma_rx->dma_blk_cfg;
 
     memset(blk_cfg, 0, sizeof(struct dma_block_config));
-    blk_cfg->source_address   = (uint32_t)(uintptr_t)&lpspi->RDR;
-    blk_cfg->dest_address     = (uint32_t)cfg->ring_buf;
+    blk_cfg->source_address   = (uintptr_t)&lpspi->RDR;
+    blk_cfg->dest_address     = cfg->ring_buf;
     blk_cfg->block_size       = cfg->ring_buf_size;
     blk_cfg->dest_reload_en   = 1U;
     blk_cfg->source_addr_adj  = DMA_ADDR_ADJ_NO_CHANGE;
@@ -181,27 +186,22 @@ static int lpspi_stream_dma_configure(struct spi_dt_spec const* spec) {
     dma_cfg->user_data    = (void*)dev;
 
     rc = dma_config(dma_rx->dma_dev, dma_rx->channel, dma_cfg);
-    if (rc != 0) {
-        return (rc);
+    if (rc == 0) {
+        /*
+         * Cache the eDMA TCD_DADDR register address for ISR-context spurious-FCF detection.
+         *
+         * S32K358 eDMA TCD layout (from S32K358_DMA_TCD.h, IP_TCD_BASE = 0x40210000):
+         *   channel N:  base_addr = IP_TCD_BASE + N * LPSPI_STREAM_TCD_STRIDE
+         *   TCD_DADDR:  base_addr + LPSPI_STREAM_TCD_DADDR_OFF
+         *
+         * This assumes channel < 12 (no channel-gap adjustment required on S32K358).
+         * Channels used for LPSPI streaming (ch4-7) satisfy this constraint.
+         * Reading DADDR in the ISR is safe — MMIO register, no locking required.
+         */
+        stream->dma_daddr_reg = lpspi_get_tcd_daddr_reg(dma_data->dma_rx.channel);
     }
 
-    /*
-     * Cache the eDMA TCD_DADDR register address for ISR-context spurious-FCF detection.
-     *
-     * S32K358 eDMA TCD layout (from S32K358_DMA_TCD.h, IP_TCD_BASE = 0x40210000):
-     *   channel N:  base_addr = IP_TCD_BASE + N * LPSPI_STREAM_TCD_STRIDE
-     *   TCD_DADDR:  base_addr + LPSPI_STREAM_TCD_DADDR_OFF
-     *
-     * This assumes channel < 12 (no channel-gap adjustment required on S32K358).
-     * Channels used for LPSPI streaming (ch4-7) satisfy this constraint.
-     * Reading DADDR in the ISR is safe — MMIO register, no locking required.
-     */
-    stream->dma_daddr_reg = (volatile uint32_t *)(uintptr_t)(
-        IP_TCD_BASE +
-        (dma_data->dma_rx.channel * LPSPI_STREAM_TCD_STRIDE) +
-        LPSPI_STREAM_TCD_DADDR_OFF);
-
-    return (0);
+    return (rc);
 }
 
 /* -------------------------------------------------------------------------
@@ -294,7 +294,7 @@ int spi_read_stream_async_dt(struct spi_dt_spec const* spec, const struct spi_st
     LPSPI_Type* lpspi = lpspi_base(dev);
     struct lpspi_data* data = dev->data;
     struct spi_nxp_stream_data* stream = data->stream;
-    struct spi_nxp_dma_data* dma_data = (struct spi_nxp_dma_data*)data->driver_data;
+    struct spi_nxp_dma_data const* dma_data = (struct spi_nxp_dma_data const*)data->driver_data;
     int ret;
 
     ret = lpspi_stream_validate_args(stream, spec, cfg);
@@ -356,7 +356,7 @@ int spi_stream_stop_dt(struct spi_dt_spec const* spec) {
     LPSPI_Type* lpspi = lpspi_base(dev);
     struct lpspi_data* data = dev->data;
     struct spi_nxp_stream_data* stream = data->stream;
-    struct spi_nxp_dma_data* dma_data;
+    struct spi_nxp_dma_data const* dma_data;
     int ret;
 
     if (stream == NULL) {
@@ -370,7 +370,7 @@ int spi_stream_stop_dt(struct spi_dt_spec const* spec) {
     /* Clear TXMSK — it does not auto-clear in Peripheral mode */
     lpspi->TCR &= ~LPSPI_TCR_TXMSK_MASK;
 
-    dma_data = (struct spi_nxp_dma_data*)data->driver_data;
+    dma_data = (struct spi_nxp_dma_data const*)data->driver_data;
     if (dma_data != NULL) {
         ret = dma_stop(dma_data->dma_rx.dma_dev, dma_data->dma_rx.channel);
         if (ret != 0) {
@@ -387,8 +387,8 @@ int spi_stream_stop_dt(struct spi_dt_spec const* spec) {
 
 uint32_t spi_stream_overrun_count_dt(struct spi_dt_spec const* spec) {
     struct device const* dev = spec->bus;
-    struct lpspi_data* data = dev->data;
-    struct spi_nxp_stream_data* stream = data->stream;
+    struct lpspi_data const* data = dev->data;
+    struct spi_nxp_stream_data const* stream = data->stream;
 
     if (stream == NULL) {
         return (0U);
