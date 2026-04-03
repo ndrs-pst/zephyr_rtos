@@ -225,7 +225,7 @@ class ComplianceTest:
 
     def _result(self, res, text):
         res.text = text.rstrip()
-        self.case.result += [res]
+        self.case.append(res)
 
     def error(self, text, msg=None, type_="error"):
         """
@@ -2655,6 +2655,46 @@ class TextEncoding(ComplianceTest):
             if mime_type.rsplit('=')[-1] not in self.ALLOWED_CHARSETS:
                 desc = f"Text file with unsupported encoding: {file} has mime type {mime_type}"
                 self.fmtd_failure("error", "TextEncoding", file, desc=desc)
+
+
+class DeviceAPICheck(ComplianceTest):
+    """
+    Checks that driver API structs use the DEVICE_API() macro instead of
+    being declared as plain variables, so they are placed into iterable
+    sections.
+    """
+
+    name = "DeviceAPI"
+    doc = zephyr_doc_detail_builder("/kernel/drivers/index.html#subsystems-and-api-structures")
+
+    # Matches variable definitions like:
+    #   static const struct foo_driver_api my_api = {
+    #   const struct foo_driver_api my_api = {
+    DEVICE_API_DEF_RE = re.compile(
+        r"[^*/{]*\bstruct\s+(\w+_driver_api)\s+(\w+)\s*=",
+    )
+
+    def run(self):
+        for fname in get_files(filter="d"):
+            if not fname.endswith(".c"):
+                continue
+            if not fname.startswith("drivers/"):
+                continue
+
+            with open(GIT_TOP / fname, encoding="utf-8") as f:
+                for line_no, line in enumerate(f, start=1):
+                    match = self.DEVICE_API_DEF_RE.match(line)
+
+                    # Ignore emulation driver backends
+                    if match and "emul" not in match.group(1):
+                        self.fmtd_failure(
+                            "error",
+                            "DEVICE_API",
+                            fname,
+                            line=line_no,
+                            desc=f"Use DEVICE_API() to define '{match.group(2)}' "
+                            f"(type: {match.group(1)}) so it is placed in an iterable section.",
+                        )
 
 
 def init_logs(cli_arg):

@@ -154,6 +154,9 @@ int z_abort_timeout(struct _timeout* to) {
                 sys_clock_set_timeout(next_timeout(elapsed()), false);
             }
         }
+        else if (to->dticks == TIMEOUT_DTICKS_ANNOUNCING) {
+            to->dticks = TIMEOUT_DTICKS_ABORTED;
+        }
     }
 
     return (ret);
@@ -237,6 +240,7 @@ void sys_clock_announce(int32_t ticks) {
         curr_tick += dt;
         t->dticks = 0;
         remove_timeout(t);
+        t->dticks = TIMEOUT_DTICKS_ANNOUNCING;
 
         k_spin_unlock(&timeout_lock, key);
         t->fn(t);

@@ -185,6 +185,11 @@ Boards
   Zephyr is expected to execute in the non-secure state of the processor, the board or project
   must explicitly enable :kconfig:option:`CONFIG_TRUSTED_EXECUTION_NON_SECURE`.
 
+* The following WCH SoC Kconfigs have been renamed. Kconfig/CMake/code
+  needs to be updated if they reference the old Kconfigs:
+
+  * ``CONFIG_SOC_SERIES_CH32V00X`` with :kconfig:option:`CONFIG_SOC_SERIES_QINGKE_V2C`
+
 Device Drivers and Devicetree
 *****************************
 
@@ -988,6 +993,11 @@ STM32
   is now selected automatically based on devicetree configuration: instances with either of
   the ``cs-gpios`` or new ``st,soft-nss`` property operate in "Soft NSS" mode, while all other
   instances operate in "Hard NSS" mode.
+
+* To ensure that the SPI is functional at any frequency, all SPI pins are now configured with a
+  ``very-high-speed`` slew-rate by default. This may result in higher power consumption.
+  The slew-rate value can be overridden in board's dts or in overlays to a slower speed in order to
+  decrease power consumption.
 
 * :kconfig:option:`CONFIG_NUM_IRQS` is computed automatically based on active (``status = "okay";``)
   devices by using the new ``dt_highest_controller_irq_number`` Kconfig preprocessor function.

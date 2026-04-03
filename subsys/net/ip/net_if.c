@@ -2935,7 +2935,8 @@ out :
 }
 
 bool net_if_ipv6_addr_onlink(struct net_if** iface, struct net_in6_addr const* addr) {
-    bool ret = false;
+    struct net_if* best_iface = NULL;
+    uint8_t best_len = 0U;
 
     STRUCT_SECTION_FOREACH(net_if, tmp) {
         struct net_if_ipv6 const* ipv6;
@@ -2953,25 +2954,36 @@ bool net_if_ipv6_addr_onlink(struct net_if** iface, struct net_in6_addr const* a
         }
 
         ARRAY_FOR_EACH(ipv6->prefix, i) {
-            if (ipv6->prefix[i].is_used &&
-                net_ipv6_is_prefix(ipv6->prefix[i].prefix.s6_addr,
-                                   addr->s6_addr,
-                                   ipv6->prefix[i].len)) {
-                if (iface != NULL) {
-                    *iface = tmp;
-                }
+            uint8_t plen;
 
-                ret = true;
-                net_if_unlock(tmp);
-                goto out;
+            if (!ipv6->prefix[i].is_used) {
+                continue;
+            }
+
+            plen = ipv6->prefix[i].len;
+            if (plen <= best_len) {
+                continue;
+            }
+
+            if (net_ipv6_is_prefix(ipv6->prefix[i].prefix.s6_addr,
+                                   addr->s6_addr, plen)) {
+                best_len = plen;
+                best_iface = tmp;
             }
         }
 
         net_if_unlock(tmp);
     }
 
-out :
-    return (ret);
+    if (best_iface != NULL) {
+        if (iface != NULL) {
+            *iface = best_iface;
+        }
+
+        return (true);
+    }
+
+    return (false);
 }
 
 void net_if_ipv6_prefix_set_timer(struct net_if_ipv6_prefix* prefix,

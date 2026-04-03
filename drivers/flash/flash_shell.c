@@ -319,6 +319,7 @@ static int cmd_flash_shell_test(const struct shell* sh, size_t argc, char* argv[
         }
 
         if (memcmp(m_test_arr, m_cmp_arr, size) != 0) {
+            result = -EIO;
             shell_error(sh, "Verification ERROR!");
             break;
         }
