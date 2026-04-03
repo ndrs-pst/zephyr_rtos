@@ -388,21 +388,22 @@ static DEVICE_API(spi, lpspi_dma_driver_api) = {
 };
 
 static void lpspi_isr(const struct device* dev) {
-#ifdef CONFIG_SPI_NXP_LPSPI_STREAM
+    #if defined(CONFIG_SPI_NXP_LPSPI_STREAM)
     LPSPI_Type* lpspi = (LPSPI_Type*)DEVICE_MMIO_NAMED_GET(dev, reg_base);
     uint32_t sr = lpspi->SR;
 
-    /* Frame Complete Flag: PCS deasserted → one full frame received.
+    /* Frame Complete Flag: PCS deasserted -> one full frame received.
      * Only handle when FCIE is enabled (streaming path).
      * Clear W1C immediately to prevent re-entry.
      */
-    if (((sr & LPSPI_SR_FCF_MASK) != 0U) && ((lpspi->IER & LPSPI_IER_FCIE_MASK) != 0U)) {
-        lpspi->SR = LPSPI_SR_FCF_MASK; /* W1C — clear before handler runs */
+    if (((sr & LPSPI_SR_FCF_MASK) != 0U) &&
+        ((lpspi->IER & LPSPI_IER_FCIE_MASK) != 0U)) {
+        lpspi->SR = LPSPI_SR_FCF_MASK;      /* W1C: clear before handler runs */
         lpspi_stream_isr_fcf_handler(dev);
     }
-#else
+    #else
     ARG_UNUSED(dev);
-#endif /* CONFIG_SPI_NXP_LPSPI_STREAM */
+    #endif /* CONFIG_SPI_NXP_LPSPI_STREAM */
 }
 
 #define LPSPI_DMA_COMMON_CFG(n)             \

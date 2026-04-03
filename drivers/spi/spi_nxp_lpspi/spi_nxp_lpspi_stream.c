@@ -248,42 +248,42 @@ void lpspi_stream_isr_fcf_handler(const struct device* dev) {
     dma_pos = (*stream->dma_daddr_reg - (uint32_t)cfg->ring_buf) %
               (uint32_t)cfg->ring_buf_size;
 
-    if (dma_pos == stream->write_pos) {
+    if (dma_pos != stream->write_pos) {
+        /* Step 1: snapshot current write position (= start of just-received frame) */
+        frame_start = stream->write_pos;
+
+        /* Step 2: advance write pointer for next frame */
+        stream->write_pos = (frame_start + (uint32_t)cfg->frame_size) % (uint32_t)cfg->ring_buf_size;
+
+        /* Step 3: get next descriptor slot (round-robin, no allocation) */
+        pool_idx = stream->desc_pool_head % (uint32_t)cfg->frame_pool_count;
+        stream->desc_pool_head++;
+
+        desc = &cfg->frame_pool[pool_idx];
+
+        /*
+        * Overrun guard: sys_snode_peek_next returns non-NULL while the node is
+        * still linked inside the k_fifo (k_fifo_get sets next=NULL on removal).
+        * If the consumer has not yet drained this slot, posting it again would
+        * corrupt the fifo linked list. Drop the frame, record the overrun, and
+        * let the consumer detect the gap via frame_idx discontinuity.
+        */
+        if (sys_slist_peek_next(&desc->node) != NULL) {
+            stream->overrun_count++;
+        }
+        else {
+            /* Step 4: populate descriptor */
+            desc->data = (cfg->ring_buf + frame_start);
+            desc->len  = cfg->frame_size;
+            desc->frame_idx += 1U;
+
+            /* Step 5: notify consumer thread (ISR-safe, non-blocking) */
+            k_fifo_put(cfg->frame_fifo, desc);
+        }
+    }
+    else {
         stream->spurious_count++;
-        return;
     }
-
-    /* Step 1: snapshot current write position (= start of just-received frame) */
-    frame_start = stream->write_pos;
-
-    /* Step 2: advance write pointer for next frame */
-    stream->write_pos = (frame_start + (uint32_t)cfg->frame_size) % (uint32_t)cfg->ring_buf_size;
-
-    /* Step 3: get next descriptor slot (round-robin, no allocation) */
-    pool_idx = stream->desc_pool_head % (uint32_t)cfg->frame_pool_count;
-    stream->desc_pool_head++;
-
-    desc = &cfg->frame_pool[pool_idx];
-
-    /*
-     * Overrun guard: sys_snode_peek_next returns non-NULL while the node is
-     * still linked inside the k_fifo (k_fifo_get sets next=NULL on removal).
-     * If the consumer has not yet drained this slot, posting it again would
-     * corrupt the fifo linked list.  Drop the frame, record the overrun, and
-     * let the consumer detect the gap via frame_idx discontinuity.
-     */
-    if (sys_slist_peek_next(&desc->node) != NULL) {
-        stream->overrun_count++;
-        return;
-    }
-
-    /* Step 4: populate descriptor */
-    desc->data = (cfg->ring_buf + frame_start);
-    desc->len  = cfg->frame_size;
-    desc->frame_idx += 1U;
-
-    /* Step 5: notify consumer thread (ISR-safe, non-blocking) */
-    k_fifo_put(cfg->frame_fifo, desc);
 }
 
 /* -------------------------------------------------------------------------
