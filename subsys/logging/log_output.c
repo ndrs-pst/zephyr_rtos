@@ -31,6 +31,77 @@
 #define DROPPED_COLOR_POSTFIX \
 	COND_CODE_1(CONFIG_LOG_BACKEND_SHOW_COLOR, (LOG_COLOR_CODE_DEFAULT), ())
 
+/* Timestamp format strings - evaluated at compile-time */
+/* Simple timestamp format (no formatting) */
+#define LOG_TS_SIMPLE_FMT \
+	COND_CODE_1(CONFIG_LOG_TIMESTAMP_64BIT, ("[%016llu] "), ("[%08lu] "))
+
+/* Linux timestamp format - base format depends on 64-bit and HIDE_US */
+#define LOG_TS_LINUX_FMT \
+	COND_CODE_1(CONFIG_LOG_TIMESTAMP_64BIT, \
+		(COND_CODE_1(CONFIG_LOG_OUTPUT_FORMAT_HIDE_US, \
+			("[%5llu.%03d] "), ("[%5llu.%06d] "))), \
+		(COND_CODE_1(CONFIG_LOG_OUTPUT_FORMAT_HIDE_US, \
+			("[%5lu.%03d] "), ("[%5lu.%06d] "))))
+
+/* Syslog with libc - format depends on HIDE_US */
+#define LOG_TS_SYSLOG_LIBC_FMT \
+	COND_CODE_1(CONFIG_LOG_OUTPUT_FORMAT_HIDE_US, ("%s.%03uZ "), ("%s.%06uZ "))
+
+/* Syslog without libc - format depends on HIDE_US */
+#define LOG_TS_SYSLOG_NO_LIBC_FMT \
+	COND_CODE_1(CONFIG_LOG_OUTPUT_FORMAT_HIDE_US, \
+		("%04u-%02u-%02uT%02u:%02u:%02u.%03uZ "), \
+		("%04u-%02u-%02uT%02u:%02u:%02u.%06uZ "))
+
+/* Date timestamp with libc - format depends on HIDE_US */
+#define LOG_TS_DATE_LIBC_FMT \
+	COND_CODE_1(CONFIG_LOG_OUTPUT_FORMAT_HIDE_US, ("[%s.%03u] "), ("[%s.%03u,%03u] "))
+
+/* Date timestamp without libc - format depends on HIDE_US */
+#define LOG_TS_DATE_NO_LIBC_FMT \
+	COND_CODE_1(CONFIG_LOG_OUTPUT_FORMAT_HIDE_US, \
+		("[%04u-%02u-%02u %02u:%02u:%02u.%03u] "), \
+		("[%04u-%02u-%02u %02u:%02u:%02u.%03u,%03u] "))
+
+/* ISO8601 timestamp with libc - format depends on HIDE_US */
+#define LOG_TS_ISO8601_LIBC_FMT \
+	COND_CODE_1(CONFIG_LOG_OUTPUT_FORMAT_HIDE_US, ("[%s,%03uZ] "), ("[%s,%06uZ] "))
+
+/* ISO8601 timestamp without libc - format depends on HIDE_US */
+#define LOG_TS_ISO8601_NO_LIBC_FMT \
+	COND_CODE_1(CONFIG_LOG_OUTPUT_FORMAT_HIDE_US, \
+		("[%04u-%02u-%02uT%02u:%02u:%02u,%03uZ] "), \
+		("[%04u-%02u-%02uT%02u:%02u:%02u,%06uZ] "))
+
+/* HH:MM:SS timestamp format - depends on HIDE_US */
+#define LOG_TS_HHMMSS_FMT \
+	COND_CODE_1(CONFIG_LOG_OUTPUT_FORMAT_HIDE_US, \
+		("[%02u:%02u:%02u.%03u] "), ("[%02u:%02u:%02u.%03u,%03u] "))
+
+/* Value selector macros - evaluates at compile-time */
+#define LOG_TS_VAL_SIMPLE(ts) (ts)
+#define LOG_TS_VAL_MS_OR_US(ms, us) \
+	COND_CODE_1(CONFIG_LOG_OUTPUT_FORMAT_HIDE_US, (ms), (ms * 1000U + us))
+
+/* Typedef for total_seconds based on timestamp width */
+#if IS_ENABLED(CONFIG_LOG_TIMESTAMP_64BIT)
+typedef uint64_t log_total_seconds_t;
+#else
+typedef uint32_t log_total_seconds_t;
+#endif
+
+/* Print call wrappers - eliminates conditionals in function body */
+#define LOG_PRINT_TS_DATE_LIBC(output, time_str, ms, us) \
+	print_formatted((output), LOG_TS_DATE_LIBC_FMT, (time_str), LOG_TS_VAL_MS_OR_US(ms, us))
+
+#define LOG_PRINT_TS_DATE_NO_LIBC(output, y, m, d, h, min, s, ms, us) \
+	print_formatted((output), LOG_TS_DATE_NO_LIBC_FMT, (y), (m), (d), (h), (min), (s), \
+		LOG_TS_VAL_MS_OR_US(ms, us))
+
+#define LOG_PRINT_TS_HHMMSS(output, h, m, s, ms, us) \
+	print_formatted((output), LOG_TS_HHMMSS_FMT, (h), (m), (s), LOG_TS_VAL_MS_OR_US(ms, us))
+
 static const char *const severity[] = {
 	NULL,
 	"err",
@@ -155,17 +226,9 @@ static int timestamp_print(const struct log_output *output,
 	uint32_t freq = log_output_context.timestamp_freq;
 
 	if (!format) {
-#ifndef CONFIG_LOG_TIMESTAMP_64BIT
-		length = print_formatted(output, "[%08lu] ", timestamp);
-#else
-		length = print_formatted(output, "[%016llu] ", timestamp);
-#endif
+		length = print_formatted(output, LOG_TS_SIMPLE_FMT, timestamp);
 	} else if (freq != 0U) {
-#ifndef CONFIG_LOG_TIMESTAMP_64BIT
-		uint32_t total_seconds;
-#else
-		uint64_t total_seconds;
-#endif
+		log_total_seconds_t total_seconds;
 		uint32_t remainder;
 		uint32_t ms;
 		uint32_t us;
@@ -175,7 +238,11 @@ static int timestamp_print(const struct log_output *output,
 
 		remainder = timestamp % freq;
 		ms = (remainder * 1000U) / freq;
-		us = (1000 * (remainder * 1000U - (ms * freq))) / freq;
+		if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_HIDE_US)) {
+			us = 0U;
+		} else {
+			us = (1000U * (remainder * 1000U - (ms * freq))) / freq;
+		}
 
 		if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) && flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
 #if defined(CONFIG_POSIX_C_LANG_SUPPORT_R)
@@ -187,29 +254,23 @@ static int timestamp_print(const struct log_output *output,
 			char time_str[sizeof("1970-01-01T00:00:00")];
 
 			strftime(time_str, sizeof(time_str), "%FT%T", &tm_timestamp);
-
-			length = print_formatted(output, "%s.%06uZ ",
-						 time_str, ms * 1000U + us);
+			length = print_formatted(output, LOG_TS_SYSLOG_LIBC_FMT, time_str,
+						 LOG_TS_VAL_MS_OR_US(ms, us));
 #else /* CONFIG_REQUIRES_FULL_LIBC */
-			length = print_formatted(output,
-					"%04u-%02u-%02uT%02u:%02u:%02u.%06uZ ",
+			length = print_formatted(output, LOG_TS_SYSLOG_NO_LIBC_FMT,
 					tm_timestamp.tm_year + 1900, tm_timestamp.tm_mon + 1,
 					tm_timestamp.tm_mday, tm_timestamp.tm_hour,
 					tm_timestamp.tm_min, tm_timestamp.tm_sec,
-					ms * 1000U + us);
+					LOG_TS_VAL_MS_OR_US(ms, us));
 #endif /* CONFIG_REQUIRES_FULL_LIBC */
 #endif /* CONFIG_POSIX_C_LANG_SUPPORT_R */
 		} else if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP)) {
 			length = log_custom_timestamp_print(output, timestamp, print_formatted);
 		} else {
 			if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP)) {
-				length = print_formatted(output,
-#if defined(CONFIG_LOG_TIMESTAMP_64BIT)
-							"[%5llu.%06d] ",
-#else
-							"[%5lu.%06d] ",
-#endif
-							total_seconds, ms * 1000U + us);
+				length = print_formatted(output, LOG_TS_LINUX_FMT,
+							 total_seconds,
+							 LOG_TS_VAL_MS_OR_US(ms, us));
 #if defined(CONFIG_POSIX_C_LANG_SUPPORT_R)
 			} else if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_DATE_TIMESTAMP)) {
 				struct tm tm_timestamp = {0};
@@ -220,16 +281,12 @@ static int timestamp_print(const struct log_output *output,
 				char time_str[sizeof("1970-01-01 00:00:00")];
 
 				strftime(time_str, sizeof(time_str), "%F %T", &tm_timestamp);
-
-				length = print_formatted(output, "[%s.%03u,%03u] ", time_str, ms,
-							 us);
+				length = LOG_PRINT_TS_DATE_LIBC(output, time_str, ms, us);
 #else /* CONFIG_REQUIRES_FULL_LIBC */
-				length = print_formatted(
-					output, "[%04u-%02u-%02u %02u:%02u:%02u.%03u,%03u] ",
+				length = LOG_PRINT_TS_DATE_NO_LIBC(output,
 					tm_timestamp.tm_year + 1900, tm_timestamp.tm_mon + 1,
 					tm_timestamp.tm_mday, tm_timestamp.tm_hour,
-					tm_timestamp.tm_min, tm_timestamp.tm_sec,
-					ms, us);
+					tm_timestamp.tm_min, tm_timestamp.tm_sec, ms, us);
 #endif /* CONFIG_REQUIRES_FULL_LIBC */
 			} else if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_ISO8601_TIMESTAMP)) {
 				struct tm tm_timestamp = {0};
@@ -240,17 +297,15 @@ static int timestamp_print(const struct log_output *output,
 				char time_str[sizeof("1970-01-01T00:00:00")];
 
 				strftime(time_str, sizeof(time_str), "%FT%T", &tm_timestamp);
-
-				length = print_formatted(output, "[%s,%06uZ] ", time_str,
-							 ms * 1000U + us);
+				length = print_formatted(output, LOG_TS_ISO8601_LIBC_FMT, time_str,
+							 LOG_TS_VAL_MS_OR_US(ms, us));
 #else /* CONFIG_REQUIRES_FULL_LIBC */
-				length = print_formatted(output,
-							 "[%04u-%02u-%02uT%02u:%02u:%02u,%06uZ] ",
+				length = print_formatted(output, LOG_TS_ISO8601_NO_LIBC_FMT,
 							 tm_timestamp.tm_year + 1900,
 							 tm_timestamp.tm_mon + 1,
 							 tm_timestamp.tm_mday, tm_timestamp.tm_hour,
 							 tm_timestamp.tm_min, tm_timestamp.tm_sec,
-							 ms * 1000U + us);
+							 LOG_TS_VAL_MS_OR_US(ms, us));
 #endif /* CONFIG_REQUIRES_FULL_LIBC */
 #endif /* CONFIG_POSIX_C_LANG_SUPPORT_R */
 			} else {
@@ -263,9 +318,8 @@ static int timestamp_print(const struct log_output *output,
 				seconds -= hours * 3600U;
 				mins = seconds / 60U;
 				seconds -= mins * 60U;
-				length = print_formatted(output,
-							"[%02u:%02u:%02u.%03u,%03u] ",
-							hours, mins, seconds, ms, us);
+
+				length = LOG_PRINT_TS_HHMMSS(output, hours, mins, seconds, ms, us);
 			}
 		}
 	} else {
