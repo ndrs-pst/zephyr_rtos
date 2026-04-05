@@ -168,6 +168,7 @@ static int level_to_rfc5424_severity(uint32_t level)
 static int out_func(int c, void *ctx)
 {
 	const struct log_output *out_ctx = (const struct log_output *)ctx;
+	struct log_output_control_block *control_block = out_ctx->control_block;
 	int idx;
 
 	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
@@ -175,18 +176,18 @@ static int out_func(int c, void *ctx)
 		/* Need that step for big endian */
 		char x = (char)c;
 
-		out_ctx->func((uint8_t *)&x, 1, out_ctx->control_block->ctx);
+		out_ctx->func((uint8_t *)&x, 1, control_block->ctx);
 		return 0;
 	}
 
-	if (out_ctx->control_block->offset == out_ctx->size) {
+	if (control_block->offset == out_ctx->size) {
 		log_output_flush(out_ctx);
 	}
 
-	idx = atomic_inc(&out_ctx->control_block->offset);
+	idx = atomic_inc(&control_block->offset);
 	out_ctx->buf[idx] = (uint8_t)c;
 
-	__ASSERT_NO_MSG(out_ctx->control_block->offset <= out_ctx->size);
+	__ASSERT_NO_MSG(control_block->offset <= out_ctx->size);
 
 	return 0;
 }
@@ -353,10 +354,7 @@ static void color_postfix(const struct log_output *output,
 
 
 static int ids_print(const struct log_output *output,
-		     bool level_on,
-		     bool func_on,
-		     bool thread_on,
-		     bool core_on,
+		     uint32_t flags,
 		     const char *domain,
 		     const char *source,
 		     k_tid_t tid,
@@ -365,11 +363,12 @@ static int ids_print(const struct log_output *output,
 {
 	int total = 0;
 
-	if (level_on) {
+	if ((flags & LOG_OUTPUT_FLAG_LEVEL) != 0U) {
 		total += print_formatted(output, "<%s> ", severity[level]);
 	}
 
-	if (IS_ENABLED(CONFIG_LOG_THREAD_ID_PREFIX) && thread_on) {
+	if (IS_ENABLED(CONFIG_LOG_THREAD_ID_PREFIX) &&
+	    ((flags & LOG_OUTPUT_FLAG_THREAD) != 0U)) {
 		if (tid == NULL) {
 			total += print_formatted(output, "[irq] ");
 		} else if (IS_ENABLED(CONFIG_THREAD_NAME)) {
@@ -385,7 +384,8 @@ static int ids_print(const struct log_output *output,
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_LOG_CORE_ID_PREFIX) && core_on) {
+	if (IS_ENABLED(CONFIG_LOG_CORE_ID_PREFIX) &&
+	    ((flags & LOG_OUTPUT_FLAG_CORE) != 0U)) {
 		total += print_formatted(output, "[core %d] ", core_id);
 	}
 
@@ -393,12 +393,8 @@ static int ids_print(const struct log_output *output,
 		total += print_formatted(output, "%s/", domain);
 	}
 
-	if (source) {
-		total += print_formatted(output,
-				(func_on &&
-				((1 << level) & LOG_FUNCTION_PREFIX_MASK)) ?
-				"%s." : "%s: ",
-				source);
+	if ((flags & LOG_OUTPUT_FLAG_SKIP_SOURCE) == 0U) {
+		total += print_formatted(output, "%s: ", source);
 	}
 
 	return total;
@@ -508,13 +504,8 @@ static bool is_synced(void)
 #endif
 
 static int syslog_print(const struct log_output *output,
-			bool level_on,
-			bool func_on,
 			bool *thread_on,
-			const char *domain,
-			const char *source,
 			k_tid_t tid,
-			uint32_t level,
 			uint32_t length)
 {
 	uint32_t len = length;
@@ -643,7 +634,6 @@ do_not_print_name:
 
 static uint32_t prefix_print(const struct log_output *output,
 			     uint32_t flags,
-			     bool func_on,
 			     log_timestamp_t timestamp,
 			     const char *domain,
 			     const char *source,
@@ -653,15 +643,6 @@ static uint32_t prefix_print(const struct log_output *output,
 {
 	__ASSERT_NO_MSG(level <= LOG_LEVEL_DBG);
 	uint32_t length = 0U;
-
-	bool stamp = flags & LOG_OUTPUT_FLAG_TIMESTAMP;
-	bool colors_on = flags & LOG_OUTPUT_FLAG_COLORS;
-	bool level_on = flags & LOG_OUTPUT_FLAG_LEVEL;
-	bool thread_on = IS_ENABLED(CONFIG_LOG_THREAD_ID_PREFIX) &&
-			 (flags & LOG_OUTPUT_FLAG_THREAD);
-	bool core_on = IS_ENABLED(CONFIG_LOG_CORE_ID_PREFIX) &&
-			 (flags & LOG_OUTPUT_FLAG_CORE);
-	bool source_off = flags & LOG_OUTPUT_FLAG_SKIP_SOURCE;
 	const char *tag = IS_ENABLED(CONFIG_LOG) ? z_log_get_tag() : NULL;
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
@@ -673,32 +654,35 @@ static uint32_t prefix_print(const struct log_output *output,
 		 */
 		static const int facility = 16; /* local0 */
 
-		length += print_formatted(
-			output,
-			 /* <PRI>VERSION */
-			"<%d>1 ",
-			facility * 8 +
-			level_to_rfc5424_severity(level));
+		length += print_formatted(output, "<%d>1 ",
+					  facility * 8 + level_to_rfc5424_severity(level));
 	}
 
 	if (tag) {
 		length += print_formatted(output, "%s ", tag);
 	}
 
-	if (stamp) {
+	if ((flags & LOG_OUTPUT_FLAG_TIMESTAMP) != 0U) {
 		length += timestamp_print(output, flags, timestamp);
 	}
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
 	    ((flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) != 0U)) {
-		length += syslog_print(output, level_on, func_on, &thread_on, domain,
-				       source_off ? NULL : source, tid, level, length);
+		bool thread_on = IS_ENABLED(CONFIG_LOG_THREAD_ID_PREFIX) &&
+				 ((flags & LOG_OUTPUT_FLAG_THREAD) != 0U);
+
+		length += syslog_print(output, &thread_on, tid, length);
+		/* syslog_print clears thread_on when it consumed the thread name
+		 * as APP-NAME; suppress the flag so ids_print does not repeat it. */
+		if (thread_on == false) {
+			flags &= ~(uint32_t)LOG_OUTPUT_FLAG_THREAD;
+		}
 	} else {
+		bool colors_on = ((flags & LOG_OUTPUT_FLAG_COLORS) != 0U);
 		color_prefix(output, colors_on, level);
 	}
 
-	length += ids_print(output, level_on, func_on, thread_on, core_on, domain,
-			    source_off ? NULL : source, tid, core_id, level);
+	length += ids_print(output, flags, domain, source, tid, core_id, level);
 
 	return length;
 }
@@ -728,7 +712,7 @@ void log_output_process(const struct log_output *output,
 	cbprintf_cb cb;
 
 	if (!raw_string) {
-		prefix_offset = prefix_print(output, flags, 0, timestamp,
+		prefix_offset = prefix_print(output, flags, timestamp,
 					     domain, source, tid, core_id, level);
 		cb = out_func;
 	} else {
