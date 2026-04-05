@@ -31,6 +31,7 @@
 #include <stdint.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
@@ -41,14 +42,31 @@ extern "C" {
  * @brief Frame descriptor posted by ISR to the thread notification k_fifo.
  *
  * The node field must remain first — it is used as the k_fifo link.
- * The caller must NOT free these descriptors; they are reused from the pool.
+ * Descriptors are reused round-robin from the pool; never freed.
+ * After processing a frame obtained via k_fifo_get(), the consumer MUST call
+ * spi_stream_frame_release() to allow the ISR to reuse this slot.
  */
 struct spi_stream_frame {
     sys_snode_t node;           /**< k_fifo linkage — MUST be first field */
     uintptr_t data;             /**< Pointer into ring buffer (zero-copy) */
     size_t   len;               /**< Frame length in bytes */
-    uint32_t frame_idx;         /**< Monotonic frame counter (wraps at UINT32_MAX) */
+    atomic_t in_fifo;           /**< 1 while queued/processing; 0 after spi_stream_frame_release() */
 };
+
+/**
+ * @brief Release a frame descriptor back to the ISR pool.
+ *
+ * Must be called after the consumer has finished accessing frame->data.
+ * Clears in_fifo so the ISR can reuse this descriptor slot.
+ * Failure to call this causes permanent overrun on this slot.
+ *
+ *   struct spi_stream_frame *f = k_fifo_get(&fifo, K_FOREVER);
+ *   process((uint8_t *)f->data, f->len);
+ *   spi_stream_frame_release(f);   // <-- must call before next use
+ */
+static inline void spi_stream_frame_release(struct spi_stream_frame* frame) {
+    atomic_set(&frame->in_fifo, 0);
+}
 
 /**
  * @brief Configuration for a continuous SPI peripheral RX stream.

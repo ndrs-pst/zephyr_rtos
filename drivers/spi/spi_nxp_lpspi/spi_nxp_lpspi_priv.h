@@ -128,11 +128,6 @@ struct spi_nxp_stream_data {
     uint32_t overrun_count;  /**< Descriptors dropped due to pool exhaustion */
 
     /* ------------------------------------------------------------------ */
-    /* Monotonic frame counter                                             */
-    /* ------------------------------------------------------------------ */
-    uint32_t frame_idx;
-
-    /* ------------------------------------------------------------------ */
     /* Spurious-FCF suppression                                            */
     /* dma_daddr_reg: cached pointer to the eDMA TCD_DADDR MMIO register  */
     /* for the RX channel.  Populated by lpspi_stream_dma_configure()     */

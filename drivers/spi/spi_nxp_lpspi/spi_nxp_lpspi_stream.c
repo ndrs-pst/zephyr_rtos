@@ -198,7 +198,7 @@ static int lpspi_stream_dma_configure(struct spi_dt_spec const* spec) {
          * Channels used for LPSPI streaming (ch4-7) satisfy this constraint.
          * Reading DADDR in the ISR is safe — MMIO register, no locking required.
          */
-        stream->dma_daddr_reg = lpspi_get_tcd_daddr_reg(dma_data->dma_rx.channel);
+        stream->dma_daddr_reg = lpspi_get_tcd_daddr_reg(dma_rx->channel);
     }
 
     return (rc);
@@ -214,76 +214,73 @@ static int lpspi_stream_dma_configure(struct spi_dt_spec const* spec) {
  * sleeping Zephyr API.  Execution time is O(1).
  *
  * Sequence:
- *   1. Record frame_start = current write_pos.
- *   2. Advance write_pos by frame_size (wraps modulo ring_buf_size).
- *   3. Acquire next descriptor from round-robin pool (no malloc).
- *   4. Fill descriptor fields.
- *   5. k_fifo_put() to notify consumer thread.
+ *   1. Spurious-FCF guard: skip if DMA has not advanced past write_pos.
+ *   2. Peek at the next pool slot (no head advance yet).
+ *   3. Overrun guard: if slot is still held by consumer, drop and return.
+ *   4. Advance write_pos and pool head, populate descriptor, publish.
+ *
+ * Previous overrun guard (removed)
+ * ---------------------------------
+ * The old guard used sys_slist_peek_next(&desc->node) != NULL.
+ * sys_slist_peek_next returns node->next, which is NULL for the tail (or sole)
+ * entry in the fifo regardless of whether it is still linked.  That made the
+ * guard blind to the most common case — a small pool where one slot is
+ * frequently the only pending entry — and would have corrupted the fifo list
+ * by calling k_fifo_put on an already-linked node.
+ * The atomic in_fifo flag has no such edge case: set by ISR at publish,
+ * cleared by consumer via spi_stream_frame_release() after processing.
+ *
+ * write_pos / desc_pool_head ordering
+ * ------------------------------------
+ * Both are advanced only inside the publish branch.  On overrun they are left
+ * unchanged so the same ring-buffer region is offered again on the next FCF —
+ * the DMA will have overwritten it by then, but that is unavoidable without a
+ * copy; at least the software pointers stay consistent.
  */
 void lpspi_stream_isr_fcf_handler(const struct device* dev) {
     struct lpspi_data* data = dev->data;
     struct spi_nxp_stream_data* stream = data->stream;
     const struct spi_stream_config* cfg = stream->cfg;
-    uint32_t frame_start;
     uint32_t dma_pos;
+    uint32_t frame_start;
     uint32_t pool_idx;
     struct spi_stream_frame* desc;
 
     /*
-     * Spurious-FCF guard: the master deasserted CS without clocking any data.
-     *
-     * The eDMA TCD_DADDR register reflects the live destination address
-     * i.e. where the DMA will write the NEXT byte.  Normalised to a ring-buffer offset
-     * it equals the byte position up to which data has been written so far.
-     * If it matches write_pos, no new data arrived and we must not advance
-     * write_pos or publish a descriptor.
-     *
-     * dma_daddr_reg is an MMIO register pointer cached at stream-start time
-     * (lpspi_stream_dma_configure).  Reading it here is ISR-safe.
-     *
-     * Note: on the very first FCF after stream start, DADDR == ring_buf base
-     * and write_pos == 0, so (dma_pos == write_pos) correctly suppresses the
-     * spurious event without any special first-call logic.
+     * Spurious-FCF guard.
+     * DADDR reflects where DMA writes the NEXT byte; normalised to a ring-buffer
+     * offset it equals how far DMA has written.  Equal to write_pos means no
+     * bytes arrived — suppress without touching any state.
      */
     dma_pos = (*stream->dma_daddr_reg - (uint32_t)cfg->ring_buf) %
               (uint32_t)cfg->ring_buf_size;
 
-    if (dma_pos != stream->write_pos) {
-        /* Step 1: snapshot current write position (= start of just-received frame) */
-        frame_start = stream->write_pos;
-
-        /* Step 2: advance write pointer for next frame */
-        stream->write_pos = (frame_start + (uint32_t)cfg->frame_size) % (uint32_t)cfg->ring_buf_size;
-
-        /* Step 3: get next descriptor slot (round-robin, no allocation) */
-        pool_idx = stream->desc_pool_head % (uint32_t)cfg->frame_pool_count;
-        stream->desc_pool_head++;
-
-        desc = &cfg->frame_pool[pool_idx];
-
-        /*
-        * Overrun guard: sys_snode_peek_next returns non-NULL while the node is
-        * still linked inside the k_fifo (k_fifo_get sets next=NULL on removal).
-        * If the consumer has not yet drained this slot, posting it again would
-        * corrupt the fifo linked list. Drop the frame, record the overrun, and
-        * let the consumer detect the gap via frame_idx discontinuity.
-        */
-        if (sys_slist_peek_next(&desc->node) != NULL) {
-            stream->overrun_count++;
-        }
-        else {
-            /* Step 4: populate descriptor */
-            desc->data = (cfg->ring_buf + frame_start);
-            desc->len  = cfg->frame_size;
-            desc->frame_idx += 1U;
-
-            /* Step 5: notify consumer thread (ISR-safe, non-blocking) */
-            k_fifo_put(cfg->frame_fifo, desc);
-        }
-    }
-    else {
+    if (dma_pos == stream->write_pos) {
         stream->spurious_count++;
+        return;
     }
+
+    /* Snapshot frame_start and peek pool slot before any mutation */
+    frame_start = stream->write_pos;
+    pool_idx    = stream->desc_pool_head % (uint32_t)cfg->frame_pool_count;
+    desc        = &cfg->frame_pool[pool_idx];
+
+    /* Overrun guard: slot still held by consumer */
+    if (atomic_get(&desc->in_fifo) != 0) {
+        stream->overrun_count++;
+        return;
+    }
+
+    /* Safe to publish - advance pointers and post descriptor */
+    stream->write_pos = (frame_start + (uint32_t)cfg->frame_size) %
+                        (uint32_t)cfg->ring_buf_size;
+    stream->desc_pool_head++;
+
+    desc->data = cfg->ring_buf + frame_start;
+    desc->len  = cfg->frame_size;
+
+    atomic_set(&desc->in_fifo, 1);
+    k_fifo_put(cfg->frame_fifo, desc);
 }
 
 /* -------------------------------------------------------------------------
@@ -307,9 +304,14 @@ int spi_read_stream_async_dt(struct spi_dt_spec const* spec, const struct spi_st
     stream->write_pos      = 0U;
     stream->desc_pool_head = 0U;
     stream->overrun_count  = 0U;
-    stream->frame_idx      = 0U;
     stream->spurious_count = 0U;
     /* stream->dma_daddr_reg is set by lpspi_stream_dma_configure() below */
+
+    /* Reset in_fifo for all pool slots - required on restart after stop,
+     * where slots may still be marked in-use from the previous session. */
+    for (size_t i = 0U; i < cfg->frame_pool_count; i++) {
+        cfg->frame_pool[i].in_fifo = 0;
+    }
 
     /* Configure LPSPI hardware for slave RX-only streaming */
     ret = lpspi_configure(dev, &spec->config);
