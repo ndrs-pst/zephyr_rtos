@@ -1,0 +1,14 @@
+# Copyright (c) 2026 NDR Solution (Thailand) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_NXP_S32
+	bool "NXP S32 hwinfo driver"
+	default y
+	depends on SOC_SERIES_S32K3
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable NXP S32K3 hwinfo driver.
+	  Provides reset cause via MC_RGM (DES + FES registers) and device
+	  identification via SIUL2 MIDR1-MIDR4 registers.
+	  Note: S32K358 has no unique silicon serial number; device ID reflects
+	  the MCU part/variant only.
