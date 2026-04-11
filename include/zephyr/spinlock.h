@@ -66,7 +66,7 @@ struct k_spinlock {
     #endif /* CONFIG_TICKET_SPINLOCKS */
     #endif /* CONFIG_SMP */
 
-    #if (defined(CONFIG_SPIN_VALIDATE) || defined(_MSC_VER)) /* #CUSTOM@NDRS */
+    #if defined(CONFIG_SPIN_VALIDATE)
     /* Stores the thread that holds the lock with the locking CPU
      * ID in the bottom two bits.
      */
@@ -80,9 +80,9 @@ struct k_spinlock {
     #endif /* CONFIG_SPIN_VALIDATE */
 
     /* #CUSTOM@NDRS */
-    #if (defined(CONFIG_NONZERO_SPINLOCK_SIZE) || defined(_MSC_VER)) && \
-         !defined(CONFIG_SMP)                                        && \
-         !defined(CONFIG_SPIN_VALIDATE)
+    #if (defined(CONFIG_NONZERO_SPINLOCK_SIZE) && \
+         !defined(CONFIG_SMP)                  && \
+         !defined(CONFIG_SPIN_VALIDATE))
     /* Add a dummy field to guarantee the spinlock has a non-zero
      * size. If neither CONFIG_SMP nor CONFIG_SPIN_VALIDATE are
      * defined then the k_spinlock struct would otherwise have no
@@ -207,7 +207,9 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock* l) {
     }
     #else
     while (!atomic_cas(&l->locked, 0, 1)) {
-        arch_spin_relax();
+        do {
+            arch_spin_relax();
+        } while (atomic_get(&l->locked) != 0);
     }
     #endif /* CONFIG_TICKET_SPINLOCKS */
     #endif /* CONFIG_SMP */
@@ -337,10 +339,11 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock* l,
  * @cond INTERNAL_HIDDEN
  */
 
-#if defined(CONFIG_SMP) && defined(CONFIG_TEST)
+#if defined(CONFIG_SMP) && (defined(CONFIG_TEST) || defined(CONFIG_ASSERT))
 /*
  * @brief Checks if spinlock is held by some CPU, including the local CPU.
- *        This API shouldn't be used outside the tests for spinlock
+ *        This should only be used in tests or assertions, not to make
+ *        runtime control flow decisions.
  *
  * @param l A pointer to the spinlock
  * @retval true - if spinlock is held by some CPU; false - otherwise
@@ -354,7 +357,7 @@ static ALWAYS_INLINE bool z_spin_is_locked(struct k_spinlock* l) {
     return (l->locked);
     #endif /* CONFIG_TICKET_SPINLOCKS */
 }
-#endif /* defined(CONFIG_SMP) && defined(CONFIG_TEST) */
+#endif /* defined(CONFIG_SMP) && (defined(CONFIG_TEST) || defined(CONFIG_ASSERT)) */
 
 /* Internal function: releases the lock, but leaves local interrupts disabled */
 static ALWAYS_INLINE void k_spin_release(struct k_spinlock* l) {

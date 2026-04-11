@@ -1257,8 +1257,31 @@ int i2c_stm32_configure_timing(const struct device* dev, uint32_t clock) {
     I2C_TypeDef* i2c = cfg->i2c;
     uint32_t timing = 0U;
     uint32_t idx;
-    uint32_t speed    = 0U;
-    uint32_t i2c_freq = cfg->bitrate;
+    uint32_t speed = 0U;
+    uint32_t i2c_freq;
+
+    switch (I2C_SPEED_GET(data->dev_config)) {
+        case I2C_SPEED_DT :
+            i2c_freq = cfg->bitrate;
+            break;
+
+        case I2C_SPEED_STANDARD :
+            i2c_freq = I2C_BITRATE_STANDARD;
+            break;
+
+        case I2C_SPEED_FAST :
+            i2c_freq = I2C_BITRATE_FAST;
+            break;
+
+        case I2C_SPEED_FAST_PLUS :
+            i2c_freq = I2C_BITRATE_FAST_PLUS;
+            break;
+
+        default :
+            LOG_ERR("i2c: speed ID %u (I2C_SPEED_*) not supported",
+            I2C_SPEED_GET(data->dev_config));
+            return (-EINVAL);
+    }
 
     /* Reset valid timing count at the beginning of each new computation */
     i2c_valid_timing_nbr = 0;
@@ -1412,17 +1435,20 @@ int i2c_stm32_transaction(const struct device* dev,
         }
         else {
             msg.flags = saved_flags;
-            flagsp    = next_msg_flags;
+            flagsp = next_msg_flags;
         }
+
         if ((msg.flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
             ret = i2c_stm32_msg_write(dev, &msg, flagsp, periph);
         }
         else {
             ret = i2c_stm32_msg_read(dev, &msg, flagsp, periph);
         }
+
         if (ret < 0) {
             break;
         }
+
         rest -= msg.len;
         msg.buf += msg.len;
         msg.len = rest;

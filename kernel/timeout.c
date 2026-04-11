@@ -213,9 +213,7 @@ int32_t z_get_next_timeout_expiry(void) {
     return (ret);
 }
 
-void sys_clock_announce(int32_t ticks) {
-    k_spinlock_key_t key = k_spin_lock(&timeout_lock);
-
+void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key) {
     /* We release the lock around the callbacks below, so on SMP
      * systems someone might be already running the loop.  Don't
      * race (which will cause parallel execution of "sequential"
@@ -263,6 +261,16 @@ void sys_clock_announce(int32_t ticks) {
     z_time_slice();
     #endif /* CONFIG_TIMESLICING */
 }
+
+#if defined(CONFIG_SMP) || defined(CONFIG_SPIN_VALIDATE)
+k_spinlock_key_t sys_clock_lock(void) {
+    return k_spin_lock(&timeout_lock);
+}
+
+void sys_clock_unlock(k_spinlock_key_t key) {
+    k_spin_unlock(&timeout_lock, key);
+}
+#endif
 
 int64_t sys_clock_tick_get(void) {
     uint64_t t = 0U;

@@ -2102,7 +2102,7 @@ static void tcp_resend_data(struct k_work* work) {
 out :
     k_mutex_unlock(&conn->lock);
 
-    if (conn_unref) {
+    if (conn_unref && (conn->state != TCP_UNUSED) && (conn->state != TCP_CLOSED)) {
         tcp_conn_close(conn, -ETIMEDOUT);
     }
 }
@@ -3859,9 +3859,10 @@ int net_tcp_put(struct net_context* context, bool force_close) {
             keep_alive_timer_stop(conn);
         }
     }
-    else if (conn->in_connect) {
+    else if (conn->in_connect && (conn->state != TCP_CLOSED) && (conn->state != TCP_UNUSED)) {
         conn->in_connect = false;
         k_sem_reset(&conn->connect_sem);
+        tcp_conn_close(conn, -ECONNABORTED);
     }
 
     k_mutex_unlock(&conn->lock);
@@ -4337,7 +4338,7 @@ int net_tcp_finalize(struct net_pkt* pkt, bool force_chksum) {
     tcp_hdr->chksum = 0U;
 
     if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt), type) || force_chksum) {
-        uint16_t chksum;
+        uint16_t chksum = 0;
         int ret;
 
         ret = net_calc_chksum_tcp(pkt, &chksum);
@@ -4361,7 +4362,7 @@ struct net_tcp_hdr* net_tcp_input(struct net_pkt* pkt,
     if (IS_ENABLED(CONFIG_NET_TCP_CHECKSUM) &&
         (net_if_need_calc_rx_checksum(net_pkt_iface(pkt), type) ||
          net_pkt_is_ip_reassembled(pkt))) {
-        uint16_t chksum;
+        uint16_t chksum = 0;
         int ret;
 
         ret = net_calc_chksum_tcp(pkt, &chksum);

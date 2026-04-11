@@ -80,6 +80,10 @@ Major enhancements with this release include:
   A new context switch implementation for ARM Cortex-M, enabled via
   :kconfig:option:`CONFIG_USE_SWITCH`, delivers significant performance improvements.
 
+**NAND flash support**
+  Added a new Flash Translation Layer (FTL) disk driver providing wear leveling and bad block
+  management, enabling NAND flash memories to be utilized as standard disk devices.
+
 **Developer experience improvements**
   This release adds several new tools and improvements to development and testing workflows:
 
@@ -133,9 +137,16 @@ The following CVEs are addressed by this release:
 
 * :cve:`2026-5067` Under embargo until 2026-05-23
 
+* :cve:`2026-5068` Under embargo until 2026-05-21
+
 * :cve:`2026-5071` Under embargo until 2026-05-18
 
 * :cve:`2026-5072` Under embargo until 2026-05-18
+
+* :cve:`2026-5589` Under embargo until 2026-06-03
+
+* :cve:`2026-5590` `Zephyr project bug tracker GHSA-4vqm-pw24-g9jp
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-4vqm-pw24-g9jp>`_
 
 API Changes
 ***********
@@ -409,6 +420,10 @@ New APIs and options
   * :dtcompatible:`jedec,mspi-nor` now allows MSPI configuration of read, write and
     control commands separately via devicetree.
 
+  * Added extended operations to the flash API to support marking blocks as bad
+    (:c:enum:`FLASH_EX_OP_MARK_BAD_BLOCK`) and checking if a block is bad
+    (:c:enum:`FLASH_EX_OP_IS_BAD_BLOCK`).
+
 * Haptics
 
   * Added error callback to API
@@ -451,9 +466,45 @@ New APIs and options
 
 * Networking
 
+  * CoAP
+
+    * :kconfig:option:`CONFIG_COAP_CLIENT_MULTICAST`
+
+  * DHCP
+
+    * :c:func:`net_dhcpv4_server_set_address_validator_cb`
+
+  * LwM2M
+
+    * :kconfig:option:`CONFIG_LWM2M_SEND_SCHEDULER`
+    * :kconfig:option:`CONFIG_LWM2M_IPSO_MAGNETOMETER`
+    * :c:func:`lwm2m_cache_free_slots_get`
+
+  * Misc
+
+    * :kconfig:option:`CONFIG_WIREGUARD`
+    * :kconfig:option:`CONFIG_NET_ZPERF_RAW_TX`
+    * :kconfig:option:`CONFIG_FTP_CLIENT`
+
+  * OpenThread
+
+    * :kconfig:option:`CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR`
+
+  * Sockets
+
+    * DTLS server socket now supports multiple parallel client sessions on a
+      single socket.
+    * :kconfig:option:`CONFIG_NET_SOCKETS_TLS_CONNECT_TIMEOUT`
+
   * Wi-Fi
 
     * Add support for Wi-Fi Direct (P2P) mode.
+    * Add support for WEP (Wired Equivalent Privacy) security. This is disabled by default
+      but can be enabled by :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP`
+    * Use PSA crypto by default instead of legacy one. This can be controlled by
+      :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA` option.
+    * :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_CLEANUP_INTERVAL`
+    * :kconfig:option:`CONFIG_WIFI_NM_HOSTAPD_CLEANUP_INTERVAL`
 
 * OTP
 
@@ -1705,6 +1756,14 @@ Libraries / Subsystems
     export of version information from Mbed TLS. If enabled, the
     :c:func:`mbedtls_version_get_number()` function will be available.
 
+  * Mbed TLS has been upgraded to version 4.1.0. From now on this repo will only include TLS
+    and X.509, while crypto support was moved to TF-PSA-Crypto. A new west module
+    has been introduced for the latter and it's based on upstream release 1.1.0.
+    Release notes for both projects can be found here:
+
+    * https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-4.1.0
+    * https://github.com/Mbed-TLS/TF-PSA-Crypto/releases/tag/tf-psa-crypto-1.1.0
+
 * Zbus
 
    * Added experimental proxy-agent communication with IPC backend support for
@@ -1718,6 +1777,9 @@ Other notable changes
 
   * https://trustedfirmware-m.readthedocs.io/en/tf-mv2.2.2/releases/2.2.1.html
   * https://trustedfirmware-m.readthedocs.io/en/tf-mv2.2.2/releases/2.2.2.html
+
+* TF-M NS interface headers are now automatically available to non-secure applications via the
+  ``zephyr_interface`` CMake library, removing the need to explicitly link against ``tfm_api``.
 
 * NXP SoC DTSI files have been reorganized by moving them into family-specific
   subdirectories under ``dts/arm/nxp``.

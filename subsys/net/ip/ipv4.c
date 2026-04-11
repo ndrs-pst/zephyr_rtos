@@ -131,7 +131,7 @@ int net_ipv4_finalize(struct net_pkt* pkt, uint8_t next_header_proto) {
     ipv4_hdr->proto = next_header_proto;
 
     if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV4_HEADER)) {
-        uint16_t chksum;
+        uint16_t chksum = 0;
         int ret;
 
         ipv4_hdr->chksum = 0;
@@ -342,7 +342,7 @@ enum net_verdict net_ipv4_input(struct net_pkt* pkt) {
     }
 
     if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV4_HEADER)) {
-        uint16_t chksum;
+        uint16_t chksum = 0;
         int ret;
 
         ret = net_calc_chksum_ipv4(pkt, &chksum);

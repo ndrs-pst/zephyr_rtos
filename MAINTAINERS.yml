@@ -270,6 +270,7 @@ ARM64 arch:
   collaborators:
     - npitre
     - JiafeiPan
+    - carlocaione
   files:
     - arch/arm64/
     - include/zephyr/arch/arm64/
@@ -2535,13 +2536,19 @@ Documentation Infrastructure:
     - drivers.stepper
 
 "Drivers: Syscon":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - carlocaione
+  collaborators:
+    - pdgendt
   files:
     - include/zephyr/drivers/syscon.h
     - drivers/syscon/
     - tests/drivers/syscon/
   tests:
     - drivers.syscon
+  labels:
+    - "area: Syscon"
 
 "Drivers: System timer":
   status: maintained
@@ -2972,7 +2979,8 @@ Heap Management:
 IPC:
   status: maintained
   maintainers:
-    - doki-nordic
+    - iuliana-prodan
+    - anangl
   collaborators:
     - arnopo
   files:
