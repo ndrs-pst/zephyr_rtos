@@ -34,11 +34,11 @@ extern "C" {
 
 /** @brief Line control signals. */
 enum uart_line_ctrl {
-	UART_LINE_CTRL_BAUD_RATE = BIT(0), /**< Baud rate */
-	UART_LINE_CTRL_RTS = BIT(1),       /**< Request To Send (RTS) */
-	UART_LINE_CTRL_DTR = BIT(2),       /**< Data Terminal Ready (DTR) */
-	UART_LINE_CTRL_DCD = BIT(3),       /**< Data Carrier Detect (DCD) */
-	UART_LINE_CTRL_DSR = BIT(4),       /**< Data Set Ready (DSR) */
+    UART_LINE_CTRL_BAUD_RATE = BIT(0),      /**< Baud rate */
+    UART_LINE_CTRL_RTS       = BIT(1),      /**< Request To Send (RTS) */
+    UART_LINE_CTRL_DTR       = BIT(2),      /**< Data Terminal Ready (DTR) */
+    UART_LINE_CTRL_DCD       = BIT(3),      /**< Data Carrier Detect (DCD) */
+    UART_LINE_CTRL_DSR       = BIT(4)       /**< Data Set Ready (DSR) */
 };
 
 /**
@@ -48,58 +48,59 @@ enum uart_line_ctrl {
  * receiving.
  */
 enum uart_rx_stop_reason {
-	/** @brief Overrun error */
-	UART_ERROR_OVERRUN = (1 << 0),
-	/** @brief Parity error */
-	UART_ERROR_PARITY  = (1 << 1),
-	/** @brief Framing error */
-	UART_ERROR_FRAMING = (1 << 2),
-	/**
-	 * @brief Break interrupt
-	 *
-	 * A break interrupt was received. This happens when the serial input
-	 * is held at a logic '0' state for longer than the sum of
-	 * start time + data bits + parity + stop bits.
-	 */
-	UART_BREAK = (1 << 3),
-	/**
-	 * @brief Collision error
-	 *
-	 * This error is raised when transmitted data does not match
-	 * received data. Typically this is useful in scenarios where
-	 * the TX and RX lines maybe connected together such as
-	 * RS-485 half-duplex. This error is only valid on UARTs that
-	 * support collision checking.
-	 */
-	UART_ERROR_COLLISION = (1 << 4),
-	/** @brief Noise error */
-	UART_ERROR_NOISE = (1 << 5),
+    /** @brief Overrun error */
+    UART_ERROR_OVERRUN = (1 << 0),
+    /** @brief Parity error */
+    UART_ERROR_PARITY  = (1 << 1),
+    /** @brief Framing error */
+    UART_ERROR_FRAMING = (1 << 2),
+    /**
+     * @brief Break interrupt
+     *
+     * A break interrupt was received. This happens when the serial input
+     * is held at a logic '0' state for longer than the sum of
+     * start time + data bits + parity + stop bits.
+     */
+    UART_BREAK = (1 << 3),
+    /**
+     * @brief Collision error
+     *
+     * This error is raised when transmitted data does not match
+     * received data. Typically this is useful in scenarios where
+     * the TX and RX lines maybe connected together such as
+     * RS-485 half-duplex. This error is only valid on UARTs that
+     * support collision checking.
+     */
+    UART_ERROR_COLLISION = (1 << 4),
+
+    /** @brief Noise error */
+    UART_ERROR_NOISE = (1 << 5),
 };
 
 /** @brief Parity modes */
 enum uart_config_parity {
-	UART_CFG_PARITY_NONE,   /**< No parity */
-	UART_CFG_PARITY_ODD,    /**< Odd parity */
-	UART_CFG_PARITY_EVEN,   /**< Even parity */
-	UART_CFG_PARITY_MARK,   /**< Mark parity */
-	UART_CFG_PARITY_SPACE,  /**< Space parity */
+    UART_CFG_PARITY_NONE,                   /**< No parity */
+    UART_CFG_PARITY_ODD,                    /**< Odd parity */
+    UART_CFG_PARITY_EVEN,                   /**< Even parity */
+    UART_CFG_PARITY_MARK,                   /**< Mark parity */
+    UART_CFG_PARITY_SPACE                   /**< Space parity */
 };
 
 /** @brief Number of stop bits. */
 enum uart_config_stop_bits {
-	UART_CFG_STOP_BITS_0_5,  /**< 0.5 stop bit */
-	UART_CFG_STOP_BITS_1,    /**< 1 stop bit */
-	UART_CFG_STOP_BITS_1_5,  /**< 1.5 stop bits */
-	UART_CFG_STOP_BITS_2,    /**< 2 stop bits */
+    UART_CFG_STOP_BITS_0_5,                 /**< 0.5 stop bit */
+    UART_CFG_STOP_BITS_1,                   /**< 1 stop bit */
+    UART_CFG_STOP_BITS_1_5,                 /**< 1.5 stop bits */
+    UART_CFG_STOP_BITS_2                    /**< 2 stop bits */
 };
 
 /** @brief Number of data bits. */
 enum uart_config_data_bits {
-	UART_CFG_DATA_BITS_5,    /**< 5 data bits */
-	UART_CFG_DATA_BITS_6,    /**< 6 data bits */
-	UART_CFG_DATA_BITS_7,    /**< 7 data bits */
-	UART_CFG_DATA_BITS_8,    /**< 8 data bits */
-	UART_CFG_DATA_BITS_9,    /**< 9 data bits */
+    UART_CFG_DATA_BITS_5,                   /**< 5 data bits */
+    UART_CFG_DATA_BITS_6,                   /**< 6 data bits */
+    UART_CFG_DATA_BITS_7,                   /**< 7 data bits */
+    UART_CFG_DATA_BITS_8,                   /**< 8 data bits */
+    UART_CFG_DATA_BITS_9                    /**< 9 data bits */
 };
 
 /**
@@ -110,21 +111,21 @@ enum uart_config_data_bits {
  * In other cases, flow control is managed by hardware/driver.
  */
 enum uart_config_flow_control {
-	UART_CFG_FLOW_CTRL_NONE,     /**< No flow control */
-	UART_CFG_FLOW_CTRL_RTS_CTS,  /**< RTS/CTS flow control */
-	UART_CFG_FLOW_CTRL_DTR_DSR,  /**< DTR/DSR flow control */
-	UART_CFG_FLOW_CTRL_RS485,    /**< RS485 flow control */
+    UART_CFG_FLOW_CTRL_NONE,                /**< No flow control */
+    UART_CFG_FLOW_CTRL_RTS_CTS,             /**< RTS/CTS flow control */
+    UART_CFG_FLOW_CTRL_DTR_DSR,             /**< DTR/DSR flow control */
+    UART_CFG_FLOW_CTRL_RS485                /**< RS485 flow control */
 };
 
 /**
  * @brief UART controller configuration structure
  */
 struct uart_config {
-	uint32_t baudrate;  /**< Baudrate setting in bps */
-	uint8_t parity;     /**< Parity bit, use @ref uart_config_parity */
-	uint8_t stop_bits;  /**< Stop bits, use @ref uart_config_stop_bits */
-	uint8_t data_bits;  /**< Data bits, use @ref uart_config_data_bits */
-	uint8_t flow_ctrl;  /**< Flow control setting, use @ref uart_config_flow_control */
+    uint32_t baudrate;                      /**< Baudrate setting in bps */
+    uint8_t  parity;                        /**< Parity bit, use @ref uart_config_parity */
+    uint8_t  stop_bits;                     /**< Stop bits, use @ref uart_config_stop_bits */
+    uint8_t  data_bits;                     /**< Data bits, use @ref uart_config_data_bits */
+    uint8_t  flow_ctrl;                     /**< Flow control setting, use @ref uart_config_flow_control */
 };
 
 /**
@@ -139,8 +140,8 @@ struct uart_config {
  * @param dev UART device instance.
  * @param user_data Arbitrary user data.
  */
-typedef void (*uart_irq_callback_user_data_t)(const struct device *dev,
-					      void *user_data);
+typedef void (*uart_irq_callback_user_data_t)(const struct device* dev,
+                                              void* user_data);
 
 /**
  * @}
@@ -199,65 +200,65 @@ typedef void (*uart_irq_callback_user_data_t)(const struct device *dev,
  *
  */
 enum uart_event_type {
-	/** @brief Whole TX buffer was transmitted. */
-	UART_TX_DONE,
-	/**
-	 * @brief Transmitting aborted due to timeout or uart_tx_abort call
-	 *
-	 * When flow control is enabled, there is a possibility that TX transfer
-	 * won't finish in the allotted time. Some data may have been
-	 * transferred, information about it can be found in event data.
-	 */
-	UART_TX_ABORTED,
-	/**
-	 * @brief Received data is ready for processing.
-	 *
-	 * This event is generated in the following cases:
-	 * - When RX timeout occurred, and data was stored in provided buffer.
-	 *   This can happen multiple times in the same buffer.
-	 * - When provided buffer is full.
-	 * - After uart_rx_disable().
-	 * - After stopping due to external event (#UART_RX_STOPPED).
-	 */
-	UART_RX_RDY,
-	/**
-	 * @brief Driver requests next buffer for continuous reception.
-	 *
-	 * This event is triggered when receiving has started for a new buffer,
-	 * i.e. it's time to provide a next buffer for a seamless switchover to
-	 * it. For continuous reliable receiving, user should provide another RX
-	 * buffer in response to this event, using uart_rx_buf_rsp function
-	 *
-	 * If uart_rx_buf_rsp is not called before current buffer
-	 * is filled up, receiving will stop.
-	 */
-	UART_RX_BUF_REQUEST,
-	/**
-	 * @brief Buffer is no longer used by UART driver.
-	 */
-	UART_RX_BUF_RELEASED,
-	/**
-	 * @brief RX has been disabled and can be reenabled.
-	 *
-	 * This event is generated whenever receiver has been stopped, disabled
-	 * or finished its operation and can be enabled again using
-	 * uart_rx_enable
-	 */
-	UART_RX_DISABLED,
-	/**
-	 * @brief RX has stopped due to external event.
-	 *
-	 * Reason is one of uart_rx_stop_reason.
-	 */
-	UART_RX_STOPPED,
+    /** @brief Whole TX buffer was transmitted. */
+    UART_TX_DONE,
+    /**
+     * @brief Transmitting aborted due to timeout or uart_tx_abort call
+     *
+     * When flow control is enabled, there is a possibility that TX transfer
+     * won't finish in the allotted time. Some data may have been
+     * transferred, information about it can be found in event data.
+     */
+    UART_TX_ABORTED,
+    /**
+     * @brief Received data is ready for processing.
+     *
+     * This event is generated in the following cases:
+     * - When RX timeout occurred, and data was stored in provided buffer.
+     *   This can happen multiple times in the same buffer.
+     * - When provided buffer is full.
+     * - After uart_rx_disable().
+     * - After stopping due to external event (#UART_RX_STOPPED).
+     */
+    UART_RX_RDY,
+    /**
+     * @brief Driver requests next buffer for continuous reception.
+     *
+     * This event is triggered when receiving has started for a new buffer,
+     * i.e. it's time to provide a next buffer for a seamless switchover to
+     * it. For continuous reliable receiving, user should provide another RX
+     * buffer in response to this event, using uart_rx_buf_rsp function
+     *
+     * If uart_rx_buf_rsp is not called before current buffer
+     * is filled up, receiving will stop.
+     */
+    UART_RX_BUF_REQUEST,
+    /**
+     * @brief Buffer is no longer used by UART driver.
+     */
+    UART_RX_BUF_RELEASED,
+    /**
+     * @brief RX has been disabled and can be reenabled.
+     *
+     * This event is generated whenever receiver has been stopped, disabled
+     * or finished its operation and can be enabled again using
+     * uart_rx_enable
+     */
+    UART_RX_DISABLED,
+    /**
+     * @brief RX has stopped due to external event.
+     *
+     * Reason is one of uart_rx_stop_reason.
+     */
+    UART_RX_STOPPED
 };
 
 /** @brief UART TX event data. */
 struct uart_event_tx {
-	/** @brief Pointer to current buffer. */
-	const uint8_t *buf;
-	/** @brief Number of bytes sent. */
-	size_t len;
+    /** @brief Pointer to current buffer. */
+    uint8_t const* buf;
+    /** @brief Number of bytes sent. */
+    size_t len;
 };
 
 /**
@@ -267,43 +268,44 @@ struct uart_event_tx {
  * rx.buf[rx.offset+rx.len].  That is, the length is relative to the offset.
  */
 struct uart_event_rx {
-	/** @brief Pointer to current buffer. */
-	uint8_t *buf;
-	/** @brief Currently received data offset in bytes. */
-	size_t offset;
-	/** @brief Number of new bytes received. */
-	size_t len;
+    /** @brief Pointer to current buffer. */
+    uint8_t* buf;
+    /** @brief Currently received data offset in bytes. */
+    size_t offset;
+    /** @brief Number of new bytes received. */
+    size_t len;
 };
 
 /** @brief UART RX buffer released event data. */
 struct uart_event_rx_buf {
-	/** @brief Pointer to buffer that is no longer in use. */
-	uint8_t *buf;
+    /** @brief Pointer to buffer that is no longer in use. */
+    uint8_t* buf;
 };
 
 /** @brief UART RX stopped data. */
 struct uart_event_rx_stop {
-	/** @brief Reason why receiving stopped */
-	enum uart_rx_stop_reason reason;
-	/** @brief Last received data. */
-	struct uart_event_rx data;
+    /** @brief Reason why receiving stopped */
+    enum uart_rx_stop_reason reason;
+    /** @brief Last received data. */
+    struct uart_event_rx data;
 };
 
 /** @brief Structure containing information about current event. */
 struct uart_event {
-	/** @brief Type of event */
-	enum uart_event_type type;
-	/** @brief Event data */
-	union uart_event_data {
-		/** @brief #UART_TX_DONE and #UART_TX_ABORTED events data. */
-		struct uart_event_tx tx;
-		/** @brief #UART_RX_RDY event data. */
-		struct uart_event_rx rx;
-		/** @brief #UART_RX_BUF_RELEASED event data. */
-		struct uart_event_rx_buf rx_buf;
-		/** @brief #UART_RX_STOPPED event data. */
-		struct uart_event_rx_stop rx_stop;
-	} data;
+    /** @brief Type of event */
+    enum uart_event_type type;
+
+    /** @brief Event data */
+    union uart_event_data {
+        /** @brief #UART_TX_DONE and #UART_TX_ABORTED events data. */
+        struct uart_event_tx tx;
+        /** @brief #UART_RX_RDY event data. */
+        struct uart_event_rx rx;
+        /** @brief #UART_RX_BUF_RELEASED event data. */
+        struct uart_event_rx_buf rx_buf;
+        /** @brief #UART_RX_STOPPED event data. */
+        struct uart_event_rx_stop rx_stop;
+    } data;
 };
 
 /**
@@ -315,8 +317,8 @@ struct uart_event {
  * @param evt Pointer to uart_event instance.
  * @param user_data Pointer to data specified by user.
  */
-typedef void (*uart_callback_t)(const struct device *dev,
-				struct uart_event *evt, void *user_data);
+typedef void (*uart_callback_t)(const struct device* dev,
+                                struct uart_event* evt, void* user_data);
 
 /**
  * @}
@@ -331,7 +333,7 @@ typedef void (*uart_callback_t)(const struct device *dev,
  * @retval err Error flags as defined in @ref uart_rx_stop_reason
  * @retval -ENOSYS If not implemented.
  */
-__syscall int uart_err_check(const struct device *dev);
+__syscall int uart_err_check(const struct device* dev);
 
 /**
  * @defgroup uart_polling Polling UART API
@@ -356,7 +358,7 @@ __syscall int uart_err_check(const struct device *dev);
  * @retval -ENOSYS If the operation is not implemented.
  * @retval -EBUSY If async reception was enabled using @ref uart_rx_enable
  */
-__syscall int uart_poll_in(const struct device *dev, unsigned char *p_char);
+__syscall int uart_poll_in(const struct device* dev, unsigned char* p_char);
 
 /**
  * @brief Read a 16-bit datum from the device for input.
@@ -377,7 +379,7 @@ __syscall int uart_poll_in(const struct device *dev, unsigned char *p_char);
  * @retval -ENOSYS If the function is not implemented.
  * @retval -EBUSY If async reception was enabled using @ref uart_rx_enable
  */
-__syscall int uart_poll_in_u16(const struct device *dev, uint16_t *p_u16);
+__syscall int uart_poll_in_u16(const struct device* dev, uint16_t* p_u16);
 
 /**
  * @brief Write a character to the device for output.
@@ -394,8 +396,7 @@ __syscall int uart_poll_in_u16(const struct device *dev, uint16_t *p_u16);
  * @param dev UART device instance.
  * @param out_char Character to send.
  */
-__syscall void uart_poll_out(const struct device *dev,
-			     unsigned char out_char);
+__syscall void uart_poll_out(const struct device* dev, unsigned char out_char);
 
 /**
  * @brief Write a 16-bit datum to the device for output.
@@ -411,7 +412,7 @@ __syscall void uart_poll_out(const struct device *dev,
  * @param dev UART device instance.
  * @param out_u16 Wide data to send.
  */
-__syscall void uart_poll_out_u16(const struct device *dev, uint16_t out_u16);
+__syscall void uart_poll_out_u16(const struct device* dev, uint16_t out_u16);
 
 /**
  * @}
@@ -431,8 +432,7 @@ __syscall void uart_poll_out_u16(const struct device *dev, uint16_t out_u16);
  *                  or driver does not support setting configuration in runtime.
  * @retval -ENOTSUP If API is not enabled.
  */
-__syscall int uart_configure(const struct device *dev,
-			     const struct uart_config *cfg);
+__syscall int uart_configure(const struct device* dev, const struct uart_config* cfg);
 
 /**
  * @brief Get UART configuration.
@@ -448,8 +448,7 @@ __syscall int uart_configure(const struct device *dev,
  * @retval -ENOSYS If driver does not support getting current configuration.
  * @retval -ENOTSUP If API is not enabled.
  */
-__syscall int uart_config_get(const struct device *dev,
-			      struct uart_config *cfg);
+__syscall int uart_config_get(const struct device* dev, struct uart_config* cfg);
 
 /**
  * @addtogroup uart_interrupt
@@ -476,7 +475,7 @@ __syscall int uart_config_get(const struct device *dev,
  * @retval -ENOSYS  if this function is not supported
  * @retval -ENOTSUP If API is not enabled.
  */
-static inline int uart_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size);
+static inline int uart_fifo_fill(const struct device* dev, const uint8_t* tx_data, int size);
 
 /**
  * @brief Fill FIFO with wide data.
@@ -498,7 +497,7 @@ static inline int uart_fifo_fill(const struct device *dev, const uint8_t *tx_dat
  * @retval -ENOSYS If this function is not implemented
  * @retval -ENOTSUP If API is not enabled.
  */
-static inline int uart_fifo_fill_u16(const struct device *dev, const uint16_t *tx_data, int size);
+static inline int uart_fifo_fill_u16(const struct device* dev, const uint16_t* tx_data, int size);
 
 /**
  * @brief Read data from FIFO.
@@ -521,7 +520,7 @@ static inline int uart_fifo_fill_u16(const struct device *dev, const uint16_t *t
  * @retval -ENOSYS If this function is not implemented.
  * @retval -ENOTSUP If API is not enabled.
  */
-static inline int uart_fifo_read(const struct device *dev, uint8_t *rx_data, const int size);
+static inline int uart_fifo_read(const struct device* dev, uint8_t* rx_data, const int size);
 
 /**
  * @brief Read wide data from FIFO.
@@ -544,21 +543,21 @@ static inline int uart_fifo_read(const struct device *dev, uint8_t *rx_data, con
  * @retval -ENOSYS If this function is not implemented.
  * @retval -ENOTSUP If API is not enabled.
  */
-static inline int uart_fifo_read_u16(const struct device *dev, uint16_t *rx_data, const int size);
+static inline int uart_fifo_read_u16(const struct device* dev, uint16_t* rx_data, const int size);
 
 /**
  * @brief Enable TX interrupt in IER.
  *
  * @param dev UART device instance.
  */
-__syscall void uart_irq_tx_enable(const struct device *dev);
+__syscall void uart_irq_tx_enable(const struct device* dev);
 
 /**
  * @brief Disable TX interrupt in IER.
  *
  * @param dev UART device instance.
  */
-__syscall void uart_irq_tx_disable(const struct device *dev);
+__syscall void uart_irq_tx_disable(const struct device* dev);
 
 /**
  * @brief Check if UART TX buffer can accept bytes
@@ -580,21 +579,21 @@ __syscall void uart_irq_tx_disable(const struct device *dev);
  * @retval -ENOSYS If this function is not implemented.
  * @retval -ENOTSUP If API is not enabled.
  */
-static inline int uart_irq_tx_ready(const struct device *dev);
+static inline int uart_irq_tx_ready(const struct device* dev);
 
 /**
  * @brief Enable RX interrupt.
  *
  * @param dev UART device instance.
  */
-__syscall void uart_irq_rx_enable(const struct device *dev);
+__syscall void uart_irq_rx_enable(const struct device* dev);
 
 /**
  * @brief Disable RX interrupt.
  *
  * @param dev UART device instance.
  */
-__syscall void uart_irq_rx_disable(const struct device *dev);
+__syscall void uart_irq_rx_disable(const struct device* dev);
 
 /**
  * @brief Check if UART TX block finished transmission
@@ -615,7 +614,7 @@ __syscall void uart_irq_rx_disable(const struct device *dev);
  * @retval -ENOSYS If this function is not implemented.
  * @retval -ENOTSUP If API is not enabled.
  */
-static inline int uart_irq_tx_complete(const struct device *dev);
+static inline int uart_irq_tx_complete(const struct device* dev);
 
 /**
  * @brief Check if UART RX buffer has a received char
@@ -637,21 +636,22 @@ static inline int uart_irq_tx_complete(const struct device *dev);
  * @retval -ENOSYS If this function is not implemented.
  * @retval -ENOTSUP If API is not enabled.
  */
-static inline int uart_irq_rx_ready(const struct device *dev);
+static inline int uart_irq_rx_ready(const struct device* dev);
+
 
 /**
  * @brief Enable error interrupt.
  *
  * @param dev UART device instance.
  */
-__syscall void uart_irq_err_enable(const struct device *dev);
+__syscall void uart_irq_err_enable(const struct device* dev);
 
 /**
  * @brief Disable error interrupt.
  *
  * @param dev UART device instance.
  */
-__syscall void uart_irq_err_disable(const struct device *dev);
+__syscall void uart_irq_err_disable(const struct device* dev);
 
 /**
  * @brief Check if any IRQs is pending.
@@ -663,7 +663,7 @@ __syscall void uart_irq_err_disable(const struct device *dev);
  * @retval -ENOSYS If this function is not implemented.
  * @retval -ENOTSUP If API is not enabled.
  */
-__syscall int uart_irq_is_pending(const struct device *dev);
+__syscall int uart_irq_is_pending(const struct device* dev);
 
 /**
  * @brief Start processing interrupts in ISR.
@@ -690,7 +690,7 @@ __syscall int uart_irq_is_pending(const struct device *dev);
  * @retval -ENOSYS If this function is not implemented.
  * @retval -ENOTSUP If API is not enabled.
  */
-__syscall int uart_irq_update(const struct device *dev);
+__syscall int uart_irq_update(const struct device* dev);
 
 /**
  * @brief Set the IRQ callback function pointer.
@@ -707,9 +707,9 @@ __syscall int uart_irq_update(const struct device *dev);
  * @retval -ENOSYS If this function is not implemented.
  * @retval -ENOTSUP If API is not enabled.
  */
-static inline int uart_irq_callback_user_data_set(const struct device *dev,
-						  uart_irq_callback_user_data_t cb,
-						  void *user_data);
+static inline int uart_irq_callback_user_data_set(const struct device* dev,
+                                                  uart_irq_callback_user_data_t cb,
+                                                  void* user_data);
 
 /**
  * @brief Set the IRQ callback function pointer (legacy).
@@ -724,8 +724,8 @@ static inline int uart_irq_callback_user_data_set(const struct device *dev,
  * @retval -ENOSYS If this function is not implemented.
  * @retval -ENOTSUP If API is not enabled.
  */
-static inline int uart_irq_callback_set(const struct device *dev,
-					 uart_irq_callback_user_data_t cb);
+static inline int uart_irq_callback_set(const struct device* dev,
+                                        uart_irq_callback_user_data_t cb);
 
 /**
  * @}
@@ -751,9 +751,9 @@ static inline int uart_irq_callback_set(const struct device *dev,
  * @retval -ENOSYS If not supported by the device.
  * @retval -ENOTSUP If API not enabled.
  */
-static inline int uart_callback_set(const struct device *dev,
-				    uart_callback_t callback,
-				    void *user_data);
+static inline int uart_callback_set(const struct device* dev,
+                                    uart_callback_t callback,
+                                    void* user_data);
 
 /**
  * @brief Send given number of bytes from buffer through UART.
@@ -764,17 +764,17 @@ static inline int uart_callback_set(const struct device *dev,
  * @param dev     UART device instance.
  * @param buf     Pointer to transmit buffer.
  * @param len     Length of transmit buffer.
- * @param timeout Timeout in microseconds. Valid only if flow control is
- *		  enabled. @ref SYS_FOREVER_US disables timeout.
+ * @param tmout_us Timeout in microseconds. Valid only if flow control is
+ *                 enabled. @ref SYS_FOREVER_US disables timeout.
  *
  * @retval 0 If successful.
  * @retval -ENOTSUP If API is not enabled.
  * @retval -EBUSY If There is already an ongoing transfer.
  * @retval -errno Other negative errno value in case of failure.
  */
-__syscall int uart_tx(const struct device *dev, const uint8_t *buf,
-		      size_t len,
-		      int32_t timeout);
+__syscall int uart_tx(const struct device* dev, uint8_t const* buf,
+                      size_t len,
+                      int32_t tmout_us);
 
 /**
  * @brief Send given number of datum from buffer through UART.
@@ -785,16 +785,16 @@ __syscall int uart_tx(const struct device *dev, const uint8_t *buf,
  * @param dev     UART device instance.
  * @param buf     Pointer to wide data transmit buffer.
  * @param len     Length of wide data transmit buffer.
- * @param timeout Timeout in milliseconds. Valid only if flow control is
- *		  enabled. @ref SYS_FOREVER_MS disables timeout.
+ * @param tmout_ms Timeout in milliseconds. Valid only if flow control is
+ *                 enabled. @ref SYS_FOREVER_MS disables timeout.
  *
  * @retval 0 If successful.
  * @retval -ENOTSUP If API is not enabled.
  * @retval -EBUSY If there is already an ongoing transfer.
  * @retval -errno Other negative errno value in case of failure.
  */
-__syscall int uart_tx_u16(const struct device *dev, const uint16_t *buf,
-			  size_t len, int32_t timeout);
+__syscall int uart_tx_u16(const struct device* dev, uint16_t const* buf,
+                          size_t len, int32_t tmout_ms);
 
 /**
  * @brief Abort current TX transmission.
@@ -808,7 +808,7 @@ __syscall int uart_tx_u16(const struct device *dev, const uint16_t *buf,
  * @retval -EFAULT There is no active transmission.
  * @retval -errno Other negative errno value in case of failure.
  */
-__syscall int uart_tx_abort(const struct device *dev);
+__syscall int uart_tx_abort(const struct device* dev);
 
 /**
  * @brief Start receiving data through UART.
@@ -820,10 +820,10 @@ __syscall int uart_tx_abort(const struct device *dev);
  * @param dev     UART device instance.
  * @param buf     Pointer to receive buffer.
  * @param len     Buffer length.
- * @param timeout Inactivity period after receiving at least a byte which
- *		  triggers  #UART_RX_RDY event. Given in microseconds.
- *		  @ref SYS_FOREVER_US disables timeout. See @ref uart_event_type
- *		  for details.
+ * @param tmout_us Inactivity period after receiving at least a byte which
+ *        triggers  #UART_RX_RDY event. Given in microseconds.
+ * @ref SYS_FOREVER_US disables timeout. See @ref uart_event_type
+ *      for details.
  *
  * @retval 0 If successful.
  * @retval -ENOTSUP If API is not enabled.
@@ -831,9 +831,9 @@ __syscall int uart_tx_abort(const struct device *dev);
  * @retval -errno Other negative errno value in case of failure.
  *
  */
-__syscall int uart_rx_enable(const struct device *dev, uint8_t *buf,
-			     size_t len,
-			     int32_t timeout);
+__syscall int uart_rx_enable(const struct device* dev, uint8_t* buf,
+                             size_t len,
+                             int32_t tmout_us);
 
 /**
  * @brief Start receiving wide data through UART.
@@ -845,10 +845,10 @@ __syscall int uart_rx_enable(const struct device *dev, uint8_t *buf,
  * @param dev     UART device instance.
  * @param buf     Pointer to wide data receive buffer.
  * @param len     Buffer length.
- * @param timeout Inactivity period after receiving at least a byte which
- *		  triggers  #UART_RX_RDY event. Given in milliseconds.
- *		  @ref SYS_FOREVER_MS disables timeout. See
- *		  @ref uart_event_type for details.
+ * @param timeout_ms Inactivity period after receiving at least a byte which
+ *        triggers  #UART_RX_RDY event. Given in milliseconds.
+ *        @ref SYS_FOREVER_MS disables timeout. See
+ *        @ref uart_event_type for details.
  *
  * @retval 0 If successful.
  * @retval -ENOTSUP If API is not enabled.
@@ -856,8 +856,8 @@ __syscall int uart_rx_enable(const struct device *dev, uint8_t *buf,
  * @retval -errno Other negative errno value in case of failure.
  *
  */
-__syscall int uart_rx_enable_u16(const struct device *dev, uint16_t *buf,
-				 size_t len, int32_t timeout);
+__syscall int uart_rx_enable_u16(const struct device* dev, uint16_t* buf,
+                                 size_t len, int32_t tmout_ms);
 
 /**
  * @brief Provide receive buffer in response to #UART_RX_BUF_REQUEST event.
@@ -879,8 +879,8 @@ __syscall int uart_rx_enable_u16(const struct device *dev, uint16_t *buf,
  * @retval -EACCES Receiver is already disabled (function called too late?).
  * @retval -errno Other negative errno value in case of failure.
  */
-static inline int uart_rx_buf_rsp(const struct device *dev, uint8_t *buf,
-				  size_t len);
+static inline int uart_rx_buf_rsp(const struct device* dev, uint8_t* buf,
+                                  size_t len);
 
 /**
  * @brief Provide wide data receive buffer in response to #UART_RX_BUF_REQUEST
@@ -903,8 +903,8 @@ static inline int uart_rx_buf_rsp(const struct device *dev, uint8_t *buf,
  * @retval -EACCES Receiver is already disabled (function called too late?).
  * @retval -errno Other negative errno value in case of failure.
  */
-static inline int uart_rx_buf_rsp_u16(const struct device *dev, uint16_t *buf,
-				      size_t len);
+static inline int uart_rx_buf_rsp_u16(const struct device* dev, uint16_t* buf,
+                                      size_t len);
 
 /**
  * @brief Disable RX
@@ -921,7 +921,7 @@ static inline int uart_rx_buf_rsp_u16(const struct device *dev, uint16_t *buf,
  * @retval -EFAULT There is no active reception.
  * @retval -errno Other negative errno value in case of failure.
  */
-__syscall int uart_rx_disable(const struct device *dev);
+__syscall int uart_rx_disable(const struct device* dev);
 
 /**
  * @}
@@ -939,8 +939,7 @@ __syscall int uart_rx_disable(const struct device *dev);
  * @retval -ENOTSUP If API is not enabled.
  * @retval -errno Other negative errno value in case of failure.
  */
-__syscall int uart_line_ctrl_set(const struct device *dev,
-				 uint32_t ctrl, uint32_t val);
+__syscall int uart_line_ctrl_set(const struct device* dev, uint32_t ctrl, uint32_t val);
 
 /**
  * @brief Retrieve line control for UART.
@@ -954,8 +953,7 @@ __syscall int uart_line_ctrl_set(const struct device *dev,
  * @retval -ENOTSUP If API is not enabled.
  * @retval -errno Other negative errno value in case of failure.
  */
-__syscall int uart_line_ctrl_get(const struct device *dev, uint32_t ctrl,
-				 uint32_t *val);
+__syscall int uart_line_ctrl_get(const struct device* dev, uint32_t ctrl, uint32_t* val);
 
 /**
  * @brief Send extra command to driver.
@@ -972,7 +970,7 @@ __syscall int uart_line_ctrl_get(const struct device *dev, uint32_t ctrl,
  * @retval -ENOTSUP If API is not enabled.
  * @retval -errno Other negative errno value in case of failure.
  */
-__syscall int uart_drv_cmd(const struct device *dev, uint32_t cmd, uint32_t p);
+__syscall int uart_drv_cmd(const struct device* dev, uint32_t cmd, uint32_t p);
 
 #ifdef __cplusplus
 }

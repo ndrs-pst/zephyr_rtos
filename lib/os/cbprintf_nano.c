@@ -73,15 +73,20 @@ static inline int convert_value(uint_value_type num, unsigned int base,
  *
  * @return printed byte count if CONFIG_CBPRINTF_LIBC_SUBSTS is set
  */
-int z_cbvprintf_impl(cbprintf_cb __out, void *ctx, const char *fmt,
+int z_cbvprintf_impl(cbprintf_cb cb_out, void *ctx, const char *fmt,
 		     va_list ap, uint32_t flags)
 {
 	size_t count = 0;
 	char buf[DIGITS_BUFLEN];
-	char *prefix, *data;
-	int min_width, precision, data_len;
-	char padding_mode, length_mod, special;
-	cbprintf_cb_local out = __out;
+	char const* prefix;
+	char const* data;
+	int min_width;
+	int precision;
+	int data_len;
+	char padding_mode;
+	char length_mod;
+    char special;
+	cbprintf_cb_local out = (cbprintf_cb_local)cb_out;
 
 	const bool tagged_ap = (flags & Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS)
 			       == Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS;
@@ -233,7 +238,7 @@ start:
 			}
 
 			if (*fmt != 'u' && (int_value_type)d < 0) {
-				d = -d;
+				d = -(int_value_type)d;
 				prefix = "-";
 				min_width--;
 			} else if (special == ' ') {

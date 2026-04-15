@@ -93,11 +93,11 @@ static int spi_mcux_transfer_next_packet(const struct device *dev)
 	dspi_transfer_t transfer;
 	status_t status;
 
-	if ((ctx->tx_len == 0) && (ctx->rx_len == 0)) {
+	if ((ctx->tx.len == 0) && (ctx->rx.len == 0)) {
 		/* nothing left to rx or tx, we're done! */
 		LOG_DBG("spi transceive done");
-		spi_context_cs_control(&data->ctx, false);
-		spi_context_complete(&data->ctx, dev, 0);
+		spi_context_cs_control(ctx, false);
+		spi_context_complete(ctx, dev, 0);
 		return 0;
 	}
 
@@ -105,7 +105,7 @@ static int spi_mcux_transfer_next_packet(const struct device *dev)
 
 	if (!config->is_dma_chn_shared) {
 		/* start dma directly in not shared mode */
-		if (ctx->tx_len != 0) {
+		if (ctx->tx.len != 0) {
 			int ret = 0;
 
 			LOG_DBG("Starting DMA Ch%u",
@@ -119,7 +119,7 @@ static int spi_mcux_transfer_next_packet(const struct device *dev)
 			}
 		}
 
-		if (ctx->rx_len != 0) {
+		if (ctx->rx.len != 0) {
 			int ret = 0;
 
 			LOG_DBG("Starting DMA Ch%u",
@@ -153,29 +153,29 @@ static int spi_mcux_transfer_next_packet(const struct device *dev)
 	transfer.configFlags = kDSPI_MasterCtar0 | kDSPI_MasterPcsContinuous |
 			       (ctx->config->slave << DSPI_MASTER_PCS_SHIFT);
 
-	if (ctx->tx_len == 0) {
+	if (ctx->tx.len == 0) {
 		/* rx only, nothing to tx */
 		transfer.txData = NULL;
 		transfer.rxData = ctx->rx_buf;
-		transfer.dataSize = ctx->rx_len;
-	} else if (ctx->rx_len == 0) {
+		transfer.dataSize = ctx->rx.len;
+	} else if (ctx->rx.len == 0) {
 		/* tx only, nothing to rx */
 		transfer.txData = (uint8_t *) ctx->tx_buf;
 		transfer.rxData = NULL;
-		transfer.dataSize = ctx->tx_len;
-	} else if (ctx->tx_len == ctx->rx_len) {
+		transfer.dataSize = ctx->tx.len;
+	} else if (ctx->tx.len == ctx->rx.len) {
 		/* rx and tx are the same length */
 		transfer.txData = (uint8_t *) ctx->tx_buf;
 		transfer.rxData = ctx->rx_buf;
-		transfer.dataSize = ctx->tx_len;
-	} else if (ctx->tx_len > ctx->rx_len) {
+		transfer.dataSize = ctx->tx.len;
+	} else if (ctx->tx.len > ctx->rx.len) {
 		/* Break up the tx into multiple transfers so we don't have to
 		 * rx into a longer intermediate buffer. Leave chip select
 		 * active between transfers.
 		 */
 		transfer.txData = (uint8_t *) ctx->tx_buf;
 		transfer.rxData = ctx->rx_buf;
-		transfer.dataSize = ctx->rx_len;
+		transfer.dataSize = ctx->rx.len;
 		transfer.configFlags |= kDSPI_MasterActiveAfterTransfer;
 	} else {
 		/* Break up the rx into multiple transfers so we don't have to
@@ -184,11 +184,11 @@ static int spi_mcux_transfer_next_packet(const struct device *dev)
 		 */
 		transfer.txData = (uint8_t *) ctx->tx_buf;
 		transfer.rxData = ctx->rx_buf;
-		transfer.dataSize = ctx->tx_len;
+		transfer.dataSize = ctx->tx.len;
 		transfer.configFlags |= kDSPI_MasterActiveAfterTransfer;
 	}
 
-	if (!(ctx->tx_count <= 1 && ctx->rx_count <= 1)) {
+	if (!(ctx->tx.count <= 1 && ctx->rx.count <= 1)) {
 		transfer.configFlags |= kDSPI_MasterActiveAfterTransfer;
 	}
 
@@ -269,10 +269,10 @@ static int mcux_spi_context_data_update(const struct device *dev)
 #ifdef CONFIG_MCUX_DSPI_EDMA_SHUFFLE_DATA
 	/* only used when use inner buffer to translate tx format */
 	if (CONFIG_MCUX_DSPI_BUFFER_SIZE * 4 <
-	    get_size_byte_by_frame_size(ctx->current_tx->len, frame_size_bit)) {
+	    get_size_byte_by_frame_size(ctx->tx.current->len, frame_size_bit)) {
 		/* inner buffer can not hold all transferred data */
 		LOG_ERR("inner buffer is too small to hold all data esp %d, act %d",
-			ctx->current_tx->len * 8 / frame_size_bit,
+			ctx->tx.current->len * 8 / frame_size_bit,
 			(CONFIG_MCUX_DSPI_BUFFER_SIZE * 4 / frame_size_bit));
 		return -EINVAL;
 	}
@@ -290,11 +290,11 @@ static int mcux_spi_context_data_update(const struct device *dev)
 				*pcdata |= temp_data;
 				pcdata++;
 				i++;
-			} while (i < ctx->current_tx->len &&
+			} while (i < ctx->tx.current->len &&
 				 i < data->inner_tx_buffer->len);
 		}
 		/* indicate it is the last data */
-		if (i == ctx->current_tx->len) {
+		if (i == ctx->tx.current->len) {
 			--pcdata;
 			*pcdata |= SPI_PUSHR_EOQ(1) | SPI_PUSHR_CTCNT(1);
 			LOG_DBG("last pcdata is %x", *pcdata);
@@ -310,10 +310,10 @@ static int mcux_spi_context_data_update(const struct device *dev)
 				pdata++;
 				pcdata++;
 				i += 2;
-			} while (i < ctx->current_tx->len &&
+			} while (i < ctx->tx.current->len &&
 				 i < data->inner_tx_buffer->len);
 		}
-		if (i == ctx->current_tx->len) {
+		if (i == ctx->tx.current->len) {
 			/* indicate it is the last data */
 			--pcdata;
 			*pcdata |= SPI_PUSHR_EOQ(1);
@@ -341,23 +341,23 @@ static int update_tx_dma(const struct device *dev)
 	bool rx_only = false;
 
 	DSPI_DisableDMA(base, (uint32_t)kDSPI_TxDmaEnable);
-	if (data->ctx.tx_len == 0) {
+	if (data->ctx.tx.len == 0) {
 		LOG_DBG("empty data no need to setup DMA");
 		return 0;
 	}
 
-	if (data->ctx.current_tx && data->ctx.current_tx->len > 0 &&
-	    data->ctx.current_tx->buf != NULL) {
+	if (data->ctx.tx.current && data->ctx.tx.current->len > 0 &&
+	    data->ctx.tx.current->buf != NULL) {
 #ifdef CONFIG_MCUX_DSPI_EDMA_SHUFFLE_DATA
 		tx_size = get_size_byte_by_frame_size(data->transfer_len,
 						      frame_size);
 		tx_buf = data->inner_tx_buffer->buf;
 #else
 		/* expect the buffer is pre-set */
-		tx_size = get_size_byte_by_frame_size(data->ctx.current_tx->len,
+		tx_size = get_size_byte_by_frame_size(data->ctx.tx.current->len,
 						      frame_size);
 		LOG_DBG("tx size is %d", tx_size);
-		tx_buf = data->ctx.current_tx->buf;
+		tx_buf = data->ctx.tx.current->buf;
 #endif
 	} else {
 		tx_buf = data->inner_tx_buffer->buf;
@@ -396,12 +396,12 @@ static int update_rx_dma(const struct device *dev)
 	bool tx_only = false;
 
 	DSPI_DisableDMA(base, (uint32_t)kDSPI_RxDmaEnable);
-	if (data->ctx.rx_len == 0) {
+	if (data->ctx.rx.len == 0) {
 		LOG_DBG("empty data no need to setup DMA");
 		return 0;
 	}
 
-	if (data->ctx.current_rx) {
+	if (data->ctx.rx.current) {
 		rx_size = data->transfer_len;
 		if (data->ctx.rx_buf != NULL) {
 			rx_buf = data->ctx.rx_buf;
@@ -417,7 +417,7 @@ static int update_rx_dma(const struct device *dev)
 	}
 
 	if (config->is_dma_chn_shared) {
-		if (data->ctx.rx_len == 1) {
+		if (data->ctx.rx.len == 1) {
 			/* do not link tx on last frame*/
 			LOG_DBG("do not link tx/rx channel for last one");
 			data->rx_dma_config.dma_cfg.source_chaining_en = 0;
@@ -489,23 +489,23 @@ static void dma_callback(const struct device *dma_dev, void *callback_arg,
 	}
 
 	if (channel == data->tx_dma_config.dma_channel) {
-		LOG_DBG("ctx.tx_len is %d", data->ctx.tx_len);
-		LOG_DBG("tx count %d", data->ctx.tx_count);
+		LOG_DBG("ctx.tx.len is %d", data->ctx.tx.len);
+		LOG_DBG("tx count %d", data->ctx.tx.count);
 
 		spi_context_update_tx(&data->ctx, 1, data->transfer_len);
-		LOG_DBG("tx count %d", data->ctx.tx_count);
+		LOG_DBG("tx count %d", data->ctx.tx.count);
 		LOG_DBG("tx buf/len %p/%zu", data->ctx.tx_buf,
-			data->ctx.tx_len);
+			data->ctx.tx.len);
 		data->tx_transfer_count++;
 		/* tx done */
 	} else {
-		LOG_DBG("ctx.rx_len is %d", data->ctx.rx_len);
-		LOG_DBG("rx count %d", data->ctx.rx_count);
+		LOG_DBG("ctx.rx.len is %d", data->ctx.rx.len);
+		LOG_DBG("rx count %d", data->ctx.rx.count);
 		spi_context_update_rx(&data->ctx, 1, data->transfer_len);
-		LOG_DBG("rx count %d", data->ctx.rx_count);
+		LOG_DBG("rx count %d", data->ctx.rx.count);
 		/* setup the inner tx buffer */
 		LOG_DBG("rx buf/len %p/%zu", data->ctx.rx_buf,
-			data->ctx.rx_len);
+			data->ctx.rx.len);
 		data->rx_transfer_count++;
 	}
 
@@ -521,21 +521,21 @@ static void dma_callback(const struct device *dma_dev, void *callback_arg,
 		if (config->is_dma_chn_shared) {
 			data->transfer_len = data->frame_size >> 3;
 		} else {
-			if (data->ctx.tx_len == 0) {
-				data->transfer_len = data->ctx.rx_len;
-			} else if (data->ctx.rx_len == 0) {
-				data->transfer_len = data->ctx.tx_len;
+			if (data->ctx.tx.len == 0) {
+				data->transfer_len = data->ctx.rx.len;
+			} else if (data->ctx.rx.len == 0) {
+				data->transfer_len = data->ctx.tx.len;
 			} else {
 				data->transfer_len =
-					data->ctx.tx_len > data->ctx.rx_len ?
-						data->ctx.rx_len :
-						data->ctx.tx_len;
+					data->ctx.tx.len > data->ctx.rx.len ?
+						data->ctx.rx.len :
+						data->ctx.tx.len;
 			}
 		}
 		update_tx_dma(dev);
 		update_rx_dma(dev);
 		spi_mcux_transfer_next_packet(dev);
-	} else if (data->ctx.rx_len == 0 && data->ctx.tx_len == 0) {
+	} else if (data->ctx.rx.len == 0 && data->ctx.tx.len == 0) {
 		LOG_DBG("end of transfer");
 		DSPI_StopTransfer(base);
 		DSPI_FlushFifo(base, true, true);
@@ -712,9 +712,9 @@ static int transceive(const struct device *dev,
 	if (config->is_dma_chn_shared) {
 		data->transfer_len = data->frame_size >> 3;
 	} else {
-		data->transfer_len = data->ctx.tx_len > data->ctx.rx_len ?
-					     data->ctx.rx_len :
-					     data->ctx.tx_len;
+		data->transfer_len = data->ctx.tx.len > data->ctx.rx.len ?
+					     data->ctx.rx.len :
+					     data->ctx.tx.len;
 	}
 	data->tx_transfer_count = 0;
 	data->rx_transfer_count = 0;

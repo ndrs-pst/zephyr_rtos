@@ -25,6 +25,7 @@
 #include <cortex_m/debug.h>
 #include <zephyr/arch/common/xip.h>
 #include <zephyr/arch/common/init.h>
+#include <zephyr/toolchain.h>
 
 /*
  * GCC can detect if memcpy is passed a NULL argument, however one of

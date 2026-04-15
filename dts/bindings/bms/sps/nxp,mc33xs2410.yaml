@@ -1,0 +1,54 @@
+# Copyright (c) 2026 NDR Solution (Thailand) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: MC33XS2410 Quad high-side switch
+
+compatible: "nxp,mc33xs2410"
+
+include: [spi-device.yaml]
+
+properties:
+    int-gpios:
+      type: phandle-array
+      required: true
+      description: |
+        Interrupt pin.
+
+        This pin signals active low when produced by the controller. The
+        property value should ensure the flags properly describe the signal
+        that is presented to the driver.
+    rst-gpios:
+      type: phandle-array
+      required: true
+      description: |
+        Reset pin.
+
+        This pin is used to reset the MC33XS2410 device.
+    in1-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        Input 1 control pin.
+    in2-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        Input 2 control pin.
+    in3-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        Input 3 control pin.
+    in4-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        Input 4 control pin.
+    lhm-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        LHM (Load High to Medium) control pin.
+    reg:
+      type: array
+      required: true

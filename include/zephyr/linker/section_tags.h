@@ -15,8 +15,14 @@
 
 #include <zephyr/linker/sections.h>
 
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 #define __noinit		__in_section_unique(_NOINIT_SECTION_NAME)
 #define __noinit_named(name)	__in_section_unique_named(_NOINIT_SECTION_NAME, name)
+#else
+#define __noinit
+#define __noinit_named(name)
+#endif
+
 #define __irq_vector_table	Z_GENERIC_SECTION(_IRQ_VECTOR_TABLE_SECTION_NAME)
 #define __sw_isr_table		Z_GENERIC_SECTION(_SW_ISR_TABLE_SECTION_NAME)
 
@@ -53,12 +59,14 @@
 #define __ccm_noinit_section __dtcm_noinit_section __DEPRECATED_MACRO
 #endif /* CONFIG_ARM */
 
-#if defined(CONFIG_NOCACHE_MEMORY)
+#if defined(CONFIG_NOCACHE_MEMORY) && !defined(_MSC_VER) /* #CUSTOM@NDRS */
 #define __nocache __in_section_unique(_NOCACHE_SECTION_NAME)
+#define __nocache_named(name) __in_section_unique_named(_NOCACHE_SECTION_NAME, name)
 #define __nocache_load __in_section_unique(_NOCACHE_LOAD_SECTION_NAME)
 #define __nocache_noinit __nocache
 #else
 #define __nocache
+#define __nocache_named(name)
 #define __nocache_load
 #define __nocache_noinit __noinit
 #endif /* CONFIG_NOCACHE_MEMORY */

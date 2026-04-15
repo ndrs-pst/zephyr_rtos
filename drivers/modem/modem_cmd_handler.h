@@ -384,7 +384,7 @@ void modem_cmd_handler_tx_unlock(struct modem_cmd_handler *handler);
 static inline void modem_cmd_handler_process(struct modem_cmd_handler *handler,
 					     struct modem_iface *iface)
 {
-	handler->process(handler, iface);
+	handler->process(handler, iface);       /* @see cmd_handler_process */
 }
 
 #ifdef __cplusplus

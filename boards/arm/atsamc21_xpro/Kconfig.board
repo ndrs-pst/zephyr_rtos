@@ -1,0 +1,8 @@
+# SAM C21 Xplained Pro Board configuration
+
+# Copyright (c) 2018 Bryan O'Donoghue
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ATSAMC21_XPRO
+	bool "SAM C21 Xplained Pro"
+	depends on SOC_PART_NUMBER_SAMC21J18A

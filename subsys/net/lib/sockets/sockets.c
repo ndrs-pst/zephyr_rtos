@@ -105,6 +105,7 @@ void *z_vrfy_zsock_get_context_object(int sock)
 #include <zephyr/syscalls/zsock_get_context_object_mrsh.c>
 #endif
 
+/* @see NET_SOCKET_REGISTER(...) for the instance of net_socket_register */
 int z_impl_zsock_socket(int family, int type, int proto)
 {
 	STRUCT_SECTION_FOREACH(net_socket_register, sock_family) {
@@ -122,14 +123,14 @@ int z_impl_zsock_socket(int family, int type, int proto)
 		}
 
 		errno = 0;
-		ret = sock_family->handler(family, type, proto);
+		ret = sock_family->handler(family, type, proto);        /* @see zsock_socket_internal */
 
 		SYS_PORT_TRACING_OBJ_INIT(socket, ret < 0 ? -errno : ret,
 					  family, type, proto);
 
-		(void)sock_obj_core_alloc(ret, sock_family, family, type, proto);
+		(void) sock_obj_core_alloc(ret, sock_family, family, type, proto);
 
-		return ret;
+		return (ret);
 	}
 
 	errno = EAFNOSUPPORT;
@@ -216,17 +217,41 @@ static inline int z_vrfy_zsock_shutdown(int sock, int how)
 #include <zephyr/syscalls/zsock_shutdown_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int z_impl_zsock_bind(int sock, const struct net_sockaddr *addr, net_socklen_t addrlen)
-{
+int z_impl_zsock_bind(int sock, const struct net_sockaddr *addr, net_socklen_t addrlen) {
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
+
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->bind == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->bind(obj, addr, addrlen);
+
+	k_mutex_unlock(lock);
+
+	return (ret);
+	#else
 	int ret;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, bind, sock, addr, addrlen);
 
-	ret = VTABLE_CALL(bind, sock, addr, addrlen);
+	ret = VTABLE_CALL(bind, sock, addr, addrlen);               /* @see sock_bind_vmeth */
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, bind, sock, ret < 0 ? -errno : ret);
 
 	return ret;
+	#endif
 }
 
 #ifdef CONFIG_USERSPACE
@@ -245,17 +270,41 @@ static inline int z_vrfy_zsock_bind(int sock, const struct net_sockaddr *addr,
 #endif /* CONFIG_USERSPACE */
 
 int z_impl_zsock_connect(int sock, const struct net_sockaddr *addr,
-			net_socklen_t addrlen)
-{
+			 net_socklen_t addrlen) {
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
+
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->connect == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->connect(obj, addr, addrlen);
+
+	k_mutex_unlock(lock);
+
+	return (ret);
+	#else
 	int ret;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, connect, sock, addr, addrlen);
 
-	ret = VTABLE_CALL(connect, sock, addr, addrlen);
+	ret = VTABLE_CALL(connect, sock, addr, addrlen);            /* @see sock_connect_vmeth */
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, connect, sock,
 				       ret < 0 ? -errno : ret);
 	return ret;
+	#endif
 }
 
 #ifdef CONFIG_USERSPACE
@@ -273,17 +322,41 @@ int z_vrfy_zsock_connect(int sock, const struct net_sockaddr *addr,
 #include <zephyr/syscalls/zsock_connect_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int z_impl_zsock_listen(int sock, int backlog)
-{
+int z_impl_zsock_listen(int sock, int backlog) {
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
+
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->listen == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->listen(obj, backlog);
+
+	k_mutex_unlock(lock);
+
+	return (ret);
+	#else
 	int ret;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, listen, sock, backlog);
 
-	ret = VTABLE_CALL(listen, sock, backlog);
+	ret = VTABLE_CALL(listen, sock, backlog);                   /* @see sock_listen_vmeth */
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, listen, sock,
 				       ret < 0 ? -errno : ret);
-	return ret;
+	return (ret);
+	#endif
 }
 
 #ifdef CONFIG_USERSPACE
@@ -300,12 +373,37 @@ int z_impl_zsock_accept(int sock, struct net_sockaddr *addr, net_socklen_t *addr
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, accept, sock);
 
-	new_sock = VTABLE_CALL(accept, sock, addr, addrlen);
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
+
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->accept == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->accept(obj, addr, addrlen);
+
+	k_mutex_unlock(lock);
+
+	new_sock = ret;
+	#else
+	new_sock = VTABLE_CALL(accept, sock, addr, addrlen);        /* @see sock_accept_vmeth */
+	#endif
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, accept, new_sock, addr, addrlen,
 				       new_sock < 0 ? -errno : 0);
 
-	(void)sock_obj_core_alloc_find(sock, new_sock, NET_SOCK_STREAM);
+	(void) sock_obj_core_alloc_find(sock, new_sock, NET_SOCK_STREAM);
 
 	return new_sock;
 }
@@ -333,14 +431,39 @@ static inline int z_vrfy_zsock_accept(int sock, struct net_sockaddr *addr,
 #endif /* CONFIG_USERSPACE */
 
 ssize_t z_impl_zsock_sendto(int sock, const void *buf, size_t len, int flags,
-			   const struct net_sockaddr *dest_addr, net_socklen_t addrlen)
+			    const struct net_sockaddr *dest_addr, net_socklen_t addrlen)
 {
 	int bytes_sent;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, sendto, sock, len, flags,
 					dest_addr, addrlen);
 
-	bytes_sent = VTABLE_CALL(sendto, sock, buf, len, flags, dest_addr, addrlen);
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
+
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->sendto == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->sendto(obj, buf, len, flags, dest_addr, addrlen);
+
+	k_mutex_unlock(lock);
+
+	bytes_sent = ret;
+	#else
+	bytes_sent = VTABLE_CALL(sendto, sock, buf, len, flags, dest_addr, addrlen);    /* @see sock_sendto_vmeth */
+	#endif
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, sendto, sock,
 				       bytes_sent < 0 ? -errno : bytes_sent);
@@ -376,7 +499,32 @@ ssize_t z_impl_zsock_sendmsg(int sock, const struct net_msghdr *msg, int flags)
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, sendmsg, sock, msg, flags);
 
-	bytes_sent = VTABLE_CALL(sendmsg, sock, msg, flags);
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
+
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->sendmsg == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->sendmsg(obj, msg, flags);
+
+	k_mutex_unlock(lock);
+
+	bytes_sent = ret;
+	#else
+	bytes_sent = VTABLE_CALL(sendmsg, sock, msg, flags);        /* @see sock_sendmsg_vmeth */
+	#endif
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, sendmsg, sock,
 				       bytes_sent < 0 ? -errno : bytes_sent);
@@ -488,7 +636,32 @@ ssize_t z_impl_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, recvfrom, sock, max_len, flags, src_addr, addrlen);
 
-	bytes_received = VTABLE_CALL(recvfrom, sock, buf, max_len, flags, src_addr, addrlen);
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
+
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->recvfrom == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->recvfrom(obj, buf, max_len, flags, src_addr, addrlen);
+
+	k_mutex_unlock(lock);
+
+	bytes_received = ret;
+	#else
+	bytes_received = VTABLE_CALL(recvfrom, sock, buf, max_len, flags, src_addr, addrlen); /* @see sock_recvfrom_vmeth */
+	#endif
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, recvfrom, sock,
 				       src_addr, addrlen,
@@ -537,7 +710,32 @@ ssize_t z_impl_zsock_recvmsg(int sock, struct net_msghdr *msg, int flags)
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, recvmsg, sock, msg, flags);
 
-	bytes_received = VTABLE_CALL(recvmsg, sock, msg, flags);
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
+
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->recvmsg == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->recvmsg(obj, msg, flags);
+
+	k_mutex_unlock(lock);
+
+	bytes_received = ret;
+	#else
+	bytes_received = VTABLE_CALL(recvmsg, sock, msg, flags);    /* @see sock_recvmsg_vmeth */
+	#endif
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, recvmsg, sock, msg,
 				       bytes_received < 0 ? -errno : bytes_received);
@@ -861,15 +1059,40 @@ static inline int z_vrfy_zsock_inet_pton(net_sa_family_t family,
 int z_impl_zsock_getsockopt(int sock, int level, int optname,
 			    void *optval, net_socklen_t *optlen)
 {
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
+
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->getsockopt == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->getsockopt(obj, level, optname, optval, optlen);
+
+	k_mutex_unlock(lock);
+
+	return (ret);
+	#else
 	int ret;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, getsockopt, sock, level, optname);
 
-	ret = VTABLE_CALL(getsockopt, sock, level, optname, optval, optlen);
+	ret = VTABLE_CALL(getsockopt, sock, level, optname, optval, optlen);    /* @see sock_getsockopt_vmeth */
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, getsockopt, sock, level, optname,
 				       optval, *optlen, ret < 0 ? -errno : ret);
 	return ret;
+	#endif
 }
 
 #ifdef CONFIG_USERSPACE
@@ -906,16 +1129,41 @@ int z_vrfy_zsock_getsockopt(int sock, int level, int optname,
 int z_impl_zsock_setsockopt(int sock, int level, int optname,
 			    const void *optval, net_socklen_t optlen)
 {
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
+
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->setsockopt == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->setsockopt(obj, level, optname, optval, optlen);
+
+	k_mutex_unlock(lock);
+
+	return (ret);
+	#else
 	int ret;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, setsockopt, sock,
 					level, optname, optval, optlen);
 
-	ret = VTABLE_CALL(setsockopt, sock, level, optname, optval, optlen);
+	ret = VTABLE_CALL(setsockopt, sock, level, optname, optval, optlen);    /* @see sock_setsockopt_vmeth */
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, setsockopt, sock,
 				       ret < 0 ? -errno : ret);
 	return ret;
+	#endif
 }
 
 #ifdef CONFIG_USERSPACE
@@ -941,16 +1189,41 @@ int z_vrfy_zsock_setsockopt(int sock, int level, int optname,
 int z_impl_zsock_getpeername(int sock, struct net_sockaddr *addr,
 			     net_socklen_t *addrlen)
 {
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
+
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->getpeername == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->getpeername(obj, addr, addrlen);
+
+	k_mutex_unlock(lock);
+
+	return (ret);
+	#else
 	int ret;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, getpeername, sock);
 
-	ret = VTABLE_CALL(getpeername, sock, addr, addrlen);
+	ret = VTABLE_CALL(getpeername, sock, addr, addrlen);        /* @see sock_getpeername_vmeth */
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, getpeername, sock,
 				       addr, addrlen,
 				       ret < 0 ? -errno : ret);
 	return ret;
+	#endif
 }
 
 #ifdef CONFIG_USERSPACE
@@ -986,16 +1259,41 @@ static inline int z_vrfy_zsock_getpeername(int sock, struct net_sockaddr *addr,
 int z_impl_zsock_getsockname(int sock, struct net_sockaddr *addr,
 			     net_socklen_t *addrlen)
 {
+	#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+	const struct socket_op_vtable* vtable;
+	struct k_mutex* lock;
+	void* obj;
+	int ret;
+
+	obj = get_sock_vtable(sock, &vtable, &lock);
+	if (obj == NULL) {
+		errno = EBADF;
+		return (-1);
+	}
+
+	if (vtable->getsockname == NULL) {
+		errno = EOPNOTSUPP;
+		return (-1);
+	}
+
+	(void) k_mutex_lock(lock, K_FOREVER);
+	ret = vtable->getsockname(obj, addr, addrlen);
+
+	k_mutex_unlock(lock);
+
+	return (ret);
+	#else
 	int ret;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, getsockname, sock);
 
-	ret = VTABLE_CALL(getsockname, sock, addr, addrlen);
+	ret = VTABLE_CALL(getsockname, sock, addr, addrlen);        /* @see sock_getsockname_vmeth */
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, getsockname, sock,
 				       addr, addrlen,
 				       ret < 0 ? -errno : ret);
 	return ret;
+	#endif
 }
 
 #ifdef CONFIG_USERSPACE
@@ -1094,7 +1392,7 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *message, int flags,
 	size_t total_len = 0;
 	size_t offset = 0;
 	k_timepoint_t end;
-	int ret, i, opt;
+	int ret, opt;
 
 	if (sent_len != NULL) {
 		*sent_len = 0;
@@ -1111,7 +1409,7 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *message, int flags,
 		return -EOPNOTSUPP;
 	}
 
-	for (i = 0; i < message->msg_iovlen; i++) {
+	for (size_t i = 0; i < message->msg_iovlen; i++) {
 		total_len += message->msg_iov[i].iov_len;
 	}
 
@@ -1150,8 +1448,8 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *message, int flags,
 		}
 
 		/* Update msghdr for the next iteration. */
-		for (i = 0; i < message->msg_iovlen; i++) {
-			if (ret < message->msg_iov[i].iov_len) {
+		for (size_t i = 0; i < message->msg_iovlen; i++) {
+			if (ret < (int)message->msg_iov[i].iov_len) {
 				message->msg_iov[i].iov_len -= ret;
 				message->msg_iov[i].iov_base =
 					(uint8_t *)message->msg_iov[i].iov_base + ret;

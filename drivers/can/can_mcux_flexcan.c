@@ -284,7 +284,7 @@ static int mcux_flexcan_start(const struct device *dev)
 		/* Re-add all RX filters using current mode */
 		k_mutex_lock(&data->rx_mutex, K_FOREVER);
 
-		for (alloc = RX_START_IDX; alloc < config->rx_mb; alloc++) {
+		for (alloc = RX_START_IDX; alloc < (int)config->rx_mb; alloc++) {
 			if (atomic_test_bit(data->rx_allocs, alloc)) {
 				status = mcux_flexcan_mb_start(dev, alloc);
 				if (status != kStatus_Success) {
@@ -314,7 +314,7 @@ static int mcux_flexcan_start(const struct device *dev)
 		timing.frJumpwidth = data->timing_data.sjw - 1U;
 		timing.fphaseSeg1 = data->timing_data.phase_seg1 - 1U;
 		timing.fphaseSeg2 = data->timing_data.phase_seg2 - 1U;
-		timing.fpropSeg = data->timing_data.prop_seg;
+		timing.fpropSeg = (uint8_t)data->timing_data.prop_seg;
 		FLEXCAN_SetFDTimingConfig(base, &timing);
 
 		FLEXCAN_EnterFreezeMode(base);
@@ -347,7 +347,7 @@ static int mcux_flexcan_stop(const struct device *dev)
 	data->common.started = false;
 
 	/* Abort any pending TX frames before entering freeze mode */
-	for (alloc = 0; alloc < config->tx_mb; alloc++) {
+	for (alloc = 0; alloc < (int)config->tx_mb; alloc++) {
 		function = data->tx_cbs[alloc].function;
 		arg = data->tx_cbs[alloc].arg;
 
@@ -378,7 +378,7 @@ static int mcux_flexcan_stop(const struct device *dev)
 		 */
 		k_mutex_lock(&data->rx_mutex, K_FOREVER);
 
-		for (alloc = RX_START_IDX; alloc < config->rx_mb; alloc++) {
+		for (alloc = RX_START_IDX; alloc < (int)config->rx_mb; alloc++) {
 			if (atomic_test_bit(data->rx_allocs, alloc)) {
 				mcux_flexcan_mb_stop(dev, alloc);
 			}
@@ -740,7 +740,7 @@ static int mcux_flexcan_send(const struct device *dev,
 		return -EAGAIN;
 	}
 
-	for (alloc = 0; alloc < config->tx_mb; alloc++) {
+	for (alloc = 0; alloc < (int)config->tx_mb; alloc++) {
 		if (!atomic_test_and_set_bit(data->tx_allocs, alloc)) {
 			break;
 		}
@@ -811,7 +811,7 @@ static int mcux_flexcan_add_rx_filter(const struct device *dev,
 	k_mutex_lock(&data->rx_mutex, K_FOREVER);
 
 	/* Find and allocate RX message buffer */
-	for (i = RX_START_IDX; i < config->rx_mb; i++) {
+	for (i = RX_START_IDX; i < (int)config->rx_mb; i++) {
 		if (!atomic_test_and_set_bit(data->rx_allocs, i)) {
 			alloc = i;
 			break;
@@ -915,7 +915,7 @@ static void mcux_flexcan_remove_rx_filter(const struct device *dev, int filter_i
 	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
 
-	if (filter_id < 0 || filter_id >= config->rx_mb) {
+	if (filter_id < 0 || filter_id >= (int)config->rx_mb) {
 		LOG_ERR("filter ID %d out of bounds", filter_id);
 		return;
 	}
@@ -990,7 +990,7 @@ static inline void mcux_flexcan_transfer_error_status(const struct device *dev,
 
 	if (state == CAN_STATE_BUS_OFF) {
 		/* Abort any pending TX frames in case of bus-off */
-		for (alloc = 0; alloc < config->tx_mb; alloc++) {
+		for (alloc = 0; alloc < (int)config->tx_mb; alloc++) {
 			/* Copy callback function and argument before clearing bit */
 			function = data->tx_cbs[alloc].function;
 			arg = data->tx_cbs[alloc].arg;
@@ -1284,7 +1284,7 @@ static int mcux_flexcan_init(const struct device *dev)
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
 	if (config->flexcan_fd) {
 		flexcan_config.timingConfig.frJumpwidth = data->timing_data.sjw - 1U;
-		flexcan_config.timingConfig.fpropSeg = data->timing_data.prop_seg;
+		flexcan_config.timingConfig.fpropSeg = (uint8_t)data->timing_data.prop_seg;
 		flexcan_config.timingConfig.fphaseSeg1 = data->timing_data.phase_seg1 - 1U;
 		flexcan_config.timingConfig.fphaseSeg2 = data->timing_data.phase_seg2 - 1U;
 
@@ -1551,7 +1551,7 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 									\
 	static ATOMIC_DEFINE(flexcan_tx_allocs_##id, FLEXCAN_INST_TX_MB(id));	\
 									\
-	static const struct mcux_flexcan_config mcux_flexcan_config_##id = { \
+	static struct mcux_flexcan_config DT_CONST mcux_flexcan_config_##id = { \
 		DEVICE_MMIO_NAMED_ROM_INIT(flexcan_mmio, DT_DRV_INST(id)),	\
 		.common = CAN_DT_DRIVER_CONFIG_INST_GET(id, 0, FLEXCAN_MAX_BITRATE(id)), \
 		FLEXCAN_INST_CLOCKS(id),				\
@@ -1597,3 +1597,59 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(FLEXCAN_DEVICE_INIT_MCUX)
+
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+#define S32K3_CAN_CFG_REG_INIT(id) \
+    zephyr_gtest_can_s32k3_reg_init(DEVICE_DT_GET(DT_DRV_INST(id)), \
+                                    &mcux_flexcan_data_##id, \
+                                    &mcux_flexcan_config_##id);
+
+void zephyr_gtest_can_s32k3_reg_init(const struct device* dev,
+                                     struct mcux_flexcan_data* data,
+                                     struct mcux_flexcan_config* cfg) {
+    mem_addr_t base_addr = cfg->flexcan_mmio.addr;
+    int rc;
+
+    switch (base_addr) {
+        case 0x40304000U : // flexcan0: can@40304000
+            cfg->flexcan_mmio.addr = (mm_reg_t)ut_mcu_flexcan_0_area;
+            break;
+
+        case 0x40308000U : // flexcan1: can@40308000
+            cfg->flexcan_mmio.addr = (mm_reg_t)ut_mcu_flexcan_1_area;
+            break;
+
+        case 0x4030C000U : // flexcan2: can@4030C000
+            cfg->flexcan_mmio.addr = (mm_reg_t)ut_mcu_flexcan_2_area;
+            break;
+
+        case 0x40310000U : // flexcan3: can@40310000
+            cfg->flexcan_mmio.addr = (mm_reg_t)ut_mcu_flexcan_3_area;
+            break;
+
+        case 0x40314000U : // flexcan4: can@40314000
+            cfg->flexcan_mmio.addr = (mm_reg_t)ut_mcu_flexcan_4_area;
+            break;
+
+        case 0x40318000U : // flexcan5: can@40318000
+            cfg->flexcan_mmio.addr = (mm_reg_t)ut_mcu_flexcan_5_area;
+            break;
+
+        default: {
+            break;
+        }
+    }
+
+    rc = dev->ops.init(dev);
+    if (rc == 0) {
+        dev->state->initialized = true;
+        dev->state->init_res = 0U;
+    }
+}
+
+void zephyr_gtest_can_s32k3(void) {
+    DT_INST_FOREACH_STATUS_OKAY(S32K3_CAN_CFG_REG_INIT);
+}
+#endif

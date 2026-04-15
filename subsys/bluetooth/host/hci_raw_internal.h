@@ -14,7 +14,7 @@ extern "C" {
 #endif
 
 struct bt_dev_raw {
-	const struct device *hci;
+    const struct device *hci;
 };
 
 int bt_hci_recv(const struct device *dev, struct net_buf *buf);

@@ -60,7 +60,7 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 	ecspi_transfer_t transfer;
 	status_t status;
 
-	if ((ctx->tx_len == 0) && (ctx->rx_len == 0)) {
+	if ((ctx->tx.len == 0) && (ctx->rx.len == 0)) {
 		/* nothing left to rx or tx, we're done! */
 		spi_context_cs_control(&data->ctx, false);
 		spi_context_complete(&data->ctx, dev, 0);

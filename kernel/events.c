@@ -178,7 +178,7 @@ static int event_walk_op(struct k_thread *thread, void *data)
 static uint32_t k_event_post_internal(struct k_event *event, uint32_t events,
 				  uint32_t events_mask)
 {
-	k_spinlock_key_t  key;
+	k_spinlock_key_t key;
 	struct event_walk_data data;
 	uint32_t previous_events;
 
@@ -282,9 +282,9 @@ uint32_t z_vrfy_k_event_clear(struct k_event *event, uint32_t events)
 static uint32_t k_event_wait_internal(struct k_event *event, uint32_t events,
 				      unsigned int options, k_timeout_t timeout)
 {
-	uint32_t  rv = 0;
-	unsigned int  wait_condition;
-	struct k_thread  *thread;
+	uint32_t rv = 0;
+	unsigned int wait_condition;
+	struct k_thread *thread;
 
 	__ASSERT(((arch_is_in_isr() == false) ||
 		  K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
@@ -300,7 +300,7 @@ static uint32_t k_event_wait_internal(struct k_event *event, uint32_t events,
 	wait_condition = options & K_EVENT_WAIT_MASK;
 	thread = k_sched_current_thread_query();
 
-	k_spinlock_key_t  key = k_spin_lock(&event->lock);
+	k_spinlock_key_t key = k_spin_lock(&event->lock);
 
 	if (options & K_EVENT_OPTION_RESET) {
 		event->events = 0;

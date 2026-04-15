@@ -77,7 +77,7 @@ kernel_sources(
 # frame pointers ARE enabled, gcc will also infuriatingly disallow a
 # clobber of the r7 frame pointer register in inline assembly
 # (vs. just spilling filling as needed).  Our optimized arch_switch
-# requires the ability to clobber this (callee-saved) register.  Turn
+# requires the ability to clobber this (callee-saved) register. Turn
 # the flag back on for the two files that need it.  (The error
 # behavior only gets modified at the level of a whole file, I tried
 # #pragmas and attributes to change the code generation for the
@@ -223,5 +223,12 @@ if(CONFIG_KERNEL_NO_LTO)
 endif()
 
 add_dependencies(kernel zephyr_generated_headers)
+
+#CUSTOM@NDRS kernel code always be speed optimization !!!
+set_source_files_properties(
+  ${kernel_files}
+  PROPERTIES
+  COMPILE_FLAGS ${COMPILER_OPTIMIZE_FOR_SPEED_FLAG}
+  )
 
 unset(libkernel)

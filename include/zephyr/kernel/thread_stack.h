@@ -44,9 +44,19 @@ extern "C" {
  *
  * Stacks should always be created with K_THREAD_STACK_DEFINE().
  */
-struct __packed z_thread_stack_element {
-	char data;
+#if defined(_MSC_VER)                       /* #CUSTOM@NDRS */
+__pragma(pack(push, 1))
+
+struct z_thread_stack_element {
+    char data;
 };
+
+__pragma(pack(pop))
+#else
+struct __packed z_thread_stack_element {
+    char data;
+};
+#endif
 
 /**
  * @typedef k_thread_stack_t
@@ -54,7 +64,6 @@ struct __packed z_thread_stack_element {
  *
  * @see z_thread_stack_element
  */
-
 
 /**
  * @brief Properly align a CPU stack pointer value
@@ -66,11 +75,11 @@ struct __packed z_thread_stack_element {
  * @param ptr Proposed stack pointer address
  * @return Properly aligned stack pointer address
  */
-static inline char *z_stack_ptr_align(char *ptr)
-{
-	return (char *)ROUND_DOWN(ptr, ARCH_STACK_PTR_ALIGN);
+static inline char* z_stack_ptr_align(char* ptr) {
+    return ((char*)ROUND_DOWN(ptr, ARCH_STACK_PTR_ALIGN));
 }
-#define Z_STACK_PTR_ALIGN(ptr) ((uintptr_t)z_stack_ptr_align((char *)(ptr)))
+
+#define Z_STACK_PTR_ALIGN(ptr) ((uintptr_t)z_stack_ptr_align((char*)(ptr)))
 
 /**
  * @brief Helper macro for getting a stack frame struct
@@ -86,26 +95,26 @@ static inline char *z_stack_ptr_align(char *ptr)
  * @return Pointer to stack frame struct within the stack buffer
  */
 #define Z_STACK_PTR_TO_FRAME(type, ptr) \
-	(type *)((ptr) - sizeof(type))
+    (type*)((ptr) - sizeof(type))
 
 #ifdef ARCH_KERNEL_STACK_RESERVED
-#define K_KERNEL_STACK_RESERVED	((size_t)ARCH_KERNEL_STACK_RESERVED)
+#define K_KERNEL_STACK_RESERVED ((size_t)ARCH_KERNEL_STACK_RESERVED)
 #else
-#define K_KERNEL_STACK_RESERVED	((size_t)0)
+#define K_KERNEL_STACK_RESERVED ((size_t)0)
 #endif /* ARCH_KERNEL_STACK_RESERVED */
 
 #define Z_KERNEL_STACK_SIZE_ADJUST(size) (ROUND_UP(size, \
-						   ARCH_STACK_PTR_ALIGN) + \
-					  K_KERNEL_STACK_RESERVED)
+                                                   ARCH_STACK_PTR_ALIGN) + \
+                                          K_KERNEL_STACK_RESERVED)
 
 #ifdef ARCH_KERNEL_STACK_OBJ_ALIGN
-#define Z_KERNEL_STACK_OBJ_ALIGN	ARCH_KERNEL_STACK_OBJ_ALIGN
+#define Z_KERNEL_STACK_OBJ_ALIGN    ARCH_KERNEL_STACK_OBJ_ALIGN
 #else
-#define Z_KERNEL_STACK_OBJ_ALIGN	ARCH_STACK_PTR_ALIGN
+#define Z_KERNEL_STACK_OBJ_ALIGN    ARCH_STACK_PTR_ALIGN
 #endif /* ARCH_KERNEL_STACK_OBJ_ALIGN */
 
 #define K_KERNEL_STACK_LEN(size) \
-	ROUND_UP(Z_KERNEL_STACK_SIZE_ADJUST(size), Z_KERNEL_STACK_OBJ_ALIGN)
+    ROUND_UP(Z_KERNEL_STACK_SIZE_ADJUST(size), Z_KERNEL_STACK_OBJ_ALIGN)
 
 /**
  * @addtogroup thread_stack_api
@@ -132,7 +141,7 @@ static inline char *z_stack_ptr_align(char *ptr)
  * @param size Size of the shadow stack memory region
  */
 #define K_THREAD_HW_SHADOW_STACK_SIZE(size_) \
-	ARCH_THREAD_HW_SHADOW_STACK_SIZE(size_)
+    ARCH_THREAD_HW_SHADOW_STACK_SIZE(size_)
 
 /**
  * @brief Declare a hardware shadow stack
@@ -144,7 +153,7 @@ static inline char *z_stack_ptr_align(char *ptr)
  * @param size Size of the shadow stack memory region
  */
 #define K_KERNEL_HW_SHADOW_STACK_DECLARE(sym, size) \
-	ARCH_THREAD_HW_SHADOW_STACK_DECLARE(__ ## sym ## _shstk, size)
+    ARCH_THREAD_HW_SHADOW_STACK_DECLARE(__ ## sym ## _shstk, size)
 
 /**
  * @brief Declare a hardware shadow stack array
@@ -157,13 +166,13 @@ static inline char *z_stack_ptr_align(char *ptr)
  * @param size Size of the shadow stack memory region
  */
 #define K_KERNEL_HW_SHADOW_STACK_ARRAY_DECLARE(sym, nmemb, size) \
-	ARCH_THREAD_HW_SHADOW_STACK_ARRAY_DECLARE(__ ## sym ## _shstk_arr, \
-						  nmemb, size)
+    ARCH_THREAD_HW_SHADOW_STACK_ARRAY_DECLARE(__ ## sym ## _shstk_arr, \
+        nmemb, size)
 
 struct _stack_to_hw_shadow_stack {
-	k_thread_stack_t *stack;
-	k_thread_hw_shadow_stack_t *shstk_addr;
-	size_t size;
+    k_thread_stack_t* stack;
+    k_thread_hw_shadow_stack_t* shstk_addr;
+    size_t size;
 };
 
 
@@ -179,20 +188,20 @@ struct _stack_to_hw_shadow_stack {
  * @param size Size of the shadow stack memory region
  */
 #define K_THREAD_HW_SHADOW_STACK_DEFINE(sym, size_) \
-	ARCH_THREAD_HW_SHADOW_STACK_DEFINE(__ ## sym ## _shstk, size_); \
-	static const STRUCT_SECTION_ITERABLE(_stack_to_hw_shadow_stack, \
-		sym ## _stack_to_shstk_attach) = { \
-		.stack = sym, \
-		.shstk_addr = __ ## sym ## _shstk, \
-		.size = size_, \
-	}
+    ARCH_THREAD_HW_SHADOW_STACK_DEFINE(__ ## sym ## _shstk, size_); \
+    static const STRUCT_SECTION_ITERABLE(_stack_to_hw_shadow_stack, \
+        sym ## _stack_to_shstk_attach) = { \
+        .stack = sym, \
+        .shstk_addr = __ ## sym ## _shstk, \
+        .size = size_, \
+    }
 
 struct _stack_to_hw_shadow_stack_arr {
-	uintptr_t stack_addr;
-	uintptr_t shstk_addr;
-	size_t stack_size;
-	size_t shstk_size;
-	size_t nmemb;
+    uintptr_t stack_addr;
+    uintptr_t shstk_addr;
+    size_t stack_size;
+    size_t shstk_size;
+    size_t nmemb;
 };
 
 /**
@@ -208,16 +217,16 @@ struct _stack_to_hw_shadow_stack_arr {
  * @param size Size of the shadow stack memory region
  */
 #define K_THREAD_HW_SHADOW_STACK_ARRAY_DEFINE(sym, nmemb_, size_) \
-	ARCH_THREAD_HW_SHADOW_STACK_ARRAY_DEFINE(__ ## sym ## _shstk_arr, nmemb_, \
-			K_THREAD_HW_SHADOW_STACK_SIZE(size_)); \
-	static const STRUCT_SECTION_ITERABLE(_stack_to_hw_shadow_stack_arr, \
-		sym ## _stack_to_shstk_attach) = { \
-		.stack_addr = (uintptr_t)sym, \
-		.stack_size = K_KERNEL_STACK_LEN(size_), \
-		.nmemb = nmemb_, \
-		.shstk_addr = (uintptr_t)__ ## sym ## _shstk_arr, \
-		.shstk_size = K_THREAD_HW_SHADOW_STACK_SIZE(size_), \
-	}
+    ARCH_THREAD_HW_SHADOW_STACK_ARRAY_DEFINE(__ ## sym ## _shstk_arr, nmemb_, \
+        K_THREAD_HW_SHADOW_STACK_SIZE(size_)); \
+    static const STRUCT_SECTION_ITERABLE(_stack_to_hw_shadow_stack_arr, \
+        sym ## _stack_to_shstk_attach) = { \
+        .stack_addr = (uintptr_t)sym, \
+        .stack_size = K_KERNEL_STACK_LEN(size_), \
+        .nmemb = nmemb_, \
+        .shstk_addr = (uintptr_t)__ ## sym ## _shstk_arr, \
+        .shstk_size = K_THREAD_HW_SHADOW_STACK_SIZE(size_), \
+    }
 
 /**
  * @brief Attach a hardware shadow stack to a thread
@@ -230,9 +239,9 @@ struct _stack_to_hw_shadow_stack_arr {
 #define k_thread_hw_shadow_stack_attach arch_thread_hw_shadow_stack_attach
 
 struct _thread_hw_shadow_stack_static {
-	struct k_thread *thread;
-	k_thread_hw_shadow_stack_t *shstk_addr;
-	size_t size;
+    struct k_thread *thread;
+    k_thread_hw_shadow_stack_t *shstk_addr;
+    size_t size;
 };
 
 /**
@@ -248,12 +257,12 @@ struct _thread_hw_shadow_stack_static {
  * @param size_ Size of the hardware shadow stack memory region
  */
 #define K_THREAD_HW_SHADOW_STACK_ATTACH(thread_, shstk_addr_, size_) \
-	static const STRUCT_SECTION_ITERABLE(_thread_hw_shadow_stack_static, \
-		thread ## _shstk_attach_static) = { \
-		.thread = thread_, \
-		.shstk_addr = shstk_addr_, \
-		.size = size_, \
-	}
+    static const STRUCT_SECTION_ITERABLE(_thread_hw_shadow_stack_static, \
+        thread ## _shstk_attach_static) = { \
+        .thread = thread_, \
+        .shstk_addr = shstk_addr_, \
+        .size = size_, \
+    }
 
 #else
 #define K_KERNEL_HW_SHADOW_STACK_DECLARE(sym, size)
@@ -272,9 +281,9 @@ struct _thread_hw_shadow_stack_static {
  * @param size Size of the stack memory region
  */
 #define K_KERNEL_STACK_DECLARE(sym, size) \
-	K_KERNEL_HW_SHADOW_STACK_DECLARE(sym, K_THREAD_HW_SHADOW_STACK_SIZE(size)); \
-	extern struct z_thread_stack_element \
-		sym[K_KERNEL_STACK_LEN(size)]
+    K_KERNEL_HW_SHADOW_STACK_DECLARE(sym, K_THREAD_HW_SHADOW_STACK_SIZE(size)); \
+    extern struct z_thread_stack_element \
+        sym[K_KERNEL_STACK_LEN(size)]
 
 /**
  * @brief Declare a reference to a thread stack array
@@ -287,9 +296,9 @@ struct _thread_hw_shadow_stack_static {
  * @param size Size of the stack memory region
  */
 #define K_KERNEL_STACK_ARRAY_DECLARE(sym, nmemb, size) \
-	K_KERNEL_HW_SHADOW_STACK_ARRAY_DECLARE(sym, nmemb, K_THREAD_HW_SHADOW_STACK_SIZE(size)); \
-	extern struct z_thread_stack_element \
-		sym[nmemb][K_KERNEL_STACK_LEN(size)]
+    K_KERNEL_HW_SHADOW_STACK_ARRAY_DECLARE(sym, nmemb, K_THREAD_HW_SHADOW_STACK_SIZE(size)); \
+    extern struct z_thread_stack_element \
+        sym[nmemb][K_KERNEL_STACK_LEN(size)]
 
 /**
  * @brief Declare a reference to a pinned thread stack array
@@ -302,9 +311,9 @@ struct _thread_hw_shadow_stack_static {
  * @param size Size of the stack memory region
  */
 #define K_KERNEL_PINNED_STACK_ARRAY_DECLARE(sym, nmemb, size) \
-	K_KERNEL_HW_SHADOW_STACK_ARRAY_DECLARE(sym, nmemb, K_THREAD_HW_SHADOW_STACK_SIZE(size)); \
-	extern struct z_thread_stack_element \
-		sym[nmemb][K_KERNEL_STACK_LEN(size)]
+    K_KERNEL_HW_SHADOW_STACK_ARRAY_DECLARE(sym, nmemb, K_THREAD_HW_SHADOW_STACK_SIZE(size)); \
+    extern struct z_thread_stack_element \
+        sym[nmemb][K_KERNEL_STACK_LEN(size)]
 
 /**
  * @brief Define a toplevel kernel stack memory region in specified section
@@ -326,9 +335,9 @@ struct _thread_hw_shadow_stack_static {
  * @param lsect Linker section for this stack
  */
 #define Z_KERNEL_STACK_DEFINE_IN(sym, size, lsect) \
-	struct z_thread_stack_element lsect \
-		__aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
-		sym[K_KERNEL_STACK_LEN(size)]
+        struct z_thread_stack_element lsect \
+                __aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
+                sym[K_KERNEL_STACK_LEN(size)]
 
 /**
  * @brief Define a toplevel array of kernel stack memory regions in specified section
@@ -339,9 +348,9 @@ struct _thread_hw_shadow_stack_static {
  * @param lsect Linker section for this array of stacks
  */
 #define Z_KERNEL_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, lsect) \
-	struct z_thread_stack_element lsect \
-		__aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
-		sym[nmemb][K_KERNEL_STACK_LEN(size)]
+        struct z_thread_stack_element lsect \
+                __aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
+                sym[nmemb][K_KERNEL_STACK_LEN(size)]
 
 /**
  * @brief Define a toplevel kernel stack memory region
@@ -365,9 +374,9 @@ struct _thread_hw_shadow_stack_static {
  * @param size Size of the stack memory region
  */
 #define K_KERNEL_STACK_DEFINE(sym, size) \
-	Z_KERNEL_STACK_DEFINE_IN(sym, size, __kstackmem); \
-	K_THREAD_HW_SHADOW_STACK_DEFINE(sym, \
-					K_THREAD_HW_SHADOW_STACK_SIZE(size))
+    Z_KERNEL_STACK_DEFINE_IN(sym, size, __kstackmem); \
+    K_THREAD_HW_SHADOW_STACK_DEFINE(sym, \
+                                    K_THREAD_HW_SHADOW_STACK_SIZE(size))
 
 /**
  * @brief Define a toplevel kernel stack memory region in pinned section
@@ -383,14 +392,14 @@ struct _thread_hw_shadow_stack_static {
  */
 #if defined(CONFIG_LINKER_USE_PINNED_SECTION)
 #define K_KERNEL_PINNED_STACK_DEFINE(sym, size) \
-	Z_KERNEL_STACK_DEFINE_IN(sym, size, __pinned_noinit); \
-	K_THREAD_HW_SHADOW_STACK_DEFINE(sym, \
-					K_THREAD_HW_SHADOW_STACK_SIZE(size))
+    Z_KERNEL_STACK_DEFINE_IN(sym, size, __pinned_noinit); \
+    K_THREAD_HW_SHADOW_STACK_DEFINE(sym, \
+                                    K_THREAD_HW_SHADOW_STACK_SIZE(size))
 #else
 #define K_KERNEL_PINNED_STACK_DEFINE(sym, size) \
-	Z_KERNEL_STACK_DEFINE_IN(sym, size, __kstackmem); \
-	K_THREAD_HW_SHADOW_STACK_DEFINE(sym, \
-					K_THREAD_HW_SHADOW_STACK_SIZE(size))
+    Z_KERNEL_STACK_DEFINE_IN(sym, size, __kstackmem); \
+    K_THREAD_HW_SHADOW_STACK_DEFINE(sym, \
+                                    K_THREAD_HW_SHADOW_STACK_SIZE(size))
 #endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 /**
@@ -403,9 +412,8 @@ struct _thread_hw_shadow_stack_static {
  * @param size Size of the stack memory region
  */
 #define K_KERNEL_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	Z_KERNEL_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, __kstackmem); \
-	K_THREAD_HW_SHADOW_STACK_ARRAY_DEFINE(sym, nmemb, size)
-
+    Z_KERNEL_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, __kstackmem); \
+    K_THREAD_HW_SHADOW_STACK_ARRAY_DEFINE(sym, nmemb, size)
 
 /**
  * @brief Define a toplevel array of kernel stack memory regions in pinned section
@@ -422,12 +430,12 @@ struct _thread_hw_shadow_stack_static {
  */
 #if defined(CONFIG_LINKER_USE_PINNED_SECTION)
 #define K_KERNEL_PINNED_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	Z_KERNEL_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, __pinned_noinit); \
-	K_THREAD_HW_SHADOW_STACK_ARRAY_DEFINE(sym, nmemb, size)
+    Z_KERNEL_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, __pinned_noinit); \
+    K_THREAD_HW_SHADOW_STACK_ARRAY_DEFINE(sym, nmemb, size)
 #else
 #define K_KERNEL_PINNED_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	Z_KERNEL_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, __kstackmem); \
-	K_THREAD_HW_SHADOW_STACK_ARRAY_DEFINE(sym, nmemb, size)
+    Z_KERNEL_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, __kstackmem); \
+    K_THREAD_HW_SHADOW_STACK_ARRAY_DEFINE(sym, nmemb, size)
 #endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 /**
@@ -440,28 +448,27 @@ struct _thread_hw_shadow_stack_static {
  * @param size Size of the stack memory region
  */
 #define K_KERNEL_STACK_MEMBER(sym, size) \
-	Z_KERNEL_STACK_DEFINE_IN(sym, size,)
+        Z_KERNEL_STACK_DEFINE_IN(sym, size, )
 
 #define K_KERNEL_STACK_SIZEOF(sym) (sizeof(sym) - K_KERNEL_STACK_RESERVED)
 
 /** @} */
 
-static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
-{
-	return (char *)sym + K_KERNEL_STACK_RESERVED;
+static inline char* K_KERNEL_STACK_BUFFER(k_thread_stack_t* sym) {
+    return ((char*)sym + K_KERNEL_STACK_RESERVED);
 }
 #ifndef CONFIG_USERSPACE
-#define K_THREAD_STACK_RESERVED		K_KERNEL_STACK_RESERVED
-#define K_THREAD_STACK_SIZEOF		K_KERNEL_STACK_SIZEOF
-#define K_THREAD_STACK_LEN		K_KERNEL_STACK_LEN
-#define K_THREAD_STACK_DEFINE		K_KERNEL_STACK_DEFINE
-#define K_THREAD_STACK_ARRAY_DEFINE	K_KERNEL_STACK_ARRAY_DEFINE
-#define K_THREAD_STACK_BUFFER		K_KERNEL_STACK_BUFFER
-#define K_THREAD_STACK_DECLARE		K_KERNEL_STACK_DECLARE
-#define K_THREAD_STACK_ARRAY_DECLARE	K_KERNEL_STACK_ARRAY_DECLARE
-#define K_THREAD_PINNED_STACK_DEFINE	K_KERNEL_PINNED_STACK_DEFINE
+#define K_THREAD_STACK_RESERVED         K_KERNEL_STACK_RESERVED
+#define K_THREAD_STACK_SIZEOF           K_KERNEL_STACK_SIZEOF
+#define K_THREAD_STACK_LEN              K_KERNEL_STACK_LEN
+#define K_THREAD_STACK_DEFINE           K_KERNEL_STACK_DEFINE
+#define K_THREAD_STACK_ARRAY_DEFINE     K_KERNEL_STACK_ARRAY_DEFINE
+#define K_THREAD_STACK_BUFFER           K_KERNEL_STACK_BUFFER
+#define K_THREAD_STACK_DECLARE          K_KERNEL_STACK_DECLARE
+#define K_THREAD_STACK_ARRAY_DECLARE    K_KERNEL_STACK_ARRAY_DECLARE
+#define K_THREAD_PINNED_STACK_DEFINE    K_KERNEL_PINNED_STACK_DEFINE
 #define K_THREAD_PINNED_STACK_ARRAY_DEFINE \
-					K_KERNEL_PINNED_STACK_ARRAY_DEFINE
+                                        K_KERNEL_PINNED_STACK_ARRAY_DEFINE
 #else
 /**
  * @brief Indicate how much additional memory is reserved for stack objects
@@ -479,9 +486,9 @@ static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * it is correctly aligned.
  */
 #ifdef ARCH_THREAD_STACK_RESERVED
-#define K_THREAD_STACK_RESERVED		((size_t)(ARCH_THREAD_STACK_RESERVED))
+#define K_THREAD_STACK_RESERVED     ((size_t)(ARCH_THREAD_STACK_RESERVED))
 #else
-#define K_THREAD_STACK_RESERVED		((size_t)0U)
+#define K_THREAD_STACK_RESERVED     ((size_t)0U)
 #endif /* ARCH_THREAD_STACK_RESERVED */
 
 /**
@@ -510,10 +517,10 @@ static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * @return Alignment of the stack object
  */
 #if defined(ARCH_THREAD_STACK_OBJ_ALIGN)
-#define Z_THREAD_STACK_OBJ_ALIGN(size)	\
-	ARCH_THREAD_STACK_OBJ_ALIGN(Z_THREAD_STACK_SIZE_ADJUST(size))
+#define Z_THREAD_STACK_OBJ_ALIGN(size) \
+    ARCH_THREAD_STACK_OBJ_ALIGN(Z_THREAD_STACK_SIZE_ADJUST(size))
 #else
-#define Z_THREAD_STACK_OBJ_ALIGN(size)	ARCH_STACK_PTR_ALIGN
+#define Z_THREAD_STACK_OBJ_ALIGN(size) ARCH_STACK_PTR_ALIGN
 #endif /* ARCH_THREAD_STACK_OBJ_ALIGN */
 
 /**
@@ -544,10 +551,10 @@ static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  */
 #if defined(ARCH_THREAD_STACK_SIZE_ADJUST)
 #define Z_THREAD_STACK_SIZE_ADJUST(size) \
-	ARCH_THREAD_STACK_SIZE_ADJUST((size) + K_THREAD_STACK_RESERVED)
+    ARCH_THREAD_STACK_SIZE_ADJUST((size) + K_THREAD_STACK_RESERVED)
 #else
 #define Z_THREAD_STACK_SIZE_ADJUST(size) \
-	(ROUND_UP((size), ARCH_STACK_PTR_ALIGN) + K_THREAD_STACK_RESERVED)
+    (ROUND_UP((size), ARCH_STACK_PTR_ALIGN) + K_THREAD_STACK_RESERVED)
 #endif /* ARCH_THREAD_STACK_SIZE_ADJUST */
 
 /**
@@ -565,8 +572,8 @@ static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * @param size Size of the stack memory region
  */
 #define K_THREAD_STACK_DECLARE(sym, size) \
-	extern struct z_thread_stack_element \
-		sym[K_THREAD_STACK_LEN(size)]
+        extern struct z_thread_stack_element \
+                sym[K_THREAD_STACK_LEN(size)]
 
 /**
  * @brief Declare a reference to a thread stack array
@@ -579,8 +586,8 @@ static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * @param size Size of the stack memory region
  */
 #define K_THREAD_STACK_ARRAY_DECLARE(sym, nmemb, size) \
-	extern struct z_thread_stack_element \
-		sym[nmemb][K_THREAD_STACK_LEN(size)]
+        extern struct z_thread_stack_element \
+                sym[nmemb][K_THREAD_STACK_LEN(size)]
 
 /**
  * @brief Return the size in bytes of a stack memory region
@@ -596,7 +603,7 @@ static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * @param sym Stack memory symbol
  * @return Size of the stack buffer
  */
-#define K_THREAD_STACK_SIZEOF(sym)	(sizeof(sym) - K_THREAD_STACK_RESERVED)
+#define K_THREAD_STACK_SIZEOF(sym)      (sizeof(sym) - K_THREAD_STACK_RESERVED)
 
 /**
  * @brief Define a toplevel thread stack memory region in specified region
@@ -627,9 +634,9 @@ static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * @param lsect Linker section for this stack
  */
 #define Z_THREAD_STACK_DEFINE_IN(sym, size, lsect) \
-	struct z_thread_stack_element lsect \
-		__aligned(Z_THREAD_STACK_OBJ_ALIGN(size)) \
-		sym[K_THREAD_STACK_LEN(size)]
+        struct z_thread_stack_element lsect \
+                __aligned(Z_THREAD_STACK_OBJ_ALIGN(size)) \
+                sym[K_THREAD_STACK_LEN(size)]
 
 /**
  * @brief Define a toplevel array of thread stack memory regions in specified region
@@ -646,9 +653,9 @@ static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * @param lsect Linker section for this stack
  */
 #define Z_THREAD_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, lsect) \
-	struct z_thread_stack_element lsect \
-		__aligned(Z_THREAD_STACK_OBJ_ALIGN(size)) \
-		sym[nmemb][K_THREAD_STACK_LEN(size)]
+        struct z_thread_stack_element lsect \
+                __aligned(Z_THREAD_STACK_OBJ_ALIGN(size)) \
+                sym[nmemb][K_THREAD_STACK_LEN(size)]
 
 /**
  * @brief Define a toplevel thread stack memory region
@@ -677,7 +684,7 @@ static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * @param size Size of the stack memory region
  */
 #define K_THREAD_STACK_DEFINE(sym, size) \
-	Z_THREAD_STACK_DEFINE_IN(sym, size, __stackmem)
+        Z_THREAD_STACK_DEFINE_IN(sym, size, __stackmem)
 
 /**
  * @brief Define a toplevel thread stack memory region in pinned section
@@ -711,10 +718,10 @@ static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  */
 #if defined(CONFIG_LINKER_USE_PINNED_SECTION)
 #define K_THREAD_PINNED_STACK_DEFINE(sym, size) \
-	Z_THREAD_STACK_DEFINE_IN(sym, size, __pinned_noinit)
+        Z_THREAD_STACK_DEFINE_IN(sym, size, __pinned_noinit)
 #else
 #define K_THREAD_PINNED_STACK_DEFINE(sym, size) \
-	K_THREAD_STACK_DEFINE(sym, size)
+        K_THREAD_STACK_DEFINE(sym, size)
 #endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 /**
@@ -731,8 +738,8 @@ static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * @return Appropriate size for an array member
  */
 #define K_THREAD_STACK_LEN(size) \
-	ROUND_UP(Z_THREAD_STACK_SIZE_ADJUST(size), \
-		 Z_THREAD_STACK_OBJ_ALIGN(size))
+        ROUND_UP(Z_THREAD_STACK_SIZE_ADJUST(size), \
+                 Z_THREAD_STACK_OBJ_ALIGN(size))
 
 /**
  * @brief Define a toplevel array of thread stack memory regions
@@ -748,7 +755,7 @@ static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * @param size Size of the stack memory region
  */
 #define K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	Z_THREAD_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, __stackmem)
+        Z_THREAD_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, __stackmem)
 
 /**
  * @brief Define a toplevel array of thread stack memory regions in pinned section
@@ -769,10 +776,10 @@ static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  */
 #if defined(CONFIG_LINKER_USE_PINNED_SECTION)
 #define K_THREAD_PINNED_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	Z_THREAD_PINNED_STACK_DEFINE_IN(sym, nmemb, size, __pinned_noinit)
+        Z_THREAD_PINNED_STACK_DEFINE_IN(sym, nmemb, size, __pinned_noinit)
 #else
 #define K_THREAD_PINNED_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size)
+        K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size)
 #endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 /** @} */
@@ -791,9 +798,8 @@ static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * @param sym defined stack symbol name
  * @return The buffer itself, a char *
  */
-static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
-{
-	return (char *)sym + K_THREAD_STACK_RESERVED;
+static inline char* K_THREAD_STACK_BUFFER(k_thread_stack_t* sym) {
+    return (char*)sym + K_THREAD_STACK_RESERVED;
 }
 
 #endif /* CONFIG_USERSPACE */

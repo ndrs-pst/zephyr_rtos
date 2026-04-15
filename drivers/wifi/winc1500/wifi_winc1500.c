@@ -43,17 +43,17 @@ typedef void (*tpfAppResolveCb) (uint8 *pu8DomainName, uint32 u32ServerIP);
 NMI_API void registerSocketCallback(tpfAppSocketCb socket_cb,
 				    tpfAppResolveCb resolve_cb);
 NMI_API SOCKET winc1500_socket(uint16 u16Domain, uint8 u8Type, uint8 u8Flags);
-NMI_API sint8 winc1500_socket_bind(SOCKET sock, struct sockaddr *pstrAddr, uint8 u8AddrLen);
+NMI_API sint8 winc1500_socket_bind(SOCKET sock, struct net_sockaddr *pstrAddr, uint8 u8AddrLen);
 NMI_API sint8 winc1500_socket_listen(SOCKET sock, uint8 backlog);
-NMI_API sint8 winc1500_socket_accept(SOCKET sock, struct sockaddr *addr, uint8 *addrlen);
-NMI_API sint8 winc1500_socket_connect(SOCKET sock, struct sockaddr *pstrAddr, uint8 u8AddrLen);
+NMI_API sint8 winc1500_socket_accept(SOCKET sock, struct net_sockaddr *addr, uint8 *addrlen);
+NMI_API sint8 winc1500_socket_connect(SOCKET sock, struct net_sockaddr *pstrAddr, uint8 u8AddrLen);
 NMI_API sint16 winc1500_socket_recv(SOCKET sock, void *pvRecvBuf,
 		    uint16 u16BufLen, uint32 u32Timeoutmsec);
 NMI_API sint16 winc1500_socket_send(SOCKET sock, void *pvSendBuffer,
 		    uint16 u16SendLength, uint16 u16Flags);
 NMI_API sint16 winc1500_socket_sendto(SOCKET sock, void *pvSendBuffer,
 		      uint16 u16SendLength, uint16 flags,
-		      struct sockaddr *pstrDestAddr, uint8 u8AddrLen);
+		      struct net_sockaddr *pstrDestAddr, uint8 u8AddrLen);
 NMI_API sint8 winc1500_close(SOCKET sock);
 
 enum socket_errors {
@@ -93,7 +93,7 @@ typedef struct {
 
 typedef struct {
 	SOCKET			sock;
-	struct sockaddr_in	strAddr;
+	struct net_sockaddr_in	strAddr;
 } tstrSocketAcceptMsg;
 
 typedef struct {
@@ -105,7 +105,7 @@ typedef struct {
 	uint8			*pu8Buffer;
 	sint16			s16BufferSize;
 	uint16			u16RemainingSize;
-	struct sockaddr_in	strRemoteAddr;
+	struct net_sockaddr_in	strRemoteAddr;
 } tstrSocketRecvMsg;
 
 
@@ -335,8 +335,8 @@ static int winc1500_bind(struct net_context *context,
 		return 0;
 	}
 
-	ret = winc1500_socket_bind((intptr_t)context->offload_context, (struct sockaddr *)addr,
-		   addrlen);
+	ret = winc1500_socket_bind((intptr_t)context->offload_context, (struct net_sockaddr *)addr,
+				   addrlen);
 	if (ret) {
 		LOG_ERR("bind error %d %s!",
 			ret, socket_message_to_string(ret));
@@ -394,7 +394,7 @@ static int winc1500_connect(struct net_context *context,
 	w1500_data.socket_data[socket].connect_user_data = user_data;
 	w1500_data.socket_data[socket].ret_code = 0;
 
-	ret = winc1500_socket_connect(socket, (struct sockaddr *)addr, addrlen);
+	ret = winc1500_socket_connect(socket, (struct net_sockaddr *)addr, addrlen);
 	if (ret) {
 		LOG_ERR("connect error %d %s!",
 			ret, socket_error_string(ret));
@@ -507,7 +507,7 @@ static int winc1500_sendto(struct net_pkt *pkt,
 	net_buf_add(buf, net_pkt_get_len(pkt));
 
 	ret = winc1500_socket_sendto(socket, buf->data, buf->len, 0,
-		     (struct sockaddr *)dst_addr, addrlen);
+		     (struct net_sockaddr *)dst_addr, addrlen);
 	if (ret) {
 		LOG_ERR("sendto error %d %s!", ret, socket_error_string(ret));
 		goto out;
@@ -911,8 +911,8 @@ static void handle_socket_msg_accept(struct socket_data *sd, void *pvMsg)
 		a_sd->context->remote.sa_family = NET_AF_INET;
 		net_sin(&a_sd->context->remote)->sin_port =
 			accept_msg->strAddr.sin_port;
-		net_sin(&a_sd->context->remote)->sin_addr.s_addr =
-			accept_msg->strAddr.sin_addr.s_addr;
+		net_sin(&a_sd->context->remote)->sin_addr.s_addr_be =
+			accept_msg->strAddr.sin_addr.s_addr_be;
 		a_sd->context->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
 
 		sd->accept_cb(a_sd->context,

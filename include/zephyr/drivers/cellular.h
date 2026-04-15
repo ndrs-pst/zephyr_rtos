@@ -31,116 +31,156 @@ extern "C" {
 
 /** Cellular access technologies (3GPP TS 27.007 AcT) */
 enum cellular_access_technology {
-	/** Global System for Mobile communications (2G, 3GPP Rel 99) */
-	CELLULAR_ACCESS_TECHNOLOGY_GSM = 0,
-	/** Bandwidth & Spectrum limited variant of GSM (2G, 3GPP Rel 99) */
-	CELLULAR_ACCESS_TECHNOLOGY_GSM_COMPACT = 1,
-	/** UMTS Terrestrial Radio Access Network (3G, 3GPP Rel 99) */
-	CELLULAR_ACCESS_TECHNOLOGY_UTRAN = 2,
-	/** GSM Enhanced General Packet Radio Service (2.5G, 3GPP Rel 99) */
-	CELLULAR_ACCESS_TECHNOLOGY_GSM_EGPRS = 3,
-	/** UTRAN with High Speed Downlink Packet Access (3.5G, 3GPP Rel 5) */
-	CELLULAR_ACCESS_TECHNOLOGY_UTRAN_HSDPA = 4,
-	/** UTRAN with High Speed Uplink Packet Access (3.75G, 3GPP Rel 6) */
-	CELLULAR_ACCESS_TECHNOLOGY_UTRAN_HSUPA = 5,
-	/** UTRAN with HSDPA and HSUDP (HSPA) (3.75G, 3GPP Rel 6) */
-	CELLULAR_ACCESS_TECHNOLOGY_UTRAN_HSDPA_HSUPA = 6,
-	/** Evolved UTRAN (4G, 3GPP Rel 8) */
-	CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN = 7,
-	/** Extended Coverage GSM for IoT (2G, 3GPP Rel 13) */
-	CELLULAR_ACCESS_TECHNOLOGY_EC_GSM_IOT = 8,
-	/** EUTRAN Narrowband-IoT (4G, 3GPP Rel 13) */
-	CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_NB_S1 = 9,
-	/** LTE/E-UTRA connected to 5G Core Network (5G, 3GPP Rel 15) */
-	CELLULAR_ACCESS_TECHNOLOGY_E_UTRA_5G_CN = 10,
-	/** New Radio with 5G Core Network (5G, 3GPP Rel 15) */
-	CELLULAR_ACCESS_TECHNOLOGY_NR_5G_CN = 11,
-	/** Next Generation RAN (5G, 3GPP Rel 15) */
-	CELLULAR_ACCESS_TECHNOLOGY_NG_RAN = 12,
-	/** LTE/E-UTRA & NR dual connectivity (5G, 3GPP Rel 15) */
-	CELLULAR_ACCESS_TECHNOLOGY_E_UTRA_NR_DUAL = 13,
-	/** Narrowband-IoT over Satellite (4G, 3GPP Rel 17) */
-	CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_NB_S1_SAT = 14,
-	/** LTE (wideband) over Satellite (4G, 3GPP Rel 17) */
-	CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_WB_S1_SAT = 15,
-	/** Next Generation RAN over Satellite (5G, 3GPP Rel 17) */
-	CELLULAR_ACCESS_TECHNOLOGY_NG_RAN_SAT = 16,
-	/** Unknown access technology */
-	CELLULAR_ACCESS_TECHNOLOGY_UNKNOWN = 255,
+    /** Global System for Mobile communications (2G, 3GPP Rel 99) */
+    CELLULAR_ACCESS_TECHNOLOGY_GSM = 0,
+
+    /** Bandwidth & Spectrum limited variant of GSM (2G, 3GPP Rel 99) */
+    CELLULAR_ACCESS_TECHNOLOGY_GSM_COMPACT = 1,
+
+    /** UMTS Terrestrial Radio Access Network (3G, 3GPP Rel 99) */
+    CELLULAR_ACCESS_TECHNOLOGY_UTRAN = 2,
+
+    /** GSM Enhanced General Packet Radio Service (2.5G, 3GPP Rel 99) */
+    CELLULAR_ACCESS_TECHNOLOGY_GSM_EGPRS = 3,
+
+    /** UTRAN with High Speed Downlink Packet Access (3.5G, 3GPP Rel 5) */
+    CELLULAR_ACCESS_TECHNOLOGY_UTRAN_HSDPA = 4,
+
+    /** UTRAN with High Speed Uplink Packet Access (3.75G, 3GPP Rel 6) */
+    CELLULAR_ACCESS_TECHNOLOGY_UTRAN_HSUPA = 5,
+
+    /** UTRAN with HSDPA and HSUDP (HSPA) (3.75G, 3GPP Rel 6) */
+    CELLULAR_ACCESS_TECHNOLOGY_UTRAN_HSDPA_HSUPA = 6,
+
+    /** Evolved UTRAN (4G, 3GPP Rel 8) */
+    CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN = 7,
+
+    /** Extended Coverage GSM for IoT (2G, 3GPP Rel 13) */
+    CELLULAR_ACCESS_TECHNOLOGY_EC_GSM_IOT = 8,
+
+    /** EUTRAN Narrowband-IoT (4G, 3GPP Rel 13) */
+    CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_NB_S1 = 9,
+
+    /** LTE/E-UTRA connected to 5G Core Network (5G, 3GPP Rel 15) */
+    CELLULAR_ACCESS_TECHNOLOGY_E_UTRA_5G_CN = 10,
+
+    /** New Radio with 5G Core Network (5G, 3GPP Rel 15) */
+    CELLULAR_ACCESS_TECHNOLOGY_NR_5G_CN = 11,
+
+    /** Next Generation RAN (5G, 3GPP Rel 15) */
+    CELLULAR_ACCESS_TECHNOLOGY_NG_RAN = 12,
+
+    /** LTE/E-UTRA & NR dual connectivity (5G, 3GPP Rel 15) */
+    CELLULAR_ACCESS_TECHNOLOGY_E_UTRA_NR_DUAL = 13,
+
+    /** Narrowband-IoT over Satellite (4G, 3GPP Rel 17) */
+    CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_NB_S1_SAT = 14,
+
+    /** LTE (wideband) over Satellite (4G, 3GPP Rel 17) */
+    CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_WB_S1_SAT = 15,
+
+    /** Next Generation RAN over Satellite (5G, 3GPP Rel 17) */
+    CELLULAR_ACCESS_TECHNOLOGY_NG_RAN_SAT = 16,
+
+    /** Unknown access technology */
+    CELLULAR_ACCESS_TECHNOLOGY_UNKNOWN = 255,
 };
 
 /** Cellular network structure */
 struct cellular_network {
-	/** Cellular access technology */
-	enum cellular_access_technology technology;
-	/**
-	 * List of bands, as defined by the specified cellular access technology,
-	 * to enables. All supported bands are enabled if none are provided.
-	 */
-	uint16_t *bands;
-	/** Size of bands */
-	uint16_t size;
+    /** Cellular access technology */
+    enum cellular_access_technology technology;
+    /**
+     * List of bands, as defined by the specified cellular access technology,
+     * to enables. All supported bands are enabled if none are provided.
+     */
+    uint16_t* bands;
+    /** Size of bands */
+    uint16_t size;
 };
 
 /** Cellular signal type */
 enum cellular_signal_type {
-	CELLULAR_SIGNAL_RSSI,
-	CELLULAR_SIGNAL_RSRP,
-	CELLULAR_SIGNAL_RSRQ,
+    /** RSSI – Reference Signal Strength Indicator */
+    CELLULAR_SIGNAL_RSSI,
+
+    /** RSRP – Reference Signal Received Power */
+    CELLULAR_SIGNAL_RSRP,
+
+    /** RSRQ – Reference Signal Received Quality */
+    CELLULAR_SIGNAL_RSRQ
 };
 
 /** Cellular modem info type */
 enum cellular_modem_info_type {
-	/** International Mobile Equipment Identity */
-	CELLULAR_MODEM_INFO_IMEI,
-	/** Modem model ID */
-	CELLULAR_MODEM_INFO_MODEL_ID,
-	/** Modem manufacturer */
-	CELLULAR_MODEM_INFO_MANUFACTURER,
-	/** Modem fw version */
-	CELLULAR_MODEM_INFO_FW_VERSION,
-	/** International Mobile Subscriber Identity */
-	CELLULAR_MODEM_INFO_SIM_IMSI,
-	/** Integrated Circuit Card Identification Number (SIM) */
-	CELLULAR_MODEM_INFO_SIM_ICCID,
+    /** International Mobile Equipment Identity */
+    CELLULAR_MODEM_INFO_IMEI,
+
+    /** Modem model ID */
+    CELLULAR_MODEM_INFO_MODEL_ID,
+
+    /** Modem manufacturer */
+    CELLULAR_MODEM_INFO_MANUFACTURER,
+
+    /** Modem fw version */
+    CELLULAR_MODEM_INFO_FW_VERSION,
+
+    /** International Mobile Subscriber Identity */
+    CELLULAR_MODEM_INFO_SIM_IMSI,
+
+    /** Integrated Circuit Card Identification Number (SIM) */
+    CELLULAR_MODEM_INFO_SIM_ICCID
 };
 
 /** Cellular registration status (3GPP TS 27.007) */
 enum cellular_registration_status {
-	/** Not registered, not searching */
-	CELLULAR_REGISTRATION_NOT_REGISTERED = 0,
-	/** Registered, home network */
-	CELLULAR_REGISTRATION_REGISTERED_HOME = 1,
-	/** Not registered, searching for an operator */
-	CELLULAR_REGISTRATION_SEARCHING = 2,
-	/** Registration denied */
-	CELLULAR_REGISTRATION_DENIED = 3,
-	/** Unknown (e.g. out of coverage) */
-	CELLULAR_REGISTRATION_UNKNOWN = 4,
-	/** Registered, roaming */
-	CELLULAR_REGISTRATION_REGISTERED_ROAMING = 5,
-	/** Registered for "SMS only", home network */
-	CELLULAR_REGISTRATION_SMS_ONLY_HOME = 6,
-	/** Registered for "SMS only", roaming network */
-	CELLULAR_REGISTRATION_SMS_ONLY_ROAMING = 7,
-	/** Attached for emergency bearer services only */
-	CELLULAR_REGISTRATION_EMERGENCY_ONLY = 8,
-	/** Registered for "CSFB not preferred", home network */
-	CELLULAR_REGISTRATION_CSFB_NOT_PREFERRED_HOME = 9,
-	/** Registered for "CSFB not preferred", roaming network */
-	CELLULAR_REGISTRATION_CSFB_NOT_PREFERRED_ROAMING = 10,
-	/** Attached for access to "Restricted Local Operator Services" */
-	CELLULAR_REGISTRATION_RLOS = 11,
+    /** Not registered, not searching */
+    CELLULAR_REGISTRATION_NOT_REGISTERED = 0,
+
+    /** Registered, home network */
+    CELLULAR_REGISTRATION_REGISTERED_HOME = 1,
+
+    /** Not registered, searching for an operator */
+    CELLULAR_REGISTRATION_SEARCHING = 2,
+
+    /** Registration denied */
+    CELLULAR_REGISTRATION_DENIED = 3,
+
+    /** Unknown (e.g. out of coverage) */
+    CELLULAR_REGISTRATION_UNKNOWN = 4,
+
+    /** Registered, roaming */
+    CELLULAR_REGISTRATION_REGISTERED_ROAMING = 5,
+
+    /** Registered for "SMS only", home network */
+    CELLULAR_REGISTRATION_SMS_ONLY_HOME = 6,
+
+    /** Registered for "SMS only", roaming network */
+    CELLULAR_REGISTRATION_SMS_ONLY_ROAMING = 7,
+
+    /** Attached for emergency bearer services only */
+    CELLULAR_REGISTRATION_EMERGENCY_ONLY = 8,
+
+    /** Registered for "CSFB not preferred", home network */
+    CELLULAR_REGISTRATION_CSFB_NOT_PREFERRED_HOME = 9,
+
+    /** Registered for "CSFB not preferred", roaming network */
+    CELLULAR_REGISTRATION_CSFB_NOT_PREFERRED_ROAMING = 10,
+
+    /** Attached for access to "Restricted Local Operator Services" */
+    CELLULAR_REGISTRATION_RLOS = 11,
 };
 
 /** Events emitted asynchronously by a cellular driver */
 enum cellular_event {
-	/** One or more modem-info field changed (e.g. IMSI became available). */
-	CELLULAR_EVENT_MODEM_INFO_CHANGED = BIT(0),
-	/** Cellular network registration status changed */
-	CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED = BIT(1),
-	/** Result of a communications link check to the modem */
-	CELLULAR_EVENT_MODEM_COMMS_CHECK_RESULT = BIT(2),
+    /** One or more modem-info field changed (e.g. IMSI became available). */
+    CELLULAR_EVENT_MODEM_INFO_CHANGED = BIT(0),
+
+    /** Cellular network registration status changed */
+    CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED = BIT(1),
+
+    /** Result of a communications link check to the modem */
+    CELLULAR_EVENT_MODEM_COMMS_CHECK_RESULT = BIT(2),
 };
 
 /* Opaque bit-mask large enough for all current & future events */
@@ -148,17 +188,17 @@ typedef uint32_t cellular_event_mask_t;
 
 /** Payload for @ref CELLULAR_EVENT_MODEM_INFO_CHANGED. */
 struct cellular_evt_modem_info {
-	enum cellular_modem_info_type field; /**< Which field changed */
+    enum cellular_modem_info_type field; /**< Which field changed */
 };
 
 /** Payload for @ref CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED. */
 struct cellular_evt_registration_status {
-	enum cellular_registration_status status; /**< New registration status */
+    enum cellular_registration_status status; /**< New registration status */
 };
 
 /** Payload for @ref CELLULAR_EVENT_MODEM_COMMS_CHECK_RESULT */
 struct cellular_evt_modem_comms_check_result {
-	bool success; /**< Communications to modem checked successfully */
+    bool success; /**< Communications to modem checked successfully */
 };
 
 /**
@@ -173,49 +213,49 @@ struct cellular_evt_modem_comms_check_result {
  * @note  The driver calls the callback directly from its own context.
  *        Off-load heavy processing to a work-queue if required.
  */
-typedef void (*cellular_event_cb_t)(const struct device *dev, enum cellular_event event,
-				    const void *payload, void *user_data);
+typedef void (*cellular_event_cb_t)(const struct device* dev, enum cellular_event event,
+                                    const void* payload, void* user_data);
 
 /** API for configuring networks */
-typedef int (*cellular_api_configure_networks)(const struct device *dev,
-					       const struct cellular_network *networks,
-					       uint8_t size);
+typedef int (*cellular_api_configure_networks)(const struct device* dev,
+                                               const struct cellular_network* networks,
+                                               uint8_t size);
 
 /** API for getting supported networks */
-typedef int (*cellular_api_get_supported_networks)(const struct device *dev,
-						   const struct cellular_network **networks,
-						   uint8_t *size);
+typedef int (*cellular_api_get_supported_networks)(const struct device* dev,
+                                                   const struct cellular_network** networks,
+                                                   uint8_t* size);
 
 /** API for getting network signal strength */
-typedef int (*cellular_api_get_signal)(const struct device *dev,
-				       const enum cellular_signal_type type, int16_t *value);
+typedef int (*cellular_api_get_signal)(const struct device* dev,
+                                       const enum cellular_signal_type type, int16_t* value);
 
 /** API for getting modem information */
-typedef int (*cellular_api_get_modem_info)(const struct device *dev,
-					   const enum cellular_modem_info_type type, char *info,
-					   size_t size);
+typedef int (*cellular_api_get_modem_info)(const struct device* dev,
+                                           const enum cellular_modem_info_type type, char* info,
+                                           size_t size);
 
 /** API for getting registration status */
-typedef int (*cellular_api_get_registration_status)(const struct device *dev,
-						    enum cellular_access_technology tech,
-						    enum cellular_registration_status *status);
+typedef int (*cellular_api_get_registration_status)(const struct device* dev,
+                            enum cellular_access_technology tech,
+                            enum cellular_registration_status* status);
 
 /** API for programming APN */
-typedef int (*cellular_api_set_apn)(const struct device *dev, const char *apn);
+typedef int (*cellular_api_set_apn)(const struct device* dev, const char* apn);
 
 /** API for registering an asynchronous callback */
-typedef int (*cellular_api_set_callback)(const struct device *dev, cellular_event_mask_t mask,
-					 cellular_event_cb_t cb, void *user_data);
+typedef int (*cellular_api_set_callback)(const struct device* dev, cellular_event_mask_t mask,
+                                         cellular_event_cb_t cb, void* user_data);
 
 /** Cellular driver API */
 __subsystem struct cellular_driver_api {
-	cellular_api_configure_networks configure_networks;
-	cellular_api_get_supported_networks get_supported_networks;
-	cellular_api_get_signal get_signal;
-	cellular_api_get_modem_info get_modem_info;
-	cellular_api_get_registration_status get_registration_status;
-	cellular_api_set_apn set_apn;
-	cellular_api_set_callback set_callback;
+    cellular_api_configure_networks configure_networks;
+    cellular_api_get_supported_networks get_supported_networks;
+    cellular_api_get_signal get_signal;
+    cellular_api_get_modem_info get_modem_info;
+    cellular_api_get_registration_status get_registration_status;
+    cellular_api_set_apn set_apn;
+    cellular_api_set_callback set_callback;
 };
 
 /**
@@ -239,16 +279,15 @@ __subsystem struct cellular_driver_api {
  * @retval -ENOTSUP if API is not supported by cellular network device.
  * @retval <0 Negative errno-code otherwise.
  */
-static inline int cellular_configure_networks(const struct device *dev,
-					      const struct cellular_network *networks, uint8_t size)
-{
-	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+static inline int cellular_configure_networks(const struct device* dev,
+                                              const struct cellular_network* networks, uint8_t size) {
+    const struct cellular_driver_api* api = (const struct cellular_driver_api*)dev->api;
 
-	if (api->configure_networks == NULL) {
-		return -ENOSYS;
-	}
+    if (api->configure_networks == NULL) {
+        return (-ENOSYS);
+    }
 
-	return api->configure_networks(dev, networks, size);
+    return api->configure_networks(dev, networks, size);
 }
 
 /**
@@ -262,17 +301,16 @@ static inline int cellular_configure_networks(const struct device *dev,
  * @retval -ENOTSUP if API is not supported by cellular network device.
  * @retval <0 Negative errno-code otherwise.
  */
-static inline int cellular_get_supported_networks(const struct device *dev,
-						  const struct cellular_network **networks,
-						  uint8_t *size)
-{
-	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+static inline int cellular_get_supported_networks(const struct device* dev,
+                                                  const struct cellular_network** networks,
+                                                  uint8_t* size) {
+    const struct cellular_driver_api* api = (const struct cellular_driver_api*)dev->api;
 
-	if (api->get_supported_networks == NULL) {
-		return -ENOSYS;
-	}
+    if (api->get_supported_networks == NULL) {
+        return (-ENOSYS);
+    }
 
-	return api->get_supported_networks(dev, networks, size);
+    return api->get_supported_networks(dev, networks, size);
 }
 
 /**
@@ -287,16 +325,15 @@ static inline int cellular_get_supported_networks(const struct device *dev,
  * @retval -ENODATA if device is not in a state where signal can be polled
  * @retval <0 Negative errno-code otherwise.
  */
-static inline int cellular_get_signal(const struct device *dev,
-				      const enum cellular_signal_type type, int16_t *value)
-{
-	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+static inline int cellular_get_signal(const struct device* dev,
+                                      const enum cellular_signal_type type, int16_t* value) {
+    const struct cellular_driver_api* api = (const struct cellular_driver_api*)dev->api;
 
-	if (api->get_signal == NULL) {
-		return -ENOSYS;
-	}
+    if (api->get_signal == NULL) {
+        return (-ENOSYS);
+    }
 
-	return api->get_signal(dev, type, value);
+    return api->get_signal(dev, type, value);
 }
 
 /**
@@ -312,17 +349,16 @@ static inline int cellular_get_signal(const struct device *dev,
  * @retval -ENODATA if modem does not provide info requested
  * @retval <0 Negative errno-code from chat module otherwise.
  */
-static inline int cellular_get_modem_info(const struct device *dev,
-					  const enum cellular_modem_info_type type, char *info,
-					  size_t size)
-{
-	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+static inline int cellular_get_modem_info(const struct device* dev,
+                                          const enum cellular_modem_info_type type, char* info,
+                                          size_t size) {
+    const struct cellular_driver_api* api = (const struct cellular_driver_api*)dev->api;
 
-	if (api->get_modem_info == NULL) {
-		return -ENOSYS;
-	}
+    if (api->get_modem_info == NULL) {
+        return (-ENOSYS);
+    }
 
-	return api->get_modem_info(dev, type, info, size);
+    return api->get_modem_info(dev, type, info, size);
 }
 
 /**
@@ -337,17 +373,16 @@ static inline int cellular_get_modem_info(const struct device *dev,
  * @retval -ENODATA if modem does not provide info requested
  * @retval <0 Negative errno-code from chat module otherwise.
  */
-static inline int cellular_get_registration_status(const struct device *dev,
-						   enum cellular_access_technology tech,
-						   enum cellular_registration_status *status)
-{
-	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+static inline int cellular_get_registration_status(const struct device* dev,
+                                                   enum cellular_access_technology tech,
+                                                   enum cellular_registration_status* status) {
+    const struct cellular_driver_api* api = (const struct cellular_driver_api*)dev->api;
 
-	if (api->get_registration_status == NULL) {
-		return -ENOSYS;
-	}
+    if (api->get_registration_status == NULL) {
+        return (-ENOSYS);
+    }
 
-	return api->get_registration_status(dev, tech, status);
+    return api->get_registration_status(dev, tech, status);
 }
 
 /**
@@ -366,15 +401,14 @@ static inline int cellular_get_registration_status(const struct device *dev,
  * @retval -EBUSY if modem is already dialled, APN cannot be changed
  * @retval <0 Negative errno-code otherwise.
  */
-static inline int cellular_set_apn(const struct device *dev, const char *apn)
-{
-	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+static inline int cellular_set_apn(const struct device* dev, const char* apn) {
+    const struct cellular_driver_api* api = (const struct cellular_driver_api*)dev->api;
 
-	if (api->set_apn == NULL) {
-		return -ENOSYS;
-	}
+    if (api->set_apn == NULL) {
+        return (-ENOSYS);
+    }
 
-	return api->set_apn(dev, apn);
+    return api->set_apn(dev, apn);
 }
 
 /**
@@ -391,16 +425,15 @@ static inline int cellular_set_apn(const struct device *dev, const char *apn)
  * @retval -ENOMEM   No space left for another subscriber
  * @retval <0        Driver-specific error
  */
-static inline int cellular_set_callback(const struct device *dev, cellular_event_mask_t mask,
-					cellular_event_cb_t cb, void *user_data)
-{
-	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+static inline int cellular_set_callback(const struct device* dev, cellular_event_mask_t mask,
+                                        cellular_event_cb_t cb, void* user_data) {
+    const struct cellular_driver_api* api = (const struct cellular_driver_api*)dev->api;
 
-	if (api->set_callback == NULL) {
-		return -ENOSYS;
-	}
+    if (api->set_callback == NULL) {
+        return (-ENOSYS);
+    }
 
-	return api->set_callback(dev, mask, cb, user_data);
+    return api->set_callback(dev, mask, cb, user_data);
 }
 
 #ifdef __cplusplus

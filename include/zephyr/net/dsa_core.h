@@ -31,7 +31,7 @@
 #if defined(CONFIG_DSA_PORT_MAX_COUNT)
 #define DSA_PORT_MAX_COUNT CONFIG_DSA_PORT_MAX_COUNT
 #else
-#define DSA_PORT_MAX_COUNT 0
+#define DSA_PORT_MAX_COUNT 1 /* #CUSTOM@NDRS */
 #endif
 
 /** @endcond */

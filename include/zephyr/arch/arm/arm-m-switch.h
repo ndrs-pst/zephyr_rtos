@@ -217,6 +217,7 @@ static inline void arm_m_exc_tail(void)
  * @param switch_to     Switch handle (typically PSP) for the next thread.
  * @param switched_from Storage location to write the outgoing switch handle.
  */
+#ifdef CONFIG_USE_SWITCH
 static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 {
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD)
@@ -339,7 +340,6 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 			   "r11");
 }
 
-#ifdef CONFIG_USE_SWITCH
 /**
  * @brief Public arch-level wrapper for the Cortex-M switch routine.
  *

@@ -356,19 +356,19 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	if (!spi_context_total_tx_len(&data->ctx) && !spi_context_total_rx_len(&data->ctx)) {
 		goto end_transceive;
 	}
-	if (data->ctx.rx_len == 0) {
+	if (data->ctx.rx.len == 0) {
 		data->data_len = spi_context_is_slave(&data->ctx)
 					 ? spi_context_total_tx_len(&data->ctx)
-					 : data->ctx.tx_len;
-	} else if (data->ctx.tx_len == 0) {
+					 : data->ctx.tx.len;
+	} else if (data->ctx.tx.len == 0) {
 		data->data_len = spi_context_is_slave(&data->ctx)
 					 ? spi_context_total_rx_len(&data->ctx)
-					 : data->ctx.rx_len;
+					 : data->ctx.rx.len;
 	} else {
 		data->data_len = spi_context_is_slave(&data->ctx)
 					 ? MAX(spi_context_total_tx_len(&data->ctx),
 					       spi_context_total_rx_len(&data->ctx))
-					 : MIN(data->ctx.tx_len, data->ctx.rx_len);
+					 : MIN(data->ctx.tx.len, data->ctx.rx.len);
 	}
 	if (data->ctx.tx_buf == NULL) { /* If there is only the rx buffer */
 		ret = config->fsp_api->read(data->fsp_ctrl, data->ctx.rx_buf, data->data_len,

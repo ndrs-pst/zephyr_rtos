@@ -122,21 +122,21 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 	/* Set buffers info */
 	spi_context_buffers_setup(&spi->ctx, tx_bufs, rx_bufs, 1);
 
-	if ((ctx->tx_count > 1) || (ctx->rx_count > 1)) {
+	if ((ctx->tx.count > 1) || (ctx->rx.count > 1)) {
 		is_multibufs = true;
 	}
 
-	if (ctx->tx_count > ctx->rx_count) {
+	if (ctx->tx.count > ctx->rx.count) {
 		spi->tx_dummy_len = 0;
-		for (i = ctx->rx_count; i < ctx->tx_count; i++) {
-			buf = ctx->current_tx + i;
+		for (i = ctx->rx.count; i < ctx->tx.count; i++) {
+			buf = ctx->tx.current + i;
 			dummy_len += buf->len;
 		}
 		spi->rx_dummy_len = dummy_len;
-	} else if (ctx->tx_count < ctx->rx_count) {
+	} else if (ctx->tx.count < ctx->rx.count) {
 		spi->rx_dummy_len = 0;
-		for (i = ctx->tx_count; i < ctx->rx_count; i++) {
-			buf = ctx->current_rx + i;
+		for (i = ctx->tx.count; i < ctx->rx.count; i++) {
+			buf = ctx->rx.current + i;
 			dummy_len += buf->len;
 		}
 		spi->tx_dummy_len = dummy_len;
@@ -145,7 +145,7 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 		spi->rx_dummy_len = 0;
 	}
 
-	if ((ctx->tx_len == 0) && (ctx->rx_len == 0)) {
+	if ((ctx->tx.len == 0) && (ctx->rx.len == 0)) {
 		spi_context_cs_control(&spi->ctx, true);
 		spi_context_complete(&spi->ctx, dev, 0);
 		return 0;
@@ -156,31 +156,31 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 		sedi_spi_control(info->spi_device, SEDI_SPI_IOCTL_BUFFER_SETS, 1);
 	}
 
-	if (ctx->tx_len == 0) {
+	if (ctx->tx.len == 0) {
 		/* rx only, nothing to tx */
 		data_out = NULL;
 		data_in = (uint8_t *)ctx->rx_buf;
-		transfer_bytes = ctx->rx_len;
+		transfer_bytes = ctx->rx.len;
 		spi->tx_dummy_len -= transfer_bytes;
-	} else if (ctx->rx_len == 0) {
+	} else if (ctx->rx.len == 0) {
 		/* tx only, nothing to rx */
 		data_out = (uint8_t *)ctx->tx_buf;
 		data_in = NULL;
-		transfer_bytes = ctx->tx_len;
+		transfer_bytes = ctx->tx.len;
 		spi->rx_dummy_len -= transfer_bytes;
-	} else if (ctx->tx_len == ctx->rx_len) {
+	} else if (ctx->tx.len == ctx->rx.len) {
 		/* rx and tx are the same length */
 		data_out = (uint8_t *)ctx->tx_buf;
 		data_in = (uint8_t *)ctx->rx_buf;
-		transfer_bytes = ctx->tx_len;
-	} else if (ctx->tx_len > ctx->rx_len) {
+		transfer_bytes = ctx->tx.len;
+	} else if (ctx->tx.len > ctx->rx.len) {
 		/* Break up the tx into multiple transfers so we don't have to
 		 * rx into a longer intermediate buffer. Leave chip select
 		 * active between transfers.
 		 */
 		data_out = (uint8_t *)ctx->tx_buf;
 		data_in = ctx->rx_buf;
-		transfer_bytes = ctx->rx_len;
+		transfer_bytes = ctx->rx.len;
 	} else {
 		/* Break up the rx into multiple transfers so we don't have to
 		 * tx from a longer intermediate buffer. Leave chip select
@@ -188,7 +188,7 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 		 */
 		data_out = (uint8_t *)ctx->tx_buf;
 		data_in = ctx->rx_buf;
-		transfer_bytes = ctx->tx_len;
+		transfer_bytes = ctx->tx.len;
 	}
 
 	spi_context_cs_control(&spi->ctx, false);
@@ -273,11 +273,11 @@ void spi_sedi_callback(uint32_t event, void *param)
 		spi_context_cs_control(&spi->ctx, true);
 		spi_context_complete(&spi->ctx, dev, error);
 	} else if (event == SEDI_SPI_EVENT_TX_FINISHED) {
-		spi_context_update_tx(ctx, 1, ctx->tx_len);
-		if (ctx->tx_len != 0) {
+		spi_context_update_tx(ctx, 1, ctx->tx.len);
+		if (ctx->tx.len != 0) {
 			sedi_spi_update_tx_buf(info->spi_device, ctx->tx_buf,
-					       ctx->tx_len);
-			if ((ctx->rx_len == 0) &&
+					       ctx->tx.len);
+			if ((ctx->rx.len == 0) &&
 			    (spi->rx_data_updated == false)) {
 				/* Update rx length if always no rx */
 				sedi_spi_update_rx_buf(info->spi_device, NULL,
@@ -290,10 +290,10 @@ void spi_sedi_callback(uint32_t event, void *param)
 			spi->tx_data_updated = true;
 		}
 	} else if (event == SEDI_SPI_EVENT_RX_FINISHED) {
-		spi_context_update_rx(ctx, 1, ctx->rx_len);
-		if (ctx->rx_len != 0) {
+		spi_context_update_rx(ctx, 1, ctx->rx.len);
+		if (ctx->rx.len != 0) {
 			sedi_spi_update_rx_buf(info->spi_device, ctx->rx_buf,
-					       ctx->rx_len);
+					       ctx->rx.len);
 		}
 	}
 }

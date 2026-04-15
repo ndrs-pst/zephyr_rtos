@@ -187,9 +187,9 @@ static int spi_ambiq_xfer(const struct device *dev, const struct spi_config *con
 		/* First send out all data */
 		if (spi_context_tx_on(ctx)) {
 			spi_ambiq_inform(dev);
-			chunk = (ctx->tx_len > AMBIQ_SPID_TX_BUFSIZE_MAX)
+			chunk = (ctx->tx.len > AMBIQ_SPID_TX_BUFSIZE_MAX)
 					? AMBIQ_SPID_TX_BUFSIZE_MAX
-					: ctx->tx_len;
+					: ctx->tx.len;
 			am_hal_ios_fifo_space_used(data->ios_handler, &used_space);
 			/* Controller done reading the last block signalled
 			 * Check if any more data available
@@ -237,7 +237,7 @@ static int spi_ambiq_xfer(const struct device *dev, const struct spi_config *con
 					goto end;
 				}
 				if (ctx->rx_buf) {
-					size = MIN(num_read, ctx->rx_len);
+					size = MIN(num_read, ctx->rx.len);
 					/* Read data from LRAM */
 					memcpy(ctx->rx_buf,
 					       (uint8_t *)&am_hal_ios_pui8LRAM[1 + offset], size);

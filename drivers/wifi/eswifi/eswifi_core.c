@@ -233,6 +233,7 @@ static int __parse_ipv4_address(char *str, char *ssid, uint8_t ip[4])
 
 		ip[byte++] = (uint8_t)v;
 		while (*str && (*str++ != '.')) {
+			/* pass */
 		}
 	}
 

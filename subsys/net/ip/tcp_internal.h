@@ -474,10 +474,10 @@ static inline void net_tcp_reply_rst(struct net_pkt *pkt)
  *
  * @return <0 if there was an error, 0 if ok
  */
-int net_tcp_endpoint_copy(struct net_context *ctx,
-			  struct net_sockaddr *local,
-			  struct net_sockaddr *peer,
-			  net_socklen_t *addrlen);
+int net_tcp_endpoint_copy(struct net_context* ctx,
+						  struct net_sockaddr* local,
+					      struct net_sockaddr* peer,
+						  net_socklen_t* addrlen);
 
 /**
  * @brief Notify TCP layer that connection has been accepted by the application

@@ -420,7 +420,7 @@ static int spi_smartbond_transfer_mode_get(const struct device *dev)
 		 * In such a case the context should be updated and a dummy write/read should
 		 * take place.
 		 */
-		if (ctx->rx_len || ctx->tx_len) {
+		if (ctx->rx.len || ctx->tx.len) {
 			spi_smartbond_set_fifo_mode(dev, SPI_SMARTBOND_FIFO_MODE_TX_RX);
 			return SPI_SMARTBOND_TRANSFER_TX_RX;
 		}
@@ -480,7 +480,7 @@ static void spi_smartbond_write(const struct device *dev)
 		 * It might happen that a NULL buffer with a non-zero length is provided.
 		 * In that case, the bytes should be consumed.
 		 */
-		if (ctx->rx_len && !ctx->rx_buf) {
+		if (ctx->rx.len && !ctx->rx_buf) {
 			spi_smartbond_read_discard(dev);
 			spi_context_update_rx(ctx, data->dfs, 1);
 		}
@@ -1086,7 +1086,7 @@ static int spi_smartbond_transceive(const struct device *dev, const struct spi_c
 				 * It might happen that a NULL buffer with a non-zero length
 				 * is provided. In that case, the bytes should be consumed.
 				 */
-				if (ctx->rx_len) {
+				if (ctx->rx.len) {
 					spi_context_update_rx(ctx, data->dfs, 1);
 				}
 			}

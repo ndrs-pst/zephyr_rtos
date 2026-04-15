@@ -83,7 +83,7 @@ static inline k_spinlock_key_t sys_clock_lock(void)
 	/* If this fires, a new config grew real spinlock content and
 	 * the #if guard above needs updating.
 	 */
-	BUILD_ASSERT(sizeof(struct k_spinlock) <= 1);
+	BUILD_ASSERT(sizeof(struct k_spinlock) <= 1, "assert!");
 
 	key.key = arch_irq_lock();
 	return key;

@@ -120,7 +120,7 @@ static void push_data(const struct device *dev)
 			}
 		} else if (spi_context_rx_on(&spi->ctx)) {
 			/* No need to push more than necessary */
-			if ((int)(spi->ctx.rx_len - spi->fifo_diff) <= 0) {
+			if ((int)(spi->ctx.rx.len - spi->fifo_diff) <= 0) {
 				break;
 			}
 
@@ -172,10 +172,10 @@ static void pull_data(const struct device *dev)
 		spi->fifo_diff--;
 	}
 
-	if (!spi->ctx.rx_len && spi->ctx.tx_len < info->fifo_depth) {
-		write_rxftlr(dev, spi->ctx.tx_len - 1);
-	} else if (read_rxftlr(dev) >= spi->ctx.rx_len) {
-		write_rxftlr(dev, spi->ctx.rx_len - 1);
+	if (!spi->ctx.rx.len && spi->ctx.tx.len < info->fifo_depth) {
+		write_rxftlr(dev, spi->ctx.tx.len - 1);
+	} else if (read_rxftlr(dev) >= spi->ctx.rx.len) {
+		write_rxftlr(dev, spi->ctx.rx.len - 1);
 	}
 }
 
@@ -318,10 +318,10 @@ static void spi_dw_update_txftlr(const struct device *dev,
 	uint32_t reg_data = dw_spi_txftlr_dflt;
 
 	if (spi_dw_is_slave(spi)) {
-		if (!spi->ctx.tx_len) {
+		if (!spi->ctx.tx.len) {
 			reg_data = 0U;
-		} else if (spi->ctx.tx_len < dw_spi_txftlr_dflt) {
-			reg_data = spi->ctx.tx_len - 1;
+		} else if (spi->ctx.tx.len < dw_spi_txftlr_dflt) {
+			reg_data = spi->ctx.tx.len - 1;
 		}
 	} else {
 #if defined(CONFIG_SPI_DW_HSSI) && defined(CONFIG_SPI_EXTENDED_MODES)
@@ -329,10 +329,10 @@ static void spi_dw_update_txftlr(const struct device *dev,
 		 * TXFTLR field in the TXFTLR register is valid only for
 		 * Controller mode operation
 		 */
-		if (!spi->ctx.tx_len) {
+		if (!spi->ctx.tx.len) {
 			reg_data = 0U;
-		} else if (spi->ctx.tx_len < dw_spi_txftlr_dflt) {
-			reg_data = (spi->ctx.tx_len - 1) << DW_SPI_TXFTLR_TXFTLR_SHIFT;
+		} else if (spi->ctx.tx.len < dw_spi_txftlr_dflt) {
+			reg_data = (spi->ctx.tx.len - 1) << DW_SPI_TXFTLR_TXFTLR_SHIFT;
 		}
 #endif
 	}
@@ -422,13 +422,13 @@ static int transceive(const struct device *dev,
 	reg_data = dw_spi_rxftlr_dflt;
 
 	if (spi_dw_is_slave(spi)) {
-		if (spi->ctx.rx_len &&
-		    spi->ctx.rx_len < dw_spi_rxftlr_dflt) {
-			reg_data = spi->ctx.rx_len - 1;
+		if (spi->ctx.rx.len &&
+		    spi->ctx.rx.len < dw_spi_rxftlr_dflt) {
+			reg_data = spi->ctx.rx.len - 1;
 		}
 	} else {
-		if (spi->ctx.rx_len && spi->ctx.rx_len < info->fifo_depth) {
-			reg_data = spi->ctx.rx_len - 1;
+		if (spi->ctx.rx.len && spi->ctx.rx.len < info->fifo_depth) {
+			reg_data = spi->ctx.rx.len - 1;
 		}
 	}
 

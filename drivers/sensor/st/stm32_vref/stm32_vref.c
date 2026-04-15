@@ -32,6 +32,7 @@ LOG_MODULE_REGISTER(stm32_vref, CONFIG_SENSOR_LOG_LEVEL);
 struct stm32_vref_data {
 	struct adc_sequence adc_seq;
 	struct k_mutex mutex;
+
 	/*
 	 * Numerator for VREFINT calculation
 	 * (VREFINT = Num / <ADC read data>)
@@ -81,7 +82,7 @@ static int stm32_vref_sample_fetch(const struct device *dev, enum sensor_channel
 {
 	const struct stm32_vref_config *cfg = dev->config;
 	struct stm32_vref_data *data = dev->data;
-	struct adc_sequence *sp = &data->adc_seq;
+	const struct adc_sequence *sp = &data->adc_seq;
 	int rc;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_VOLTAGE) {
@@ -120,7 +121,7 @@ unlock:
 static int stm32_vref_channel_get(const struct device *dev, enum sensor_channel chan,
 				  struct sensor_value *val)
 {
-	struct stm32_vref_data *data = dev->data;
+	const struct stm32_vref_data *data = dev->data;
 	int32_t vref;
 
 	if (chan != SENSOR_CHAN_VOLTAGE) {
@@ -239,11 +240,13 @@ static struct stm32_vref_data stm32_vref_dev_data;
 static const struct stm32_vref_config stm32_vref_dev_config = {
 	.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(0)),
 	.adc_base = (ADC_TypeDef *)DT_REG_ADDR(DT_INST_IO_CHANNELS_CTLR(0)),
-	.adc_cfg = {.gain = ADC_GAIN_1,
-		    .reference = ADC_REF_INTERNAL,
-		    .acquisition_time = ADC_ACQ_TIME_MAX,
-		    .channel_id = DT_INST_IO_CHANNELS_INPUT(0),
-		    .differential = 0},
+	.adc_cfg = {
+		.gain = ADC_GAIN_1,
+		.reference = ADC_REF_INTERNAL,
+		.acquisition_time = ADC_ACQ_TIME_MAX,
+		.channel_id = DT_INST_IO_CHANNELS_INPUT(0),
+		.differential = 0
+	},
 
 	.vrefint_cal = VREFINT_CAL_INIT(0),
 	.cal_mv = DT_INST_PROP(0, vrefint_cal_mv),

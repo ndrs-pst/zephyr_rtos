@@ -42,3 +42,7 @@ properties:
     type: int
     required: true
     description: Maximal transfer size (in bytes) when FIFO is used.
+
+  stpm3x-isr:
+    type: boolean
+    description: Use STPM3X interrupt service routine

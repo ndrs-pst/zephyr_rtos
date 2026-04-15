@@ -56,7 +56,8 @@ struct llext_const_symbol {
 	/** Address of symbol */
 	const void *const addr;
 };
-BUILD_ASSERT(sizeof(struct llext_const_symbol) == 2 * sizeof(uintptr_t));
+BUILD_ASSERT(sizeof(struct llext_const_symbol) == 2 * sizeof(uintptr_t),
+			 "sizeof(struct llext_const_symbol) error !!!");
 
 /**
  * @brief Symbols are named memory addresses
@@ -254,7 +255,11 @@ struct z_llext_discarded_const_symbol {
  *
  * @param x Symbol to export
  */
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define EXPORT_SYMBOL(x)
+#else
 #define EXPORT_SYMBOL(x) EXPORT_SYMBOL_NAMED(x, x)
+#endif
 
 /**
  * @brief Export a constant symbol with a custom name and group

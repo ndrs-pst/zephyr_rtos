@@ -74,7 +74,7 @@ void test_main(void)
 	__ASSERT((psplim == main_stack_base), "PSPLIM not set to main stack base: (0x%x)", psplim);
 #endif
 
-	int key = arch_irq_lock();
+	unsigned int key = arch_irq_lock();
 	__ASSERT(arch_irq_unlocked(key), "IRQs locked in main()");
 
 	arch_irq_unlock(key);

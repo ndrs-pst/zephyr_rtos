@@ -26,14 +26,14 @@ static int cmd_get_device_id(const struct shell *sh, size_t argc, char **argv)
 		return length;
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "Length: %zd\n", length);
-	shell_fprintf(sh, SHELL_NORMAL, "ID: 0x");
+	shell_fprintf_normal(sh, "Length: %zd\n", length);
+	shell_fprintf_normal(sh, "ID: 0x");
 
 	for (i = 0 ; i < length ; i++) {
-		shell_fprintf(sh, SHELL_NORMAL, "%02x", dev_id[i]);
+		shell_fprintf_normal(sh, "%02x", dev_id[i]);
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "\n");
+	shell_fprintf_normal(sh, "\n");
 
 	return 0;
 }
@@ -54,13 +54,13 @@ static int cmd_get_device_eui64(const struct shell *sh, size_t argc, char **argv
 		return ret;
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "EUI64: 0x");
+	shell_fprintf_normal(sh, "EUI64: 0x");
 
 	for (i = 0 ; i < 8 ; i++) {
-		shell_fprintf(sh, SHELL_NORMAL, "%02x", dev_eui64[i]);
+		shell_fprintf_normal(sh, "%02x", dev_eui64[i]);
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "\n");
+	shell_fprintf_normal(sh, "\n");
 
 	return 0;
 }

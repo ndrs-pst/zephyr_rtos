@@ -18,19 +18,19 @@ extern "C" {
 extern const struct shell_transport_api shell_uart_transport_api;
 
 #ifndef CONFIG_SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE
-#define CONFIG_SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE 0
+#define CONFIG_SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE 1
 #endif
 
 #ifndef CONFIG_SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE
-#define CONFIG_SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE 0
+#define CONFIG_SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE 1
 #endif
 
 #ifndef CONFIG_SHELL_BACKEND_SERIAL_ASYNC_RX_BUFFER_COUNT
-#define CONFIG_SHELL_BACKEND_SERIAL_ASYNC_RX_BUFFER_COUNT 0
+#define CONFIG_SHELL_BACKEND_SERIAL_ASYNC_RX_BUFFER_COUNT 1
 #endif
 
 #ifndef CONFIG_SHELL_BACKEND_SERIAL_ASYNC_RX_BUFFER_SIZE
-#define CONFIG_SHELL_BACKEND_SERIAL_ASYNC_RX_BUFFER_SIZE 0
+#define CONFIG_SHELL_BACKEND_SERIAL_ASYNC_RX_BUFFER_SIZE 1
 #endif
 
 #define ASYNC_RX_BUF_SIZE (CONFIG_SHELL_BACKEND_SERIAL_ASYNC_RX_BUFFER_COUNT * \
@@ -73,6 +73,15 @@ struct shell_uart_polling {
 	struct k_timer rx_timer;
 };
 
+/* #CUSTOM@NDRS
+ * Make CONFIG_SHELL_ASYNC_API=y to ensure compatibility with CONFIG_DCACHE=y.
+ */
+#if (IS_ENABLED(CONFIG_SHELL_ASYNC_API) && IS_ENABLED(CONFIG_NOCACHE_MEMORY))
+#define SHELL_UART_NOCACHE_ATTR __nocache
+#else
+#define SHELL_UART_NOCACHE_ATTR
+#endif
+
 #ifdef CONFIG_SHELL_BACKEND_SERIAL_API_POLLING
 #define SHELL_UART_STRUCT struct shell_uart_polling
 #elif defined(CONFIG_SHELL_BACKEND_SERIAL_API_ASYNC)
@@ -88,7 +97,7 @@ struct shell_uart_polling {
  * previous Zephyr version, it will be removed in future release.
  */
 #define SHELL_UART_DEFINE(_name, ...)                                                              \
-	static SHELL_UART_STRUCT _name##_shell_uart;                                               \
+	SHELL_UART_NOCACHE_ATTR static SHELL_UART_STRUCT _name##_shell_uart;                       \
 	struct shell_transport _name = {                                                           \
 		.api = &shell_uart_transport_api,                                                  \
 		.ctx = (struct shell_telnet *)&_name##_shell_uart,                                 \
@@ -102,14 +111,14 @@ struct shell_uart_polling {
  *
  * @returns Pointer to the shell instance.
  */
-const struct shell *shell_backend_uart_get_ptr(void);
+const struct shell* shell_backend_uart_get_ptr(void);
 
 /**
  * @brief This function provides pointer to the smp shell data of the UART shell transport.
  *
  * @returns Pointer to the smp shell data.
  */
-struct smp_shell_data *shell_uart_smp_shell_data_get_ptr(void);
+struct smp_shell_data* shell_uart_smp_shell_data_get_ptr(void);
 
 #ifdef __cplusplus
 }

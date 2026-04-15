@@ -24,7 +24,6 @@ void eswifi_shell_register(struct eswifi_dev *dev)
 static int eswifi_shell_atcmd(const struct shell *sh, size_t argc,
 			      char **argv)
 {
-	int i;
 	size_t len = 0;
 
 	if (eswifi == NULL) {
@@ -40,7 +39,7 @@ static int eswifi_shell_atcmd(const struct shell *sh, size_t argc,
 	eswifi_lock(eswifi);
 
 	memset(eswifi->buf, 0, sizeof(eswifi->buf));
-	for (i = 1; i < argc; i++) {
+	for (size_t i = 1; i < argc; i++) {
 		size_t argv_len = strlen(argv[i]);
 
 		if ((len + argv_len) >= sizeof(eswifi->buf) - 1) {

@@ -22,24 +22,22 @@ void settings_init(void);
 
 int settings_backend_init(void);
 
-int settings_subsys_init(void)
-{
+int settings_subsys_init(void) {
+    int err;
 
-	int err = 0;
+    err = 0;
+    settings_lock_take();
 
-	settings_lock_take();
+    if (settings_subsys_initialized == false) {
+        settings_init();
 
-	if (!settings_subsys_initialized) {
-		settings_init();
+        err = settings_backend_init();
+        if (err == 0) {
+            settings_subsys_initialized = true;
+        }
+    }
 
-		err = settings_backend_init();
+    settings_lock_release();
 
-		if (!err) {
-			settings_subsys_initialized = true;
-		}
-	}
-
-	settings_lock_release();
-
-	return err;
+    return (err);
 }

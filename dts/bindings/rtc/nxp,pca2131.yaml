@@ -1,0 +1,50 @@
+# Copyright (c) 2026 NDR Solution (Thailand) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP PCA2131 RTC with integrated TCXO
+
+compatible: "nxp,pca2131"
+
+include:
+  - name: rtc-device.yaml
+  - name: i2c-device.yaml
+  - name: pm.yaml
+    property-allowlist:
+      - wakeup-source
+
+properties:
+
+  clkout-frequency:
+    type: int
+    default: 32768
+    enum:
+      - 32768
+      - 16384
+      - 8192
+      - 4096
+      - 2048
+      - 1024
+      - 1
+      - 0
+    description: |
+      Frequency of the CLKOUT signal in Hertz (Hz). Default is 32768 Hz. Set to 0 to
+      disable the CLKOUT signal (High-Z). The COF field maps: 0=32768, 1=16384, 2=8192,
+      3=4096, 4=2048, 5=1024, 6=1Hz, 7=High-Z.
+
+  battery-switch-over:
+    type: string
+    required: true
+    enum:
+      - standard
+      - direct
+      - disabled
+    description: |
+      Battery switch-over function selection:
+        - standard: The power failure condition happens when VDD < VBAT and VDD < Vth(sw)bat
+        - direct: The power failure condition happens when VDD < VBAT
+        - disabled: Battery switch-over disabled - only one power supply (VDD)
+
+  int1-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the PCA2131 INT1 interrupt output. This signal is open-drain, active low.

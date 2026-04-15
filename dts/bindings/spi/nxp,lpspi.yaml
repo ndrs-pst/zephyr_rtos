@@ -65,3 +65,29 @@ properties:
     required: true
     description: |
       Max number of words in the TX/Command fifo on this instance of the LPSPI.
+
+  dma-source-data-size:
+    type: int
+    description: |
+      Default source data width in bytes for DMA transfers.
+      Specifies the size of each element transferred from source.
+      Common values: 1 (byte), 2 (word), 4 (dword), 8 (qword)
+
+  dma-dest-data-size:
+    type: int
+    description: |
+      Default destination data width in bytes for DMA transfers.
+      Specifies the size of each element transferred to destination.
+      Common values: 1 (byte), 2 (word), 4 (dword), 8 (qword)
+
+  dma-source-burst-length:
+    type: int
+    description: |
+      Default source burst length in bytes for DMA transfers.
+      Number of bytes transferred in a single burst from source.
+
+  dma-dest-burst-length:
+    type: int
+    description: |
+      Default destination burst length in bytes for DMA transfers.
+      Number of bytes transferred in a single burst to destination.

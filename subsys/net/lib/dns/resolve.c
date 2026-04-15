@@ -63,21 +63,29 @@ NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(resolve_svc, dns_dispatcher_svc_handler,
 /* See dns_unpack_answer, and also see:
  * https://tools.ietf.org/html/rfc1035#section-4.1.2
  */
-#define DNS_QUERY_POS		0x0c
+#define DNS_QUERY_POS       0x0C
 
-#define DNS_IPV4_LEN		sizeof(struct net_in_addr)
-#define DNS_IPV6_LEN		sizeof(struct net_in6_addr)
+#define DNS_IPV4_LEN        sizeof(struct net_in_addr)
+#define DNS_IPV6_LEN        sizeof(struct net_in6_addr)
 
 #define DNS_RESOLVER_MIN_BUF	1
 #define DNS_RESOLVER_BUF_CTR	(DNS_RESOLVER_MIN_BUF + \
 				 CONFIG_DNS_RESOLVER_ADDITIONAL_BUF_CTR)
 
+#if defined(_MSC_VER) /* #CUSTOM@NDRS, _ud_size from 0 -> 4 */
 NET_BUF_POOL_DEFINE(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
-		    DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);
+                    DNS_RESOLVER_MAX_BUF_SIZE, 4, NULL);
 
 NET_BUF_POOL_DEFINE(dns_qname_pool, DNS_RESOLVER_BUF_CTR,
-		    CONFIG_DNS_RESOLVER_MAX_QUERY_LEN,
-		    0, NULL);
+                    CONFIG_DNS_RESOLVER_MAX_QUERY_LEN, 4, NULL);
+#else
+NET_BUF_POOL_DEFINE(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
+                    DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);
+
+NET_BUF_POOL_DEFINE(dns_qname_pool, DNS_RESOLVER_BUF_CTR,
+                    CONFIG_DNS_RESOLVER_MAX_QUERY_LEN,
+                    0, NULL);
+#endif
 
 #ifdef CONFIG_DNS_RESOLVER_CACHE
 DNS_CACHE_DEFINE(dns_cache, CONFIG_DNS_RESOLVER_CACHE_MAX_ENTRIES);
@@ -219,7 +227,7 @@ static void dns_postprocess_server(struct dns_resolve_context *ctx, int idx)
 		if (!IS_ENABLED(CONFIG_MDNS_RESPONDER) && ctx->servers[idx].is_mdns) {
 			struct net_in_addr mcast_addr = { { { 224, 0, 0, 251 } } };
 
-			if (net_sin(addr)->sin_addr.s_addr == mcast_addr.s_addr) {
+			if (net_sin(addr)->sin_addr.s_addr_be == mcast_addr.s_addr_be) {
 				struct net_if *iface;
 
 				iface = net_if_get_by_index(ctx->servers[idx].if_index);
@@ -1147,6 +1155,7 @@ static int dns_validate_record(struct dns_resolve_context *ctx, struct dns_msg_t
 		net_buf_unref(result);
 		break;
 	}
+
 	case DNS_RESPONSE_IP: {
 		if (*answer_type == DNS_RR_TYPE_A) {
 			address_size = DNS_IPV4_LEN;
@@ -1190,6 +1199,7 @@ static int dns_validate_record(struct dns_resolve_context *ctx, struct dns_msg_t
 
 		break;
 	}
+
 	case DNS_RESPONSE_TXT:
 		pos = dns_msg->msg + dns_msg->response_position;
 
@@ -1248,11 +1258,13 @@ static int dns_validate_record(struct dns_resolve_context *ctx, struct dns_msg_t
 
 		break;
 	}
+
 	case DNS_RESPONSE_CNAME_NO_IP:
 		/* Instead of using the QNAME at DNS_QUERY_POS,
 		 * we will use this CNAME
 		 */
 		break;
+
 	default:
 		return DNS_EAI_FAIL;
 	}
@@ -1561,7 +1573,7 @@ static int dns_write(struct dns_resolve_context *ctx,
 	dns_id = ctx->queries[query_idx].id;
 	query_type = ctx->queries[query_idx].query_type;
 
-	len = buf_len;
+	len = (uint16_t)buf_len;
 
 	ret = dns_msg_pack_query(buf, &len, (uint16_t)max_len,
 				 dns_qname->data, dns_qname->len, dns_id,

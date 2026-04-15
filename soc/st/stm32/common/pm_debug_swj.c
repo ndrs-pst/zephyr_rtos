@@ -11,7 +11,7 @@
 
 PINCTRL_DT_DEFINE(SWJ_NODE);
 
-const struct pinctrl_dev_config *swj_pcfg = PINCTRL_DT_DEV_CONFIG_GET(SWJ_NODE);
+const struct pinctrl_dev_config *const swj_pcfg = PINCTRL_DT_DEV_CONFIG_GET(SWJ_NODE);
 
 /*
  * Serial Wire / JTAG port pins are enabled as part of SoC default configuration.

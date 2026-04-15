@@ -74,7 +74,7 @@ struct dhcpv4_server_ctx {
 };
 
 static struct net_in_addr net_dhcpv4_server_find_free_address(struct dhcpv4_server_ctx *ctx,
-							  struct dhcpv4_client_id *client_id);
+							      struct dhcpv4_client_id *client_id);
 
 static void *address_validator_callback_user_data;
 static net_dhcpv4_server_address_validator_cb_t address_validator_callback;
@@ -760,7 +760,7 @@ static int dhcpv4_get_client_id(struct dhcp_msg *msg, uint8_t *options,
 	int ret;
 
 	client_id->hw_addr_type = msg->htype;
-	memcpy(client_id->hw_addr_buf, msg->chaddr, min(msg->hlen,
+	memcpy(client_id->hw_addr_buf, msg->chaddr, z_min(msg->hlen,
 			DHCPV4_HARDWARE_ADDRESS_MAX_SIZE));
 	client_id->hw_addr_len = msg->hlen;
 
@@ -1091,6 +1091,7 @@ static void dhcpv4_handle_discover(struct dhcpv4_server_ctx *ctx,
 			/* Reusing declined address slot, need to clear it first */
 			reset_slot(selected);
 		}
+
 		if (selected->state == DHCPV4_SERVER_ADDR_FREE) {
 
 			struct net_in_addr selected_addr;
@@ -1581,7 +1582,7 @@ static void dhcpv4_server_cb(struct net_socket_service_event *evt)
 	}
 
 	ret = zsock_recvfrom(evt->event.fd, recv_buf, sizeof(recv_buf),
-			     ZSOCK_MSG_DONTWAIT, NULL, 0);
+			     ZSOCK_MSG_DONTWAIT, NULL, NULL);
 	if (ret < 0) {
 		if (errno == EAGAIN) {
 			return;

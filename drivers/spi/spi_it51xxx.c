@@ -200,7 +200,7 @@ static void spi_it51xxx_ctrl_mode_selection(const struct device *dev)
 	 * with the tx pointer set to null
 	 */
 	if (!ctx->rx_buf) {
-		total_rx_len -= ctx->rx_len;
+		total_rx_len -= ctx->rx.len;
 	}
 
 	/* spi cs1 only supports pio mode */
@@ -393,7 +393,7 @@ static inline void spi_it51xxx_fifo_rx(const struct device *dev)
 	if (data->xfer_mode == XFER_RX_ONLY) {
 		data->receive_len = spi_context_total_rx_len(ctx);
 	} else {
-		data->receive_len = ctx->rx_len;
+		data->receive_len = ctx->rx.len;
 	}
 	spi_it51xxx_set_fifo_len(dev, data->ctrl_mode.rx, data->receive_len);
 
@@ -412,15 +412,15 @@ static inline void spi_it51xxx_fifo_tx(const struct device *dev)
 		   cfg->base + SPI09_FIFO_BASE_ADDR_1);
 
 	if (data->xfer_mode == XFER_TX_ONLY) {
-		for (int i = 0; i < ctx->tx_count; i++) {
-			const struct spi_buf spi_buf = ctx->current_tx[i];
+		for (int i = 0; i < ctx->tx.count; i++) {
+			const struct spi_buf spi_buf = ctx->tx.current[i];
 
 			memcpy(data->fifo_data + data->transfer_len, spi_buf.buf, spi_buf.len);
 			data->transfer_len += spi_buf.len;
 		}
 	} else {
-		memcpy(data->fifo_data, ctx->tx_buf, ctx->tx_len);
-		data->transfer_len = ctx->tx_len;
+		memcpy(data->fifo_data, ctx->tx_buf, ctx->tx.len);
+		data->transfer_len = ctx->tx.len;
 	}
 	spi_it51xxx_set_fifo_len(dev, data->ctrl_mode.tx, data->transfer_len);
 
@@ -593,7 +593,7 @@ static void it51xxx_spi_fifo_done_handle(const struct device *dev, const bool is
 
 	if (is_tx_done) {
 		do {
-			size_t curr_tx_len = ctx->tx_len;
+			size_t curr_tx_len = ctx->tx.len;
 
 			spi_context_update_tx(ctx, 1, curr_tx_len);
 			data->transfer_len -= curr_tx_len;
@@ -603,7 +603,7 @@ static void it51xxx_spi_fifo_done_handle(const struct device *dev, const bool is
 			memcpy(ctx->rx_buf, data->fifo_data, data->receive_len);
 			LOG_HEXDUMP_DBG(ctx->rx_buf, data->receive_len, "fifo: rx:");
 			do {
-				size_t curr_rx_len = ctx->rx_len;
+				size_t curr_rx_len = ctx->rx.len;
 
 				spi_context_update_rx(ctx, 1, curr_rx_len);
 				data->receive_len -= curr_rx_len;
@@ -616,7 +616,7 @@ static void it51xxx_spi_fifo_done_handle(const struct device *dev, const bool is
 	 * null pointer.
 	 */
 	if (!ctx->rx_buf) {
-		spi_context_update_rx(ctx, 1, ctx->rx_len);
+		spi_context_update_rx(ctx, 1, ctx->rx.len);
 	}
 
 	spi_it51xxx_next_xfer(dev);
@@ -648,7 +648,7 @@ static void it51xxx_spi_byte_done_handle(const struct device *dev)
 	 * null pointer.
 	 */
 	if (!ctx->rx_buf) {
-		spi_context_update_rx(ctx, 1, ctx->rx_len);
+		spi_context_update_rx(ctx, 1, ctx->rx.len);
 	}
 
 	spi_it51xxx_next_xfer(dev);

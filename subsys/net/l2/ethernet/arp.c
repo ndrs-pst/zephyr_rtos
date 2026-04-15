@@ -255,9 +255,9 @@ static inline struct net_in_addr *if_get_addr(struct net_if *iface,
 		     net_ipv4_addr_cmp_raw(
 				own_addr, ipv4->unicast[i].ipv4.address.in_addr.s4_addr))) {
 			if ((dst_addr == NULL) ||
-			    is_same_subnet(dst_addr->s_addr,
-					   ipv4->unicast[i].ipv4.address.in_addr.s_addr,
-					   ipv4->unicast[i].netmask.s_addr)) {
+			    is_same_subnet(dst_addr->s_addr_be,
+					   ipv4->unicast[i].ipv4.address.in_addr.s_addr_be,
+					   ipv4->unicast[i].netmask.s_addr_be)) {
 				/* Use preferred address on the same subnet as destination */
 				return &ipv4->unicast[i].ipv4.address.in_addr;
 			} else if (fall_back == NULL) {
@@ -818,7 +818,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 	struct net_arp_hdr *arp_hdr;
 	struct net_in_addr src_ipaddr;
 	struct net_pkt *reply;
-	struct net_in_addr *addr;
+	const struct net_in_addr *addr;
 
 	if (net_pkt_get_len(pkt) < sizeof(struct net_arp_hdr)) {
 		NET_DBG("DROP: Too short ARP msg (%zu bytes, min %zu bytes)",

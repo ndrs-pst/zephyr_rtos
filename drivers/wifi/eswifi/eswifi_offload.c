@@ -19,7 +19,6 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 
 #include "eswifi.h"
 
-
 static int eswifi_off_bind(struct net_context *context,
 			   const struct net_sockaddr *addr,
 			   net_socklen_t addrlen)

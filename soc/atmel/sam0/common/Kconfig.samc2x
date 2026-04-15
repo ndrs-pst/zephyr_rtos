@@ -1,0 +1,37 @@
+# Copyright (c) 2022 Kamil Serwus
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_SAMC20 || SOC_SERIES_SAMC21
+
+config SOC_ATMEL_SAMC_XOSC32K
+	bool "External 32 kHz crystal oscillator"
+	help
+	  Say y to enable the external 32 kHZ crystal oscillator at
+	  startup.  This can then be selected as the main clock source
+	  for the SOC.
+
+config SOC_ATMEL_SAMC_XOSC
+	bool "External crystal oscillator"
+	help
+	  Say y to enable the external crystal oscillator at startup.
+
+choice
+	prompt "Main clock source"
+	help
+	  Selects the clock that the main clocks, such as the CPU
+	  clock and AHB clock, will be derived from.
+
+config SOC_ATMEL_SAMC_XOSC32K_AS_MAIN
+	bool "XOSC32K"
+	depends on SOC_ATMEL_SAMC_XOSC32K
+
+config SOC_ATMEL_SAMC_XOSC_AS_MAIN
+	bool "XOSC"
+	depends on SOC_ATMEL_SAMC_XOSC
+
+config SOC_ATMEL_SAMC_OSC48M_AS_MAIN
+	bool "OSC48M"
+
+endchoice
+
+endif # SOC_SERIES_SAMC20 || SOC_SERIES_SAMC21

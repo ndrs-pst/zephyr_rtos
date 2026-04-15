@@ -92,7 +92,7 @@ struct dma_mcux_edma_data {
 };
 
 #define DEV_CFG(dev) \
-	((const struct dma_mcux_edma_config *const)dev->config)
+	((struct dma_mcux_edma_config DT_CONST*)dev->config)
 #define DEV_DATA(dev) ((struct dma_mcux_edma_data *)dev->data)
 #define DEV_BASE(dev) ((DMA_Type *)DEVICE_MMIO_NAMED_GET(dev, edma_mmio))
 
@@ -133,12 +133,16 @@ struct dma_mcux_edma_data {
 #if defined(CONFIG_DMA_MCUX_EDMA)
 #define EDMA_HW_TCD_SADDR(dev, ch) (DEV_BASE(dev)->TCD[ch].SADDR)
 #define EDMA_HW_TCD_DADDR(dev, ch) (DEV_BASE(dev)->TCD[ch].DADDR)
+#define EDMA_HW_TCD_SLAST(dev, ch) (DEV_BASE(dev)->TCD[ch].SLAST)
+#define EDMA_HW_TCD_DLAST_SGA(dev, ch) (DEV_BASE(dev)->TCD[ch].DLAST_SGA)
 #define EDMA_HW_TCD_BITER(dev, ch) (DEV_BASE(dev)->TCD[ch].BITER_ELINKNO)
 #define EDMA_HW_TCD_CITER(dev, ch) (DEV_BASE(dev)->TCD[ch].CITER_ELINKNO)
 #define EDMA_HW_TCD_CSR(dev, ch)   (DEV_BASE(dev)->TCD[ch].CSR)
 #elif defined(CONFIG_DMA_MCUX_EDMA_V3)
 #define EDMA_HW_TCD_SADDR(dev, ch) (DEV_BASE(dev)->CH[ch].TCD_SADDR)
 #define EDMA_HW_TCD_DADDR(dev, ch) (DEV_BASE(dev)->CH[ch].TCD_DADDR)
+#define EDMA_HW_TCD_SLAST(dev, ch) (DEV_BASE(dev)->CH[ch].TCD_SLAST_SDA)
+#define EDMA_HW_TCD_DLAST_SGA(dev, ch) (DEV_BASE(dev)->CH[ch].TCD_DLAST_SGA)
 #define EDMA_HW_TCD_BITER(dev, ch) (DEV_BASE(dev)->CH[ch].TCD_BITER_ELINKNO)
 #define EDMA_HW_TCD_CITER(dev, ch) (DEV_BASE(dev)->CH[ch].TCD_CITER_ELINKNO)
 #define EDMA_HW_TCD_CSR(dev, ch)   (DEV_BASE(dev)->CH[ch].TCD_CSR)
@@ -151,6 +155,10 @@ struct dma_mcux_edma_data {
 						  EDMA_TCD_TYPE((void *)DEV_BASE(dev)))
 #define EDMA_HW_TCD_DADDR(dev, ch) EDMA_TCD_DADDR(EDMA_TCD_BASE((void *)DEV_BASE(dev), ch), \
 				   EDMA_TCD_TYPE((void *)DEV_BASE(dev)))
+#define EDMA_HW_TCD_SLAST(dev, ch) EDMA_TCD_SLAST_SDA(EDMA_TCD_BASE((void *)DEV_BASE(dev), ch), \
+				   EDMA_TCD_TYPE((void *)DEV_BASE(dev)))
+#define EDMA_HW_TCD_DLAST_SGA(dev, ch) EDMA_TCD_DLAST_SGA(EDMA_TCD_BASE((void *)DEV_BASE(dev), ch), \
+				       EDMA_TCD_TYPE((void *)DEV_BASE(dev)))
 #define EDMA_HW_TCD_BITER(dev, ch) EDMA_TCD_BITER(EDMA_TCD_BASE((void *)DEV_BASE(dev), ch), \
 				   EDMA_TCD_TYPE((void *)DEV_BASE(dev)))
 #define EDMA_HW_TCD_CITER(dev, ch) EDMA_TCD_CITER(EDMA_TCD_BASE((void *)DEV_BASE(dev), ch), \
@@ -191,6 +199,50 @@ static ALWAYS_INLINE uint32_t dma_mcux_edma_remove_channel_gap(const struct devi
 #define dma_mcux_edma_add_channel_gap(dev, channel) channel
 #define dma_mcux_edma_remove_channel_gap(dev, channel) channel
 #endif /* DMA_MCUX_HAS_CHANNEL_GAP */
+
+static int32_t dma_mcux_edma_reload_adjust(const struct dma_block_config *block_config,
+					   bool source)
+{
+	enum dma_addr_adj addr_adj = source ? (enum dma_addr_adj)block_config->source_addr_adj :
+		(enum dma_addr_adj)block_config->dest_addr_adj;
+	int32_t block_size = (int32_t)block_config->block_size;
+
+	switch (addr_adj) {
+	case DMA_ADDR_ADJ_INCREMENT:
+		return -block_size;
+
+	case DMA_ADDR_ADJ_DECREMENT:
+		return block_size;
+
+	case DMA_ADDR_ADJ_NO_CHANGE:
+	default:
+		return 0;
+	}
+}
+
+static void dma_mcux_edma_patch_basic_cyclic_tcd(const struct device *dev,
+						 uint32_t hw_channel,
+						 struct dma_config *config)
+{
+	struct dma_block_config const *block_config = config->head_block;
+
+	if (!config->cyclic || (block_config == NULL)) {
+		return;
+	}
+
+	if (block_config->source_reload_en != 0U) {
+		EDMA_HW_TCD_SLAST(dev, hw_channel) =
+			dma_mcux_edma_reload_adjust(block_config, true);
+	}
+
+	if (block_config->dest_reload_en != 0U) {
+		EDMA_HW_TCD_DLAST_SGA(dev, hw_channel) =
+			dma_mcux_edma_reload_adjust(block_config, false);
+	}
+
+	/* Keep the request line enabled across major loops for cyclic transfers. */
+	EDMA_HW_TCD_CSR(dev, hw_channel) &= ~DMA_CSR_DREQ(1U);
+}
 
 static bool data_size_valid(const size_t data_size)
 {
@@ -470,8 +522,8 @@ static int dma_mcux_edma_configure_basic(const struct device *dev,
 {
 	edma_handle_t *p_handle = DEV_EDMA_HANDLE(dev, channel);
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
-	struct dma_mcux_channel_transfer_edma_settings *xfer_settings = &data->transfer_settings;
-	struct dma_block_config *block_config = config->head_block;
+	struct dma_mcux_channel_transfer_edma_settings const *xfer_settings = &data->transfer_settings;
+	struct dma_block_config const *block_config = config->head_block;
 	uint32_t hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
 	int ret = 0;
 
@@ -490,6 +542,8 @@ static int dma_mcux_edma_configure_basic(const struct device *dev,
 	if (submit_status != kStatus_Success) {
 		LOG_ERR("Error submitting EDMA Transfer: 0x%x", submit_status);
 		ret = -EFAULT;
+	} else {
+		dma_mcux_edma_patch_basic_cyclic_tcd(dev, hw_channel, config);
 	}
 
 	LOG_DBG("DMA TCD CSR 0x%x", EDMA_HW_TCD_CSR(dev, hw_channel));
@@ -500,9 +554,9 @@ static int dma_mcux_edma_configure_basic(const struct device *dev,
 static int dma_mcux_edma_configure_hardware(const struct device *dev, uint32_t channel,
 					     struct dma_config *config)
 {
-	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+	struct call_back const* data = DEV_CHANNEL_DATA(dev, channel);
 	edma_transfer_type_t transfer_type = data->transfer_settings.transfer_type;
-	struct dma_block_config *block_config = config->head_block;
+	struct dma_block_config const* block_config = config->head_block;
 	bool sg_mode = block_config->source_gather_en || block_config->dest_scatter_en;
 	uint32_t hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
 
@@ -550,16 +604,16 @@ static inline int dma_mcux_edma_validate_cfg(const struct device *dev,
 	}
 
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
-	struct dma_block_config *block_config = config->head_block;
+	struct dma_block_config const* block_config = config->head_block;
 	uint32_t slot = config->dma_slot;
 	edma_transfer_type_t *type = &data->transfer_settings.transfer_type;
 
-	if (slot >= DEV_CFG(dev)->dma_requests) {
+	if (slot >= (uint32_t)DEV_CFG(dev)->dma_requests) {
 		LOG_ERR("source number is out of scope %d", slot);
 		return -ENOTSUP;
 	}
 
-	if (channel >= DEV_CFG(dev)->dma_channels) {
+	if (channel >= (uint32_t)DEV_CFG(dev)->dma_channels) {
 		LOG_ERR("out of DMA channel %d", channel);
 		return -EINVAL;
 	}
@@ -739,7 +793,7 @@ static int dma_mcux_edma_stop(const struct device *dev, uint32_t channel)
 
 static int dma_mcux_edma_suspend(const struct device *dev, uint32_t channel)
 {
-	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+	struct call_back const* data = DEV_CHANNEL_DATA(dev, channel);
 
 #if (defined(CONFIG_DMA_MCUX_EDMA_V3) || defined(CONFIG_DMA_MCUX_EDMA_V4)) && \
 	(!defined(FSL_FEATURE_SOC_DMAMUX_COUNT) || (FSL_FEATURE_SOC_DMAMUX_COUNT == 0))
@@ -760,7 +814,7 @@ static int dma_mcux_edma_suspend(const struct device *dev, uint32_t channel)
 
 static int dma_mcux_edma_resume(const struct device *dev, uint32_t channel)
 {
-	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+	struct call_back const* data = DEV_CHANNEL_DATA(dev, channel);
 
 	if (!data->busy) {
 		return -EINVAL;
@@ -774,8 +828,8 @@ static void dma_mcux_edma_update_hw_tcd(const struct device *dev, uint32_t chann
 {
 	EDMA_HW_TCD_SADDR(dev, channel) = EDMA_MMAP_ADDR(src);
 	EDMA_HW_TCD_DADDR(dev, channel) = EDMA_MMAP_ADDR(dst);
-	EDMA_HW_TCD_BITER(dev, channel) = size;
-	EDMA_HW_TCD_CITER(dev, channel) = size;
+	EDMA_HW_TCD_BITER(dev, channel) = (uint16_t)size;
+	EDMA_HW_TCD_CITER(dev, channel) = (uint16_t)size;
 	EDMA_HW_TCD_CSR(dev, channel) |= DMA_CSR_DREQ(1U);
 }
 
@@ -786,7 +840,8 @@ static int edma_reload_loop(const struct device *dev, uint32_t channel,
 	edma_tcd_t *tcd = NULL;
 	edma_tcd_t *pre_tcd = NULL;
 	uint32_t hw_channel;
-	uint32_t hw_id, sw_id;
+	uint32_t hw_id;
+	uint32_t sw_id;
 	uint8_t pre_idx;
 
 	hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
@@ -811,8 +866,8 @@ static int edma_reload_loop(const struct device *dev, uint32_t channel,
 
 	EDMA_TCD_SADDR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) = EDMA_MMAP_ADDR(src);
 	EDMA_TCD_DADDR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) = EDMA_MMAP_ADDR(dst);
-	EDMA_TCD_BITER(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) = size;
-	EDMA_TCD_CITER(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) = size;
+	EDMA_TCD_BITER(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) = (uint16_t)size;
+	EDMA_TCD_CITER(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) = (uint16_t)size;
 	/* Enable automatically stop */
 	EDMA_TCD_CSR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) |= DMA_CSR_DREQ(1U);
 	sw_id = EDMA_TCD_DLAST_SGA(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev)));
@@ -829,7 +884,7 @@ static int edma_reload_loop(const struct device *dev, uint32_t channel,
 	 * minor loop burst completes.
 	 */
 	while (EDMA_HW_TCD_CSR(dev, hw_channel) & EDMA_HW_TCD_CH_ACTIVE_MASK) {
-		;
+		/* pass */
 	}
 
 	/* Identify the current active TCD.  Use DLAST_SGA as the HW ID */
@@ -917,7 +972,7 @@ static int edma_reload_dynamic(const struct device *dev, uint32_t channel,
 static int dma_mcux_edma_reload(const struct device *dev, uint32_t channel,
 				uint32_t src, uint32_t dst, size_t size)
 {
-	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+	struct call_back const* data = DEV_CHANNEL_DATA(dev, channel);
 	int ret = 0;
 
 	/* Lock the channel configuration */
@@ -994,7 +1049,7 @@ static int dma_mcux_edma_get_status(const struct device *dev, uint32_t channel,
 static bool dma_mcux_edma_channel_filter(const struct device *dev,
 					 int channel_id, void *param)
 {
-	enum dma_channel_filter *filter = (enum dma_channel_filter *)param;
+	enum dma_channel_filter const* filter = (enum dma_channel_filter const*)param;
 
 	if (filter && *filter == DMA_CHANNEL_PERIODIC) {
 		if (channel_id > 3) {
@@ -1149,7 +1204,12 @@ static int dma_mcux_edma_init(const struct device *dev)
 /* no cache means no worries */
 #define EDMA_TCDPOOL_CACHE_ATTR
 #elif defined(CONFIG_DMA_MCUX_USE_DTCM_FOR_DMA_DESCRIPTORS)
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 #define EDMA_TCDPOOL_CACHE_ATTR __dtcm_noinit_section
+#else
+#pragma section(".dtcm_noinit", read, write, nopage)
+#define EDMA_TCDPOOL_CACHE_ATTR __declspec(allocate(".dtcm_noinit"))
+#endif
 #elif defined(CONFIG_CPU_HAS_NXP_SYSMPU)
 /* Kinetis LMEM parts keep the default SRAM region outside the cached area. */
 #define EDMA_TCDPOOL_CACHE_ATTR
@@ -1167,7 +1227,7 @@ static int dma_mcux_edma_init(const struct device *dev)
 	static void dma_imx_config_func_##n(const struct device *dev);		\
 	static __aligned(DMA_TCD_ALIGN_SIZE) EDMA_TCDPOOL_CACHE_ATTR edma_tcd_t	\
 	dma_tcdpool##n[DT_INST_PROP(n, dma_channels)][CONFIG_DMA_TCD_QUEUE_SIZE];\
-	static const struct dma_mcux_edma_config dma_config_##n = {		\
+	static struct dma_mcux_edma_config DT_CONST dma_config_##n = {		\
 		DEVICE_MMIO_NAMED_ROM_INIT(edma_mmio, DT_DRV_INST(n)),		\
 		DMAMUX_BASE_INIT(n)						\
 		.dma_requests = DT_INST_PROP(n, dma_requests),			\
@@ -1197,3 +1257,44 @@ static int dma_mcux_edma_init(const struct device *dev)
 	DMA_MCUX_EDMA_CONFIG_FUNC(n);
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_INIT)
+
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+#include "S32K358_device.h"
+
+#define S32K3_DMA_CFG_REG_INIT(n) \
+    zephyr_gtest_dma_s32k3_reg_init(DEVICE_DT_GET(DT_DRV_INST(n)), &dma_data_##n, \
+                                    &dma_config_##n);
+
+static void zephyr_gtest_dma_s32k3_reg_init(const struct device* dev, struct dma_mcux_edma_data* data,
+                                            struct dma_mcux_edma_config* cfg) {
+    uintptr_t base_addr = (uintptr_t)cfg->edma_mmio.addr;
+    int rc = 0;
+
+    switch (base_addr) {
+        case IP_EDMA_BASE: {
+            cfg->edma_mmio.addr = (mm_reg_t)ut_mcu_edma_area;
+            dmamux_base_0[0] = (DMAMUX_Type*)ut_mcu_dmamux_0_area;
+            dmamux_base_0[1] = (DMAMUX_Type*)ut_mcu_dmamux_1_area;
+            break;
+        }
+
+        default : {
+            rc = -1;
+            break;
+        }
+    }
+
+    if (rc == 0) {
+        rc = dev->ops.init(dev);
+        if (rc == 0) {
+            dev->state->initialized = true;
+            dev->state->init_res = 0U;
+        }
+    }
+}
+
+void zephyr_gtest_dma_s32k3(void) {
+    DT_INST_FOREACH_STATUS_OKAY(S32K3_DMA_CFG_REG_INIT)
+}
+#endif

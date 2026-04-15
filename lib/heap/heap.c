@@ -269,7 +269,9 @@ static void free_chunk(struct z_heap *h, chunkid_t c)
  */
 static chunkid_t mem_to_chunkid(struct z_heap *h, void *p)
 {
-	uint8_t *mem = p, *base = (uint8_t *)chunk_buf(h);
+	uint8_t const *mem = p;
+	uint8_t const *base = (uint8_t *)chunk_buf(h);
+
 	return (mem - chunk_header_bytes(h) - base) / CHUNK_UNIT;
 }
 
@@ -350,7 +352,7 @@ size_t sys_heap_usable_size(struct sys_heap *heap, void *mem)
 
 	if (SYS_HEAP_HARDENING_FULL) {
 		verify_chunk_canary(h, c, mem);
-	}
+}
 
 	return chunk_usable_bytes(h, c) - mem_align_gap(h, mem);
 }
@@ -466,7 +468,8 @@ void *sys_heap_noalign_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 {
 	struct z_heap *h = heap->heap;
-	size_t gap, rew;
+	size_t gap;
+	size_t rew;
 
 	/*
 	 * Split align and rewind values (if any).
@@ -475,10 +478,11 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	 * So if e.g. align = 0x28 (32 | 8) this means we align to a 32-byte
 	 * boundary and then rewind 8 bytes.
 	 */
-	rew = align & -align;
+	/* #CUSTOM@NDRS */
+	rew = align & ~(align - 1U);
 	if (align != rew) {
 		align -= rew;
-		gap = min(rew, chunk_header_bytes(h));
+		gap = z_min(rew, chunk_header_bytes(h));
 	} else {
 		if (align <= chunk_header_bytes(h)) {
 			return sys_heap_alloc(heap, bytes);
@@ -506,13 +510,13 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	uint8_t *mem = chunk_mem(h, c0);
 
 	/* Align allocated memory */
-	mem = (uint8_t *) ROUND_UP(mem + rew, align) - rew;
-	chunk_unit_t *end = (chunk_unit_t *) ROUND_UP(mem + bytes, CHUNK_UNIT);
+	mem = (uint8_t *)ROUND_UP(mem + rew, align) - rew;
+	chunk_unit_t const *end = (chunk_unit_t *)ROUND_UP(mem + bytes, CHUNK_UNIT);
 
 	/* Get corresponding chunks */
 	chunkid_t c = mem_to_chunkid(h, mem);
 	chunkid_t c_end = end - chunk_buf(h) + CHUNK_TRAILER_SIZE;
-	CHECK(c >= c0 && c  < c_end && c_end <= c0 + padded_sz);
+	CHECK((c >= c0) && (c  < c_end) && (c_end <= (c0 + padded_sz)));
 
 	/* Split and free unused prefix */
 	if (c > c0) {
@@ -683,7 +687,7 @@ void *sys_heap_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 	if (ptr2 != NULL) {
 		size_t prev_size = sys_heap_usable_size(heap, ptr);
 
-		memcpy(ptr2, ptr, min(prev_size, bytes));
+		memcpy(ptr2, ptr, z_min(prev_size, bytes));
 		sys_heap_free(heap, ptr);
 	}
 	return ptr2;
@@ -717,7 +721,7 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 	if (ptr2 != NULL) {
 		size_t prev_size = sys_heap_usable_size(heap, ptr);
 
-		memcpy(ptr2, ptr, min(prev_size, bytes));
+		memcpy(ptr2, ptr, z_min(prev_size, bytes));
 		sys_heap_free(heap, ptr);
 	}
 	return ptr2;
@@ -741,7 +745,7 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 
 	/* Round the start up, the end down */
 	uintptr_t addr = ROUND_UP(mem, CHUNK_UNIT);
-	uintptr_t end = ROUND_DOWN((uint8_t *)mem + bytes, CHUNK_UNIT);
+	uintptr_t end = ROUND_DOWN((uintptr_t)mem + bytes, CHUNK_UNIT);
 	chunksz_t heap_sz = (end - addr) / CHUNK_UNIT;
 
 	CHECK(end > addr);

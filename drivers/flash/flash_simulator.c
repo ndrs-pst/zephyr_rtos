@@ -157,7 +157,7 @@ static int flash_range_is_valid(const struct device *dev, off_t offset,
 {
 	const struct flash_simulator_config *cfg = dev->config;
 
-	if ((offset < 0 || offset >= cfg->flash_size ||
+	if (((offset < 0) || (offset >= (off_t)cfg->flash_size) ||
 	     (cfg->flash_size - offset) < len)) {
 		return 0;
 	}
@@ -487,6 +487,12 @@ static int flash_init(const struct device *dev)
 	return rc;
 }
 
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
+int flash_simulator_init(const struct device *dev) {
+	return flash_init(dev);
+}
+#endif
+
 /* Extension to generic flash driver API */
 void *z_impl_flash_simulator_get_memory(const struct device *dev,
 					size_t *mock_size)
@@ -611,7 +617,7 @@ const struct flash_simulator_params *z_vrfy_flash_simulator_get_params(const str
 		};                                                                                 \
 	))                                                                                         \
                                                                                                    \
-	static const struct flash_simulator_config flash_simulator_config_##n = {                  \
+	static struct flash_simulator_config DT_CONST flash_simulator_config_##n = {               \
 		.prog_unit_buf = prog_unit_buf_##n,                                                \
 		.flash_parameters = &flash_parameters_##n,                                         \
 		.base_offset = FLASH_SIMULATOR_BASE_OFFSET(n),                                     \
@@ -709,3 +715,27 @@ NATIVE_TASK(flash_native_options, PRE_BOOT_1, 1);
 NATIVE_TASK(flash_native_cleanup, ON_EXIT, 1);
 
 #endif /* CONFIG_ARCH_POSIX */
+
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
+
+#define FLASH_SIMULATOR_DEV_INIT(n)       \
+	zephyr_gtest_flash_simulator_dev_init(DEVICE_DT_GET(DT_DRV_INST(n)), \
+					      &flash_simulator_data_##n, &flash_simulator_config_##n);
+
+static void zephyr_gtest_flash_simulator_dev_init(const struct device *dev,
+						  struct flash_simulator_data* data,
+						  struct flash_simulator_config* cfg) {
+	int rc;
+
+	rc = dev->ops.init(dev);
+	if (rc == 0) {
+		dev->state->initialized = true;
+		dev->state->init_res = 0U;
+	}
+}
+
+void zephyr_gtest_flash_simulator(void) {
+	DT_INST_FOREACH_STATUS_OKAY(FLASH_SIMULATOR_DEV_INIT)
+}
+
+#endif /* (__GTEST == 1U) */

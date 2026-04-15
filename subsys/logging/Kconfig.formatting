@@ -239,6 +239,16 @@ config LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP
 
 endchoice
 
+config LOG_OUTPUT_FORMAT_HIDE_US
+	bool "Hide microseconds in timestamp"
+	default n
+	help
+	  When enabled, the microseconds field (,uuu) is omitted from the
+	  formatted timestamp. Useful when 1 ms resolution is sufficient and
+	  the extra digits are considered noise.
+	  Applies to time (hh:mm:ss.mmm), date (YYYY-MM-DD hh:mm:ss.mmm) and
+	  Linux ([sssss.mmmuuu]) timestamp formats.
+
 config LOG_BACKEND_CRLF_NONE
 	bool "Prevent adding CR and LF in logger"
 	help

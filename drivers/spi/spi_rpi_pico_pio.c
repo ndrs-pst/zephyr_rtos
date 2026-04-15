@@ -779,8 +779,8 @@ static void spi_pico_pio_txrx_3_wire(const struct device *dev)
 	uint8_t *rxbuf = data->spi_ctx.rx_buf;
 	uint32_t txrx;
 	int sio_pin = dev_cfg->sio_gpio.pin;
-	uint32_t tx_size = data->spi_ctx.tx_len; /* Number of WORDS to send */
-	uint32_t rx_size = data->spi_ctx.rx_len; /* Number of WORDS to receive */
+	uint32_t tx_size = data->spi_ctx.tx.len; /* Number of WORDS to send */
+	uint32_t rx_size = data->spi_ctx.rx.len; /* Number of WORDS to receive */
 	PIO pio = pio_rpi_pico_get_pio(dev_cfg->piodev);
 
 	if (txbuf) {

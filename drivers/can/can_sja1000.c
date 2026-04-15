@@ -273,16 +273,17 @@ int can_sja1000_set_mode(const struct device *dev, can_mode_t mode)
 
 static void can_sja1000_read_frame(const struct device *dev, struct can_frame *frame)
 {
+	const struct can_sja1000_config *config = dev->config;
+	can_sja1000_read_reg_t read_reg = config->read_reg;
 	uint32_t id;
 	uint8_t info;
 	uint8_t data_reg;
 
-	memset(frame, 0, sizeof(*frame));
-
-	info = can_sja1000_read_reg(dev, CAN_SJA1000_FRAME_INFO);
-
+	info = read_reg(dev, CAN_SJA1000_FRAME_INFO);
 	if ((info & CAN_SJA1000_FRAME_INFO_RTR) != 0) {
-		frame->flags |= CAN_FRAME_RTR;
+		frame->flags = CAN_FRAME_RTR;
+	} else {
+		frame->flags = 0;
 	}
 
 	frame->dlc = CAN_SJA1000_FRAME_INFO_DLC_GET(info);
@@ -295,39 +296,45 @@ static void can_sja1000_read_frame(const struct device *dev, struct can_frame *f
 		frame->flags |= CAN_FRAME_IDE;
 
 		id = FIELD_PREP(GENMASK(28, 21),
-				can_sja1000_read_reg(dev, CAN_SJA1000_XFF_ID1));
+				read_reg(dev, CAN_SJA1000_XFF_ID1));
 		id |= FIELD_PREP(GENMASK(20, 13),
-				 can_sja1000_read_reg(dev, CAN_SJA1000_XFF_ID2));
+				 read_reg(dev, CAN_SJA1000_XFF_ID2));
 		id |= FIELD_PREP(GENMASK(12, 5),
-				 can_sja1000_read_reg(dev, CAN_SJA1000_EFF_ID3));
+				 read_reg(dev, CAN_SJA1000_EFF_ID3));
 		id |= FIELD_PREP(GENMASK(4, 0),
-				 can_sja1000_read_reg(dev, CAN_SJA1000_EFF_ID4) >> 3);
+				 read_reg(dev, CAN_SJA1000_EFF_ID4) >> 3);
 		frame->id = id;
 		data_reg = CAN_SJA1000_EFF_DATA;
 	} else {
 		id = FIELD_PREP(GENMASK(10, 3),
-				can_sja1000_read_reg(dev, CAN_SJA1000_XFF_ID1));
+				read_reg(dev, CAN_SJA1000_XFF_ID1));
 		id |= FIELD_PREP(GENMASK(2, 0),
-				 can_sja1000_read_reg(dev, CAN_SJA1000_XFF_ID2) >> 5);
+				 read_reg(dev, CAN_SJA1000_XFF_ID2) >> 5);
 		frame->id = id;
 		data_reg = CAN_SJA1000_SFF_DATA;
 	}
 
 	if ((frame->flags & CAN_FRAME_RTR) == 0U) {
-		for (int i = 0; i < frame->dlc; i++) {
-			frame->data[i] = can_sja1000_read_reg(dev, data_reg + i);
-		}
+		frame->data[0] = read_reg(dev, data_reg);
+		frame->data[1] = read_reg(dev, data_reg + 1);
+		frame->data[2] = read_reg(dev, data_reg + 2);
+		frame->data[3] = read_reg(dev, data_reg + 3);
+		frame->data[4] = read_reg(dev, data_reg + 4);
+		frame->data[5] = read_reg(dev, data_reg + 5);
+		frame->data[6] = read_reg(dev, data_reg + 6);
+		frame->data[7] = read_reg(dev, data_reg + 7);
 	}
 }
 
 void can_sja1000_write_frame(const struct device *dev, const struct can_frame *frame)
 {
+	const struct can_sja1000_config *config = dev->config;
+	can_sja1000_write_reg_t write_reg = config->write_reg;
 	uint32_t id;
 	uint8_t info;
 	uint8_t data_reg;
 
 	info = CAN_SJA1000_FRAME_INFO_DLC_PREP(frame->dlc);
-
 	if ((frame->flags & CAN_FRAME_RTR) != 0) {
 		info |= CAN_SJA1000_FRAME_INFO_RTR;
 	}
@@ -336,32 +343,37 @@ void can_sja1000_write_frame(const struct device *dev, const struct can_frame *f
 		info |= CAN_SJA1000_FRAME_INFO_FF;
 	}
 
-	can_sja1000_write_reg(dev, CAN_SJA1000_FRAME_INFO, info);
+	write_reg(dev, CAN_SJA1000_FRAME_INFO, info);
 
 	if ((frame->flags & CAN_FRAME_IDE) != 0) {
 		id = frame->id;
-		can_sja1000_write_reg(dev, CAN_SJA1000_XFF_ID1,
-				      FIELD_GET(GENMASK(28, 21), id));
-		can_sja1000_write_reg(dev, CAN_SJA1000_XFF_ID2,
-				      FIELD_GET(GENMASK(20, 13), id));
-		can_sja1000_write_reg(dev, CAN_SJA1000_EFF_ID3,
-				      FIELD_GET(GENMASK(12, 5), id));
-		can_sja1000_write_reg(dev, CAN_SJA1000_EFF_ID4,
-				      FIELD_GET(GENMASK(4, 0), id) << 3);
+		write_reg(dev, CAN_SJA1000_XFF_ID1,
+			  FIELD_GET(GENMASK(28, 21), id));
+		write_reg(dev, CAN_SJA1000_XFF_ID2,
+			  FIELD_GET(GENMASK(20, 13), id));
+		write_reg(dev, CAN_SJA1000_EFF_ID3,
+			  FIELD_GET(GENMASK(12, 5), id));
+		write_reg(dev, CAN_SJA1000_EFF_ID4,
+			  FIELD_GET(GENMASK(4, 0), id) << 3);
 		data_reg = CAN_SJA1000_EFF_DATA;
 	} else {
 		id = frame->id;
-		can_sja1000_write_reg(dev, CAN_SJA1000_XFF_ID1,
-				      FIELD_GET(GENMASK(10, 3), id));
-		can_sja1000_write_reg(dev, CAN_SJA1000_XFF_ID2,
-				      FIELD_GET(GENMASK(2, 0), id) << 5);
+		write_reg(dev, CAN_SJA1000_XFF_ID1,
+			  FIELD_GET(GENMASK(10, 3), id));
+		write_reg(dev, CAN_SJA1000_XFF_ID2,
+			  FIELD_GET(GENMASK(2, 0), id) << 5);
 		data_reg = CAN_SJA1000_SFF_DATA;
 	}
 
 	if ((frame->flags & CAN_FRAME_RTR) == 0U) {
-		for (int i = 0; i < frame->dlc; i++) {
-			can_sja1000_write_reg(dev, data_reg + i, frame->data[i]);
-		}
+		write_reg(dev, data_reg, frame->data[0]);
+		write_reg(dev, data_reg + 1, frame->data[1]);
+		write_reg(dev, data_reg + 2, frame->data[2]);
+		write_reg(dev, data_reg + 3, frame->data[3]);
+		write_reg(dev, data_reg + 4, frame->data[4]);
+		write_reg(dev, data_reg + 5, frame->data[5]);
+		write_reg(dev, data_reg + 6, frame->data[6]);
+		write_reg(dev, data_reg + 7, frame->data[7]);
 	}
 }
 
@@ -563,9 +575,8 @@ static void can_sja1000_handle_receive_irq(const struct device *dev)
 	do {
 		can_sja1000_read_frame(dev, &frame);
 
-#ifndef CONFIG_CAN_ACCEPT_RTR
-		if ((frame.flags & CAN_FRAME_RTR) == 0U) {
-#endif /* !CONFIG_CAN_ACCEPT_RTR */
+		if (IS_ENABLED(CONFIG_CAN_ACCEPT_RTR) ||
+		    ((frame.flags & CAN_FRAME_RTR) == 0U)) {
 			for (int i = 0; i < ARRAY_SIZE(data->filters); i++) {
 				if (!atomic_test_bit(data->rx_allocs, i)) {
 					continue;
@@ -578,9 +589,7 @@ static void can_sja1000_handle_receive_irq(const struct device *dev)
 					}
 				}
 			}
-#ifndef CONFIG_CAN_ACCEPT_RTR
 		}
-#endif /* !CONFIG_CAN_ACCEPT_RTR */
 
 		can_sja1000_write_reg(dev, CAN_SJA1000_CMR, CAN_SJA1000_CMR_RRB);
 		sr = can_sja1000_read_reg(dev, CAN_SJA1000_SR);
@@ -722,7 +731,7 @@ void can_sja1000_isr(const struct device *dev)
 		can_sja1000_handle_error_passive_irq(dev);
 	}
 
-	if (prev_state != data->state && cb != NULL) {
+	if ((prev_state != data->state) && (cb != NULL)) {
 		err_cnt.rx_err_cnt = can_sja1000_read_reg(dev, CAN_SJA1000_RXERR);
 		err_cnt.tx_err_cnt = can_sja1000_read_reg(dev, CAN_SJA1000_TXERR);
 		cb(dev, data->state, err_cnt, cb_data);
@@ -732,6 +741,7 @@ void can_sja1000_isr(const struct device *dev)
 int can_sja1000_init(const struct device *dev)
 {
 	const struct can_sja1000_config *config = dev->config;
+	can_sja1000_write_reg_t write_reg = config->write_reg;
 	struct can_sja1000_data *data = dev->data;
 	struct can_timing timing = { 0 };
 	int err;
@@ -760,18 +770,18 @@ int can_sja1000_init(const struct device *dev)
 	}
 
 	/* Set PeliCAN mode */
-	can_sja1000_write_reg(dev, CAN_SJA1000_CDR, config->cdr | CAN_SJA1000_CDR_CAN_MODE);
+	write_reg(dev, CAN_SJA1000_CDR, config->cdr | CAN_SJA1000_CDR_CAN_MODE);
 
 	/* Set up acceptance code and mask to match any frame (software filtering) */
-	can_sja1000_write_reg(dev, CAN_SJA1000_ACR0, 0x00);
-	can_sja1000_write_reg(dev, CAN_SJA1000_ACR1, 0x00);
-	can_sja1000_write_reg(dev, CAN_SJA1000_ACR2, 0x00);
-	can_sja1000_write_reg(dev, CAN_SJA1000_ACR3, 0x00);
+	write_reg(dev, CAN_SJA1000_ACR0, 0x00);
+	write_reg(dev, CAN_SJA1000_ACR1, 0x00);
+	write_reg(dev, CAN_SJA1000_ACR2, 0x00);
+	write_reg(dev, CAN_SJA1000_ACR3, 0x00);
 
-	can_sja1000_write_reg(dev, CAN_SJA1000_AMR0, 0xFF);
-	can_sja1000_write_reg(dev, CAN_SJA1000_AMR1, 0xFF);
-	can_sja1000_write_reg(dev, CAN_SJA1000_AMR2, 0xFF);
-	can_sja1000_write_reg(dev, CAN_SJA1000_AMR3, 0xFF);
+	write_reg(dev, CAN_SJA1000_AMR0, 0xFF);
+	write_reg(dev, CAN_SJA1000_AMR1, 0xFF);
+	write_reg(dev, CAN_SJA1000_AMR2, 0xFF);
+	write_reg(dev, CAN_SJA1000_AMR3, 0xFF);
 
 	err = can_calc_timing(dev, &timing, config->common.bitrate,
 			      config->common.sample_point);
@@ -790,13 +800,13 @@ int can_sja1000_init(const struct device *dev)
 	}
 
 	/* Set output control */
-	can_sja1000_write_reg(dev, CAN_SJA1000_OCR, config->ocr);
+	write_reg(dev, CAN_SJA1000_OCR, config->ocr);
 
 	/* Clear error counters and error capture */
 	can_sja1000_clear_errors(dev);
 
 	/* Set error warning limit */
-	can_sja1000_write_reg(dev, CAN_SJA1000_EWLR, 96);
+	write_reg(dev, CAN_SJA1000_EWLR, 96);
 
 	/* Set normal mode */
 	data->common.mode = CAN_MODE_NORMAL;
@@ -806,12 +816,12 @@ int can_sja1000_init(const struct device *dev)
 	}
 
 	/* Enable interrupts */
-	can_sja1000_write_reg(dev, CAN_SJA1000_IER,
+	write_reg(dev, CAN_SJA1000_IER,
 #ifdef CONFIG_CAN_STATS
-			      CAN_SJA1000_IER_BEIE | CAN_SJA1000_IER_DOIE |
+		  CAN_SJA1000_IER_BEIE | CAN_SJA1000_IER_DOIE |
 #endif /* CONFIG_CAN_STATS */
-			      CAN_SJA1000_IER_RIE | CAN_SJA1000_IER_TIE |
-			      CAN_SJA1000_IER_EIE | CAN_SJA1000_IER_EPIE);
+		  CAN_SJA1000_IER_RIE | CAN_SJA1000_IER_TIE |
+		  CAN_SJA1000_IER_EIE | CAN_SJA1000_IER_EPIE);
 
 	return 0;
 }

@@ -129,7 +129,7 @@ static int cmd_add_network(const struct shell *sh, size_t argc, char *argv[])
 		{"timeout", sys_getopt_required_argument, 0, 't'},
 		{"identity", sys_getopt_required_argument, 0, 'a'},
 		{"key-passwd", sys_getopt_required_argument, 0, 'K'},
-		{"help", sys_getopt_no_argument, 0, 'h'},		 {0, 0, 0, 0}};
+		{"help", sys_getopt_no_argument, 0, 'h'}, {0, 0, 0, 0}};
 	char *endptr;
 	bool secure_connection = false;
 	uint8_t band;

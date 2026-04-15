@@ -388,7 +388,6 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 	int ret;
 
 	for (size_t i = 1; i < argc; ++i) {
-
 		if (*argv[i] != '-') {
 			host = argv[i];
 			continue;
@@ -401,16 +400,14 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 				PR_WARNING("Parse error: %s\n", argv[i]);
 				return -ENOEXEC;
 			}
-
-
 			break;
+
 		case 'i':
 			interval = parse_arg(&i, argc, argv);
 			if (interval < 0) {
 				PR_WARNING("Parse error: %s\n", argv[i]);
 				return -ENOEXEC;
 			}
-
 			break;
 
 		case 'I':
@@ -435,7 +432,6 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 				PR_WARNING("Parse error: %s\n", argv[i]);
 				return -ENOEXEC;
 			}
-
 			break;
 
 		case 's':
@@ -444,7 +440,6 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 				PR_WARNING("Parse error: %s\n", argv[i]);
 				return -ENOEXEC;
 			}
-
 			break;
 
 		default:

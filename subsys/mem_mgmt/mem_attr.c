@@ -69,7 +69,7 @@ int mem_attr_get_region_index_by_name(const char *target_name)
 
 	num_regions = mem_attr_get_regions(&regions);
 
-	for (int i = 0; i < num_regions; ++i) {
+	for (int i = 0; i < (int)num_regions; ++i) {
 		if (regions[i].dt_name != NULL &&
 		    strcmp(regions[i].dt_name, target_name) == 0) {
 			return i;

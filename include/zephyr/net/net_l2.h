@@ -130,6 +130,7 @@ NET_L2_DECLARE_PUBLIC(CUSTOM_IEEE802154_L2);
 #endif /* CONFIG_NET_L2_CUSTOM_IEEE802154 */
 
 #define NET_L2_INIT(_name, _recv_fn, _send_fn, _enable_fn, _get_flags_fn, ...) \
+	MSC_DECLARE_SECTION("._net_l2.static")				\
 	const STRUCT_SECTION_ITERABLE(net_l2,				\
 				      NET_L2_GET_NAME(_name)) = {	\
 		.recv = (_recv_fn),					\

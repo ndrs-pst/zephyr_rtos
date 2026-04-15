@@ -68,8 +68,7 @@ static inline void z_timer_observer_on_expiry(struct k_timer *timer)
  *
  * @param t  Timeout used by the timer.
  */
-void z_timer_expiration_handler(struct _timeout *t)
-{
+void z_timer_expiration_handler(struct _timeout const* t) {
 	struct k_timer *timer = CONTAINER_OF(t, struct k_timer, timeout);
 	struct k_thread *thread;
 	k_spinlock_key_t key = k_spin_lock(&lock);
@@ -88,7 +87,7 @@ void z_timer_expiration_handler(struct _timeout *t)
 		k_timeout_t next = timer->period;
 
 		/* see note about z_add_timeout() in z_impl_k_timer_start() */
-		next.ticks = max(next.ticks - 1, 0);
+		next.ticks = z_max(next.ticks - 1, 0);
 
 #ifdef CONFIG_TIMEOUT_64BIT
 		/* Exploit the fact that uptime during a kernel
@@ -151,10 +150,9 @@ void z_timer_expiration_handler(struct _timeout *t)
 }
 
 
-void k_timer_init(struct k_timer *timer,
-			 k_timer_expiry_t expiry_fn,
-			 k_timer_stop_t stop_fn)
-{
+void k_timer_init(struct k_timer* timer,
+                  k_timer_expiry_t expiry_fn,
+                  k_timer_stop_t stop_fn) {
 	timer->expiry_fn = expiry_fn;
 	timer->stop_fn = stop_fn;
 	timer->status = 0U;
@@ -179,9 +177,8 @@ void k_timer_init(struct k_timer *timer,
 }
 
 
-void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
-			  k_timeout_t period)
-{
+void z_impl_k_timer_start(struct k_timer* timer, k_timeout_t duration,
+                          k_timeout_t period) {
 	SYS_PORT_TRACING_OBJ_FUNC(k_timer, start, timer, duration, period);
 
 	/* Acquire spinlock to ensure safety during concurrent calls to
@@ -214,7 +211,7 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 		 * is consistent for both 32-bit k_ticks_t which are unsigned
 		 * and 64-bit k_ticks_t which are signed.
 		 */
-		duration.ticks = max(1, duration.ticks);
+		duration.ticks = z_max(1, duration.ticks);
 		duration.ticks = duration.ticks - 1;
 	}
 
@@ -223,7 +220,7 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 	timer->status = 0U;
 
 	z_add_timeout(&timer->timeout, z_timer_expiration_handler,
-		     duration);
+                      duration);
 
 	z_timer_observer_on_start(timer, duration, period);
 

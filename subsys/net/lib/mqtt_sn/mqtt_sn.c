@@ -760,7 +760,7 @@ static int process_pubs(struct mqtt_sn_client *client, int64_t *next_cycle)
 	struct mqtt_sn_publish *pub, *pubs;
 	const int64_t now = k_uptime_get();
 	int64_t next_attempt;
-	bool dup; /* dup flag if message is resent */
+	bool dup = false; /* dup flag if message is resent */
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&client->publish, pub, pubs, next) {
 		if (pub->qos == MQTT_SN_QOS_M1) {
@@ -860,7 +860,7 @@ static int process_topics(struct mqtt_sn_client *client, int64_t *next_cycle)
 	bool subscribing = false;
 	bool registering = false;
 
-	bool dup; /* dup flag if message is resent */
+	bool dup = false; /* dup flag if message is resent */
 
 	/* First pass to check for REGISTERING, SUBSCRIBING, UNSUBSCRIBING */
 	SYS_SLIST_FOR_EACH_CONTAINER(&client->topic, topic, next) {

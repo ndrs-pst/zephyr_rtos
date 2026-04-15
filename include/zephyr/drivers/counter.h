@@ -60,7 +60,7 @@ extern "C" {
  * If flags is set then counter is free running while top value is updated,
  * otherwise counter is reset (see @ref counter_set_top_value()).
  */
-#define COUNTER_TOP_CFG_DONT_RESET BIT(0)
+#define COUNTER_TOP_CFG_DONT_RESET          BIT(0)
 
 /**
  * @brief Flag instructing counter to reset itself if changing top value
@@ -68,7 +68,7 @@ extern "C" {
  *
  * See @ref COUNTER_TOP_CFG_DONT_RESET.
  */
-#define COUNTER_TOP_CFG_RESET_WHEN_LATE BIT(1)
+#define COUNTER_TOP_CFG_RESET_WHEN_LATE     BIT(1)
 
 /**@} */
 
@@ -85,7 +85,7 @@ extern "C" {
  * Ticks relation to counter value. If set ticks are treated as absolute value,
  * else it is relative to the counter reading performed during the call.
  */
-#define COUNTER_ALARM_CFG_ABSOLUTE BIT(0)
+#define COUNTER_ALARM_CFG_ABSOLUTE          BIT(0)
 
 /**
  * @brief Alarm flag enabling immediate expiration when driver detects that
@@ -93,7 +93,7 @@ extern "C" {
  *
  * Alarm callback must be called from the same context as if it was set on time.
  */
-#define COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE BIT(1)
+#define COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE  BIT(1)
 
 /**@} */
 
@@ -109,7 +109,7 @@ extern "C" {
  * @brief Identifies guard period needed for detection of late setting of
  *	  absolute alarm (see @ref counter_set_channel_alarm).
  */
-#define COUNTER_GUARD_PERIOD_LATE_TO_SET BIT(0)
+#define COUNTER_GUARD_PERIOD_LATE_TO_SET    BIT(0)
 
 /**@} */
 
@@ -570,7 +570,7 @@ static inline uint32_t z_impl_counter_us_to_ticks(const struct device *dev, uint
 {
 	uint64_t ticks = (us * z_counter_get_frequency(dev)) / USEC_PER_SEC;
 
-	return (ticks > (uint64_t)UINT32_MAX) ? UINT32_MAX : ticks;
+	return (ticks > (uint64_t)UINT32_MAX) ? UINT32_MAX : (uint32_t)ticks;
 }
 
 /**
@@ -632,7 +632,7 @@ static inline uint32_t z_impl_counter_ns_to_ticks(const struct device *dev, uint
 {
 	uint64_t ticks = (ns * z_counter_get_frequency(dev)) / NSEC_PER_SEC;
 
-	return (ticks > (uint64_t)UINT32_MAX) ? UINT32_MAX : ticks;
+	return (ticks > (uint64_t)UINT32_MAX) ? UINT32_MAX : (uint32_t)ticks;
 }
 
 /**

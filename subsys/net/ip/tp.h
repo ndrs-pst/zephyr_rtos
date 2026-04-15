@@ -166,7 +166,12 @@ bool tp_tap_input(struct net_pkt *pkt);
 
 #define tp_tap_input(_pkt) false
 #define tp_input(_pkt) false
+
+#if defined(_MSC_VER)
+#define tp_out(...)
+#else
 #define tp_out(args...)
+#endif
 
 #endif /* end of IS_ENABLED(CONFIG_NET_TEST_PROTOCOL) */
 

@@ -321,6 +321,7 @@
 			reg = <0x52990000 0xfd0>;
 			interrupts = <43 4>;
 			clk-dst = <0x100>;
+			scb-index = <0>;
 			status = "disabled";
 		};
 
@@ -329,6 +330,7 @@
 			reg = <0x529a0000 0xfd0>;
 			interrupts = <143 4>;
 			clk-dst = <0x101>;
+			scb-index = <2>;
 			status = "disabled";
 		};
 
@@ -337,6 +339,7 @@
 			reg = <0x529b0000 0xfd0>;
 			interrupts = <144 4>;
 			clk-dst = <0x102>;
+			scb-index = <3>;
 			status = "disabled";
 		};
 
@@ -345,6 +348,7 @@
 			reg = <0x529c0000 0xfd0>;
 			interrupts = <145 4>;
 			clk-dst = <0x103>;
+			scb-index = <4>;
 			status = "disabled";
 		};
 
@@ -353,6 +357,7 @@
 			reg = <0x529d0000 0xfd0>;
 			interrupts = <146 4>;
 			clk-dst = <0x104>;
+			scb-index = <5>;
 			status = "disabled";
 		};
 
@@ -361,6 +366,7 @@
 			reg = <0x529e0000 0xfd0>;
 			interrupts = <147 4>;
 			clk-dst = <0x105>;
+			scb-index = <6>;
 			status = "disabled";
 		};
 
@@ -369,6 +375,7 @@
 			reg = <0x529f0000 0xfd0>;
 			interrupts = <148 4>;
 			clk-dst = <0x106>;
+			scb-index = <7>;
 			status = "disabled";
 		};
 
@@ -377,6 +384,7 @@
 			reg = <0x52a00000 0xfd0>;
 			interrupts = <149 4>;
 			clk-dst = <0x107>;
+			scb-index = <8>;
 			status = "disabled";
 		};
 
@@ -385,6 +393,7 @@
 			reg = <0x52a10000 0xfd0>;
 			interrupts = <150 4>;
 			clk-dst = <0x108>;
+			scb-index = <9>;
 			status = "disabled";
 		};
 
@@ -393,6 +402,7 @@
 			reg = <0x52a20000 0xfd0>;
 			interrupts = <151 4>;
 			clk-dst = <0x109>;
+			scb-index = <10>;
 			status = "disabled";
 		};
 
@@ -401,6 +411,7 @@
 			reg = <0x52a30000 0xfd0>;
 			interrupts = <152 4>;
 			clk-dst = <0x10a>;
+			scb-index = <11>;
 			status = "disabled";
 		};
 
@@ -409,6 +420,7 @@
 			reg = <0x52d00000 0xfd0>;
 			interrupts = <142 4>;
 			clk-dst = <0x800>;
+			scb-index = <1>;
 			status = "disabled";
 		};
 

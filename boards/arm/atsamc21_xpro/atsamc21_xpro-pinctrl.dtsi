@@ -1,0 +1,81 @@
+/*
+ * Copyright (c) 2022, Gerson Fernando Budke <nandojve@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/samc21j-pinctrl.h>
+
+&pinctrl {
+    pwm_default: pwm_default {
+        group1 {
+            pinmux = <PB30E_TCC0_WO0>;
+        };
+    };
+
+    sercom2_i2c_default: sercom2_i2c_default {
+        group1 {
+            pinmux = <PA12C_SERCOM2_PAD0>,  /* I2C_SDA */
+                     <PA13C_SERCOM2_PAD1>;  /* I2C_SCL */
+        };
+    };
+
+    sercom5_spi_default: sercom5_spi_default {
+        group1 {
+            pinmux = <PB00D_SERCOM5_PAD2>,  /* SPI_DO  */
+                     <PB02D_SERCOM5_PAD0>,  /* SPI_DI  */
+                     <PB01D_SERCOM5_PAD3>;  /* SPI_SCK */
+        };
+    };
+
+    sercom0_spi_default: sercom0_spi_default {
+        group1 {
+            pinmux = <PB00D_SERCOM5_PAD2>,  /* SPI_DO  */
+                     <PB02D_SERCOM5_PAD0>,  /* SPI_DI  */
+                     <PB01D_SERCOM5_PAD3>;  /* SPI_SCK */
+        };
+    };
+
+    sercom0_uart_default: sercom0_uart_default {
+        group1 {
+            pinmux = <PA06D_SERCOM0_PAD2>,  /* LIN TXD */
+                     <PA07D_SERCOM0_PAD3>;  /* LIN RXD */
+        };
+    };
+
+    sercom1_uart_default: sercom1_uart_default {
+        group1 {
+            pinmux = <PA16C_SERCOM1_PAD0>,  /* UART TX */
+                     <PA19C_SERCOM1_PAD3>;  /* UART RX */
+        };
+    };
+
+    sercom1_spi_default: sercom1_spi_default {
+        group1 {
+            pinmux = <PA18C_SERCOM1_PAD2>,  /* SPI_DO  */
+                     <PA16C_SERCOM1_PAD0>,  /* SPI_DI  */
+                     <PA19C_SERCOM1_PAD3>;  /* SPI_SCK */
+        };
+    };
+
+    sercom3_uart_default: sercom3_uart_default {
+        group1 {
+                     
+            pinmux = <PA22C_SERCOM3_PAD0>,  /* UART TXD */
+                     <PA23C_SERCOM3_PAD1>;  /* UART RXD */
+        };
+    };
+
+    sercom4_uart_default: sercom4_uart_default {
+        group1 {
+            pinmux = <PB10D_SERCOM4_PAD2>,  /* UART TXD */
+                     <PB11D_SERCOM4_PAD3>;  /* UART RXD */
+        };
+    };
+
+    can0_default: can0_default {
+        group1 {
+            pinmux = <PA24G_CAN0_TX>,       /* CAN TX */
+                     <PA25G_CAN0_RX>;       /* CAN RX */
+        };
+    };
+};

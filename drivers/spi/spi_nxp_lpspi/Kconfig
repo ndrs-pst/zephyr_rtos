@@ -61,6 +61,26 @@ config SPI_NXP_LPSPI_TXFIFO_WAIT_CYCLES
 	  for if there is some programming error that causes TX fifo not to empty.
 	  The default of 10000 is arbitrary.
 
+config SPI_NXP_LPSPI_STREAM
+	bool "NXP LPSPI continuous RX streaming via eDMA circular buffer"
+	default n
+	depends on SPI_NXP_LPSPI_DMA
+	help
+	  Enable continuous, zero-copy SPI slave RX streaming using eDMA in
+	  cyclic (circular buffer) mode.  The DMA channel runs continuously
+	  without stopping between frames.  A Frame Complete interrupt (FCF/FCIE)
+	  fires on every chip-select deassertion and notifies a Zephyr thread
+	  via k_fifo — no CPU data copy in the ISR.
+
+	  Requires:
+	    - SPI_NXP_LPSPI_DMA=y (DMA driver already configured).
+	    - Target LPSPI DTS node has a "dmas" rx entry.
+	    - Application provides statically allocated ring buffer and
+	      frame descriptor pool (see include/zephyr/drivers/spi_stream.h).
+
+	  Adds spi_read_stream_async() / spi_stream_stop() API.
+	  Compatible with slave mode only; frame size is fixed per session.
+
 config SPI_NXP_LPSPI_ERR050456
 	bool
 	help

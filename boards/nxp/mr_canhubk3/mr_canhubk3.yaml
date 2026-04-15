@@ -6,7 +6,7 @@ name: NXP MR-CANHUBK3
 type: mcu
 arch: arm
 ram: 1024
-flash: 1024
+flash: 4096
 toolchain:
   - zephyr
 supported:

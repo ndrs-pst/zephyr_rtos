@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #endif
 
-#if !defined(_CLOCK_T_DECLARED) && !defined(__clock_t_defined)
+#if !defined(_CLOCK_T_DECLARED) && !defined(__clock_t_defined) && !defined(_MSC_VER) /* #CUSTOM@NDRS */
 typedef unsigned long clock_t;
 #define _CLOCK_T_DECLARED
 #define __clock_t_defined
@@ -23,7 +23,13 @@ typedef unsigned long clockid_t;
 #define __clockid_t_defined
 #endif
 
-#ifdef CONFIG_NEWLIB_LIBC
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define _DEV_T_DECLARED
+#define _INO_T_DECLARED
+typedef unsigned short mode_t;
+#endif
+
+#if defined(CONFIG_NEWLIB_LIBC) && !defined(_MSC_VER) /* #CUSTOM@NDRS */
 #include <sys/_pthreadtypes.h>
 #endif
 
@@ -92,8 +98,8 @@ typedef unsigned long timer_t;
 #if !defined(CONFIG_NEWLIB_LIBC)
 #if !defined(_PTHREAD_ATTR_T_DECLARED) && !defined(__pthread_attr_t_defined)
 typedef struct {
-	void *stack;
-	unsigned int details[2];
+    void* stack;
+    unsigned int details[2];
 } pthread_attr_t;
 #define _PTHREAD_ATTR_T_DECLARED
 #define __pthread_attr_t_defined
@@ -110,31 +116,31 @@ typedef struct k_sem sem_t;
 typedef uint32_t pthread_mutex_t;
 
 struct pthread_mutexattr {
-	unsigned char type: 2;
-	bool initialized: 1;
+    unsigned char type: 2;
+    bool initialized: 1;
 };
-#if !defined(CONFIG_NEWLIB_LIBC)
+#if !defined(CONFIG_NEWLIB_LIBC) || defined(_MSC_VER) /* #CUSTOM@NDRS */
 typedef struct pthread_mutexattr pthread_mutexattr_t;
-BUILD_ASSERT(sizeof(pthread_mutexattr_t) >= sizeof(struct pthread_mutexattr));
+BUILD_ASSERT(sizeof(pthread_mutexattr_t) >= sizeof(struct pthread_mutexattr), "sizeof error !!!");
 #endif
 
 /* Condition variables */
 typedef uint32_t pthread_cond_t;
 
 struct pthread_condattr {
-	clockid_t clock;
+    clockid_t clock;
 };
 
-#if !defined(CONFIG_NEWLIB_LIBC)
+#if !defined(CONFIG_NEWLIB_LIBC) || defined(_MSC_VER) /* #CUSTOM@NDRS */
 typedef struct pthread_condattr pthread_condattr_t;
-BUILD_ASSERT(sizeof(pthread_condattr_t) >= sizeof(struct pthread_condattr));
+BUILD_ASSERT(sizeof(pthread_condattr_t) >= sizeof(struct pthread_condattr), "sizeof error !!!");
 #endif
 
 /* Barrier */
 typedef uint32_t pthread_barrier_t;
 
 typedef struct pthread_barrierattr {
-	int pshared;
+    int pshared;
 } pthread_barrierattr_t;
 
 typedef uint32_t pthread_rwlockattr_t;
@@ -142,18 +148,18 @@ typedef uint32_t pthread_rwlockattr_t;
 typedef uint32_t pthread_rwlock_t;
 
 struct pthread_once {
-	bool flag;
+    bool flag;
 };
 
-#if !defined(CONFIG_NEWLIB_LIBC)
+#if !defined(CONFIG_NEWLIB_LIBC) || defined(_MSC_VER) /* #CUSTOM@NDRS */
 typedef uint32_t pthread_key_t;
 typedef struct pthread_once pthread_once_t;
 /* Newlib typedefs pthread_once_t as a struct with two ints */
-BUILD_ASSERT(sizeof(pthread_once_t) >= sizeof(struct pthread_once));
+BUILD_ASSERT(sizeof(pthread_once_t) >= sizeof(struct pthread_once), "sizeof error !!!");
 #endif
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif	/* ZEPHYR_INCLUDE_POSIX_TYPES_H_ */
+#endif /* ZEPHYR_INCLUDE_POSIX_TYPES_H_ */

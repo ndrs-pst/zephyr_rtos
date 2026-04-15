@@ -21,8 +21,8 @@
 #define ZEPHYR_MODULES_CANOPENNODE_CANOPENNODE_H_
 
 #include <CANopen.h>
-#include <CO_Emergency.h>
-#include <CO_SDO.h>
+#include <stack/CO_Emergency.h>
+#include <stack/CO_SDO.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -23,3 +23,8 @@ properties:
 
   system-interrupts:
     description: Required for cat1c devices
+
+  scb-index:
+    type: int
+    required: true
+    description: Index of the SCB (Serial Communication Block) hardware instance

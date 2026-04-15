@@ -63,7 +63,7 @@ static int64_t q16_16_s_to_ll_us(uint32_t t)
 static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *expected_orig_ts,
 			      struct sntp_time *res)
 {
-	struct sntp_pkt *pkt = (struct sntp_pkt *)data;
+	struct sntp_pkt *pkt = (struct sntp_pkt*)data;
 	struct timespec client_rx_ts;
 	int64_t client_tx_us;
 	int64_t client_rx_us;
@@ -110,14 +110,14 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 	}
 	client_rx_us = (USEC_PER_SEC * (int64_t)(client_rx_ts.tv_sec + OFFSET_1970_JAN_1)) +
 		       (client_rx_ts.tv_nsec / NSEC_PER_USEC);
-	client_tx_us = q32_32_s_to_ll_us(expected_orig_ts->seconds, expected_orig_ts->fraction);
-	rtt_us = client_rx_us - client_tx_us;
+	client_tx_us = q32_32_s_to_ll_us((uint32_t)expected_orig_ts->seconds, expected_orig_ts->fraction);
+	rtt_us = (int32_t)(client_rx_us - client_tx_us);
 
 	server_rx_us = q32_32_s_to_ll_us(net_ntohl(pkt->rx_tm_s), net_ntohl(pkt->rx_tm_f));
 	server_tx_us = q32_32_s_to_ll_us(net_ntohl(pkt->tx_tm_s), net_ntohl(pkt->tx_tm_f));
 
 	/* Compute single sided path delay (assumes symmetrical packet delay) */
-	res->rsp_delay_us = (rtt_us - (server_tx_us - server_rx_us)) / 2;
+	res->rsp_delay_us = (rtt_us - (int32_t)(server_tx_us - server_rx_us)) / 2;
 
 #if defined(CONFIG_SNTP_UNCERTAINTY)
 
@@ -222,7 +222,7 @@ static int sntp_query_send(struct sntp_ctx *ctx)
 	tx_pkt.tx_tm_s = net_htonl(ctx->expected_orig_ts.seconds);
 	tx_pkt.tx_tm_f = net_htonl(ctx->expected_orig_ts.fraction);
 
-	return zsock_send(ctx->sock.fd, (uint8_t *)&tx_pkt, sizeof(tx_pkt), 0);
+	return zsock_send(ctx->sock.fd, (uint8_t*)&tx_pkt, sizeof(tx_pkt), 0);
 }
 
 int sntp_query(struct sntp_ctx *ctx, uint32_t timeout, struct sntp_time *ts)
@@ -259,7 +259,7 @@ int sntp_recv_response(struct sntp_ctx *ctx, uint32_t timeout,
 		return -ETIMEDOUT;
 	}
 
-	rcvd = zsock_recv(ctx->sock.fd, (uint8_t *)&buf, sizeof(buf), 0);
+	rcvd = zsock_recv(ctx->sock.fd, (uint8_t*)&buf, sizeof(buf), 0);
 	if (rcvd < 0) {
 		return -errno;
 	}
@@ -268,7 +268,7 @@ int sntp_recv_response(struct sntp_ctx *ctx, uint32_t timeout,
 		return -EMSGSIZE;
 	}
 
-	status = parse_response((uint8_t *)&buf, sizeof(buf),
+	status = parse_response((uint8_t*)&buf, sizeof(buf),
 				&ctx->expected_orig_ts,
 				ts);
 	return status;
@@ -326,10 +326,10 @@ int sntp_send_async(struct sntp_ctx *ctx)
 int sntp_read_async(struct net_socket_service_event *event, struct sntp_time *ts)
 {
 	struct sntp_ctx *ctx = event->user_data;
-	struct sntp_pkt buf = {0};
+	struct sntp_pkt buf;
 	int rcvd;
 
-	rcvd = zsock_recv(ctx->sock.fd, (uint8_t *)&buf, sizeof(buf), 0);
+	rcvd = zsock_recv(ctx->sock.fd, (uint8_t*)&buf, sizeof(buf), 0);
 	if (rcvd < 0) {
 		return -errno;
 	}
@@ -338,7 +338,9 @@ int sntp_read_async(struct net_socket_service_event *event, struct sntp_time *ts
 		return -EMSGSIZE;
 	}
 
-	return parse_response((uint8_t *)&buf, sizeof(buf), &ctx->expected_orig_ts, ts);
+	rcvd = parse_response((uint8_t*)&buf, sizeof(buf), &ctx->expected_orig_ts, ts);
+
+	return rcvd;
 }
 
 void sntp_close_async(const struct net_socket_service_desc *service)
@@ -346,7 +348,7 @@ void sntp_close_async(const struct net_socket_service_desc *service)
 	struct sntp_ctx *ctx = service->pev->user_data;
 	/* Detach socket from socket service */
 	net_socket_service_unregister(service);
-	/* CLose the socket */
+	/* Close the socket */
 	if (ctx) {
 		(void)zsock_close(ctx->sock.fd);
 	}

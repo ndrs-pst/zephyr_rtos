@@ -24,11 +24,11 @@ static struct sensor_read_config iodev_sensor_shell_stream_config = {
 RTIO_IODEV_DEFINE(iodev_sensor_shell_stream, &__sensor_iodev_api,
 		  &iodev_sensor_shell_stream_config);
 
-static void sensor_shell_processing_entry_point(void *a, void *b, void *c)
+static void sensor_shell_processing_entry_point(void *p1, void *p2, void *p3)
 {
-	ARG_UNUSED(a);
-	ARG_UNUSED(b);
-	ARG_UNUSED(c);
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
 	while (true) {
 		sensor_processing_with_callback(&sensor_read_rtio,

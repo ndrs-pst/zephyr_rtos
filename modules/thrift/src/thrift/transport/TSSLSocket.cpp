@@ -169,7 +169,7 @@ void TSSLSocket::openSecConnection(struct addrinfo *res)
 #ifdef TCP_LOW_MIN_RTO
 	if (getUseLowMinRto()) {
 		int one = 1;
-		setsockopt(socket_, IPPROTO_TCP, TCP_LOW_MIN_RTO, &one, sizeof(one));
+		setsockopt(socket_, NET_IPPROTO_TCP, TCP_LOW_MIN_RTO, &one, sizeof(one));
 	}
 #endif
 
@@ -289,7 +289,7 @@ void TSSLSocket::open()
 	char port[sizeof("65535")];
 	std::memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_socktype = NET_SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE | AI_ADDRCONFIG;
 	sprintf(port, "%d", port_);
 
@@ -339,10 +339,10 @@ TSSLSocketFactory::TSSLSocketFactory(SSLProtocol protocol)
 	case TLSv1_0:
 		break;
 	case TLSv1_1:
-		ctx_->protocol = IPPROTO_TLS_1_1;
+		ctx_->protocol = NET_IPPROTO_TLS_1_1;
 		break;
 	case TLSv1_2:
-		ctx_->protocol = IPPROTO_TLS_1_2;
+		ctx_->protocol = NET_IPPROTO_TLS_1_2;
 		break;
 	default:
 		throw TTransportException(TTransportException::BAD_ARGS,
@@ -600,9 +600,9 @@ Decision DefaultClientAccessManager::verify(const sockaddr_storage &sa, const ch
 					    int size) noexcept
 {
 	bool match = false;
-	if (sa.ss_family == AF_INET && size == sizeof(in_addr)) {
+	if (sa.ss_family == NET_AF_INET && size == sizeof(in_addr)) {
 		match = (memcmp(&((sockaddr_in *)&sa)->sin_addr, data, size) == 0);
-	} else if (sa.ss_family == AF_INET6 && size == sizeof(in6_addr)) {
+	} else if (sa.ss_family == NET_AF_INET6 && size == sizeof(in6_addr)) {
 		match = (memcmp(&((sockaddr_in6 *)&sa)->sin6_addr, data, size) == 0);
 	}
 	return (match ? ALLOW : SKIP);

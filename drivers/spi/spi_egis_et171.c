@@ -408,19 +408,19 @@ static int spi_dma_tx_load(const struct device *dev)
 	int dfs = SPI_WORD_SIZE_GET(ctx->config->operation) >> 3;
 
 	struct dma_block_config *blk_cfg = &data->dma_tx.dma_blk_cfg;
-	const struct spi_buf *current_tx = ctx->current_tx;
+	const struct spi_buf *current_tx = ctx->tx.current;
 
 	/* prepare the block for this TX DMA channel */
 	memset(&data->dma_tx.dma_blk_cfg, 0, sizeof(struct dma_block_config));
 
 	data->dma_tx.dma_blk_cfg.block_size =
-		MIN(ctx->current_tx->len, data->chunk_len) / data->dma_tx.dma_cfg.dest_data_size;
+		MIN(ctx->tx.current->len, data->chunk_len) / data->dma_tx.dma_cfg.dest_data_size;
 
 	/* tx direction has memory as source and periph as dest. */
 	configure_tx_dma_block_source(blk_cfg, current_tx, data, current_tx->len);
 
-	remain_len = data->chunk_len - ctx->current_tx->len;
-	spi_context_update_tx(ctx, dfs, ctx->current_tx->len);
+	remain_len = data->chunk_len - ctx->tx.current->len;
+	spi_context_update_tx(ctx, dfs, ctx->tx.current->len);
 	configure_tx_dma_block_dest(blk_cfg, data, cfg);
 
 	/* direction is given by the DT */
@@ -430,7 +430,7 @@ static int spi_dma_tx_load(const struct device *dev)
 	data->dma_tx.dma_cfg.user_data = (void *)data;
 
 	if (data->dma_tx.dma_cfg.source_chaining_en) {
-		data->dma_tx.dma_cfg.block_count = ctx->tx_count;
+		data->dma_tx.dma_cfg.block_count = ctx->tx.count;
 		data->dma_tx.dma_cfg.dma_callback = NULL;
 		data->dma_tx.block_idx = 0;
 
@@ -440,7 +440,7 @@ static int spi_dma_tx_load(const struct device *dev)
 			data->dma_tx.block_idx += 1;
 
 			blk_cfg->next_block = next_blk_cfg;
-			current_tx = ctx->current_tx;
+			current_tx = ctx->tx.current;
 
 			next_blk_cfg->block_size = current_tx->len /
 						data->dma_tx.dma_cfg.dest_data_size;
@@ -452,8 +452,8 @@ static int spi_dma_tx_load(const struct device *dev)
 
 			blk_cfg = next_blk_cfg;
 			next_blk_cfg->next_block = NULL;
-			remain_len -= ctx->current_tx->len;
-			spi_context_update_tx(ctx, dfs, ctx->current_tx->len);
+			remain_len -= ctx->tx.current->len;
+			spi_context_update_tx(ctx, dfs, ctx->tx.current->len);
 		}
 
 	} else {
@@ -518,19 +518,19 @@ static int spi_dma_rx_load(const struct device *dev)
 	int dfs = SPI_WORD_SIZE_GET(ctx->config->operation) >> 3;
 
 	struct dma_block_config *blk_cfg = &data->dma_rx.dma_blk_cfg;
-	const struct spi_buf *current_rx = ctx->current_rx;
+	const struct spi_buf *current_rx = ctx->rx.current;
 
 	/* prepare the block for this RX DMA channel */
 	memset(&data->dma_rx.dma_blk_cfg, 0, sizeof(struct dma_block_config));
 
 	data->dma_rx.dma_blk_cfg.block_size =
-		MIN(ctx->current_rx->len, data->chunk_len) / data->dma_rx.dma_cfg.dest_data_size;
+		MIN(ctx->rx.current->len, data->chunk_len) / data->dma_rx.dma_cfg.dest_data_size;
 
 	/* rx direction has periph as source and mem as dest. */
 	configure_rx_dma_block_dest(blk_cfg, current_rx, data, current_rx->len);
 
-	remain_len = data->chunk_len - ctx->current_rx->len;
-	spi_context_update_rx(ctx, dfs, ctx->current_rx->len);
+	remain_len = data->chunk_len - ctx->rx.current->len;
+	spi_context_update_rx(ctx, dfs, ctx->rx.current->len);
 	configure_rx_dma_block_source(blk_cfg, data, cfg);
 
 	data->dma_rx.dma_cfg.head_block = blk_cfg;
@@ -538,7 +538,7 @@ static int spi_dma_rx_load(const struct device *dev)
 	data->dma_rx.dma_cfg.user_data = (void *)data;
 
 	if (data->dma_rx.dma_cfg.source_chaining_en) {
-		data->dma_rx.dma_cfg.block_count = ctx->rx_count;
+		data->dma_rx.dma_cfg.block_count = ctx->rx.count;
 		data->dma_rx.dma_cfg.dma_callback = NULL;
 		data->dma_rx.block_idx = 0;
 
@@ -548,7 +548,7 @@ static int spi_dma_rx_load(const struct device *dev)
 			data->dma_rx.block_idx += 1;
 
 			blk_cfg->next_block = next_blk_cfg;
-			current_rx = ctx->current_rx;
+			current_rx = ctx->rx.current;
 
 			next_blk_cfg->block_size = current_rx->len /
 						data->dma_rx.dma_cfg.dest_data_size;
@@ -560,8 +560,8 @@ static int spi_dma_rx_load(const struct device *dev)
 
 			blk_cfg = next_blk_cfg;
 			next_blk_cfg->next_block = NULL;
-			remain_len -= ctx->current_rx->len;
-			spi_context_update_rx(ctx, dfs, ctx->current_rx->len);
+			remain_len -= ctx->rx.current->len;
+			spi_context_update_rx(ctx, dfs, ctx->rx.current->len);
 		}
 	} else {
 		data->dma_rx.dma_blk_cfg.next_block = NULL;

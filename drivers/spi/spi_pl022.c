@@ -343,6 +343,7 @@ static int spi_pl022_configure(const struct device *dev,
 {
 	const struct spi_pl022_cfg *cfg = dev->config;
 	struct spi_pl022_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
 	const uint16_t op = spicfg->operation;
 	uint32_t prescale;
 	uint32_t postdiv;
@@ -351,7 +352,7 @@ static int spi_pl022_configure(const struct device *dev,
 	uint32_t cr1;
 	int ret;
 
-	if (spi_context_configured(&data->ctx, spicfg)) {
+	if (spi_context_configured(ctx, spicfg)) {
 		return 0;
 	}
 
@@ -419,7 +420,7 @@ static int spi_pl022_configure(const struct device *dev,
 	}
 #endif
 
-	data->ctx.config = spicfg;
+	ctx->config = spicfg;
 
 	return 0;
 }
@@ -444,6 +445,7 @@ static uint32_t spi_pl022_dma_setup(const struct device *dev, const uint32_t dir
 {
 	const struct spi_pl022_cfg *cfg = dev->config;
 	struct spi_pl022_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
 	struct dma_config *dma_cfg = &data->dma[dir].config;
 	struct dma_block_config *block_cfg = &data->dma[dir].block;
 	const struct spi_pl022_dma_config *dma = &cfg->dma[dir];
@@ -460,7 +462,7 @@ static uint32_t spi_pl022_dma_setup(const struct device *dev, const uint32_t dir
 	dma_cfg->dma_slot = cfg->dma[dir].slot;
 	dma_cfg->channel_direction = dir == TX ? MEMORY_TO_PERIPHERAL : PERIPHERAL_TO_MEMORY;
 
-	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
+	if (SPI_WORD_SIZE_GET(ctx->config->operation) == 8) {
 		dma_cfg->source_data_size = 1;
 		dma_cfg->dest_data_size = 1;
 	} else {
@@ -468,14 +470,14 @@ static uint32_t spi_pl022_dma_setup(const struct device *dev, const uint32_t dir
 		dma_cfg->dest_data_size = 2;
 	}
 
-	block_cfg->block_size = spi_context_max_continuous_chunk(&data->ctx);
+	block_cfg->block_size = spi_context_max_continuous_chunk(ctx);
 
 	if (dir == TX) {
 		dma_cfg->dma_callback = spi_pl022_dma_callback;
 		block_cfg->dest_address = SSP_DR(cfg->reg);
 		block_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-		if (spi_context_tx_buf_on(&data->ctx)) {
-			block_cfg->source_address = (uint32_t)data->ctx.tx_buf;
+		if (spi_context_tx_buf_on(ctx)) {
+			block_cfg->source_address = (uint32_t)ctx->tx_buf;
 			block_cfg->source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
 		} else {
 			block_cfg->source_address = (uint32_t)&dummy_tx;
@@ -488,8 +490,8 @@ static uint32_t spi_pl022_dma_setup(const struct device *dev, const uint32_t dir
 		block_cfg->source_address = SSP_DR(cfg->reg);
 		block_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 
-		if (spi_context_rx_buf_on(&data->ctx)) {
-			block_cfg->dest_address = (uint32_t)data->ctx.rx_buf;
+		if (spi_context_rx_buf_on(ctx)) {
+			block_cfg->dest_address = (uint32_t)ctx->rx_buf;
 			block_cfg->dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
 		} else {
 			block_cfg->dest_address = (uint32_t)&dummy_rx;
@@ -566,6 +568,7 @@ static void spi_pl022_dma_callback(const struct device *dma_dev, void *arg, uint
 	const struct device *dev = (const struct device *)arg;
 	const struct spi_pl022_cfg *cfg = dev->config;
 	struct spi_pl022_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
 	bool complete = false;
 	k_spinlock_key_t key;
 	size_t chunk_len;
@@ -583,7 +586,7 @@ static void spi_pl022_dma_callback(const struct device *dma_dev, void *arg, uint
 
 	key = k_spin_lock(&data->lock);
 
-	chunk_len = spi_context_max_continuous_chunk(&data->ctx);
+	chunk_len = spi_context_max_continuous_chunk(ctx);
 	for (size_t i = 0; i < ARRAY_SIZE(cfg->dma); i++) {
 		if (dma_dev == cfg->dma[i].dev && channel == cfg->dma[i].channel) {
 			data->dma[i].count += chunk_len;
@@ -596,12 +599,12 @@ static void spi_pl022_dma_callback(const struct device *dma_dev, void *arg, uint
 	 * chunk_len is zero here means the transfer is already complete.
 	 */
 	if (spi_pl022_chunk_transfer_finished(dev)) {
-		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
-			spi_context_update_tx(&data->ctx, 1, chunk_len);
-			spi_context_update_rx(&data->ctx, 1, chunk_len);
+		if (SPI_WORD_SIZE_GET(ctx->config->operation) == 8) {
+			spi_context_update_tx(ctx, 1, chunk_len);
+			spi_context_update_rx(ctx, 1, chunk_len);
 		} else {
-			spi_context_update_tx(&data->ctx, 2, chunk_len);
-			spi_context_update_rx(&data->ctx, 2, chunk_len);
+			spi_context_update_tx(ctx, 2, chunk_len);
+			spi_context_update_rx(ctx, 2, chunk_len);
 		}
 
 		if (spi_pl022_transfer_ongoing(data)) {
@@ -799,7 +802,7 @@ static int spi_pl022_transceive_impl(const struct device *dev,
 	struct spi_context *ctx = &data->ctx;
 	int ret;
 
-	spi_context_lock(&data->ctx, (cb ? true : false), cb, userdata, config);
+	spi_context_lock(ctx, (cb ? true : false), cb, userdata, config);
 
 	ret = spi_pl022_configure(dev, config);
 	if (ret < 0) {
@@ -847,7 +850,7 @@ static int spi_pl022_transceive_impl(const struct device *dev,
 		} while (spi_pl022_transfer_ongoing(data));
 
 #if defined(CONFIG_SPI_ASYNC)
-		spi_context_complete(&data->ctx, dev, ret);
+		spi_context_complete(ctx, dev, ret);
 #endif
 	}
 #endif
@@ -855,7 +858,7 @@ static int spi_pl022_transceive_impl(const struct device *dev,
 	spi_context_cs_control(ctx, false);
 
 error:
-	spi_context_release(&data->ctx, ret);
+	spi_context_release(ctx, ret);
 
 	return ret;
 }

@@ -16,13 +16,13 @@ extern "C" {
 #endif
 
 struct settings_fcb {
-	struct settings_store cf_store;
-	struct fcb cf_fcb;
+    struct settings_store cf_store;
+    struct fcb cf_fcb;
 };
 
-extern int settings_fcb_src(struct settings_fcb *cf);
-extern int settings_fcb_dst(struct settings_fcb *cf);
-void settings_mount_fcb_backend(struct settings_fcb *cf);
+extern int settings_fcb_src(struct settings_fcb* cf);
+extern int settings_fcb_dst(struct settings_fcb* cf);
+void settings_mount_fcb_backend(struct settings_fcb* cf);
 
 #ifdef __cplusplus
 }

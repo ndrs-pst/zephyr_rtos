@@ -348,8 +348,8 @@ static SlSockAddr_t *translate_z_to_sl_addrs(const struct net_sockaddr *addr,
 		*sl_addrlen = sizeof(SlSockAddrIn_t);
 		sl_addr_in->sin_family = SL_AF_INET;
 		sl_addr_in->sin_port = z_sockaddr_in->sin_port;
-		sl_addr_in->sin_addr.s_addr =
-			z_sockaddr_in->sin_addr.s_addr;
+		sl_addr_in->sin_addr.s_addr_be =
+			z_sockaddr_in->sin_addr.s_addr_be;
 
 		sl_addr = (SlSockAddr_t *)sl_addr_in;
 	} else if (addrlen == sizeof(struct net_sockaddr_in6)) {
@@ -385,8 +385,8 @@ static void translate_sl_to_z_addr(SlSockAddr_t *sl_addr,
 			sl_addr_in = (SlSockAddrIn_t *)sl_addr;
 			z_sockaddr_in->sin_family = NET_AF_INET;
 			z_sockaddr_in->sin_port = sl_addr_in->sin_port;
-			z_sockaddr_in->sin_addr.s_addr =
-				sl_addr_in->sin_addr.s_addr;
+			z_sockaddr_in->sin_addr.s_addr_be =
+				sl_addr_in->sin_addr.s_addr_be;
 			*addrlen = sizeof(struct net_sockaddr_in);
 		} else {
 			*addrlen = sl_addrlen;
@@ -1023,7 +1023,7 @@ static int set_addr_info(const struct SlNetUtil_addrInfo_t *sl_ai,
 			(SlNetSock_AddrIn_t *)sl_ai->ai_addr;
 
 		net_sin(ai_addr)->sin_family = ai->ai_family;
-		net_sin(ai_addr)->sin_addr.s_addr = sl_addr->sin_addr.s_addr;
+		net_sin(ai_addr)->sin_addr.s_addr_be = sl_addr->sin_addr.s_addr_be;
 		net_sin(ai_addr)->sin_port = sl_addr->sin_port;
 		ai->ai_addrlen = sizeof(struct net_sockaddr_in);
 	} else {

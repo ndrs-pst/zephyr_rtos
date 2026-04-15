@@ -27,7 +27,7 @@
 #define SYS_HEAP_HARDENING_BASIC    (CONFIG_SYS_HEAP_HARDENING_LEVEL >= 1)
 #define SYS_HEAP_HARDENING_MODERATE (CONFIG_SYS_HEAP_HARDENING_LEVEL >= 2)
 #define SYS_HEAP_HARDENING_FULL     (CONFIG_SYS_HEAP_HARDENING_LEVEL >= 3)
-#define SYS_HEAP_HARDENING_EXTREME (CONFIG_SYS_HEAP_HARDENING_LEVEL >= 4)
+#define SYS_HEAP_HARDENING_EXTREME  (CONFIG_SYS_HEAP_HARDENING_LEVEL >= 4)
 
 /* Chunks are identified by their offset in 8 byte units from the
  * first address in the buffer (a zero-valued chunkid_t is used as a
@@ -73,7 +73,7 @@ typedef uint32_t chunksz_t;
 #ifdef CONFIG_SYS_HEAP_CANARIES
 
 struct z_heap_chunk_trailer {
-	uint64_t canary;
+    uint64_t canary;
 } __aligned(CHUNK_UNIT);
 
 #define CHUNK_TRAILER_SIZE (sizeof(struct z_heap_chunk_trailer) / CHUNK_UNIT)
@@ -263,7 +263,7 @@ static ALWAYS_INLINE chunksz_t bytes_to_chunksz(struct z_heap *h, size_t bytes, 
 	size_t oddments = ((bytes % CHUNK_UNIT) + (extra % CHUNK_UNIT) +
 			   chunk_header_bytes(h) + CHUNK_UNIT - 1U) / CHUNK_UNIT;
 
-	return (chunksz_t)min(chunks + oddments + CHUNK_TRAILER_SIZE, h->end_chunk);
+	return (chunksz_t)z_min(chunks + oddments + CHUNK_TRAILER_SIZE, h->end_chunk);
 }
 
 static inline chunksz_t min_chunk_size(struct z_heap *h)

@@ -440,12 +440,12 @@ static int gspi_siwx91x_burst_size(struct spi_context *ctx)
 {
 	int burst_len = 4;
 
-	for (int i = 0; i < ctx->tx_count; i++) {
-		burst_len = MIN(burst_len, gspi_siwx91x_burst_size_buf(ctx->current_tx + i));
+	for (int i = 0; i < ctx->tx.count; i++) {
+		burst_len = MIN(burst_len, gspi_siwx91x_burst_size_buf(ctx->tx.current + i));
 	}
 
-	for (int i = 0; i < ctx->rx_count; i++) {
-		burst_len = MIN(burst_len, gspi_siwx91x_burst_size_buf(ctx->current_rx + i));
+	for (int i = 0; i < ctx->rx.count; i++) {
+		burst_len = MIN(burst_len, gspi_siwx91x_burst_size_buf(ctx->rx.current + i));
 	}
 
 	return burst_len;

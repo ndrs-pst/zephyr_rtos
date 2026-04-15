@@ -140,7 +140,7 @@ static void spi_opentitan_xfer(const struct device *dev, const bool gpio_cs_cont
 	struct spi_context *ctx = &data->ctx;
 
 	while (spi_context_tx_on(ctx) || spi_context_rx_on(ctx)) {
-		const size_t segment_len = MAX(ctx->tx_len, ctx->rx_len);
+		const size_t segment_len = MAX(ctx->tx.len, ctx->rx.len);
 		uint32_t host_command_reg;
 
 		/* Setup transaction duplex. */
@@ -152,7 +152,7 @@ static void spi_opentitan_xfer(const struct device *dev, const bool gpio_cs_cont
 			host_command_reg = SPI_HOST_COMMAND_DIRECTION_BOTH;
 		}
 
-		size_t tx_bytes_to_queue = spi_context_tx_buf_on(ctx) ? ctx->tx_len : 0;
+		size_t tx_bytes_to_queue = spi_context_tx_buf_on(ctx) ? ctx->tx.len : 0;
 
 		/* First place Tx bytes in FIFO, packed four to a word. */
 		while (tx_bytes_to_queue > 0) {
@@ -173,7 +173,7 @@ static void spi_opentitan_xfer(const struct device *dev, const bool gpio_cs_cont
 		 * segments remain (because we will handle one Rx segment after the
 		 * forthcoming transaction).
 		 */
-		if (ctx->tx_count > 0 || ctx->rx_count > 1)  {
+		if (ctx->tx.count > 0 || ctx->rx.count > 1)  {
 			host_command_reg |= SPI_HOST_COMMAND_CSAAT_BIT;
 		}
 		/* Segment length field holds COMMAND.LEN + 1. */
@@ -182,7 +182,7 @@ static void spi_opentitan_xfer(const struct device *dev, const bool gpio_cs_cont
 		/* Issue transaction. */
 		sys_write32(host_command_reg, cfg->base + SPI_HOST_COMMAND_REG_OFFSET);
 
-		size_t rx_bytes_to_read = spi_context_rx_buf_on(ctx) ? ctx->rx_len : 0;
+		size_t rx_bytes_to_read = spi_context_rx_buf_on(ctx) ? ctx->rx.len : 0;
 
 		/* Read from Rx FIFO as required. */
 		while (rx_bytes_to_read > 0) {

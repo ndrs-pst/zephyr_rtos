@@ -73,7 +73,7 @@ static int cmd_register(const struct shell *sh,
 	uint8_t cfg;
 	int ret;
 
-	cfg = strtol(argv[3], NULL, 10);
+	cfg = (uint8_t)strtol(argv[3], NULL, 10);
 	ret = usbd_register_class(my_uds_ctx, argv[1], current_cmd_speed, cfg);
 	if (ret) {
 		shell_error(sh,
@@ -94,7 +94,7 @@ static int cmd_unregister(const struct shell *sh,
 	uint8_t cfg;
 	int ret;
 
-	cfg = strtol(argv[3], NULL, 10);
+	cfg = (uint8_t)strtol(argv[3], NULL, 10);
 	ret = usbd_unregister_class(my_uds_ctx, argv[1], current_cmd_speed, cfg);
 	if (ret) {
 		shell_error(sh,
@@ -294,7 +294,7 @@ static int cmd_device_bcd_usb(const struct shell *sh, size_t argc,
 	uint16_t bcd;
 	int ret;
 
-	bcd = strtol(argv[2], NULL, 16);
+	bcd = (uint16_t)strtol(argv[2], NULL, 16);
 	ret = usbd_device_set_bcd_usb(my_uds_ctx, current_cmd_speed, bcd);
 	if (ret) {
 		shell_error(sh, "dev: failed to set device bcdUSB to %x", bcd);
@@ -311,7 +311,7 @@ static int cmd_device_pid(const struct shell *sh, size_t argc,
 	uint16_t pid;
 	int ret;
 
-	pid = strtol(argv[1], NULL, 16);
+	pid = (uint8_t)strtol(argv[1], NULL, 16);
 	ret = usbd_device_set_pid(my_uds_ctx, pid);
 	if (ret) {
 		shell_error(sh, "dev: failed to set device idProduct to %x", pid);
@@ -326,7 +326,7 @@ static int cmd_device_vid(const struct shell *sh, size_t argc,
 	uint16_t vid;
 	int ret;
 
-	vid = strtol(argv[1], NULL, 16);
+	vid = (uint8_t)strtol(argv[1], NULL, 16);
 	ret = usbd_device_set_vid(my_uds_ctx, vid);
 	if (ret) {
 		shell_error(sh, "dev: failed to set device idVendor to %x", vid);
@@ -341,9 +341,9 @@ static int cmd_device_code_triple(const struct shell *sh, size_t argc,
 	uint8_t class, subclass, protocol;
 	int ret;
 
-	class = strtol(argv[2], NULL, 16);
-	subclass = strtol(argv[3], NULL, 16);
-	protocol = strtol(argv[4], NULL, 16);
+	class = (uint8_t)strtol(argv[2], NULL, 16);
+	subclass = (uint8_t)strtol(argv[3], NULL, 16);
+	protocol = (uint8_t)strtol(argv[4], NULL, 16);
 	ret = usbd_device_set_code_triple(my_uds_ctx, current_cmd_speed,
 					  class, subclass, protocol);
 	if (ret) {
@@ -384,7 +384,7 @@ static int cmd_config_set_selfpowered(const struct shell *sh, const bool self,
 	uint8_t cfg;
 	int ret;
 
-	cfg = strtol(argv[2], NULL, 10);
+	cfg = (uint8_t)strtol(argv[2], NULL, 10);
 
 	ret = usbd_config_attrib_self(my_uds_ctx, current_cmd_speed, cfg, self);
 	if (ret) {
@@ -418,7 +418,7 @@ static int cmd_config_rwup(const struct shell *sh, const bool rwup,
 	uint8_t cfg;
 	int ret;
 
-	cfg = strtol(argv[2], NULL, 10);
+	cfg = (uint8_t)strtol(argv[2], NULL, 10);
 
 	ret = usbd_config_attrib_rwup(my_uds_ctx, current_cmd_speed, cfg, rwup);
 	if (ret) {
@@ -453,15 +453,15 @@ static int cmd_config_power(const struct shell *sh, size_t argc,
 	uint8_t cfg;
 	int ret;
 
-	cfg = strtol(argv[2], NULL, 10);
-	power = strtol(argv[3], NULL, 10);
+	cfg = (uint8_t)strtol(argv[2], NULL, 10);
+	power = (uint16_t)strtol(argv[3], NULL, 10);
 
 	if (power > UINT8_MAX) {
 		power = UINT8_MAX;
 		shell_print(sh, "dev: limit bMaxPower value to %u", power);
 	}
 
-	ret = usbd_config_maxpower(my_uds_ctx, current_cmd_speed, cfg, power);
+	ret = usbd_config_maxpower(my_uds_ctx, current_cmd_speed, cfg, (uint8_t)power);
 	if (ret) {
 		shell_error(sh,
 			    "dev: failed to set configuration %u bMaxPower value to %u",

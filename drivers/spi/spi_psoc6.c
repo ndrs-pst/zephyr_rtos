@@ -56,9 +56,9 @@ static void spi_psoc6_transfer_next_packet(const struct device *dev)
 	struct spi_psoc6_transfer *xfer = &data->xfer;
 	uint32_t count;
 
-	LOG_DBG("TX L: %d, RX L: %d", ctx->tx_len, ctx->rx_len);
+	LOG_DBG("TX L: %d, RX L: %d", ctx->tx.len, ctx->rx.len);
 
-	if ((ctx->tx_len == 0U) && (ctx->rx_len == 0U)) {
+	if ((ctx->tx.len == 0U) && (ctx->rx.len == 0U)) {
 		/* nothing left to rx or tx, we're done! */
 		xfer->dataSize = 0U;
 
@@ -67,29 +67,29 @@ static void spi_psoc6_transfer_next_packet(const struct device *dev)
 		return;
 	}
 
-	if (ctx->tx_len == 0U) {
+	if (ctx->tx.len == 0U) {
 		/* rx only, nothing to tx */
 		xfer->txData = NULL;
 		xfer->rxData = ctx->rx_buf;
-		xfer->dataSize = ctx->rx_len;
-	} else if (ctx->rx_len == 0U) {
+		xfer->dataSize = ctx->rx.len;
+	} else if (ctx->rx.len == 0U) {
 		/* tx only, nothing to rx */
 		xfer->txData = (uint8_t *) ctx->tx_buf;
 		xfer->rxData = NULL;
-		xfer->dataSize = ctx->tx_len;
-	} else if (ctx->tx_len == ctx->rx_len) {
+		xfer->dataSize = ctx->tx.len;
+	} else if (ctx->tx.len == ctx->rx.len) {
 		/* rx and tx are the same length */
 		xfer->txData = (uint8_t *) ctx->tx_buf;
 		xfer->rxData = ctx->rx_buf;
-		xfer->dataSize = ctx->tx_len;
-	} else if (ctx->tx_len > ctx->rx_len) {
+		xfer->dataSize = ctx->tx.len;
+	} else if (ctx->tx.len > ctx->rx.len) {
 		/* Break up the tx into multiple transfers so we don't have to
 		 * rx into a longer intermediate buffer. Leave chip select
 		 * active between transfers.
 		 */
 		xfer->txData = (uint8_t *) ctx->tx_buf;
 		xfer->rxData = ctx->rx_buf;
-		xfer->dataSize = ctx->rx_len;
+		xfer->dataSize = ctx->rx.len;
 	} else {
 		/* Break up the rx into multiple transfers so we don't have to
 		 * tx from a longer intermediate buffer. Leave chip select
@@ -97,7 +97,7 @@ static void spi_psoc6_transfer_next_packet(const struct device *dev)
 		 */
 		xfer->txData = (uint8_t *) ctx->tx_buf;
 		xfer->rxData = ctx->rx_buf;
-		xfer->dataSize = ctx->tx_len;
+		xfer->dataSize = ctx->tx.len;
 	}
 
 	if (xfer->txData != NULL) {

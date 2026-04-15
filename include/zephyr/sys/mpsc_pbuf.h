@@ -147,10 +147,10 @@ struct mpsc_pbuf_buffer_config {
  *
  * @param buffer Buffer.
  *
- * @param config Configuration.
+ * @param cfg Configuration.
  */
 void mpsc_pbuf_init(struct mpsc_pbuf_buffer *buffer,
-		    const struct mpsc_pbuf_buffer_config *config);
+		    const struct mpsc_pbuf_buffer_config *cfg);
 
 /** @brief Allocate a packet.
  *

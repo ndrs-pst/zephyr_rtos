@@ -220,7 +220,7 @@ int modem_cellular_init(const struct device *dev);
 
 int modem_cellular_pm_action(const struct device *dev, enum pm_device_action action);
 
-extern const struct cellular_driver_api modem_cellular_api;
+extern struct cellular_driver_api DT_CONST modem_cellular_api;
 
 void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 						 enum modem_chat_script_result result,
@@ -318,7 +318,9 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 			DT_INST_PROP_OR(inst, cmux_close_pipe_on_power_save, 0),                   \
 		.use_default_pdp_context = DT_INST_PROP_OR(inst, zephyr_use_default_pdp_ctx, 0),   \
 		.use_default_apn = DT_INST_PROP_OR(inst, zephyr_use_default_apn, 0),               \
-		.cmux_idle_timeout = K_MSEC(DT_INST_PROP_OR(inst, cmux_idle_timeout_ms, 0)),       \
+		.cmux_idle_timeout = {                                                             \
+			.ticks = Z_TIMEOUT_MS_TICKS(DT_INST_PROP_OR(inst, cmux_idle_timeout_ms, 0))\
+		},                                                                                 \
 		.set_baudrate_chat_script = (set_baudrate_script),                                 \
 		.init_chat_script = (init_script),                                                 \
 		.dial_chat_script = (dial_script),                                                 \

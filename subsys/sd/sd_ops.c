@@ -21,6 +21,7 @@ int sdmmc_read_status(struct sd_card *card)
 {
 	struct sdhc_command cmd;
 	int ret;
+	uint32_t response;
 
 	cmd.opcode = SD_SEND_STATUS;
 	cmd.arg = 0;
@@ -35,28 +36,32 @@ int sdmmc_read_status(struct sd_card *card)
 	if (ret) {
 		return SD_RETRY;
 	}
+
+	response = cmd.response[0U];
 	if (card->host_props.is_spi) {
 		/* Check R2 response bits */
-		if ((cmd.response[0U] & SDHC_SPI_R2_CARD_LOCKED) ||
-		    (cmd.response[0U] & SDHC_SPI_R2_UNLOCK_FAIL)) {
+		if ((response & SDHC_SPI_R2_CARD_LOCKED) ||
+		    (response & SDHC_SPI_R2_UNLOCK_FAIL)) {
 			return -EACCES;
-		} else if ((cmd.response[0U] & SDHC_SPI_R2_WP_VIOLATION) ||
-			   (cmd.response[0U] & SDHC_SPI_R2_ERASE_PARAM) ||
-			   (cmd.response[0U] & SDHC_SPI_R2_OUT_OF_RANGE)) {
+		} else if ((response & SDHC_SPI_R2_WP_VIOLATION) ||
+			   (response & SDHC_SPI_R2_ERASE_PARAM) ||
+			   (response & SDHC_SPI_R2_OUT_OF_RANGE)) {
 			return -EINVAL;
-		} else if ((cmd.response[0U] & SDHC_SPI_R2_ERR) ||
-			   (cmd.response[0U] & SDHC_SPI_R2_CC_ERR) ||
-			   (cmd.response[0U] & SDHC_SPI_R2_ECC_FAIL)) {
+		} else if ((response & SDHC_SPI_R2_ERR) ||
+			   (response & SDHC_SPI_R2_CC_ERR) ||
+			   (response & SDHC_SPI_R2_ECC_FAIL)) {
 			return -EIO;
 		}
 		/* Otherwise, no error in R2 response */
 		return 0;
 	}
+
 	/* Otherwise, check native card response */
-	if ((cmd.response[0U] & SD_R1_RDY_DATA) &&
-	    (SD_R1_CURRENT_STATE(cmd.response[0U]) == SDMMC_R1_TRANSFER)) {
+	if ((response & SD_R1_RDY_DATA) &&
+	    (SD_R1_CURRENT_STATE(response) == SDMMC_R1_TRANSFER)) {
 		return 0;
 	}
+
 	/* Valid response, the card is busy */
 	return -EBUSY;
 }
@@ -251,8 +256,13 @@ static int sdmmc_read_cxd(struct sd_card *card, uint32_t opcode, uint32_t rca, u
 		LOG_DBG("CMD%d failed: %d", opcode, ret);
 		return ret;
 	}
-	/* CSD/CID is 16 bytes */
-	memcpy(cxd, cmd.response, 16);
+
+	/* CSD/CID is 16 bytes */ /* #CUSTOM@NDRS swap order of card status according to underlying MCU */
+	cxd[0] = cmd.response[3];
+	cxd[1] = cmd.response[2];
+	cxd[2] = cmd.response[1];
+	cxd[3] = cmd.response[0];
+
 	return 0;
 }
 

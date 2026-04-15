@@ -117,7 +117,7 @@ int stm32_gpioport_configure_pin(
  * exported by the GPIO driver when enabled.
  */
 #if defined(CONFIG_GPIO_STM32)
-extern const struct gpio_driver_api gpio_stm32_driver;
+extern struct gpio_driver_api DT_CONST gpio_stm32_driver;
 #endif /* CONFIG_GPIO_STM32 */
 
 #endif /* ZEPHYR_SOC_ST_STM32_COMMON_STM32_GPIO_SHARED_H_ */

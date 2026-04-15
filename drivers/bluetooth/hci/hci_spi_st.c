@@ -444,7 +444,7 @@ static int bt_spi_rx_buf_construct(uint8_t *msg, struct net_buf **bufp, uint16_t
 			}
 		}
 
-		len = sizeof(struct bt_hci_evt_hdr) + msg[EVT_HEADER_SIZE];
+		len = BT_HCI_EVT_HDR_SIZE + msg[EVT_HEADER_SIZE];
 		if (len > net_buf_tailroom(buf)) {
 			LOG_ERR("Event too long: %d", len);
 			net_buf_unref(buf);

@@ -27,31 +27,34 @@
 
 LOG_MODULE_REGISTER(w1_serial, CONFIG_W1_LOG_LEVEL);
 
-#define W1_SERIAL_READ_REQ_BYTE 0xFF
-#define W1_SERIAL_BIT_1         0xFF
-#define W1_SERIAL_BIT_0         0x00
+#define W1_SERIAL_READ_REQ_BYTE   0xFF
+#define W1_SERIAL_BIT_1           0xFF
+#define W1_SERIAL_BIT_0           0x00
 
 /* Standard speed signal parameters:
  * RST: t_RSTL=520us; t_slot=1041us
  * DATA: t_low1=8.68us; t_low0=78.1us; t_slot=86.8us
  */
-#define W1_SERIAL_STD_RESET_BYTE 0xF0
-#define W1_SERIAL_STD_RESET_BAUD 9600u
-#define W1_SERIAL_STD_DATA_BAUD  115200u
+#define W1_SERIAL_STD_RESET_BYTE   0xF0
+#define W1_SERIAL_STD_RESET_BAUD   9600u
+#define W1_SERIAL_STD_DATA_BAUD    115200u
 
 /*
  * Overdrive speed signal parameters:
  * Unlike standard speed, RST and DATA timing defined in Devicetree
  */
-#define W1_SERIAL_OD_RESET_BYTE 0xE0
+#define W1_SERIAL_OD_RESET_BYTE    0xE0
 
 struct w1_serial_config {
 	/** w1 master config, common to all drivers */
 	struct w1_master_config master_config;
+
 	/** UART device used for 1-Wire communication */
 	const struct device *uart_dev;
+
 	/** Baud rate for overdrive speed data communication */
 	uint32_t od_data_baud;
+
 	/** Baud rate for overdrive speed reset/presence detection */
 	uint32_t od_reset_baud;
 };
@@ -78,7 +81,7 @@ static int serial_tx_rx(const struct device *dev, const uint8_t *tx_data, uint8_
 	__ASSERT_NO_MSG(tx_data != NULL);
 	__ASSERT_NO_MSG(rx_data != NULL);
 
-	for (int i = 0; i < len; ++i) {
+	for (size_t i = 0U; i < len; ++i) {
 		while (uart_poll_in(cfg->uart_dev, &dummy) == 0) {
 			/* poll in any buffered data */
 		}

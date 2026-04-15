@@ -130,7 +130,7 @@ static int fs_get_mnt_point(struct fs_mount_t **mnt_pntp,
 static inline void fs_copy_mnt_point_to_entry(struct fs_mount_t *mnt, struct fs_dirent *entry)
 {
 	entry->type = FS_DIR_ENTRY_DIR;
-	memcpy(entry->name, &mnt->mnt_point[1], min(sizeof(entry->name) - 1, mnt->mountp_len));
+	memcpy(entry->name, &mnt->mnt_point[1], z_min(sizeof(entry->name) - 1, mnt->mountp_len));
 	entry->name[sizeof(entry->name) - 1] = 0;
 	entry->size = 0;
 }
@@ -304,6 +304,17 @@ off_t fs_tell(struct fs_file_t *zfp)
 	}
 
 	return rc;
+}
+
+/* #CUSTOM@NDRS */
+off_t /**/fs_size(struct fs_file_t* zfp)
+{
+    off_t off  = fs_tell(zfp);
+    off_t size = fs_seek(zfp, 0, FS_SEEK_END);
+
+    fs_seek(zfp, off, FS_SEEK_SET);
+
+    return (size);
 }
 
 int fs_truncate(struct fs_file_t *zfp, off_t length)
