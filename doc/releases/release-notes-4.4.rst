@@ -26,8 +26,8 @@
 
 .. _zephyr_4.4:
 
-Zephyr 4.4.0 (Working Draft)
-############################
+Zephyr 4.4.0
+############
 
 We are pleased to announce the release of Zephyr version 4.4.0.
 
@@ -67,7 +67,9 @@ Major enhancements with this release include:
   - A :ref:`Wake-up Controller (WUC) API <wuc_api>` for managing wake-up sources that can bring the
     system out of low-power states.
 
-**Zbus proxy agents**
+**Zbus async listeners and proxy agents**
+  Zbus async listeners enable non-blocking observer callbacks via workqueues.
+
   :ref:`Zbus proxy agents <zbus_proxy_agent>` extend publish-subscribe messaging across CPU and
   domain boundaries over IPC.
 
@@ -81,8 +83,9 @@ Major enhancements with this release include:
   :kconfig:option:`CONFIG_USE_SWITCH`, delivers significant performance improvements.
 
 **NAND flash support**
-  Added a new Flash Translation Layer (FTL) disk driver providing wear leveling and bad block
-  management, enabling NAND flash memories to be utilized as standard disk devices.
+  A new Flash Translation Layer (FTL) disk driver (:dtcompatible:`zephyr,ftl-dhara`) provides wear
+  leveling and bad block management and enables NAND flash memories to be utilized as standard disk
+  devices.
 
 **Developer experience improvements**
   This release adds several new tools and improvements to development and testing workflows:
@@ -92,6 +95,9 @@ Major enhancements with this release include:
 
   - A new display driver for QEMU targets simplifies development of display-based applications in
     environments where the native simulator is unavailable.
+
+  - A new heap hardening mechanism (:kconfig:option:`CONFIG_SYS_HEAP_HARDENING`) provides multiple
+    levels of runtime protection against heap corruption.
 
   - New :ref:`scope-based cleanup helpers <cleanup_api>` provide :abbr:`RAII (Resource Acquisition
     Is Initialization)`/defer-style automatic cleanup in C when leaving scope.
@@ -154,6 +160,9 @@ API Changes
 ..
   Only removed, deprecated and new APIs. Changes go in migration guide.
 
+Removed APIs and options
+========================
+
 * Architectures
 
   * Xtensa
@@ -167,21 +176,88 @@ API Changes
 
 * Bluetooth
 
+  * ``CONFIG_BT_TBS_SUPPORTED_FEATURES``
+
+  * The deprecated ``bt_hci_cmd_create()`` function was removed. It has been replaced by
+    :c:func:`bt_hci_cmd_alloc`.
+
   * Controller
 
     * :kconfig:option:`CONFIG_BT_CTLR_ADV_AUX_SET`, :kconfig:option:`CONFIG_BT_CTLR_ADV_SYNC_SET`
       and :kconfig:option:`CONFIG_BT_CTLR_ADV_DATA_BUF_MAX` no longer require
       :kconfig:option:`CONFIG_BT_CTLR_ADVANCED_FEATURES`
 
-Removed APIs and options
-========================
+* Mbed TLS
 
-* Bluetooth
+  * ``CONFIG_PSA_WANT_KEY_TYPE_DES``
+  * ``CONFIG_PSA_WANT_ECC_SECP_K1_192``
+  * ``CONFIG_PSA_WANT_ECC_SECP_R1_192``
+  * ``CONFIG_PSA_WANT_ECC_SECP_R1_224``
+  * ``CONFIG_CUSTOM_MBEDTLS_CFG_FILE``
+  * ``CONFIG_MBEDTLS_CHACHAPOLY_AEAD_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_AES_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_CAMELLIA_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_CCM_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_CHACHA20_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_DES_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_GCM_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_MODE_CBC_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_MODE_CTR_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_MODE_XTS_ENABLED``
+  * ``CONFIG_MBEDTLS_CMAC``
+  * ``CONFIG_MBEDTLS_DHM_C``
+  * ``CONFIG_MBEDTLS_ECDH_C``
+  * ``CONFIG_MBEDTLS_ECDSA_C``
+  * ``CONFIG_MBEDTLS_ECDSA_DETERMINISTIC``
+  * ``CONFIG_MBEDTLS_ECJPAKE_C``
+  * ``CONFIG_MBEDTLS_ECP_ALL_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_C``
+  * ``CONFIG_MBEDTLS_ECP_DP_BP256R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_BP384R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_BP512R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_CURVE25519_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_CURVE448_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP192K1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP192R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP224K1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP224R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP256K1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP256R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP384R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP521R1_ENABLED``
+  * ``CONFIG_MBEDTLS_GENPRIME_ENABLED``
+  * ``CONFIG_MBEDTLS_HKDF_C``
+  * ``CONFIG_MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED``
+  * ``CONFIG_MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED``
+  * ``CONFIG_MBEDTLS_KEY_EXCHANGE_RSA_ENABLED``
+  * ``CONFIG_MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED``
+  * ``CONFIG_MBEDTLS_MD5``
+  * ``CONFIG_MBEDTLS_PKCS1_V15``
+  * ``CONFIG_MBEDTLS_PKCS1_V21``
+  * ``CONFIG_MBEDTLS_POLY1305``
+  * ``CONFIG_MBEDTLS_RSA_C``
+  * ``CONFIG_MBEDTLS_SHA1``
+  * ``CONFIG_MBEDTLS_SHA224``
+  * ``CONFIG_MBEDTLS_SHA256``
+  * ``CONFIG_MBEDTLS_SHA384``
+  * ``CONFIG_MBEDTLS_SHA512``
+  * ``CONFIG_MBEDTLS_USE_PSA_CRYPTO``
 
-   * ``CONFIG_BT_TBS_SUPPORTED_FEATURES``
+  * ``CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR`` has been renamed to
+    :kconfig:option:`CONFIG_MBEDTLS_PSA_DRIVER_GET_ENTROPY`.
 
-   * The deprecated ``bt_hci_cmd_create()`` functon was removed. It has been replaced by
-     :c:func:`bt_hci_cmd_alloc`.
+  * ``CONFIG_MBEDTLS_PEM_CERTIFICATE_FORMAT`` has been replaced by the underlying options it used
+    to enable: :kconfig:option:`CONFIG_MBEDTLS_PEM_PARSE_C`,
+    :kconfig:option:`CONFIG_MBEDTLS_PEM_WRITE_C` and :kconfig:option:`CONFIG_MBEDTLS_BASE64_C`.
+
+  * ``CONFIG_MBEDTLS_SERVER_NAME_INDICATION`` has been renamed to
+    :kconfig:option:`CONFIG_MBEDTLS_SSL_SERVER_NAME_INDICATION`.
+
+  * ``CONFIG_MBEDTLS_TEST`` has been renamed to :kconfig:option:`CONFIG_MBEDTLS_DEBUG_C`.
+
+* Random
+
+  * ``CONFIG_CSPRNG_AVAILABLE`` has been renamed to :kconfig:option:`CONFIG_ENTROPY_NODE_ENABLED`.
 
 Deprecated APIs and options
 ===========================
@@ -235,6 +311,16 @@ Deprecated APIs and options
     * :c:macro:`I2S_OPT_FRAME_CLK_SLAVE` -> :c:macro:`I2S_OPT_FRAME_CLK_TARGET`
 
 .. _latest revision of the I2S specification: https://www.nxp.com/docs/en/user-manual/UM11732.pdf
+
+* Mbed TLS
+
+  * :kconfig:option:`CONFIG_MBEDTLS_USER_CONFIG_ENABLE` and
+    :kconfig:option:`CONFIG_MBEDTLS_CFG_FILE` were deprecated. Instead, use
+    :kconfig:option:`CONFIG_MBEDTLS_CONFIG_FILE`.
+
+  * :kconfig:option:`CONFIG_MBEDTLS_LIBRARY` was deprecated. Instead, use
+    :kconfig:option:`CONFIG_MBEDTLS_CUSTOM`.
+
 
 * POSIX
 
@@ -344,6 +430,10 @@ New APIs and options
 
 * Build system
 
+  * Added ``zephyr_constants_library()`` CMake function for generating
+    headers with build-time constants derived from C struct layouts
+    (:github:`104861`).
+
   * Added :ref:`slot1-partition <snippet-slot1-partition>` snippet.
 
   * Sysbuild
@@ -396,9 +486,24 @@ New APIs and options
 
 * Display
 
-  * :kconfig:option:`SSD1325_DEFAULT_CONTRAST`
-  * :kconfig:option:`SSD1325_CONV_BUFFER_LINES`
+  * :c:func:`display_register_event_cb` and :c:func:`display_unregister_event_cb`.
+  * :kconfig:option:`CONFIG_SSD1325_DEFAULT_CONTRAST`
+  * :kconfig:option:`CONFIG_SSD1325_CONV_BUFFER_LINES`
   * :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_XRGB_8888`
+  * :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_888`
+  * :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_ABGR_8888`
+  * :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGBA_8888`
+  * :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGRA_8888`
+  * :c:enumerator:`PIXEL_FORMAT_XRGB_8888`
+  * :c:enumerator:`PIXEL_FORMAT_BGR_888`
+  * :c:enumerator:`PIXEL_FORMAT_ABGR_8888`
+  * :c:enumerator:`PIXEL_FORMAT_RGBA_8888`
+  * :c:enumerator:`PIXEL_FORMAT_BGRA_8888`
+  * :c:macro:`PANEL_PIXEL_FORMAT_XRGB_8888`
+  * :kconfig:option:`CONFIG_SDL_DISPLAY_ROUNDED_MASK`
+  * :kconfig:option:`CONFIG_SDL_DISPLAY_ROUNDED_MASK_COLOR`
+  * ``serial-vcom-inversion`` and ``serial-vcom-interval`` properties of :dtcompatible:`sharp,ls0xx`.
+  * :kconfig:option:`CONFIG_LS0XX_VCOM_THREAD_PRIO`
 
 * Ethernet
 
@@ -414,6 +519,10 @@ New APIs and options
     implement ``get_stats_type`` to skip expensive FW queries when only common stats
     are requested. The existing ``get_stats`` API remains unchanged for backward
     compatibility.
+
+* Exception
+
+  * :kconfig:option:`CONFIG_EXCEPTION_DUMP_HOOK_ONLY`
 
 * Flash
 
@@ -451,6 +560,35 @@ New APIs and options
       :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT`,
       :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT_TIME_MS` see
       :ref:`raw UART MCUmgr SMP transport <mcumgr_smp_transport_raw_uart>` for details.
+
+* Mbed TLS
+
+  * :kconfig:option:`CONFIG_TF_PSA_CRYPTO_USER_CONFIG_FILE`
+  * :kconfig:option:`CONFIG_PSA_WANT_ALG_SHAKE128`
+  * :kconfig:option:`CONFIG_PSA_WANT_ALG_SHAKE256`
+  * :kconfig:option:`CONFIG_MBEDTLS_BASE64_C`
+  * :kconfig:option:`CONFIG_MBEDTLS_PEM_PARSE_C`
+  * :kconfig:option:`CONFIG_MBEDTLS_PEM_WRITE_C`
+  * :kconfig:option:`CONFIG_MBEDTLS_PK_PARSE_C`
+  * :kconfig:option:`CONFIG_MBEDTLS_SSL_KEYING_MATERIAL_EXPORT`
+  * :kconfig:option:`CONFIG_MBEDTLS_VERSION_C`
+  * :kconfig:option:`CONFIG_MBEDTLS_X509_CRT_PARSE_C`
+  * :kconfig:option:`CONFIG_MBEDTLS_X509_RSASSA_PSS_SUPPORT`
+  * :kconfig:option:`CONFIG_MBEDTLS_X509_USE_C`
+  * :kconfig:option:`CONFIG_MBEDTLS_CIPHERSUITE_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`
+  * :kconfig:option:`CONFIG_MBEDTLS_CIPHERSUITE_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256`
+  * :kconfig:option:`CONFIG_MBEDTLS_CIPHERSUITE_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256`
+  * :kconfig:option:`CONFIG_MBEDTLS_CIPHERSUITE_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384`
+  * :kconfig:option:`CONFIG_MBEDTLS_CIPHERSUITE_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384`
+  * :kconfig:option:`CONFIG_MBEDTLS_CIPHERSUITE_TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8`
+  * :kconfig:option:`CONFIG_MBEDTLS_CIPHERSUITE_TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384`
+  * :kconfig:option:`CONFIG_MBEDTLS_CIPHERSUITE_TLS_PSK_WITH_AES_256_CBC_SHA384`
+  * :kconfig:option:`CONFIG_MBEDTLS_CIPHERSUITE_TLS_PSK_WITH_AES_128_GCM_SHA256`
+  * :kconfig:option:`CONFIG_MBEDTLS_CIPHERSUITE_ECJPAKE_WITH_AES_128_CCM_8`
+  * :kconfig:option:`CONFIG_MBEDTLS_CIPHERSUITE_TLS1_3_AES_256_GCM_SHA384`
+  * :kconfig:option:`CONFIG_MBEDTLS_CIPHERSUITE_TLS1_3_AES_128_GCM_SHA256`
+  * :kconfig:option:`CONFIG_MBEDTLS_CIPHERSUITE_TLS1_3_AES_128_CCM_SHA256`
+  * :kconfig:option:`CONFIG_MBEDTLS_CIPHERSUITE_TLS1_3_CHACHA20_POLY1305_SHA256`
 
 * Modem
 
@@ -559,6 +697,11 @@ New APIs and options
 
   * :kconfig:option:`CONFIG_TIMEUTIL_APPLY_SKEW`
 
+* Userspace
+
+  * :c:func:`k_object_access_check`
+  * :c:func:`k_mem_domain_deinit`
+
 * Utilities
 
   * :abbr:`COBS (Consistent Overhead Byte Stuffing)` streaming support
@@ -621,11 +764,21 @@ New APIs and options
 
 * Zbus
 
+   * :kconfig:option:`CONFIG_ZBUS_ASYNC_LISTENER`
+   * :kconfig:option:`CONFIG_ZBUS_ASYNC_LISTENER_EXEC_TIMEOUT`
    * :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT`
    * :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_IPC`
+   * :c:macro:`ZBUS_ASYNC_LISTENER_DEFINE`
+   * :c:macro:`ZBUS_ASYNC_LISTENER_DEFINE_WITH_ENABLE`
    * :c:macro:`ZBUS_PROXY_AGENT_DEFINE`
    * :c:macro:`ZBUS_PROXY_ADD_CHAN`
    * :c:macro:`ZBUS_SHADOW_CHAN_DEFINE`
+   * :c:macro:`ZBUS_SHADOW_CHAN_DEFINE_WITH_ID`
+   * :c:func:`zbus_chan_from_name`. Retrieve a zbus channel reference by its name string.
+   * :c:func:`zbus_async_listener_set_work_queue`. Set the work queue for an async listener
+     observer.
+   * :c:func:`zbus_chan_pub_stats_msg_age`. Get the message age in milliseconds since the last
+     publish.
 
 .. zephyr-keep-sorted-stop
 
@@ -1707,13 +1860,33 @@ New Samples
   Same as above, this will also be recomputed at the time of the release.
  Just link the sample, further details go in the sample documentation itself.
 
-DeviceTree
+Devicetree
 **********
 
 * Migration guide: :ref:`migration_4.4_devicetree`
+
+* New macros for reg property iteration (:github:`104223`)
+
+  * :c:macro:`DT_FOREACH_REG`
+  * :c:macro:`DT_FOREACH_REG_SEP`
+  * :c:macro:`DT_FOREACH_REG_VARGS`
+  * :c:macro:`DT_FOREACH_REG_SEP_VARGS`
+  * Instance number based variants of each, e.g. :c:macro:`DT_INST_FOREACH_REG`
+
+* Definitions for ``*-map`` related properties (:github:`87595`)
+  provide first-class support for nexus nodes and specifier mappings.
+  See Devicetree Specification v0.4 section 2.5 for more details
+  on these properties.
+
+* New :dtcompatible:`zephyr,mapped-partition` binding and associated
+  APIs for memory-mapped flash partitions. This is a successor to the
+  existing :dtcompatible:`fixed-partitions` binding
+
 * Bindings are no longer allowed to specify any default values for the
   ``status``, ``#address-cells`` and ``#size-cells`` properties.
+
 * :c:macro:`DT_CHILD_BY_UNIT_ADDR_INT`
+
 * :c:macro:`DT_INST_CHILD_BY_UNIT_ADDR_INT`
 
 Kconfig
@@ -1726,6 +1899,12 @@ Kernel
 
 * Dropped CONFIG_SCHED_DUMB and CONFIG_WAITQ_DUMB options which were deprecated
   in Zephyr 4.2.0
+
+* Added tiered heap hardening with :kconfig:option:`CONFIG_SYS_HEAP_HARDENING`
+  (Basic, Moderate, Full, Extreme) providing progressive levels of runtime
+  corruption detection for :c:func:`sys_heap_alloc` and :c:func:`sys_heap_free`,
+  including double-free detection, neighbor consistency checks, and optional
+  per-chunk canaries (:github:`104999`).
 
 * :ref:`cleanup_api`
 
@@ -1766,9 +1945,22 @@ Libraries / Subsystems
 
 * Zbus
 
+   * Added async listener support. Async listeners execute in a workqueue context instead of the
+     publisher's thread, enabling non-blocking operations without requiring a dedicated subscriber
+     thread.
+   * Added :zephyr:code-sample:`zbus-async-listeners`.
    * Added experimental proxy-agent communication with IPC backend support for
      forwarding channel data across domains.
    * Added :zephyr:code-sample:`zbus-proxy-agent-ipc`.
+   * Added the :c:func:`zbus_chan_from_name` function. Retrieve a zbus channel from its name string.
+   * Added the :c:func:`zbus_async_listener_set_work_queue` function. Set the work queue for an
+     async listener.
+   * Added the :c:func:`zbus_chan_pub_stats_msg_age` function. Get the message age in milliseconds
+     since the last publish.
+   * Clarified observer priority documentation and fixed spelling and grammar.
+   * Updated observer types image in documentation.
+   * Filtered out tests that are not SMP aware.
+
 
 Other notable changes
 *********************

@@ -337,7 +337,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: f292d7fb988fe470d999d43d794d3f284539c0dd
+      revision: 0ceb1ac7d09f9188c0bce3001f1cdfede5ada4b9
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -397,7 +397,7 @@ manifest:
         - testing
         - tee
     - name: tf-psa-crypto
-      revision: c82dfc7be6417aba6b161dda66dde9278e8524de
+      revision: dc575a2ddcc8cb16275d24c42a52eaf79ebe2231
       path: modules/crypto/tf-psa-crypto
       groups:
         - crypto

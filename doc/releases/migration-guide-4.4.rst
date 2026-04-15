@@ -7,8 +7,8 @@
 
 .. _migration_4.4:
 
-Migration guide to Zephyr v4.4.0 (Working Draft)
-################################################
+Migration guide to Zephyr v4.4.0
+################################
 
 This document describes the changes required when migrating your application from Zephyr v4.3.0 to
 Zephyr v4.4.0.
@@ -48,6 +48,13 @@ Build System
 
 Kernel
 ******
+
+* Heap hardening support has been implemented by adding a build time generated
+  ``zephyr/heap_constants.h`` file that is now included from ``kernel.h``. This
+  may create a build race condition for downstream application built as a cmake
+  library where cmake may try to build them before the header file is
+  generated, these may need an extra ``add_dependencies(${lib} zephyr_generated_headers)``
+  entry in cmake, see :github:`106439` for mode details.
 
 Boards
 ******
@@ -181,9 +188,9 @@ Boards
 
 * Boards or projects based on STM32N6x SoCs (:kconfig:option:`CONFIG_SOC_SERIES_STM32N6X`) now need
   to explicitly enable :kconfig:option:`CONFIG_TRUSTED_EXECUTION_SECURE` when the Zephyr
-  application is expected to execute in the secure state of the process. Alternatively, if the
-  Zephyr is expected to execute in the non-secure state of the processor, the board or project
-  must explicitly enable :kconfig:option:`CONFIG_TRUSTED_EXECUTION_NON_SECURE`.
+  application is expected to execute in the secure state of the processor. Alternatively, if the
+  Zephyr application is expected to execute in the non-secure state of the processor, the board or
+  project must explicitly enable :kconfig:option:`CONFIG_TRUSTED_EXECUTION_NON_SECURE`.
 
 * The following WCH SoC Kconfigs have been renamed. Kconfig/CMake/code
   needs to be updated if they reference the old Kconfigs:
@@ -488,32 +495,39 @@ Display
 
 * For ILI9341 controller, display mirroring configuration has been updated to conform with
   the described behavior of the sample ``samples/drivers/display``. (:github:`99267`).
+  This change causes mirroring issues on some display panels, which will have a proper fix in the
+  v4.4.1 release. (:github:`106862`)
 
-* The ``PIXEL_FORMAT_BGR_565`` pixel format has been renamed to
-  :c:macro:`PIXEL_FORMAT_RGB_565X` to correctly reflect that it is a
-  byte-swapped version of RGB_565, not a channel-swapped format.
-  Applications using ``PIXEL_FORMAT_BGR_565`` must update to use
-  :c:macro:`PIXEL_FORMAT_RGB_565X`. (:github:`99276`)
+* The ``PIXEL_FORMAT_BGR_565`` pixel format (and its corresponding devicetree macro
+  ``PANEL_PIXEL_FORMAT_BGR_565``) has been renamed to :c:enumerator:`PIXEL_FORMAT_RGB_565X`
+  (and :c:macro:`PANEL_PIXEL_FORMAT_RGB_565X`) to correctly reflect that it is a byte-swapped
+  version of RGB-565, not a swapped Red-Blue channels format. (:github:`99276`)
+  Applications and libraries using ``PIXEL_FORMAT_BGR_565`` to denote byte-swapped RGB-565 must
+  update to use :c:enumerator:`PIXEL_FORMAT_RGB_565X`.
 
-* The devicetree macro ``PANEL_PIXEL_FORMAT_BGR_565`` has been renamed to
-  :c:macro:`PANEL_PIXEL_FORMAT_RGB_565X`. (:github:`99276`)
+* The Kconfig options ``CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_565`` and
+  ``CONFIG_ST7789V_BGR565`` have been renamed to
+  :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565X` and
+  :kconfig:option:`CONFIG_ST7789V_RGB565X` respectively. (:github:`99276`)
 
-* The Kconfig options ``SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_565`` and
-  ``ST7789V_BGR565`` have been renamed to
-  :kconfig:option:`SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565X` and :kconfig:option:`ST7789V_RGB565X`
-  respectively. (:github:`99276`)
+* ``CONFIG_SSD1327`` symbol has been renamed to :kconfig:option:`CONFIG_SSD1327_5` to include
+  ``SSD1325`` as well.
 
-* ``CONFIG_SSD1327`` symbol has been renamed to :kconfig:option:`CONFIG_SSD1327_5` to include ``SSD1325`` as well.
-
-* ``solomon,ssd1327fb`` devicetree compatible has been renamed :dtcompatible:`solomon,ssd1327`
-  to harmonize with other display controllers and eliminate the zephyr-irrelevant ``fb`` suffix.
-
-* ``solomon,ssd1306fb`` and ``solomon,ssd1309fb`` devicetree compatibles has been renamed
-  :dtcompatible:`solomon,ssd1306` and :dtcompatible:`solomon,ssd1309` respectively,
-  to harmonize with other display controllers and eliminate the zephyr-irrelevant ``fb`` suffix.
+* ``solomon,ssd1327fb``, ``solomon,ssd1306fb`` and ``solomon,ssd1309fb`` devicetree compatibles
+  have been renamed :dtcompatible:`solomon,ssd1327`, :dtcompatible:`solomon,ssd1306` and
+  :dtcompatible:`solomon,ssd1309` respectively, to harmonize with other display controllers and
+  eliminate the zephyr-irrelevant ``fb`` suffix.
 
 * The NXP eLCDIF controller (:dtcompatible:`nxp,imx-elcdif`) now correctly advertises support for
   :c:macro:`PIXEL_FORMAT_XRGB_8888` instead of :c:macro:`PIXEL_FORMAT_ARGB_8888`.
+
+* ``waveshare,7inch-dsi-lcd-c`` devicetree compatible has been replaced by
+  :dtcompatible:`waveshare,dsi2dpi`, and ``CONFIG_WAVESHARE_7INCH_DSI_LCD_C`` option has been
+  replaced by :kconfig:option:`CONFIG_WAVESHARE_DSI2DPI`. (:github:`100140`)
+
+* Boards using STM32 LTDC display controller must update their devicetree to have
+  :c:macro:`PANEL_PIXEL_FORMAT_RGB_888` as ``pixel-format`` in :dtcompatible:`st,stm32-ltdc` node.
+  (:github:`99277`)
 
 DMA
 ===
@@ -820,8 +834,9 @@ NXP
 
 * ``zephyr,flash`` chosen property must point to the
   :dtcompatible:`soc-nv-flash` compatible node.
+
   * ``zephyr,flash-controller`` chosen property must point to the
-  :dtcompatible:`nxp,imx-flexspi-nor` compatible node.
+    :dtcompatible:`nxp,imx-flexspi-nor` compatible node.
   * A ``ranges`` property is required on the controller node.
 
 QSPI
@@ -1072,8 +1087,10 @@ USB-C
 Video
 =====
 
-* ``CONFIG_VIDEO_HIMAX_HM01B0`` has been renamed into :kconfig:option:`CONFIG_VIDEO_HM01B0`.
-* CONFIG_VIDEO_OV7670 is now gone and replaced by CONFIG_VIDEO_OV767X.  This allows supporting both the OV7670 and 0V7675.
+* ``CONFIG_VIDEO_HIMAX_HM01B0`` has been renamed to :kconfig:option:`CONFIG_VIDEO_HM01B0`.
+* ``CONFIG_VIDEO_OV7670`` is now gone and replaced by
+  :kconfig:option:`CONFIG_VIDEO_OV767X`. This allows supporting both the OV7670
+  and 0V7675.
 * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_SZ_MAX` is replaced by
   :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE` which represent the
   size in byte allocated for the whole video buffer pool.
@@ -1095,27 +1112,30 @@ Video
 Watchdog
 ========
 
-  * The semantics of :kconfig:option:`CONFIG_WDT_DISABLE_AT_BOOT` have been clarified: the expected
-    behavior when ``CONFIG_WDT_DISABLE_AT_BOOT=n``, which was unclear and implemented inconsistently
-    across drivers, is now explicitly documented in :kconfig:option:`CONFIG_WDT_DISABLE_AT_BOOT`'s
-    description (refer to it for more details).
+* The semantics of :kconfig:option:`CONFIG_WDT_DISABLE_AT_BOOT` have been clarified: the expected
+  behavior when ``CONFIG_WDT_DISABLE_AT_BOOT=n``, which was unclear and
+  implemented inconsistently across drivers, is now explicitly documented in
+  :kconfig:option:`CONFIG_WDT_DISABLE_AT_BOOT`'s description (refer to it for
+  more details).
 
-    All in-tree watchdog drivers have been updated to follow the now documented semantics.
+  All in-tree watchdog drivers have been updated to follow the now documented semantics.
 
-    Notably, ``CONFIG_WDT_DISABLE_AT_BOOT=n`` can no longer be used to have watchdog(s) enabled at
-    boot "*automatically*". Users which relied on this behavior must update their application to
-    explicitly configure a watchdog, as done in the :zephyr:code-sample:`watchdog`. The following
-    Kconfig options related to this incorrect usage have been removed:
+  Notably, ``CONFIG_WDT_DISABLE_AT_BOOT=n`` can no longer be used to have
+  watchdog(s) enabled at boot "*automatically*". Users which relied on this
+  behavior must update their application to explicitly configure a watchdog, as
+  done in the :zephyr:code-sample:`watchdog`. The following Kconfig options
+  related to this incorrect usage have been removed:
 
-      * ``CONFIG_IWDG_STM32_INITIAL_TIMEOUT``
-      * ``CONFIG_WDT_RPI_PICO_INITIAL_TIMEOUT``
-      * ``CONFIG_WDT_CC13XX_CC26XX_INITIAL_TIMEOUT``
-      * ``CONFIG_WDT_CC23X0_INITIAL_TIMEOUT``
-      * ``CONFIG_WDT_CC32XX_INITIAL_TIMEOUT``
+    * ``CONFIG_IWDG_STM32_INITIAL_TIMEOUT``
+    * ``CONFIG_WDT_RPI_PICO_INITIAL_TIMEOUT``
+    * ``CONFIG_WDT_CC13XX_CC26XX_INITIAL_TIMEOUT``
+    * ``CONFIG_WDT_CC23X0_INITIAL_TIMEOUT``
+    * ``CONFIG_WDT_CC32XX_INITIAL_TIMEOUT``
+
+* Updated :dtcompatible:`microchip,xec-watchdog` for PCR and GIRQ properties to
+  use new macros (:github:`105668`).
 
 .. zephyr-keep-sorted-stop
-
-* Updated :dtcompatible:`microchip,xec-watchdog` for PCR and GIRQ properties to use new macros (:github:`105668`).
 
 Bluetooth
 *********
@@ -1182,6 +1202,7 @@ Bluetooth Mesh
 
 Bluetooth HCI
 =============
+
 * Use :c:macro:`BT_HCI_LE_SUPERVISION_TIMEOUT_MIN` and :c:macro:`BT_HCI_LE_SUPERVISION_TIMEOUT_MAX` instead
   of :c:macro:`BT_HCI_LE_SUPERVISON_TIMEOUT_MIN` and :c:macro:`BT_HCI_LE_SUPERVISON_TIMEOUT_MAX` because
   they have been deprecated for misspelling.
@@ -1362,7 +1383,7 @@ Flash map
 JWT
 ===
 
-* Previously deprecated ``CONFIG_JWT_SIGN_RSA_LEGACY`` is removed. This removal happens before
+* Previously deprecated ``CONFIG_JWT_SIGN_RSA_LEGACY`` is removed. This removal occurred before
   the usual deprecation period of 2 releases because it has been agreed (see :github:`97660`)
   that Mbed TLS is an external module, so normal deprecation rules do not apply in this case.
 
@@ -1386,6 +1407,11 @@ Management
     :kconfig:option:`CONFIG_UART_MCUMGR` must now also be selected, this has changed to be
     ``depends on`` rather than ``select``.
 
+Random
+======
+
+* ``CONFIG_CSPRNG_AVAILABLE`` has been renamed to :kconfig:option:`CONFIG_ENTROPY_NODE_ENABLED`.
+
 Tracing
 ========
 
@@ -1407,6 +1433,15 @@ Settings
 
 * ``CONFIG_SETTINGS_TFM_ITS`` has been renamed to :kconfig:option:`CONFIG_SETTINGS_TFM_PSA`.
 
+Modules
+*******
+
+HostAP
+======
+
+* Kconfig :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA` is now
+  enabled by default.
+
 Mbed TLS
 ========
 
@@ -1421,6 +1456,15 @@ Mbed TLS
 * ``CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR`` has been renamed to
   :kconfig:option:`CONFIG_MBEDTLS_PSA_DRIVER_GET_ENTROPY`.
 
+* ``CONFIG_MBEDTLS_PEM_CERTIFICATE_FORMAT`` has been replaced by the underlying options it used
+  to enable: :kconfig:option:`CONFIG_MBEDTLS_PEM_PARSE_C`,
+  :kconfig:option:`CONFIG_MBEDTLS_PEM_WRITE_C` and :kconfig:option:`CONFIG_MBEDTLS_BASE64_C`.
+
+* ``CONFIG_MBEDTLS_SERVER_NAME_INDICATION`` has been renamed to
+  :kconfig:option:`CONFIG_MBEDTLS_SSL_SERVER_NAME_INDICATION`.
+
+* ``CONFIG_MBEDTLS_TEST`` has been renamed to :kconfig:option:`CONFIG_MBEDTLS_DEBUG_C`.
+
 * The following PSA related Kconfig symbols have been removed as they are no longer
   supported by TF-PSA-Crypto:
 
@@ -1431,6 +1475,7 @@ Mbed TLS
 
 * The following Mbed TLS Kconfig symbols have been removed:
 
+  * ``CONFIG_CUSTOM_MBEDTLS_CFG_FILE``
   * ``CONFIG_MBEDTLS_CHACHAPOLY_AEAD_ENABLED``
   * ``CONFIG_MBEDTLS_CIPHER_AES_ENABLED``
   * ``CONFIG_MBEDTLS_CIPHER_CAMELLIA_ENABLED``
@@ -1466,37 +1511,19 @@ Mbed TLS
   * ``CONFIG_MBEDTLS_HKDF_C``
   * ``CONFIG_MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED``
   * ``CONFIG_MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED``
+  * ``CONFIG_MBEDTLS_KEY_EXCHANGE_RSA_ENABLED``
   * ``CONFIG_MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED``
   * ``CONFIG_MBEDTLS_MD5``
   * ``CONFIG_MBEDTLS_PKCS1_V15``
   * ``CONFIG_MBEDTLS_PKCS1_V21``
   * ``CONFIG_MBEDTLS_POLY1305``
   * ``CONFIG_MBEDTLS_RSA_C``
-  * ``CONFIG_MBEDTLS_RSA_ENABLE_LEGACY_APIS``
   * ``CONFIG_MBEDTLS_SHA1``
   * ``CONFIG_MBEDTLS_SHA224``
   * ``CONFIG_MBEDTLS_SHA256``
   * ``CONFIG_MBEDTLS_SHA384``
   * ``CONFIG_MBEDTLS_SHA512``
   * ``CONFIG_MBEDTLS_USE_PSA_CRYPTO``
-
-* The following PSA Crypto API changes are introduced with TF-PSA-Crypto 1.1:
-
-  * ``psa_open_key()`` has been removed. Keys are now automatically loaded from persistent storage
-    when they are used.
-  * ``psa_close_key()`` has been replaced by :c:func:`psa_purge_key`. Update all call sites
-    accordingly.
-  * ``psa_key_handle_t`` has been replaced by ``psa_key_id_t``. Update type declarations and
-    variable definitions accordingly.
-
-Modules
-*******
-
-HostAP
-======
-
-* Kconfig :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA` is now
-  enabled by default.
 
 OpenThread
 ==========
@@ -1508,7 +1535,7 @@ OpenThread
   * ``CONFIG_CUSTOM_OPENTHREAD_SECURITY`` to
     :kconfig:option:`CONFIG_OPENTHREAD_SECURITY_CUSTOM_CONFIG`
 
-* :kconfig:option:`CONFIG_OPENTHREAD_CRYPTO_PSA` no more depends on
+* :kconfig:option:`CONFIG_OPENTHREAD_CRYPTO_PSA` no longer depends on
   :kconfig:option:`CONFIG_PSA_CRYPTO_CLIENT`, but instead selects
   :kconfig:option:`CONFIG_PSA_CRYPTO`.
 
@@ -1540,7 +1567,7 @@ Architectures
 
   * Use :c:func:`sys_cache_is_mem_coherent` instead of :c:func:`arch_mem_coherent`.
 
-* :kconfig:option:`CONFIG_RISCV` now requires, that the :dtcompatible:`riscv` is present in the
+* :kconfig:option:`CONFIG_RISCV` now requires that the :dtcompatible:`riscv` is present in the
   devicetree.
 
 * The ``riscv,isa-base`` and  ``riscv,isa-extensions`` devicetree properties of
