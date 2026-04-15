@@ -337,7 +337,7 @@ struct gnss_satellites_callback {
 __syscall int gnss_set_fix_rate(const struct device* dev, uint32_t fix_interval_ms);
 
 static inline int z_impl_gnss_set_fix_rate(const struct device* dev, uint32_t fix_interval_ms) {
-    const struct gnss_driver_api* api = (const struct gnss_driver_api*)dev->api;
+    const struct gnss_driver_api* api = DEVICE_API_GET(gnss, dev);
 
     if (api->set_fix_rate == NULL) {
         return (-ENOSYS);
@@ -358,7 +358,7 @@ static inline int z_impl_gnss_set_fix_rate(const struct device* dev, uint32_t fi
 __syscall int gnss_get_fix_rate(const struct device* dev, uint32_t* fix_interval_ms);
 
 static inline int z_impl_gnss_get_fix_rate(const struct device* dev, uint32_t* fix_interval_ms) {
-    const struct gnss_driver_api* api = (const struct gnss_driver_api*)dev->api;
+    const struct gnss_driver_api* api = DEVICE_API_GET(gnss, dev);
 
     if (api->get_fix_rate == NULL) {
         return (-ENOSYS);
@@ -381,7 +381,7 @@ __syscall int gnss_set_navigation_mode(const struct device* dev,
 
 static inline int z_impl_gnss_set_navigation_mode(const struct device* dev,
                                                   enum gnss_navigation_mode mode) {
-    const struct gnss_driver_api* api = (const struct gnss_driver_api*)dev->api;
+    const struct gnss_driver_api* api = DEVICE_API_GET(gnss, dev);
 
     if (api->set_navigation_mode == NULL) {
         return (-ENOSYS);
@@ -404,7 +404,7 @@ __syscall int gnss_get_navigation_mode(const struct device* dev,
 
 static inline int z_impl_gnss_get_navigation_mode(const struct device* dev,
                                                   enum gnss_navigation_mode* mode) {
-    const struct gnss_driver_api* api = (const struct gnss_driver_api*)dev->api;
+    const struct gnss_driver_api* api = DEVICE_API_GET(gnss, dev);
 
     if (api->get_navigation_mode == NULL) {
         return (-ENOSYS);
@@ -426,7 +426,7 @@ __syscall int gnss_set_enabled_systems(const struct device* dev, gnss_systems_t 
 
 static inline int z_impl_gnss_set_enabled_systems(const struct device* dev,
                                                   gnss_systems_t systems) {
-    const struct gnss_driver_api* api = (const struct gnss_driver_api*)dev->api;
+    const struct gnss_driver_api* api = DEVICE_API_GET(gnss, dev);
 
     if (api->set_enabled_systems == NULL) {
         return (-ENOSYS);
@@ -448,7 +448,7 @@ __syscall int gnss_get_enabled_systems(const struct device* dev, gnss_systems_t*
 
 static inline int z_impl_gnss_get_enabled_systems(const struct device* dev,
                                                   gnss_systems_t* systems) {
-    const struct gnss_driver_api* api = (const struct gnss_driver_api*)dev->api;
+    const struct gnss_driver_api* api = DEVICE_API_GET(gnss, dev);
 
     if (api->get_enabled_systems == NULL) {
         return (-ENOSYS);
@@ -470,7 +470,7 @@ __syscall int gnss_get_supported_systems(const struct device* dev, gnss_systems_
 
 static inline int z_impl_gnss_get_supported_systems(const struct device* dev,
                                                     gnss_systems_t* systems) {
-    const struct gnss_driver_api* api = (const struct gnss_driver_api*)dev->api;
+    const struct gnss_driver_api* api = DEVICE_API_GET(gnss, dev);
 
     if (api->get_supported_systems == NULL) {
         return (-ENOSYS);
@@ -496,7 +496,7 @@ __syscall int gnss_get_latest_timepulse(const struct device* dev, k_ticks_t *tim
 
 static inline int z_impl_gnss_get_latest_timepulse(const struct device* dev,
                                                    k_ticks_t* timestamp) {
-    const struct gnss_driver_api* api = (const struct gnss_driver_api*)dev->api;
+    const struct gnss_driver_api* api = DEVICE_API_GET(gnss, dev);
 
     if (api->get_latest_timepulse == NULL) {
         return (-ENOSYS);

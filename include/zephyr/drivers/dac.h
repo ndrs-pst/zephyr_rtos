@@ -37,7 +37,7 @@ extern "C" {
  * @brief Broadcast channel identifier for DACs that support it.
  * @note Only for use in dac_write_value().
  */
-#define DAC_CHANNEL_BROADCAST	0xFF
+#define DAC_CHANNEL_BROADCAST   0xFF
 
 /**
  * @brief Structure for specifying the configuration of a DAC channel.
@@ -51,13 +51,13 @@ struct dac_channel_cfg {
      * This is relevant for instance if the output is directly connected to the load,
      * without an amplifier in between. The actual details on this are hardware dependent.
      */
-    bool buffered: 1;
+    bool buffered : 1;
 
     /** Enable internal output path for this channel. This is relevant for channels that
      * support directly connecting to on-chip peripherals via internal paths. The actual
      * details on this are hardware dependent.
      */
-    bool internal: 1;
+    bool internal : 1;
 };
 
 /**
@@ -112,11 +112,11 @@ struct dac_channel_cfg {
  * @return Static initializer for an dac_channel_cfg structure.
  */
 #define DAC_CHANNEL_CFG_DT(node_id) { \
-	.resolution       = DT_PROP_OR(node_id, zephyr_resolution, 0), \
-	.buffered         = DT_PROP(node_id, zephyr_buffered),         \
-	.internal         = DT_PROP(node_id, zephyr_internal),         \
-	.channel_id       = DT_REG_ADDR(node_id),                      \
-}
+        .resolution = DT_PROP_OR(node_id, zephyr_resolution, 0), \
+        .buffered   = DT_PROP(node_id, zephyr_buffered),         \
+        .internal   = DT_PROP(node_id, zephyr_internal),         \
+        .channel_id = DT_REG_ADDR(node_id),                      \
+    }
 
 /**
  * @brief Container for DAC channel information specified in devicetree.
@@ -125,55 +125,55 @@ struct dac_channel_cfg {
  * @see DAC_DT_SPEC_GET
  */
 struct dac_dt_spec {
-	/**
-	 * Pointer to the device structure for the DAC driver instance
-	 * used by this io-channel.
-	 */
-	const struct device *dev;
+    /**
+     * Pointer to the device structure for the DAC driver instance
+     * used by this io-channel.
+     */
+    const struct device* dev;
 
-	/** DAC channel identifier used by this io-channel. */
-	uint8_t channel_id;
+    /** DAC channel identifier used by this io-channel. */
+    uint8_t channel_id;
 
-	/**
-	 * Flag indicating whether configuration of the associated DAC channel
-	 * is provided as a child node of the corresponding DAC controller in
-	 * devicetree.
-	 */
-	bool channel_cfg_dt_node_exists;
+    /**
+     * Flag indicating whether configuration of the associated DAC channel
+     * is provided as a child node of the corresponding DAC controller in
+     * devicetree.
+     */
+    bool channel_cfg_dt_node_exists;
 
-	/**
-	 * Configuration of the associated DAC channel specified in devicetree.
-	 * This field is valid only when @a channel_cfg_dt_node_exists is set
-	 * to @a true.
-	 */
-	struct dac_channel_cfg channel_cfg;
+    /**
+     * Configuration of the associated DAC channel specified in devicetree.
+     * This field is valid only when @a channel_cfg_dt_node_exists is set
+     * to @a true.
+     */
+    struct dac_channel_cfg channel_cfg;
 
-	/**
-	 * Voltage of the reference selected for the channel or 0 if this
-	 * value is not provided in devicetree.
-	 * This field is valid only when @a channel_cfg_dt_node_exists is set
-	 * to @a true.
-	 */
-	uint16_t vref_mv;
+    /**
+     * Voltage of the reference selected for the channel or 0 if this
+     * value is not provided in devicetree.
+     * This field is valid only when @a channel_cfg_dt_node_exists is set
+     * to @a true.
+     */
+    uint16_t vref_mv;
 };
 
 /** @cond INTERNAL_HIDDEN */
 
-#define DAC_DT_SPEC_STRUCT(ctlr, output) { \
-		.dev = DEVICE_DT_GET(ctlr), \
-		.channel_id = output, \
-		DAC_CHANNEL_CFG_FROM_DT_NODE(\
-			DAC_CHANNEL_DT_NODE(ctlr, output)) \
-	}
+#define DAC_DT_SPEC_STRUCT(ctlr, output) {  \
+        .dev = DEVICE_DT_GET(ctlr),         \
+        .channel_id = output,               \
+        DAC_CHANNEL_CFG_FROM_DT_NODE(       \
+                DAC_CHANNEL_DT_NODE(ctlr, output)) \
+    }
 
 #define DAC_CHANNEL_DT_NODE(ctlr, output) \
-	DT_CHILD_BY_UNIT_ADDR_INT(ctlr, output)
+    DT_CHILD_BY_UNIT_ADDR_INT(ctlr, output)
 
 #define DAC_CHANNEL_CFG_FROM_DT_NODE(node_id) \
-	IF_ENABLED(DT_NODE_EXISTS(node_id), \
-		(.channel_cfg_dt_node_exists = true, \
-		 .channel_cfg  = DAC_CHANNEL_CFG_DT(node_id), \
-		 .vref_mv      = DT_PROP_OR(node_id, zephyr_vref_mv, 0),))
+    IF_ENABLED(DT_NODE_EXISTS(node_id), \
+               (.channel_cfg_dt_node_exists = true, \
+                .channel_cfg = DAC_CHANNEL_CFG_DT(node_id), \
+                .vref_mv     = DT_PROP_OR(node_id, zephyr_vref_mv, 0), ))
 
 /** @endcond */
 
@@ -236,8 +236,8 @@ struct dac_dt_spec {
  * @return Static initializer for an dac_dt_spec structure.
  */
 #define DAC_DT_SPEC_GET_BY_NAME(node_id, name) \
-	DAC_DT_SPEC_STRUCT(DT_IO_CHANNELS_CTLR_BY_NAME(node_id, name), \
-			   DT_IO_CHANNELS_OUTPUT_BY_NAME(node_id, name))
+    DAC_DT_SPEC_STRUCT(DT_IO_CHANNELS_CTLR_BY_NAME(node_id, name), \
+                       DT_IO_CHANNELS_OUTPUT_BY_NAME(node_id, name))
 
 /**
  * @brief Like DAC_DT_SPEC_GET_BY_NAME(), with a fallback to a default value.
@@ -252,8 +252,8 @@ struct dac_dt_spec {
  * @see DAC_DT_SPEC_INST_GET_BY_NAME_OR
  */
 #define DAC_DT_SPEC_GET_BY_NAME_OR(node_id, name, default_value) \
-	COND_CODE_1(DT_PROP_HAS_NAME(node_id, io_channels, name), \
-		    (DAC_DT_SPEC_GET_BY_NAME(node_id, name)), (default_value))
+    COND_CODE_1(DT_PROP_HAS_NAME(node_id, io_channels, name), \
+                (DAC_DT_SPEC_GET_BY_NAME(node_id, name)), (default_value))
 
 /** @brief Get DAC io-channel information from a DT_DRV_COMPAT devicetree
  *         instance by name.
@@ -266,8 +266,7 @@ struct dac_dt_spec {
  * @return Static initializer for an dac_dt_spec structure.
  */
 #define DAC_DT_SPEC_INST_GET_BY_NAME(inst, name) \
-	DAC_DT_SPEC_GET_BY_NAME(DT_DRV_INST(inst), name)
-
+    DAC_DT_SPEC_GET_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
  * @brief Like DAC_DT_SPEC_INST_GET_BY_NAME(), with a fallback to a default value.
@@ -282,7 +281,7 @@ struct dac_dt_spec {
  * @see DAC_DT_SPEC_GET_BY_NAME_OR
  */
 #define DAC_DT_SPEC_INST_GET_BY_NAME_OR(inst, name, default_value) \
-	DAC_DT_SPEC_GET_BY_NAME_OR(DT_DRV_INST(inst), name, default_value)
+    DAC_DT_SPEC_GET_BY_NAME_OR(DT_DRV_INST(inst), name, default_value)
 
 /**
  * @brief Get DAC io-channel information from devicetree.
@@ -345,10 +344,10 @@ struct dac_dt_spec {
  * @return Static initializer for an dac_dt_spec structure.
  */
 #define DAC_DT_SPEC_GET_BY_IDX(node_id, idx) \
-	DAC_DT_SPEC_STRUCT(DT_IO_CHANNELS_CTLR_BY_IDX(node_id, idx), \
-			   COND_CODE_1(DT_PHA_HAS_CELL_AT_IDX(node_id, io_channels, idx, output), \
-				       (DT_IO_CHANNELS_OUTPUT_BY_IDX(node_id, idx)), \
-				       (0)))
+    DAC_DT_SPEC_STRUCT(DT_IO_CHANNELS_CTLR_BY_IDX(node_id, idx), \
+                       COND_CODE_1(DT_PHA_HAS_CELL_AT_IDX(node_id, io_channels, idx, output), \
+                                   (DT_IO_CHANNELS_OUTPUT_BY_IDX(node_id, idx)), \
+                                   (0)))
 
 /**
  * @brief Like DAC_DT_SPEC_GET_BY_IDX(), with a fallback to a default value.
@@ -363,8 +362,8 @@ struct dac_dt_spec {
  * @see DAC_DT_SPEC_INST_GET_BY_IDX_OR
  */
 #define DAC_DT_SPEC_GET_BY_IDX_OR(node_id, idx, default_value) \
-	COND_CODE_1(DT_PROP_HAS_IDX(node_id, io_channels, idx), \
-		    (DAC_DT_SPEC_GET_BY_IDX(node_id, idx)), (default_value))
+    COND_CODE_1(DT_PROP_HAS_IDX(node_id, io_channels, idx), \
+                (DAC_DT_SPEC_GET_BY_IDX(node_id, idx)), (default_value))
 
 /** @brief Get DAC io-channel information from a DT_DRV_COMPAT devicetree
  *         instance.
@@ -377,7 +376,7 @@ struct dac_dt_spec {
  * @return Static initializer for an dac_dt_spec structure.
  */
 #define DAC_DT_SPEC_INST_GET_BY_IDX(inst, idx) \
-	DAC_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), idx)
+    DAC_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), idx)
 
 /**
  * @brief Like DAC_DT_SPEC_INST_GET_BY_IDX(), with a fallback to a default value.
@@ -392,7 +391,7 @@ struct dac_dt_spec {
  * @see DAC_DT_SPEC_GET_BY_IDX_OR
  */
 #define DAC_DT_SPEC_INST_GET_BY_IDX_OR(inst, idx, default_value) \
-	DAC_DT_SPEC_GET_BY_IDX_OR(DT_DRV_INST(inst), idx, default_value)
+    DAC_DT_SPEC_GET_BY_IDX_OR(DT_DRV_INST(inst), idx, default_value)
 
 /**
  * @brief Equivalent to DAC_DT_SPEC_GET_BY_IDX(node_id, 0).
@@ -417,7 +416,7 @@ struct dac_dt_spec {
  *         or @p default_value if the node or property do not exist.
  */
 #define DAC_DT_SPEC_GET_OR(node_id, default_value) \
-	DAC_DT_SPEC_GET_BY_IDX_OR(node_id, 0, default_value)
+    DAC_DT_SPEC_GET_BY_IDX_OR(node_id, 0, default_value)
 
 /** @brief Equivalent to DAC_DT_SPEC_INST_GET_BY_IDX(inst, 0).
  *
@@ -441,7 +440,7 @@ struct dac_dt_spec {
  *         or @p default_value if the node or property do not exist.
  */
 #define DAC_DT_SPEC_INST_GET_OR(inst, default_value) \
-	DAC_DT_SPEC_GET_OR(DT_DRV_INST(inst), default_value)
+    DAC_DT_SPEC_GET_OR(DT_DRV_INST(inst), default_value)
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -495,9 +494,7 @@ __syscall int dac_channel_setup(const struct device* dev,
 
 static inline int z_impl_dac_channel_setup(const struct device* dev,
                                            const struct dac_channel_cfg* channel_cfg) {
-    const struct dac_driver_api* api = (const struct dac_driver_api*)dev->api;
-
-    return api->channel_setup(dev, channel_cfg);
+    return DEVICE_API_GET(dac, dev)->channel_setup(dev, channel_cfg);
 }
 
 /**
@@ -509,13 +506,12 @@ static inline int z_impl_dac_channel_setup(const struct device* dev,
  * Devicetree is not valid.
  * @see dac_channel_setup()
  */
-static inline int dac_channel_setup_dt(const struct dac_dt_spec *spec)
-{
-	if (!spec->channel_cfg_dt_node_exists) {
-		return -ENOTSUP;
-	}
+static inline int dac_channel_setup_dt(const struct dac_dt_spec* spec) {
+    if (!spec->channel_cfg_dt_node_exists) {
+        return (-ENOTSUP);
+    }
 
-	return dac_channel_setup(spec->dev, &spec->channel_cfg);
+    return dac_channel_setup(spec->dev, &spec->channel_cfg);
 }
 
 /**
@@ -533,9 +529,7 @@ __syscall int dac_write_value(const struct device* dev, uint8_t channel,
 
 static inline int z_impl_dac_write_value(const struct device* dev,
                                          uint8_t channel, uint32_t value) {
-    const struct dac_driver_api* api = (const struct dac_driver_api*)dev->api;
-
-    return api->write_value(dev, channel, value);
+    return DEVICE_API_GET(dac, dev)->write_value(dev, channel, value);
 }
 
 /**
@@ -548,14 +542,13 @@ static inline int z_impl_dac_write_value(const struct device* dev,
  * Devicetree is not valid.
  * @see dac_write_value()
  */
-static inline int dac_write_value_dt(const struct dac_dt_spec *spec,
-				     uint32_t value)
-{
-	if (!spec->channel_cfg_dt_node_exists) {
-		return -ENOTSUP;
-	}
+static inline int dac_write_value_dt(const struct dac_dt_spec* spec,
+                                     uint32_t value) {
+    if (!spec->channel_cfg_dt_node_exists) {
+        return (-ENOTSUP);
+    }
 
-	return dac_write_value(spec->dev, spec->channel_id, value);
+    return dac_write_value(spec->dev, spec->channel_id, value);
 }
 
 /**
@@ -576,25 +569,24 @@ static inline int dac_write_value_dt(const struct dac_dt_spec *spec,
  *
  * @retval 0 on successful conversion
  */
-typedef int (*dac_x_to_raw_fn)(uint32_t ref_mv, uint8_t resolution, uint32_t *valp);
+typedef int (*dac_x_to_raw_fn)(uint32_t ref_mv, uint8_t resolution, uint32_t* valp);
 
 /**
  * @brief Convert a millivolts value to a raw DAC value.
  *
  * @see dac_x_to_raw_fn
  */
-static inline int dac_millivolts_to_raw(uint32_t ref_mv, uint8_t resolution, uint32_t *valp)
-{
-	uint64_t dac_mv = (((uint64_t)*valp) << resolution) / (uint64_t)ref_mv;
+static inline int dac_millivolts_to_raw(uint32_t ref_mv, uint8_t resolution, uint32_t* valp) {
+    uint64_t dac_mv = (((uint64_t)*valp) << resolution) / (uint64_t)ref_mv;
 
-	if (dac_mv > (1ULL << resolution)) {
-		__ASSERT_MSG_INFO("conversion result is out of range");
-		return -ERANGE;
-	}
+    if (dac_mv > (1ULL << resolution)) {
+        __ASSERT_MSG_INFO("conversion result is out of range");
+        return (-ERANGE);
+    }
 
-	*valp = (uint32_t)dac_mv;
+    *valp = (uint32_t)dac_mv;
 
-	return 0;
+    return (0);
 }
 
 /**
@@ -602,18 +594,17 @@ static inline int dac_millivolts_to_raw(uint32_t ref_mv, uint8_t resolution, uin
  *
  * @see dac_x_to_raw_fn
  */
-static inline int dac_microvolts_to_raw(uint32_t ref_mv, uint8_t resolution, uint32_t *valp)
-{
-	uint64_t dac_uv = (((uint64_t)*valp) << resolution) / (uint64_t)ref_mv / (uint64_t)1000;
+static inline int dac_microvolts_to_raw(uint32_t ref_mv, uint8_t resolution, uint32_t* valp) {
+    uint64_t dac_uv = (((uint64_t)*valp) << resolution) / (uint64_t)ref_mv / (uint64_t)1000;
 
-	if (dac_uv > (1ULL << resolution)) {
-		__ASSERT_MSG_INFO("conversion result is out of range");
-		return -ERANGE;
-	}
+    if (dac_uv > (1ULL << resolution)) {
+        __ASSERT_MSG_INFO("conversion result is out of range");
+        return (-ERANGE);
+    }
 
-	*valp = (uint32_t)dac_uv;
+    *valp = (uint32_t)dac_uv;
 
-	return 0;
+    return (0);
 }
 
 /**
@@ -630,14 +621,13 @@ static inline int dac_microvolts_to_raw(uint32_t ref_mv, uint8_t resolution, uin
  * @see dac_x_to_raw_fn
  */
 static inline int dac_x_to_raw_dt_chan(dac_x_to_raw_fn conv_func,
-					    const struct dac_dt_spec *spec,
-					    uint32_t *valp)
-{
-	if (!spec->channel_cfg_dt_node_exists) {
-		return -ENOTSUP;
-	}
+                                       const struct dac_dt_spec* spec,
+                                       uint32_t* valp) {
+    if (!spec->channel_cfg_dt_node_exists) {
+        return (-ENOTSUP);
+    }
 
-	return conv_func(spec->vref_mv, spec->channel_cfg.resolution, valp);
+    return conv_func(spec->vref_mv, spec->channel_cfg.resolution, valp);
 }
 
 /**
@@ -653,9 +643,8 @@ static inline int dac_x_to_raw_dt_chan(dac_x_to_raw_fn conv_func,
  * Devicetree is not valid.
  * @see dac_millivolts_to_raw()
  */
-static inline int dac_millivolts_to_raw_dt(const struct dac_dt_spec *spec, uint32_t *valp)
-{
-	return dac_x_to_raw_dt_chan(dac_millivolts_to_raw, spec, valp);
+static inline int dac_millivolts_to_raw_dt(const struct dac_dt_spec* spec, uint32_t* valp) {
+    return dac_x_to_raw_dt_chan(dac_millivolts_to_raw, spec, valp);
 }
 
 /**
@@ -671,9 +660,8 @@ static inline int dac_millivolts_to_raw_dt(const struct dac_dt_spec *spec, uint3
  * Devicetree is not valid.
  * @see dac_microvolts_to_raw()
  */
-static inline int dac_microvolts_to_raw_dt(const struct dac_dt_spec *spec, uint32_t *valp)
-{
-	return dac_x_to_raw_dt_chan(dac_microvolts_to_raw, spec, valp);
+static inline int dac_microvolts_to_raw_dt(const struct dac_dt_spec* spec, uint32_t* valp) {
+    return dac_x_to_raw_dt_chan(dac_microvolts_to_raw, spec, valp);
 }
 
 /**
@@ -683,9 +671,8 @@ static inline int dac_microvolts_to_raw_dt(const struct dac_dt_spec *spec, uint3
  *
  * @return true if the DAC device is ready for use and false otherwise.
  */
-static inline bool dac_is_ready_dt(const struct dac_dt_spec *spec)
-{
-	return spec->channel_cfg_dt_node_exists && device_is_ready(spec->dev);
+static inline bool dac_is_ready_dt(const struct dac_dt_spec* spec) {
+    return spec->channel_cfg_dt_node_exists && device_is_ready(spec->dev);
 }
 
 /**
@@ -698,4 +685,4 @@ static inline bool dac_is_ready_dt(const struct dac_dt_spec *spec)
 
 #include <zephyr/syscalls/dac.h>
 
-#endif  /* ZEPHYR_INCLUDE_DRIVERS_DAC_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_DAC_H_ */

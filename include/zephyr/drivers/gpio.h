@@ -892,8 +892,7 @@ __syscall int gpio_pin_interrupt_configure(const struct device* port,
 static inline int z_impl_gpio_pin_interrupt_configure(const struct device* port,
                                                       gpio_pin_t pin,
                                                       gpio_flags_t flags) {
-    const struct gpio_driver_api* api =
-            (const struct gpio_driver_api*)port->api;
+    const struct gpio_driver_api* api = DEVICE_API_GET(gpio, port);
     __unused const struct gpio_driver_config* const cfg =
             (const struct gpio_driver_config*)port->config;
     const struct gpio_driver_data* const data =
@@ -1002,8 +1001,7 @@ __syscall int gpio_pin_configure(const struct device* port,
 static inline int z_impl_gpio_pin_configure(const struct device* port,
                                             gpio_pin_t pin,
                                             gpio_flags_t flags) {
-    const struct gpio_driver_api* api =
-            (const struct gpio_driver_api*)port->api;
+    const struct gpio_driver_api* api = DEVICE_API_GET(gpio, port);
     __unused const struct gpio_driver_config* const cfg =
             (const struct gpio_driver_config*)port->config;
     struct gpio_driver_data* data =
@@ -1099,7 +1097,7 @@ __syscall int gpio_port_get_direction(const struct device* port, gpio_port_pins_
 static inline int z_impl_gpio_port_get_direction(const struct device* port, gpio_port_pins_t map,
                                                  gpio_port_pins_t* inputs,
                                                  gpio_port_pins_t* outputs) {
-    const struct gpio_driver_api* api = (const struct gpio_driver_api*)port->api;
+    const struct gpio_driver_api* api = DEVICE_API_GET(gpio, port);
     int ret;
 
     SYS_PORT_TRACING_FUNC_ENTER(gpio_port, get_direction, port, map, inputs, outputs);
@@ -1224,8 +1222,7 @@ __syscall int gpio_pin_get_config(const struct device* port, gpio_pin_t pin,
 static inline int z_impl_gpio_pin_get_config(const struct device* port,
                                              gpio_pin_t pin,
                                              gpio_flags_t* flags) {
-    const struct gpio_driver_api* api =
-        (const struct gpio_driver_api*)port->api;
+    const struct gpio_driver_api* api = DEVICE_API_GET(gpio, port);
     int ret;
 
     SYS_PORT_TRACING_FUNC_ENTER(gpio_pin, get_config, port, pin, *flags);
@@ -1281,7 +1278,7 @@ __syscall int gpio_port_get_raw(const struct device* port,
 
 static inline int z_impl_gpio_port_get_raw(const struct device* port,
                                            gpio_port_value_t* value) {
-    const struct gpio_driver_api* api = (const struct gpio_driver_api*)port->api;
+    const struct gpio_driver_api* api = DEVICE_API_GET(gpio, port);
     int ret;
 
     SYS_PORT_TRACING_FUNC_ENTER(gpio_port, get_raw, port, value);
@@ -1348,8 +1345,7 @@ __syscall int gpio_port_set_masked_raw(const struct device* port,
 static inline int z_impl_gpio_port_set_masked_raw(const struct device* port,
                                                   gpio_port_pins_t mask,
                                                   gpio_port_value_t value) {
-    const struct gpio_driver_api* api =
-            (const struct gpio_driver_api*)port->api;
+    const struct gpio_driver_api* api = DEVICE_API_GET(gpio, port);
     int ret;
 
     SYS_PORT_TRACING_FUNC_ENTER(gpio_port, set_masked_raw, port, mask, value);
@@ -1406,8 +1402,7 @@ __syscall int gpio_port_set_bits_raw(const struct device* port,
 
 static inline int z_impl_gpio_port_set_bits_raw(const struct device* port,
                                                 gpio_port_pins_t pins) {
-    const struct gpio_driver_api* api =
-            (const struct gpio_driver_api*)port->api;
+    const struct gpio_driver_api* api = DEVICE_API_GET(gpio, port);
     int ret;
 
     SYS_PORT_TRACING_FUNC_ENTER(gpio_port, set_bits_raw, port, pins);
@@ -1448,8 +1443,7 @@ __syscall int gpio_port_clear_bits_raw(const struct device* port,
 
 static inline int z_impl_gpio_port_clear_bits_raw(const struct device* port,
                                                   gpio_port_pins_t pins) {
-    const struct gpio_driver_api* api =
-            (const struct gpio_driver_api*)port->api;
+    const struct gpio_driver_api* api = DEVICE_API_GET(gpio, port);
     int ret;
 
     SYS_PORT_TRACING_FUNC_ENTER(gpio_port, clear_bits_raw, port, pins);
@@ -1490,8 +1484,7 @@ __syscall int gpio_port_toggle_bits(const struct device* port,
 
 static inline int z_impl_gpio_port_toggle_bits(const struct device* port,
                                                gpio_port_pins_t pins) {
-    const struct gpio_driver_api* api =
-            (const struct gpio_driver_api*)port->api;
+    const struct gpio_driver_api* api = DEVICE_API_GET(gpio, port);
     int ret;
 
     SYS_PORT_TRACING_FUNC_ENTER(gpio_port, toggle_bits, port, pins);
@@ -1789,8 +1782,7 @@ static inline void gpio_init_callback(struct gpio_callback* callback,
  */
 static inline int gpio_add_callback(const struct device* port,
                                     struct gpio_callback* callback) {
-    const struct gpio_driver_api* api =
-            (const struct gpio_driver_api*)port->api;
+    const struct gpio_driver_api* api = DEVICE_API_GET(gpio, port);
     int ret;
 
     SYS_PORT_TRACING_FUNC_ENTER(gpio, add_callback, port, callback);
@@ -1842,8 +1834,7 @@ static inline int gpio_add_callback_dt(const struct gpio_dt_spec* spec,
  */
 static inline int gpio_remove_callback(const struct device* port,
                                        struct gpio_callback* callback) {
-    const struct gpio_driver_api* api =
-            (const struct gpio_driver_api*)port->api;
+    const struct gpio_driver_api* api = DEVICE_API_GET(gpio, port);
     int ret;
 
     SYS_PORT_TRACING_FUNC_ENTER(gpio, remove_callback, port, callback);
@@ -1892,8 +1883,7 @@ static inline int gpio_remove_callback_dt(const struct gpio_dt_spec* spec,
 __syscall int gpio_get_pending_int(const struct device* dev);
 
 static inline int z_impl_gpio_get_pending_int(const struct device* dev) {
-    const struct gpio_driver_api* api =
-            (const struct gpio_driver_api*)dev->api;
+    const struct gpio_driver_api* api = DEVICE_API_GET(gpio, dev);
     int ret;
 
     SYS_PORT_TRACING_FUNC_ENTER(gpio, get_pending_int, dev);

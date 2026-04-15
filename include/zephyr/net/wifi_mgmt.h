@@ -988,6 +988,9 @@ struct wifi_iface_status {
     /** Security type, see enum wifi_security_type */
     enum wifi_security_type security;
 
+    /** WEP key type (64-bit or 128-bit), see enum wifi_wep_key_type */
+    enum wifi_wep_key_type wep_key_type;
+
     /** MFP options, see enum wifi_mfp_options */
     enum wifi_mfp_options mfp;
 

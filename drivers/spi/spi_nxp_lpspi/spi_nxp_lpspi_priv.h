@@ -8,11 +8,13 @@
 #define ZEPHYR_DRIVERS_SPI_SPI_NXP_LPSPI_PRIV_H_
 
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/irq.h>
+
+#include "../spi_rtio.h"
+#include "../spi_context.h"
 
 #ifdef CONFIG_SPI_NXP_LPSPI_DMA
 #include <zephyr/drivers/dma.h>
@@ -22,8 +24,6 @@
 #include <zephyr/drivers/spi_stream.h>
 #include <zephyr/sys/atomic.h>
 #endif
-
-#include "../spi_context.h"
 
 #if CONFIG_NXP_LP_FLEXCOMM
 #include <zephyr/drivers/mfd/nxp_lp_flexcomm.h>

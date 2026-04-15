@@ -177,7 +177,7 @@ __subsystem struct clock_control_driver_api {
  */
 static inline int clock_control_on(const struct device* dev,
                                    clock_control_subsys_t sys) {
-    const struct clock_control_driver_api* api = (const struct clock_control_driver_api*)dev->api;
+    const struct clock_control_driver_api* api = DEVICE_API_GET(clock_control, dev);
 
     if (api->on == NULL) {
         return (-ENOSYS);
@@ -198,7 +198,7 @@ static inline int clock_control_on(const struct device* dev,
  */
 static inline int clock_control_off(const struct device* dev,
                                     clock_control_subsys_t sys) {
-    const struct clock_control_driver_api* api = (const struct clock_control_driver_api*)dev->api;
+    const struct clock_control_driver_api* api = DEVICE_API_GET(clock_control, dev);
 
     if (api->off == NULL) {
         return (-ENOSYS);
@@ -228,7 +228,7 @@ static inline int clock_control_async_on(const struct device* dev,
                                          clock_control_subsys_t sys,
                                          clock_control_cb_t cb,
                                          void* user_data) {
-    const struct clock_control_driver_api* api = (const struct clock_control_driver_api*)dev->api;
+    const struct clock_control_driver_api* api = DEVICE_API_GET(clock_control, dev);
 
     if (api->async_on == NULL) {
         return (-ENOSYS);
@@ -247,7 +247,7 @@ static inline int clock_control_async_on(const struct device* dev,
  */
 static inline enum clock_control_status clock_control_get_status(const struct device* dev,
                                                                  clock_control_subsys_t sys) {
-    const struct clock_control_driver_api* api = (const struct clock_control_driver_api*)dev->api;
+    const struct clock_control_driver_api* api = DEVICE_API_GET(clock_control, dev);
 
     if (!api->get_status) {
         return (CLOCK_CONTROL_STATUS_UNKNOWN);
@@ -271,7 +271,7 @@ static inline enum clock_control_status clock_control_get_status(const struct de
 static inline int clock_control_get_rate(const struct device* dev,
                                          clock_control_subsys_t sys,
                                          uint32_t* rate) {
-    const struct clock_control_driver_api* api = (const struct clock_control_driver_api*)dev->api;
+    const struct clock_control_driver_api* api = DEVICE_API_GET(clock_control, dev);
 
     if (api->get_rate == NULL) {
         return (-ENOSYS);
@@ -299,7 +299,7 @@ static inline int clock_control_get_rate(const struct device* dev,
 static inline int clock_control_set_rate(const struct device* dev,
                                          clock_control_subsys_t sys,
                                          clock_control_subsys_rate_t rate) {
-    const struct clock_control_driver_api* api = (const struct clock_control_driver_api*)dev->api;
+    const struct clock_control_driver_api* api = DEVICE_API_GET(clock_control, dev);
 
     if (api->set_rate == NULL) {
         return (-ENOSYS);
@@ -333,7 +333,7 @@ static inline int clock_control_set_rate(const struct device* dev,
 static inline int clock_control_configure(const struct device* dev,
                                           clock_control_subsys_t sys,
                                           void* data) {
-    const struct clock_control_driver_api* api = (const struct clock_control_driver_api*)dev->api;
+    const struct clock_control_driver_api* api = DEVICE_API_GET(clock_control, dev);
 
     if (api->configure == NULL) {
         return (-ENOSYS);

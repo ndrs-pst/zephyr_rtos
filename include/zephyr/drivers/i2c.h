@@ -777,10 +777,7 @@ __syscall int i2c_configure(const struct device* dev, uint32_t dev_config);
 
 static inline int z_impl_i2c_configure(const struct device* dev,
                                        uint32_t dev_config) {
-    const struct i2c_driver_api* api =
-            (const struct i2c_driver_api*)dev->api;
-
-    return api->configure(dev, dev_config);
+    return DEVICE_API_GET(i2c, dev)->configure(dev, dev_config);
 }
 
 /**
@@ -824,7 +821,7 @@ static inline int i2c_configure_dt(struct i2c_dt_spec const* spec,
 __syscall int i2c_get_config(const struct device* dev, uint32_t* dev_config);
 
 static inline int z_impl_i2c_get_config(const struct device* dev, uint32_t* dev_config) {
-    const struct i2c_driver_api* api = (const struct i2c_driver_api*)dev->api;
+    const struct i2c_driver_api* api = DEVICE_API_GET(i2c, dev);
 
     if (api->get_config == NULL) {
         return (-ENOSYS);
@@ -871,9 +868,6 @@ __syscall int i2c_transfer(const struct device* dev,
 static inline int z_impl_i2c_transfer(const struct device* dev,
                                       struct i2c_msg* msgs, uint8_t num_msgs,
                                       uint16_t addr) {
-    const struct i2c_driver_api* api =
-            (const struct i2c_driver_api*)dev->api;
-
     if (!num_msgs) {
         return (0);
     }
@@ -882,7 +876,7 @@ static inline int z_impl_i2c_transfer(const struct device* dev,
         msgs[num_msgs - 1].flags |= I2C_MSG_STOP;
     }
 
-    int res =  api->transfer(dev, msgs, num_msgs, addr);
+    int res =  DEVICE_API_GET(i2c, dev)->transfer(dev, msgs, num_msgs, addr);
 
     i2c_xfer_stats(dev, msgs, num_msgs);
 
@@ -923,8 +917,7 @@ static inline int i2c_transfer_cb(const struct device* dev,
                                   uint16_t addr,
                                   i2c_callback_t cb,
                                   void* userdata) {
-    const struct i2c_driver_api* api =
-        (const struct i2c_driver_api*)dev->api;
+    const struct i2c_driver_api* api = DEVICE_API_GET(i2c, dev);
 
     if (api->transfer_cb == NULL) {
         return (-ENOSYS);
@@ -1068,7 +1061,7 @@ static inline int i2c_transfer_signal(const struct device* dev,
                                       uint8_t num_msgs,
                                       uint16_t addr,
                                       struct k_poll_signal* sig) {
-    const struct i2c_driver_api* api = (const struct i2c_driver_api*)dev->api;
+    const struct i2c_driver_api* api = DEVICE_API_GET(i2c, dev);
 
     if (api->transfer_cb == NULL) {
         return -ENOSYS;
@@ -1104,7 +1097,7 @@ void i2c_iodev_submit_fallback(const struct device *dev, struct rtio_iodev_sqe *
 static inline void i2c_iodev_submit(struct rtio_iodev_sqe* iodev_sqe) {
     const struct i2c_dt_spec* dt_spec = (const struct i2c_dt_spec*)iodev_sqe->sqe.iodev->data;
     const struct device* dev = dt_spec->bus;
-    const struct i2c_driver_api* api = (const struct i2c_driver_api*)dev->api;
+    const struct i2c_driver_api* api = DEVICE_API_GET(i2c, dev);
 
     if (api->iodev_submit == NULL) {
         rtio_iodev_sqe_err(iodev_sqe, -ENOSYS);
@@ -1255,8 +1248,7 @@ static inline int i2c_transfer_dt(const struct i2c_dt_spec* spec,
 __syscall int i2c_recover_bus(const struct device* dev);
 
 static inline int z_impl_i2c_recover_bus(const struct device* dev) {
-    const struct i2c_driver_api* api =
-            (const struct i2c_driver_api*)dev->api;
+    const struct i2c_driver_api* api = DEVICE_API_GET(i2c, dev);
 
     if (api->recover_bus == NULL) {
         return (-ENOSYS);
@@ -1291,8 +1283,7 @@ static inline int z_impl_i2c_recover_bus(const struct device* dev) {
  */
 static inline int i2c_target_register(const struct device* dev,
                                       struct i2c_target_config* cfg) {
-    const struct i2c_driver_api* api =
-            (const struct i2c_driver_api*)dev->api;
+    const struct i2c_driver_api* api = DEVICE_API_GET(i2c, dev);
 
     if (api->target_register == NULL) {
         return (-ENOSYS);
@@ -1319,8 +1310,7 @@ static inline int i2c_target_register(const struct device* dev,
  */
 static inline int i2c_target_unregister(const struct device* dev,
                                         struct i2c_target_config* cfg) {
-    const struct i2c_driver_api* api =
-            (const struct i2c_driver_api*)dev->api;
+    const struct i2c_driver_api* api = DEVICE_API_GET(i2c, dev);
 
     if (api->target_unregister == NULL) {
         return (-ENOSYS);
@@ -1345,10 +1335,7 @@ static inline int i2c_target_unregister(const struct device* dev,
 __syscall int i2c_target_driver_register(const struct device* dev);
 
 static inline int z_impl_i2c_target_driver_register(const struct device* dev) {
-    const struct i2c_target_driver_api* api =
-            (const struct i2c_target_driver_api*)dev->api;
-
-    return api->driver_register(dev);
+    return DEVICE_API_GET(i2c_target, dev)->driver_register(dev);
 }
 
 /**
@@ -1367,10 +1354,7 @@ static inline int z_impl_i2c_target_driver_register(const struct device* dev) {
 __syscall int i2c_target_driver_unregister(const struct device* dev);
 
 static inline int z_impl_i2c_target_driver_unregister(const struct device* dev) {
-    const struct i2c_target_driver_api* api =
-            (const struct i2c_target_driver_api*)dev->api;
-
-    return api->driver_unregister(dev);
+    return DEVICE_API_GET(i2c_target, dev)->driver_unregister(dev);
 }
 
 /*

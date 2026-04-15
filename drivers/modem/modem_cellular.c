@@ -91,11 +91,11 @@ static char const* modem_cellular_state_str(enum modem_cellular_state state) {
         case MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT :
             return "run dial script";
 
-        case MODEM_CELLULAR_STATE_CARRIER_ON :
-            return "carrier on";
+        case MODEM_CELLULAR_STATE_REGISTERED :
+            return "registered";
 
-        case MODEM_CELLULAR_STATE_DORMANT:
-            return "dormant";
+        case MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD :
+            return "await PPP dead";
 
         case MODEM_CELLULAR_STATE_INIT_POWER_OFF :
             return "init power off";
@@ -962,7 +962,6 @@ static void modem_cellular_set_baudrate_event_handler(struct modem_cellular_data
             modem_chat_run_script_async(&data->chat, config->set_baudrate_chat_script);
             break;
 
-
         case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
             /* Some modems save the new speed on first change, meaning the
              * modem is already at the new baudrate, meaning no reply. So
@@ -1299,6 +1298,9 @@ static int modem_cellular_on_run_dial_script_state_leave(struct modem_cellular_d
 }
 
 static int modem_cellular_on_await_registered_state_enter(struct modem_cellular_data* data) {
+    /* PHY is now up and searching for network */
+    net_if_carrier_on(modem_ppp_get_iface(data->ppp));
+
     if (modem_ppp_attach(data->ppp, data->dlci1_pipe) < 0) {
         return -EAGAIN;
     }
@@ -1338,10 +1340,11 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
             break;
 
         case MODEM_CELLULAR_EVENT_REGISTERED :
-            modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_CARRIER_ON);
+            modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_REGISTERED);
             break;
 
         case MODEM_CELLULAR_EVENT_SUSPEND :
+            net_if_carrier_off(modem_ppp_get_iface(data->ppp));
             modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
             break;
 
@@ -1361,14 +1364,14 @@ static int modem_cellular_on_await_registered_state_leave(struct modem_cellular_
     return (0);
 }
 
-static int modem_cellular_on_carrier_on_state_enter(struct modem_cellular_data* data) {
-    net_if_carrier_on(modem_ppp_get_iface(data->ppp));
+static int modem_cellular_on_registered_state_enter(struct modem_cellular_data* data) {
+    net_if_dormant_off(modem_ppp_get_iface(data->ppp));
     modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 
     return (0);
 }
 
-static void modem_cellular_carrier_on_event_handler(struct modem_cellular_data* data,
+static void modem_cellular_registered_event_handler(struct modem_cellular_data* data,
                                                     enum modem_cellular_event evt) {
     struct modem_cellular_config const* config = data->dev->config;
     struct cellular_evt_modem_comms_check_result result;
@@ -1401,12 +1404,12 @@ static void modem_cellular_carrier_on_event_handler(struct modem_cellular_data* 
             break;
 
         case MODEM_CELLULAR_EVENT_DEREGISTERED :
-            modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_DORMANT);
+            modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD);
             break;
 
         case MODEM_CELLULAR_EVENT_PPP_DEAD:
             if (net_if_is_admin_up(modem_ppp_get_iface(data->ppp))) {
-                modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_DORMANT);
+                modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD);
                 modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
             }
             break;
@@ -1428,20 +1431,20 @@ static void modem_cellular_carrier_on_event_handler(struct modem_cellular_data* 
     }
 }
 
-static int modem_cellular_on_carrier_on_state_leave(struct modem_cellular_data* data) {
+static int modem_cellular_on_registered_state_leave(struct modem_cellular_data* data) {
     modem_cellular_stop_timer(data);
 
     return (0);
 }
 
-static int modem_cellular_on_dormant_state_enter(struct modem_cellular_data* data) {
+static int modem_cellular_on_await_ppp_dead_state_enter(struct modem_cellular_data* data) {
     net_if_dormant_on(modem_ppp_get_iface(data->ppp));
 
     return (0);
 }
 
-static void modem_cellular_dormant_event_handler(struct modem_cellular_data* data,
-                                                 enum modem_cellular_event evt) {
+static void modem_cellular_await_ppp_dead_event_handler(struct modem_cellular_data* data,
+                                                        enum modem_cellular_event evt) {
     switch (evt) {
         case MODEM_CELLULAR_EVENT_RING:
             LOG_DBG("RING received!");
@@ -1457,11 +1460,10 @@ static void modem_cellular_dormant_event_handler(struct modem_cellular_data* dat
     }
 }
 
-static int modem_cellular_on_dormant_state_leave(struct modem_cellular_data* data) {
+static int modem_cellular_on_await_ppp_dead_state_leave(struct modem_cellular_data* data) {
     net_if_carrier_off(modem_ppp_get_iface(data->ppp));
     modem_chat_release(&data->chat);
     modem_ppp_release(data->ppp);
-    net_if_dormant_off(modem_ppp_get_iface(data->ppp));
 
     return (0);
 }
@@ -1652,12 +1654,12 @@ static int modem_cellular_on_state_enter(struct modem_cellular_data* data) {
             ret = modem_cellular_on_await_registered_state_enter(data);
             break;
 
-        case MODEM_CELLULAR_STATE_CARRIER_ON :
-            ret = modem_cellular_on_carrier_on_state_enter(data);
+        case MODEM_CELLULAR_STATE_REGISTERED :
+            ret = modem_cellular_on_registered_state_enter(data);
             break;
 
-        case MODEM_CELLULAR_STATE_DORMANT :
-            ret = modem_cellular_on_dormant_state_enter(data);
+        case MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD :
+            ret = modem_cellular_on_await_ppp_dead_state_enter(data);
             break;
 
         case MODEM_CELLULAR_STATE_INIT_POWER_OFF :
@@ -1720,12 +1722,12 @@ static int modem_cellular_on_state_leave(struct modem_cellular_data* data) {
             ret = modem_cellular_on_await_registered_state_leave(data);
             break;
 
-        case MODEM_CELLULAR_STATE_CARRIER_ON :
-            ret = modem_cellular_on_carrier_on_state_leave(data);
+        case MODEM_CELLULAR_STATE_REGISTERED :
+            ret = modem_cellular_on_registered_state_leave(data);
             break;
 
-        case MODEM_CELLULAR_STATE_DORMANT :
-            ret = modem_cellular_on_dormant_state_leave(data);
+        case MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD :
+            ret = modem_cellular_on_await_ppp_dead_state_leave(data);
             break;
 
         case MODEM_CELLULAR_STATE_INIT_POWER_OFF :
@@ -1830,12 +1832,12 @@ static void modem_cellular_event_handler(struct modem_cellular_data* data,
             modem_cellular_await_registered_event_handler(data, evt);
             break;
 
-        case MODEM_CELLULAR_STATE_CARRIER_ON :
-            modem_cellular_carrier_on_event_handler(data, evt);
+        case MODEM_CELLULAR_STATE_REGISTERED :
+            modem_cellular_registered_event_handler(data, evt);
             break;
 
-        case MODEM_CELLULAR_STATE_DORMANT :
-            modem_cellular_dormant_event_handler(data, evt);
+        case MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD :
+            modem_cellular_await_ppp_dead_event_handler(data, evt);
             break;
 
         case MODEM_CELLULAR_STATE_INIT_POWER_OFF :
@@ -1938,7 +1940,7 @@ static int modem_cellular_get_signal(const struct device* dev,
     struct modem_cellular_data* data = dev->data;
 
     if ((data->state != MODEM_CELLULAR_STATE_AWAIT_REGISTERED) &&
-        (data->state != MODEM_CELLULAR_STATE_CARRIER_ON)) {
+        (data->state != MODEM_CELLULAR_STATE_REGISTERED)) {
         return (-ENODATA);
     }
 

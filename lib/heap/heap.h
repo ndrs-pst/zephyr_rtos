@@ -60,11 +60,18 @@
  * overflow detection by testing left_chunk(c + chunk_size(c)) == c.
  */
 
-enum chunk_fields { LEFT_SIZE, SIZE_AND_USED, FREE_PREV, FREE_NEXT };
+enum chunk_fields {
+    LEFT_SIZE,
+    SIZE_AND_USED,
+    FREE_PREV,
+    FREE_NEXT
+};
 
 #define CHUNK_UNIT 8U
 
-typedef struct { char bytes[CHUNK_UNIT]; } chunk_unit_t;
+typedef struct {
+    char bytes[CHUNK_UNIT];
+} chunk_unit_t;
 
 /* big_heap needs uint32_t, small_heap needs uint16_t */
 typedef uint32_t chunkid_t;
@@ -73,7 +80,7 @@ typedef uint32_t chunksz_t;
 #ifdef CONFIG_SYS_HEAP_CANARIES
 
 struct z_heap_chunk_trailer {
-    uint64_t canary;
+    uint32_t canary;
 } __aligned(CHUNK_UNIT);
 
 #define CHUNK_TRAILER_SIZE (sizeof(struct z_heap_chunk_trailer) / CHUNK_UNIT)
@@ -85,106 +92,110 @@ struct z_heap_chunk_trailer {
 #endif /* CONFIG_SYS_HEAP_CANARIES */
 
 struct z_heap_bucket {
-	chunkid_t next;
+    chunkid_t next;
 };
 
 struct z_heap {
-	chunkid_t chunk0_hdr[2];
-	chunkid_t end_chunk;
-	uint32_t avail_buckets;
-#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
-	size_t free_bytes;
-	size_t allocated_bytes;
-	size_t max_allocated_bytes;
-#endif
-	struct z_heap_bucket buckets[];
+    chunkid_t chunk0_hdr[2];
+    chunkid_t end_chunk;
+    uint32_t  avail_buckets;
+
+    #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+    size_t free_bytes;
+    size_t allocated_bytes;
+    size_t max_allocated_bytes;
+    #endif
+
+    #ifdef CONFIG_SYS_HEAP_CANARIES_RANDOM
+    uint32_t canary_base;
+    #endif
+
+    struct z_heap_bucket buckets[];
 };
 
-static inline bool big_heap_chunks(chunksz_t chunks)
-{
-	if (IS_ENABLED(CONFIG_SYS_HEAP_SMALL_ONLY)) {
-		return false;
-	}
-	if (IS_ENABLED(CONFIG_SYS_HEAP_BIG_ONLY) || sizeof(void *) > 4U) {
-		return true;
-	}
-	return chunks > 0x7fffU;
+static inline bool big_heap_chunks(chunksz_t chunks) {
+    if (IS_ENABLED(CONFIG_SYS_HEAP_SMALL_ONLY)) {
+        return (false);
+    }
+
+    if (IS_ENABLED(CONFIG_SYS_HEAP_BIG_ONLY) || sizeof(void*) > 4U) {
+        return (true);
+    }
+
+    return (chunks > 0x7FFFU);
 }
 
-static inline bool big_heap_bytes(size_t bytes)
-{
-	return big_heap_chunks(bytes / CHUNK_UNIT);
+static inline bool big_heap_bytes(size_t bytes) {
+    return big_heap_chunks(bytes / CHUNK_UNIT);
 }
 
-static inline bool big_heap(struct z_heap *h)
-{
-	return big_heap_chunks(h->end_chunk);
+static inline bool big_heap(struct z_heap* h) {
+    return big_heap_chunks(h->end_chunk);
 }
 
-static inline chunk_unit_t *chunk_buf(struct z_heap *h)
-{
-	/* the struct z_heap matches with the first chunk */
-	return (chunk_unit_t *)h;
+static inline chunk_unit_t* chunk_buf(struct z_heap* h) {
+    /* the struct z_heap matches with the first chunk */
+    return (chunk_unit_t*)h;
 }
 
-static inline chunkid_t chunk_field(struct z_heap *h, chunkid_t c,
-				    enum chunk_fields f)
-{
-	chunk_unit_t *buf = chunk_buf(h);
-	void *cmem = &buf[c];
+static inline chunkid_t chunk_field(struct z_heap* h, chunkid_t c,
+                                    enum chunk_fields f) {
+    chunk_unit_t* buf = chunk_buf(h);
+    void* cmem = &buf[c];
 
-	if (big_heap(h)) {
-		return ((uint32_t *)cmem)[f];
-	} else {
-		return ((uint16_t *)cmem)[f];
-	}
+    if (big_heap(h)) {
+        return ((uint32_t*)cmem)[f];
+    }
+    else {
+        return ((uint16_t*)cmem)[f];
+    }
 }
 
-static inline void chunk_set(struct z_heap *h, chunkid_t c,
-			     enum chunk_fields f, chunkid_t val)
-{
-	CHECK(c <= h->end_chunk);
+static inline void chunk_set(struct z_heap* h, chunkid_t c,
+                             enum chunk_fields f, chunkid_t val) {
+    CHECK(c <= h->end_chunk);
 
-	chunk_unit_t *buf = chunk_buf(h);
-	void *cmem = &buf[c];
+    chunk_unit_t* buf = chunk_buf(h);
+    void* cmem = &buf[c];
 
-	if (big_heap(h)) {
-		CHECK(val == (uint32_t)val);
-		((uint32_t *)cmem)[f] = val;
-	} else {
-		CHECK(val == (uint16_t)val);
-		((uint16_t *)cmem)[f] = val;
-	}
+    if (big_heap(h)) {
+        CHECK(val == (uint32_t)val);
+        ((uint32_t*)cmem)[f] = val;
+    }
+    else {
+        CHECK(val == (uint16_t)val);
+        ((uint16_t*)cmem)[f] = val;
+    }
 }
 
-static inline bool chunk_used(struct z_heap *h, chunkid_t c)
-{
-	return chunk_field(h, c, SIZE_AND_USED) & 1U;
+static inline bool chunk_used(struct z_heap* h, chunkid_t c) {
+    return chunk_field(h, c, SIZE_AND_USED) & 1U;
 }
 
-static inline chunksz_t chunk_size(struct z_heap *h, chunkid_t c)
-{
-	return chunk_field(h, c, SIZE_AND_USED) >> 1;
+static inline chunksz_t chunk_size(struct z_heap* h, chunkid_t c) {
+    return chunk_field(h, c, SIZE_AND_USED) >> 1;
 }
 
-static inline void set_chunk_used(struct z_heap *h, chunkid_t c, bool used)
-{
-	chunk_unit_t *buf = chunk_buf(h);
-	void *cmem = &buf[c];
+static inline void set_chunk_used(struct z_heap* h, chunkid_t c, bool used) {
+    chunk_unit_t* buf = chunk_buf(h);
+    void* cmem = &buf[c];
 
-	if (big_heap(h)) {
-		if (used) {
-			((uint32_t *)cmem)[SIZE_AND_USED] |= 1U;
-		} else {
-			((uint32_t *)cmem)[SIZE_AND_USED] &= ~1U;
-		}
-	} else {
-		if (used) {
-			((uint16_t *)cmem)[SIZE_AND_USED] |= 1U;
-		} else {
-			((uint16_t *)cmem)[SIZE_AND_USED] &= ~1U;
-		}
-	}
+    if (big_heap(h)) {
+        if (used) {
+            ((uint32_t*)cmem)[SIZE_AND_USED] |= 1U;
+        }
+        else {
+            ((uint32_t*)cmem)[SIZE_AND_USED] &= ~1U;
+        }
+    }
+    else {
+        if (used) {
+            ((uint16_t*)cmem)[SIZE_AND_USED] |= 1U;
+        }
+        else {
+            ((uint16_t*)cmem)[SIZE_AND_USED] &= ~1U;
+        }
+    }
 }
 
 /*
@@ -192,62 +203,51 @@ static inline void set_chunk_used(struct z_heap *h, chunkid_t c, bool used)
  * when its size is modified, and potential set_chunk_used() is always
  * invoked after set_chunk_size().
  */
-static inline void set_chunk_size(struct z_heap *h, chunkid_t c, chunksz_t size)
-{
-	chunk_set(h, c, SIZE_AND_USED, size << 1);
+static inline void set_chunk_size(struct z_heap* h, chunkid_t c, chunksz_t size) {
+    chunk_set(h, c, SIZE_AND_USED, size << 1);
 }
 
-static inline chunkid_t prev_free_chunk(struct z_heap *h, chunkid_t c)
-{
-	return chunk_field(h, c, FREE_PREV);
+static inline chunkid_t prev_free_chunk(struct z_heap* h, chunkid_t c) {
+    return chunk_field(h, c, FREE_PREV);
 }
 
-static inline chunkid_t next_free_chunk(struct z_heap *h, chunkid_t c)
-{
-	return chunk_field(h, c, FREE_NEXT);
+static inline chunkid_t next_free_chunk(struct z_heap* h, chunkid_t c) {
+    return chunk_field(h, c, FREE_NEXT);
 }
 
-static inline void set_prev_free_chunk(struct z_heap *h, chunkid_t c,
-				       chunkid_t prev)
-{
-	chunk_set(h, c, FREE_PREV, prev);
+static inline void set_prev_free_chunk(struct z_heap* h, chunkid_t c,
+                                       chunkid_t prev) {
+    chunk_set(h, c, FREE_PREV, prev);
 }
 
-static inline void set_next_free_chunk(struct z_heap *h, chunkid_t c,
-				       chunkid_t next)
-{
-	chunk_set(h, c, FREE_NEXT, next);
+static inline void set_next_free_chunk(struct z_heap* h, chunkid_t c,
+                                       chunkid_t next) {
+    chunk_set(h, c, FREE_NEXT, next);
 }
 
-static inline chunkid_t left_chunk(struct z_heap *h, chunkid_t c)
-{
-	return c - chunk_field(h, c, LEFT_SIZE);
+static inline chunkid_t left_chunk(struct z_heap* h, chunkid_t c) {
+    return c - chunk_field(h, c, LEFT_SIZE);
 }
 
-static inline chunkid_t right_chunk(struct z_heap *h, chunkid_t c)
-{
-	return c + chunk_size(h, c);
+static inline chunkid_t right_chunk(struct z_heap* h, chunkid_t c) {
+    return c + chunk_size(h, c);
 }
 
-static inline void set_left_chunk_size(struct z_heap *h, chunkid_t c,
-				       chunksz_t size)
-{
-	chunk_set(h, c, LEFT_SIZE, size);
+static inline void set_left_chunk_size(struct z_heap* h, chunkid_t c,
+                                       chunksz_t size) {
+    chunk_set(h, c, LEFT_SIZE, size);
 }
 
-static inline size_t chunk_header_bytes(struct z_heap *h)
-{
-	return big_heap(h) ? 8 : 4;
+static inline size_t chunk_header_bytes(struct z_heap* h) {
+    return big_heap(h) ? 8 : 4;
 }
 
-static inline size_t heap_footer_bytes(size_t size)
-{
-	return big_heap_bytes(size) ? 8 : 4;
+static inline size_t heap_footer_bytes(size_t size) {
+    return big_heap_bytes(size) ? 8 : 4;
 }
 
-static inline chunksz_t chunksz(size_t bytes)
-{
-	return (bytes + CHUNK_UNIT - 1U) / CHUNK_UNIT;
+static inline chunksz_t chunksz(size_t bytes) {
+    return (bytes + CHUNK_UNIT - 1U) / CHUNK_UNIT;
 }
 
 /**
@@ -257,18 +257,16 @@ static inline chunksz_t chunksz(size_t bytes)
  * be 64-bits wide, clamping guards against overflow when converting to the
  * 32-bit wide 'chunksz_t'.
  */
-static ALWAYS_INLINE chunksz_t bytes_to_chunksz(struct z_heap *h, size_t bytes, size_t extra)
-{
-	size_t chunks = (bytes / CHUNK_UNIT) + (extra / CHUNK_UNIT);
-	size_t oddments = ((bytes % CHUNK_UNIT) + (extra % CHUNK_UNIT) +
-			   chunk_header_bytes(h) + CHUNK_UNIT - 1U) / CHUNK_UNIT;
+static ALWAYS_INLINE chunksz_t bytes_to_chunksz(struct z_heap* h, size_t bytes, size_t extra) {
+    size_t chunks = (bytes / CHUNK_UNIT) + (extra / CHUNK_UNIT);
+    size_t oddments = ((bytes % CHUNK_UNIT) + (extra % CHUNK_UNIT) +
+                       chunk_header_bytes(h) + CHUNK_UNIT - 1U) / CHUNK_UNIT;
 
-	return (chunksz_t)z_min(chunks + oddments + CHUNK_TRAILER_SIZE, h->end_chunk);
+    return (chunksz_t)z_min(chunks + oddments + CHUNK_TRAILER_SIZE, h->end_chunk);
 }
 
-static inline chunksz_t min_chunk_size(struct z_heap *h)
-{
-	return chunksz(chunk_header_bytes(h) + 1) + CHUNK_TRAILER_SIZE;
+static inline chunksz_t min_chunk_size(struct z_heap* h) {
+    return chunksz(chunk_header_bytes(h) + 1) + CHUNK_TRAILER_SIZE;
 }
 
 /*
@@ -280,70 +278,65 @@ static inline chunksz_t min_chunk_size(struct z_heap *h)
  * The initial conditions short-circuit the comparison with build-time constants
  * when undersized chunks cannot occur.
  */
-static inline bool undersized_chunk(struct z_heap *h, chunkid_t c)
-{
-	return (CHUNK_TRAILER_SIZE != 0 || big_heap(h)) &&
-		chunk_size(h, c) < min_chunk_size(h);
+static inline bool undersized_chunk(struct z_heap* h, chunkid_t c) {
+    return (CHUNK_TRAILER_SIZE != 0 || big_heap(h)) &&
+            chunk_size(h, c) < min_chunk_size(h);
 }
 
-static inline size_t chunk_usable_bytes(struct z_heap *h, chunkid_t c)
-{
-	return chunk_size(h, c) * CHUNK_UNIT - chunk_header_bytes(h)
-	       - CHUNK_TRAILER_SIZE * CHUNK_UNIT;
+static inline size_t chunk_usable_bytes(struct z_heap* h, chunkid_t c) {
+    return (chunk_size(h, c) * CHUNK_UNIT) - chunk_header_bytes(h) -
+           CHUNK_TRAILER_SIZE * CHUNK_UNIT;
 }
 
-static inline size_t mem_align_gap(struct z_heap *h, void *mem)
-{
-	if (chunk_header_bytes(h) == CHUNK_UNIT) {
-		return 0;
-	}
-	return ((uintptr_t)mem - chunk_header_bytes(h)) & (CHUNK_UNIT - 1);
+static inline size_t mem_align_gap(struct z_heap* h, void* mem) {
+    if (chunk_header_bytes(h) == CHUNK_UNIT) {
+        return 0;
+    }
+
+    return ((uintptr_t)mem - chunk_header_bytes(h)) & (CHUNK_UNIT - 1);
 }
 
-static inline int bucket_idx(struct z_heap *h, chunksz_t sz)
-{
-	unsigned int usable_sz = sz - min_chunk_size(h) + 1;
-	return 31 - __builtin_clz(usable_sz);
+static inline int bucket_idx(struct z_heap* h, chunksz_t sz) {
+    unsigned int usable_sz = sz - min_chunk_size(h) + 1;
+
+    return (31 - __builtin_clz(usable_sz));
 }
 
-static inline void get_alloc_info(struct z_heap *h, size_t *alloc_bytes,
-			   size_t *free_bytes)
-{
-	chunkid_t c;
+static inline void get_alloc_info(struct z_heap* h, size_t* alloc_bytes, size_t* free_bytes) {
+    chunkid_t c;
 
-	*alloc_bytes = 0;
-	*free_bytes = 0;
+    *alloc_bytes = 0;
+    *free_bytes  = 0;
 
-	for (c = right_chunk(h, 0); c < h->end_chunk; c = right_chunk(h, c)) {
-		if (chunk_used(h, c)) {
-			*alloc_bytes += chunk_usable_bytes(h, c);
-		} else if (!undersized_chunk(h, c)) {
-			*free_bytes += chunk_usable_bytes(h, c);
-		}
-	}
+    for (c = right_chunk(h, 0); c < h->end_chunk; c = right_chunk(h, c)) {
+        if (chunk_used(h, c)) {
+            *alloc_bytes += chunk_usable_bytes(h, c);
+        }
+        else if (!undersized_chunk(h, c)) {
+            *free_bytes += chunk_usable_bytes(h, c);
+        }
+    }
 }
 
 #ifdef CONFIG_SYS_HEAP_CANARIES
 
 /* Returns pointer to the chunk trailer (at the end of the chunk) */
-static inline struct z_heap_chunk_trailer *chunk_trailer(struct z_heap *h,
-							 chunkid_t c)
-{
-	chunk_unit_t *buf = chunk_buf(h);
+static inline struct z_heap_chunk_trailer* chunk_trailer(struct z_heap* h,
+                                                         chunkid_t c) {
+    chunk_unit_t* buf = chunk_buf(h);
 
-	return (struct z_heap_chunk_trailer *)&buf[c + chunk_size(h, c)
-						   - CHUNK_TRAILER_SIZE];
+    return (struct z_heap_chunk_trailer*)&buf[c + chunk_size(h, c) - CHUNK_TRAILER_SIZE];
 }
 
 #endif /* CONFIG_SYS_HEAP_CANARIES */
 
 #ifdef CONFIG_SYS_HEAP_VALIDATE
-bool z_heap_full_check(struct z_heap *h);
+bool z_heap_full_check(struct z_heap* h);
 #else
-static inline bool z_heap_full_check(struct z_heap *h)
-{
-	ARG_UNUSED(h);
-	return true;
+static inline bool z_heap_full_check(struct z_heap* h) {
+    ARG_UNUSED(h);
+
+    return (true);
 }
 #endif
 

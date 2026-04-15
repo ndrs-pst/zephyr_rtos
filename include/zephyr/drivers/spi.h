@@ -1079,11 +1079,8 @@ static inline int z_impl_spi_transceive(const struct device* dev,
                                         const struct spi_config* config,
                                         const struct spi_buf_set* tx_bufs,
                                         const struct spi_buf_set* rx_bufs) {
-    const struct spi_driver_api* api =
-        (const struct spi_driver_api*)dev->api;
-    int ret;
+    int ret = DEVICE_API_GET(spi, dev)->transceive(dev, config, tx_bufs, rx_bufs);
 
-    ret = api->transceive(dev, config, tx_bufs, rx_bufs);
     spi_transceive_stats(dev, ret, tx_bufs, rx_bufs);
 
     return (ret);
@@ -1274,10 +1271,8 @@ static inline int spi_transceive_cb(const struct device* dev,
                                     const struct spi_buf_set* rx_bufs,
                                     spi_callback_t callback,
                                     void* userdata) {
-    const struct spi_driver_api* api =
-        (const struct spi_driver_api*)dev->api;
-
-    return api->transceive_async(dev, config, tx_bufs, rx_bufs, callback, userdata);
+    return DEVICE_API_GET(spi, dev)->transceive_async(dev, config, tx_bufs, rx_bufs, callback,
+                                                      userdata);
 }
 
 #if defined(CONFIG_POLL) || defined(__DOXYGEN__)
@@ -1323,11 +1318,9 @@ static inline int spi_transceive_signal(const struct device* dev,
                                         const struct spi_buf_set* tx_bufs,
                                         const struct spi_buf_set* rx_bufs,
                                         struct k_poll_signal* sig) {
-    const struct spi_driver_api* api =
-        (const struct spi_driver_api*)dev->api;
     spi_callback_t cb = (sig == NULL) ? NULL : z_spi_transfer_signal_cb;
 
-    return api->transceive_async(dev, config, tx_bufs, rx_bufs, cb, sig);
+    return DEVICE_API_GET(spi, dev)->transceive_async(dev, config, tx_bufs, rx_bufs, cb, sig);
 }
 
 /**
@@ -1421,9 +1414,8 @@ static inline int spi_write_signal(const struct device* dev,
 static inline void spi_iodev_submit(struct rtio_iodev_sqe* iodev_sqe) {
     const struct spi_dt_spec* dt_spec = (const struct spi_dt_spec*)iodev_sqe->sqe.iodev->data;
     const struct device* dev = dt_spec->bus;
-    const struct spi_driver_api* api = (const struct spi_driver_api*)dev->api;
 
-    api->iodev_submit(dt_spec->bus, iodev_sqe);
+    DEVICE_API_GET(spi, dev)->iodev_submit(dev, iodev_sqe);
 }
 
 /** @cond INTERNAL_HIDDEN */
@@ -1500,10 +1492,7 @@ __syscall int spi_release(const struct device* dev,
 
 static inline int z_impl_spi_release(const struct device* dev,
                                      const struct spi_config* config) {
-    const struct spi_driver_api* api =
-        (const struct spi_driver_api*)dev->api;
-
-    return api->release(dev, config);
+    return DEVICE_API_GET(spi, dev)->release(dev, config);
 }
 
 /**
