@@ -175,11 +175,12 @@ static void mcux_lpuart_pm_policy_state_lock_put(struct device const* dev) {
 #endif /* CONFIG_PM */
 
 static int mcux_lpuart_poll_in(struct device const* dev, unsigned char* c) {
-    uint32_t flags = LPUART_GetStatusFlags(get_base(dev));
+    LPUART_Type* lpuart = get_base(dev);
+    uint32_t flags = LPUART_GetStatusFlags(lpuart);
     int ret = -1;
 
     if (flags & kLPUART_RxDataRegFullFlag) {
-        *c = LPUART_ReadByte(get_base(dev));
+        *c = LPUART_ReadByte(lpuart);
         ret = 0;
     }
 
@@ -187,12 +188,13 @@ static int mcux_lpuart_poll_in(struct device const* dev, unsigned char* c) {
 }
 
 static void mcux_lpuart_poll_out(struct device const* dev, unsigned char c) {
+    LPUART_Type* lpuart = get_base(dev);
     unsigned int key;
     #ifdef CONFIG_PM
     struct mcux_lpuart_data* data = dev->data;
     #endif
 
-    while (!(LPUART_GetStatusFlags(get_base(dev))
+    while (!(LPUART_GetStatusFlags(lpuart)
             & LPUART_STAT_TDRE_MASK)) {
         /* pass */
     }
@@ -211,17 +213,18 @@ static void mcux_lpuart_poll_out(struct device const* dev, unsigned char c) {
         data->tx_poll_stream_on = true;
         mcux_lpuart_pm_policy_state_lock_get(dev);
         /* Enable TC interrupt */
-        LPUART_EnableInterrupts(get_base(dev),
+        LPUART_EnableInterrupts(lpuart,
                                 kLPUART_TransmissionCompleteInterruptEnable);
     }
     #endif /* CONFIG_PM */
 
-    LPUART_WriteByte(get_base(dev), c);
+    LPUART_WriteByte(lpuart, c);
     irq_unlock(key);
 }
 
 static int mcux_lpuart_err_check(struct device const* dev) {
-    uint32_t flags = LPUART_GetStatusFlags(get_base(dev));
+    LPUART_Type* lpuart = get_base(dev);
+    uint32_t flags = LPUART_GetStatusFlags(lpuart);
     int err = 0;
 
     if (flags & kLPUART_RxOverrunFlag) {
@@ -240,10 +243,10 @@ static int mcux_lpuart_err_check(struct device const* dev) {
         err |= UART_ERROR_PARITY;
     }
 
-    LPUART_ClearStatusFlags(get_base(dev), kLPUART_RxOverrunFlag    |
-                                           kLPUART_ParityErrorFlag  |
-                                           kLPUART_FramingErrorFlag |
-                                           kLPUART_NoiseErrorFlag);
+    LPUART_ClearStatusFlags(lpuart, kLPUART_RxOverrunFlag    |
+                                    kLPUART_ParityErrorFlag  |
+                                    kLPUART_FramingErrorFlag |
+                                    kLPUART_NoiseErrorFlag);
 
     return (err);
 }
@@ -252,12 +255,13 @@ static int mcux_lpuart_err_check(struct device const* dev) {
 static int mcux_lpuart_fifo_fill(struct device const* dev,
                                  uint8_t const* tx_data,
                                  int len) {
-    int num_tx = 0U;
+    LPUART_Type* lpuart = get_base(dev);
+    int num_tx = 0;
 
-    while ((len - num_tx > 0) &&
-           (LPUART_GetStatusFlags(get_base(dev))
-            & LPUART_STAT_TDRE_MASK)) {
-        LPUART_WriteByte(get_base(dev), tx_data[num_tx++]);
+    while ((len > num_tx) &&
+           ((LPUART_GetStatusFlags(lpuart) & LPUART_STAT_TDRE_MASK) != 0U)) {
+        LPUART_WriteByte(lpuart, tx_data[num_tx]);
+        ++num_tx;
     }
 
     return (num_tx);
@@ -265,18 +269,20 @@ static int mcux_lpuart_fifo_fill(struct device const* dev,
 
 static int mcux_lpuart_fifo_read(struct device const* dev, uint8_t* rx_data,
                                  int const len) {
-    int num_rx = 0U;
+    LPUART_Type* lpuart = get_base(dev);
+    int num_rx = 0;
 
-    while ((len - num_rx > 0) &&
-           (LPUART_GetStatusFlags(get_base(dev))
-            & kLPUART_RxDataRegFullFlag)) {
-        rx_data[num_rx++] = LPUART_ReadByte(get_base(dev));
+    while ((len > num_rx) &&
+           ((LPUART_GetStatusFlags(lpuart) & kLPUART_RxDataRegFullFlag) != 0U)) {
+        rx_data[num_rx] = LPUART_ReadByte(lpuart);
+        ++num_rx;
     }
 
     return (num_rx);
 }
 
 static void mcux_lpuart_irq_tx_enable(struct device const* dev) {
+    LPUART_Type* lpuart = get_base(dev);
     uint32_t mask = kLPUART_TxDataRegEmptyInterruptEnable;
     #ifdef CONFIG_PM
     struct mcux_lpuart_data* data = dev->data;
@@ -288,12 +294,12 @@ static void mcux_lpuart_irq_tx_enable(struct device const* dev) {
     data->tx_poll_stream_on = false;
     data->tx_int_stream_on  = true;
     /* Transmission complete interrupt no longer required */
-    LPUART_DisableInterrupts(get_base(dev),
+    LPUART_DisableInterrupts(lpuart,
                              kLPUART_TransmissionCompleteInterruptEnable);
     /* Do not allow system to sleep while UART tx is ongoing */
     mcux_lpuart_pm_policy_state_lock_get(dev);
     #endif
-    LPUART_EnableInterrupts(get_base(dev), mask);
+    LPUART_EnableInterrupts(lpuart, mask);
 
     #ifdef CONFIG_PM
     irq_unlock(key);
@@ -330,52 +336,59 @@ static int mcux_lpuart_irq_tx_complete(struct device const* dev) {
 }
 
 static int mcux_lpuart_irq_tx_ready(struct device const* dev) {
+    LPUART_Type* lpuart = get_base(dev);
     uint32_t mask  = kLPUART_TxDataRegEmptyInterruptEnable;
-    uint32_t flags = LPUART_GetStatusFlags(get_base(dev));
+    uint32_t flags = LPUART_GetStatusFlags(lpuart);
 
-    return ((LPUART_GetEnabledInterrupts(get_base(dev)) & mask) &&
-            (flags & LPUART_STAT_TDRE_MASK));
+    return ((LPUART_GetEnabledInterrupts(lpuart) & mask) &&
+            ((flags & LPUART_STAT_TDRE_MASK) != 0U));
 }
 
 static void mcux_lpuart_irq_rx_enable(struct device const* dev) {
+    LPUART_Type* lpuart = get_base(dev);
     uint32_t mask = kLPUART_RxDataRegFullInterruptEnable | kLPUART_RxOverrunInterruptEnable;
 
-    LPUART_EnableInterrupts(get_base(dev), mask);
+    LPUART_EnableInterrupts(lpuart, mask);
 }
 
 static void mcux_lpuart_irq_rx_disable(struct device const* dev) {
+    LPUART_Type* lpuart = get_base(dev);
     uint32_t mask = kLPUART_RxDataRegFullInterruptEnable | kLPUART_RxOverrunInterruptEnable;
 
-    LPUART_DisableInterrupts(get_base(dev), mask);
+    LPUART_DisableInterrupts(lpuart, mask);
 }
 
 static int mcux_lpuart_irq_rx_full(struct device const* dev) {
-    uint32_t flags = LPUART_GetStatusFlags(get_base(dev));
+    LPUART_Type* lpuart = get_base(dev);
+    uint32_t flags = LPUART_GetStatusFlags(lpuart);
 
     return ((flags & kLPUART_RxDataRegFullFlag) != 0U);
 }
 
 static int mcux_lpuart_irq_rx_pending(struct device const* dev) {
+    LPUART_Type* lpuart = get_base(dev);
     uint32_t mask = kLPUART_RxDataRegFullInterruptEnable;
 
-    return ((LPUART_GetEnabledInterrupts(get_base(dev)) & mask) &&
+    return ((LPUART_GetEnabledInterrupts(lpuart) & mask) &&
             mcux_lpuart_irq_rx_full(dev));
 }
 
 static void mcux_lpuart_irq_err_enable(struct device const* dev) {
+    LPUART_Type* lpuart = get_base(dev);
     uint32_t mask = kLPUART_NoiseErrorInterruptEnable   |
                     kLPUART_FramingErrorInterruptEnable |
                     kLPUART_ParityErrorInterruptEnable;
 
-    LPUART_EnableInterrupts(get_base(dev), mask);
+    LPUART_EnableInterrupts(lpuart, mask);
 }
 
 static void mcux_lpuart_irq_err_disable(struct device const* dev) {
+    LPUART_Type* lpuart = get_base(dev);
     uint32_t mask = kLPUART_NoiseErrorInterruptEnable   |
                     kLPUART_FramingErrorInterruptEnable |
                     kLPUART_ParityErrorInterruptEnable;
 
-    LPUART_DisableInterrupts(get_base(dev), mask);
+    LPUART_DisableInterrupts(lpuart, mask);
 }
 
 static int mcux_lpuart_irq_is_pending(struct device const* dev) {
@@ -419,10 +432,11 @@ static inline void async_timer_start(struct k_work_delayable* work, size_t timeo
 }
 
 static void async_user_callback(struct device const* dev, struct uart_event* evt) {
-    const struct mcux_lpuart_data* data = dev->data;
+    struct mcux_lpuart_data const* data = dev->data;
+    struct mcux_lpuart_async_data const* async = &data->async;
 
-    if (data->async.user_callback) {
-        data->async.user_callback(dev, evt, data->async.user_data);
+    if (async->user_callback) {
+        async->user_callback(dev, evt, async->user_data);
     }
 }
 
@@ -496,12 +510,13 @@ static void async_evt_rx_buf_request(struct device const* dev) {
 
 static void async_evt_rx_buf_release(struct device const* dev) {
     struct mcux_lpuart_data* data = (struct mcux_lpuart_data*)dev->data;
+    struct mcux_lpuart_rx_dma_params* rx_dma = &data->async.rx_dma_params;
     unsigned int key;
     uint8_t* released_buf;
 
     /* Snapshot the buffer pointer atomically for the event payload. */
     key = irq_lock();
-    released_buf = data->async.rx_dma_params.buf;
+    released_buf = rx_dma->buf;
     irq_unlock(key);
 
     struct uart_event evt = {
@@ -516,11 +531,11 @@ static void async_evt_rx_buf_release(struct device const* dev) {
      * swapped concurrently.
      */
     key = irq_lock();
-    if (data->async.rx_dma_params.buf == released_buf) {
-        data->async.rx_dma_params.buf = NULL;
-        data->async.rx_dma_params.buf_len = 0U;
-        data->async.rx_dma_params.offset = 0U;
-        data->async.rx_dma_params.counter = 0U;
+    if (rx_dma->buf == released_buf) {
+        rx_dma->buf = NULL;
+        rx_dma->buf_len = 0U;
+        rx_dma->offset = 0U;
+        rx_dma->counter = 0U;
     }
     irq_unlock(key);
 }
@@ -529,6 +544,7 @@ static void mcux_lpuart_async_rx_flush(struct device const* dev) {
     struct dma_status status;
     struct mcux_lpuart_data* data = dev->data;
     const struct mcux_lpuart_config* config = dev->config;
+    struct mcux_lpuart_rx_dma_params* rx_dma = &data->async.rx_dma_params;
 
     int const get_status_result = dma_get_status(config->rx_dma_config.dma_dev,
                                                  config->rx_dma_config.dma_channel,
@@ -542,8 +558,8 @@ static void mcux_lpuart_async_rx_flush(struct device const* dev) {
         unsigned int key;
 
         key = irq_lock();
-        buf_len = data->async.rx_dma_params.buf_len;
-        counter = data->async.rx_dma_params.counter;
+        buf_len = rx_dma->buf_len;
+        counter = rx_dma->counter;
         irq_unlock(key);
 
         if (buf_len >= status.pending_length) {
@@ -551,8 +567,8 @@ static void mcux_lpuart_async_rx_flush(struct device const* dev) {
 
             if (status.pending_length && rx_rcv_len > counter) {
                 key = irq_lock();
-                if (rx_rcv_len > data->async.rx_dma_params.counter) {
-                    data->async.rx_dma_params.counter = rx_rcv_len;
+                if (rx_rcv_len > rx_dma->counter) {
+                    rx_dma->counter = rx_rcv_len;
                     notify = true;
                 }
                 irq_unlock(key);
@@ -576,11 +592,12 @@ static int mcux_lpuart_rx_disable(struct device const* dev) {
     LOG_INF("Disabling UART RX DMA");
     const struct mcux_lpuart_config* config = dev->config;
     struct mcux_lpuart_data* data = (struct mcux_lpuart_data*)dev->data;
+    struct mcux_lpuart_async_data* async = &data->async;
     LPUART_Type* lpuart = get_base(dev);
     unsigned int const key = irq_lock();
 
     LPUART_EnableRx(lpuart, false);
-    (void) k_work_cancel_delayable(&data->async.rx_dma_params.timeout_work);
+    (void) k_work_cancel_delayable(&async->rx_dma_params.timeout_work);
     LPUART_DisableInterrupts(lpuart, kLPUART_IdleLineInterruptEnable     |
                                      kLPUART_RxOverrunInterruptEnable    |
                                      kLPUART_NoiseErrorInterruptEnable   |
@@ -594,21 +611,21 @@ static int mcux_lpuart_rx_disable(struct device const* dev) {
     LPUART_EnableRxDMA(lpuart, false);
 
     /* No active RX buffer, cannot disable */
-    if (!data->async.rx_dma_params.buf) {
+    if (!async->rx_dma_params.buf) {
         LOG_ERR("No buffers to release from RX DMA!");
     }
     else {
         mcux_lpuart_async_rx_flush(dev);
         async_evt_rx_buf_release(dev);
-        if (data->async.next_rx_buffer != NULL) {
-            data->async.rx_dma_params.buf     = data->async.next_rx_buffer;
-            data->async.rx_dma_params.buf_len = data->async.next_rx_buffer_len;
-            data->async.next_rx_buffer        = NULL;
-            data->async.next_rx_buffer_len    = 0;
+        if (async->next_rx_buffer != NULL) {
+            async->rx_dma_params.buf     = async->next_rx_buffer;
+            async->rx_dma_params.buf_len = async->next_rx_buffer_len;
+            async->next_rx_buffer        = NULL;
+            async->next_rx_buffer_len    = 0;
             /* Release the next buffer as well */
             async_evt_rx_buf_release(dev);
         }
-        data->async.rx_dma_params.buf = NULL;
+        async->rx_dma_params.buf = NULL;
     }
 
     int const ret = dma_stop(config->rx_dma_config.dma_dev,
