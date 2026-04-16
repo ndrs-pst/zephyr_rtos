@@ -83,6 +83,7 @@ static inline void encode_be16(struct coap_packet *cpkt, uint16_t offset, uint16
 	cpkt->offset += 2;
 }
 
+__maybe_unused
 static inline void encode_be32(struct coap_packet *cpkt, uint16_t offset, uint32_t data)
 {
 	sys_put_be32(data, &cpkt->data[offset]);
@@ -145,19 +146,6 @@ static inline bool insert_be16(struct coap_packet *cpkt, uint16_t data, size_t o
 	memmove(&cpkt->data[offset + 2], &cpkt->data[offset], cpkt->offset - offset);
 
 	encode_be16(cpkt, offset, data);
-
-	return true;
-}
-
-static inline bool insert_be32(struct coap_packet *cpkt, uint32_t data, size_t offset)
-{
-	if (!enough_space(cpkt, 4)) {
-		return false;
-	}
-
-	memmove(&cpkt->data[offset + 4], &cpkt->data[offset], cpkt->offset - offset);
-
-	encode_be32(cpkt, offset, data);
 
 	return true;
 }
