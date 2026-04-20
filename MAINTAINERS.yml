@@ -165,6 +165,7 @@ ADI Platforms:
   files:
     - boards/adi/
     - boards/common/*adi*
+    - boards/shields/ad_apardpfw_sl/
     - boards/shields/eval*ardz/
     - boards/shields/pmod_acl/
     - drivers/*/*max*
@@ -180,6 +181,7 @@ ADI Platforms:
     - dts/bindings/*/adi,*
     - dts/bindings/*/lltc,*
     - dts/bindings/*/maxim,*
+    - dts/vendor/adi/
     - soc/adi/
   files-regex:
     - ^drivers/(adc|dac|gpio|mfd|regulator)/.*adp?\d+
@@ -212,7 +214,6 @@ ARM Platforms:
   status: maintained
   maintainers:
     - wearyzen
-  collaborators:
     - ithinuel
   files:
     - boards/arm/mps*/
@@ -248,10 +249,10 @@ ARM arch:
   status: maintained
   maintainers:
     - wearyzen
+    - ithinuel
   collaborators:
     - MaureenHelm
     - stephanosio
-    - ithinuel
   files:
     - arch/arm/
     - arch/arm/core/offsets/
@@ -399,6 +400,7 @@ Base OS:
     - peter-mitsis
   files:
     - include/zephyr/sys/
+    - include/zephyr/zvfs/eventfd.h
     - lib/os/
     - tests/misc/print_format/
     - tests/lib/p4workq/
@@ -893,7 +895,7 @@ CMSIS API layer:
   collaborators:
     - nashif
   files:
-    - subsys/portability/
+    - subsys/portability/cmsis*/
     - include/zephyr/portability/cmsis*
     - samples/subsys/portability/cmsis_rtos_v*/
     - tests/subsys/portability/cmsis_rtos_v*/
@@ -3333,6 +3335,7 @@ Key-Value Storage Systems:
     - subsys/llext/
     - doc/services/llext/
     - include/zephyr/linker/llext-sections.ld
+    - scripts/build/llext_*
   labels:
     - "area: llext"
   tests:
@@ -3450,6 +3453,19 @@ LoRa and LoRaWAN:
     - sample.driver.lora
     - lorawan
 
+LoRaWAN native backend:
+  status: maintained
+  maintainers:
+    - carlocaione
+  collaborators:
+    - JordanYates
+    - martinjaeger
+    - mniestroj
+  files:
+    - subsys/lorawan/native/
+  labels:
+    - "area: LoRa"
+
 Logging:
   status: maintained
   maintainers:
@@ -3517,8 +3533,6 @@ MIPS arch:
     - boards/qemu/malta/
   labels:
     - "area: MIPS"
-  tests:
-    - arch.mips
 
 Memory Management:
   status: maintained
@@ -3629,6 +3643,7 @@ Microchip SAM Platforms:
   files:
     - boards/atmel/
     - dts/arm/atmel/
+    - dts/arm/microchip/sam/
     - soc/atmel/
     - soc/microchip/sam/sama*/
     - drivers/*/*sam*
@@ -4546,8 +4561,6 @@ OpenRISC Arch:
     - soc/qemu/or1k/
   labels:
     - "area: OpenRISC"
-  tests:
-    - arch.openrisc
 
 OpenTitan Platforms:
   status: maintained
@@ -4782,6 +4795,7 @@ Raspberry Pi Pico Platforms:
     - boards/wiznet/w5500_evb_pico*/
     - dts/arm/raspberrypi/rpi_pico/
     - dts/bindings/*/raspberrypi,pico*
+    - dts/vendor/raspberrypi/
     - dts/riscv/raspberrypi/
     - drivers/*/*rpi_pico
     - drivers/*/*rpi_pico*/
@@ -5994,9 +6008,9 @@ West:
   status: maintained
   maintainers:
     - wearyzen
+    - ithinuel
   collaborators:
     - tomi-font
-    - ithinuel
   files:
     - modules/cmsis_6/
   labels:
@@ -6121,8 +6135,8 @@ West:
   maintainers:
     - kristofer-jonsson-arm
     - wearyzen
-  collaborators:
     - ithinuel
+  collaborators:
     - ccli8
     - johan-alfven-arm
   files:
@@ -6678,6 +6692,7 @@ West:
   collaborators:
     - Vge0rge
     - wearyzen
+    - ithinuel
     - valeriosetti
     - JordanYates
   files: []
@@ -6701,6 +6716,7 @@ West:
   collaborators:
     - Vge0rge
     - wearyzen
+    - ithinuel
     - valeriosetti
     - JordanYates
   files: []
@@ -6762,6 +6778,7 @@ West:
   collaborators:
     - Vge0rge
     - wearyzen
+    - ithinuel
     - valeriosetti
     - JordanYates
   files:
