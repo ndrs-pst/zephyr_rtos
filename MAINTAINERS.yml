@@ -1824,8 +1824,6 @@ Documentation Infrastructure:
     - aaronemassey
     - DBS06
     - teburd
-  collaborators:
-    - DBS06
   files:
     - drivers/fuel_gauge/
     - dts/bindings/fuel-gauge/
@@ -5843,6 +5841,7 @@ West:
     - mbolivar
     - carlescufi
     - marc-hb
+    - sylvioalves
   files:
     - scripts/west-commands.yml
     - scripts/west_commands/
