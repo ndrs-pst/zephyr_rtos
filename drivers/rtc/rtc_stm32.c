@@ -316,7 +316,6 @@ static void rtc_stm32_init_alarm(const struct rtc_time* timeptr, uint16_t id, ui
             /* all the other values are consistent with what is expected by hardware */
             day_weekday = bin2bcd(timeptr->tm_wday);
         }
-
     }
     else if (mask & RTC_ALARM_TIME_MASK_MONTHDAY) {
         /* the Alarm compares with the day number & ignores the day of the week */
@@ -883,8 +882,17 @@ static int rtc_stm32_alarm_get_time(const struct device *dev, uint16_t id, uint1
     }
 
     memset(timeptr, -1, sizeof(struct rtc_time));
+
+    if (IS_ENABLED(CONFIG_SOC_SERIES_STM32H7RSX)) {
+        stm32_backup_domain_enable_access();
+    }
+
     rtc_stm32_alarm_get_alrm_time(id, timeptr);
     *mask = rtc_stm32_alarm_get_alrm_mask(id);
+
+    if (IS_ENABLED(CONFIG_SOC_SERIES_STM32H7RSX)) {
+        stm32_backup_domain_disable_access();
+    }
 
     LOG_DBG("get alarm: mday = %d, wday = %d, hour = %d, min = %d, sec = %d, "
             "mask = 0x%04x", timeptr->tm_mday, timeptr->tm_wday, timeptr->tm_hour,

@@ -726,7 +726,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 	info_err = bt_conn_get_info(conn, &info);
 	if (info_err != 0) {
-		bt_shell_error("Failed to connection information: %d", info_err);
+		bt_shell_error("Unable to get info: conn %p (err %d)", conn, info_err);
 		goto done;
 	}
 
@@ -753,14 +753,16 @@ done:
 static void disconnected_set_new_default_conn_cb(struct bt_conn *conn, void *user_data)
 {
 	struct bt_conn_info info;
+	int err;
 
 	if (default_conn != NULL) {
 		/* nop */
 		return;
 	}
 
-	if (bt_conn_get_info(conn, &info) != 0) {
-		bt_shell_error("Unable to get info: conn %p", conn);
+	err = bt_conn_get_info(conn, &info);
+	if (err != 0) {
+		bt_shell_error("Unable to get info: conn %p (err %d)", conn, err);
 		return;
 	}
 
@@ -781,12 +783,19 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 			conn_type |= BT_CONN_TYPE_BR;
 		}
 
-		bt_conn_get_info(conn, &info);
+		int err = bt_conn_get_info(conn, &info);
+
+		if (err != 0) {
+			bt_shell_error("Unable to get info: conn %p (err %d)", conn, err);
+		}
 		bt_conn_unref(default_conn);
 		default_conn = NULL;
 
-		/* If we are connected to other devices, set one of them as default */
-		bt_conn_foreach(info.type, disconnected_set_new_default_conn_cb, NULL);
+		if (err == 0) {
+			/* If we are connected to other devices, set one of them as default */
+			bt_conn_foreach(info.type, disconnected_set_new_default_conn_cb, NULL);
+		}
+
 		if (default_conn == NULL) {
 			bt_conn_foreach(conn_type, disconnected_set_new_default_conn_cb, NULL);
 		}
@@ -865,8 +874,13 @@ static void remote_info_available(struct bt_conn *conn,
 				  struct bt_conn_remote_info *remote_info)
 {
 	struct bt_conn_info info;
+	int err;
 
-	bt_conn_get_info(conn, &info);
+	err = bt_conn_get_info(conn, &info);
+	if (err != 0) {
+		bt_shell_error("Unable to get info: conn %p (err %d)", conn, err);
+		return;
+	}
 
 	if (IS_ENABLED(CONFIG_BT_REMOTE_VERSION)) {
 		bt_shell_print("Remote LMP version %s (0x%02x) subversion 0x%04x "
@@ -3898,7 +3912,7 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_conn_get_info(conn, &info);
 	if (err) {
-		shell_print(sh, "Failed to get info");
+		shell_error(sh, "Failed to get info (err %d)", err);
 		goto done;
 	}
 
@@ -4311,9 +4325,11 @@ static void connection_info(struct bt_conn *conn, void *user_data)
 	struct bt_conn_info info;
 	const char *selected;
 	const char *role_str;
+	int err;
 
-	if (bt_conn_get_info(conn, &info) < 0) {
-		bt_shell_error("Unable to get info: conn %p", conn);
+	err = bt_conn_get_info(conn, &info);
+	if (err != 0) {
+		bt_shell_error("Unable to get info: conn %p (err %d)", conn, err);
 		return;
 	}
 

@@ -53,6 +53,18 @@ Clock Control
   RT11xx overlays should be updated using the mapping
   ``loop-div = clock-mult * 2`` and ``post-div = clock-div``.
 
+Flash
+=====
+* :dtcompatible:`jedec,spi-nand` now requires a ``plane-bytes`` property, which indicates the size
+  of each plane in the flash device. For devices with a single plane, this should be set to the
+  same value as ``size-bytes``.
+
+STM32
+=====
+
+* SoC DTSI files now consistently use interrupt priority zero for all peripherals.
+  Applications must now explicitly configure interrupt priorities using Devicetree
+  if they previously relied on the values found in SoC DTSI files. (:github:`106188`)
 
 .. zephyr-keep-sorted-stop
 
@@ -97,6 +109,10 @@ Networking
 
 Other subsystems
 ****************
+
+* Demand paging (``subsys/demand_paging``) is moved under Memory Management
+  into ``subsys/mem_mgmt/demand_paging``. Custom backing store and eviction algorithm code need
+  to be moved there.
 
 Modules
 *******
