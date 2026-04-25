@@ -155,6 +155,7 @@ static struct adc_hdl adc_list[] = {
                        ti_lmp90098,
                        ti_lmp90099,
                        ti_lmp90100,
+                       ti_mspm0_adc12,
                        ti_tla2021,
                        ti_tla2022,
                        ti_tla2024,

@@ -190,7 +190,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 17085db9a77a99294385bdc678148c46caddc402
+      revision: 6580b4c0ed7dbc7bea1d638c3bab06b86558614d
       path: modules/hal/infineon
       groups:
         - hal
@@ -205,7 +205,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 0424db2d8320cfe417af5675b5bfd2b9a8b43d23
+      revision: c8f0c2b6ecf66b0a4af24b5272d879c305868feb
       path: modules/hal/nordic
       groups:
         - hal
@@ -215,7 +215,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 5e4b011cd546f6eb86bbb2826b01469c66302b64
+      revision: 261a17e15c0395756ae54ea07b27a176edebf90e
       path: modules/hal/nxp
       groups:
         - hal
@@ -255,12 +255,12 @@ manifest:
       groups:
         - hal
     - name: hal_st
-      revision: 7a792882847223c72944791e0c48eed6101e6569
+      revision: e9f0468ade3c06d5e3961e3821543dd67c7ea7f0
       path: modules/hal/st
       groups:
         - hal
     - name: hal_stm32
-      revision: 3cfe1a8a5479c844bc6cbb8ceb1f21482a020bb8
+      revision: f23ca3a1adb587f3180dc68ea2347ff448e1dfec
       path: modules/hal/stm32
       groups:
         - hal
@@ -301,7 +301,7 @@ manifest:
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
     - name: libmctp
-      revision: b97860e78998551af99931ece149eeffc538bdb1
+      revision: 782a9da666b6e7703b28dee65499a8f1f456f2b5
       path: modules/lib/libmctp
     - name: libmetal
       revision: 66e084293b2a7ced5a73fbd247deddba8915883a
