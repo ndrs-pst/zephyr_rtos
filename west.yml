@@ -426,7 +426,7 @@ manifest:
       revision: c3b935185fd5e68ff232e78d5ac6a67415f1fce1
     - name: FlashDB
       path: modules/lib/flashdb
-      revision: 0bcc2eac8dba2fd9fdf850c745dc1b0017ebfa8f
+      revision: 50f28b37f3e00ed2953c0e348b5d59c26bd90dde
     - name: freemaster
       remote: nxp-mcuxpresso
       repo-path: mcux-freemaster
