@@ -127,13 +127,13 @@ struct net_buf* mcumgr_serial_process_frag(struct mcumgr_serial_rx_ctxt* rx_ctxt
 
     if (rx_ctxt->nb == NULL) {
         rx_ctxt->nb = smp_packet_alloc();
-        net_buf_reset(rx_ctxt->nb);
         if (rx_ctxt->nb == NULL) {
             return (NULL);
         }
+        net_buf_reset(rx_ctxt->nb);
     }
 
-    #if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE) &&                                                    \
+    #if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE) && \
         defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_RAW_BINARY_NON_SMP_OVER_CONSOLE)
     if (rx_ctxt->raw_transport == true) {
     #endif
@@ -142,7 +142,7 @@ struct net_buf* mcumgr_serial_process_frag(struct mcumgr_serial_rx_ctxt* rx_ctxt
             return NULL;
         }
         #endif
-    #if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE) &&                                                    \
+    #if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE) && \
         defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_RAW_BINARY_NON_SMP_OVER_CONSOLE)
     }
     else {
@@ -204,7 +204,7 @@ struct net_buf* mcumgr_serial_process_frag(struct mcumgr_serial_rx_ctxt* rx_ctxt
         /* Packet is complete; strip the CRC. */
         rx_ctxt->nb->len -= 2U;
         #endif
-    #if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE) &&                                                    \
+    #if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE) && \
         defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_RAW_BINARY_NON_SMP_OVER_CONSOLE)
     }
     #endif

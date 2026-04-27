@@ -1527,8 +1527,24 @@ static inline void uart_stm32_dma_rx_enable(const struct device* dev) {
     USART_TypeDef* usart = DEVICE_STM32_GET_USART(dev);
     struct uart_stm32_data* data = dev->data;
 
-    LL_USART_EnableDMAReq_RX(usart);
+    #ifdef CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED
+    /*
+     * Workaround for STM32H5/U5: USART does not generate DMA requests
+     * after clearing/setting DMAR. This issue is not documented in the
+     * errata but behaves similarly to the documented DMAT issue.
+     * Toggle UE (USART Enable) to reset the USART internal state machine
+     * before re-enabling DMAR.
+     */
+    LL_USART_Disable(usart);
+    LL_USART_Enable(usart);
 
+    /* Wait for USART to be ready after re-enable */
+    while (!LL_USART_IsActiveFlag_TEACK(usart)) {
+        /* busy-wait for transmit enable acknowledge */
+    }
+    #endif /* CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED */
+
+    LL_USART_EnableDMAReq_RX(usart);
     data->dma_rx.enabled = true;
 }
 

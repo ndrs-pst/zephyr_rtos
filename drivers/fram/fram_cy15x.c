@@ -552,7 +552,7 @@ static DEVICE_API(fram, fram_cy15x_api) = {
         .write_fn = fram_cy15x##t##_write, \
     }; \
     static struct fram_cy15x_data fram_cy15x##t##_data_##n;     \
-    DEVICE_DT_DEFINE(INST_DT_CY15X(n, t), &fram_cy15x_init,     \
+    DEVICE_DT_DEFINE(INST_DT_CY15X(n, t), fram_cy15x_init,      \
                      NULL, &fram_cy15x##t##_data_##n,           \
                      &fram_cy15x##t##_config_##n, POST_KERNEL,  \
                      CONFIG_FRAM_INIT_PRIORITY,                 \
