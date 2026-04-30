@@ -1081,7 +1081,7 @@ static inline int check_errors(const struct device* dev, char const* funcname) {
 
     return (0);
 
-error:
+error :
     if (LL_I2C_IsEnabledReloadMode(i2c)) {
         LL_I2C_DisableReloadMode(i2c);
     }

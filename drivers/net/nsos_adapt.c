@@ -72,10 +72,10 @@ static int socket_family_from_nsos_mid(int family_mid, int *family)
 		*family = NET_AF_INET6;
 		break;
 	case NSOS_MID_AF_UNIX:
-		*family = AF_UNIX;
+		*family = NET_AF_UNIX;
 		break;
 	case NSOS_MID_AF_PACKET:
-		*family = AF_PACKET;
+		*family = NET_AF_PACKET;
 		break;
 	default:
 		nsi_print_warning("%s: socket family %d not supported\n", __func__, family_mid);
@@ -97,10 +97,10 @@ static int socket_family_to_nsos_mid(int family, int *family_mid)
 	case NET_AF_INET6:
 		*family_mid = NSOS_MID_AF_INET6;
 		break;
-	case AF_UNIX:
+	case NET_AF_UNIX:
 		*family_mid = NSOS_MID_AF_UNIX;
 		break;
-	case AF_PACKET:
+	case NET_AF_PACKET:
 		*family_mid = NSOS_MID_AF_PACKET;
 		break;
 	default:
@@ -142,7 +142,7 @@ static int socket_proto_from_nsos_mid(int proto_mid, int *proto)
 		*proto = NET_IPPROTO_RAW;
 		break;
 	case NSOS_MID_IPPROTO_ETH_P_ALL:
-		*proto = htons(ETH_P_ALL);
+		*proto = net_htons(ETH_P_ALL);
 		break;
 	default:
 		nsi_print_warning("%s: socket protocol %d not supported\n", __func__, proto_mid);
@@ -183,7 +183,7 @@ static int socket_proto_to_nsos_mid(int proto, int *proto_mid)
 		*proto_mid = NSOS_MID_IPPROTO_RAW;
 		break;
 	case ETH_P_ALL:
-		*proto_mid = htons(NSOS_MID_IPPROTO_ETH_P_ALL);
+		*proto_mid = net_htons(NSOS_MID_IPPROTO_ETH_P_ALL);
 		break;
 	default:
 		nsi_print_warning("%s: socket protocol %d not supported\n", __func__, proto);
@@ -203,7 +203,7 @@ static int socket_type_from_nsos_mid(int type_mid, int *type)
 		*type = NET_SOCK_DGRAM;
 		break;
 	case NSOS_MID_SOCK_RAW:
-		*type = SOCK_RAW;
+		*type = NET_SOCK_RAW;
 		break;
 	default:
 		nsi_print_warning("%s: socket type %d not supported\n", __func__, type_mid);
@@ -405,7 +405,7 @@ static int sockaddr_to_nsos_mid(const struct net_sockaddr *addr, socklen_t addrl
 
 		return 0;
 	}
-	case AF_UNIX: {
+	case NET_AF_UNIX: {
 		struct nsos_mid_sockaddr_un *addr_un_mid =
 			(struct nsos_mid_sockaddr_un *)addr_mid;
 		const struct sockaddr_un *addr_un = (const struct sockaddr_un *)addr;
@@ -422,7 +422,7 @@ static int sockaddr_to_nsos_mid(const struct net_sockaddr *addr, socklen_t addrl
 
 		return 0;
 	}
-	case AF_PACKET: {
+	case NET_AF_PACKET: {
 		struct nsos_mid_sockaddr_ll *addr_ll_mid =
 			(struct nsos_mid_sockaddr_ll *)addr_mid;
 		const struct sockaddr_ll *addr_ll = (const struct sockaddr_ll *)addr;

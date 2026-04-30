@@ -488,7 +488,7 @@ static int eth_nxp_s32_set_config(const struct device* dev,
         #endif
 
         #if defined(CONFIG_ETH_NXP_S32_MULTICAST_FILTER)
-	case ETHERNET_CONFIG_TYPE_FILTER:
+        case ETHERNET_CONFIG_TYPE_FILTER :
             if (config->filter.set) {
                 Gmac_Ip_AddDstAddrToHashFilter(cfg->instance,
                                                config->filter.mac_address.addr);
