@@ -196,6 +196,7 @@ static inline void ring_buf_init(struct ring_buf* buf,
  * @param size Ring buffer size (in 32-bit words)
  * @param data Ring buffer data area (uint32_t data[size]).
  */
+__deprecated /* use #include <zephyr/sys/ringq.h> instead */
 static inline void ring_buf_item_init(struct ring_buf* buf,
                                       uint32_t size,
                                       uint32_t* data) {
@@ -243,7 +244,8 @@ static inline uint32_t ring_buf_space_get(struct ring_buf const* buf) {
  *
  * @return Ring buffer free space (in 32-bit words).
  */
-static inline uint32_t ring_buf_item_space_get(struct ring_buf const* buf) {
+__deprecated /* use #include <zephyr/sys/ringq.h> instead */
+static inline uint32_t ring_buf_item_space_get(const struct ring_buf* buf) {
     return (ring_buf_space_get(buf) / 4UL);
 }
 
@@ -480,6 +482,7 @@ uint32_t ring_buf_peek(struct ring_buf* buf, uint8_t* data, uint32_t size);
  * @retval 0 Data item was written.
  * @retval -EMSGSIZE Ring buffer has insufficient free space.
  */
+__deprecated /* use #include <zephyr/sys/ringq.h> instead */
 int ring_buf_item_put(struct ring_buf* buf, uint16_t type, uint8_t value,
                       uint32_t* data, uint8_t size32);
 
@@ -507,6 +510,7 @@ int ring_buf_item_put(struct ring_buf* buf, uint16_t type, uint8_t value,
  * @retval -EMSGSIZE Data area @a data is too small; @a size32 now contains
  *         the number of 32-bit words needed.
  */
+__deprecated /* use #include <zephyr/sys/ringq.h> instead */
 int ring_buf_item_get(struct ring_buf* buf, uint16_t* type, uint8_t* value,
                       uint32_t* data, uint8_t* size32);
 

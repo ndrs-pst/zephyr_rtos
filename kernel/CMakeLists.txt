@@ -62,7 +62,6 @@ add_compile_options($<TARGET_PROPERTY:compiler,warning_shadow_variables>)
 
 kernel_sources(
   main_weak.c
-  banner.c
   busy_wait.c
   device.c
   errno.c
@@ -125,7 +124,6 @@ kernel_sources_ifdef(CONFIG_TIMESLICING timeslicing.c)
 kernel_sources_ifdef(CONFIG_SCHED_DEADLINE deadline.c)
 kernel_sources_ifdef(CONFIG_SPIN_VALIDATE spinlock_validate.c)
 kernel_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
-kernel_sources_ifdef(CONFIG_BOOTARGS boot_args.c)
 kernel_sources_ifdef(CONFIG_THREAD_MONITOR thread_monitor.c)
 kernel_sources_ifdef(CONFIG_DEMAND_PAGING_STATS paging/statistics.c)
 

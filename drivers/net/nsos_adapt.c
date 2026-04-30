@@ -135,6 +135,9 @@ static int socket_proto_from_nsos_mid(int proto_mid, int *proto)
 	case NSOS_MID_IPPROTO_IPV6:
 		*proto = NET_IPPROTO_IPV6;
 		break;
+	case NSOS_MID_IPPROTO_ICMPV6:
+		*proto = IPPROTO_ICMPV6;
+		break;
 	case NSOS_MID_IPPROTO_RAW:
 		*proto = NET_IPPROTO_RAW;
 		break;
@@ -172,6 +175,9 @@ static int socket_proto_to_nsos_mid(int proto, int *proto_mid)
 		break;
 	case NET_IPPROTO_IPV6:
 		*proto_mid = NSOS_MID_IPPROTO_IPV6;
+		break;
+	case NET_IPPROTO_ICMPV6:
+		*proto_mid = NSOS_MID_IPPROTO_ICMPV6;
 		break;
 	case NET_IPPROTO_RAW:
 		*proto_mid = NSOS_MID_IPPROTO_RAW;

@@ -248,9 +248,6 @@ static void z_sys_init_run_level(enum init_level level) {
     }
 }
 
-/* defined in banner.c */
-extern void boot_banner(void);
-
 #if (defined(CONFIG_STATIC_INIT_GNU) && !defined(_MSC_VER)) /* #CUSTOM@NDRS */
 extern void (*__zephyr_init_array_start[])();
 extern void (*__zephyr_init_array_end[])();
@@ -303,7 +300,6 @@ static void bg_thread_main(void* unused1, void* unused2, void* unused3) {
     #if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
     z_stack_adjust_initialized = 1;
     #endif /* CONFIG_STACK_POINTER_RANDOM */
-    boot_banner();
 
     #if (defined(CONFIG_STATIC_INIT_GNU) && !defined(_MSC_VER)) /* #CUSTOM@NDRS */
     z_static_init_gnu();
@@ -331,10 +327,10 @@ static void bg_thread_main(void* unused1, void* unused2, void* unused3) {
 
     #ifdef CONFIG_BOOTARGS
     extern int main(int argc, char** argv);
-    extern char** prepare_main_args(int* argc);
+    extern char** sys_boot_prepare_main_args(int* argc);
 
     int argc = 0;
-    char** argv = prepare_main_args(&argc);
+    char** argv = sys_boot_prepare_main_args(&argc);
     (void) main(argc, argv);
     #else
     extern int main(void);

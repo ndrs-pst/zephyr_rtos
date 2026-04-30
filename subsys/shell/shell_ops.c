@@ -511,8 +511,8 @@ void z_shell_vt100_colors_restore(struct shell const* sh,
     vt100_bgcolor_set(sh, color->bgcol);
 }
 
-void z_shell_vfprintf(struct shell const* sh, enum shell_vt100_color color,
-                      char const* fmt, va_list args) {
+static void z_shell_print(struct shell const* sh, enum shell_vt100_color color, bool do_cbprintf,
+                          void* ptr, va_list args) {
     if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS) &&
         z_flag_use_colors_get(sh) &&
         (color != sh->ctx->vt100_ctx.col.col)) {
@@ -521,13 +521,34 @@ void z_shell_vfprintf(struct shell const* sh, enum shell_vt100_color color,
         z_shell_vt100_colors_store(sh, &col);
         z_shell_vt100_color_set(sh, color);
 
-        z_shell_fprintf_fmt(sh->fprintf_ctx, fmt, args);
+        if (do_cbprintf) {
+            z_shell_cbpprintf_fmt(sh->fprintf_ctx, ptr);
+        }
+        else {
+            z_shell_fprintf_fmt(sh->fprintf_ctx, (const char*)ptr, args);
+        }
 
         z_shell_vt100_colors_restore(sh, &col);
     }
     else {
-        z_shell_fprintf_fmt(sh->fprintf_ctx, fmt, args);
+        if (do_cbprintf) {
+            z_shell_cbpprintf_fmt(sh->fprintf_ctx, ptr);
+        }
+        else {
+            z_shell_fprintf_fmt(sh->fprintf_ctx, (const char*)ptr, args);
+        }
     }
+}
+
+void z_shell_cbpprintf(struct shell const* sh, enum shell_vt100_color color, void* package) {
+    va_list no_used = {0};
+
+    z_shell_print(sh, color, true, package, no_used);
+}
+
+void z_shell_vfprintf(struct shell const* sh, enum shell_vt100_color color,
+                      const char* fmt, va_list args) {
+    z_shell_print(sh, color, false, (void*)fmt, args);
 }
 
 void z_shell_fprintf(struct shell const* sh,

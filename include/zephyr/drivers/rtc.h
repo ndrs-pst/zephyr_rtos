@@ -74,7 +74,6 @@ struct rtc_time {
 };
 
 /**
- * @typedef rtc_update_callback
  * @brief RTC update event callback
  *
  * @param dev Device instance invoking the handler
@@ -83,7 +82,6 @@ struct rtc_time {
 typedef void (*rtc_update_callback)(const struct device* dev, void* user_data);
 
 /**
- * @typedef rtc_alarm_callback
  * @brief RTC alarm triggered callback
  *
  * @param dev Device instance invoking the handler
@@ -99,7 +97,6 @@ typedef void (*rtc_alarm_callback)(const struct device* dev, uint16_t id, void* 
  */
 
 /**
- * @typedef rtc_api_set_time
  * @brief Callback API to set RTC time.
  *
  * See rtc_set_time() for argument description.
@@ -113,7 +110,6 @@ typedef int (*rtc_api_set_time)(const struct device* dev, const struct rtc_time*
 typedef int (*rtc_api_set_time_ext)(const struct device* dev, uint8_t const* du);
 
 /**
- * @typedef rtc_api_get_time
  * @brief Callback API to get RTC time.
  *
  * See rtc_get_time() for argument description.
@@ -127,7 +123,6 @@ typedef int (*rtc_api_get_time)(const struct device* dev, struct rtc_time* timep
 typedef int (*rtc_api_get_time_ext)(const struct device* dev, uint8_t* du);
 
 /**
- * @typedef rtc_api_alarm_get_supported_fields
  * @brief Callback API to get the supported fields of the RTC alarm time.
  *
  * See rtc_alarm_get_supported_fields() for argument description.
@@ -136,7 +131,6 @@ typedef int (*rtc_api_alarm_get_supported_fields)(const struct device* dev, uint
                                                   uint16_t* mask);
 
 /**
- * @typedef rtc_api_alarm_set_time
  * @brief Callback API to set RTC alarm time.
  *
  * See rtc_alarm_set_time() for argument description.
@@ -145,7 +139,6 @@ typedef int (*rtc_api_alarm_set_time)(const struct device* dev, uint16_t id, uin
                                       const struct rtc_time* timeptr);
 
 /**
- * @typedef rtc_api_alarm_get_time
  * @brief Callback API to get RTC alarm time.
  *
  * See rtc_alarm_get_time() for argument description.
@@ -154,7 +147,6 @@ typedef int (*rtc_api_alarm_get_time)(const struct device* dev, uint16_t id, uin
                                       struct rtc_time* timeptr);
 
 /**
- * @typedef rtc_api_alarm_is_pending
  * @brief Callback API to test if RTC alarm is pending.
  *
  * See rtc_alarm_is_pending() for argument description.
@@ -162,7 +154,6 @@ typedef int (*rtc_api_alarm_get_time)(const struct device* dev, uint16_t id, uin
 typedef int (*rtc_api_alarm_is_pending)(const struct device* dev, uint16_t id);
 
 /**
- * @typedef rtc_api_alarm_set_callback
  * @brief Callback API to set RTC alarm callback.
  *
  * See rtc_alarm_set_callback() for argument description.
@@ -171,7 +162,6 @@ typedef int (*rtc_api_alarm_set_callback)(const struct device* dev, uint16_t id,
                                           rtc_alarm_callback callback, void* user_data);
 
 /**
- * @typedef rtc_api_update_set_callback
  * @brief Callback API to set RTC update callback.
  *
  * See rtc_update_set_callback() for argument description.
@@ -180,7 +170,6 @@ typedef int (*rtc_api_update_set_callback)(const struct device* dev,
                                            rtc_update_callback callback, void* user_data);
 
 /**
- * @typedef rtc_api_set_calibration
  * @brief Callback API to set RTC calibration.
  *
  * See rtc_set_calibration() for argument description.
@@ -188,7 +177,6 @@ typedef int (*rtc_api_update_set_callback)(const struct device* dev,
 typedef int (*rtc_api_set_calibration)(const struct device* dev, int32_t calibration);
 
 /**
- * @typedef rtc_api_get_calibration
  * @brief Callback API to get RTC calibration.
  *
  * See rtc_get_calibration() for argument description.

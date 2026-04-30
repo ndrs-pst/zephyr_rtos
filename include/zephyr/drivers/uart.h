@@ -309,7 +309,6 @@ struct uart_event {
 };
 
 /**
- * @typedef uart_callback_t
  * @brief Define the application callback function signature for
  * uart_callback_set() function.
  *

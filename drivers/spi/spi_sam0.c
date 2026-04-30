@@ -36,7 +36,7 @@ struct spi_sam0_config {
     uint32_t gclk_gen;
     uint16_t gclk_id;
 
-    #ifdef CONFIG_SPI_ASYNC
+    #ifdef CONFIG_SPI_SAM0_DMA
     const struct device* dma_dev;
     uint8_t tx_dma_request;
     uint8_t tx_dma_channel;
@@ -48,7 +48,8 @@ struct spi_sam0_config {
 /* Device run time data */
 struct spi_sam0_data {
     struct spi_context ctx;
-    #ifdef CONFIG_SPI_ASYNC
+
+    #ifdef CONFIG_SPI_SAM0_DMA
     const struct device* dev;
     uint32_t dma_segment_len;
     #endif
@@ -238,7 +239,7 @@ static void spi_sam0_fast_tx(SercomSpi* regs, const struct spi_buf* tx_buf) {
     const uint8_t* pend;
     uint8_t ch;
 
-    p    = tx_buf->buf;
+    p = tx_buf->buf;
     pend = (uint8_t*)tx_buf->buf + tx_buf->len;
     while (p != pend) {
         ch = *p++;
@@ -415,60 +416,7 @@ static bool spi_sam0_is_regular(const struct spi_buf_set* tx_bufs,
     return (rc);
 }
 
-static int spi_sam0_transceive(const struct device* dev,
-                               const struct spi_config* config,
-                               const struct spi_buf_set* tx_bufs,
-                               const struct spi_buf_set* rx_bufs) {
-    const struct spi_sam0_config* cfg;
-    struct spi_sam0_data* data;
-    SercomSpi* regs;
-    bool rc;
-    int  ret;
-
-    cfg  = dev->config;
-    data = dev->data;
-    regs = cfg->regs;
-
-    spi_context_lock(&data->ctx, false, NULL, NULL, config);
-
-    ret = spi_sam0_configure(dev, config);
-    if (ret == 0) {
-        spi_context_cs_control(&data->ctx, true);
-
-        /* This driver special cases the common send only, receive
-         * only, and transmit then receive operations.  This special
-         * casing is 4x faster than the spi_context() routines
-         * and allows the transmit and receive to be interleaved.
-         */
-        rc = spi_sam0_is_regular(tx_bufs, rx_bufs);
-        if (rc == true) {
-            spi_sam0_fast_transceive(dev, config, tx_bufs, rx_bufs);
-        }
-        else {
-            spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
-
-            do {
-                spi_sam0_shift_master(regs, data);
-            } while (spi_sam0_transfer_ongoing(data));
-        }
-
-        spi_context_cs_control(&data->ctx, false);
-    }
-
-    spi_context_release(&data->ctx, ret);
-
-    return (ret);
-}
-
-static int spi_sam0_transceive_sync(const struct device* dev,
-                                    const struct spi_config* config,
-                                    const struct spi_buf_set* tx_bufs,
-                                    const struct spi_buf_set* rx_bufs) {
-    return spi_sam0_transceive(dev, config, tx_bufs, rx_bufs);
-}
-
-#ifdef CONFIG_SPI_ASYNC
-
+#ifdef CONFIG_SPI_SAM0_DMA
 static void spi_sam0_dma_rx_done(const struct device* dma_dev, void* arg,
                                  uint32_t id, int error_code);
 
@@ -649,54 +597,105 @@ static void spi_sam0_dma_rx_done(const struct device* dma_dev, void* arg,
         }
     }
 }
+#endif /* CONFIG_SPI_SAM0_DMA */
 
+static int spi_sam0_transceive(const struct device* dev,
+                               const struct spi_config* config,
+                               const struct spi_buf_set* tx_bufs,
+                               const struct spi_buf_set* rx_bufs,
+                               bool asynchronous,
+                               spi_callback_t cb,
+                               void* userdata) {
+    const struct spi_sam0_config* cfg = dev->config;
+    struct spi_sam0_data* data = dev->data;
+    SercomSpi* regs = cfg->regs;
+    int ret;
 
+    spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
+
+    ret = spi_sam0_configure(dev, config);
+    if (ret != 0) {
+        goto err_unlock;
+    }
+
+    spi_context_cs_control(&data->ctx, true);
+
+    #ifdef CONFIG_SPI_SAM0_DMA
+    /*
+     * Transmit clocks the output and we use receive to determine when
+     * the transmit is done, so we always need both
+     */
+    if ((cfg->dma_dev != NULL) && (cfg->tx_dma_channel != 0xFF) && (cfg->rx_dma_channel != 0xFF)) {
+        spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+
+        spi_sam0_dma_advance_segment(dev);
+        ret = spi_sam0_dma_advance_buffers(dev);
+        if (ret != 0) {
+            dma_stop(cfg->dma_dev, cfg->tx_dma_channel);
+            dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
+
+            spi_context_cs_control(&data->ctx, false);
+        }
+        else {
+            /* Wait for DMA completion signaled by spi_sam0_dma_rx_done() */
+            ret = spi_context_wait_for_completion(&data->ctx);
+        }
+        spi_context_release(&data->ctx, ret);
+
+        return (ret);
+    }
+
+    if (asynchronous == true) {
+        ret = -ENOTSUP;
+        spi_context_cs_control(&data->ctx, false);
+        goto err_unlock;
+    }
+    #endif /* CONFIG_SPI_SAM0_DMA */
+
+    /* This driver special cases the common send only, receive
+     * only, and transmit then receive operations.    This special
+     * casing is 4x faster than the spi_context() routines
+     * and allows the transmit and receive to be interleaved.
+     */
+    if (spi_sam0_is_regular(tx_bufs, rx_bufs)) {
+        spi_sam0_fast_transceive(dev, config, tx_bufs, rx_bufs);
+    }
+    else {
+        spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+
+        do {
+            spi_sam0_shift_master(regs, data);
+        } while (spi_sam0_transfer_ongoing(data));
+    }
+
+    spi_context_cs_control(&data->ctx, false);
+
+err_unlock :
+    spi_context_release(&data->ctx, ret);
+
+    return (ret);
+}
+
+#ifdef CONFIG_SPI_ASYNC
 static int spi_sam0_transceive_async(const struct device* dev,
                                      const struct spi_config* config,
                                      const struct spi_buf_set* tx_bufs,
                                      const struct spi_buf_set* rx_bufs,
                                      spi_callback_t cb,
                                      void* userdata) {
-    const struct spi_sam0_config* cfg;
-    struct spi_sam0_data* data;
-    int ret;
-
-    cfg  = dev->config;
-    data = dev->data;
-
-    /*
-     * Transmit clocks the output and we use receive to determine when
-     * the transmit is done, so we always need both
-     */
-    if ((cfg->tx_dma_channel != 0xFFU) && (cfg->rx_dma_channel != 0xFF)) {
-        spi_context_lock(&data->ctx, true, cb, userdata, config);
-
-        ret = spi_sam0_configure(dev, config);
-        if (ret == 0) {
-            spi_context_cs_control(&data->ctx, true);
-
-            spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
-
-            spi_sam0_dma_advance_segment(dev);
-            ret = spi_sam0_dma_advance_buffers(dev);
-            if (ret != 0) {
-                dma_stop(cfg->dma_dev, cfg->tx_dma_channel);
-                dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
-                spi_context_cs_control(&data->ctx, false);
-            }
-        }
-
-        spi_context_release(&data->ctx, ret);
-    }
-    else {
-        ret = -ENOTSUP;
-    }
-
-    return (ret);
+    return spi_sam0_transceive(dev, config, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static int spi_sam0_release(const struct device* dev, const struct spi_config* config) {
+static int spi_sam0_transceive_sync(const struct device* dev,
+                                    const struct spi_config* config,
+                                    const struct spi_buf_set* tx_bufs,
+                                    const struct spi_buf_set* rx_bufs) {
+    return spi_sam0_transceive(dev, config, tx_bufs, rx_bufs, false, NULL, NULL);
+}
+
+static int spi_sam0_release(const struct device* dev,
+                            const struct spi_config* config) {
     struct spi_sam0_data* data = dev->data;
 
     spi_context_unlock_unconditionally(&data->ctx);
@@ -735,8 +734,8 @@ static int spi_sam0_init(const struct device* dev) {
 
     ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
     if (ret == 0) {
-        #ifdef CONFIG_SPI_ASYNC
-        if (device_is_ready(cfg->dma_dev) == true) {
+        #ifdef CONFIG_SPI_SAM0_DMA
+        if ((cfg->dma_dev != NULL) && !device_is_ready(cfg->dma_dev)) {
             data->dev = dev;
         }
         else {
@@ -770,13 +769,15 @@ static DEVICE_API(spi, spi_sam0_driver_api) = {
     .release = spi_sam0_release,
 };
 
-#if CONFIG_SPI_ASYNC
-#define SPI_SAM0_DMA_CHANNELS(n)                    \
+#if CONFIG_SPI_SAM0_DMA
+#define SPI_SAM0_DMA_CHANNELS(n)                                \
+    IF_ENABLED(DT_INST_NODE_HAS_PROP(n, dmas), (                \
     .dma_dev = DEVICE_DT_GET(ATMEL_SAM0_DT_INST_DMA_CTLR(n, tx)),   \
     .tx_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, tx),    \
     .tx_dma_channel = ATMEL_SAM0_DT_INST_DMA_CHANNEL(n, tx),    \
     .rx_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, rx),    \
-    .rx_dma_channel = ATMEL_SAM0_DT_INST_DMA_CHANNEL(n, rx),
+    .rx_dma_channel = ATMEL_SAM0_DT_INST_DMA_CHANNEL(n, rx),    \
+    ))
 #else
 #define SPI_SAM0_DMA_CHANNELS(n)
 #endif
