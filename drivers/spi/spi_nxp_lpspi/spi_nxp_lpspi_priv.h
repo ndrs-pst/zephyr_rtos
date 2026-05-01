@@ -10,6 +10,7 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/irq.h>
 
@@ -50,6 +51,7 @@ struct lpspi_config {
     uint32_t sck_pcs_delay;
     uint32_t transfer_delay;
     const struct pinctrl_dev_config* pincfg;
+    struct reset_dt_spec reset;
     uint8_t data_pin_config;
     bool tristate_output;
     uint8_t tx_fifo_size;
@@ -84,7 +86,7 @@ typedef enum {
 } lpspi_transfer_state_t;
 
 struct spi_dma_stream {
-    const struct device *dma_dev;
+    const struct device* dma_dev;
     uint32_t channel;
     struct dma_config dma_cfg;
     struct dma_block_config dma_blk_cfg;
@@ -116,29 +118,29 @@ struct spi_nxp_stream_data {
     const struct spi_stream_config* cfg;
 
     /* ------------------------------------------------------------------ */
-    /* Ring buffer write pointer (software-tracked per FCF event)          */
+    /* Ring buffer write pointer (software-tracked per FCF event)         */
     /* Advanced by frame_size bytes on every FCF interrupt.               */
     /* ------------------------------------------------------------------ */
     uint32_t write_pos; /**< Byte offset of next frame start in ring_buf */
 
     /* ------------------------------------------------------------------ */
-    /* Frame descriptor pool state                                         */
+    /* Frame descriptor pool state                                        */
     /* ------------------------------------------------------------------ */
     uint32_t desc_pool_head; /**< Next pool slot to use (mod frame_pool_count) */
     uint32_t overrun_count;  /**< Descriptors dropped due to pool exhaustion */
 
     /* ------------------------------------------------------------------ */
-    /* Spurious-FCF suppression                                            */
+    /* Spurious-FCF suppression                                           */
     /* dma_daddr_reg: cached pointer to the eDMA TCD_DADDR MMIO register  */
     /* for the RX channel.  Populated by lpspi_stream_dma_configure()     */
-    /* after dma_config() succeeds; valid for the streaming session.       */
-    /* Reading DADDR is ISR-safe (MMIO register — no locking needed).      */
-    /*                                                                     */
-    /* A spurious FCF fires when the master deasserts CS with no bytes     */
+    /* after dma_config() succeeds; valid for the streaming session.      */
+    /* Reading DADDR is ISR-safe (MMIO register — no locking needed).     */
+    /*                                                                    */
+    /* A spurious FCF fires when the master deasserts CS with no bytes    */
     /* clocked.  DADDR hasn't advanced past write_pos in that case, so the */
-    /* handler suppresses the event instead of posting a garbage frame.    */
-    /*                                                                     */
-    /* spurious_count: diagnostic, incremented per suppressed event.       */
+    /* handler suppresses the event instead of posting a garbage frame.   */
+    /*                                                                    */
+    /* spurious_count: diagnostic, incremented per suppressed event.      */
     /* ------------------------------------------------------------------ */
     volatile uint32_t* dma_daddr_reg;   /**< &TCD_DADDR for RX channel (ISR-safe read) */
     uint32_t spurious_count;            /**< Suppressed spurious FCF events */
@@ -205,6 +207,7 @@ int lpspi_wait_tx_fifo_empty(const struct device* dev, spi_operation_t operation
         .sck_pcs_delay   = DT_INST_PROP_OR(n, sck_pcs_delay, 0),                \
         .transfer_delay  = DT_INST_PROP_OR(n, transfer_delay, 0),               \
         .pincfg          = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                   \
+        .reset           = RESET_DT_SPEC_INST_GET_OR(n, {0}),                   \
         .data_pin_config = (uint8_t)DT_INST_ENUM_IDX(n, data_pin_config),       \
         .tristate_output = DT_INST_PROP(n, tristate_output),                    \
         .rx_fifo_size    = (uint8_t)DT_INST_PROP(n, rx_fifo_size),              \
@@ -236,7 +239,7 @@ int lpspi_wait_tx_fifo_empty(const struct device* dev, spi_operation_t operation
  * Called from lpspi_isr() in spi_nxp_lpspi_dma.c when FCF (Frame Complete
  * Flag) is asserted.  Runs at interrupt priority — must not block.
  */
-void lpspi_stream_isr_fcf_handler(const struct device *dev);
+void lpspi_stream_isr_fcf_handler(const struct device* dev);
 
 /**
  * Per-instance static storage declaration — used inside LPSPI_DMA_INIT(n)

@@ -538,6 +538,7 @@ static int cmd_set_calibration(const struct shell* sh, size_t argc, char** argv)
 
 STRUCT_SECTION_START_EXTERN(Z_DEVICE_API_TYPE(rtc));
 STRUCT_SECTION_END_EXTERN(Z_DEVICE_API_TYPE(rtc));
+extern const uint8_t Z_DEVICE_API_EXT_END(Z_DEVICE_API_TYPE(rtc))[];
 
 static bool device_is_rtc(const struct device* dev) {
     return DEVICE_API_IS(rtc, dev);

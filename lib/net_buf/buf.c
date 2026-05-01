@@ -463,7 +463,7 @@ void net_buf_unref(struct net_buf *buf)
 		struct net_buf *frags = buf->frags;
 		__maybe_unused uint8_t pool_id = buf->pool_id;
 		struct net_buf_pool *pool;
-		uint8_t old_ref = atomic_dec(&buf->ref_word);
+		uint8_t old_ref = (uint8_t)atomic_dec(&buf->ref_word);
 
 		NET_BUF_DBG("buf %p ref %u pool_id %u frags %p", buf, old_ref,
 			    pool_id, frags);
@@ -507,7 +507,7 @@ struct net_buf *net_buf_ref(struct net_buf *buf)
 {
 	__ASSERT_NO_MSG(buf);
 
-	__maybe_unused uint8_t old_ref = atomic_inc(&buf->ref_word);
+	__maybe_unused uint8_t old_ref = (uint8_t)atomic_inc(&buf->ref_word);
 
 	__ASSERT(old_ref != 0xff, "buf %p ref count overflow", buf);
 	NET_BUF_DBG("buf %p (old) ref %u pool_id %u",
@@ -731,7 +731,7 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
 	} while (1);
 
 	/* Unreachable */
-	return 0;
+	return (0);
 }
 
 size_t net_buf_data_match(const struct net_buf *buf, size_t offset, const void *data, size_t len)

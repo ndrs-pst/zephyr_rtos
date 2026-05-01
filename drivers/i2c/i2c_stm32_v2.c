@@ -153,7 +153,10 @@ static inline int wait_bus_idle(const struct device* dev, uint32_t timeout_us) {
 #ifdef CONFIG_I2C_STM32_V2_DMA
 static int configure_dma(struct stream const* dma, struct dma_config* dma_cfg,
                          struct dma_block_config* blk_cfg) {
-    if (!device_is_ready(dma->dev_dma)) {
+    bool is_ready;
+
+    is_ready = device_is_ready(dma->dev_dma);
+    if (is_ready == false) {
         LOG_ERR("DMA device not ready");
         return (-ENODEV);
     }
@@ -478,7 +481,7 @@ int i2c_stm32_target_register(const struct device* dev,
     uint32_t bitrate_cfg;
     int ret;
 
-    if (!config) {
+    if (config == NULL) {
         return (-EINVAL);
     }
 
@@ -762,14 +765,14 @@ int i2c_stm32_error(const struct device* dev) {
      */
     if (LL_I2C_IsActiveFlag_BERR(i2c)) {
         LL_I2C_ClearFlag_BERR(i2c);
-        data->current.is_err = 1U;
         #if defined(CONFIG_I2C_TARGET)
-        if (error_cb != NULL) {
-            error_cb(data->target_cfg, I2C_ERROR_GENERIC);
+        if (!data->controller_active) {
+            if (error_cb != NULL) {
+                error_cb(data->target_cfg, I2C_ERROR_GENERIC);
+            }
             goto end;
         }
         #endif
-        return (0);
     }
 
     #if defined(CONFIG_SMBUS_STM32_SMBALERT)

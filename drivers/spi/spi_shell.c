@@ -122,8 +122,9 @@ static size_t num_maps = ARRAY_SIZE(maps) - CONFIG_SPI_SHELL_MAX_DEVICE_SLOTS;
 
 STRUCT_SECTION_START_EXTERN(Z_DEVICE_API_TYPE(spi));
 STRUCT_SECTION_END_EXTERN(Z_DEVICE_API_TYPE(spi));
+extern const uint8_t Z_DEVICE_API_EXT_END(Z_DEVICE_API_TYPE(spi))[];
 STRUCT_SECTION_START_EXTERN(Z_DEVICE_API_TYPE(gpio));
-STRUCT_SECTION_END_EXTERN(Z_DEVICE_API_TYPE(gpio));
+extern const uint8_t Z_DEVICE_API_EXT_END(Z_DEVICE_API_TYPE(gpio))[];
 
 static bool device_is_spi(const struct device* dev) {
     return DEVICE_API_IS(spi, dev);

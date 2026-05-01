@@ -78,6 +78,7 @@ static void can_shell_rx_msgq_triggered_work_handler(struct k_work* work);
 
 STRUCT_SECTION_START_EXTERN(Z_DEVICE_API_TYPE(can));
 STRUCT_SECTION_END_EXTERN(Z_DEVICE_API_TYPE(can));
+extern const uint8_t Z_DEVICE_API_EXT_END(Z_DEVICE_API_TYPE(can))[];
 
 static bool can_device_check(const struct device* dev) {
     return DEVICE_API_IS(can, dev) && device_is_ready(dev);

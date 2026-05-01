@@ -47,7 +47,7 @@ static inline reset_ip_name_t lpspi_get_reset(LPSPI_Type* const lpspi) {
 
     __ASSERT_NO_MSG(rst != -1);
 
-    return rst;
+    return (rst);
 }
 #endif
 
@@ -66,7 +66,7 @@ static inline clock_ip_name_t lpspi_get_clock(LPSPI_Type* const lpspi) {
 
     __ASSERT_NO_MSG(clk != -1);
 
-    return clk;
+    return (clk);
 }
 #endif
 
@@ -79,7 +79,7 @@ int lpspi_wait_tx_fifo_empty(const struct device* dev, spi_operation_t operation
      * Don't wait - it will deadlock.
      */
     if (SPI_OP_MODE_GET(operation) == SPI_OP_MODE_SLAVE) {
-        return 0;
+        return (0);
     }
 
     while (FIELD_GET(LPSPI_FSR_TXCOUNT_MASK, lpspi->FSR) != 0) {
@@ -93,7 +93,7 @@ int lpspi_wait_tx_fifo_empty(const struct device* dev, spi_operation_t operation
         }
     }
 
-    return 0;
+    return (0);
 }
 
 int spi_lpspi_release(const struct device* dev, const struct spi_config* spi_cfg) {
@@ -101,7 +101,7 @@ int spi_lpspi_release(const struct device* dev, const struct spi_config* spi_cfg
 
     spi_context_unlock_unconditionally(&data->ctx);
 
-    return 0;
+    return (0);
 }
 
 static inline int lpspi_validate_xfer_args(const struct spi_config* spi_cfg) {
@@ -131,7 +131,7 @@ static inline int lpspi_validate_xfer_args(const struct spi_config* spi_cfg) {
         return -EINVAL;
     }
 
-    return 0;
+    return (0);
 }
 
 static uint8_t lpspi_calc_delay_scaler(uint32_t desired_delay_ns,
@@ -299,12 +299,12 @@ int lpspi_configure(const struct device* dev, const struct spi_config* spi_cfg) 
      * module reset before each transfer and reduce latency.
      */
     if (already_configured && !IS_ENABLED(CONFIG_SPI_NXP_LPSPI_ERR050456)) {
-        return 0;
+        return (0);
     }
 
     ret = lpspi_validate_xfer_args(spi_cfg);
     if (ret != 0) {
-        return ret;
+        return (ret);
     }
 
     /* For the purpose of configuring the LPSPI, 8 is the minimum frame size for the hardware */
@@ -360,14 +360,38 @@ int lpspi_configure(const struct device* dev, const struct spi_config* spi_cfg) 
     return (ret);
 }
 
-static void lpspi_module_system_init(LPSPI_Type* lpspi) {
+static int lpspi_module_system_init(const struct device* dev) {
+    const struct lpspi_config* config = dev->config;
+
+    #if defined(LPSPI_CLOCKS) || defined(LPSPI_RSTS)
+    LPSPI_Type* lpspi = (LPSPI_Type*)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+    #endif
+
     #ifdef LPSPI_CLOCKS
     CLOCK_EnableClock(lpspi_get_clock(lpspi));
     #endif
 
-    #ifdef LPSPI_RSTS
-    RESET_ReleasePeripheralReset(lpspi_get_reset(lpspi));
-    #endif
+    if (config->reset.dev != NULL) {
+        int ret;
+
+        if (!device_is_ready(config->reset.dev)) {
+            LOG_ERR("reset controller not ready");
+            return (-ENODEV);
+        }
+
+        ret = reset_line_deassert_dt(&config->reset);
+        if (ret != 0) {
+            LOG_ERR("Failed to deassert reset line (%d)", ret);
+            return (ret);
+        }
+    }
+    else {
+        #ifdef LPSPI_RSTS
+        RESET_ReleasePeripheralReset(lpspi_get_reset(lpspi));
+        #endif
+    }
+
+    return (0);
 }
 
 int spi_nxp_init_common(const struct device* dev) {
@@ -380,7 +404,7 @@ int spi_nxp_init_common(const struct device* dev) {
 
     if (!device_is_ready(config->clock_dev)) {
         LOG_ERR("clock control device not ready");
-        return -ENODEV;
+        return (-ENODEV);
     }
 
     ret = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
@@ -389,27 +413,30 @@ int spi_nxp_init_common(const struct device* dev) {
         if (ret != -ENOSYS) {
             /* Real error occurred */
             LOG_ERR("Failed to configure clock: %d", ret);
-            return ret;
+            return (ret);
         }
     }
 
-    lpspi_module_system_init(lpspi);
+    ret = lpspi_module_system_init(dev);
+    if (ret != 0) {
+        return (ret);
+    }
 
     data->major_version = (lpspi->VERID & LPSPI_VERID_MAJOR_MASK) >> LPSPI_VERID_MAJOR_SHIFT;
 
     ret = spi_context_cs_configure_all(&data->ctx);
     if (ret < 0) {
-        return ret;
+        return (ret);
     }
 
     ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
     if (ret != 0) {
-        return ret;
+        return (ret);
     }
 
     ret = clock_control_get_rate(config->clock_dev, config->clock_subsys, &data->clock_freq);
     if (ret != 0) {
-        return ret;
+        return (ret);
     }
 
     /* Full software reset */
@@ -419,5 +446,5 @@ int spi_nxp_init_common(const struct device* dev) {
 
     config->irq_config_func(dev);
 
-    return ret;
+    return (ret);
 }

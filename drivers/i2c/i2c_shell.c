@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/drivers/i2c.h>
-#include <zephyr/drivers/i3c.h>
 #include <zephyr/shell/shell.h>
 #include <stdlib.h>
 #include <string.h>
@@ -176,7 +175,8 @@ static int cmd_i2c_write(struct shell const* sh, size_t argc, char** argv) {
 /* i2c write_byte <device> <dev_addr> <reg_addr> <value> */
 static int cmd_i2c_write_byte(struct shell const* sh, size_t argc, char** argv) {
     return i2c_write_from_buffer(sh, argv[ARGV_DEV],
-                                 argv[ARGV_ADDR], argv[ARGV_REG], &argv[4], 1);
+                                 argv[ARGV_ADDR], argv[ARGV_REG],
+                                 &argv[4], 1);
 }
 
 static int i2c_read_to_buffer(struct shell const* sh,
@@ -189,8 +189,7 @@ static int i2c_read_to_buffer(struct shell const* sh,
 
     dev = shell_device_get_binding(s_dev_name);
     if (!dev) {
-        shell_error(sh, "I2C: Device driver %s not found.",
-                    s_dev_name);
+        shell_error(sh, "I2C: Device driver %s not found.", s_dev_name);
         return (-ENODEV);
     }
 
@@ -214,8 +213,7 @@ static int i2c_read_to_buffer(struct shell const* sh,
     }
 
     if (ret < 0) {
-        shell_error(sh, "Failed to read from device: %s",
-                    s_dev_addr);
+        shell_error(sh, "Failed to read from device: %s", s_dev_addr);
         return (-EIO);
     }
 
@@ -372,17 +370,10 @@ __maybe_unused static int cmd_i2c_target_unregister(struct shell const* sh, size
 /* #CUSTOM@NDRS remove `|| DEVICE_API_IS(i3c, dev)` from return statement */
 STRUCT_SECTION_START_EXTERN(Z_DEVICE_API_TYPE(i2c));
 STRUCT_SECTION_END_EXTERN(Z_DEVICE_API_TYPE(i2c));
-#ifdef CONFIG_I3C
-STRUCT_SECTION_START_EXTERN(Z_DEVICE_API_TYPE(i3c));
-STRUCT_SECTION_END_EXTERN(Z_DEVICE_API_TYPE(i3c));
-#endif
+extern const uint8_t Z_DEVICE_API_EXT_END(Z_DEVICE_API_TYPE(i2c))[];
 
-static bool device_is_i2c(const struct device *dev) {
-    #ifdef CONFIG_I3C
-    return DEVICE_API_IS(i2c, dev) || DEVICE_API_IS(i3c, dev);
-    #else
+static bool device_is_i2c(const struct device* dev) {
     return DEVICE_API_IS(i2c, dev);
-    #endif
 }
 
 static void device_name_get(size_t idx, struct shell_static_entry* entry) {

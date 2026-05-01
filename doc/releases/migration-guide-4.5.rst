@@ -63,6 +63,13 @@ Digital Microphone
   have been updated. Application code using :c:func:`dmic_configure`, :c:func:`dmic_trigger`, and
   :c:func:`dmic_read` is not impacted.
 
+Ethernet
+========
+
+* ``ETHERNET_CONFIG_TYPE_T1S_PARAM`` and the related ``NET_REQUEST_ETHERNET_SET_T1S_PARAM`` has
+  been removed. :c:func:`phy_set_plca_cfg` together with :c:func:`net_eth_get_phy` should be
+  used instead to set these parameters (:github:`108136`).
+
 Flash
 =====
 * :dtcompatible:`jedec,spi-nand` now requires a ``plane-bytes`` property, which indicates the size
@@ -144,14 +151,25 @@ Bluetooth Audio
     :c:member:`bt_cap_commander_cb.broadcast_reception_start` is called. This also applies for
     :c:func:`bt_cap_commander_broadcast_reception_stop` in a similar manner. (:github:`101070`)
 
+* CCP
+
+  * :c:member:`bt_tbs_client_cb.technology` has changed the ``value`` parameter from ``uint32_t``
+    to ``enum bt_bearer_tech``. Applications using this application should switch the type.
+    (:github:`102430`)
+  * All ``BT_TBS_TECHNOLOGY_*`` values like ``BT_TBS_TECHNOLOGY_3G`` are renamed to
+    ``BT_BEARER_TECH_*`` like ``BT_BEARER_TECH_3G``. Applications can do search-and-replace from
+    ``BT_TBS_TECHNOLOGY`` to ``BT_BEARER_TECH``. Additionally the values are now defined in
+    :zephyr_file:`include/zephyr/bluetooth/assigned_numbers.h` instead of
+    :zephyr_file:`include/zephyr/bluetooth/audio/tbs.h`. (:github:`102430`)
+
 * CSIP
 
-   * Optional CSIS characteristics have been made configurable via Kconfig and must be enabled
-     explicitly:
+  * Optional CSIS characteristics have been made configurable via Kconfig and must be enabled
+    explicitly:
 
-     * Coordinated Set Size → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT`
-     * Set Member Lock → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT`
-     * Set Member Rank → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT`
+    * Coordinated Set Size → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT`
+    * Set Member Lock → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT`
+    * Set Member Rank → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT`
 
 .. zephyr-keep-sorted-stop
 

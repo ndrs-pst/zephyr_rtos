@@ -149,6 +149,7 @@ static int cmd_nsec(const struct shell* sh, size_t argc, char** argv) {
 
 STRUCT_SECTION_START_EXTERN(Z_DEVICE_API_TYPE(pwm));
 STRUCT_SECTION_END_EXTERN(Z_DEVICE_API_TYPE(pwm));
+extern const uint8_t Z_DEVICE_API_EXT_END(Z_DEVICE_API_TYPE(pwm))[];
 
 static bool device_is_pwm(const struct device* dev) {
     return DEVICE_API_IS(pwm, dev);

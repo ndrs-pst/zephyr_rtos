@@ -714,8 +714,8 @@ void net_pkt_frag_unref(struct net_buf *frag)
 	 */
 	while (frag) {
 		struct net_buf *next = frag->frags;
-		struct net_buf_pool *pool = net_buf_pool_get(frag->pool_id);
-		uint8_t old_ref = atomic_dec(&frag->ref_word);
+		struct net_buf_pool const *pool = net_buf_pool_get(frag->pool_id);
+		uint8_t old_ref = (uint8_t)atomic_dec(&frag->ref_word);
 
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
 		NET_DBG("%s (%s) [%d] frag %p ref %u (%s():%d)",

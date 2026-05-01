@@ -13,9 +13,7 @@
 #define DT_DRV_COMPAT st_stm32_flash_controller
 
 #include <string.h>
-#if defined(CONFIG_SOC_SERIES_STM32C5X) || defined(CONFIG_SOC_SERIES_STM32H5X)
 #include <zephyr/cache.h>
-#endif /* CONFIG_SOC_SERIES_STM32C5X || CONFIG_SOC_SERIES_STM32H5X */
 #include <zephyr/drivers/flash.h>
 #include <zephyr/drivers/flash/stm32_flash_api_extensions.h>
 #include <zephyr/init.h>
@@ -149,12 +147,15 @@ static void flash_stm32_flush_caches(struct device const* dev, off_t offset, siz
 }
 
 static int flash_stm32_read(struct device const* dev, off_t offset, void* data, size_t len) {
-    if (!flash_stm32_valid_range(dev, offset, len, false)) {
+    bool is_valid;
+
+    is_valid = flash_stm32_valid_range(dev, offset, len, false);
+    if (is_valid == false) {
         LOG_ERR("Read range invalid. Offset: %ld, len: %zu", (long)offset, len);
         return (-EINVAL);
     }
 
-    if (!len) {
+    if (len == 0) {
         return (0);
     }
 
@@ -166,14 +167,16 @@ static int flash_stm32_read(struct device const* dev, off_t offset, void* data, 
 }
 
 static int flash_stm32_erase(struct device const* dev, off_t offset, size_t len) {
+    bool is_valid;
     int rc;
 
-    if (!flash_stm32_valid_range(dev, offset, len, true)) {
+    is_valid = flash_stm32_valid_range(dev, offset, len, true);
+    if (is_valid == false) {
         LOG_ERR("Erase range invalid. Offset: %ld, len: %zu", (long)offset, len);
         return (-EINVAL);
     }
 
-    if (!len) {
+    if (len == 0) {
         return (0);
     }
 
@@ -190,7 +193,7 @@ static int flash_stm32_erase(struct device const* dev, off_t offset, size_t len)
 
     int rc2 = flash_stm32_cr_lock(dev, true);
 
-    if (!rc) {
+    if (rc == 0) {
         rc = rc2;
     }
 
@@ -207,7 +210,7 @@ static int flash_stm32_write(struct device const* dev, off_t offset, void const*
         return (-EINVAL);
     }
 
-    if (!len) {
+    if (len == 0) {
         return (0);
     }
 
@@ -221,7 +224,8 @@ static int flash_stm32_write(struct device const* dev, off_t offset, void const*
     }
 
     int rc2 = flash_stm32_cr_lock(dev, true);
-    if (!rc) {
+
+    if (rc == 0) {
         rc = rc2;
     }
 
@@ -257,19 +261,21 @@ static int flash_stm32_no_align_write(struct device const* dev, off_t offset, vo
     size_t chunk_size, local_offset;
     off_t off = offset;
     size_t remaining = len;
+    bool is_exist;
     int rc;
 
     BUILD_ASSERT(FLASH_STM32_WRITE_BLOCK_SIZE >= 4, "Invalid write size.");
 
-    if (!remaining) {
+    if (remaining == 0) {
         return (0);
     }
 
-    if (!flash_stm32_range_exists(dev, off, remaining)) {
+    is_exist = flash_stm32_range_exists(dev, off, remaining);
+    if (is_exist == false) {
         return (-EINVAL);
     }
 
-    if (off % FLASH_STM32_WRITE_BLOCK_SIZE != 0) {
+    if ((off % FLASH_STM32_WRITE_BLOCK_SIZE) != 0) {
         local_offset = off % FLASH_STM32_WRITE_BLOCK_SIZE;
         chunk_size = MIN(remaining, FLASH_STM32_WRITE_BLOCK_SIZE - local_offset);
 
@@ -461,13 +467,9 @@ static const struct flash_parameters* flash_stm32_get_parameters(struct device c
 static int flash_stm32_get_size(struct device const* dev, uint64_t* size) {
     ARG_UNUSED(dev);
 
-    #if defined(CONFIG_SOC_SERIES_STM32C5X) || defined(CONFIG_SOC_SERIES_STM32H5X)
-    /* Disable the ICACHE to ensure all memory accesses are non-cacheable.
-     * This is required on STM32H5, where the manufacturing flash must be
-     * accessed in non-cacheable mode - otherwise, a bus error occurs.
-     */
-    cache_instr_disable();
-    #endif /* CONFIG_SOC_SERIES_STM32C5X || CONFIG_SOC_SERIES_STM32H5X */
+    if (IS_ENABLED(CONFIG_HAS_STM32_UNCACHED_ACCESS_ONLY_OTP)) {
+        sys_cache_instr_disable();
+    }
 
     #ifdef CONFIG_STM32_HAL2
     *size = (uint64_t)FLASH_SIZE;
@@ -475,10 +477,9 @@ static int flash_stm32_get_size(struct device const* dev, uint64_t* size) {
     *size = (uint64_t)LL_GetFlashSize() * 1024U;
     #endif /* CONFIG_STM32_HAL2 */
 
-    #if defined(CONFIG_SOC_SERIES_STM32C5X) || defined(CONFIG_SOC_SERIES_STM32H5X)
-    /* Re-enable the ICACHE (unconditionally - it should always be turned on) */
-    cache_instr_enable();
-    #endif /* CONFIG_SOC_SERIES_STM32C5X || CONFIG_SOC_SERIES_STM32H5X */
+    if (IS_ENABLED(CONFIG_HAS_STM32_UNCACHED_ACCESS_ONLY_OTP)) {
+        sys_cache_instr_enable();
+    }
 
     return (0);
 }
