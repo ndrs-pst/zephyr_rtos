@@ -152,9 +152,9 @@ cy_rslt_t _i2c_abort_async(const struct device* dev) {
 }
 
 static void ifx_master_event_handler(void* callback_arg, uint32_t event) {
-    const struct device* dev = (const struct device*)callback_arg;
+    struct device const* dev = (const struct device*)callback_arg;
     struct ifx_cat1_i2c_data* data = dev->data;
-    const struct ifx_cat1_i2c_config* const config = dev->config;
+    struct ifx_cat1_i2c_config const* const config = dev->config;
 
     if (((CY_SCB_I2C_MASTER_ERR_EVENT | CY_SCB_I2C_SLAVE_ERR_EVENT) & event) != 0) {
         /* In case of error abort transfer */
@@ -177,10 +177,11 @@ static void ifx_master_event_handler(void* callback_arg, uint32_t event) {
         return;
     }
 
+    struct i2c_target_callbacks const* target_callbacks = data->p_target_config->callbacks;
     if ((event & CY_SCB_I2C_SLAVE_READ_EVENT) != 0) {
-        if (data->p_target_config->callbacks->read_requested) {
-            data->p_target_config->callbacks->read_requested(data->p_target_config,
-                                                             &data->i2c_target_wr_byte);
+        if (target_callbacks->read_requested) {
+            target_callbacks->read_requested(data->p_target_config,
+                                             &data->i2c_target_wr_byte);
             data->context.slaveTxBufferIdx  = 0;
             data->context.slaveTxBufferCnt  = 0;
             data->context.slaveTxBufferSize = 1;
@@ -189,9 +190,9 @@ static void ifx_master_event_handler(void* callback_arg, uint32_t event) {
     }
 
     if ((event & CY_SCB_I2C_SLAVE_RD_BUF_EMPTY_EVENT) != 0) {
-        if (data->p_target_config->callbacks->read_processed) {
-            data->p_target_config->callbacks->read_processed(data->p_target_config,
-                                                             &data->i2c_target_wr_byte);
+        if (target_callbacks->read_processed) {
+            target_callbacks->read_processed(data->p_target_config,
+                                             &data->i2c_target_wr_byte);
             data->context.slaveTxBufferIdx  = 0;
             data->context.slaveTxBufferCnt  = 0;
             data->context.slaveTxBufferSize = 1;
@@ -202,27 +203,27 @@ static void ifx_master_event_handler(void* callback_arg, uint32_t event) {
     if ((event & CY_SCB_I2C_SLAVE_WRITE_EVENT) != 0) {
         Cy_SCB_I2C_SlaveConfigWriteBuf(config->base, (uint8_t*)data->target_wr_buffer,
                                        CONFIG_I2C_INFINEON_CAT1_TARGET_BUF, &data->context);
-        if (data->p_target_config->callbacks->write_requested) {
-            data->p_target_config->callbacks->write_requested(data->p_target_config);
+        if (target_callbacks->write_requested) {
+            target_callbacks->write_requested(data->p_target_config);
         }
     }
 
     if ((event & CY_SCB_I2C_SLAVE_WR_CMPLT_EVENT) != 0) {
-        if (data->p_target_config->callbacks->write_received) {
+        if (target_callbacks->write_received) {
             for (size_t i = 0; i < data->context.slaveRxBufferIdx; i++) {
-                data->p_target_config->callbacks->write_received(data->p_target_config,
-                                                                 data->target_wr_buffer[i]);
+                target_callbacks->write_received(data->p_target_config,
+                                                 data->target_wr_buffer[i]);
             }
         }
 
-        if (data->p_target_config->callbacks->stop) {
-            data->p_target_config->callbacks->stop(data->p_target_config);
+        if (target_callbacks->stop) {
+            target_callbacks->stop(data->p_target_config);
         }
     }
 
     if ((event & CY_SCB_I2C_SLAVE_RD_CMPLT_EVENT) != 0) {
-        if (data->p_target_config->callbacks->stop) {
-            data->p_target_config->callbacks->stop(data->p_target_config);
+        if (target_callbacks->stop) {
+            target_callbacks->stop(data->p_target_config);
         }
     }
 }
@@ -708,7 +709,9 @@ static int ifx_cat1_i2c_init(const struct device* dev) {
 
     config->irq_config_func(dev);
 
-    return ifx_cat1_i2c_configure(dev, I2C_MODE_CONTROLLER | I2C_SPEED_SET(I2C_SPEED_STANDARD));
+    ret = ifx_cat1_i2c_configure(dev, I2C_MODE_CONTROLLER | I2C_SPEED_SET(I2C_SPEED_STANDARD));
+
+    return (ret);
 }
 
 void _i2c_free(const struct device* dev) {
