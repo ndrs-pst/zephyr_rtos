@@ -120,19 +120,24 @@ struct eth_stm32_hal_dev_data {
     uint8_t mac_addr[6];
     ETH_HandleTypeDef heth;
     struct k_sem rx_int_sem;
+
     #if defined(CONFIG_ETH_STM32_HAL_API_V2)
     struct k_sem tx_int_sem;
     #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
+
     K_KERNEL_STACK_MEMBER(rx_thread_stack,
                           CONFIG_ETH_STM32_HAL_RX_THREAD_STACK_SIZE);
     struct k_thread rx_thread;
+
     #if defined(CONFIG_ETH_STM32_MULTICAST_FILTER)
     uint8_t hash_index_cnt[64];
     #endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
+
     #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
     const struct device *ptp_clock;
     float clk_ratio;
     #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
+
     #if defined(CONFIG_NET_STATISTICS_ETHERNET)
     struct net_stats_eth stats;
     #endif
@@ -143,9 +148,10 @@ void eth_stm32_set_mac_config(const struct device *dev, struct phy_link_state *s
 int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt);
 struct net_pkt *eth_stm32_rx(const struct device *dev);
 int eth_stm32_hal_init(const struct device *dev);
-int eth_stm32_hal_start(const struct device *dev);
-int eth_stm32_hal_stop(const struct device *dev);
+int eth_stm32_hal_start(const struct device *dev, struct net_if *iface);
+int eth_stm32_hal_stop(const struct device *dev, struct net_if *iface);
 int eth_stm32_hal_set_config(const struct device *dev,
+                             struct net_if *iface,
                              enum ethernet_config_type type,
                              const struct ethernet_config *config);
 struct net_if *eth_stm32_get_iface(struct eth_stm32_hal_dev_data *ctx);
@@ -156,7 +162,7 @@ void eth_stm32_mcast_filter(const struct device *dev,
 #endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
 
 #ifdef CONFIG_PTP_CLOCK_STM32_HAL
-const struct device *eth_stm32_get_ptp_clock(const struct device *dev);
+const struct device *eth_stm32_get_ptp_clock(const struct device *dev, struct net_if *iface);
 bool eth_stm32_is_ptp_pkt(struct net_if *iface, struct net_pkt *pkt);
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 

@@ -113,7 +113,7 @@ static int cmd_flash_shell_erase(const struct shell* sh, size_t argc, char* argv
         return (result);
     }
 
-    if (argc > 3) {
+    if (argc > 2) {
         size = strtoul(argv[2], NULL, 0);
     }
     else {

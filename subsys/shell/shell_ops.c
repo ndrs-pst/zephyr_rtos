@@ -444,6 +444,10 @@ void z_shell_write(struct shell const* sh, void const* data,
         (void)err;
         __ASSERT_NO_MSG(err == 0);
         __ASSERT_NO_MSG(length >= tmp_cnt);
+        if (err < 0) {
+            break;
+        }
+
         offset += tmp_cnt;
         length -= tmp_cnt;
         if ((tmp_cnt == 0) &&

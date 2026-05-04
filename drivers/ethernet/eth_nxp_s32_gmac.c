@@ -129,7 +129,8 @@ static void phy_link_state_changed(const struct device* pdev,
     }
 }
 
-static const struct device* eth_nxp_s32_get_phy(const struct device* dev) {
+static const struct device* eth_nxp_s32_get_phy(const struct device* dev,
+                                                struct net_if* iface __unused) {
     const struct eth_nxp_s32_config* cfg = dev->config;
 
     return cfg->phy_dev;
@@ -221,7 +222,8 @@ static int eth_nxp_s32_init(const struct device* dev) {
     return (0);
 }
 
-static int eth_nxp_s32_start(const struct device* dev) {
+static int eth_nxp_s32_start(const struct device* dev
+                             struct net_if* iface __unused) {
     const struct eth_nxp_s32_config* cfg = dev->config;
 
     Gmac_Ip_EnableController(cfg->instance);
@@ -234,7 +236,8 @@ static int eth_nxp_s32_start(const struct device* dev) {
     return (0);
 }
 
-static int eth_nxp_s32_stop(const struct device* dev) {
+static int eth_nxp_s32_stop(const struct device* dev
+                            struct net_if* iface __unused) {
     const struct eth_nxp_s32_config* cfg = dev->config;
     Gmac_Ip_StatusType status;
     int err = 0;
@@ -454,6 +457,7 @@ static void eth_nxp_s32_rx_thread(void* arg1, void* unused1, void* unused2) {
 }
 
 static int eth_nxp_s32_set_config(const struct device* dev,
+                                  struct net_if* iface __unused,
                                   enum ethernet_config_type type,
                                   const struct ethernet_config* config) {
     struct eth_nxp_s32_data* ctx = dev->data;
@@ -508,9 +512,8 @@ static int eth_nxp_s32_set_config(const struct device* dev,
     return res;
 }
 
-static enum ethernet_hw_caps eth_nxp_s32_get_capabilities(const struct device* dev) {
-    ARG_UNUSED(dev);
-
+static enum ethernet_hw_caps eth_nxp_s32_get_capabilities(const struct device* dev __unused,
+                                                          struct net_if* iface __unused) {
     return (ETHERNET_LINK_10BASE
             | ETHERNET_LINK_100BASE
 

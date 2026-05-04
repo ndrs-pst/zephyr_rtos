@@ -1057,6 +1057,7 @@ static void esp_mgmt_iface_status_work(struct k_work* work) {
 }
 
 static int esp_mgmt_iface_status(const struct device* dev,
+                                 struct net_if* iface,
                                  struct wifi_iface_status* status) {
     struct esp_data* data = dev->data;
 
@@ -1069,7 +1070,7 @@ static int esp_mgmt_iface_status(const struct device* dev,
     status->security   = WIFI_SECURITY_TYPE_UNKNOWN;
     status->mfp        = WIFI_MFP_UNKNOWN;
 
-    if (!net_if_is_carrier_ok(data->net_iface)) {
+    if (!net_if_is_carrier_ok(iface)) {
         status->state = WIFI_STATE_INTERFACE_DISABLED;
         return (0);
     }
@@ -1115,6 +1116,7 @@ out :
 }
 
 static int esp_mgmt_scan(const struct device* dev,
+                         struct net_if* iface,
                          struct wifi_scan_params* params,
                          scan_result_cb_t cb) {
     struct esp_data* data = dev->data;
@@ -1125,7 +1127,7 @@ static int esp_mgmt_scan(const struct device* dev,
         return (-EINPROGRESS);
     }
 
-    if (!net_if_is_carrier_ok(data->net_iface)) {
+    if (!net_if_is_carrier_ok(iface)) {
         return (-EIO);
     }
 
@@ -1250,13 +1252,14 @@ static int esp_conn_cmd_escape_and_append(struct esp_data* data, size_t* off,
 }
 
 static int esp_mgmt_connect(const struct device* dev,
+                            struct net_if* iface,
                             struct wifi_connect_req_params* params) {
-    struct esp_data* data = dev->data;                          /* ESP_AT_STA_SEQ09 */
+    struct esp_data* data = dev->data;
     size_t off = 0;
     int err;
 
-    if (!net_if_is_carrier_ok(data->net_iface) ||
-        !net_if_is_admin_up(data->net_iface)) {
+    if (!net_if_is_carrier_ok(iface) ||
+        !net_if_is_admin_up(iface)) {
         return (-EIO);
     }
 
@@ -1302,7 +1305,7 @@ static int esp_mgmt_connect(const struct device* dev,
     return (0);
 }
 
-static int esp_mgmt_disconnect(const struct device* dev) {
+static int esp_mgmt_disconnect(const struct device* dev, struct net_if* iface __unused) {
     struct esp_data* data = dev->data;
     int ret;
 
@@ -1312,6 +1315,7 @@ static int esp_mgmt_disconnect(const struct device* dev) {
 }
 
 static int esp_mgmt_ap_enable(const struct device* dev,
+                              struct net_if* iface,
                               struct wifi_connect_req_params* params) {
     char cmd[sizeof("AT+" _CWSAP "=\"\",\"\",xx,x") + WIFI_SSID_MAX_LEN +
              WIFI_PSK_MAX_LEN];
@@ -1345,16 +1349,16 @@ static int esp_mgmt_ap_enable(const struct device* dev,
 
     ret = esp_cmd_send(data, NULL, 0, cmd, ESP_CMD_TIMEOUT);
 
-    net_if_dormant_off(data->net_iface);
+    net_if_dormant_off(iface);
 
     return (ret);
 }
 
-static int esp_mgmt_ap_disable(const struct device* dev) {
+static int esp_mgmt_ap_disable(const struct device* dev, struct net_if* iface) {
     struct esp_data* data = dev->data;
 
     if (!esp_flags_are_set(data, EDF_STA_CONNECTED)) {
-        net_if_dormant_on(data->net_iface);
+        net_if_dormant_on(iface);
     }
 
     return esp_mode_flags_clear(data, EDF_AP_ENABLED);

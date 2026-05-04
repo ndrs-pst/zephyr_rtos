@@ -714,7 +714,7 @@ void eth_stm32_setup_mac_filter(ETH_HandleTypeDef *heth)
 	k_sleep(K_MSEC(1));
 }
 
-int eth_stm32_hal_start(const struct device *dev)
+int eth_stm32_hal_start(const struct device *dev, struct net_if *iface __unused)
 {
 	struct eth_stm32_hal_dev_data *ctx = dev->data;
 	ETH_HandleTypeDef *heth = &ctx->heth;
@@ -730,7 +730,7 @@ int eth_stm32_hal_start(const struct device *dev)
 	return 0;
 }
 
-int eth_stm32_hal_stop(const struct device *dev)
+int eth_stm32_hal_stop(const struct device *dev, struct net_if *iface __unused)
 {
 	struct eth_stm32_hal_dev_data *ctx = dev->data;
 	ETH_HandleTypeDef *heth = &ctx->heth;
@@ -748,8 +748,9 @@ int eth_stm32_hal_stop(const struct device *dev)
 }
 
 int eth_stm32_hal_set_config(const struct device *dev,
-				    enum ethernet_config_type type,
-				    const struct ethernet_config *config)
+			     struct net_if *iface __unused,
+			     enum ethernet_config_type type,
+			     const struct ethernet_config *config)
 {
 	struct eth_stm32_hal_dev_data *ctx = dev->data;
 	ETH_HandleTypeDef *heth = &ctx->heth;
