@@ -1584,7 +1584,7 @@ static void z_shell_print(const struct shell* sh, enum shell_vt100_color color, 
 
     __ASSERT_NO_MSG(sh->ctx);
     __ASSERT_NO_MSG(z_flag_cmd_ctx_get(sh) ||
-                    (k_current_get() != ctx->tid));
+                    (k_current_get() != sh->ctx->tid));
     __ASSERT_NO_MSG(sh->fprintf_ctx);
 
     struct shell_ctx* ctx = sh->ctx;

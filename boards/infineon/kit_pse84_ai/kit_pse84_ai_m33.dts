@@ -46,7 +46,7 @@
 &clk_eco {
 	clock-frequency = <17203200>;
 	system-clock = <IFX_ECO>;
-	status = "okay";
+	status = "disabled";           /* Disable due to our real hardware clock re-work failures */
 };
 
 &clk_ext {
