@@ -38,6 +38,14 @@ Boards
 Device Drivers and Devicetree
 *****************************
 
+Haptics
+=======
+
+* The ``cirrus,cs40l5x`` compatible has been replaced by variant-specific compatibles
+  :dtcompatible:`cirrus,cs40l50`, :dtcompatible:`cirrus,cs40l51`, :dtcompatible:`cirrus,cs40l52`,
+  and :dtcompatible:`cirrus,cs40l53`. Applications using the old compatible must update their
+  devicetree nodes accordingly.
+
 .. Group contents in this section by subsystem, e.g.:
 ..
 .. ADC
@@ -77,6 +85,10 @@ Ethernet
   a pointer to :c:struct:`net_if`. This api is not directly exposed to the application, so only
   out-of-tree drivers need to be updated. (:github:`106086`)
 
+* The ``pinctrl-0`` and ``pinctrl-names`` devicetree properties for the
+  :dtcompatible:`nxp,enet-mac` need to be moved from the MAC node to the parent Ethernet controller
+  node. (:github:`107352`)
+
 Flash
 =====
 * :dtcompatible:`jedec,spi-nand` now requires a ``plane-bytes`` property, which indicates the size
@@ -94,6 +106,20 @@ GPIO
   behavior as before since these flags were effectively ignored. (:github:`104690`)
 
 * On STM32F1 series, GPIO output pins now use 50 MHz max. speed instead of 10 MHz. (:github:`104690`)
+
+NXP
+===
+
+* :kconfig:option:`CONFIG_MCUX_LPTMR_TIMER` no longer defaults to ``y`` based on the
+  ``/chosen/zephyr,system-timer`` chosen node being compatible with
+  :dtcompatible:`nxp,lptmr`. Out-of-tree SoCs and boards that rely on the LPTMR
+  as the system timer must now explicitly default the symbol in their
+  ``Kconfig.defconfig`` (for example ``default y if PM``).
+
+* Kinetis KE1xF no longer requires a board overlay to designate the system
+  timer when :kconfig:option:`CONFIG_PM` is enabled. The SoC DTSI now sets the
+  ``zephyr,system-timer`` chosen property, so boards that added the overlay
+  described in the Zephyr 4.4 migration guide can remove it.
 
 STM32
 =====

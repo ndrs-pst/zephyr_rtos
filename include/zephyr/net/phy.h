@@ -219,6 +219,7 @@ __subsystem struct ethphy_driver_api {
     /** Write PHY C45 register */
     int (*write_c45)(const struct device* dev, uint8_t devad, uint16_t regad, uint16_t data);
 
+    #if defined(CONFIG_ETH_PHY_API_PLCA) || defined(__DOXYGEN__)
     /* Set PLCA settings */
     int (*set_plca_cfg)(const struct device* dev, struct phy_plca_cfg* plca_cfg);
 
@@ -227,8 +228,8 @@ __subsystem struct ethphy_driver_api {
 
     /* Get PLCA status */
     int (*get_plca_sts)(const struct device* dev, bool* plca_sts);
+    #endif /* CONFIG_ETH_PHY_API_PLCA */
 };
-
 /**
  * @endcond
  */
@@ -404,12 +405,17 @@ static inline int phy_write_c45(const struct device* dev, uint8_t devad, uint16_
  * @retval 0 If successful.
  * @retval -EIO If communication with PHY failed.
  */
-static inline int phy_set_plca_cfg(const struct device* dev, struct phy_plca_cfg* plca_cfg) {
+static inline int phy_set_plca_cfg(__maybe_unused const struct device* dev,
+                                   __maybe_unused struct phy_plca_cfg* plca_cfg) {
+    #if defined(CONFIG_ETH_PHY_API_PLCA)
     if (DEVICE_API_GET(ethphy, dev)->set_plca_cfg == NULL) {
         return (-ENOSYS);
     }
 
     return DEVICE_API_GET(ethphy, dev)->set_plca_cfg(dev, plca_cfg);
+    #else
+    return (-ENOSYS);
+    #endif /* CONFIG_ETH_PHY_API_PLCA */
 }
 
 /**
@@ -423,12 +429,17 @@ static inline int phy_set_plca_cfg(const struct device* dev, struct phy_plca_cfg
  * @retval 0 If successful.
  * @retval -EIO If communication with PHY failed.
  */
-static inline int phy_get_plca_cfg(const struct device* dev, struct phy_plca_cfg* plca_cfg) {
+static inline int phy_get_plca_cfg(__maybe_unused const struct device* dev,
+                                   __maybe_unused struct phy_plca_cfg* plca_cfg) {
+    #if defined(CONFIG_ETH_PHY_API_PLCA)
     if (DEVICE_API_GET(ethphy, dev)->get_plca_cfg == NULL) {
         return (-ENOSYS);
     }
 
     return DEVICE_API_GET(ethphy, dev)->get_plca_cfg(dev, plca_cfg);
+    #else
+    return (-ENOSYS);
+    #endif /* CONFIG_ETH_PHY_API_PLCA */
 }
 
 /**
@@ -442,12 +453,17 @@ static inline int phy_get_plca_cfg(const struct device* dev, struct phy_plca_cfg
  * @retval 0 If successful.
  * @retval -EIO If communication with PHY failed.
  */
-static inline int phy_get_plca_sts(const struct device* dev, bool* plca_status) {
+static inline int phy_get_plca_sts(__maybe_unused const struct device* dev,
+                                   __maybe_unused bool* plca_status) {
+    #if defined(CONFIG_ETH_PHY_API_PLCA)
     if (DEVICE_API_GET(ethphy, dev)->get_plca_sts == NULL) {
         return (-ENOSYS);
     }
 
     return DEVICE_API_GET(ethphy, dev)->get_plca_sts(dev, plca_status);
+    #else
+    return (-ENOSYS);
+    #endif /* CONFIG_ETH_PHY_API_PLCA */
 }
 
 #ifdef __cplusplus

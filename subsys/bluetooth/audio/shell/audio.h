@@ -125,7 +125,6 @@ struct shell_stream {
 			size_t left_read_idx;
 			/* Indicates where to read right USB data in the ring buffer */
 			size_t right_read_idx;
-			size_t right_ring_buf_fail_cnt;
 #endif /* CONFIG_USBD_AUDIO2_CLASS */
 #endif /* CONFIG_LIBLC3 */
 		} tx;
@@ -930,6 +929,8 @@ static inline bool print_base_subgroup_cb(const struct bt_bap_base_subgroup *sub
 	struct bt_audio_codec_cfg codec_cfg;
 	uint8_t *data;
 	int ret;
+
+	ARG_UNUSED(user_data);
 
 	bt_shell_print("Subgroup %p:", subgroup);
 

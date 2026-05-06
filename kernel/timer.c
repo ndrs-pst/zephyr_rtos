@@ -68,7 +68,8 @@ static inline void z_timer_observer_on_expiry(struct k_timer *timer)
  *
  * @param t  Timeout used by the timer.
  */
-void z_timer_expiration_handler(struct _timeout const* t) {
+void z_timer_expiration_handler(const struct _timeout *t)
+{
 	struct k_timer *timer = CONTAINER_OF(t, struct k_timer, timeout);
 	struct k_thread *thread;
 	k_spinlock_key_t key = k_spin_lock(&lock);
@@ -86,9 +87,6 @@ void z_timer_expiration_handler(struct _timeout const* t) {
 	    !K_TIMEOUT_EQ(timer->period, K_FOREVER)) {
 		k_timeout_t next = timer->period;
 
-		/* see note about z_add_timeout() in z_impl_k_timer_start() */
-		next.ticks = z_max(next.ticks - 1, 0);
-
 #ifdef CONFIG_TIMEOUT_64BIT
 		/* Exploit the fact that uptime during a kernel
 		 * timeout handler reflects the time of the scheduled
@@ -97,11 +95,8 @@ void z_timer_expiration_handler(struct _timeout const* t) {
 		 * delayed for any reason, we still end up calculating
 		 * the next expiration as a regular stride from where
 		 * we "should" have run.  Requires absolute timeouts.
-		 * (Note offset by one: we're nominally at the
-		 * beginning of a tick, so need to defeat the "round
-		 * down" behavior on timeout addition).
 		 */
-		next = K_TIMEOUT_ABS_TICKS(k_uptime_ticks() + 1 + next.ticks);
+		next = K_TIMEOUT_ABS_TICKS(k_uptime_ticks() + next.ticks);
 #endif /* CONFIG_TIMEOUT_64BIT */
 		z_add_timeout(&timer->timeout, z_timer_expiration_handler,
 			      next);
@@ -150,9 +145,10 @@ void z_timer_expiration_handler(struct _timeout const* t) {
 }
 
 
-void k_timer_init(struct k_timer* timer,
-                  k_timer_expiry_t expiry_fn,
-                  k_timer_stop_t stop_fn) {
+void k_timer_init(struct k_timer *timer,
+		  k_timer_expiry_t expiry_fn,
+		  k_timer_stop_t stop_fn)
+{
 	timer->expiry_fn = expiry_fn;
 	timer->stop_fn = stop_fn;
 	timer->status = 0U;
@@ -177,8 +173,9 @@ void k_timer_init(struct k_timer* timer,
 }
 
 
-void z_impl_k_timer_start(struct k_timer* timer, k_timeout_t duration,
-                          k_timeout_t period) {
+void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
+			  k_timeout_t period)
+{
 	SYS_PORT_TRACING_OBJ_FUNC(k_timer, start, timer, duration, period);
 
 	/* Acquire spinlock to ensure safety during concurrent calls to
@@ -193,34 +190,12 @@ void z_impl_k_timer_start(struct k_timer* timer, k_timeout_t duration,
 		return;
 	}
 
-	/* z_add_timeout() always adds one to the incoming tick count
-	 * to round up to the next tick (by convention it waits for
-	 * "at least as long as the specified timeout"), but the
-	 * period interval is always guaranteed to be reset from
-	 * within the timer ISR, so no round up is desired and 1 is
-	 * subtracted in there.
-	 *
-	 * Note that the duration (!) value gets the same treatment
-	 * for backwards compatibility.  This is unfortunate
-	 * (i.e. k_timer_start() doesn't treat its initial sleep
-	 * argument the same way k_sleep() does), but historical.  The
-	 * timer_api test relies on this behavior.
-	 */
-	if (Z_IS_TIMEOUT_RELATIVE(duration)) {
-		/* For the duration == K_NO_WAIT case, ensure that behaviour
-		 * is consistent for both 32-bit k_ticks_t which are unsigned
-		 * and 64-bit k_ticks_t which are signed.
-		 */
-		duration.ticks = z_max(1, duration.ticks);
-		duration.ticks = duration.ticks - 1;
-	}
-
 	(void)z_abort_timeout(&timer->timeout);
 	timer->period = period;
 	timer->status = 0U;
 
 	z_add_timeout(&timer->timeout, z_timer_expiration_handler,
-                      duration);
+		      duration);
 
 	z_timer_observer_on_start(timer, duration, period);
 
