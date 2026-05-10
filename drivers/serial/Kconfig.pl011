@@ -7,8 +7,8 @@ menuconfig UART_PL011
 	depends on DT_HAS_ARM_PL011_ENABLED || DT_HAS_ARM_SBSA_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	select SERIAL_SUPPORT_ASYNC if DT_HAS_ARM_PL011_ENABLED
-	select DMA if UART_ASYNC_API && DT_HAS_ARM_PL011_ENABLED
+	select SERIAL_SUPPORT_ASYNC if $(dt_compat_any_has_prop,$(DT_COMPAT_ARM_PL011),dmas) && DT_HAS_ARM_PL011_ENABLED
+	select DMA if UART_ASYNC_API && $(dt_compat_any_has_prop,$(DT_COMPAT_ARM_PL011),dmas) && DT_HAS_ARM_PL011_ENABLED
 	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_ARM_PL011),pinctrl-0)
 	help
 	  This option enables the UART driver for the PL011

@@ -11,3 +11,15 @@ properties:
   fifo-disable:
     type: boolean
     description: Disable the UART FIFO
+
+  dmas:
+    type: phandle-array
+    description: |
+      Optional DMA channel specifiers for TX and RX async operation.
+      Must contain entries named "tx" and "rx" as declared by dma-names.
+
+  dma-names:
+    type: string-array
+    description: |
+      Names of the DMA channels referenced by the dmas property.
+      Must be "tx" and "rx".
