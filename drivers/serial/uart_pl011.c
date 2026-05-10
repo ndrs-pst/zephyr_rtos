@@ -18,6 +18,9 @@
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/irq.h>
+#ifdef CONFIG_UART_ASYNC_API
+#include <zephyr/drivers/dma.h>
+#endif
 #if defined(CONFIG_PINCTRL)
 #include <zephyr/drivers/pinctrl.h>
 #endif
@@ -59,17 +62,45 @@ struct pl011_config {
 	int (*pwr_on_func)(const struct device *dev);
 };
 
+#ifdef CONFIG_UART_ASYNC_API
+struct pl011_dma_stream {
+	const struct device *dma_dev;
+	uint32_t dma_channel;
+	struct dma_config dma_cfg;
+	struct dma_block_config blk_cfg;
+	uint8_t *buffer;
+	size_t buffer_length;
+	volatile size_t counter;
+	size_t offset;
+	int32_t timeout_us;
+	struct k_work_delayable timeout_work;
+	bool enabled;
+};
+#endif
+
 /* Device data structure */
 struct pl011_data {
 	DEVICE_MMIO_RAM;
 	struct uart_config uart_cfg;
 	bool sbsa;		/* SBSA mode */
 	uint32_t clk_freq;
+
 #if PL011_USE_IRQ
 	volatile bool sw_call_txdrdy;
 	uart_irq_callback_user_data_t irq_cb;
 	struct k_spinlock irq_cb_lock;
 	void *irq_cb_data;
+#endif
+
+#ifdef CONFIG_UART_ASYNC_API
+	uart_callback_t async_cb;
+	void *async_cb_data;
+	const struct device *dev;
+	struct pl011_dma_stream tx_dma;
+	struct pl011_dma_stream rx_dma;
+	uint8_t *rx_next_buffer;
+	size_t rx_next_buffer_len;
+	struct k_spinlock async_lock;
 #endif
 };
 
@@ -531,13 +562,574 @@ static void pl011_irq_callback_set(const struct device *dev,
 }
 #endif /* PL011_USE_IRQ */
 
+#ifdef CONFIG_UART_ASYNC_API
+static void pl011_async_user_callback(struct pl011_data *data, struct uart_event *evt)
+{
+	if (data->async_cb) {
+		data->async_cb(data->dev, evt, data->async_cb_data);
+	}
+}
+
+static void pl011_async_evt_tx_done(struct pl011_data *data)
+{
+	k_spinlock_key_t key;
+	struct uart_event evt = {
+		.type = UART_TX_DONE,
+		.data.tx.buf = data->tx_dma.buffer,
+		.data.tx.len = data->tx_dma.counter,
+	};
+
+	key = k_spin_lock(&data->async_lock);
+	data->tx_dma.buffer_length = 0;
+	data->tx_dma.counter = 0;
+	k_spin_unlock(&data->async_lock, key);
+	pl011_async_user_callback(data, &evt);
+}
+
+static void pl011_async_evt_tx_abort(struct pl011_data *data)
+{
+	k_spinlock_key_t key;
+	struct uart_event evt = {
+		.type = UART_TX_ABORTED,
+		.data.tx.buf = data->tx_dma.buffer,
+		.data.tx.len = data->tx_dma.counter,
+	};
+
+	key = k_spin_lock(&data->async_lock);
+	data->tx_dma.buffer_length = 0;
+	data->tx_dma.counter = 0;
+	k_spin_unlock(&data->async_lock, key);
+	pl011_async_user_callback(data, &evt);
+}
+
+static void pl011_async_evt_rx_rdy(struct pl011_data *data)
+{
+	struct uart_event evt = {
+		.type = UART_RX_RDY,
+		.data.rx.buf = data->rx_dma.buffer,
+		.data.rx.len = data->rx_dma.counter - data->rx_dma.offset,
+		.data.rx.offset = data->rx_dma.offset,
+	};
+
+	if (evt.data.rx.len > 0) {
+		data->rx_dma.offset = data->rx_dma.counter;
+		pl011_async_user_callback(data, &evt);
+	}
+}
+
+static void pl011_async_evt_rx_buf_req(struct pl011_data *data)
+{
+	struct uart_event evt = {
+		.type = UART_RX_BUF_REQUEST,
+	};
+
+	pl011_async_user_callback(data, &evt);
+}
+
+static void pl011_async_evt_rx_buf_rel(struct pl011_data *data, uint8_t *buf)
+{
+	struct uart_event evt = {
+		.type = UART_RX_BUF_RELEASED,
+		.data.rx_buf.buf = buf,
+	};
+
+	pl011_async_user_callback(data, &evt);
+}
+
+static void pl011_async_evt_rx_disabled(struct pl011_data *data)
+{
+	struct uart_event evt = {
+		.type = UART_RX_DISABLED,
+	};
+
+	pl011_async_user_callback(data, &evt);
+}
+
+static void pl011_async_evt_rx_stopped(struct pl011_data *data, int reason)
+{
+	struct uart_event evt = {
+		.type = UART_RX_STOPPED,
+		.data.rx_stop.reason = reason,
+		.data.rx_stop.data.buf = data->rx_dma.buffer,
+		.data.rx_stop.data.offset = 0,
+		.data.rx_stop.data.len = data->rx_dma.counter,
+	};
+
+	pl011_async_user_callback(data, &evt);
+}
+
+static void pl011_async_timer_start(struct k_work_delayable *work, int32_t timeout_us)
+{
+	if ((timeout_us != SYS_FOREVER_US) && (timeout_us != 0)) {
+		k_work_reschedule(work, K_USEC(timeout_us));
+	}
+}
+
+static inline void pl011_dma_tx_req_enable(const struct device *dev)
+{
+	get_uart(dev)->dmacr |= PL011_DMACR_TXDMAE;
+}
+
+static inline void pl011_dma_tx_req_disable(const struct device *dev)
+{
+	get_uart(dev)->dmacr &= ~PL011_DMACR_TXDMAE;
+}
+
+static inline void pl011_dma_rx_req_enable(const struct device *dev)
+{
+	struct pl011_data *data = dev->data;
+
+	get_uart(dev)->dmacr |= PL011_DMACR_RXDMAE;
+	data->rx_dma.enabled = true;
+}
+
+static inline void pl011_dma_rx_req_disable(const struct device *dev)
+{
+	struct pl011_data *data = dev->data;
+
+	get_uart(dev)->dmacr &= ~PL011_DMACR_RXDMAE;
+	data->rx_dma.enabled = false;
+}
+
+static void pl011_dma_rx_flush(const struct device *dev)
+{
+	struct pl011_data *data = dev->data;
+	struct dma_status stat;
+
+	if ((data->rx_dma.dma_dev == NULL) || (data->rx_dma.buffer == NULL)) {
+		return;
+	}
+
+	if (dma_get_status(data->rx_dma.dma_dev, data->rx_dma.dma_channel, &stat) == 0) {
+		data->rx_dma.counter = data->rx_dma.buffer_length - stat.pending_length;
+		if (data->rx_dma.counter > data->rx_dma.offset) {
+			pl011_async_evt_rx_rdy(data);
+		}
+	}
+}
+
+static int pl011_async_tx_abort(const struct device *dev);
+static int pl011_async_rx_disable(const struct device *dev);
+
+static void pl011_async_rx_timeout(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct pl011_dma_stream *rx_dma = CONTAINER_OF(dwork, struct pl011_dma_stream, timeout_work);
+	struct pl011_data *data = CONTAINER_OF(rx_dma, struct pl011_data, rx_dma);
+	bool disable_rx = false;
+
+	unsigned int key = irq_lock();
+	if (data->rx_dma.enabled &&
+	    (data->rx_dma.counter >= data->rx_dma.buffer_length) &&
+	    (data->rx_next_buffer == NULL)) {
+		disable_rx = true;
+	}
+	irq_unlock(key);
+
+	if (disable_rx) {
+		(void)pl011_async_rx_disable(data->dev);
+		return;
+	}
+
+	key = irq_lock();
+	pl011_dma_rx_flush(data->dev);
+	irq_unlock(key);
+}
+
+static void pl011_async_tx_timeout(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct pl011_dma_stream *tx_dma = CONTAINER_OF(dwork, struct pl011_dma_stream, timeout_work);
+	struct pl011_data *data = CONTAINER_OF(tx_dma, struct pl011_data, tx_dma);
+
+	(void)pl011_async_tx_abort(data->dev);
+}
+
+static void pl011_dma_tx_cb(const struct device *dma_dev, void *user_data,
+			    uint32_t channel, int status)
+{
+	const struct device *dev = user_data;
+	struct pl011_data *data = dev->data;
+	struct dma_status dma_stat;
+
+	ARG_UNUSED(dma_dev);
+	ARG_UNUSED(channel);
+
+	(void)k_work_cancel_delayable(&data->tx_dma.timeout_work);
+	pl011_dma_tx_req_disable(dev);
+
+	if (status < 0) {
+		pl011_async_evt_tx_abort(data);
+		return;
+	}
+
+	if (dma_get_status(data->tx_dma.dma_dev, data->tx_dma.dma_channel, &dma_stat) == 0) {
+		data->tx_dma.counter = data->tx_dma.buffer_length - dma_stat.pending_length;
+	} else {
+		data->tx_dma.counter = data->tx_dma.buffer_length;
+	}
+
+	pl011_async_evt_tx_done(data);
+}
+
+static void pl011_dma_rx_reload(const struct device *dev)
+{
+	struct pl011_data *data = dev->data;
+	struct pl011_dma_stream *rx_dma = &data->rx_dma;
+	uint8_t *released = rx_dma->buffer;
+	unsigned int key = irq_lock();
+
+	rx_dma->buffer = data->rx_next_buffer;
+	rx_dma->buffer_length = data->rx_next_buffer_len;
+	rx_dma->counter = 0;
+	rx_dma->offset = 0;
+	data->rx_next_buffer = NULL;
+	data->rx_next_buffer_len = 0;
+	irq_unlock(key);
+
+	rx_dma->blk_cfg.dest_address = (uint32_t)rx_dma->buffer;
+	rx_dma->blk_cfg.block_size = rx_dma->buffer_length;
+
+	(void)dma_reload(rx_dma->dma_dev, rx_dma->dma_channel,
+			rx_dma->blk_cfg.source_address,
+			rx_dma->blk_cfg.dest_address,
+			rx_dma->blk_cfg.block_size);
+	(void)dma_start(rx_dma->dma_dev, rx_dma->dma_channel);
+
+	pl011_async_evt_rx_buf_rel(data, released);
+	pl011_async_evt_rx_buf_req(data);
+}
+
+static void pl011_dma_rx_cb(const struct device *dma_dev, void *user_data,
+			    uint32_t channel, int status)
+{
+	const struct device *dev = user_data;
+	struct pl011_data *data = dev->data;
+	bool has_next;
+	unsigned int key;
+
+	ARG_UNUSED(dma_dev);
+	ARG_UNUSED(channel);
+
+	(void)k_work_cancel_delayable(&data->rx_dma.timeout_work);
+
+	if (status < 0) {
+		pl011_async_evt_rx_stopped(data, status);
+		return;
+	}
+
+	if (status == DMA_STATUS_BLOCK) {
+		data->rx_dma.counter = data->rx_dma.buffer_length / 2;
+		pl011_async_evt_rx_rdy(data);
+		pl011_async_timer_start(&data->rx_dma.timeout_work, data->rx_dma.timeout_us);
+		return;
+	}
+
+	data->rx_dma.counter = data->rx_dma.buffer_length;
+	pl011_async_evt_rx_rdy(data);
+
+	key = irq_lock();
+	has_next = (data->rx_next_buffer != NULL);
+	irq_unlock(key);
+
+	if (has_next) {
+		pl011_dma_rx_reload(dev);
+	} else {
+		/* Avoid async disable from ISR context; defer it to timeout work. */
+		(void)k_work_reschedule(&data->rx_dma.timeout_work, K_TICKS(1));
+	}
+}
+
+static int pl011_async_callback_set(const struct device *dev,
+				   uart_callback_t callback,
+				   void *user_data)
+{
+	struct pl011_data *data = dev->data;
+
+	if (data->sbsa) {
+		return -ENOTSUP;
+	}
+
+	data->async_cb = callback;
+	data->async_cb_data = user_data;
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS) && PL011_USE_IRQ
+	data->irq_cb = NULL;
+	data->irq_cb_data = NULL;
+#endif
+
+	return 0;
+}
+
+static int pl011_async_tx(const struct device *dev, const uint8_t *buf,
+			 size_t len, int32_t timeout)
+{
+	struct pl011_data *data = dev->data;
+	k_spinlock_key_t key;
+	int ret;
+
+	if (data->sbsa) {
+		return -ENOTSUP;
+	}
+
+	if (data->tx_dma.dma_dev == NULL) {
+		return -ENODEV;
+	}
+
+	if ((buf == NULL) || (len == 0U)) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&data->async_lock);
+	if (data->tx_dma.buffer_length != 0U) {
+		k_spin_unlock(&data->async_lock, key);
+		return -EBUSY;
+	}
+
+	data->tx_dma.buffer = (uint8_t *)buf;
+	data->tx_dma.buffer_length = len;
+	data->tx_dma.counter = 0U;
+	data->tx_dma.timeout_us = timeout;
+	k_spin_unlock(&data->async_lock, key);
+
+	data->tx_dma.blk_cfg.source_address = (uint32_t)data->tx_dma.buffer;
+	data->tx_dma.blk_cfg.block_size = len;
+
+	ret = dma_config(data->tx_dma.dma_dev, data->tx_dma.dma_channel,
+			 &data->tx_dma.dma_cfg);
+	if (ret != 0) {
+		key = k_spin_lock(&data->async_lock);
+		data->tx_dma.buffer_length = 0U;
+		k_spin_unlock(&data->async_lock, key);
+		return -EINVAL;
+	}
+
+	ret = dma_start(data->tx_dma.dma_dev, data->tx_dma.dma_channel);
+	if (ret != 0) {
+		key = k_spin_lock(&data->async_lock);
+		data->tx_dma.buffer_length = 0U;
+		k_spin_unlock(&data->async_lock, key);
+		return -EIO;
+	}
+
+	pl011_dma_tx_req_enable(dev);
+	pl011_async_timer_start(&data->tx_dma.timeout_work, timeout);
+
+	return 0;
+}
+
+static int pl011_async_tx_abort(const struct device *dev)
+{
+	struct pl011_data *data = dev->data;
+	struct dma_status stat;
+	k_spinlock_key_t key;
+
+	if (data->sbsa) {
+		return -ENOTSUP;
+	}
+
+	key = k_spin_lock(&data->async_lock);
+	if ((data->tx_dma.dma_dev == NULL) || (data->tx_dma.buffer_length == 0U)) {
+		k_spin_unlock(&data->async_lock, key);
+		return -EFAULT;
+	}
+	k_spin_unlock(&data->async_lock, key);
+
+	(void)k_work_cancel_delayable(&data->tx_dma.timeout_work);
+	if (dma_get_status(data->tx_dma.dma_dev, data->tx_dma.dma_channel, &stat) == 0) {
+		data->tx_dma.counter = data->tx_dma.buffer_length - stat.pending_length;
+	}
+
+	(void)dma_stop(data->tx_dma.dma_dev, data->tx_dma.dma_channel);
+	pl011_dma_tx_req_disable(dev);
+	pl011_async_evt_tx_abort(data);
+
+	return 0;
+}
+
+static int pl011_async_rx_enable(const struct device *dev, uint8_t *buf,
+				size_t len, int32_t timeout)
+{
+	struct pl011_data *data = dev->data;
+	int ret;
+
+	if (data->sbsa) {
+		return -ENOTSUP;
+	}
+
+	if (data->rx_dma.dma_dev == NULL) {
+		return -ENODEV;
+	}
+
+	if ((buf == NULL) || (len == 0U)) {
+		return -EINVAL;
+	}
+
+	if (data->rx_dma.enabled) {
+		return -EBUSY;
+	}
+
+	data->rx_dma.buffer = buf;
+	data->rx_dma.buffer_length = len;
+	data->rx_dma.counter = 0U;
+	data->rx_dma.offset = 0U;
+	data->rx_dma.timeout_us = timeout;
+	data->rx_next_buffer = NULL;
+	data->rx_next_buffer_len = 0U;
+
+	data->rx_dma.blk_cfg.dest_address = (uint32_t)buf;
+	data->rx_dma.blk_cfg.block_size = len;
+
+	ret = dma_config(data->rx_dma.dma_dev, data->rx_dma.dma_channel,
+			 &data->rx_dma.dma_cfg);
+	if (ret != 0) {
+		return -EINVAL;
+	}
+
+	ret = dma_start(data->rx_dma.dma_dev, data->rx_dma.dma_channel);
+	if (ret != 0) {
+		return -EIO;
+	}
+
+	pl011_dma_rx_req_enable(dev);
+	get_uart(dev)->imsc |= (PL011_IMSC_RTIM | PL011_IMSC_ERROR_MASK);
+	pl011_async_timer_start(&data->rx_dma.timeout_work, timeout);
+	pl011_async_evt_rx_buf_req(data);
+
+	return 0;
+}
+
+static int pl011_async_rx_buf_rsp(const struct device *dev, uint8_t *buf, size_t len)
+{
+	struct pl011_data *data = dev->data;
+	int ret;
+	unsigned int key = irq_lock();
+
+	if (data->sbsa) {
+		irq_unlock(key);
+		return -ENOTSUP;
+	}
+
+	if (data->rx_next_buffer != NULL) {
+		ret = -EBUSY;
+	} else if (!data->rx_dma.enabled) {
+		ret = -EACCES;
+	} else if ((buf == NULL) || (len == 0U)) {
+		ret = -EINVAL;
+	} else {
+		data->rx_next_buffer = buf;
+		data->rx_next_buffer_len = len;
+		ret = 0;
+	}
+
+	irq_unlock(key);
+
+	return ret;
+}
+
+static int pl011_async_rx_disable(const struct device *dev)
+{
+	struct pl011_data *data = dev->data;
+
+	if (data->sbsa) {
+		return -ENOTSUP;
+	}
+
+	if (!data->rx_dma.enabled) {
+		pl011_async_evt_rx_disabled(data);
+		return -EFAULT;
+	}
+
+	(void)k_work_cancel_delayable(&data->rx_dma.timeout_work);
+	pl011_dma_rx_flush(dev);
+	get_uart(dev)->imsc &= ~(PL011_IMSC_RTIM | PL011_IMSC_ERROR_MASK);
+	pl011_dma_rx_req_disable(dev);
+	(void)dma_stop(data->rx_dma.dma_dev, data->rx_dma.dma_channel);
+
+	pl011_async_evt_rx_buf_rel(data, data->rx_dma.buffer);
+	if (data->rx_next_buffer != NULL) {
+		pl011_async_evt_rx_buf_rel(data, data->rx_next_buffer);
+	}
+
+	data->rx_next_buffer = NULL;
+	data->rx_next_buffer_len = 0U;
+	pl011_async_evt_rx_disabled(data);
+
+	return 0;
+}
+
+static int pl011_async_init(const struct device *dev)
+{
+	volatile struct pl011_regs *uart = get_uart(dev);
+	struct pl011_data *data = dev->data;
+
+	data->dev = dev;
+
+	if ((data->rx_dma.dma_dev != NULL) && !device_is_ready(data->rx_dma.dma_dev)) {
+		return -ENODEV;
+	}
+
+	if ((data->tx_dma.dma_dev != NULL) && !device_is_ready(data->tx_dma.dma_dev)) {
+		return -ENODEV;
+	}
+
+	uart->dmacr &= ~(PL011_DMACR_TXDMAE | PL011_DMACR_RXDMAE);
+
+	k_work_init_delayable(&data->rx_dma.timeout_work, pl011_async_rx_timeout);
+	k_work_init_delayable(&data->tx_dma.timeout_work, pl011_async_tx_timeout);
+
+	if (data->rx_dma.dma_dev != NULL) {
+		memset(&data->rx_dma.blk_cfg, 0, sizeof(data->rx_dma.blk_cfg));
+		data->rx_dma.blk_cfg.source_address = (uint32_t)&uart->dr;
+		data->rx_dma.blk_cfg.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		data->rx_dma.blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+		data->rx_dma.dma_cfg.head_block = &data->rx_dma.blk_cfg;
+		data->rx_dma.dma_cfg.user_data = (void *)dev;
+		data->rx_dma.dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
+		data->rx_dma.dma_cfg.source_data_size = 1;
+		data->rx_dma.dma_cfg.dest_data_size = 1;
+		data->rx_dma.dma_cfg.source_burst_length = 1;
+		data->rx_dma.dma_cfg.dest_burst_length = 1;
+		data->rx_dma.dma_cfg.block_count = 1;
+		data->rx_dma.dma_cfg.dma_callback = pl011_dma_rx_cb;
+	}
+
+	if (data->tx_dma.dma_dev != NULL) {
+		memset(&data->tx_dma.blk_cfg, 0, sizeof(data->tx_dma.blk_cfg));
+		data->tx_dma.blk_cfg.dest_address = (uint32_t)&uart->dr;
+		data->tx_dma.blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+		data->tx_dma.blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		data->tx_dma.dma_cfg.head_block = &data->tx_dma.blk_cfg;
+		data->tx_dma.dma_cfg.user_data = (void *)dev;
+		data->tx_dma.dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
+		data->tx_dma.dma_cfg.source_data_size = 1;
+		data->tx_dma.dma_cfg.dest_data_size = 1;
+		data->tx_dma.dma_cfg.source_burst_length = 1;
+		data->tx_dma.dma_cfg.dest_burst_length = 1;
+		data->tx_dma.dma_cfg.block_count = 1;
+		data->tx_dma.dma_cfg.dma_callback = pl011_dma_tx_cb;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_UART_ASYNC_API */
+
 static __maybe_unused DEVICE_API(uart, pl011_driver_api_noirq) = {
 	.poll_in = pl011_poll_in,
 	.poll_out = pl011_poll_out,
 	.err_check = pl011_err_check,
+
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure = pl011_runtime_configure,
 	.config_get = pl011_runtime_config_get,
+#endif
+
+#ifdef CONFIG_UART_ASYNC_API
+	.callback_set = pl011_async_callback_set,
+	.tx = pl011_async_tx,
+	.tx_abort = pl011_async_tx_abort,
+	.rx_enable = pl011_async_rx_enable,
+	.rx_buf_rsp = pl011_async_rx_buf_rsp,
+	.rx_disable = pl011_async_rx_disable,
 #endif
 };
 
@@ -546,10 +1138,12 @@ static DEVICE_API(uart, pl011_driver_api) = {
 	.poll_in = pl011_poll_in,
 	.poll_out = pl011_poll_out,
 	.err_check = pl011_err_check,
+
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure = pl011_runtime_configure,
 	.config_get = pl011_runtime_config_get,
 #endif
+
 	.fifo_fill = pl011_fifo_fill,
 	.fifo_read = pl011_fifo_read,
 	.irq_tx_enable = pl011_irq_tx_enable,
@@ -564,6 +1158,15 @@ static DEVICE_API(uart, pl011_driver_api) = {
 	.irq_is_pending = pl011_irq_is_pending,
 	.irq_update = pl011_irq_update,
 	.irq_callback_set = pl011_irq_callback_set,
+
+#ifdef CONFIG_UART_ASYNC_API
+	.callback_set = pl011_async_callback_set,
+	.tx = pl011_async_tx,
+	.tx_abort = pl011_async_tx_abort,
+	.rx_enable = pl011_async_rx_enable,
+	.rx_buf_rsp = pl011_async_rx_buf_rsp,
+	.rx_disable = pl011_async_rx_disable,
+#endif
 };
 #endif /* PL011_USE_IRQ */
 
@@ -654,6 +1257,15 @@ static int pl011_init(const struct device *dev)
 	}
 #endif
 
+#ifdef CONFIG_UART_ASYNC_API
+	if (!data->sbsa) {
+		ret = pl011_async_init(dev);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+#endif
+
 	if (!data->sbsa) {
 		pl011_enable(dev);
 	}
@@ -706,11 +1318,46 @@ static int pl011_init(const struct device *dev)
 #define IRQ_CONFIG_FUNC_INIT(n)                                                                    \
 	IF_ENABLED(PL011_NODE_USE_IRQ(n), (.irq_config_func = pl011_irq_config_func_##n,))
 
+#ifdef CONFIG_UART_ASYNC_API
+#define PL011_DMA_CHANNEL_INIT(n, name, direction)                                                 \
+	.name##_dma = {                                                                            \
+		COND_CODE_1(DT_INST_DMAS_HAS_NAME(n, name),                                        \
+			(.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, name)),             \
+			 .dma_channel = DT_DMAS_CELL_BY_NAME_OR(DT_DRV_INST(n), name, channel, 0), \
+			 .dma_cfg = {.channel_direction = direction, .complete_callback_en = 1}),  \
+			(.dma_dev = NULL))                                                         \
+	},
+#else
+#define PL011_DMA_CHANNEL_INIT(n, name, direction)
+#endif
+
 #if PL011_USE_IRQ
 void pl011_isr(const struct device *dev)
 {
 	struct pl011_data *data = dev->data;
 	volatile struct pl011_regs *uart = get_uart(dev);
+
+#ifdef CONFIG_UART_ASYNC_API
+	if (data->async_cb
+		&& (data->irq_cb == NULL)
+		&& data->rx_dma.enabled) {
+		if (uart->mis & PL011_IMSC_RTIM) {
+			uart->icr = PL011_IMSC_RTIM;
+			pl011_dma_rx_flush(dev);
+			pl011_async_timer_start(&data->rx_dma.timeout_work,
+					      data->rx_dma.timeout_us);
+		}
+
+		if (uart->mis & PL011_IMSC_ERROR_MASK) {
+			int err = pl011_err_check(dev);
+
+			uart->icr = PL011_IMSC_ERROR_MASK;
+			if (err != 0) {
+				pl011_async_evt_rx_stopped(data, err);
+			}
+		}
+	}
+#endif
 
 	/* Clear CTS modem status interrupt and disable it */
 	if (uart->mis & PL011_IMSC_CTSMIM) {
@@ -784,9 +1431,11 @@ void pl011_isr(const struct device *dev)
 		.clk_freq =                                                                        \
 			COND_CODE_1(DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(n), fixed_clock),       \
 				    (DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency)), (0)),   \
+		PL011_DMA_CHANNEL_INIT(n, rx, PERIPHERAL_TO_MEMORY)                                \
+		PL011_DMA_CHANNEL_INIT(n, tx, MEMORY_TO_PERIPHERAL)                                \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, pl011_init, PM_INST_GET(n), &pl011_data_port_##n,		   \
+	DEVICE_DT_INST_DEFINE(n, pl011_init, PM_INST_GET(n), &pl011_data_port_##n,                 \
 			      &pl011_cfg_port_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,      \
 			      PL011_DEVICE_API(n));
 
@@ -808,7 +1457,7 @@ DT_INST_FOREACH_STATUS_OKAY(PL011_INIT)
 	static struct pl011_config pl011_cfg_sbsa_##n = {                                          \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
 		IF_ENABLED(PL011_NODE_USE_IRQ(n),                                                  \
-			   (.irq_config_func = pl011_irq_config_func_sbsa_##n,))		   \
+			   (.irq_config_func = pl011_irq_config_func_sbsa_##n,))                   \
 	};
 
 #define PL011_SBSA_INIT(n)					\

@@ -149,5 +149,9 @@ volatile struct pl011_regs *get_uart(const struct device *dev)
 /* PL011 Raw Interrupt Status Register */
 #define PL011_RIS_TXRIS		BIT(5)	/* Transmit interrupt status */
 
+/* PL011 DMA Control Register */
+#define PL011_DMACR_RXDMAE	BIT(0)
+#define PL011_DMACR_TXDMAE	BIT(1)
+#define PL011_DMACR_DMAONERR	BIT(2)
 
 #endif /* ZEPHYR_DRIVERS_SERIAL_UART_PL011_REGISTERS_H_ */

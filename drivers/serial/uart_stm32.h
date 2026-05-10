@@ -64,21 +64,21 @@ struct uart_stm32_config {
 
 #ifdef CONFIG_UART_ASYNC_API
 struct uart_dma_stream {
-    const struct device*    dma_dev;
-    uint32_t                dma_channel;
-    struct dma_config       dma_cfg;
-    uint8_t                 priority;
-    bool                    src_addr_increment;
-    bool                    dst_addr_increment;
-    int                     fifo_threshold;
+    const struct device* dma_dev;
+    uint32_t dma_channel;
+    struct dma_config dma_cfg;
+    uint8_t priority;
+    bool src_addr_increment;
+    bool dst_addr_increment;
+    int  fifo_threshold;
     struct dma_block_config blk_cfg;
-    uint8_t*                buffer;
-    size_t                  buffer_length;
-    size_t                  offset;
-    volatile size_t         counter;
-    int32_t                 timeout;
+    uint8_t* buffer;
+    size_t buffer_length;
+    size_t offset;
+    volatile size_t counter;
+    int32_t timeout;
     struct k_work_delayable timeout_work;
-    bool                    enabled;
+    bool enabled;
 };
 #endif
 
@@ -93,13 +93,13 @@ struct uart_stm32_data {
     #endif
 
     #ifdef CONFIG_UART_ASYNC_API
-    const struct device*   uart_dev;
-    uart_callback_t        async_cb;
-    void*                  async_user_data;
+    const struct device* uart_dev;
+    uart_callback_t async_cb;
+    void* async_user_data;
     struct uart_dma_stream dma_rx;
     struct uart_dma_stream dma_tx;
-    uint8_t*               rx_next_buffer;
-    size_t                 rx_next_buffer_len;
+    uint8_t* rx_next_buffer;
+    size_t rx_next_buffer_len;
     #endif
 
     #ifdef CONFIG_PM

@@ -385,7 +385,7 @@ static DEVICE_API(dma, dma_rpi_pico_driver_api) = {
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, dma_rpi_pico_init, NULL, &dma_rpi_pico##inst##_data,           \
-			      &dma_rpi_pico##inst##_config, POST_KERNEL, CONFIG_DMA_INIT_PRIORITY, \
+			      &dma_rpi_pico##inst##_config, PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,\
 			      &dma_rpi_pico_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RPI_PICO_DMA_INIT)
