@@ -118,6 +118,18 @@ static const char *const colors[] = {
 	IS_ENABLED(CONFIG_LOG_DBG_COLOR_BLUE) ? LOG_COLOR_CODE_BLUE : NULL,   /* dbg */
 };
 
+static const bool func_prefix_used = IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_ERR) ||
+				     IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_WRN) ||
+				     IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_INF) ||
+				     IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_DBG);
+static const bool func_on_lut[] = {
+	false,
+	IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_ERR),
+	IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_WRN),
+	IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_INF),
+	IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_DBG),
+};
+
 struct log_output_context {
 	uint32_t timestamp_freq;
 	log_timestamp_t timestamp_div;
@@ -355,6 +367,7 @@ static void color_postfix(const struct log_output *output,
 
 static int ids_print(const struct log_output *output,
 		     uint32_t flags,
+		     bool func_on,
 		     const char *domain,
 		     const char *source,
 		     k_tid_t tid,
@@ -394,7 +407,11 @@ static int ids_print(const struct log_output *output,
 	}
 
 	if ((flags & LOG_OUTPUT_FLAG_SKIP_SOURCE) == 0U) {
-		total += print_formatted(output, "%s: ", source);
+		total += print_formatted(output,
+					 (func_on &&
+					  ((1 << level) & LOG_FUNCTION_PREFIX_MASK)) ?
+					 "%s." : "%s: ",
+					 source);
 	}
 
 	return total;
@@ -634,6 +651,7 @@ do_not_print_name:
 
 static uint32_t prefix_print(const struct log_output *output,
 			     uint32_t flags,
+			     bool func_on,
 			     log_timestamp_t timestamp,
 			     const char *domain,
 			     const char *source,
@@ -682,7 +700,7 @@ static uint32_t prefix_print(const struct log_output *output,
 		color_prefix(output, colors_on, level);
 	}
 
-	length += ids_print(output, flags, domain, source, tid, core_id, level);
+	length += ids_print(output, flags, func_on, domain, source, tid, core_id, level);
 
 	return length;
 }
@@ -712,8 +730,8 @@ void log_output_process(const struct log_output *output,
 	cbprintf_cb cb;
 
 	if (!raw_string) {
-		prefix_offset = prefix_print(output, flags, timestamp,
-					     domain, source, tid, core_id, level);
+		prefix_offset = prefix_print(output, flags, (func_prefix_used && func_on_lut[level]),
+					     timestamp, domain, source, tid, core_id, level);
 		cb = out_func;
 	} else {
 		prefix_offset = 0;

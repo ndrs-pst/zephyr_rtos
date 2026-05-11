@@ -47,16 +47,22 @@ typedef void (*modem_chat_match_callback)(struct modem_chat* chat, char** argv, 
 struct modem_chat_match {
     /** Match array */
     uint8_t const* match;
+
     /** Separators array */
     uint8_t const* separators;
+
     /** Size of match */
     uint8_t match_size;
+
     /** Size of separators array */
     uint8_t separators_size;
+
     /** Set if modem chat instance shall use wildcards when matching */
     bool wildcards;
+
     /** Set if script shall not continue to next step in case of match */
     bool partial;
+
     /** Type of modem chat instance */
     modem_chat_match_callback callback;
 };
@@ -92,17 +98,17 @@ struct modem_chat_match {
         .callback = _callback,                                  \
     }
 
-#define MODEM_CHAT_MATCH_DEFINE(_sym, _match, _separators, _callback)                       \
+#define MODEM_CHAT_MATCH_DEFINE(_sym, _match, _separators, _callback) \
     const static struct modem_chat_match _sym = MODEM_CHAT_MATCH(_match, _separators, _callback)
 
-#define MODEM_CHAT_MATCH_WILDCARD_DEFINE(_sym, _match, _separators, _callback)                     \
-	const static struct modem_chat_match _sym =                                                \
-		MODEM_CHAT_MATCH_WILDCARD(_match, _separators, _callback)
+#define MODEM_CHAT_MATCH_WILDCARD_DEFINE(_sym, _match, _separators, _callback) \
+    const static struct modem_chat_match _sym =                 \
+        MODEM_CHAT_MATCH_WILDCARD(_match, _separators, _callback)
 
 /* Helper struct to match any response without callback. */
 extern const struct modem_chat_match modem_chat_any_match;
 
-#define MODEM_CHAT_MATCHES_DEFINE(_sym, ...)                                                       \
+#define MODEM_CHAT_MATCHES_DEFINE(_sym, ...)                    \
     const static struct modem_chat_match _sym[] = {__VA_ARGS__}
 
 /* Helper struct to match nothing. */
@@ -118,12 +124,16 @@ extern const struct modem_chat_match modem_chat_empty_matches[1];
 struct modem_chat_script_chat {
     /** Request to send to modem */
     uint8_t const* request;
+
     /** Expected responses to request */
     const struct modem_chat_match* response_matches;
+
     /** Size of request */
     uint16_t request_size;
+
     /** Number of elements in expected responses */
     uint16_t response_matches_size;
+
     /** Timeout before chat script may continue to next step in milliseconds */
     uint16_t timeout;
 };
@@ -187,16 +197,22 @@ typedef void (*modem_chat_script_callback)(struct modem_chat* chat,
 struct modem_chat_script {
     /** Name of script */
     char const* name;
+
     /** Array of script chats */
     const struct modem_chat_script_chat* script_chats;
+
     /** Array of abort matches */
     const struct modem_chat_match* abort_matches;
+
     /** Callback called when script execution terminates */
     modem_chat_script_callback callback;
+
     /** Elements in array of script chats */
     uint16_t script_chats_size;
+
     /** Number of elements in array of abort matches */
     uint16_t abort_matches_size;
+
     /** Timeout in seconds within which the script execution must terminate */
     uint32_t timeout;
 };
@@ -212,12 +228,12 @@ struct modem_chat_script {
         .timeout            = _timeout_s,                       \
     }
 
-#define MODEM_CHAT_SCRIPT_NO_ABORT_DEFINE(_sym, _script_chats, _callback, _timeout_s)              \
-	MODEM_CHAT_SCRIPT_DEFINE(_sym, _script_chats, modem_chat_empty_matches,                    \
-				 _callback, _timeout_s)
+#define MODEM_CHAT_SCRIPT_NO_ABORT_DEFINE(_sym, _script_chats, _callback, _timeout_s)   \
+    MODEM_CHAT_SCRIPT_DEFINE(_sym, _script_chats, modem_chat_empty_matches,             \
+                 _callback, _timeout_s)
 
-#define MODEM_CHAT_SCRIPT_EMPTY_DEFINE(_sym)                                                       \
-	MODEM_CHAT_SCRIPT_NO_ABORT_DEFINE(_sym, modem_chat_empty_script_chats, NULL, 0)
+#define MODEM_CHAT_SCRIPT_EMPTY_DEFINE(_sym)                    \
+    MODEM_CHAT_SCRIPT_NO_ABORT_DEFINE(_sym, modem_chat_empty_script_chats, NULL, 0)
 
 enum modem_chat_script_send_state {
     /* No data to send */
@@ -233,6 +249,7 @@ enum modem_chat_script_send_state {
  * @warning Do not modify any members of this struct directly
  */
 struct modem_chat {
+    /** @cond INTERNAL_HIDDEN */
     /* Pipe used to send and receive data */
     struct modem_pipe* pipe;
 
@@ -245,7 +262,7 @@ struct modem_chat {
     uint16_t receive_buf_len;
 
     /* Work buffer */
-    uint8_t  work_buf[32];
+    uint8_t  work_buf[CONFIG_MODEM_CHAT_WORK_BUFFER_SIZE];
     uint16_t work_buf_len;
 
     /* Chat delimiter */
@@ -301,6 +318,7 @@ struct modem_chat {
     struct modem_stats_buffer receive_buf_stats;
     struct modem_stats_buffer work_buf_stats;
     #endif
+    /** @endcond */
 };
 
 /**
@@ -309,24 +327,34 @@ struct modem_chat {
 struct modem_chat_config {
     /** Free to use user data passed with modem match callbacks */
     void* user_data;
+
     /** Receive buffer used to store parsed arguments */
     uint8_t* receive_buf;
+
     /** Size of receive buffer should be longest line + longest match */
     uint16_t receive_buf_size;
+
     /** Delimiter */
     uint8_t const* delimiter;
+
     /** Size of delimiter */
     uint8_t delimiter_size;
+
     /** Bytes which are discarded by parser */
     uint8_t* filter;
+
     /** Size of filter */
     uint8_t filter_size;
+
     /** Array of pointers used to point to parsed arguments */
     uint8_t** argv;
+
     /** Elements in array of pointers */
     uint16_t argv_size;
+
     /** Array of unsolicited matches */
     const struct modem_chat_match* unsol_matches;
+
     /** Elements in array of unsolicited matches */
     uint16_t unsol_matches_size;
 };
@@ -441,8 +469,8 @@ int modem_chat_match_set_separators(struct modem_chat_match *chat_match, const c
  * @param chat_match Modem chat match instance
  * @param callback Callback to set
  */
-void modem_chat_match_set_callback(struct modem_chat_match *chat_match,
-				   modem_chat_match_callback callback);
+void modem_chat_match_set_callback(struct modem_chat_match* chat_match,
+                                   modem_chat_match_callback callback);
 
 /**
  * @brief Set modem chat match partial flag
@@ -456,13 +484,13 @@ void modem_chat_match_set_partial(struct modem_chat_match *chat_match, bool part
  * @param chat_match Modem chat match instance
  * @param enable Enable/disable Wildcards
  */
-void modem_chat_match_enable_wildcards(struct modem_chat_match *chat_match, bool enable);
+void modem_chat_match_enable_wildcards(struct modem_chat_match* chat_match, bool enable);
 
 /**
  * @brief Initialize modem chat script chat
  * @param script_chat Modem chat script chat instance
  */
-void modem_chat_script_chat_init(struct modem_chat_script_chat *script_chat);
+void modem_chat_script_chat_init(struct modem_chat_script_chat* script_chat);
 
 /**
  * @brief Set request of modem chat script chat instance
@@ -473,8 +501,8 @@ void modem_chat_script_chat_init(struct modem_chat_script_chat *script_chat);
  *
  * @retval 0 if successful, negative errno code otherwise
  */
-int modem_chat_script_chat_set_request(struct modem_chat_script_chat *script_chat,
-				       const char *request);
+int modem_chat_script_chat_set_request(struct modem_chat_script_chat* script_chat,
+                                       const char* request);
 
 /**
  * @brief Set modem chat script chat matches
@@ -485,17 +513,17 @@ int modem_chat_script_chat_set_request(struct modem_chat_script_chat *script_cha
  *
  * @retval 0 if successful, negative errno code otherwise
  */
-int modem_chat_script_chat_set_response_matches(struct modem_chat_script_chat *script_chat,
-						const struct modem_chat_match *response_matches,
-						uint16_t response_matches_size);
+int modem_chat_script_chat_set_response_matches(struct modem_chat_script_chat* script_chat,
+                                                const struct modem_chat_match* response_matches,
+                                                uint16_t response_matches_size);
 
 /**
  * @brief Set modem chat script chat timeout
  * @param script_chat Modem chat script chat instance
  * @param timeout_ms Timeout in milliseconds
  */
-void modem_chat_script_chat_set_timeout(struct modem_chat_script_chat *script_chat,
-					uint16_t timeout_ms);
+void modem_chat_script_chat_set_timeout(struct modem_chat_script_chat* script_chat,
+                                        uint16_t timeout_ms);
 
 /**
  * @brief Initialize modem chat script
@@ -520,9 +548,9 @@ void modem_chat_script_set_name(struct modem_chat_script *script, const char *na
  *
  * @retval 0 if successful, negative errno code otherwise
  */
-int modem_chat_script_set_script_chats(struct modem_chat_script *script,
-				       const struct modem_chat_script_chat *script_chats,
-				       uint16_t script_chats_size);
+int modem_chat_script_set_script_chats(struct modem_chat_script* script,
+                                       const struct modem_chat_script_chat* script_chats,
+                                       uint16_t script_chats_size);
 
 /**
  * @brief Set modem chat script abort matches
@@ -533,17 +561,17 @@ int modem_chat_script_set_script_chats(struct modem_chat_script *script,
  *
  * @retval 0 if successful, negative errno code otherwise
  */
-int modem_chat_script_set_abort_matches(struct modem_chat_script *script,
-					const struct modem_chat_match *abort_matches,
-					uint16_t abort_matches_size);
+int modem_chat_script_set_abort_matches(struct modem_chat_script* script,
+                                        const struct modem_chat_match* abort_matches,
+                                        uint16_t abort_matches_size);
 
 /**
  * @brief Set modem chat script callback
  * @param script Modem chat script instance
  * @param callback Callback to set
  */
-void modem_chat_script_set_callback(struct modem_chat_script *script,
-				    modem_chat_script_callback callback);
+void modem_chat_script_set_callback(struct modem_chat_script* script,
+                                    modem_chat_script_callback callback);
 
 /**
  * @brief Set modem chat script timeout

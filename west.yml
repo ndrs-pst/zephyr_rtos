@@ -170,7 +170,7 @@ manifest:
         - hal
     - name: hal_bouffalolab
       path: modules/hal/bouffalolab
-      revision: 79fabada52e00341589cadc6c2902f0cd2095ba0
+      revision: 6f8ee38a67b5c4a9f0b6e395d9c363fc920182a0
       groups:
         - hal
     - name: hal_espressif
@@ -215,7 +215,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 97fdb18a735499a0a1cac3a7a6cc8c0a92eee758
+      revision: 7ae2dce1b975985efef3f7d22b5a7be9af0ca3a9
       path: modules/hal/nxp
       groups:
         - hal
@@ -231,7 +231,7 @@ manifest:
         - hal
     - name: hal_realtek
       path: modules/hal/realtek
-      revision: 84a7fd556d95a411ee3cbf4ed29478eced58fb35
+      revision: 428e4ddd2a19560cb32ddd56cbb62bf4597edafd
       groups:
         - hal
     - name: hal_renesas
@@ -337,7 +337,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 0ceb1ac7d09f9188c0bce3001f1cdfede5ada4b9
+      revision: 3e986a25337176775069c013f25705a23408f93a
       path: bootloader/mcuboot
       groups:
         - bootloader
