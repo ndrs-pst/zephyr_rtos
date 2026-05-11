@@ -101,9 +101,8 @@ char* net_byte_to_hex(char* ptr, uint8_t byte, char base, bool pad) {
 
 char* net_sprint_ll_addr_buf(uint8_t const* ll, uint8_t ll_len,
                              char* buf, int buflen) {
-    uint8_t i;
     uint8_t len;
-    uint8_t blen;
+    int blen;
     char* ptr = buf;
 
     if (ll == NULL) {
@@ -128,10 +127,11 @@ char* net_sprint_ll_addr_buf(uint8_t const* ll, uint8_t ll_len,
             break;
     }
 
-    for (i = 0U, blen = (uint8_t)buflen; i < len && blen > 0; i++) {
+    blen = buflen;
+    for (int i = 0; ((i < len) && (blen > 0)); i++) {
         ptr = net_byte_to_hex(ptr, (char)ll[i], 'A', true);
         *ptr++ = ':';
-        blen -= 3U;
+        blen -= 3;
     }
 
     if (!(ptr - buf)) {
