@@ -450,14 +450,14 @@ void z_thread_timeout(struct _timeout const* timeout) {
          * The timeout handler was canceled by a thread on another
          * CPU or another ISR. Bail.
          */
-        k_spin_unlock(&_sched_spinlock, key);
-        return;
+    }
+    else {
+        struct k_thread* thread =
+            CONTAINER_OF(timeout, struct k_thread, base.timeout);
+
+        z_sched_wake_thread_locked(thread);
     }
 
-    struct k_thread* thread = CONTAINER_OF(timeout,
-                                           struct k_thread, base.timeout);
-
-    z_sched_wake_thread_locked(thread);
     k_spin_unlock(&_sched_spinlock, key);
 }
 #endif /* CONFIG_SYS_CLOCK_EXISTS */

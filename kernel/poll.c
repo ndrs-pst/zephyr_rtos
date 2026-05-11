@@ -617,16 +617,15 @@ static void triggered_work_expiration_handler(struct _timeout const* timeout) {
          * The timeout was canceled by a thread on another CPU
          * or another ISR. Bail.
          */
-        k_spin_unlock(&lock, key);
-        return;
     }
+    else {
+        struct k_work_poll* twork =
+            CONTAINER_OF(timeout, struct k_work_poll, timeout);
 
-    struct k_work_poll* twork =
-        CONTAINER_OF(timeout, struct k_work_poll, timeout);
-
-    twork->poller.is_polling = false;
-    twork->poll_result = -EAGAIN;
-    z_work_submit_to_queue(twork->workq, &twork->work);
+        twork->poller.is_polling = false;
+        twork->poll_result = -EAGAIN;
+        z_work_submit_to_queue(twork->workq, &twork->work);
+    }
 
     k_spin_unlock(&lock, key);
 }

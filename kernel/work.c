@@ -1001,8 +1001,8 @@ int k_work_queue_stop(struct k_work_q *queue, k_timeout_t timeout)
  */
 static void work_timeout(struct _timeout const* to)
 {
-	struct k_work_delayable *dw
-		= CONTAINER_OF(to, struct k_work_delayable, timeout);
+	struct k_work_delayable *dw =
+		CONTAINER_OF(to, struct k_work_delayable, timeout);
 	struct k_work *wp = &dw->work;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	struct k_work_q *queue = NULL;
@@ -1015,22 +1015,21 @@ static void work_timeout(struct _timeout const* to)
 	 * the cancellation of the handler without explicitly holding the
 	 * timeout lock.
 	 */
-
 	if (z_is_timeout_handler_canceled(to)) {
-		k_spin_unlock(&lock, key);
-		return;
+		/* pass */
 	}
-
-	/* If the work is still marked delayed (should be) then clear that
-	 * state and submit it to the queue.  If successful the queue will be
-	 * notified of new work at the next reschedule point.
-	 *
-	 * If not successful there is no notification that the work has been
-	 * abandoned.  Sorry.
-	 */
-	if (flag_test_and_clear(&wp->flags, K_WORK_DELAYED_BIT)) {
-		queue = dw->queue;
-		(void)submit_to_queue_locked(wp, &queue);
+	else {
+		/* If the work is still marked delayed (should be) then clear that
+		* state and submit it to the queue.  If successful the queue will be
+		* notified of new work at the next reschedule point.
+		*
+		* If not successful there is no notification that the work has been
+		* abandoned.  Sorry.
+		*/
+		if (flag_test_and_clear(&wp->flags, K_WORK_DELAYED_BIT)) {
+			queue = dw->queue;
+			(void)submit_to_queue_locked(wp, &queue);
+		}
 	}
 
 	k_spin_unlock(&lock, key);

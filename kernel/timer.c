@@ -71,77 +71,70 @@ static inline void z_timer_observer_on_expiry(struct k_timer *timer)
 void z_timer_expiration_handler(const struct _timeout *t)
 {
 	struct k_timer *timer = CONTAINER_OF(t, struct k_timer, timeout);
-	struct k_thread *thread;
+	struct k_thread *thread = NULL;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	if (z_is_timeout_handler_canceled(t)) {
-		k_spin_unlock(&lock, key);
-		return;
-	}
-
-	/*
-	 * if the timer is periodic, start it again; don't add _TICK_ALIGN
-	 * since we're already aligned to a tick boundary
-	 */
-	if (!K_TIMEOUT_EQ(timer->period, K_NO_WAIT) &&
-	    !K_TIMEOUT_EQ(timer->period, K_FOREVER)) {
-		k_timeout_t next = timer->period;
+	if (!z_is_timeout_handler_canceled(t)) {
+		/*
+		 * if the timer is periodic, start it again; don't add _TICK_ALIGN
+		 * since we're already aligned to a tick boundary
+		 */
+		if (!K_TIMEOUT_EQ(timer->period, K_NO_WAIT) &&
+		    !K_TIMEOUT_EQ(timer->period, K_FOREVER)) {
+			k_timeout_t next = timer->period;
 
 #ifdef CONFIG_TIMEOUT_64BIT
-		/* Exploit the fact that uptime during a kernel
-		 * timeout handler reflects the time of the scheduled
-		 * event and not real time to get some inexpensive
-		 * protection against late interrupts.  If we're
-		 * delayed for any reason, we still end up calculating
-		 * the next expiration as a regular stride from where
-		 * we "should" have run.  Requires absolute timeouts.
-		 */
-		next = K_TIMEOUT_ABS_TICKS(k_uptime_ticks() + next.ticks);
+			/* Exploit the fact that uptime during a kernel
+			 * timeout handler reflects the time of the scheduled
+			 * event and not real time to get some inexpensive
+			 * protection against late interrupts.  If we're
+			 * delayed for any reason, we still end up calculating
+			 * the next expiration as a regular stride from where
+			 * we "should" have run.  Requires absolute timeouts.
+			 */
+			next = K_TIMEOUT_ABS_TICKS(k_uptime_ticks() + next.ticks);
 #endif /* CONFIG_TIMEOUT_64BIT */
-		z_add_timeout(&timer->timeout, z_timer_expiration_handler,
-			      next);
+			z_add_timeout(&timer->timeout, z_timer_expiration_handler,
+				      next);
+		}
+
+		/* update timer's status */
+		timer->status += 1U;
+
+		z_timer_observer_on_expiry(timer);
+
+		/* invoke timer expiry function */
+		if (timer->expiry_fn != NULL) {
+			k_timer_expiry_t expiry_fn = timer->expiry_fn;
+
+			/* Unlock for user handler. */
+			k_spin_unlock(&lock, key);
+
+			SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_timer, expiry, timer);
+
+			expiry_fn(timer);
+
+			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, expiry, timer);
+
+			key = k_spin_lock(&lock);
+		}
+
+		if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+			thread = z_waitq_head(&timer->wait_q);
+
+			if (thread != NULL) {
+				z_unpend_thread_no_timeout(thread);
+
+				arch_thread_return_value_set(thread, 0);
+			}
+		}
 	}
-
-	/* update timer's status */
-	timer->status += 1U;
-
-	z_timer_observer_on_expiry(timer);
-
-	/* invoke timer expiry function */
-	if (timer->expiry_fn != NULL) {
-		k_timer_expiry_t expiry_fn = timer->expiry_fn;
-
-		/* Unlock for user handler. */
-		k_spin_unlock(&lock, key);
-
-		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_timer, expiry, timer);
-
-		expiry_fn(timer);
-
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, expiry, timer);
-
-		key = k_spin_lock(&lock);
-	}
-
-	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
-		k_spin_unlock(&lock, key);
-		return;
-	}
-
-	thread = z_waitq_head(&timer->wait_q);
-
-	if (thread == NULL) {
-		k_spin_unlock(&lock, key);
-		return;
-	}
-
-	z_unpend_thread_no_timeout(thread);
-
-	arch_thread_return_value_set(thread, 0);
 
 	k_spin_unlock(&lock, key);
 
-	z_ready_thread(thread);
+	if (thread != NULL) {
+		z_ready_thread(thread);
+	}
 }
 
 
