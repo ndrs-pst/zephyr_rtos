@@ -1050,6 +1050,7 @@ Continuous Integration:
     - nashif
   collaborators:
     - fabiobaltieri
+    - henrikbrixandersen
     - kartben
   files:
     - .github/
@@ -6790,6 +6791,7 @@ West:
     - modules/trusted-firmware-m/
     - samples/tfm_integration/
     - doc/services/tfm/
+    - tests/modules/tf-m/
   labels:
     - "area: TF-M"
   tests:

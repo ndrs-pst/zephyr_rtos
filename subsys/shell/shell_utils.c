@@ -17,6 +17,10 @@ TYPE_SECTION_END_EXTERN(union shell_cmd_entry, shell_dynamic_subcmds);
 TYPE_SECTION_START_EXTERN(union shell_cmd_entry, shell_subcmds);
 TYPE_SECTION_END_EXTERN(union shell_cmd_entry, shell_subcmds);
 
+#if defined(CONFIG_SHELL_ALIASES)
+extern const struct shell_alias shell_aliases[];
+#endif
+
 /* Macro creates empty entry at the bottom of the memory section with subcommands
  * it is used to detect end of subcommand set that is located before this marker.
  */
@@ -362,6 +366,100 @@ const struct shell_static_entry* z_shell_find_cmd(
     return (NULL);
 }
 
+/* Function returns pointer to a command matching given alias.
+ *
+ * @param cmd_str  Command pattern to be found.
+ * @param output   The actual command to execute instead of the alias.
+ *
+ * @return 0 if alias was found and output is set, -ENOENT if alias was
+ *         not found and -ENOTSUP if aliases are not supported.
+ */
+int z_shell_find_alias(char const* cmd_str, char const** output) {
+    #if defined(CONFIG_SHELL_ALIASES)
+    int idx = 0;
+
+    while (shell_aliases[idx].alias != NULL) {
+        if (strcmp(shell_aliases[idx].alias, cmd_str) == 0) {
+            *output = shell_aliases[idx].command;
+            return (0);
+        }
+
+        idx++;
+    }
+
+    return (-ENOENT);
+    #else
+    ARG_UNUSED(cmd_str);
+    ARG_UNUSED(output);
+    return (-ENOTSUP);
+    #endif
+}
+
+int z_shell_expand_alias(char* cmd_buf, size_t cmd_buf_size) {
+    #if defined(CONFIG_SHELL_ALIASES)
+    char const* alias = NULL;
+    char* first_space = strstr(cmd_buf, " ");
+    char* remaining_cmd = first_space ? first_space + 1 : NULL;
+    size_t alias_len;
+    size_t cmd_buf_len;
+    size_t separator_len;
+    size_t new_cmd_len;
+    int ret;
+
+    if (first_space != NULL) {
+        /* Temporarily terminate command buffer at first space to get root
+         * command for alias search.
+         */
+        *first_space = '\0';
+    }
+
+    ret = z_shell_find_alias(cmd_buf, &alias);
+    if ((ret != 0) || (alias == NULL)) {
+        if (first_space != NULL) {
+            *first_space = ' ';
+        }
+
+        return (ret);
+    }
+
+    alias_len     = z_shell_strlen(alias);
+    cmd_buf_len   = z_shell_strlen(remaining_cmd);
+    separator_len = (remaining_cmd != NULL) ? 1U : 0U;
+    new_cmd_len   = alias_len + separator_len + cmd_buf_len + 1U;
+
+    if (new_cmd_len > cmd_buf_size) {
+        if (first_space != NULL) {
+            *first_space = ' ';
+        }
+
+        return (-E2BIG);
+    }
+
+    /* Move the part of command buffer after root command to the end of the
+     * alias.
+     */
+    if (remaining_cmd != NULL) {
+        memmove(cmd_buf + alias_len + 1, remaining_cmd, cmd_buf_len + 1);
+    }
+
+    /* Copy alias to the beginning of command buffer. */
+    memcpy(cmd_buf, alias, alias_len);
+
+    if (remaining_cmd == NULL) {
+        cmd_buf[alias_len] = '\0';
+    }
+    else {
+        cmd_buf[alias_len] = ' ';
+    }
+
+    return (0);
+    #else
+    ARG_UNUSED(cmd_buf);
+    ARG_UNUSED(cmd_buf_size);
+    return (-ENOTSUP);
+    #endif
+}
+
 const struct shell_static_entry* z_shell_get_last_command(
                     const struct shell_static_entry* entry,
                     size_t argc,
@@ -369,7 +467,7 @@ const struct shell_static_entry* z_shell_get_last_command(
                     size_t* match_arg,
                     struct shell_static_entry* dloc,
                     bool only_static) {
-    const struct shell_static_entry* prev_entry;
+    struct shell_static_entry const* prev_entry;
 
     *match_arg = Z_SHELL_CMD_ROOT_LVL;
 
@@ -483,7 +581,7 @@ static void buffer_trim(char* buff, uint16_t* buff_len) {
     }
 }
 
-void z_shell_cmd_trim(const struct shell* sh) {
+void z_shell_cmd_trim(struct shell const* sh) {
     buffer_trim(sh->ctx->cmd_buff, &sh->ctx->cmd_buff_len);
     sh->ctx->cmd_buff_pos = sh->ctx->cmd_buff_len;
 }
@@ -494,14 +592,14 @@ enum shell_device_status {
     SHELL_DEVICE_STATUS_NON_READY
 };
 
-static const struct device* shell_device_internal(size_t idx,
-                                                  const char* prefix,
+static struct device const* shell_device_internal(size_t idx,
+                                                  char const* prefix,
                                                   shell_device_filter_t filter,
                                                   enum shell_device_status status) {
     size_t match_idx = 0;
-    const struct device* dev;
+    struct device const* dev;
     size_t len = z_device_get_all_static(&dev);
-    const struct device* dev_end = (dev + len);
+    struct device const* dev_end = (dev + len);
 
     while (dev < dev_end) {
         if (((status == SHELL_DEVICE_STATUS_ANY) ||
@@ -522,32 +620,32 @@ static const struct device* shell_device_internal(size_t idx,
     return (NULL);
 }
 
-const struct device* shell_device_filter(size_t idx,
+struct device const* shell_device_filter(size_t idx,
                                          shell_device_filter_t filter) {
     return shell_device_internal(idx, NULL, filter,
                                  SHELL_DEVICE_STATUS_READY);
 }
 
-const struct device* shell_device_lookup(size_t idx,
-                                         const char* prefix) {
+struct device const* shell_device_lookup(size_t idx,
+                                         char const* prefix) {
     return shell_device_internal(idx, prefix, NULL,
                                  SHELL_DEVICE_STATUS_READY);
 }
 
-const struct device* shell_device_lookup_all(size_t idx,
-                                             const char* prefix) {
+struct device const* shell_device_lookup_all(size_t idx,
+                                             char const* prefix) {
     return shell_device_internal(idx, prefix, NULL,
                                  SHELL_DEVICE_STATUS_ANY);
 }
 
-const struct device* shell_device_lookup_non_ready(size_t idx,
-                                                   const char* prefix) {
+struct device const* shell_device_lookup_non_ready(size_t idx,
+                                                   char const* prefix) {
     return shell_device_internal(idx, prefix, NULL,
                                  SHELL_DEVICE_STATUS_NON_READY);
 }
 
-const struct device* shell_device_get_binding(const char* name) {
-    const struct device* dev = device_get_binding(name);
+struct device const* shell_device_get_binding(const char* name) {
+    struct device const* dev = device_get_binding(name);
 
     if (IS_ENABLED(CONFIG_DEVICE_DT_METADATA) && (dev == NULL)) {
         dev = device_get_by_dt_nodelabel(name);
@@ -557,7 +655,7 @@ const struct device* shell_device_get_binding(const char* name) {
 }
 
 #ifdef CONFIG_DEVICE_DT_METADATA
-static inline bool device_has_nodelabel(const struct device* dev,
+static inline bool device_has_nodelabel(struct device const* dev,
                                         const char* name) {
     const struct device_dt_nodelabels* nl;
 
@@ -581,10 +679,10 @@ static inline bool device_has_nodelabel(const struct device* dev,
 #define device_has_nodelabel(...) false
 #endif /* CONFIG_DEVICE_DT_METADATA */
 
-const struct device* shell_device_get_binding_all(const char* name) {
-    const struct device* dev;
+struct device const* shell_device_get_binding_all(const char* name) {
+    struct device const* dev;
     size_t len = z_device_get_all_static(&dev);
-    const struct device* dev_end = dev + len;
+    struct device const* dev_end = dev + len;
 
     if (name != NULL) {
         for (; dev < dev_end; dev++) {
@@ -600,7 +698,7 @@ const struct device* shell_device_get_binding_all(const char* name) {
     return (NULL);
 }
 
-long shell_strtol(const char* str, int base, int* err) {
+long shell_strtol(char const* str, int base, int* err) {
     long val;
     char* endptr;
 
@@ -722,8 +820,8 @@ void shell_hexdump_line_width(struct shell const* sh, unsigned int offset,
     shell_print(sh, "|");
 }
 
-void shell_hexdump_line(const struct shell* sh, unsigned int offset,
-                        const uint8_t* data, size_t len) {
+void shell_hexdump_line(struct shell const* sh, unsigned int offset,
+                        uint8_t const* data, size_t len) {
     __ASSERT_NO_MSG(sh);
 
     size_t i;
@@ -765,10 +863,10 @@ void shell_hexdump_line(const struct shell* sh, unsigned int offset,
     shell_print(sh, "|");
 }
 
-void shell_hexdump(const struct shell* sh, const uint8_t* data, size_t len) {
+void shell_hexdump(struct shell const* sh, uint8_t const* data, size_t len) {
     __ASSERT_NO_MSG(sh);
 
-    const uint8_t *p = data;
+    uint8_t const* p = data;
     size_t line_len;
 
     while (len) {

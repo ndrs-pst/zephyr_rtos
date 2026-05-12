@@ -15,6 +15,11 @@ extern "C" {
 
 #define SHELL_MSG_SPECIFY_SUBCOMMAND "Please specify a subcommand.\n"
 
+struct shell_alias {
+    const char* alias;
+    const char* command;
+};
+
 int32_t z_row_span_with_buffer_offsets_get(struct shell_multiline_cons* cons,
                                            uint16_t offset1,
                                            uint16_t offset2);
@@ -46,11 +51,11 @@ void z_shell_pattern_remove(char const* buff, uint16_t* buff_len, char const* pa
  *
  * @return Fetched command or null if command with that index does not exist.
  */
-const struct shell_static_entry* z_shell_cmd_get(const struct shell_static_entry* parent, 
+struct shell_static_entry const* z_shell_cmd_get(struct shell_static_entry const* parent, 
                                                  size_t idx,
                                                  struct shell_static_entry* dloc);
 
-const struct shell_static_entry* z_shell_find_cmd(const struct shell_static_entry* parent,
+struct shell_static_entry const* z_shell_find_cmd(struct shell_static_entry const* parent,
                                                   char const* cmd_str,
                                                   struct shell_static_entry* dloc);
 
@@ -66,7 +71,7 @@ const struct shell_static_entry* z_shell_find_cmd(const struct shell_static_entr
  *
  * @return      Pointer to found command.
  */
-const struct shell_static_entry* z_shell_get_last_command(const struct shell_static_entry* entry,
+struct shell_static_entry const* z_shell_get_last_command(struct shell_static_entry const* entry,
                                                           size_t argc,
                                                           char const* argv[],
                                                           size_t* match_arg,
@@ -74,17 +79,20 @@ const struct shell_static_entry* z_shell_get_last_command(const struct shell_sta
                                                           bool only_static);
 
 void z_shell_spaces_trim(char* str);
-void z_shell_cmd_trim(const struct shell* sh);
+void z_shell_cmd_trim(struct shell const* sh);
 
-const struct shell_static_entry* root_cmd_find(char const* syntax);
+struct shell_static_entry const* root_cmd_find(char const* syntax);
 
-static inline void z_transport_buffer_flush(const struct shell* sh) {
+static inline void z_transport_buffer_flush(struct shell const* sh) {
     z_shell_fprintf_buffer_flush(sh->fprintf_ctx);
 }
 
-static inline bool z_shell_in_select_mode(const struct shell* sh) {
+static inline bool z_shell_in_select_mode(struct shell const* sh) {
     return sh->ctx->selected_cmd == NULL ? false : true;
 }
+
+int z_shell_find_alias(char const* cmd_str, char const** output);
+int z_shell_expand_alias(char* cmd_buf, size_t cmd_buf_size);
 
 #ifdef __cplusplus
 }

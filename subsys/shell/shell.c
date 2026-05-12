@@ -49,6 +49,20 @@ BUILD_ASSERT((SHELL_THREAD_PRIORITY >= K_HIGHEST_APPLICATION_THREAD_PRIO) &&
 BUILD_ASSERT(CONFIG_SHELL_BYPASS_READ_BUF_SIZE < CONFIG_SHELL_STACK_SIZE,
              "Bypass buffer size must be smaller than shell stack size");
 
+#if defined(CONFIG_SHELL_ALIASES)
+/* We have one alias defined by default. */
+const struct shell_alias shell_aliases[] = {
+    { "?", "help" },
+
+#if defined(CONFIG_SHELL_ALIASES_HAS_FILE)
+#include "generated-shell-aliases.inc"
+#endif
+
+    /* NULL is used to mark the end of the array */
+    { NULL, NULL }
+};
+#endif /* CONFIG_SHELL_ALIASES */
+
 static inline void receive_state_change(struct shell const* sh,
                                         enum shell_receive_state state) {
     sh->ctx->receive_state = state;
@@ -149,7 +163,7 @@ static void tab_item_print(struct shell const* sh, char const* option,
     __ASSERT_NO_MSG(columns != 0);
     diff = longest_option - z_shell_strlen(option);
 
-    if (vt100_ctx->printed_cmd++ % columns == 0U) {
+    if ((vt100_ctx->printed_cmd++ % columns) == 0U) {
         z_shell_fprintf(sh, SHELL_OPTION, "\n%s%s", tab, option);
     }
     else {
@@ -248,15 +262,77 @@ static inline uint16_t completion_space_get(struct shell const* sh) {
     return (space);
 }
 
+static bool alias_expansion_needed(char const* cmd, int trailing_space) {
+    char const* cursor = cmd;
+
+    while ((*cursor != '\0') && (isspace((int)*cursor) != 0)) {
+        cursor++;
+    }
+
+    if (*cursor == '\0') {
+        return (false);
+    }
+
+    if (trailing_space != 0) {
+        return (true);
+    }
+
+    while ((*cursor != '\0') && (isspace((int)*cursor) == 0)) {
+        cursor++;
+    }
+
+    while ((*cursor != '\0') && (isspace((int)*cursor) != 0)) {
+        cursor++;
+    }
+
+    return (*cursor != '\0');
+}
+
+static bool command_starts_with(char const* cmd, char const* syntax) {
+    char const* cursor = cmd;
+    size_t len = strlen(syntax);
+
+    while ((*cursor != '\0') && (isspace((int)*cursor) != 0)) {
+        cursor++;
+    }
+
+    if (strncmp(cursor, syntax, len) != 0) {
+        return (false);
+    }
+
+    return ((cursor[len] == '\0') || (isspace((int)cursor[len]) != 0));
+}
+
+static bool __maybe_unused command_root_get(char const* cmd, char* root_cmd,
+                                            size_t root_cmd_size) {
+    char const* first_space = strstr(cmd, " ");
+    size_t cmd_len = first_space ? (size_t)(first_space - cmd)
+                                 : strlen(cmd);
+
+    if ((cmd_len == 0U) || (cmd_len >= root_cmd_size)) {
+        return (false);
+    }
+
+    memcpy(root_cmd, cmd, cmd_len);
+    root_cmd[cmd_len] = '\0';
+
+    return (true);
+}
+
 /* Prepare arguments and return number of space available for completion. */
 static bool tab_prepare(struct shell const* sh,
                         const struct shell_static_entry** cmd,
                         char const*** argv, size_t* argc,
                         size_t* complete_arg_idx,
+                        bool* alias_completion,
                         struct shell_static_entry* d_entry) {
     struct shell_ctx* ctx = sh->ctx;
     uint16_t compl_space = completion_space_get(sh);
     size_t search_argc;
+    bool select_cmd;
+    bool strip_select_cmd = false;
+    int space;
+    int ret;
 
     if (compl_space == 0U) {
         return (false);
@@ -265,6 +341,25 @@ static bool tab_prepare(struct shell const* sh,
     /* Copy command from its beginning to cursor position. */
     memcpy(ctx->temp_buff, ctx->cmd_buff, ctx->cmd_buff_pos);
     ctx->temp_buff[ctx->cmd_buff_pos] = '\0';
+
+    /* If last command is not completed (followed by space) it is treated
+     * as uncompleted one.
+     */
+    space = (ctx->cmd_buff_pos > 0) ?
+        isspace((int)ctx->cmd_buff[ctx->cmd_buff_pos - 1]) : 0;
+
+    select_cmd = (IS_ENABLED(CONFIG_SHELL_CMDS_SELECT) || (CONFIG_SHELL_CMD_ROOT[0] != 0)) &&
+                 !z_shell_in_select_mode(sh) &&
+                 command_starts_with(ctx->temp_buff, "select");
+
+    *alias_completion = !select_cmd;
+
+    if (*alias_completion &&
+        alias_expansion_needed(ctx->temp_buff, space)) {
+        ret = z_shell_expand_alias(ctx->temp_buff,
+                                   sizeof(ctx->temp_buff));
+        ARG_UNUSED(ret);
+    }
 
     /* Create argument list. */
     (void) z_shell_make_argv(argc, *argv, ctx->temp_buff,
@@ -279,20 +374,14 @@ static bool tab_prepare(struct shell const* sh,
     /* terminate arguments with NULL */
     (*argv)[argc_val] = NULL;
 
-    if ((IS_ENABLED(CONFIG_SHELL_CMDS_SELECT) || (CONFIG_SHELL_CMD_ROOT[0] != 0)) &&
-        (argc_val > 0) &&
-        (strcmp("select", (*argv)[0]) == 0) &&
-        !z_shell_in_select_mode(sh)) {
+    if (select_cmd && (*argc > 0) && (strcmp("select", (*argv)[0]) == 0)) {
         *argv = *argv + 1;
         argc_val--;
         *argc = argc_val;
+        strip_select_cmd = true;
     }
 
-    /* If last command is not completed (followed by space) it is treated
-     * as uncompleted one.
-     */
-    int space = (ctx->cmd_buff_pos > 0) ?
-                 isspace((int)ctx->cmd_buff[ctx->cmd_buff_pos - 1]) : 0;
+    *alias_completion = !strip_select_cmd;
 
     /* root command completion */
     if ((argc_val == 0) || ((space == 0) && (argc_val == 1))) {
@@ -319,11 +408,203 @@ static bool tab_prepare(struct shell const* sh,
 
 static inline bool is_completion_candidate(char const* candidate,
                                            char const* str, size_t len) {
+    if (len == 0U) {
+        return (true);
+    }
+
     return (strncmp(candidate, str, len) == 0) ? true : false;
 }
 
+static bool __maybe_unused root_alias_is_unique(struct shell_static_entry const* cmd,
+                                                char const* alias_name,
+                                                size_t alias_idx) {
+    #if defined(CONFIG_SHELL_ALIASES)
+    struct shell_static_entry dloc;
+    size_t idx = 0;
+
+    if (z_shell_find_cmd(cmd, alias_name, &dloc) != NULL) {
+        return (false);
+    }
+
+    while (idx < alias_idx) {
+        if ((shell_aliases[idx].alias != NULL) &&
+            (strcmp(shell_aliases[idx].alias, alias_name) == 0)) {
+            return (false);
+        }
+
+        idx++;
+    }
+
+    return (true);
+    #else
+    ARG_UNUSED(cmd);
+    ARG_UNUSED(alias_name);
+    ARG_UNUSED(alias_idx);
+    return (false);
+    #endif
+}
+
+static bool __maybe_unused root_alias_target_exists(struct shell_static_entry const* cmd,
+                                                    char const* alias_command) {
+    #if defined(CONFIG_SHELL_ALIASES)
+    struct shell_static_entry dloc;
+    char root_cmd[CONFIG_SHELL_CMD_BUFF_SIZE];
+
+    if (!command_root_get(alias_command, root_cmd, sizeof(root_cmd))) {
+        return (false);
+    }
+
+    return (z_shell_find_cmd(cmd, root_cmd, &dloc) != NULL);
+    #else
+    ARG_UNUSED(cmd);
+    ARG_UNUSED(alias_command);
+    return (false);
+    #endif
+}
+
+static bool __maybe_unused root_alias_completion_candidate(struct shell_static_entry const* cmd,
+                                                           char const* incompl_cmd,
+                                                           size_t incompl_cmd_len,
+                                                           size_t alias_idx) {
+    #if defined(CONFIG_SHELL_ALIASES)
+    const struct shell_alias* alias = &shell_aliases[alias_idx];
+
+    if ((alias->alias == NULL) || (alias->command == NULL)) {
+        return (false);
+    }
+
+    if (!root_alias_is_unique(cmd, alias->alias, alias_idx)) {
+        return (false);
+    }
+
+    if (!root_alias_target_exists(cmd, alias->command)) {
+        return (false);
+    }
+
+    return is_completion_candidate(alias->alias, incompl_cmd,
+                                   incompl_cmd_len);
+    #else
+    ARG_UNUSED(cmd);
+    ARG_UNUSED(incompl_cmd);
+    ARG_UNUSED(incompl_cmd_len);
+    ARG_UNUSED(alias_idx);
+    return (false);
+    #endif
+}
+
+static bool __maybe_unused alias_collision_exists(struct shell_static_entry const* cmd,
+                                                  char const* cmd_buf,
+                                                  char* root_cmd,
+                                                  size_t root_cmd_size) {
+    #if defined(CONFIG_SHELL_ALIASES)
+    char const* alias = NULL;
+    struct shell_static_entry dloc;
+    int ret;
+
+    if (!command_root_get(cmd_buf, root_cmd, root_cmd_size)) {
+        return (false);
+    }
+
+    ret = z_shell_find_alias(root_cmd, &alias);
+    if ((ret != 0) || (alias == NULL)) {
+        return (false);
+    }
+
+    return (z_shell_find_cmd(cmd, root_cmd, &dloc) != NULL);
+    #else
+    ARG_UNUSED(cmd);
+    ARG_UNUSED(cmd_buf);
+    ARG_UNUSED(root_cmd);
+    ARG_UNUSED(root_cmd_size);
+    return (false);
+    #endif
+}
+
+static void find_root_completion_candidates(struct shell_static_entry const* cmd,
+                                            char const* incompl_cmd,
+                                            char const** first_match,
+                                            size_t* cnt,
+                                            uint16_t* longest) {
+    struct shell_static_entry const* candidate;
+    struct shell_static_entry dloc;
+    size_t incompl_cmd_len = z_shell_strlen(incompl_cmd);
+    size_t idx = 0;
+
+    *first_match = NULL;
+    *longest = 0U;
+    *cnt = 0U;
+
+    while ((candidate = z_shell_cmd_get(cmd, idx++, &dloc)) != NULL) {
+        if (!is_completion_candidate(candidate->syntax, incompl_cmd,
+                                     incompl_cmd_len)) {
+            continue;
+        }
+
+        *longest = z_max(strlen(candidate->syntax), *longest);
+        if (*cnt == 0U) {
+            *first_match = candidate->syntax;
+        }
+
+        (*cnt)++;
+    }
+
+    #if defined(CONFIG_SHELL_ALIASES)
+    idx = 0;
+    while (shell_aliases[idx].alias != NULL) {
+        if (!root_alias_completion_candidate(cmd, incompl_cmd,
+                                             incompl_cmd_len, idx)) {
+            idx++;
+            continue;
+        }
+
+        *longest = max(strlen(shell_aliases[idx].alias), *longest);
+        if (*cnt == 0U) {
+            *first_match = shell_aliases[idx].alias;
+        }
+
+        (*cnt)++;
+        idx++;
+    }
+    #endif
+}
+
+static void root_autocomplete(struct shell const* sh,
+                              char const* arg,
+                              char const* match) {
+    struct shell_ctx* ctx = sh->ctx;
+    uint16_t cmd_len = z_shell_strlen(match);
+    uint16_t arg_len = z_shell_strlen(arg);
+
+    if (!IS_ENABLED(CONFIG_SHELL_TAB_AUTOCOMPLETION)) {
+        if (cmd_len == arg_len) {
+            z_shell_op_char_insert(sh, ' ');
+        }
+
+        return;
+    }
+
+    if (cmd_len != arg_len) {
+        z_shell_op_completion_insert(sh, match + arg_len,
+                                     cmd_len - arg_len);
+    }
+
+    if (isspace((int)ctx->cmd_buff[ctx->cmd_buff_pos]) == 0) {
+        if (z_flag_insert_mode_get(sh)) {
+            z_flag_insert_mode_set(sh, false);
+            z_shell_op_char_insert(sh, ' ');
+            z_flag_insert_mode_set(sh, true);
+        }
+        else {
+            z_shell_op_char_insert(sh, ' ');
+        }
+    }
+    else {
+        z_shell_op_cursor_move(sh, 1);
+    }
+}
+
 static void find_completion_candidates(struct shell const* sh,
-                                       const struct shell_static_entry* cmd,
+                                       struct shell_static_entry const* cmd,
                                        char const* incompl_cmd,
                                        size_t* first_idx, size_t* cnt,
                                        uint16_t* longest) {
@@ -457,6 +738,40 @@ static void tab_options_print(struct shell const* sh,
     z_shell_print_prompt_and_cmd(sh);
 }
 
+static void root_tab_options_print(struct shell const* sh,
+                                   struct shell_static_entry const* cmd,
+                                   char const* str,
+                                   uint16_t longest) {
+    struct shell_static_entry const* match;
+    struct shell_static_entry dloc;
+    size_t str_len = z_shell_strlen(str);
+    size_t idx = 0;
+
+    tab_item_print(sh, SHELL_INIT_OPTION_PRINTER, longest);
+
+    while ((match = z_shell_cmd_get(cmd, idx++, &dloc)) != NULL) {
+        if (!is_completion_candidate(match->syntax, str, str_len)) {
+            continue;
+        }
+
+        tab_item_print(sh, match->syntax, longest);
+    }
+
+    #if defined(CONFIG_SHELL_ALIASES)
+    idx = 0;
+    while (shell_aliases[idx].alias != NULL) {
+        if (root_alias_completion_candidate(cmd, str, str_len, idx)) {
+            tab_item_print(sh, shell_aliases[idx].alias, longest);
+        }
+
+        idx++;
+    }
+    #endif
+
+    z_cursor_next_line_move(sh);
+    z_shell_print_prompt_and_cmd(sh);
+}
+
 static uint16_t common_beginning_find(struct shell const* sh,
                                       const struct shell_static_entry* cmd,
                                       char const** str,
@@ -472,7 +787,7 @@ static uint16_t common_beginning_find(struct shell const* sh,
     match = z_shell_cmd_get(cmd, first, &dynamic_entry);
     __ASSERT_NO_MSG(match);
     strncpy(ctx->temp_buff, match->syntax,
-            sizeof(ctx->temp_buff) - 1);
+            (sizeof(ctx->temp_buff) - 1));
 
     *str = match->syntax;
 
@@ -496,6 +811,74 @@ static uint16_t common_beginning_find(struct shell const* sh,
     return (common);
 }
 
+static uint16_t root_common_beginning_find(struct shell const* sh,
+                                           struct shell_static_entry const* cmd,
+                                           char const** str,
+                                           char const* arg) {
+    struct shell_ctx* ctx = sh->ctx;
+    struct shell_static_entry const* match;
+    struct shell_static_entry dloc;
+    size_t arg_len = z_shell_strlen(arg);
+    size_t idx = 0;
+    uint16_t common = UINT16_MAX;
+    bool first = true;
+
+    while ((match = z_shell_cmd_get(cmd, idx++, &dloc)) != NULL) {
+        int curr_common;
+
+        if (!is_completion_candidate(match->syntax, arg, arg_len)) {
+            continue;
+        }
+
+        if (first) {
+            strncpy(ctx->temp_buff, match->syntax,
+                    (sizeof(ctx->temp_buff) - 1));
+            ctx->temp_buff[sizeof(ctx->temp_buff) - 1] = '\0';
+            *str = match->syntax;
+            first = false;
+            continue;
+        }
+
+        curr_common = str_common(ctx->temp_buff, match->syntax,
+                                 UINT16_MAX);
+        if ((arg_len == 0U) || (curr_common >= arg_len)) {
+            common = (curr_common < common) ? curr_common : common;
+        }
+    }
+
+    #if defined(CONFIG_SHELL_ALIASES)
+    idx = 0;
+    while (shell_aliases[idx].alias != NULL) {
+        int curr_common;
+
+        if (!root_alias_completion_candidate(cmd, arg, arg_len, idx)) {
+            idx++;
+            continue;
+        }
+
+        if (first) {
+            strncpy(ctx->temp_buff, shell_aliases[idx].alias,
+                    (sizeof(ctx->temp_buff) - 1));
+            ctx->temp_buff[sizeof(ctx->temp_buff) - 1] = '\0';
+            *str = shell_aliases[idx].alias;
+            first = false;
+            idx++;
+            continue;
+        }
+
+        curr_common = str_common(temp_buff,
+                                 shell_aliases[idx].alias, UINT16_MAX);
+        if ((arg_len == 0U) || (curr_common >= arg_len)) {
+            common = (curr_common < common) ? curr_common : common;
+        }
+
+        idx++;
+    }
+    #endif
+
+    return ((common == UINT16_MAX) ? 0U : common);
+}
+
 static void partial_autocomplete(struct shell const* sh,
                                  const struct shell_static_entry* cmd,
                                  char const* arg,
@@ -515,8 +898,25 @@ static void partial_autocomplete(struct shell const* sh,
     }
 }
 
+static void root_partial_autocomplete(struct shell const* sh,
+                                      struct shell_static_entry const* cmd,
+                                      char const* arg) {
+    char const* completion = NULL;
+    uint16_t arg_len = z_shell_strlen(arg);
+    uint16_t common = root_common_beginning_find(sh, cmd, &completion, arg);
+
+    if (!IS_ENABLED(CONFIG_SHELL_TAB_AUTOCOMPLETION)) {
+        return;
+    }
+
+    if (common) {
+        z_shell_op_completion_insert(sh, &completion[arg_len],
+                                     common - arg_len);
+    }
+}
+
 static int exec_cmd(struct shell const* sh, size_t argc, char const** argv, size_t cmd_lvl,
-                    const struct shell_static_entry* help_entry) {
+                    struct shell_static_entry const* help_entry) {
     int ret_val = 0;
     size_t cmd_argc = (argc - cmd_lvl);
     char** cmd_argv = (char**)&argv[cmd_lvl];
@@ -669,6 +1069,27 @@ static int execute(struct shell const* sh) {
 
     if (IS_ENABLED(CONFIG_SHELL_WILDCARD)) {
         z_shell_wildcard_prepare(sh);
+    }
+
+    if (IS_ENABLED(CONFIG_SHELL_ALIASES)) {
+        char root_cmd[CONFIG_SHELL_CMD_BUFF_SIZE];
+        int ret;
+
+        if (alias_collision_exists(parent, cmd_buf, root_cmd,
+                                   sizeof(root_cmd))) {
+            z_shell_fprintf(sh, SHELL_WARNING,
+                            "Alias '%s' ignored because command "
+                            "exists in current context\n",
+                            root_cmd);
+        }
+        else {
+            ret = z_shell_expand_alias(cmd_buf,
+                                       CONFIG_SHELL_CMD_BUFF_SIZE);
+            if (ret == -E2BIG) {
+                z_shell_fprintf(sh, SHELL_ERROR,
+                                "Alias expansion too long\n");
+            }
+        }
     }
 
     /* Parent present means we are in select mode. */
@@ -846,11 +1267,13 @@ static void tab_handle(struct shell const* sh) {
     const struct shell_static_entry* cmd;
     struct shell_ctx* ctx = sh->ctx;
     char const** argv = __argv;
+    char const* first_match = NULL;
     size_t first = 0;
     size_t arg_idx;
     uint16_t longest;
     size_t argc;
     size_t cnt;
+    bool alias_completion;
 
     /* Disable tab handling when readline is active */
     if (ctx->readline_state != SHELL_READLINE_INACTIVE) {
@@ -858,23 +1281,38 @@ static void tab_handle(struct shell const* sh) {
     }
 
     bool tab_possible = tab_prepare(sh, &cmd, &argv, &argc, &arg_idx,
-                                    &d_entry);
+                                    &alias_completion, &d_entry);
 
     if (tab_possible == false) {
         return;
     }
 
-    find_completion_candidates(sh, cmd, argv[arg_idx], &first, &cnt,
-                               &longest);
+    if (alias_completion && (arg_idx == Z_SHELL_CMD_ROOT_LVL)) {
+        find_root_completion_candidates(cmd, argv[arg_idx], &first_match,
+                                        &cnt, &longest);
 
-    if (cnt == 1) {
-        /* Autocompletion.*/
-        autocomplete(sh, cmd, argv[arg_idx], first);
+        if (cnt == 1U) {
+            root_autocomplete(sh, argv[arg_idx], first_match);
+        }
+        else if (cnt > 1U) {
+            root_tab_options_print(sh, cmd, argv[arg_idx], longest);
+            root_partial_autocomplete(sh, cmd, argv[arg_idx]);
+        }
     }
-    else if (cnt > 1) {
-        tab_options_print(sh, cmd, argv[arg_idx], first, cnt,
-                          longest);
-        partial_autocomplete(sh, cmd, argv[arg_idx], first, cnt);
+    else {
+        find_completion_candidates(sh, cmd, argv[arg_idx], &first, &cnt,
+                       &longest);
+
+        if (cnt == 1U) {
+            /* Autocompletion.*/
+            autocomplete(sh, cmd, argv[arg_idx], first);
+        }
+        else if (cnt > 1U) {
+            tab_options_print(sh, cmd, argv[arg_idx], first, cnt,
+                              longest);
+            partial_autocomplete(sh, cmd, argv[arg_idx], first,
+                                 cnt);
+        }
     }
 }
 
@@ -1569,7 +2007,7 @@ struct shell const* shell_backend_get_by_name(char const* backend_name) {
     return (NULL);
 }
 
-static void z_shell_print(const struct shell* sh, enum shell_vt100_color color, bool do_cbprintf,
+static void z_shell_print(struct shell const* sh, enum shell_vt100_color color, bool do_cbprintf,
                           void* ptr, va_list args) {
     __ASSERT_NO_MSG(sh);
     __ASSERT(!k_is_in_isr(), "Thread context required.");
@@ -1618,7 +2056,7 @@ static void z_shell_print(const struct shell* sh, enum shell_vt100_color color, 
     z_shell_unlock(sh);
 }
 
-void shell_cbpprintf(const struct shell* sh, enum shell_vt100_color color, void* package) {
+void shell_cbpprintf(struct shell const* sh, enum shell_vt100_color color, void* package) {
     va_list no_used = {0};
 
     z_shell_print(sh, color, true, package, no_used);
@@ -1630,12 +2068,12 @@ void shell_cbpprintf(const struct shell* sh, enum shell_vt100_color color, void*
  * block on kernel primitives that require a context switch.
  * However it can be used in shell command handlers.
  */
-void shell_vfprintf(const struct shell* sh, enum shell_vt100_color color, const char* fmt,
+void shell_vfprintf(struct shell const* sh, enum shell_vt100_color color, char const* fmt,
                     va_list args) {
     z_shell_print(sh, color, false, (void*)fmt, args);
 }
 
-void shell_fprintf_impl(const struct shell* sh, enum shell_vt100_color color, const char* fmt, ...) {
+void shell_fprintf_impl(struct shell const* sh, enum shell_vt100_color color, char const* fmt, ...) {
     va_list args;
 
     va_start(args, fmt);
@@ -1643,7 +2081,7 @@ void shell_fprintf_impl(const struct shell* sh, enum shell_vt100_color color, co
     va_end(args);
 }
 
-void shell_fprintf_info(struct shell const* sh, const char* fmt, ...) {
+void shell_fprintf_info(struct shell const* sh, char const* fmt, ...) {
     va_list args;
 
     va_start(args, fmt);
@@ -1651,7 +2089,7 @@ void shell_fprintf_info(struct shell const* sh, const char* fmt, ...) {
     va_end(args);
 }
 
-void shell_fprintf_normal(struct shell const* sh, const char* fmt, ...) {
+void shell_fprintf_normal(struct shell const* sh, char const* fmt, ...) {
     va_list args;
 
     va_start(args, fmt);
@@ -1659,7 +2097,7 @@ void shell_fprintf_normal(struct shell const* sh, const char* fmt, ...) {
     va_end(args);
 }
 
-void shell_fprintf_warn(struct shell const* sh, const char* fmt, ...) {
+void shell_fprintf_warn(struct shell const* sh, char const* fmt, ...) {
     va_list args;
 
     va_start(args, fmt);
@@ -1667,7 +2105,7 @@ void shell_fprintf_warn(struct shell const* sh, const char* fmt, ...) {
     va_end(args);
 }
 
-void shell_fprintf_error(struct shell const* sh, const char* fmt, ...) {
+void shell_fprintf_error(struct shell const* sh, char const* fmt, ...) {
     va_list args;
 
     va_start(args, fmt);
@@ -1707,7 +2145,7 @@ int shell_prompt_change(struct shell const* sh, char const* prompt) {
 }
 
 #if defined(CONFIG_SHELL_HELP)
-void shell_help(const struct shell* sh) {
+void shell_help(struct shell const* sh) {
     if (!z_shell_trylock(sh, SHELL_TX_MTX_TIMEOUT)) {
         return;
     }

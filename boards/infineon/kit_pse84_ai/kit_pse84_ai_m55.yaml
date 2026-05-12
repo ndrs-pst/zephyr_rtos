@@ -25,6 +25,7 @@ supported:
   - pwm
   - spi
   - uart
+  - usbd
   - sdhc
   - i2s
   - rtc
