@@ -211,7 +211,7 @@ void z_shell_help_cmd_print(const struct shell *sh,
 			    const struct shell_static_entry *cmd)
 {
 	static const char cmd_sep[] = " - "; /* commands separator */
-	uint16_t field_width;
+	size_t field_width;
 
 	field_width = z_shell_strlen(cmd->syntax) + z_shell_strlen(cmd_sep);
 

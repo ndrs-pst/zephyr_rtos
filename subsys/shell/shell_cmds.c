@@ -77,14 +77,17 @@ extern const struct shell_alias shell_aliases[];
 /* Function reads cursor position from terminal. */
 static int cursor_position_get(const struct shell *sh, uint16_t *x, uint16_t *y)
 {
-	uint16_t buff_idx = 0U;
+	struct shell_ctx *ctx = sh->ctx;
+	size_t buff_idx = 0U;
+	size_t x_val;
+	size_t y_val;
 	size_t cnt;
 	char c = 0;
 
-	*x = 0U;
-	*y = 0U;
+	x_val = 0U;
+	y_val = 0U;
 
-	memset(sh->ctx->temp_buff, 0, sizeof(sh->ctx->temp_buff));
+	memset(ctx->temp_buff, 0, sizeof(ctx->temp_buff));
 
 	/* escape code asking terminal about its size */
 	static char const cmd_get_terminal_size[] = "\033[6n";
@@ -97,12 +100,12 @@ static int cursor_position_get(const struct shell *sh, uint16_t *x, uint16_t *y)
 	z_transport_buffer_flush(sh);
 
 	/* timeout for terminal response = ~1s */
-	for (uint16_t i = 0; i < 1000; i++) {
+	const struct shell_transport* iface = sh->iface;
+	for (size_t i = 0; i < 1000; i++) {
 		do {
 			int ret;
 
-			ret = sh->iface->api->read(sh->iface, &c,
-						   sizeof(c), &cnt);
+			ret = iface->api->read(iface, &c, sizeof(c), &cnt);
 			if (ret < 0) {
 				return ret;
 			}
@@ -111,16 +114,16 @@ static int cursor_position_get(const struct shell *sh, uint16_t *x, uint16_t *y)
 				k_busy_wait(1000);
 				break;
 			}
+
 			if ((c != SHELL_VT100_ASCII_ESC) &&
-			    (sh->ctx->temp_buff[0] !=
-					    SHELL_VT100_ASCII_ESC)) {
+			    (ctx->temp_buff[0] != SHELL_VT100_ASCII_ESC)) {
 				continue;
 			}
 
 			if (c == 'R') { /* End of response from the terminal. */
-				sh->ctx->temp_buff[buff_idx] = '\0';
-				if (sh->ctx->temp_buff[1] != '[') {
-					sh->ctx->temp_buff[0] = 0;
+				ctx->temp_buff[buff_idx] = '\0';
+				if (ctx->temp_buff[1] != '[') {
+					ctx->temp_buff[0] = 0;
 					return -EIO;
 				}
 
@@ -129,12 +132,10 @@ static int cursor_position_get(const struct shell *sh, uint16_t *x, uint16_t *y)
 				 */
 				buff_idx = 2U;
 
-				while (sh->ctx->temp_buff[buff_idx] != ';') {
-					*y = *y * 10U +
-					(sh->ctx->temp_buff[buff_idx++] -
-									  '0');
-					if (buff_idx >=
-						CONFIG_SHELL_CMD_BUFF_SIZE) {
+				while (ctx->temp_buff[buff_idx] != ';') {
+					y_val = (y_val * 10U) +
+						(ctx->temp_buff[buff_idx++] - '0');
+					if (buff_idx >= CONFIG_SHELL_CMD_BUFF_SIZE) {
 						return -EMSGSIZE;
 					}
 				}
@@ -143,36 +144,37 @@ static int cursor_position_get(const struct shell *sh, uint16_t *x, uint16_t *y)
 					return -EIO;
 				}
 
-				while (sh->ctx->temp_buff[buff_idx]
-							     != '\0') {
-					*x = *x * 10U +
-					(sh->ctx->temp_buff[buff_idx++] -
-									   '0');
+				while (ctx->temp_buff[buff_idx] != '\0') {
+					x_val = (x_val * 10U) +
+						(ctx->temp_buff[buff_idx++] - '0');
 
-					if (buff_idx >=
-						CONFIG_SHELL_CMD_BUFF_SIZE) {
+					if (buff_idx >= CONFIG_SHELL_CMD_BUFF_SIZE) {
 						return -EMSGSIZE;
 					}
 				}
+
 				/* horizontal cursor position */
-				if (*x > SHELL_MAX_TERMINAL_SIZE) {
-					*x = SHELL_MAX_TERMINAL_SIZE;
+				if (x_val > SHELL_MAX_TERMINAL_SIZE) {
+					x_val = SHELL_MAX_TERMINAL_SIZE;
 				}
 
 				/* vertical cursor position */
-				if (*y > SHELL_MAX_TERMINAL_SIZE) {
-					*y = SHELL_MAX_TERMINAL_SIZE;
+				if (y_val > SHELL_MAX_TERMINAL_SIZE) {
+					y_val = SHELL_MAX_TERMINAL_SIZE;
 				}
 
-				sh->ctx->temp_buff[0] = 0;
+				ctx->temp_buff[0] = 0;
+
+				*x = (uint16_t)x_val;
+				*y = (uint16_t)y_val;
 
 				return 0;
 			}
 
-			sh->ctx->temp_buff[buff_idx] = c;
+			ctx->temp_buff[buff_idx] = c;
 
 			if (++buff_idx > SHELL_CURSOR_POSITION_BUFFER - 1) {
-				sh->ctx->temp_buff[0] = 0;
+				ctx->temp_buff[0] = 0;
 				/* data_buf[SHELL_CURSOR_POSITION_BUFFER - 1]
 				 * is reserved for '\0'
 				 */

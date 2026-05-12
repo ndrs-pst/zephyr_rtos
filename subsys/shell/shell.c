@@ -144,12 +144,12 @@ selected_cmd_get(struct shell const* sh) {
 }
 
 static void tab_item_print(struct shell const* sh, char const* option,
-                           uint16_t longest_option) {
+                           size_t longest_option) {
     static char const* tab = "  ";
-    static uint16_t const tab_len = 2U;
+    static size_t const tab_len = 2U;
     struct shell_vt100_ctx* vt100_ctx = &sh->ctx->vt100_ctx;
-    uint16_t columns;
-    uint16_t diff;
+    size_t columns;
+    size_t diff;
 
     /* Function initialization has been requested. */
     if (option == NULL) {
@@ -163,12 +163,13 @@ static void tab_item_print(struct shell const* sh, char const* option,
     __ASSERT_NO_MSG(columns != 0);
     diff = longest_option - z_shell_strlen(option);
 
-    if ((vt100_ctx->printed_cmd++ % columns) == 0U) {
+    if ((vt100_ctx->printed_cmd % columns) == 0U) {
         z_shell_fprintf(sh, SHELL_OPTION, "\n%s%s", tab, option);
     }
     else {
         z_shell_fprintf(sh, SHELL_OPTION, "%s", option);
     }
+    vt100_ctx->printed_cmd++;
 
     z_shell_op_cursor_horiz_move(sh, diff);
 }
@@ -572,8 +573,8 @@ static void root_autocomplete(struct shell const* sh,
                               char const* arg,
                               char const* match) {
     struct shell_ctx* ctx = sh->ctx;
-    uint16_t cmd_len = z_shell_strlen(match);
-    uint16_t arg_len = z_shell_strlen(arg);
+    size_t cmd_len = z_shell_strlen(match);
+    size_t arg_len = z_shell_strlen(arg);
 
     if (!IS_ENABLED(CONFIG_SHELL_TAB_AUTOCOMPLETION)) {
         if (cmd_len == arg_len) {
@@ -584,8 +585,8 @@ static void root_autocomplete(struct shell const* sh,
     }
 
     if (cmd_len != arg_len) {
-        z_shell_op_completion_insert(sh, match + arg_len,
-                                     cmd_len - arg_len);
+        z_shell_op_completion_insert(sh, (match + arg_len),
+                                     (cmd_len - arg_len));
     }
 
     if (isspace((int)ctx->cmd_buff[ctx->cmd_buff_pos]) == 0) {
@@ -642,8 +643,8 @@ static void autocomplete(struct shell const* sh,
                          char const* arg,
                          size_t subcmd_idx) {
     const struct shell_static_entry* match;
-    uint16_t cmd_len;
-    uint16_t arg_len = z_shell_strlen(arg);
+    size_t cmd_len;
+    size_t arg_len = z_shell_strlen(arg);
     struct shell_ctx* ctx = sh->ctx;
 
     /* ctx->active_cmd can be safely used outside of command context
@@ -709,7 +710,7 @@ static size_t str_common(char const* s1, char const* s2, size_t n) {
 static void tab_options_print(struct shell const* sh,
                               const struct shell_static_entry* cmd,
                               char const* str, size_t first, size_t cnt,
-                              uint16_t longest) {
+                              size_t longest) {
     const struct shell_static_entry* match;
     size_t str_len = z_shell_strlen(str);
     size_t idx = first;

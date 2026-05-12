@@ -192,7 +192,7 @@ int modbus_iface_get_by_name(char const* iface_name) {
     return (-ENODEV);
 }
 
-static struct modbus_context* modbus_init_iface(uint8_t const iface) {
+static struct modbus_context* modbus_init_iface(int const iface) {
     struct modbus_context* ctx;
 
     if (iface >= ARRAY_SIZE(mb_ctx_tbl)) {
@@ -240,7 +240,7 @@ int modbus_init_server(int const iface, struct modbus_iface_param param) {
         goto init_server_error;
     }
 
-    ctx = modbus_init_iface((uint8_t const)iface);
+    ctx = modbus_init_iface(iface);
     if (ctx == NULL) {
         rc = -EINVAL;
         goto init_server_error;
@@ -329,7 +329,7 @@ int modbus_init_client(int const iface, struct modbus_iface_param param) {
         goto init_client_error;
     }
 
-    ctx = modbus_init_iface((uint8_t const)iface);
+    ctx = modbus_init_iface(iface);
     if (ctx == NULL) {
         rc = -EINVAL;
         goto init_client_error;

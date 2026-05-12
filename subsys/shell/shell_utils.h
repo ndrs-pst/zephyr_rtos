@@ -31,8 +31,8 @@ int32_t z_column_span_with_buffer_offsets_get(struct shell_multiline_cons* cons,
 void z_shell_multiline_data_calc(struct shell_multiline_cons* cons,
                                  uint16_t buff_pos, uint16_t buff_len);
 
-static inline uint16_t z_shell_strlen(char const* str) {
-    return str == NULL ? 0U : (uint16_t)strlen(str);
+static inline size_t z_shell_strlen(char const* str) {
+    return ((str == NULL) ? 0U : strlen(str));
 }
 
 char z_shell_make_argv(size_t* argc, char const** argv,

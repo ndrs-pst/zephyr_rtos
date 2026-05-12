@@ -797,10 +797,10 @@ static void modem_cmux_on_msc_command(struct modem_cmux* cmux, struct modem_cmux
 
     modem_cmux_acknowledge_received_frame(cmux);
 
-    uint8_t len = command->length.value;
+    size_t len = command->length.value;
 
-    if (len != 2 && len != 3) {
-        LOG_WRN("Unexpected MSC command length %d", (int)len);
+    if ((len != 2) && (len != 3)) {
+        LOG_WRN("Unexpected MSC command length %zu", len);
         return;
     }
 

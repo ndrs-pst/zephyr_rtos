@@ -43,22 +43,25 @@ void z_shell_op_cursor_horiz_move(struct shell const* sh, int32_t delta) {
  * width.
  */
 static inline bool full_line_cmd(struct shell const* sh) {
-    size_t line_length = sh->ctx->cmd_buff_len + z_shell_strlen(sh->ctx->prompt);
+    struct shell_ctx* ctx = sh->ctx;
+    size_t line_length = ctx->cmd_buff_len + z_shell_strlen(ctx->prompt);
 
     if (line_length == 0) {
         return (false);
     }
 
-    return (line_length % sh->ctx->vt100_ctx.cons.terminal_wid == 0U);
+    return ((line_length % ctx->vt100_ctx.cons.terminal_wid) == 0U);
 }
 
 /* Function returns true if cursor is at beginning of an empty line. */
 bool z_shell_cursor_in_empty_line(struct shell const* sh) {
+    struct shell_ctx* ctx = sh->ctx;
+
     // Calculate the total length of the input and prompt, considering if echo is enabled
-    size_t total_length = (sh->ctx->cmd_buff_pos * sh->ctx->cfg.flags.echo) + z_shell_strlen(sh->ctx->prompt);
+    size_t total_length = (ctx->cmd_buff_pos * ctx->cfg.flags.echo) + z_shell_strlen(ctx->prompt);
 
     // Determine if the total length modulo the terminal width equals zero
-    bool is_in_empty_line = ((total_length % sh->ctx->vt100_ctx.cons.terminal_wid) == 0U);
+    bool is_in_empty_line = ((total_length % ctx->vt100_ctx.cons.terminal_wid) == 0U);
 
     return (is_in_empty_line);
 }
@@ -70,11 +73,12 @@ void z_shell_op_cond_next_line(struct shell const* sh) {
 }
 
 void z_shell_op_cursor_position_synchronize(struct shell const* sh) {
-    struct shell_multiline_cons* cons = &sh->ctx->vt100_ctx.cons;
+    struct shell_ctx* ctx = sh->ctx;
+    struct shell_multiline_cons* cons = &ctx->vt100_ctx.cons;
     bool last_line;
 
-    z_shell_multiline_data_calc(cons, sh->ctx->cmd_buff_pos,
-                                sh->ctx->cmd_buff_len);
+    z_shell_multiline_data_calc(cons, ctx->cmd_buff_pos,
+                                ctx->cmd_buff_len);
     last_line = (cons->cur_y == cons->cur_y_end);
 
     /* In case cursor reaches the bottom line of a terminal, it will
@@ -93,38 +97,37 @@ void z_shell_op_cursor_position_synchronize(struct shell const* sh) {
     }
 }
 
-void z_shell_op_cursor_move(struct shell const* sh, int16_t val) {
-    struct shell_multiline_cons* cons = &sh->ctx->vt100_ctx.cons;
-    uint16_t new_pos = (sh->ctx->cmd_buff_pos + val);
+void z_shell_op_cursor_move(struct shell const* sh, int val) {
+    struct shell_ctx* ctx = sh->ctx;
+    struct shell_multiline_cons* cons = &ctx->vt100_ctx.cons;
+    uint16_t new_pos = (ctx->cmd_buff_pos + val);
     int32_t row_span;
     int32_t col_span;
 
-    z_shell_multiline_data_calc(cons, sh->ctx->cmd_buff_pos,
-                                sh->ctx->cmd_buff_len);
+    z_shell_multiline_data_calc(cons, ctx->cmd_buff_pos,
+                                ctx->cmd_buff_len);
 
     /* Calculate the new cursor. */
-    row_span = z_row_span_with_buffer_offsets_get(
-                                            &sh->ctx->vt100_ctx.cons,
-                                            sh->ctx->cmd_buff_pos,
-                                            new_pos);
-    col_span = z_column_span_with_buffer_offsets_get(
-                                            &sh->ctx->vt100_ctx.cons,
-                                            sh->ctx->cmd_buff_pos,
-                                            new_pos);
+    row_span = z_row_span_with_buffer_offsets_get(&ctx->vt100_ctx.cons,
+                                                  ctx->cmd_buff_pos,
+                                                  new_pos);
+    col_span = z_column_span_with_buffer_offsets_get(&ctx->vt100_ctx.cons,
+                                                     ctx->cmd_buff_pos,
+                                                     new_pos);
 
     z_shell_op_cursor_vert_move(sh, -row_span);
     z_shell_op_cursor_horiz_move(sh, col_span);
-    sh->ctx->cmd_buff_pos = new_pos;
+    ctx->cmd_buff_pos = new_pos;
 }
 
-static uint16_t shift_calc(char const* str, uint16_t pos, uint16_t len, int16_t sign) {
+static int shift_calc(char const* str, uint16_t pos, uint16_t len, int16_t sign) {
     bool found = false;
-    uint16_t ret = 0U;
-    uint16_t idx;
+    int ret = 0;
+    int idx;
 
-    while (1) {
-        idx = pos + ret * sign;
-        if (((idx == 0U) && (sign < 0)) ||
+    while (true) {
+        idx = pos + (ret * sign);
+        if (((idx == 0) && (sign < 0)) ||
             ((idx == len) && (sign > 0))) {
             break;
         }
@@ -140,12 +143,12 @@ static uint16_t shift_calc(char const* str, uint16_t pos, uint16_t len, int16_t 
         ret++;
     }
 
-    return ret;
+    return (ret);
 }
 
-void z_shell_op_cursor_word_move(struct shell const* sh, int16_t val) {
-    int16_t shift;
-    int16_t sign;
+void z_shell_op_cursor_word_move(struct shell const* sh, int val) {
+    int shift;
+    int sign;
 
     if (val < 0) {
         val  = -val;
@@ -155,27 +158,30 @@ void z_shell_op_cursor_word_move(struct shell const* sh, int16_t val) {
         sign = 1;
     }
 
+    struct shell_ctx* ctx = sh->ctx;
     while (val--) {
-        shift = shift_calc(sh->ctx->cmd_buff,
-                           sh->ctx->cmd_buff_pos,
-                           sh->ctx->cmd_buff_len, sign);
-        z_shell_op_cursor_move(sh, sign * shift);
+        shift = shift_calc(ctx->cmd_buff,
+                           ctx->cmd_buff_pos,
+                           ctx->cmd_buff_len, sign);
+        z_shell_op_cursor_move(sh, (sign * shift));
     }
 }
 
 void z_shell_op_word_remove(struct shell const* sh) {
+    struct shell_ctx* ctx = sh->ctx;
+
     /* Line must not be empty and cursor must not be at 0 to continue. */
-    if ((sh->ctx->cmd_buff_len == 0) ||
-        (sh->ctx->cmd_buff_pos == 0)) {
+    if ((ctx->cmd_buff_len == 0) ||
+        (ctx->cmd_buff_pos == 0)) {
         return;
     }
 
-    char*    str       = &sh->ctx->cmd_buff[sh->ctx->cmd_buff_pos - 1];
-    char*    str_start = &sh->ctx->cmd_buff[0];
-    uint16_t chars_to_delete;
+    char* str = &ctx->cmd_buff[ctx->cmd_buff_pos - 1];
+    char* str_start = &ctx->cmd_buff[0];
+    int chars_to_delete;
 
     /* Start at the current position. */
-    chars_to_delete = 0U;
+    chars_to_delete = 0;
 
     /* Look back for all spaces then for non-spaces. */
     while ((str >= str_start) && (*str == ' ')) {
@@ -189,10 +195,10 @@ void z_shell_op_word_remove(struct shell const* sh) {
     }
 
     /* Manage the buffer. */
-    memmove(str + 1, str + 1 + chars_to_delete,
-            sh->ctx->cmd_buff_len - chars_to_delete);
-    sh->ctx->cmd_buff_len -= chars_to_delete;
-    sh->ctx->cmd_buff[sh->ctx->cmd_buff_len] = '\0';
+    memmove((str + 1), (str + 1 + chars_to_delete),
+            ctx->cmd_buff_len - chars_to_delete);
+    ctx->cmd_buff_len -= chars_to_delete;
+    ctx->cmd_buff[ctx->cmd_buff_len] = '\0';
 
     /* Update display. */
     z_shell_op_cursor_move(sh, -chars_to_delete);
@@ -203,11 +209,11 @@ void z_shell_op_word_remove(struct shell const* sh) {
 }
 
 void z_shell_op_cursor_home_move(struct shell const* sh) {
-    z_shell_op_cursor_move(sh, -sh->ctx->cmd_buff_pos);
+    z_shell_op_cursor_move(sh, (-1 * sh->ctx->cmd_buff_pos));
 }
 
 void z_shell_op_cursor_end_move(struct shell const* sh) {
-    z_shell_op_cursor_move(sh, sh->ctx->cmd_buff_len - sh->ctx->cmd_buff_pos);
+    z_shell_op_cursor_move(sh, (int)(sh->ctx->cmd_buff_len - sh->ctx->cmd_buff_pos));
 }
 
 void z_shell_op_left_arrow(struct shell const* sh) {
@@ -222,8 +228,10 @@ void z_shell_op_right_arrow(struct shell const* sh) {
     }
 }
 
-static void reprint_from_cursor(struct shell const* sh, uint16_t diff,
+static void reprint_from_cursor(struct shell const* sh, int diff,
                                 bool data_removed) {
+    struct shell_ctx* ctx = sh->ctx;
+
     /* Clear eos is needed only when newly printed command is shorter than
      * previously printed command. This can happen when delete or backspace
      * was called.
@@ -236,7 +244,7 @@ static void reprint_from_cursor(struct shell const* sh, uint16_t diff,
     }
 
     if (z_flag_obscure_get(sh)) {
-        int len = strlen(&sh->ctx->cmd_buff[sh->ctx->cmd_buff_pos]);
+        int len = strlen(&ctx->cmd_buff[ctx->cmd_buff_pos]);
 
         while (len--) {
             z_shell_raw_fprintf(sh->fprintf_ctx, "*");
@@ -244,31 +252,33 @@ static void reprint_from_cursor(struct shell const* sh, uint16_t diff,
     }
     else {
         /* Check if the reprint will cross a line boundary */
-        int line_len = sh->ctx->cmd_buff_len + z_shell_strlen(sh->ctx->prompt);
-        int buff_pos = sh->ctx->cmd_buff_pos + z_shell_strlen(sh->ctx->prompt);
+        int line_len = ctx->cmd_buff_len + z_shell_strlen(ctx->prompt);
+        int buff_pos = ctx->cmd_buff_pos + z_shell_strlen(ctx->prompt);
 
-        if ((buff_pos / sh->ctx->vt100_ctx.cons.terminal_wid) !=
-            (line_len / sh->ctx->vt100_ctx.cons.terminal_wid)) {
+        if ((buff_pos / ctx->vt100_ctx.cons.terminal_wid) !=
+            (line_len / ctx->vt100_ctx.cons.terminal_wid)) {
             /*
              * Reprint will take multiple lines.
              * Print each character directly.
              */
-            int pos = sh->ctx->cmd_buff_pos;
+            int pos = ctx->cmd_buff_pos;
 
             while (buff_pos < line_len) {
-                if (buff_pos++ % sh->ctx->vt100_ctx.cons.terminal_wid == 0U) {
+                if ((buff_pos % ctx->vt100_ctx.cons.terminal_wid) == 0U) {
                     z_cursor_next_line_move(sh);
                 }
+                buff_pos++;
+
                 z_shell_fprintf(sh, SHELL_NORMAL, "%c",
-                                sh->ctx->cmd_buff[pos++]);
+                                ctx->cmd_buff[pos++]);
             }
         }
         else {
             z_shell_fprintf(sh, SHELL_NORMAL, "%s",
-                            &sh->ctx->cmd_buff[sh->ctx->cmd_buff_pos]);
+                            &ctx->cmd_buff[ctx->cmd_buff_pos]);
         }
     }
-    sh->ctx->cmd_buff_pos = sh->ctx->cmd_buff_len;
+    ctx->cmd_buff_pos = ctx->cmd_buff_len;
 
     if (full_line_cmd(sh)) {
         if (((data_removed) && (diff > 0)) || (!data_removed)) {
@@ -279,21 +289,22 @@ static void reprint_from_cursor(struct shell const* sh, uint16_t diff,
     z_shell_op_cursor_move(sh, -diff);
 }
 
-static void data_insert(struct shell const* sh, char const* data, uint16_t len) {
-    uint16_t after    = sh->ctx->cmd_buff_len - sh->ctx->cmd_buff_pos;
-    char*    curr_pos = &sh->ctx->cmd_buff[sh->ctx->cmd_buff_pos];
+static void data_insert(struct shell const* sh, char const* data, size_t len) {
+    struct shell_ctx* ctx = sh->ctx;
+    int after = (int)(ctx->cmd_buff_len - ctx->cmd_buff_pos);
+    char* curr_pos = &ctx->cmd_buff[ctx->cmd_buff_pos];
 
-    if ((sh->ctx->cmd_buff_len + len) >= CONFIG_SHELL_CMD_BUFF_SIZE) {
+    if ((ctx->cmd_buff_len + len) >= CONFIG_SHELL_CMD_BUFF_SIZE) {
         return;
     }
 
     memmove(curr_pos + len, curr_pos, after);
     memcpy(curr_pos, data, len);
-    sh->ctx->cmd_buff_len += len;
-    sh->ctx->cmd_buff[sh->ctx->cmd_buff_len] = '\0';
+    ctx->cmd_buff_len += len;
+    ctx->cmd_buff[ctx->cmd_buff_len] = '\0';
 
     if (!z_flag_echo_get(sh)) {
-        sh->ctx->cmd_buff_pos += len;
+        ctx->cmd_buff_pos += len;
         return;
     }
 
@@ -301,11 +312,14 @@ static void data_insert(struct shell const* sh, char const* data, uint16_t len) 
 }
 
 static void char_replace(struct shell const* sh, char data) {
-    sh->ctx->cmd_buff[sh->ctx->cmd_buff_pos++] = data;
+    struct shell_ctx* ctx = sh->ctx;
+
+    ctx->cmd_buff[ctx->cmd_buff_pos++] = data;
 
     if (!z_flag_echo_get(sh)) {
         return;
     }
+
     if (z_flag_obscure_get(sh)) {
         data = '*';
     }
@@ -337,38 +351,43 @@ void z_shell_op_char_backspace(struct shell const* sh) {
 }
 
 void z_shell_op_char_delete(struct shell const* sh) {
-    uint16_t diff = sh->ctx->cmd_buff_len - sh->ctx->cmd_buff_pos;
-    char*    str  = &sh->ctx->cmd_buff[sh->ctx->cmd_buff_pos];
+    struct shell_ctx* ctx = sh->ctx;
+    int diff = (int)(ctx->cmd_buff_len - ctx->cmd_buff_pos);
+    char* str = &ctx->cmd_buff[ctx->cmd_buff_pos];
 
-    if (diff == 0U) {
+    if (diff == 0) {
         return;
     }
 
     memmove(str, str + 1, diff);
-    --sh->ctx->cmd_buff_len;
+    --ctx->cmd_buff_len;
     reprint_from_cursor(sh, --diff, true);
 }
 
 void z_shell_op_delete_from_cursor(struct shell const* sh) {
-    sh->ctx->cmd_buff_len                    = sh->ctx->cmd_buff_pos;
-    sh->ctx->cmd_buff[sh->ctx->cmd_buff_pos] = '\0';
+    struct shell_ctx* ctx = sh->ctx;
+
+    ctx->cmd_buff_len = ctx->cmd_buff_pos;
+    ctx->cmd_buff[ctx->cmd_buff_pos] = '\0';
 
     z_clear_eos(sh);
 }
 
 void z_shell_op_completion_insert(struct shell const* sh,
                                   char const* compl,
-                                  uint16_t compl_len) {
+                                  size_t compl_len) {
     data_insert(sh, compl, compl_len);
 }
 
 void z_shell_cmd_line_erase(struct shell const* sh) {
-    z_shell_multiline_data_calc(&sh->ctx->vt100_ctx.cons,
-                                sh->ctx->cmd_buff_pos,
-                                sh->ctx->cmd_buff_len);
+    struct shell_ctx* ctx = sh->ctx;
+
+    z_shell_multiline_data_calc(&ctx->vt100_ctx.cons,
+                                ctx->cmd_buff_pos,
+                                ctx->cmd_buff_len);
     z_shell_op_cursor_horiz_move(sh,
-                                 -(sh->ctx->vt100_ctx.cons.cur_x - 1));
-    z_shell_op_cursor_vert_move(sh, sh->ctx->vt100_ctx.cons.cur_y - 1);
+                                 -(ctx->vt100_ctx.cons.cur_x - 1));
+    z_shell_op_cursor_vert_move(sh, (ctx->vt100_ctx.cons.cur_y - 1));
 
     z_clear_eos(sh);
 }
@@ -382,28 +401,30 @@ static void print_prompt(struct shell const* sh) {
 }
 
 void z_shell_print_cmd(struct shell const* sh) {
-    int  beg_offset = 0;
-    int  end_offset = 0;
-    int  cmd_width  = z_shell_strlen(sh->ctx->cmd_buff);
-    int  adjust     = sh->ctx->vt100_ctx.cons.name_len;
+    struct shell_ctx* ctx = sh->ctx;
+    int beg_offset = 0;
+    int end_offset = 0;
+    int cmd_width  = z_shell_strlen(ctx->cmd_buff);
+    int adjust = ctx->vt100_ctx.cons.name_len;
     char ch;
 
-    while (cmd_width > sh->ctx->vt100_ctx.cons.terminal_wid - adjust) {
-        end_offset += sh->ctx->vt100_ctx.cons.terminal_wid - adjust;
-        ch                            = sh->ctx->cmd_buff[end_offset];
-        sh->ctx->cmd_buff[end_offset] = '\0';
+    while (cmd_width > ctx->vt100_ctx.cons.terminal_wid - adjust) {
+        end_offset += ctx->vt100_ctx.cons.terminal_wid - adjust;
+        ch = ctx->cmd_buff[end_offset];
+        ctx->cmd_buff[end_offset] = '\0';
 
         z_shell_raw_fprintf(sh->fprintf_ctx, "%s\n",
-                            &sh->ctx->cmd_buff[beg_offset]);
+                            &ctx->cmd_buff[beg_offset]);
 
-        sh->ctx->cmd_buff[end_offset] = ch;
-        cmd_width -= (sh->ctx->vt100_ctx.cons.terminal_wid - adjust);
+        ctx->cmd_buff[end_offset] = ch;
+        cmd_width -= (ctx->vt100_ctx.cons.terminal_wid - adjust);
         beg_offset = end_offset;
         adjust     = 0;
     }
+
     if (cmd_width > 0) {
         z_shell_raw_fprintf(sh->fprintf_ctx, "%s",
-                            &sh->ctx->cmd_buff[beg_offset]);
+                            &ctx->cmd_buff[beg_offset]);
     }
 }
 

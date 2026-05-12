@@ -1284,9 +1284,7 @@ void bt_id_get(bt_addr_le_t *addrs, size_t *count)
 
 static int id_find(const bt_addr_le_t *addr)
 {
-	uint8_t id;
-
-	for (id = 0U; id < bt_dev.id_count; id++) {
+	for (size_t id = 0U; id < bt_dev.id_count; id++) {
 		if (bt_addr_le_eq(addr, &bt_dev.id_addr[id])) {
 			return id;
 		}

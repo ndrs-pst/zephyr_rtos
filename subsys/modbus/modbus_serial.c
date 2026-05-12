@@ -278,7 +278,7 @@ static void modbus_ascii_tx_adu(struct modbus_context const* ctx) {
 static int modbus_rtu_rx_adu(struct modbus_context* ctx) {
     struct modbus_serial_config const* cfg = ctx->cfg;
     uint16_t calc_crc;
-    uint16_t crc_idx;
+    size_t crc_idx;
 
     /* Is the message long enough? */
     if ((cfg->uart_buf_ctr < MODBUS_RTU_MIN_MSG_SIZE) ||

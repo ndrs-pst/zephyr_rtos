@@ -551,21 +551,24 @@ void z_shell_spaces_trim(char* str) {
  *
  */
 static void buffer_trim(char* buff, uint16_t* buff_len) {
-    uint16_t i = 0U;
+    size_t tmp_len;
+    size_t i = 0U;
 
     /* no command in the buffer */
     if (buff[0] == '\0') {
         return;
     }
 
-    while (isspace((int)buff[*buff_len - 1U]) != 0) {
-        *buff_len -= 1U;
-        if (*buff_len == 0U) {
+    tmp_len = *buff_len;
+    while (isspace((int)buff[tmp_len - 1U]) != 0) {
+        tmp_len -= 1U;
+        if (tmp_len == 0U) {
             buff[0] = '\0';
+            *buff_len = 0U;
             return;
         }
     }
-    buff[*buff_len] = '\0';
+    buff[tmp_len] = '\0';
 
     /* Counting whitespace characters starting from beginning of the
      * command.
@@ -576,9 +579,10 @@ static void buffer_trim(char* buff, uint16_t* buff_len) {
 
     /* Removing counted whitespace characters. */
     if (--i > 0) {
-        memmove(buff, buff + i, (*buff_len + 1U) - i); /* +1 for '\0' */
-        *buff_len = *buff_len - i;
+        memmove(buff, buff + i, (tmp_len + 1U) - i); /* +1 for '\0' */
+        tmp_len = tmp_len - i;
     }
+    *buff_len = (uint16_t)tmp_len;
 }
 
 void z_shell_cmd_trim(struct shell const* sh) {
