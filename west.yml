@@ -174,7 +174,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 8344b10d3a01392fc204ce7f80c2167eed494c0e
+      revision: 05cb90227d4dc2ace31991f85809ba33331be9bc
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -200,12 +200,12 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: 86f3ea6b389d860332bd81ae8b97543def619395
+      revision: 7b94d4be56cca9639564f43a71a73411450ce65b
       path: modules/hal/microchip
       groups:
         - hal
     - name: hal_nordic
-      revision: c8f0c2b6ecf66b0a4af24b5272d879c305868feb
+      revision: a820f00abfc2fe2f4d03ebdb3d185e21607e9006
       path: modules/hal/nordic
       groups:
         - hal
@@ -260,7 +260,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: e26a8dc3ba36f6c01597704c2ade09a1d5134503
+      revision: 8645aa52920854f3308c56098e18d1a5891fdf73
       path: modules/hal/stm32
       groups:
         - hal

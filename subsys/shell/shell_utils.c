@@ -235,24 +235,23 @@ char z_shell_make_argv(size_t* argc, char const** argv, char* cmd,
     return (quote);
 }
 
-void z_shell_pattern_remove(char const* buff, uint16_t* buff_len, char const* pattern) {
+void z_shell_pattern_remove(char* buff, uint16_t* buff_len, char const* pattern) {
     char* pattern_addr = strstr(buff, pattern);
-    uint16_t shift;
-    uint16_t pattern_len = z_shell_strlen(pattern);
+    size_t shift;
+    size_t pattern_len = z_shell_strlen(pattern);
 
     if (!pattern_addr) {
         return;
     }
 
-    if (pattern_addr > buff) {
-        if (*(pattern_addr - 1) == ' ') {
-            pattern_len++;  /* space needs to be removed as well */
-            pattern_addr--; /* set pointer to space */
-        }
+    if ((pattern_addr > buff) &&
+        (pattern_addr[-1] == ' ')) {
+        pattern_len++;  /* space needs to be removed as well */
+        pattern_addr--; /* set pointer to space */
     }
 
     shift = z_shell_strlen(pattern_addr) - pattern_len + 1; /* +1 for EOS */
-    *buff_len -= pattern_len;
+    *buff_len -= (uint16_t)pattern_len;
 
     memmove(pattern_addr, pattern_addr + pattern_len, shift);
 }

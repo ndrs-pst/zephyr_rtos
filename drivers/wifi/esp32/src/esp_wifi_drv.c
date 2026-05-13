@@ -111,11 +111,13 @@ static inline struct esp32_wifi_runtime* esp32_wifi_data_get(struct net_if* ifac
 
 static int esp32_wifi_send(const struct device* dev __unused, struct net_pkt* pkt) {
     struct esp32_wifi_runtime* data = esp32_wifi_data_get(net_pkt_iface(pkt));
-    int const pkt_len = net_pkt_get_len(pkt);
-    esp_interface_t ifx = (data->state == ESP32_AP_CONNECTED) ? ESP_IF_WIFI_AP : ESP_IF_WIFI_STA;
+    const int pkt_len = net_pkt_get_len(pkt);
+    bool ap_running = ((data->state == ESP32_AP_STARTED) || (data->state == ESP32_AP_CONNECTED) ||
+                       (data->state == ESP32_AP_DISCONNECTED));
+    bool sta_connected = (data->state == ESP32_STA_CONNECTED);
+    esp_interface_t ifx = ap_running ? ESP_IF_WIFI_AP : ESP_IF_WIFI_STA;
 
-    if ((data->state != ESP32_STA_CONNECTED) &&
-        (data->state != ESP32_AP_CONNECTED)) {
+    if (!sta_connected && !ap_running) {
         return (-EIO);
     }
 
@@ -306,7 +308,7 @@ static void scan_done_handler(void) {
 static void esp_wifi_handle_sta_connect_event(void* event_data) {
     ARG_UNUSED(event_data);
     esp32_data.state = ESP32_STA_CONNECTED;
-
+    net_if_dormant_off(esp32_wifi_iface);
     #if defined(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)
     net_dhcpv4_start(esp32_wifi_iface);
     #else
@@ -319,6 +321,7 @@ static void esp_wifi_handle_sta_disconnect_event(void* event_data) {
     struct wifi_status result;
 
     if (esp32_data.state == ESP32_STA_CONNECTED) {
+        net_if_dormant_on(esp32_wifi_iface);
         #if defined(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)
         net_dhcpv4_stop(esp32_wifi_iface);
         #endif
@@ -469,12 +472,11 @@ void esp_wifi_event_handler(char const* event_base, int32_t event_id, void* even
     switch (event_id) {
         case WIFI_EVENT_STA_START :
             esp32_data.state = ESP32_STA_STARTED;
-            net_eth_carrier_on(esp32_wifi_iface);
             break;
 
         case WIFI_EVENT_STA_STOP :
             esp32_data.state = ESP32_STA_STOPPED;
-            net_eth_carrier_off(esp32_wifi_iface);
+            net_if_dormant_on(esp32_wifi_iface);
             break;
 
         case WIFI_EVENT_STA_CONNECTED :
@@ -491,13 +493,13 @@ void esp_wifi_event_handler(char const* event_base, int32_t event_id, void* even
 
         case WIFI_EVENT_AP_START :
             ap_data->state = ESP32_AP_STARTED;
-            net_eth_carrier_on(iface_ap);
+            net_if_dormant_off(iface_ap);
             wifi_mgmt_raise_ap_enable_result_event(iface_ap, WIFI_STATUS_AP_SUCCESS);
             break;
 
         case WIFI_EVENT_AP_STOP :
             ap_data->state = ESP32_AP_STOPPED;
-            net_eth_carrier_off(iface_ap);
+            net_if_dormant_on(iface_ap);
             wifi_mgmt_raise_ap_disable_result_event(iface_ap, WIFI_STATUS_AP_SUCCESS);
             break;
 
@@ -1282,7 +1284,7 @@ static void esp32_wifi_init(struct net_if* iface) {
     net_if_set_link_addr(iface, mac_addr, WIFI_MAC_ADDR_LEN, NET_LINK_ETHERNET);
 
     ethernet_init(iface);
-    net_if_carrier_off(iface);
+    net_if_dormant_on(iface);
 }
 
 #if defined(CONFIG_NET_STATISTICS_WIFI)

@@ -41,7 +41,7 @@ char z_shell_make_argv(size_t* argc, char const** argv,
 /** @brief Removes pattern and following space
  *
  */
-void z_shell_pattern_remove(char const* buff, uint16_t* buff_len, char const* pattern);
+void z_shell_pattern_remove(char* buff, uint16_t* buff_len, char const* pattern);
 
 /** @brief Get subcommand with given index from the root.
  *

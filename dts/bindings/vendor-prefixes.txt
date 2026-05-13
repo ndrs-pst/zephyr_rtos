@@ -502,6 +502,7 @@ norik	Norik Systems
 noritake	Noritake Co., Inc. Electronics Division
 novtech	NovTech, Inc.
 nuclei	Nuclei System Technology
+nucode	NUCODE Co., Ltd. (nuworks.io)
 nutsboard	NutsBoard
 nuvoton	Nuvoton Technology Corporation
 nvd	New Vision Display
@@ -737,6 +738,7 @@ tpk	TPK U.S.A. LLC
 tplink	TP-LINK Technologies Co., Ltd.
 tpo	TPO
 tq	TQ-Systems GmbH
+trenz	Trenz Electronic
 tronfy	Tronfy
 tronsmart	Tronsmart
 truly	Truly Semiconductors Limited

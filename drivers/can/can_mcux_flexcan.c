@@ -204,7 +204,7 @@ static status_t mcux_flexcan_mb_start(const struct device *dev, int alloc)
 	flexcan_mb_transfer_t xfer;
 	status_t status;
 
-	__ASSERT_NO_MSG(alloc >= 0 && alloc < config->rx_mb);
+	__ASSERT_NO_MSG((alloc >= 0) && (alloc < (int)config->rx_mb));
 
 	xfer.mbIdx = ALLOC_IDX_TO_RXMB_IDX(alloc);
 
@@ -233,7 +233,7 @@ static void mcux_flexcan_mb_stop(const struct device *dev, int alloc)
 	struct mcux_flexcan_data *data = dev->data;
 	CAN_Type *base = get_base(dev);
 
-	__ASSERT_NO_MSG(alloc >= 0 && alloc < config->rx_mb);
+	__ASSERT_NO_MSG((alloc >= 0) && (alloc < (int)config->rx_mb));
 
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
 	if ((data->common.mode & CAN_MODE_FD) != 0U) {

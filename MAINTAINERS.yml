@@ -1157,6 +1157,7 @@ Demand Paging:
     - ceolin
     - peter-mitsis
     - nashif
+    - npitre
   files:
     - subsys/mem_mgmt/demand_paging/
     - tests/kernel/mem_protect/demand_paging/
@@ -1801,7 +1802,7 @@ Documentation Infrastructure:
     - tests/drivers/firmware/
     - include/zephyr/drivers/firmware/
     - dts/bindings/firmware/
-    - doc/hardware/arch/arm-scmi.rst
+    - doc/hardware/firmware/
     - samples/drivers/firmware/
   labels:
     - "area: Firmware"
@@ -1916,7 +1917,6 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - rriveramcrus
-  collaborators:
     - Liam-Ogletree
   files:
     - drivers/haptics/
@@ -2443,6 +2443,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - danieldegrasse
+  collaborators:
+    - lucien-nxp
   files:
     - drivers/sdhc/
     - tests/drivers/sdhc/
@@ -2601,6 +2603,7 @@ Documentation Infrastructure:
     - andyross
   collaborators:
     - teburd
+    - npitre
   files:
     - drivers/timer/
     - include/zephyr/drivers/timer/
@@ -5562,6 +5565,22 @@ Test Framework (Ztest):
   tests:
     - testing
 
+Testing:
+  status: maintained
+  maintainers:
+    - PerMac
+    - hakehuang
+  collaborators:
+    - nashif
+  files: []
+  description: >-
+    This area is for testing activities on hardware and in emulators. It is not
+    meant to be a catch-all for tests, but rather a place to identify
+    collaboratorts and files related to testing activities that don't fit in
+    other areas.
+    Anyone involved with testing and filing/triaging issues who are not active
+    in other areas are encouraged to be listed here as collaborators.
+
 Testing with Renode:
   # This area is to be converted to a subarea
   status: odd fixes
@@ -5670,6 +5689,17 @@ Tracing:
     - "area: tracing"
   tests:
     - tracing
+
+Trenz Electronic Platforms:
+  status: maintained
+  maintainers:
+    - yashi
+  files:
+    - boards/trenz/
+  labels:
+    - "platform: Trenz Electronic"
+  description: >-
+    Trenz Electronic development boards.
 
 Twister:
   status: maintained
@@ -6826,6 +6856,14 @@ West:
   files: []
   labels:
     - "area: Rust"
+
+Wiki:
+  status: maintained
+  maintainers:
+    - kartben
+  collaborators:
+    - SusanRemm
+  files: []
 
 Wurth Elektronik Platforms:
   status: maintained
