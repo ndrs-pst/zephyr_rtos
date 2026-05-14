@@ -46,8 +46,16 @@ BUILD_ASSERT((sizeof(CONFIG_MODEM_CELLULAR_APN) - 1) < MODEM_CELLULAR_DATA_APN_L
              "CONFIG_MODEM_CELLULAR_APN too long for data->apn");
 #endif
 
+static void modem_cellular_enter_state(struct modem_cellular_data* data,
+                                       enum modem_cellular_state state);
 
-static char const* modem_cellular_state_str(enum modem_cellular_state state) {
+static void modem_cellular_delegate_event(struct modem_cellular_data* data,
+                                          enum modem_cellular_event evt);
+
+static void modem_cellular_event_handler(struct modem_cellular_data* data,
+                                         enum modem_cellular_event evt);
+
+static const char* modem_cellular_state_str(enum modem_cellular_state state) {
     switch (state) {
         case MODEM_CELLULAR_STATE_IDLE :
             return "idle";
@@ -87,6 +95,9 @@ static char const* modem_cellular_state_str(enum modem_cellular_state state) {
 
         case MODEM_CELLULAR_STATE_RUN_APN_SCRIPT :
             return "run apn script";
+
+        case MODEM_CELLULAR_STATE_RUN_NETWORK_SCRIPT:
+            return "run network script";
 
         case MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT :
             return "run dial script";
@@ -190,6 +201,10 @@ static bool modem_cellular_apn_change_allowed(enum modem_cellular_state st) {
     }
 }
 
+static bool modem_cellular_has_network_script(const struct modem_cellular_config* config) {
+    return (config->scripts->network != NULL);
+}
+
 static void modem_cellular_emit_event(struct modem_cellular_data* data,
                                       enum cellular_event evt, const void* payload) {
     if ((data->cb.fn != NULL) && (data->cb.mask & evt)) {
@@ -229,7 +244,18 @@ static bool modem_cellular_needs_apn(const struct modem_cellular_data* data) {
     return (data->apn[0] == '\0');
 }
 
-static void modem_cellular_notify_user_pipes_connected(struct modem_cellular_data const* data) {
+static void modem_cellular_enter_state_network_or_dial(struct modem_cellular_data* data) {
+    struct modem_cellular_config const* config = data->dev->config;
+
+    if (modem_cellular_has_network_script(config)) {
+        modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_NETWORK_SCRIPT);
+    }
+    else {
+        modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+    }
+}
+
+static void modem_cellular_notify_user_pipes_connected(struct modem_cellular_data* data) {
     struct modem_cellular_config const* config = data->dev->config;
     struct modem_cellular_user_pipe* user_pipe;
     struct modem_pipelink* pipelink;
@@ -252,15 +278,6 @@ static void modem_cellular_notify_user_pipes_disconnected(struct modem_cellular_
         modem_pipelink_notify_disconnected(pipelink);
     }
 }
-
-static void modem_cellular_enter_state(struct modem_cellular_data* data,
-                                       enum modem_cellular_state state);
-
-static void modem_cellular_delegate_event(struct modem_cellular_data* data,
-                                          enum modem_cellular_event evt);
-
-static void modem_cellular_event_handler(struct modem_cellular_data* data,
-                                         enum modem_cellular_event evt);
 
 static void modem_cellular_bus_pipe_handler(struct modem_pipe const* pipe,
                                             enum modem_pipe_event event,
@@ -433,6 +450,12 @@ static bool modem_cellular_is_registered(struct modem_cellular_data const* data)
             (data->registration_status_gprs == CELLULAR_REGISTRATION_REGISTERED_ROAMING) ||
             (data->registration_status_lte  == CELLULAR_REGISTRATION_REGISTERED_HOME   ) ||
             (data->registration_status_lte  == CELLULAR_REGISTRATION_REGISTERED_ROAMING));
+}
+
+static void modem_cellular_clear_registration_status(struct modem_cellular_data* data) {
+    data->registration_status_gsm  = CELLULAR_REGISTRATION_NOT_REGISTERED;
+    data->registration_status_gprs = CELLULAR_REGISTRATION_NOT_REGISTERED;
+    data->registration_status_lte  = CELLULAR_REGISTRATION_NOT_REGISTERED;
 }
 
 void modem_cellular_chat_on_cxreg(struct modem_chat* chat, char** argv, uint16_t argc,
@@ -676,6 +699,7 @@ static int modem_cellular_on_idle_state_enter(struct modem_cellular_data* data) 
         gpio_pin_set_dt(&config->reset_gpio, 1);
     }
 
+    modem_cellular_clear_registration_status(data);
     modem_cellular_notify_user_pipes_disconnected(data);
     modem_chat_release(&data->chat);
     modem_ppp_release(data->ppp);
@@ -1122,7 +1146,7 @@ static void modem_cellular_open_dlci2_event_handler(struct modem_cellular_data* 
             data->cmd_pipe = data->dlci2_pipe;
 
             if (config->use_default_pdp_context) {
-                modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+                modem_cellular_enter_state_network_or_dial(data);
             }
             else if (!modem_cellular_needs_apn(data)) {
                 modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_APN_SCRIPT);
@@ -1198,7 +1222,7 @@ static void modem_cellular_run_apn_script_event_handler(struct modem_cellular_da
 
         case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS :
             modem_cellular_script_success(data);
-            modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+            modem_cellular_enter_state_network_or_dial(data);
             break;
 
         case MODEM_CELLULAR_EVENT_SCRIPT_FAILED :
@@ -1215,25 +1239,29 @@ static void modem_cellular_run_apn_script_event_handler(struct modem_cellular_da
             modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
             break;
 
+        case MODEM_CELLULAR_EVENT_RING :
+            modem_pipe_open_async(data->uart_pipe);
+            break;
+
         default :
             break;
     }
 }
 
-static int modem_cellular_on_run_dial_script_state_enter(struct modem_cellular_data* data) {
+static int modem_cellular_on_run_network_script_state_enter(struct modem_cellular_data* data) {
+    modem_chat_attach(&data->chat, data->dlci1_pipe);
     modem_cellular_start_timer(data, K_NO_WAIT);
 
     return (0);
 }
 
-static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_data* data,
-                                                         enum modem_cellular_event evt) {
-    struct modem_cellular_config const* config = data->dev->config;
+static void modem_cellular_run_network_script_event_handler(struct modem_cellular_data* data,
+                                                            enum modem_cellular_event evt) {
+    const struct modem_cellular_config* config = data->dev->config;
 
     switch (evt) {
         case MODEM_CELLULAR_EVENT_TIMEOUT :
-            modem_chat_attach(&data->chat, data->dlci2_pipe);
-            modem_chat_run_script_async(&data->chat, config->scripts->dial);
+            modem_chat_run_script_async(&data->chat, config->scripts->network);
             break;
 
         case MODEM_CELLULAR_EVENT_SCRIPT_FAILED :
@@ -1249,6 +1277,68 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
         case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS :
             modem_cellular_script_success(data);
             modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_REGISTERED);
+            break;
+
+        case MODEM_CELLULAR_EVENT_SUSPEND :
+            modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
+            break;
+
+        case MODEM_CELLULAR_EVENT_RING :
+            modem_pipe_open_async(data->uart_pipe);
+            break;
+
+        default :
+            break;
+    }
+}
+
+static int modem_cellular_on_run_dial_script_state_enter(struct modem_cellular_data* data) {
+    modem_chat_attach(&data->chat, data->dlci2_pipe);
+    modem_cellular_start_timer(data, K_NO_WAIT);
+
+    return (0);
+}
+
+static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_data* data,
+                                                         enum modem_cellular_event evt) {
+    struct modem_cellular_config const* config = data->dev->config;
+
+    switch (evt) {
+        case MODEM_CELLULAR_EVENT_TIMEOUT :
+            modem_chat_run_script_async(&data->chat, config->scripts->dial);
+            break;
+
+        case MODEM_CELLULAR_EVENT_SCRIPT_FAILED :
+            modem_cellular_script_failed(data);
+            if (modem_cellular_is_script_retry_exceeded(data)) {
+                modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_SUSPEND);
+            }
+            else {
+                modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+            }
+            break;
+
+        case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS :
+            modem_cellular_script_success(data);
+            modem_chat_release(&data->chat);
+            modem_chat_attach(&data->chat, data->dlci1_pipe);
+
+            /* PHY is now up and searching for network */
+            net_if_carrier_on(modem_ppp_get_iface(data->ppp));
+
+            if (modem_ppp_attach(data->ppp, data->dlci2_pipe) < 0) {
+                LOG_ERR("Failed to attach PPP to DLCI2");
+                modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_SUSPEND);
+                break;
+            }
+
+            /* Check if we are already registered during the network setup */
+            if (modem_cellular_has_network_script(config)) {
+                modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_REGISTERED);
+            }
+            else {
+                modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_REGISTERED);
+            }
             break;
 
         case MODEM_CELLULAR_EVENT_SUSPEND :
@@ -1274,26 +1364,18 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 }
 
 static int modem_cellular_on_run_dial_script_state_leave(struct modem_cellular_data* data) {
-    modem_chat_release(&data->chat);
-
-    return (0);
+    return modem_chat_attach(&data->chat, data->dlci1_pipe);
 }
 
 static int modem_cellular_on_await_registered_state_enter(struct modem_cellular_data* data) {
-    /* PHY is now up and searching for network */
-    net_if_carrier_on(modem_ppp_get_iface(data->ppp));
+    modem_chat_attach(&data->chat, data->dlci1_pipe);
+    modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 
-    if (modem_ppp_attach(data->ppp, data->dlci2_pipe) < 0) {
-        return (-EAGAIN);
-    }
-
-    /* Check if we are already registered during the dial-script */
     if (modem_cellular_is_registered(data)) {
         modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_REGISTERED);
     }
 
-    modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
-    return modem_chat_attach(&data->chat, data->dlci1_pipe);
+    return (0);
 }
 
 static void modem_cellular_await_registered_event_handler(struct modem_cellular_data* data,
@@ -1322,7 +1404,12 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
             break;
 
         case MODEM_CELLULAR_EVENT_REGISTERED :
-            modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_REGISTERED);
+            if (modem_cellular_has_network_script(config)) {
+                modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+            }
+            else {
+                modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_REGISTERED);
+            }
             break;
 
         case MODEM_CELLULAR_EVENT_SUSPEND :
@@ -1440,7 +1527,13 @@ static void modem_cellular_await_ppp_dead_event_handler(struct modem_cellular_da
             break;
 
         case MODEM_CELLULAR_EVENT_TIMEOUT :
-            modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+            if (modem_cellular_has_network_script(config) &&
+                !modem_cellular_is_registered(data)) {
+                modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_REGISTERED);
+            }
+            else {
+                modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+            }
             break;
 
         default :
@@ -1633,6 +1726,10 @@ static int modem_cellular_on_state_enter(struct modem_cellular_data* data) {
             ret = modem_cellular_on_run_apn_script_state_enter(data);
             break;
 
+        case MODEM_CELLULAR_STATE_RUN_NETWORK_SCRIPT :
+            ret = modem_cellular_on_run_network_script_state_enter(data);
+            break;
+
         case MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT :
             ret = modem_cellular_on_run_dial_script_state_enter(data);
             break;
@@ -1809,6 +1906,10 @@ static void modem_cellular_event_handler(struct modem_cellular_data* data,
 
         case MODEM_CELLULAR_STATE_RUN_APN_SCRIPT :
             modem_cellular_run_apn_script_event_handler(data, evt);
+            break;
+
+        case MODEM_CELLULAR_STATE_RUN_NETWORK_SCRIPT :
+            modem_cellular_run_network_script_event_handler(data, evt);
             break;
 
         case MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT :
@@ -2194,7 +2295,6 @@ int modem_cellular_init(const struct device* dev) {
 
     __ASSERT_NO_MSG(config->scripts->init != NULL);
     __ASSERT_NO_MSG(config->scripts->dial != NULL);
-    __ASSERT_NO_MSG(config->scripts->periodic != NULL);
 
     k_mutex_init(&data->api_lock);
     k_work_init_delayable(&data->timeout_work, modem_cellular_timeout_handler);

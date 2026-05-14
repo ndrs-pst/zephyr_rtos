@@ -1364,12 +1364,20 @@ static void uart_stm32_isr(const struct device* dev) {
     struct uart_stm32_data* data = dev->data;
     #if defined(CONFIG_PM) || defined(CONFIG_UART_ASYNC_API)
     USART_TypeDef* usart = DEVICE_STM32_GET_USART(dev);
+
+    /*
+     * The TC flag is checked several times in this ISR
+     * but it may change in the background while we're
+     * handling the IRQ. Read the flag once and perform
+     * checks against this cached value instead, such that
+     * the whole ISR sees the same status regardless of
+     * any hardware event that may happen.
+     */
+    const bool tx_complete = (LL_USART_IsEnabledIT_TC(usart) && LL_USART_IsActiveFlag_TC(usart));
     #endif
 
     #ifdef CONFIG_PM
-    if (LL_USART_IsEnabledIT_TC(usart) &&
-        LL_USART_IsActiveFlag_TC(usart)) {
-
+    if (tx_complete) {
         if (data->tx_poll_stream_on) {
             /* A poll stream transmission just completed,
              * allow system to suspend
@@ -1448,7 +1456,7 @@ static void uart_stm32_isr(const struct device* dev) {
                               data->dma_rx.timeout);
         }
     }
-    else if (LL_USART_IsEnabledIT_TC(usart) && LL_USART_IsActiveFlag_TC(usart)) {
+    else if (tx_complete) {
         LL_USART_DisableIT_TC(usart);
         /* Generate TX_DONE event when transmission is done */
         async_evt_tx_done(data);

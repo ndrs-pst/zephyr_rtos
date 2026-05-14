@@ -590,6 +590,7 @@ Bluetooth HCI:
     - HoZHel
     - cvinayak
     - HaavardRei
+    - merin-infineon
   files:
     - include/zephyr/drivers/bluetooth/
     - include/zephyr/drivers/bluetooth.h
@@ -1667,8 +1668,6 @@ Documentation Infrastructure:
 "Drivers: EDAC":
   status: maintained
   maintainers:
-    - finikorg
-  collaborators:
     - yvesll
   files:
     - drivers/edac/
@@ -3090,6 +3089,7 @@ Infineon Platforms:
     - jsbatch
     - Peterson-Brett
     - lauracarlesso
+    - merin-infineon
   files:
     - boards/cypress/
     - boards/infineon/
@@ -3297,6 +3297,7 @@ Kernel:
     - cfriedt
     - npitre
     - TaiJuWu
+    - Mattemagikern
   files:
     - doc/kernel/
     - include/zephyr/kernel*.h
@@ -5553,6 +5554,7 @@ Test Framework (Ztest):
     - jeremybettis
     - yperess
     - asemjonovs
+    - Mattemagikern
   files:
     - subsys/testsuite/
     - tests/ztest/
@@ -6218,6 +6220,7 @@ West:
     - jsbatch
     - Peterson-Brett
     - lauracarlesso
+    - merin-infineon
   files:
     - modules/Kconfig.infineon
     - modules/hal_infineon/
