@@ -440,6 +440,28 @@ const char* wifi_conn_status_txt(enum wifi_conn_status status) {
     }
 }
 
+const char* wifi_disconn_reason_txt(enum wifi_disconn_reason reason) {
+    switch (reason) {
+        case WIFI_REASON_DISCONN_SUCCESS :
+            return "Success";
+
+        case WIFI_REASON_DISCONN_UNSPECIFIED :
+            return "Unspecified";
+
+        case WIFI_REASON_DISCONN_USER_REQUEST :
+            return "User request";
+
+        case WIFI_REASON_DISCONN_AP_LEAVING :
+            return "AP leaving";
+
+        case WIFI_REASON_DISCONN_INACTIVITY :
+            return "Inactivity";
+
+        default :
+            return "UNKNOWN";
+    }
+}
+
 static const struct wifi_mgmt_ops* const get_wifi_api(struct net_if* iface) {
     const struct device* dev = net_if_get_device(iface);
     struct net_wifi_mgmt_offload* off_api;
@@ -1900,19 +1922,19 @@ static int add_static_network_config(struct net_if* iface) {
         return (0);
     }
 
-#if defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OPEN)
+    #if defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OPEN)
     creds.header.type = WIFI_SECURITY_TYPE_NONE;
-#elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_PSK)
+    #elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_PSK)
     creds.header.type = WIFI_SECURITY_TYPE_PSK;
-#elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_PSK_SHA256)
+    #elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_PSK_SHA256)
     creds.header.type = WIFI_SECURITY_TYPE_PSK_SHA256;
-#elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_SAE)
+    #elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_SAE)
     creds.header.type = WIFI_SECURITY_TYPE_SAE;
-#elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_WPA_PSK)
+    #elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_WPA_PSK)
     creds.header.type = WIFI_SECURITY_TYPE_WPA_PSK;
-#else
+    #else
     #error "invalid CONFIG_WIFI_CREDENTIALS_STATIC_TYPE"
-#endif
+    #endif
 
     memcpy(creds.header.ssid, CONFIG_WIFI_CREDENTIALS_STATIC_SSID,
            strlen(CONFIG_WIFI_CREDENTIALS_STATIC_SSID));
@@ -1923,9 +1945,9 @@ static int add_static_network_config(struct net_if* iface) {
             CONFIG_WIFI_CREDENTIALS_STATIC_SSID);
 
     return add_network_from_credentials_struct_personal(&creds, iface);
-#else
+    #else
     return (0);
-#endif /* defined(CONFIG_WIFI_CREDENTIALS_STATIC) */
+    #endif /* defined(CONFIG_WIFI_CREDENTIALS_STATIC) */
 }
 
 static int connect_stored_command(uint64_t mgmt_request, struct net_if* iface, void* data,

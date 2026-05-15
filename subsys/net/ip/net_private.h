@@ -44,11 +44,13 @@ union net_mgmt_events {
 
     #if defined(CONFIG_NET_IPV6)
     struct net_event_ipv6_prefix ipv6_prefix;
-    #if defined(CONFIG_NET_IPV6_MLD)
+    #if defined(CONFIG_NET_IPV6_ROUTE)
     struct net_event_ipv6_route ipv6_route;
-    #endif /* CONFIG_NET_IPV6_MLD */
+    #endif /* CONFIG_NET_IPV6_ROUTE */
     #endif /* CONFIG_NET_IPV6 */
-
+    #if defined(CONFIG_NET_IPV4_ROUTE)
+    struct net_event_ipv4_route ipv4_route;
+    #endif /* CONFIG_NET_IPV4_ROUTE */
     #if defined(CONFIG_NET_HOSTNAME_ENABLE)
     struct net_event_l4_hostname hostname;
     #endif /* CONFIG_NET_HOSTNAME_ENABLE */
@@ -84,7 +86,7 @@ extern struct net_if *net_ipip_get_virtual_interface(struct net_if *input_iface)
 #if defined(CONFIG_NET_STATISTICS_VIA_PROMETHEUS)
 extern void net_stats_prometheus_init(struct net_if *iface);
 #else
-static inline void net_stats_prometheus_init(struct net_if *iface) {
+static inline void net_stats_prometheus_init(struct net_if* iface) {
     ARG_UNUSED(iface);
 }
 #endif /* CONFIG_NET_STATISTICS_VIA_PROMETHEUS */
@@ -477,4 +479,13 @@ int net_ipv4_igmp_rejoin(struct net_if *iface, const struct net_in_addr *addr);
 int net_ipv6_mld_rejoin(struct net_if *iface, const struct net_in6_addr *addr);
 #else
 #define net_ipv6_mld_rejoin(...) -ENOSYS
+#endif
+
+#if defined(_MSC_VER) /* #CUSTOM@NDRS */
+#include <intrin.h>
+#define do_popcount32(x) __popcnt((unsigned)(x))
+#define do_popcount64(x) __popcnt64((unsigned long long)(x))
+#else
+#define do_popcount32(x) __builtin_popcount((unsigned)(x))
+#define do_popcount64(x) __builtin_popcountll((unsigned long long)(x))
 #endif

@@ -32,6 +32,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include "icmpv6.h"
 #include "ipv6.h"
 #include "route.h"
+#include "route_ipv6.h"
 
 #include "udp_internal.h"
 
@@ -1111,10 +1112,10 @@ static void ra_message(void)
 		      "Address type should be autoconf");
 
 	/* Check if route was added correctly. */
-	route = net_route_lookup(TEST_NET_IF, &route_prefix);
+	route = net_route_ipv6_lookup(TEST_NET_IF, &route_prefix);
 	zassert_not_null(route, "Route not found");
 	zassert_equal(route->prefix_len, 48, "Wrong prefix length set");
-	zassert_mem_equal(&route->addr, &route_prefix, sizeof(route_prefix),
+	zassert_mem_equal(&route->addr.in6_addr, &route_prefix, sizeof(route_prefix),
 			  "Wrong prefix set");
 	zassert_true(route->is_infinite, "Wrong lifetime set");
 	zassert_equal(route->preference, NET_ROUTE_PREFERENCE_HIGH,

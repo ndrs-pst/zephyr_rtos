@@ -102,6 +102,12 @@ Ethernet
   :dtcompatible:`nxp,enet-mac` need to be moved from the MAC node to the parent Ethernet controller
   node. (:github:`107352`)
 
+* ``port_generate_random_mac`` of the :c:struct:`dsa_api` got removed. Also
+  :c:struct:`dsa_port_config` now uses :c:struct:`net_eth_mac_config` to set the MAC address.
+  ``mac_addr`` and ``use_random_mac_addr`` members of :c:struct:`dsa_port_config` were removed.
+  Out-of-tree DSA drivers must update their port configuration code to use the new API and
+  structures. (:github:`108952`)
+
 Flash
 =====
 * :dtcompatible:`jedec,spi-nand` now requires a ``plane-bytes`` property, which indicates the size
@@ -324,6 +330,10 @@ Bluetooth HCI
 Networking
 **********
 
+* Various IP routing related Kconfig options will have now ``IPV6`` prefix added to
+  them. This is done so that we can have IPv4 routing symbols that provide same
+  functionality as IPv6 ones but can be controlled separately.
+
 Ethernet
 ========
 
@@ -397,6 +407,10 @@ Mbed TLS
   implicitly enabled by :kconfig:option:`CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED`.
   Out-of-tree applications or board configurations that rely on TLS 1.3 PSK early data (0-RTT)
   must now explicitly enable :kconfig:option:`CONFIG_MBEDTLS_SSL_EARLY_DATA`.
+
+* ``CONFIG_PSA_CRYPTO_CLIENT`` has been removed as it was a duplicate of
+  :kconfig:option:`CONFIG_PSA_CRYPTO`. If you were using it, use
+  :kconfig:option:`CONFIG_PSA_CRYPTO` instead. (:github:`108960`)
 
 Architectures
 *************

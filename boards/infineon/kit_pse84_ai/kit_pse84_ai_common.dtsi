@@ -71,13 +71,13 @@ uart2: &scb2 {
 	status = "okay";
 	current-speed = <1000000>;      /* PERI0_GRP1 / current-speed should be within (8 ~ 16) divisible value */
 
-	clocks = <&peri0_group1_16bit_0>;       /* 10 MHz */
+	clocks = <&peri0_group1_16bit_1>;       /* 10 MHz */
 
 	pinctrl-0 = <&p6_7_scb2_uart_tx &p6_5_scb2_uart_rx>;
 	pinctrl-names = "default";
 };
 
-&peri0_group1_16bit_0 {         /* HF10 (80 MHz) / 8 = PERI0_GRP1 (10 MHz) */
+&peri0_group1_16bit_1 {
 	status = "okay";
 	clock-div = <8>;
 };

@@ -205,7 +205,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: a820f00abfc2fe2f4d03ebdb3d185e21607e9006
+      revision: 3c08112f3d92c81b98134479c01d3cfd40f54016
       path: modules/hal/nordic
       groups:
         - hal
@@ -215,7 +215,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 9be38ed3b6c1c62647880103025a662edd661fd1
+      revision: 1f89195ee9fee0e6552492d770e0f231198affc0
       path: modules/hal/nxp
       groups:
         - hal
@@ -337,7 +337,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 3e986a25337176775069c013f25705a23408f93a
+      revision: 4828027fab456d7bc6ce87a174def5dd8c24685b
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -363,7 +363,7 @@ manifest:
       revision: b452ce26db23a79fe50d7307adabfff3a75a53ad
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: 48a31a7149b019f7cc592a727c479361951f304b
+      revision: 47bd5b4ebd357ba637be0f2b092e1c0d370eea2f
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: 01032a8a7bdfdd541686f5dfa3671e602b9fcbff
