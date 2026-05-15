@@ -935,7 +935,7 @@ static int ifx_cat1_uart_async_rx_enable(const struct device* dev, uint8_t* rx_d
         /* Configure dma to transfer */
         ret = ifx_cat1_uart_async_dma_config_buffer(dev, false);
         if (ret == 0) {
-            if ((timeout != SYS_FOREVER_US) && (timeout != 0))) {
+            if ((timeout != SYS_FOREVER_US) && (timeout != 0)) {
                 /* Configure timeout */
                 k_work_reschedule(&dma_rx->timeout_work, K_USEC(timeout));
             }
@@ -1148,7 +1148,7 @@ static int ifx_cat1_uart_init(const struct device* dev) {
     /* Connect this SCB to the peripheral clock */
     result = ifx_cat1_utils_peri_pclk_assign_divider(config->clk_dst, &data->clock);
     if (result != CY_RSLT_SUCCESS) {
-        return -EIO;
+        return (-EIO);
     }
 
     result = (cy_rslt_t)Cy_SCB_UART_Init(config->reg_addr, &data->scb_config,
@@ -1159,7 +1159,7 @@ static int ifx_cat1_uart_init(const struct device* dev) {
         Cy_SCB_UART_Enable(config->reg_addr);
     }
     else {
-        return -ENOTSUP;
+        return (-ENOTSUP);
     }
 
     #if (CONFIG_SOC_FAMILY_INFINEON_CAT1C && CONFIG_UART_INTERRUPT_DRIVEN)

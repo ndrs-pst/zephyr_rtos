@@ -297,13 +297,15 @@ static int memory_read(const struct shell* sh, mem_addr_t addr, uint8_t width) {
         #endif /* CONFIG_64BIT */
 
         default :
-        shell_print(sh, "Incorrect data width");
+            shell_print(sh, "Incorrect data width");
             err = -EINVAL;
             break;
     }
 
     if (err == 0) {
-        shell_print(sh, "Read value 0x%llx", value);
+        int hex_digits = ((int)width) / 4;
+
+        shell_print(sh, "Read value 0x%0*llX", hex_digits, value);
     }
 
     return (err);
@@ -385,7 +387,11 @@ static int cmd_devmem(const struct shell* sh, size_t argc, char** argv) {
         return (-EINVAL);
     }
 
-    shell_print(sh, "Writing value 0x%llx", value);
+    int hex_digits = ((int)width) / 4;
+    if (hex_digits < 1) {
+        hex_digits = 1;
+    }
+    shell_print(sh, "Writing value 0x%0*llX", hex_digits, value);
 
     return memory_write(sh, addr, width, value);
 }
