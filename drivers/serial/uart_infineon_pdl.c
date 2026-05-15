@@ -680,7 +680,7 @@ static int ifx_cat1_uart_async_dma_config_buffer(const struct device* dev, bool 
         }
     }
 
-    return ret;
+    return (ret);
 }
 
 static int ifx_cat1_uart_async_tx(const struct device* dev, uint8_t const* tx_data,
@@ -706,10 +706,11 @@ static int ifx_cat1_uart_async_tx(const struct device* dev, uint8_t const* tx_da
 
         /* Configure dma to transfer */
         ret = ifx_cat1_uart_async_dma_config_buffer(dev, true);
-        if ((ret == 0) &&
-            ((timeout != SYS_FOREVER_US) && (timeout != 0))) {
-            /* Configure timeout */
-            k_work_reschedule(&dma_tx->timeout_work, K_USEC(timeout));
+        if (ret == 0) {
+            if ((timeout != SYS_FOREVER_US) && (timeout != 0)) {
+                /* Configure timeout */
+                k_work_reschedule(&dma_tx->timeout_work, K_USEC(timeout));
+            }
         }
         else {
             LOG_ERR("Error Tx DMA configure (%d)", ret);
@@ -718,7 +719,7 @@ static int ifx_cat1_uart_async_tx(const struct device* dev, uint8_t const* tx_da
         irq_unlock(key);
     }
 
-    return ret;
+    return (ret);
 }
 
 static int ifx_cat1_uart_async_tx_abort(const struct device* dev) {
@@ -752,7 +753,7 @@ static int ifx_cat1_uart_async_tx_abort(const struct device* dev) {
 
     irq_unlock(key);
 
-    return ret;
+    return (ret);
 }
 
 /* This callback is called when the dma's tx is done */
@@ -884,12 +885,13 @@ static inline void async_evt_rx_stopped(struct ifx_cat1_uart_data* data,
     struct ifx_cat1_uart_async* async = &data->async;
     struct ifx_cat1_dma_stream_rx* dma_rx = &async->dma_rx;
     struct dma_status stat;
+    int ret;
 
     if ((dma_rx->buf_len != 0) && (async->cb != NULL)) {
         rx->buf = dma_rx->buf;
-        if (dma_get_status(dma_rx->dma_dev,
-                           dma_rx->dma_channel,
-                           &stat) == 0) {
+
+        ret = dma_get_status(dma_rx->dma_dev, dma_rx->dma_channel, &stat);
+        if (ret == 0) {
             dma_rx->counter = dma_rx->buf_len - stat.pending_length;
         }
 
@@ -932,10 +934,11 @@ static int ifx_cat1_uart_async_rx_enable(const struct device* dev, uint8_t* rx_d
 
         /* Configure dma to transfer */
         ret = ifx_cat1_uart_async_dma_config_buffer(dev, false);
-        if ((ret == 0) &&
-            ((timeout != SYS_FOREVER_US) && (timeout != 0))) {
-            /* Configure timeout */
-            k_work_reschedule(&dma_rx->timeout_work, K_USEC(timeout));
+        if (ret == 0) {
+            if ((timeout != SYS_FOREVER_US) && (timeout != 0))) {
+                /* Configure timeout */
+                k_work_reschedule(&dma_rx->timeout_work, K_USEC(timeout));
+            }
         }
         else {
             LOG_ERR("Error Rx DMA configure (%d)", ret);
@@ -944,7 +947,7 @@ static int ifx_cat1_uart_async_rx_enable(const struct device* dev, uint8_t* rx_d
         irq_unlock(key);
     }
 
-    return ret;
+    return (ret);
 }
 
 /* This callback is called when the dma's rx is ready */
@@ -989,7 +992,7 @@ static void dma_callback_rx_rdy(const struct device* dma_dev, void* arg, uint32_
             if ((dma_rx->timeout != SYS_FOREVER_US) &&
                 (dma_rx->timeout != 0)) {
                 k_work_reschedule(&dma_rx->timeout_work,
-                                K_USEC(dma_rx->timeout));
+                                  K_USEC(dma_rx->timeout));
             }
         }
     }
@@ -1014,11 +1017,13 @@ static void ifx_cat1_uart_async_rx_timeout(struct k_work* work) {
         CONTAINER_OF(dma_rx, struct ifx_cat1_uart_async, dma_rx);
     struct ifx_cat1_uart_data* data = CONTAINER_OF(async, struct ifx_cat1_uart_data, async);
     struct dma_status stat;
+    int ret;
 
     unsigned int key = irq_lock();
 
     if (dma_rx->buf_len > 0) {
-        if (dma_get_status(dma_rx->dma_dev, dma_rx->dma_channel, &stat) == 0) {
+        ret = dma_get_status(dma_rx->dma_dev, dma_rx->dma_channel, &stat);
+        if (ret == 0) {
             size_t rx_rcv_len = dma_rx->buf_len - stat.pending_length;
 
             if ((rx_rcv_len > 0) && (rx_rcv_len == dma_rx->counter)) {
@@ -1055,9 +1060,8 @@ static int ifx_cat1_uart_async_rx_disable(const struct device* dev) {
     else {
         dma_stop(dma_rx->dma_dev, dma_rx->dma_channel);
 
-        if (dma_get_status(dma_rx->dma_dev,
-                           dma_rx->dma_channel,
-                           &stat) == 0) {
+        ret = dma_get_status(dma_rx->dma_dev, dma_rx->dma_channel, &stat);
+        if (ret == 0) {
             size_t rx_rcv_len = dma_rx->buf_len - stat.pending_length;
 
             if (rx_rcv_len > dma_rx->offset) {
@@ -1074,7 +1078,7 @@ static int ifx_cat1_uart_async_rx_disable(const struct device* dev) {
 
     irq_unlock(key);
 
-    return ret;
+    return (ret);
 }
 
 static int ifx_cat1_uart_async_rx_buf_rsp(const struct device* dev, uint8_t* buf, size_t len) {
@@ -1098,7 +1102,7 @@ static int ifx_cat1_uart_async_rx_buf_rsp(const struct device* dev, uint8_t* buf
 
     irq_unlock(key);
 
-    return ret;
+    return (ret);
 }
 
 #endif /* CONFIG_UART_ASYNC_API */
@@ -1132,7 +1136,7 @@ static int ifx_cat1_uart_init(const struct device* dev) {
     /* Configure dt provided device signals when available */
     ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
     if (ret < 0) {
-        return ret;
+        return (ret);
     }
 
     data->scb_config = _uart_default_config;
@@ -1175,7 +1179,7 @@ static int ifx_cat1_uart_init(const struct device* dev) {
     async->uart_dev = dev;
     if (dma_rx->dma_dev != NULL) {
         if (!device_is_ready(dma_rx->dma_dev)) {
-            return -ENODEV;
+            return (-ENODEV);
         }
 
         dma_rx->blk_cfg.source_address  = (uint32_t)&config->reg_addr->RX_FIFO_RD;
@@ -1200,7 +1204,7 @@ static int ifx_cat1_uart_init(const struct device* dev) {
 
     if (dma_tx->dma_dev != NULL) {
         if (!device_is_ready(dma_tx->dma_dev)) {
-            return -ENODEV;
+            return (-ENODEV);
         }
 
         dma_tx->blk_cfg.dest_address    = (uint32_t)&config->reg_addr->TX_FIFO_WR;
@@ -1227,7 +1231,7 @@ static int ifx_cat1_uart_init(const struct device* dev) {
     k_work_init_delayable(&dma_rx->timeout_work, ifx_cat1_uart_async_rx_timeout);
     #endif /* CONFIG_UART_ASYNC_API */
 
-    return ret;
+    return (ret);
 }
 
 static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
