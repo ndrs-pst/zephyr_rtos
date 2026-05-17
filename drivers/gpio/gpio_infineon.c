@@ -40,12 +40,12 @@ struct gpio_ifx_data {
     sys_slist_t callbacks;
 };
 
-static inline uint32_t gpio_ifx_valid_mask(uint8_t ngpios) {
+static inline uint32_t gpio_ifx_valid_mask(size_t ngpios) {
     if (IS_ENABLED(CONFIG_SOC_FAMILY_INFINEON_PSOC4)) {
         return BIT_MASK(ngpios);
     }
     else {
-        return 0xFFFFFFFFU;
+        return (0xFFFFFFFFU);
     }
 }
 
@@ -56,18 +56,22 @@ static inline uint32_t gpio_ifx_valid_mask(uint8_t ngpios) {
  * @param[out] drive_mode PDL drive mode constant.
  */
 static void gpio_ifx_select_input_drive_mode(gpio_flags_t flags, uint32_t* drive_mode) {
+    uint32_t mode;
+
     if ((flags & GPIO_PULL_UP) && (flags & GPIO_PULL_DOWN)) {
-        *drive_mode = CY_GPIO_DM_PULLUP_DOWN;
+        mode = CY_GPIO_DM_PULLUP_DOWN;
     }
     else if (flags & GPIO_PULL_UP) {
-        *drive_mode = CY_GPIO_DM_PULLUP;
+        mode = CY_GPIO_DM_PULLUP;
     }
     else if (flags & GPIO_PULL_DOWN) {
-        *drive_mode = CY_GPIO_DM_PULLDOWN;
+        mode = CY_GPIO_DM_PULLDOWN;
     }
     else {
-        *drive_mode = CY_GPIO_DM_HIGHZ;
+        mode = CY_GPIO_DM_HIGHZ;
     }
+
+    *drive_mode = mode;
 }
 
 /**
@@ -91,27 +95,28 @@ static int gpio_ifx_select_output_drive_mode(gpio_flags_t flags, uint32_t* drive
         }
 
         *drive_mode = CY_GPIO_DM_STRONG;
-        return 0;
+        return (0);
     }
 
     if (flags & GPIO_LINE_OPEN_DRAIN) {
         if (flags & GPIO_PULL_DOWN) {
-            return -ENOTSUP;
+            return (-ENOTSUP);
         }
 
-        *drive_mode = (flags & GPIO_PULL_UP) ? CY_GPIO_DM_PULLUP : CY_GPIO_DM_OD_DRIVESLOW;
+        *drive_mode = (flags & GPIO_PULL_UP) ? CY_GPIO_DM_PULLUP
+                                             : CY_GPIO_DM_OD_DRIVESLOW;
     }
     else {
         /* Open-source */
         if (flags & GPIO_PULL_UP) {
-            return -ENOTSUP;
+            return (-ENOTSUP);
         }
 
-        *drive_mode =
-            (flags & GPIO_PULL_DOWN) ? CY_GPIO_DM_PULLDOWN : CY_GPIO_DM_OD_DRIVESHIGH;
+        *drive_mode = (flags & GPIO_PULL_DOWN) ? CY_GPIO_DM_PULLDOWN
+                                               : CY_GPIO_DM_OD_DRIVESHIGH;
     }
 
-    return 0;
+    return (0);
 }
 
 static int gpio_ifx_configure(const struct device* dev, gpio_pin_t pin, gpio_flags_t flags) {
@@ -121,7 +126,7 @@ static int gpio_ifx_configure(const struct device* dev, gpio_pin_t pin, gpio_fla
     GPIO_PRT_Type* const base = cfg->regs;
 
     if (pin >= cfg->ngpios) {
-        return -EINVAL;
+        return (-EINVAL);
     }
 
     switch (flags & (GPIO_INPUT | GPIO_OUTPUT | GPIO_DISCONNECTED)) {
@@ -140,7 +145,7 @@ static int gpio_ifx_configure(const struct device* dev, gpio_pin_t pin, gpio_fla
             __fallthrough;
         case GPIO_OUTPUT :
             if (gpio_ifx_select_output_drive_mode(flags, &drive_mode) != 0) {
-                return -ENOTSUP;
+                return (-ENOTSUP);
             }
 
             if (flags & GPIO_OUTPUT_INIT_HIGH) {
@@ -168,7 +173,7 @@ static int gpio_ifx_configure(const struct device* dev, gpio_pin_t pin, gpio_fla
             break;
 
         default :
-            return -ENOTSUP;
+            return (-ENOTSUP);
     }
 
     #if defined(CY_PDL_TZ_ENABLED)
@@ -177,7 +182,7 @@ static int gpio_ifx_configure(const struct device* dev, gpio_pin_t pin, gpio_fla
     Cy_GPIO_Pin_FastInit(base, pin, drive_mode, pin_val, HSIOM_SEL_GPIO);
     #endif
 
-    return 0;
+    return (0);
 }
 
 static int gpio_ifx_port_get_raw(const struct device* dev, uint32_t* value) {
@@ -186,7 +191,7 @@ static int gpio_ifx_port_get_raw(const struct device* dev, uint32_t* value) {
 
     *value = GPIO_PRT_IN(base) & gpio_ifx_valid_mask(cfg->ngpios);
 
-    return 0;
+    return (0);
 }
 
 static int gpio_ifx_port_set_masked_raw(const struct device* dev, uint32_t mask, uint32_t value) {
@@ -203,7 +208,7 @@ static int gpio_ifx_port_set_masked_raw(const struct device* dev, uint32_t mask,
     GPIO_PRT_OUT(base) = (GPIO_PRT_OUT(base) & ~mask) | (mask & value);
     #endif
 
-    return 0;
+    return (0);
 }
 
 static int gpio_ifx_port_set_bits_raw(const struct device* dev, uint32_t mask) {
@@ -212,7 +217,7 @@ static int gpio_ifx_port_set_bits_raw(const struct device* dev, uint32_t mask) {
 
     GPIO_PRT_OUT_SET(base) = mask & gpio_ifx_valid_mask(cfg->ngpios);
 
-    return 0;
+    return (0);
 }
 
 static int gpio_ifx_port_clear_bits_raw(const struct device* dev, uint32_t mask) {
@@ -221,7 +226,7 @@ static int gpio_ifx_port_clear_bits_raw(const struct device* dev, uint32_t mask)
 
     GPIO_PRT_OUT_CLR(base) = mask & gpio_ifx_valid_mask(cfg->ngpios);
 
-    return 0;
+    return (0);
 }
 
 static int gpio_ifx_port_toggle_bits(const struct device* dev, uint32_t mask) {
@@ -230,7 +235,7 @@ static int gpio_ifx_port_toggle_bits(const struct device* dev, uint32_t mask) {
 
     GPIO_PRT_OUT_INV(base) = mask & gpio_ifx_valid_mask(cfg->ngpios);
 
-    return 0;
+    return (0);
 }
 
 static uint32_t gpio_ifx_get_pending_int(const struct device* dev) {
@@ -238,7 +243,7 @@ static uint32_t gpio_ifx_get_pending_int(const struct device* dev) {
     GPIO_PRT_Type* const base = cfg->regs;
 
     #if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
-    return base->INTR & gpio_ifx_valid_mask(cfg->ngpios);
+    return (base->INTR & gpio_ifx_valid_mask(cfg->ngpios));
     #else
     return GPIO_PRT_INTR_MASKED(base);
     #endif
@@ -248,7 +253,7 @@ static uint32_t __maybe_unused gpio_get_pending_pins(const struct gpio_ifx_confi
                                                      GPIO_PRT_Type* const base) {
     uint32_t pending = GPIO_PRT_INTR(base) & gpio_ifx_valid_mask(cfg->ngpios);
 
-    return pending;
+    return (pending);
 }
 
 static void __maybe_unused gpio_ifx_isr(const struct device* dev) {
@@ -261,7 +266,7 @@ static void __maybe_unused gpio_ifx_isr(const struct device* dev) {
         return;
     }
 
-    for (uint8_t i = 0; i < cfg->ngpios; i++) {
+    for (size_t i = 0; i < cfg->ngpios; i++) {
         if (pending & BIT(i)) {
             Cy_GPIO_ClearInterrupt(base, i);
         }
@@ -277,17 +282,17 @@ static int gpio_ifx_pin_interrupt_configure(const struct device* dev, gpio_pin_t
     GPIO_PRT_Type* const base = cfg->regs;
 
     if (pin >= cfg->ngpios) {
-        return -EINVAL;
+        return (-EINVAL);
     }
 
     if (mode == GPIO_INT_MODE_DISABLED) {
         Cy_GPIO_SetInterruptEdge(base, pin, CY_GPIO_INTR_DISABLE);
         Cy_GPIO_ClearInterrupt(base, pin);
-        return 0;
+        return (0);
     }
 
     if (mode != GPIO_INT_MODE_EDGE) {
-        return -ENOTSUP;
+        return (-ENOTSUP);
     }
 
     switch (trig) {
@@ -304,7 +309,7 @@ static int gpio_ifx_pin_interrupt_configure(const struct device* dev, gpio_pin_t
             break;
 
         default :
-            return -ENOTSUP;
+            return (-ENOTSUP);
     }
 
     Cy_GPIO_SetInterruptEdge(base, pin, trig_pdl);
@@ -317,7 +322,7 @@ static int gpio_ifx_pin_interrupt_configure(const struct device* dev, gpio_pin_t
     Cy_GPIO_SetInterruptMask(base, pin, int_en);
     #endif
 
-    return 0;
+    return (0);
 }
 
 static int gpio_ifx_manage_callback(const struct device* port, struct gpio_callback* callback,
@@ -353,7 +358,7 @@ static DEVICE_API(gpio, gpio_ifx_api) = {
                     DEVICE_DT_INST_GET(n), 0);                  \
         irq_enable(DT_INST_IRQN(n));                            \
                                                                 \
-        return 0;                                               \
+        return (0);                                             \
     }                                                           \
     GPIO_PORT_STRUCTS_DEFINE(n)                                 \
     DEVICE_DT_INST_DEFINE(n, gpio_ifx##n##_init, NULL, &gpio_ifx_data_##n, \
@@ -412,7 +417,7 @@ static __maybe_unused void gpio_shared_isr(const struct device* dev) {
         IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_shared_isr, \
                     DEVICE_DT_INST_GET(n), 0);                  \
         irq_enable(DT_INST_IRQN(n));                            \
-        return 0;                                               \
+        return (0);                                             \
     }                                                           \
                                                                 \
     DEVICE_DT_INST_DEFINE(n, gpio_shared##n##_init, NULL, NULL, &gpio_shared##n##_cfg, \
