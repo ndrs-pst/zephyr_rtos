@@ -1,0 +1,27 @@
+# Copyright (c) 2026 NDR Solution (Thailand) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: OPTIREG™ PMIC TLF30682QVS01 Power management IC
+
+compatible: "infineon,tlf30682qvs01"
+
+include: [spi-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Interrupt pin.
+
+      This pin signals active low when produced by the controller. The
+      property value should ensure the flags properly describe the signal
+      that is presented to the driver.
+  wdi-gpios:
+    type: phandle-array
+    description: |
+      Watchdog input, trigger pin.
+
+      The host MCU periodically toggles this output to service the PMIC
+      watchdog timer. Missing or invalid transitions on this signal may
+      cause the PMIC to trigger a watchdog reset or other recovery action.
