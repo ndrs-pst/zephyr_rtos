@@ -25,6 +25,7 @@ struct gpio_ifx_config {
     /* gpio_driver_config needs to be first */
     struct gpio_driver_config common;
     GPIO_PRT_Type* regs;
+    void (*irq_config_func)(const struct device* dev);
     uint8_t ngpios;
 };
 
@@ -344,32 +345,45 @@ static DEVICE_API(gpio, gpio_ifx_api) = {
     .get_pending_int         = gpio_ifx_get_pending_int,
 };
 
-#define GPIO_PORT_STRUCTS_DEFINE(n)                             \
-    static const struct gpio_ifx_config gpio_ifx_config_##n = { \
-        .common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),           \
-        .ngpios = DT_INST_PROP_OR(n, ngpios, 8),                \
-        .regs   = (GPIO_PRT_Type*)DT_INST_REG_ADDR(n),          \
-    };                                                          \
-    static struct gpio_ifx_data gpio_ifx_data_##n;
+static int gpio_ifx_init(const struct device* dev) {
+    const struct gpio_ifx_config* const cfg = dev->config;
 
-#define GPIO_PORT_DEFINE(n)                                     \
-    static int gpio_ifx##n##_init(const struct device* dev) {   \
-        IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_ifx_isr, \
-                    DEVICE_DT_INST_GET(n), 0);                  \
-        irq_enable(DT_INST_IRQN(n));                            \
-                                                                \
-        return (0);                                             \
-    }                                                           \
-    GPIO_PORT_STRUCTS_DEFINE(n)                                 \
-    DEVICE_DT_INST_DEFINE(n, gpio_ifx##n##_init, NULL, &gpio_ifx_data_##n, \
-                          &gpio_ifx_config_##n, POST_KERNEL,    \
+    if (cfg->irq_config_func != NULL) {
+        cfg->irq_config_func(dev);
+    }
+
+    return (0);
+}
+
+#define GPIO_PORT_DEFINE(n)                                             \
+    static void gpio_ifx##n##_irq_config(const struct device* dev) {    \
+        IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),          \
+                    gpio_ifx_isr, DEVICE_DT_INST_GET(n), 0);            \
+        irq_enable(DT_INST_IRQN(n));                                    \
+    }                                                                   \
+                                                                        \
+    static struct gpio_ifx_config DT_CONST gpio_ifx_config_##n = {      \
+        .common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                   \
+        .regs   = (GPIO_PRT_Type*)DT_INST_REG_ADDR(n),                  \
+        .irq_config_func = gpio_ifx##n##_irq_config,                    \
+        .ngpios = DT_INST_PROP_OR(n, ngpios, 8),                        \
+    };                                                                  \
+                                                                        \
+    static struct gpio_ifx_data gpio_ifx_data_##n;                      \
+    DEVICE_DT_INST_DEFINE(n, gpio_ifx_init, NULL, &gpio_ifx_data_##n,   \
+                          &gpio_ifx_config_##n, POST_KERNEL,            \
                           CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_ifx_api);
 
-
-#define GPIO_SHARED_PORT_DEFINE(n)                              \
-    GPIO_PORT_STRUCTS_DEFINE(n)                                 \
-    DEVICE_DT_INST_DEFINE(n, NULL, NULL, &gpio_ifx_data_##n,    \
-                          &gpio_ifx_config_##n, POST_KERNEL,    \
+#define GPIO_SHARED_PORT_DEFINE(n)                                      \
+    static struct gpio_ifx_config DT_CONST gpio_ifx_config_##n = {      \
+        .common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                   \
+        .regs   = (GPIO_PRT_Type*)DT_INST_REG_ADDR(n),                  \
+        .irq_config_func = NULL,                                        \
+        .ngpios = DT_INST_PROP_OR(n, ngpios, 8),                        \
+    };                                                                  \
+    static struct gpio_ifx_data gpio_ifx_data_##n;                      \
+    DEVICE_DT_INST_DEFINE(n, gpio_ifx_init, NULL, &gpio_ifx_data_##n,   \
+                          &gpio_ifx_config_##n, POST_KERNEL,            \
                           CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_ifx_api);
 
 /*
