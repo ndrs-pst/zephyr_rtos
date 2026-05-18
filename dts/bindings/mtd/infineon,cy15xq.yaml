@@ -7,3 +7,11 @@ description: Infineon (CY15BxxxQ) SPI FRAM
 compatible: "infineon,cy15xq"
 
 include: ["infineon,cy15x-base.yaml", spi-device.yaml]
+
+properties:
+  rdid-supported:
+    type: boolean
+    description: |
+      Set if the device supports the RDID (0x9F) command. When present,
+      the driver reads the device ID at init and logs it. Omit for
+      variants that do not implement RDID.

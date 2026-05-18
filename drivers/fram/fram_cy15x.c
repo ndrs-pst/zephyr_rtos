@@ -27,6 +27,7 @@ LOG_MODULE_REGISTER(fram_cy15x);
 #define FRAM_CY15Q_WRDI     0x04U       /* Reset the write enable latch */
 #define FRAM_CY15Q_RDSR     0x05U       /* Read STATUS register         */
 #define FRAM_CY15Q_WREN     0x06U       /* Set the write enable latch   */
+#define FRAM_CY15Q_RDID     0x9FU       /* Read Device ID               */
 #define FRAM_CY15Q_A8_BIT   BIT(3)      /* High-byte address for 4 kbit variant */
 
 /* CY15Q status register bits */
@@ -40,19 +41,23 @@ LOG_MODULE_REGISTER(fram_cy15x);
 
 struct fram_cy15x_config {
     union {
-#ifdef CONFIG_FRAM_CY15XJ
+        #ifdef CONFIG_FRAM_CY15XJ
         struct i2c_dt_spec i2c;
-#endif /* CONFIG_FRAM_CY15XJ */
-#if (defined(CONFIG_FRAM_CY15XQ) || defined(_MSC_VER)) /* #CUSTOM@NDRS */
+        #endif /* CONFIG_FRAM_CY15XJ */
+
+        #if (defined(CONFIG_FRAM_CY15XQ) || defined(_MSC_VER)) /* #CUSTOM@NDRS */
         struct spi_dt_spec spi;
-#endif /* CONFIG_FRAM_CY15XQ */
+        #endif /* CONFIG_FRAM_CY15XQ */
     } bus;
-#if ANY_INST_HAS_WP_GPIOS
+
+    #if ANY_INST_HAS_WP_GPIOS
     struct gpio_dt_spec wp_gpio;
-#endif /* ANY_INST_HAS_WP_GPIOS */
-    size_t   size;
-    uint8_t  addr_width;
-    bool     readonly;
+    #endif /* ANY_INST_HAS_WP_GPIOS */
+
+    size_t  size;
+    uint8_t addr_width;
+    bool readonly;
+    bool rdid_supported;
     uint16_t timeout;
     bool (*bus_is_ready)(const struct device *dev);
     fram_api_read  read_fn;
@@ -203,7 +208,7 @@ static int fram_cy15x_write(const struct device* dev, off_t offset,
 static size_t fram_cy15x_size(const struct device* dev) {
     const struct fram_cy15x_config* config = dev->config;
 
-    return config->size;
+    return (config->size);
 }
 
 #ifdef CONFIG_FRAM_CY15XJ
@@ -340,28 +345,28 @@ static int fram_cy15xq_read(const struct device* dev, off_t offset, void* buf, s
     size_t   cmd_len = 1U + (config->addr_width / 8U);
     uint8_t  cmd[4]  = {FRAM_CY15Q_READ, 0, 0, 0};
     uint8_t* paddr;
-    int err;
-    const struct spi_buf tx_buf = {
+    int ret;
+    struct spi_buf tx_buf = {
         .buf = cmd,
         .len = cmd_len
     };
-    const struct spi_buf_set tx = {
+    struct spi_buf_set tx = {
         .buffers = &tx_buf,
         .count   = 1
     };
-    const struct spi_buf rx_bufs[2] = {
+    struct spi_buf rx_bufs[2] = {
         {
             .buf = NULL,
-            .len = cmd_len,
+            .len = cmd_len
         },
         {
             .buf = buf,
-            .len = len,
+            .len = len
         },
     };
-    const struct spi_buf_set rx = {
+    struct spi_buf_set rx = {
         .buffers = rx_bufs,
-        .count   = ARRAY_SIZE(rx_bufs),
+        .count   = 2
     };
 
     if (len == 0U) {
@@ -395,9 +400,9 @@ static int fram_cy15xq_read(const struct device* dev, off_t offset, void* buf, s
             __ASSERT(0, "invalid address width");
     }
 
-    err = spi_transceive_dt(&config->bus.spi, &tx, &rx);
-    if (err < 0) {
-        return err;
+    ret = spi_transceive_dt(&config->bus.spi, &tx, &rx);
+    if (ret < 0) {
+        return (ret);
     }
 
     return (len);
@@ -406,11 +411,11 @@ static int fram_cy15xq_read(const struct device* dev, off_t offset, void* buf, s
 static int fram_cy15xq_wren(const struct device* dev) {
     const struct fram_cy15x_config* config = dev->config;
     uint8_t cmd = FRAM_CY15Q_WREN;
-    const struct spi_buf tx_buf = {
+    struct spi_buf tx_buf = {
         .buf = &cmd,
         .len = 1
     };
-    const struct spi_buf_set tx = {
+    struct spi_buf_set tx = {
         .buffers = &tx_buf,
         .count = 1
     };
@@ -426,20 +431,20 @@ static int fram_cy15xq_write(const struct device* dev, off_t offset, const void*
     uint8_t  cmd[4]  = {FRAM_CY15Q_WRITE, 0, 0, 0};
     size_t   cmd_len = (1U + (config->addr_width / 8U));
     uint8_t* paddr;
-    int err;
-    const struct spi_buf tx_bufs[2] = {
+    int ret;
+    struct spi_buf tx_bufs[2] = {
         {
             .buf = cmd,
-            .len = cmd_len,
+            .len = cmd_len
         },
         {
             .buf = (void*)buf,
             .len = len
         },
     };
-    const struct spi_buf_set tx = {
+    struct spi_buf_set tx = {
         .buffers = tx_bufs,
-        .count = ARRAY_SIZE(tx_bufs),
+        .count   = 2
     };
 
     if ((config->size <= 512U) && (offset >= 256U)) {
@@ -450,11 +455,11 @@ static int fram_cy15xq_write(const struct device* dev, off_t offset, const void*
     switch (config->addr_width) {
         case 24 :
             *paddr++ = (uint8_t)(offset >> 16);
-        __fallthrough;
+            __fallthrough;
 
         case 16 :
             *paddr++ = (uint8_t)(offset >> 8);
-        __fallthrough;
+            __fallthrough;
 
         case 8 :
             *paddr = (uint8_t)(offset);
@@ -464,47 +469,97 @@ static int fram_cy15xq_write(const struct device* dev, off_t offset, const void*
             __ASSERT(0, "invalid address width");
     }
 
-    err = fram_cy15xq_wren(dev);
-    if (err) {
-        LOG_ERR("failed to disable write protection (err %d)", err);
-        return err;
+    ret = fram_cy15xq_wren(dev);
+    if (ret != 0) {
+        LOG_ERR("failed to set write enable latch (err %d)", ret);
+        return (ret);
     }
 
-    err = spi_transceive_dt(&config->bus.spi, &tx, NULL);
-    if (err) {
-        return (err);
+    ret = spi_write_dt(&config->bus.spi, &tx);
+    if (ret != 0) {
+        LOG_ERR("failed to write to FRAM (err %d)", ret);
     }
 
     return (len);
 }
 #endif /* CONFIG_FRAM_CY15XQ */
 
+__maybe_unused
+static int fram_cy15xq_rdid(const struct device* dev) {
+    const struct fram_cy15x_config* config = dev->config;
+    uint8_t id[4];
+    uint8_t cmd = FRAM_CY15Q_RDID;
+    struct spi_buf tx_buf = {
+        .buf = &cmd,
+        .len = 1
+    };
+    struct spi_buf_set tx = {
+        .buffers = &tx_buf,
+        .count   = 1
+    };
+    struct spi_buf rx_bufs[2] = {
+        {
+            .buf = NULL,
+            .len = 1
+        },
+        {
+            .buf = id,
+            .len = 4
+        },
+    };
+    struct spi_buf_set rx = {
+        .buffers = rx_bufs,
+        .count   = 2
+    };
+    int ret;
+
+    ret = spi_transceive_dt(&config->bus.spi, &tx, &rx);
+    if (ret == 0) {
+        LOG_INF("FRAM ID: %02X %02X %02X %02X", id[0], id[1], id[2], id[3]);
+    }
+    else {
+        LOG_ERR("RDID read failed (err %d)", ret);
+    }
+
+    return (0);
+}
+
 static int fram_cy15x_init(const struct device* dev) {
     const struct fram_cy15x_config* config = dev->config;
     struct fram_cy15x_data* data = dev->data;
+    int ret;
 
     k_mutex_init(&data->lock);
 
     if (!config->bus_is_ready(dev)) {
         LOG_ERR("parent bus device not ready");
-        return -EINVAL;
+        return (-EINVAL);
     }
 
-#if ANY_INST_HAS_WP_GPIOS
+    #if ANY_INST_HAS_WP_GPIOS
     if (config->wp_gpio.port) {
-        int err;
         if (!device_is_ready(config->wp_gpio.port)) {
             LOG_ERR("wp gpio device not ready");
-            return -EINVAL;
+            return (-EINVAL);
         }
 
-        err = gpio_pin_configure_dt(&config->wp_gpio, GPIO_OUTPUT_ACTIVE);
-        if (err) {
-            LOG_ERR("failed to configure WP GPIO pin (err %d)", err);
-            return err;
+        ret = gpio_pin_configure_dt(&config->wp_gpio, GPIO_OUTPUT_ACTIVE);
+        if (ret != 0) {
+            LOG_ERR("failed to configure WP GPIO pin (err %d)", ret);
+            return (ret);
         }
     }
-#endif /* ANY_INST_HAS_WP_GPIOS */
+    #endif /* ANY_INST_HAS_WP_GPIOS */
+
+    #if defined(CONFIG_FRAM_CY15XQ)
+    if (config->rdid_supported) {
+        ret = fram_cy15xq_rdid(dev);
+        if (ret < 0) {
+            LOG_ERR("FRAM RDID check failed (err %d)", ret);
+            return (ret);
+        }
+    }
+    #endif /* CONFIG_FRAM_CY15XQ */
 
     return (0);
 }
@@ -531,7 +586,7 @@ static DEVICE_API(fram, fram_cy15x_api) = {
 #define fram_cy15q_bus(n, t)    \
     { .spi = SPI_DT_SPEC_GET(INST_DT_CY15X(n, t),       \
              SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |    \
-             SPI_WORD_SET(8), 0) }
+             SPI_WORD_SET(8)) }
 
 #define FRAM_CY15X_WP_GPIOS(id) \
     IF_ENABLED(DT_NODE_HAS_PROP(id, wp_gpios),          \
@@ -540,17 +595,18 @@ static DEVICE_API(fram, fram_cy15x_api) = {
 #define FRAM_CY15X_DEVICE(n, t) \
     ASSERT_CY15##t##_ADDR_W_VALID(DT_PROP(INST_DT_CY15X(n, t), \
                                           address_width)); \
-    static const struct fram_cy15x_config fram_cy15x##t##_config_##n = { \
+    static struct fram_cy15x_config DT_CONST fram_cy15x##t##_config_##n = { \
         .bus        = fram_cy15##t##_bus(n, t),     \
         FRAM_CY15X_WP_GPIOS(INST_DT_CY15X(n, t))    \
         .size       = DT_PROP(INST_DT_CY15X(n, t), size),       \
         .addr_width = DT_PROP(INST_DT_CY15X(n, t), address_width),  \
         .readonly   = DT_PROP(INST_DT_CY15X(n, t), read_only),  \
+        .rdid_supported = DT_PROP_OR(INST_DT_CY15X(n, t), rdid_supported, false), \
         .timeout    = DT_PROP(INST_DT_CY15X(n, t), timeout),    \
-        .bus_is_ready = fram_cy15x##t##_bus_is_ready,           \
-        .read_fn  = fram_cy15x##t##_read,  \
-        .write_fn = fram_cy15x##t##_write, \
-    }; \
+        .bus_is_ready   = fram_cy15x##t##_bus_is_ready,         \
+        .read_fn  = fram_cy15x##t##_read,                       \
+        .write_fn = fram_cy15x##t##_write,                      \
+    };                                                          \
     static struct fram_cy15x_data fram_cy15x##t##_data_##n;     \
     DEVICE_DT_DEFINE(INST_DT_CY15X(n, t), fram_cy15x_init,      \
                      NULL, &fram_cy15x##t##_data_##n,           \

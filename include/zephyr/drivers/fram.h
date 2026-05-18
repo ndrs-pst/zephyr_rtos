@@ -18,8 +18,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_FRAM_H_
 
 /**
- * @brief FRAM Interface
- * @defgroup fram_interface FRAM Interface
+ * @brief Interfaces for Ferroelectric Random Access Memory (FRAM).
+ * @defgroup fram_interface FRAM
  * @ingroup io_interfaces
  * @{
  */
@@ -33,9 +33,9 @@
 extern "C" {
 #endif
 
-typedef int (*fram_api_read)(const struct device* dev, off_t offset, void* data, size_t len);
-typedef int (*fram_api_write)(const struct device* dev, off_t offset, const void* data, size_t len);
-typedef size_t (*fram_api_size)(const struct device* dev);
+typedef int (*fram_api_read)(struct device const* dev, off_t offset, void* data, size_t len);
+typedef int (*fram_api_write)(struct device const* dev, off_t offset, void const* data, size_t len);
+typedef size_t (*fram_api_size)(struct device const* dev);
 
 __subsystem struct fram_driver_api {
     fram_api_read read;
@@ -53,13 +53,11 @@ __subsystem struct fram_driver_api {
  *
  *  @return 0 on success, negative errno code on failure.
  */
-__syscall int fram_read(const struct device* dev, off_t offset, void* data, size_t len);
+__syscall int fram_read(struct device const* dev, off_t offset, void* data, size_t len);
 
-static inline int z_impl_fram_read(const struct device* dev,
+static inline int z_impl_fram_read(struct device const* dev,
                                    off_t offset, void* data, size_t len) {
-    const struct fram_driver_api* api = (const struct fram_driver_api*)dev->api;
-
-    return (api->read(dev, offset, data, len));
+    return DEVICE_API_GET(fram, dev)->read(dev, offset, data, len);
 }
 
 /**
@@ -72,13 +70,11 @@ static inline int z_impl_fram_read(const struct device* dev,
  *
  *  @return 0 on success, negative errno code on failure.
  */
-__syscall int fram_write(const struct device* dev, off_t offset, const void* data, size_t len);
+__syscall int fram_write(struct device const* dev, off_t offset, void const* data, size_t len);
 
-static inline int z_impl_fram_write(const struct device* dev, off_t offset,
-                                    const void* data, size_t len) {
-    const struct fram_driver_api* api = (const struct fram_driver_api*)dev->api;
-
-    return (api->write(dev, offset, data, len));
+static inline int z_impl_fram_write(struct device const* dev, off_t offset,
+                                    void const* data, size_t len) {
+    return DEVICE_API_GET(fram, dev)->write(dev, offset, data, len);
 }
 
 /**
@@ -88,12 +84,10 @@ static inline int z_impl_fram_write(const struct device* dev, off_t offset,
  *
  *  @return FRAM size in bytes.
  */
-__syscall size_t fram_get_size(const struct device* dev);
+__syscall size_t fram_get_size(struct device const* dev);
 
-static inline size_t z_impl_fram_get_size(const struct device* dev) {
-    const struct fram_driver_api* api = (const struct fram_driver_api*)dev->api;
-
-    return (api->size(dev));
+static inline size_t z_impl_fram_get_size(struct device const* dev) {
+    return DEVICE_API_GET(fram, dev)->size(dev);
 }
 
 #ifdef __cplusplus
