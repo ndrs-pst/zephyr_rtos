@@ -22,7 +22,25 @@ from collections.abc import Iterable
 from itertools import takewhile
 from pathlib import Path, PurePath
 
-import magic
+try:
+    import magic
+except ImportError:
+    if sys.platform != 'win32':
+        raise
+    # python-magic-bin bundles libmagic.dll under <magic_pkg>/libmagic/, but
+    # python-magic's loader.py (ahupp/python-magic@0fb1922d) only searches
+    # PATH and cwd — that subdirectory was never added. Prepend it to PATH so
+    # ctypes.util.find_library() can resolve the DLL.
+    # See: https://github.com/zephyrproject-rtos/zephyr/issues/101181
+    #      https://github.com/ahupp/python-magic/pull/294 (upstream fix pending)
+    from importlib.util import find_spec
+
+    spec = find_spec('magic')
+    if spec and spec.origin:
+        dll_dir = Path(spec.origin).parent / 'libmagic'
+        if dll_dir.is_dir():
+            os.environ['PATH'] = str(dll_dir) + os.pathsep + os.environ.get('PATH', '')
+    import magic
 import unidiff
 import yaml
 from dotenv import load_dotenv
@@ -1489,9 +1507,23 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
             logging.info(f"Loading extra UNDEF_KCONFIG_ALLOWLIST values from {path}")
             undef_kconfig_allowlist_extra = get_set_from_file(path)
 
+        # Load the per-file allowlist: files listed here are skipped entirely
+        self_folder = Path(__file__).resolve().parent
+        default_files_allowlist_file = self_folder / 'undef_kconfig_files_allowlist.txt'
+        undef_kconfig_files_allowlist = get_set_from_file(str(default_files_allowlist_file))
+
+        # Load extensions to the per-file allowlist via environment variable
+        if path := os.environ.get("UNDEF_KCONFIG_FILES_ALLOWLIST_FILE", None):
+            logging.info(f"Loading extra file allowlist entries from {path}")
+            undef_kconfig_files_allowlist |= get_set_from_file(path)
+
         # splitlines() supports various line terminators
         for grep_line in grep_stdout.splitlines():
             path, lineno, line = grep_line.split("\0")
+
+            # Skip files whose CONFIG_ references are explicitly allowlisted
+            if path in undef_kconfig_files_allowlist:
+                continue
 
             # Extract symbol references (might be more than one) within the
             # line

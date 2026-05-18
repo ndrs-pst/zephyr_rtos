@@ -147,6 +147,14 @@ Input
   Users of the default configuration are advised to reconsider whether it really is appropriate;
   migration to ``zephyr,suspend-action = "full-disconnect";`` is recommended. (:github:`108294`)
 
+* Kconfig options for the ft6146, ft5336, and cst8xx input drivers have been renamed to be
+  consistent with the other input drivers. Applications using the following Kconfig options
+  must update their configurations accordingly:
+
+  * ``CONFIG_INPUT_FT5336_PERIOD`` → :kconfig:option:`CONFIG_INPUT_FT5336_PERIOD_MS`
+  * ``CONFIG_INPUT_CST8XX_PERIOD`` → :kconfig:option:`CONFIG_INPUT_CST8XX_PERIOD_MS`
+  * ``CONFIG_INPUT_FT6146_PERIOD`` → :kconfig:option:`CONFIG_INPUT_FT6146_PERIOD_MS`
+
 NXP
 ===
 
@@ -294,6 +302,12 @@ Bluetooth Audio
     ``BT_TBS_TECHNOLOGY`` to ``BT_BEARER_TECH``. Additionally the values are now defined in
     :zephyr_file:`include/zephyr/bluetooth/assigned_numbers.h` instead of
     :zephyr_file:`include/zephyr/bluetooth/audio/tbs.h`. (:github:`102430`)
+  * ``bt_tbs_register_param.supported_features`` has been renamed to
+    :c:member:`bt_tbs_register_param.optional_opcodes`. Applications can do a simple
+    search-and-replace for ``supported_features`` to ``optional_opcodes``.
+    Additionally the ``BT_TBS_FEATURE_*`` macros have been changed to ``BT_TBS_OPTIONAL_OPCODE_*``.
+    Applications can do a simple search-and-replace for ``BT_TBS_FEATURE_`` to
+    ``BT_TBS_OPTIONAL_OPCODE_``. (:github:`103350`)
 
 * CSIP
 
@@ -339,6 +353,12 @@ Ethernet
 
 * :kconfig:option:`CONFIG_NET_DEFAULT_IF_ETHERNET` now allows to get the first ethernet interface,
   instead of the first between ethernet and wifi.
+
+* The :kconfig:option:`CONFIG_ETH_QEMU_EXTRA_ARGS` and
+  :kconfig:option:`CONFIG_NET_QEMU_USER_EXTRA_ARGS` options can no longer be used to specify the MAC
+  address for the QEMU Ethernet device. Instead, :kconfig:option:`CONFIG_NET_QEMU_DEVICE_EXTRA_ARGS`
+  can be used. This is because we are no longer using the ``-nic`` option for QEMU, but the
+  ``-netdev`` and ``-device`` options. (:github:`107326`)
 
 PTP
 ===
