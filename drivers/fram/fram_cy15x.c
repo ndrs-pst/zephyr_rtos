@@ -41,13 +41,8 @@ LOG_MODULE_REGISTER(fram_cy15x);
 
 struct fram_cy15x_config {
     union {
-        #ifdef CONFIG_FRAM_CY15XJ
         struct i2c_dt_spec i2c;
-        #endif /* CONFIG_FRAM_CY15XJ */
-
-        #if (defined(CONFIG_FRAM_CY15XQ) || defined(_MSC_VER)) /* #CUSTOM@NDRS */
         struct spi_dt_spec spi;
-        #endif /* CONFIG_FRAM_CY15XQ */
     } bus;
 
     #if ANY_INST_HAS_WP_GPIOS
@@ -527,7 +522,7 @@ static int fram_cy15xq_rdid(const struct device* dev) {
 static int fram_cy15x_init(const struct device* dev) {
     const struct fram_cy15x_config* config = dev->config;
     struct fram_cy15x_data* data = dev->data;
-    int ret;
+    __maybe_unused int ret;
 
     k_mutex_init(&data->lock);
 
@@ -551,7 +546,6 @@ static int fram_cy15x_init(const struct device* dev) {
     }
     #endif /* ANY_INST_HAS_WP_GPIOS */
 
-    #if defined(CONFIG_FRAM_CY15XQ)
     if (config->rdid_supported) {
         ret = fram_cy15xq_rdid(dev);
         if (ret < 0) {
@@ -559,7 +553,6 @@ static int fram_cy15x_init(const struct device* dev) {
             return (ret);
         }
     }
-    #endif /* CONFIG_FRAM_CY15XQ */
 
     return (0);
 }
