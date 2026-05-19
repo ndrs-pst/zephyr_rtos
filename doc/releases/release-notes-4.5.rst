@@ -114,6 +114,14 @@ New Boards
   that this list will be recomputed at the time of the release, so you don't *have* to update it.
   In any case, just link the board, further details go in the board description.
 
+* Arduino
+
+  * :zephyr:board:`Arduino Nesso N1 <arduino_nesso_n1>` (``arduino_nesso_n1``)
+
+* Seeed
+
+  * :zephyr:board:`Seeed Wio Tracker L1 <wio_tracker_l1>` (``wio_tracker_l1``)
+
 New Shields
 ***********
 
@@ -127,6 +135,11 @@ New Drivers
 ..
   Same as above, this will also be recomputed at the time of the release.
   Just link the driver, further details go in the binding description
+
+* GPIO
+
+  * Diodes/Pericom PI4IOE5V6408 8-bit I2C-bus I/O expander
+    (:dtcompatible:`diodes,pi4ioe5v6408`).
 
 New Samples
 ***********
@@ -147,6 +160,7 @@ Libraries / Subsystems
     (:kconfig:option:`CONFIG_LORA_MODULE_BACKEND_NATIVE`) that implements
     LoRaWAN 1.0.x Class A directly on top of the LoRa radio driver, without
     the Semtech LoRaMac-node dependency.  Currently supports the EU868 region.
+  * :c:member:`lora_modem_config.sync_word`
 
 Other notable changes
 *********************

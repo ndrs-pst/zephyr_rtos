@@ -11,6 +11,7 @@
 #include <bus_protocols/whd_bus_sdio_protocol.h>
 #include <bus_protocols/whd_bus.h>
 #include <bus_protocols/whd_sdio.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sd/sd.h>
 
 #include <zephyr/logging/log.h>
