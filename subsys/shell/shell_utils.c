@@ -837,7 +837,7 @@ void shell_hexdump_line(struct shell const* sh, unsigned int offset,
         }
 
         if (i < len) {
-            shell_fprintf_normal(sh, "%02x ",
+            shell_fprintf_normal(sh, "%02X ",
                                  data[i] & 0xFF);
         }
         else {
@@ -875,7 +875,7 @@ void shell_hexdump(struct shell const* sh, uint8_t const* data, size_t len) {
     while (len) {
         line_len = MIN(len, SHELL_HEXDUMP_BYTES_IN_LINE);
 
-        shell_hexdump_line(sh, p - data, p, line_len);
+        shell_hexdump_line(sh, (p - data), p, line_len);
 
         len -= line_len;
         p += line_len;
