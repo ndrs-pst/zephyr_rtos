@@ -400,10 +400,34 @@ static int spi_ifx_configure(const struct device* dev, const struct spi_config* 
                                                 scb_spi_config.ssPolarity);
     }
 
+    /* Validate hardware CS slave index before doing any heavy init work */
+    if (!spi_context_is_slave(ctx) && !spi_cs_is_gpio(spi_cfg)) {
+        if (spi_cfg->slave > (uint32_t)CY_SCB_SPI_SLAVE_SELECT3) {
+            LOG_ERR("HW slave %u exceeds max SSEL index 3", spi_cfg->slave);
+            return (-EINVAL);
+        }
+    }
+
     /* Set the data rate */
     result = spi_ifx_set_frequency(dev, spi_cfg->frequency);
     if (result != CY_RSLT_SUCCESS) {
         return (-EIO);
+    }
+
+    /* Select hardware SSEL line.
+     * SPI_CTRL.SSEL may be written while the master is idle without disabling the SCB block.
+     * spi_ifx_set_frequency() above leaves SCB enabled and idle, so no
+     * Disable/Enable cycle is needed here.
+     */
+    if (!spi_context_is_slave(ctx) && !spi_cs_is_gpio(spi_cfg)) {
+        cy_en_scb_spi_slave_select_t hw_sel =
+            (cy_en_scb_spi_slave_select_t)spi_cfg->slave;
+        cy_en_scb_spi_polarity_t hw_pol =
+            (spi_cfg->operation & SPI_CS_ACTIVE_HIGH)
+            ? CY_SCB_SPI_ACTIVE_HIGH : CY_SCB_SPI_ACTIVE_LOW;
+
+        Cy_SCB_SPI_SetActiveSlaveSelect(config->reg_addr, hw_sel);
+        Cy_SCB_SPI_SetActiveSlaveSelectPolarity(config->reg_addr, hw_sel, hw_pol);
     }
 
     /* Write 0 when NULL buffer is provided for Tx/Rx */
@@ -640,9 +664,14 @@ static int spi_ifx_init(const struct device* dev) {
 #define ADVANCED_SPI_FIELDS(n)                                  \
     .parity = CY_SCB_SPI_PARITY_NONE,                           \
     .dropOnParityError = false,                                 \
-    .ssSetupDelay = DT_INST_PROP_OR(n, ss_setup_delay, 0),      \
-    .ssHoldDelay  = DT_INST_PROP_OR(n, ss_hold_delay, 0),       \
+    .ssSetupDelay      = DT_INST_PROP_OR(n, ss_setup_delay, 0), \
+    .ssHoldDelay       = DT_INST_PROP_OR(n, ss_hold_delay, 0),  \
     .ssInterDataframeDelay = DT_INST_PROP_OR(n, ss_inter_frame_delay, 0),
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+#define ADVANCED_SPI_FIELDS(n)                                  \
+    .ssSetupDelay      = DT_INST_PROP_OR(n, ss_setup_delay, 0), \
+    .ssHoldDelay       = DT_INST_PROP_OR(n, ss_hold_delay, 0),  \
+    .ssInterFrameDelay = DT_INST_PROP_OR(n, ss_inter_frame_delay, 0),
 #else
 #define ADVANCED_SPI_FIELDS(n)
 #endif
@@ -681,7 +710,7 @@ static int spi_ifx_init(const struct device* dev) {
             .ssPolarity               = DT_INST_PROP_OR(n, ss_polarity, CY_SCB_SPI_ACTIVE_LOW), \
             .rxFifoTriggerLevel       = DT_INST_PROP_OR(n, rx_fifo_trigger_level, 0),           \
             .rxFifoIntEnableMask      = DT_INST_PROP_OR(n, rx_fifo_int_enable_mask, 0),         \
-             .txFifoTriggerLevel      = DT_INST_PROP_OR(n, tx_fifo_trigger_level, 1),           \
+            .txFifoTriggerLevel       = DT_INST_PROP_OR(n, tx_fifo_trigger_level, 1),           \
             .txFifoIntEnableMask      = DT_INST_PROP_OR(n, tx_fifo_int_enable_mask, 0),         \
             .masterSlaveIntEnableMask = DT_INST_PROP_OR(n, master_slave_int_enable_mask, 0),    \
         },                                                      \

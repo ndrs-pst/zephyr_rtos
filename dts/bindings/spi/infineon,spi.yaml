@@ -18,3 +18,22 @@ properties:
 
   pinctrl-0:
     required: true
+
+  ss-setup-delay:
+    type: boolean
+    description: |
+      Adds 1 extra SPI clock cycle between SS assertion and the first SCK edge
+      (1.75 vs default 0.75 cycles). Requires Motorola sub-mode,
+      SCLK_CONTINUOUS=0, and oversample > 2. SCB v2+ / PSE84 (EDGE) only.
+
+  ss-hold-delay:
+    type: boolean
+    description: |
+      Adds 1 extra SPI clock cycle between the last SCK edge and SS deassertion
+      (1.75 vs default 0.75 cycles). Same hardware requirements as ss-setup-delay.
+
+  ss-inter-frame-delay:
+    type: boolean
+    description: |
+      Adds 1 extra SPI clock cycle inter-frame delay between SS deassertion and
+      the next assertion (2.5 vs default 1.5 cycles). Same hardware requirements.
