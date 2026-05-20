@@ -420,10 +420,10 @@ manifest:
   # zephyr-keep-sorted-stop
     - name: thingset
       path: modules/lib/thingset
-      revision: 84c603f181928dd057989a3b305cb46f14ac2644
+      revision: 8c6206e07cd0cfd3571b0c123907a35215945e76
     - name: thingset-node-c
       path: modules/lib/thingset-node-c
-      revision: c3b935185fd5e68ff232e78d5ac6a67415f1fce1
+      revision: b0b13262e9ddf144551bc05d8764ffbb462e8c89
     - name: FlashDB
       path: modules/lib/flashdb
       revision: 50f28b37f3e00ed2953c0e348b5d59c26bd90dde
