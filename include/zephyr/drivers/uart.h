@@ -19,7 +19,7 @@
  *        controllers.
  * @defgroup uart_interface UART
  * @since 1.0
- * @version 1.0.0
+ * @version 2.0.0
  * @ingroup io_interfaces
  * @{
  */
@@ -140,7 +140,7 @@ struct uart_config {
  * @param dev UART device instance.
  * @param user_data Arbitrary user data.
  */
-typedef void (*uart_irq_callback_user_data_t)(const struct device* dev,
+typedef void (*uart_irq_callback_user_data_t)(struct device const* dev,
                                               void* user_data);
 
 /**
@@ -316,7 +316,7 @@ struct uart_event {
  * @param evt Pointer to uart_event instance.
  * @param user_data Pointer to data specified by user.
  */
-typedef void (*uart_callback_t)(const struct device* dev,
+typedef void (*uart_callback_t)(struct device const* dev,
                                 struct uart_event* evt, void* user_data);
 
 /**
@@ -332,7 +332,7 @@ typedef void (*uart_callback_t)(const struct device* dev,
  * @retval err Error flags as defined in @ref uart_rx_stop_reason
  * @retval -ENOSYS If not implemented.
  */
-__syscall int uart_err_check(const struct device* dev);
+__syscall int uart_err_check(struct device const* dev);
 
 /**
  * @defgroup uart_polling Polling UART API
@@ -357,7 +357,7 @@ __syscall int uart_err_check(const struct device* dev);
  * @retval -ENOSYS If the operation is not implemented.
  * @retval -EBUSY If async reception was enabled using @ref uart_rx_enable
  */
-__syscall int uart_poll_in(const struct device* dev, unsigned char* p_char);
+__syscall int uart_poll_in(struct device const* dev, unsigned char* p_char);
 
 /**
  * @brief Read a 16-bit datum from the device for input.
@@ -378,7 +378,7 @@ __syscall int uart_poll_in(const struct device* dev, unsigned char* p_char);
  * @retval -ENOSYS If the function is not implemented.
  * @retval -EBUSY If async reception was enabled using @ref uart_rx_enable
  */
-__syscall int uart_poll_in_u16(const struct device* dev, uint16_t* p_u16);
+__syscall int uart_poll_in_u16(struct device const* dev, uint16_t* p_u16);
 
 /**
  * @brief Write a character to the device for output.
@@ -395,7 +395,7 @@ __syscall int uart_poll_in_u16(const struct device* dev, uint16_t* p_u16);
  * @param dev UART device instance.
  * @param out_char Character to send.
  */
-__syscall void uart_poll_out(const struct device* dev, unsigned char out_char);
+__syscall void uart_poll_out(struct device const* dev, unsigned char out_char);
 
 /**
  * @brief Write a 16-bit datum to the device for output.
@@ -411,7 +411,7 @@ __syscall void uart_poll_out(const struct device* dev, unsigned char out_char);
  * @param dev UART device instance.
  * @param out_u16 Wide data to send.
  */
-__syscall void uart_poll_out_u16(const struct device* dev, uint16_t out_u16);
+__syscall void uart_poll_out_u16(struct device const* dev, uint16_t out_u16);
 
 /**
  * @}
@@ -431,7 +431,7 @@ __syscall void uart_poll_out_u16(const struct device* dev, uint16_t out_u16);
  *                  or driver does not support setting configuration in runtime.
  * @retval -ENOTSUP If API is not enabled.
  */
-__syscall int uart_configure(const struct device* dev, const struct uart_config* cfg);
+__syscall int uart_configure(struct device const* dev, const struct uart_config* cfg);
 
 /**
  * @brief Get UART configuration.
@@ -447,7 +447,7 @@ __syscall int uart_configure(const struct device* dev, const struct uart_config*
  * @retval -ENOSYS If driver does not support getting current configuration.
  * @retval -ENOTSUP If API is not enabled.
  */
-__syscall int uart_config_get(const struct device* dev, struct uart_config* cfg);
+__syscall int uart_config_get(struct device const* dev, struct uart_config* cfg);
 
 /**
  * @addtogroup uart_interrupt
@@ -474,7 +474,7 @@ __syscall int uart_config_get(const struct device* dev, struct uart_config* cfg)
  * @retval -ENOSYS  if this function is not supported
  * @retval -ENOTSUP If API is not enabled.
  */
-static inline int uart_fifo_fill(const struct device* dev, const uint8_t* tx_data, int size);
+static inline int uart_fifo_fill(struct device const* dev, const uint8_t* tx_data, int size);
 
 /**
  * @brief Fill FIFO with wide data.
@@ -496,7 +496,7 @@ static inline int uart_fifo_fill(const struct device* dev, const uint8_t* tx_dat
  * @retval -ENOSYS If this function is not implemented
  * @retval -ENOTSUP If API is not enabled.
  */
-static inline int uart_fifo_fill_u16(const struct device* dev, const uint16_t* tx_data, int size);
+static inline int uart_fifo_fill_u16(struct device const* dev, const uint16_t* tx_data, int size);
 
 /**
  * @brief Read data from FIFO.
@@ -519,7 +519,7 @@ static inline int uart_fifo_fill_u16(const struct device* dev, const uint16_t* t
  * @retval -ENOSYS If this function is not implemented.
  * @retval -ENOTSUP If API is not enabled.
  */
-static inline int uart_fifo_read(const struct device* dev, uint8_t* rx_data, const int size);
+static inline int uart_fifo_read(struct device const* dev, uint8_t* rx_data, const int size);
 
 /**
  * @brief Read wide data from FIFO.
@@ -542,21 +542,21 @@ static inline int uart_fifo_read(const struct device* dev, uint8_t* rx_data, con
  * @retval -ENOSYS If this function is not implemented.
  * @retval -ENOTSUP If API is not enabled.
  */
-static inline int uart_fifo_read_u16(const struct device* dev, uint16_t* rx_data, const int size);
+static inline int uart_fifo_read_u16(struct device const* dev, uint16_t* rx_data, const int size);
 
 /**
  * @brief Enable TX interrupt in IER.
  *
  * @param dev UART device instance.
  */
-__syscall void uart_irq_tx_enable(const struct device* dev);
+__syscall void uart_irq_tx_enable(struct device const* dev);
 
 /**
  * @brief Disable TX interrupt in IER.
  *
  * @param dev UART device instance.
  */
-__syscall void uart_irq_tx_disable(const struct device* dev);
+__syscall void uart_irq_tx_disable(struct device const* dev);
 
 /**
  * @brief Check if UART TX buffer can accept bytes
@@ -578,21 +578,21 @@ __syscall void uart_irq_tx_disable(const struct device* dev);
  * @retval -ENOSYS If this function is not implemented.
  * @retval -ENOTSUP If API is not enabled.
  */
-static inline int uart_irq_tx_ready(const struct device* dev);
+static inline int uart_irq_tx_ready(struct device const* dev);
 
 /**
  * @brief Enable RX interrupt.
  *
  * @param dev UART device instance.
  */
-__syscall void uart_irq_rx_enable(const struct device* dev);
+__syscall void uart_irq_rx_enable(struct device const* dev);
 
 /**
  * @brief Disable RX interrupt.
  *
  * @param dev UART device instance.
  */
-__syscall void uart_irq_rx_disable(const struct device* dev);
+__syscall void uart_irq_rx_disable(struct device const* dev);
 
 /**
  * @brief Check if UART TX block finished transmission
@@ -613,7 +613,7 @@ __syscall void uart_irq_rx_disable(const struct device* dev);
  * @retval -ENOSYS If this function is not implemented.
  * @retval -ENOTSUP If API is not enabled.
  */
-static inline int uart_irq_tx_complete(const struct device* dev);
+static inline int uart_irq_tx_complete(struct device const* dev);
 
 /**
  * @brief Check if UART RX buffer has a received char
@@ -635,25 +635,29 @@ static inline int uart_irq_tx_complete(const struct device* dev);
  * @retval -ENOSYS If this function is not implemented.
  * @retval -ENOTSUP If API is not enabled.
  */
-static inline int uart_irq_rx_ready(const struct device* dev);
-
+static inline int uart_irq_rx_ready(struct device const* dev);
 
 /**
  * @brief Enable error interrupt.
  *
  * @param dev UART device instance.
  */
-__syscall void uart_irq_err_enable(const struct device* dev);
+__syscall void uart_irq_err_enable(struct device const* dev);
 
 /**
  * @brief Disable error interrupt.
  *
  * @param dev UART device instance.
  */
-__syscall void uart_irq_err_disable(const struct device* dev);
+__syscall void uart_irq_err_disable(struct device const* dev);
 
 /**
  * @brief Check if any IRQs is pending.
+ *
+ * This function must be called in a UART interrupt
+ * handler, or its result is undefined. Before calling this function
+ * in the interrupt handler, uart_irq_update() must be called otherwise
+ * its result may be outdated.
  *
  * @param dev UART device instance.
  *
@@ -662,14 +666,14 @@ __syscall void uart_irq_err_disable(const struct device* dev);
  * @retval -ENOSYS If this function is not implemented.
  * @retval -ENOTSUP If API is not enabled.
  */
-__syscall int uart_irq_is_pending(const struct device* dev);
+static inline int uart_irq_is_pending(struct device const* dev);
 
 /**
  * @brief Start processing interrupts in ISR.
  *
  * This function should be called the first thing in the ISR. Calling
  * uart_irq_rx_ready(), uart_irq_tx_ready(), uart_irq_tx_complete()
- * allowed only after this.
+ * and uart_irq_is_pending() is allowed only after this.
  *
  * The purpose of this function is:
  *
@@ -679,17 +683,13 @@ __syscall int uart_irq_is_pending(const struct device* dev);
  * * For devices with explicit acknowledgment of interrupts, to ack
  *   any pending interrupts and likewise to cache the original value.
  * * For devices with implicit acknowledgment, this function will be
- *   empty. But the ISR must perform the actions needs to ack the
+ *   not implemented. But the ISR must perform the actions needs to ack the
  *   interrupts (usually, call uart_fifo_read() on rx_ready, and
  *   uart_fifo_fill() on tx_ready).
  *
  * @param dev UART device instance.
- *
- * @retval 1 On success.
- * @retval -ENOSYS If this function is not implemented.
- * @retval -ENOTSUP If API is not enabled.
  */
-__syscall int uart_irq_update(const struct device* dev);
+static inline void uart_irq_update(struct device const* dev);
 
 /**
  * @brief Set the IRQ callback function pointer.
@@ -706,7 +706,7 @@ __syscall int uart_irq_update(const struct device* dev);
  * @retval -ENOSYS If this function is not implemented.
  * @retval -ENOTSUP If API is not enabled.
  */
-static inline int uart_irq_callback_user_data_set(const struct device* dev,
+static inline int uart_irq_callback_user_data_set(struct device const* dev,
                                                   uart_irq_callback_user_data_t cb,
                                                   void* user_data);
 
@@ -723,7 +723,7 @@ static inline int uart_irq_callback_user_data_set(const struct device* dev,
  * @retval -ENOSYS If this function is not implemented.
  * @retval -ENOTSUP If API is not enabled.
  */
-static inline int uart_irq_callback_set(const struct device* dev,
+static inline int uart_irq_callback_set(struct device const* dev,
                                         uart_irq_callback_user_data_t cb);
 
 /**
@@ -750,7 +750,7 @@ static inline int uart_irq_callback_set(const struct device* dev,
  * @retval -ENOSYS If not supported by the device.
  * @retval -ENOTSUP If API not enabled.
  */
-static inline int uart_callback_set(const struct device* dev,
+static inline int uart_callback_set(struct device const* dev,
                                     uart_callback_t callback,
                                     void* user_data);
 
@@ -771,7 +771,7 @@ static inline int uart_callback_set(const struct device* dev,
  * @retval -EBUSY If There is already an ongoing transfer.
  * @retval -errno Other negative errno value in case of failure.
  */
-__syscall int uart_tx(const struct device* dev, uint8_t const* buf,
+__syscall int uart_tx(struct device const* dev, uint8_t const* buf,
                       size_t len,
                       int32_t tmout_us);
 
@@ -792,7 +792,7 @@ __syscall int uart_tx(const struct device* dev, uint8_t const* buf,
  * @retval -EBUSY If there is already an ongoing transfer.
  * @retval -errno Other negative errno value in case of failure.
  */
-__syscall int uart_tx_u16(const struct device* dev, uint16_t const* buf,
+__syscall int uart_tx_u16(struct device const* dev, uint16_t const* buf,
                           size_t len, int32_t tmout_ms);
 
 /**
@@ -807,7 +807,7 @@ __syscall int uart_tx_u16(const struct device* dev, uint16_t const* buf,
  * @retval -EFAULT There is no active transmission.
  * @retval -errno Other negative errno value in case of failure.
  */
-__syscall int uart_tx_abort(const struct device* dev);
+__syscall int uart_tx_abort(struct device const* dev);
 
 /**
  * @brief Start receiving data through UART.
@@ -830,7 +830,7 @@ __syscall int uart_tx_abort(const struct device* dev);
  * @retval -errno Other negative errno value in case of failure.
  *
  */
-__syscall int uart_rx_enable(const struct device* dev, uint8_t* buf,
+__syscall int uart_rx_enable(struct device const* dev, uint8_t* buf,
                              size_t len,
                              int32_t tmout_us);
 
@@ -855,7 +855,7 @@ __syscall int uart_rx_enable(const struct device* dev, uint8_t* buf,
  * @retval -errno Other negative errno value in case of failure.
  *
  */
-__syscall int uart_rx_enable_u16(const struct device* dev, uint16_t* buf,
+__syscall int uart_rx_enable_u16(struct device const* dev, uint16_t* buf,
                                  size_t len, int32_t tmout_ms);
 
 /**
@@ -878,7 +878,7 @@ __syscall int uart_rx_enable_u16(const struct device* dev, uint16_t* buf,
  * @retval -EACCES Receiver is already disabled (function called too late?).
  * @retval -errno Other negative errno value in case of failure.
  */
-static inline int uart_rx_buf_rsp(const struct device* dev, uint8_t* buf,
+static inline int uart_rx_buf_rsp(struct device const* dev, uint8_t* buf,
                                   size_t len);
 
 /**
@@ -902,7 +902,7 @@ static inline int uart_rx_buf_rsp(const struct device* dev, uint8_t* buf,
  * @retval -EACCES Receiver is already disabled (function called too late?).
  * @retval -errno Other negative errno value in case of failure.
  */
-static inline int uart_rx_buf_rsp_u16(const struct device* dev, uint16_t* buf,
+static inline int uart_rx_buf_rsp_u16(struct device const* dev, uint16_t* buf,
                                       size_t len);
 
 /**
@@ -920,7 +920,7 @@ static inline int uart_rx_buf_rsp_u16(const struct device* dev, uint16_t* buf,
  * @retval -EFAULT There is no active reception.
  * @retval -errno Other negative errno value in case of failure.
  */
-__syscall int uart_rx_disable(const struct device* dev);
+__syscall int uart_rx_disable(struct device const* dev);
 
 /**
  * @}
@@ -938,7 +938,7 @@ __syscall int uart_rx_disable(const struct device* dev);
  * @retval -ENOTSUP If API is not enabled.
  * @retval -errno Other negative errno value in case of failure.
  */
-__syscall int uart_line_ctrl_set(const struct device* dev, uint32_t ctrl, uint32_t val);
+__syscall int uart_line_ctrl_set(struct device const* dev, uint32_t ctrl, uint32_t val);
 
 /**
  * @brief Retrieve line control for UART.
@@ -952,7 +952,7 @@ __syscall int uart_line_ctrl_set(const struct device* dev, uint32_t ctrl, uint32
  * @retval -ENOTSUP If API is not enabled.
  * @retval -errno Other negative errno value in case of failure.
  */
-__syscall int uart_line_ctrl_get(const struct device* dev, uint32_t ctrl, uint32_t* val);
+__syscall int uart_line_ctrl_get(struct device const* dev, uint32_t ctrl, uint32_t* val);
 
 /**
  * @brief Send extra command to driver.
@@ -969,7 +969,7 @@ __syscall int uart_line_ctrl_get(const struct device* dev, uint32_t ctrl, uint32
  * @retval -ENOTSUP If API is not enabled.
  * @retval -errno Other negative errno value in case of failure.
  */
-__syscall int uart_drv_cmd(const struct device* dev, uint32_t cmd, uint32_t p);
+__syscall int uart_drv_cmd(struct device const* dev, uint32_t cmd, uint32_t p);
 
 #ifdef __cplusplus
 }

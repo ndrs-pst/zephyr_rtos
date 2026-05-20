@@ -11,7 +11,7 @@
 #include <zephyr/drivers/rtc.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/sys/util.h>
+#include <zephyr/sys/minmax.h>
 
 LOG_MODULE_REGISTER(pca2131, CONFIG_RTC_LOG_LEVEL);
 

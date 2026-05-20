@@ -80,6 +80,17 @@ Deprecated APIs and options
   * Renamed :c:func:`lora_recv_duty_cycle` to :c:func:`lora_recv_duty_cycle_async`
     to be consistent with the existing sync/async naming convention.
 
+* Nordic
+
+  * The internal SoC platform Kconfig symbols ``NRF_PLATFORM_HALTIUM`` and
+    ``NRF_PLATFORM_LUMOS`` have been deprecated. Use specific SOC_SERIES_* Kconfig options instead.
+
+  * The sysbuild Kconfig option ``SB_CONFIG_NRF_HALTIUM_GENERATE_UICR`` has
+    been renamed to :kconfig:option:`SB_CONFIG_NRF_GENERATE_UICR`.
+
+  * The Nordic SoC headers :file:`<haltium_power.h>` and :file:`<haltium_pm_s2ram.h>`
+    have been renamed to :file:`<soc_power.h>` and :file:`<soc_pm_s2ram.h>` respectively.
+
 * Ring buffer
 
   * The ring buffer item API (:c:func:`ring_buf_item_init`, :c:func:`ring_buf_item_put`,
@@ -100,7 +111,11 @@ New APIs and options
 
   * :c:member:`pcm_stream_cfg.gain_db`
 
-* :c:func:`lora_recv_duty_cycle_async`
+* LoRa
+
+  * :c:func:`lora_recv_duty_cycle`
+  * :c:func:`lora_recv_duty_cycle_async`
+
 * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
 
 .. zephyr-keep-sorted-stop

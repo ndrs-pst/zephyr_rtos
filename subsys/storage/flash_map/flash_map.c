@@ -46,10 +46,6 @@ int flash_area_open(uint8_t id, const struct flash_area** fap) {
     return (0);
 }
 
-void flash_area_close(const struct flash_area* fa) {
-    /* nothing to do for now */
-}
-
 int flash_area_read(const struct flash_area* fa, off_t off, void* dst, size_t len) {
     bool is_in_bound;
     int rc;
@@ -137,16 +133,6 @@ int flash_area_has_driver(const struct flash_area* fa) {
 
     return (1);
 }
-
-const struct device* flash_area_get_device(const struct flash_area* fa) {
-    return (fa->fa_dev);
-}
-
-#if CONFIG_FLASH_MAP_LABELS
-char const* flash_area_label(const struct flash_area* fa) {
-    return fa->fa_label;
-}
-#endif
 
 uint8_t flash_area_erased_val(const struct flash_area* fa) {
     const struct flash_parameters* param;

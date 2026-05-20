@@ -41,6 +41,38 @@ Boards
   populated the Kconfig values). If either option is manually adjusted, it will cause
   :kconfig:option:`CONFIG_SRAM_DEPRECATED_KCONFIG_SET` to be set which indicates this deprecation.
 
+* The internal Nordic SoC platform Kconfig symbols ``NRF_PLATFORM_HALTIUM``
+  and ``NRF_PLATFORM_LUMOS`` are no longer used by in-tree code, which now
+  relies on explicit :kconfig:option:`CONFIG_SOC_SERIES_NRF54H`,
+  :kconfig:option:`CONFIG_SOC_SERIES_NRF92`,
+  :kconfig:option:`CONFIG_SOC_SERIES_NRF54L` and
+  :kconfig:option:`CONFIG_SOC_SERIES_NRF71` checks. Both symbols are kept
+  as deprecated stubs that default to ``y`` when the corresponding SoC
+  series is selected, so existing ``CONFIG_NRF_PLATFORM_*=y`` lines and
+  ``depends on NRF_PLATFORM_*`` clauses keep building with a Kconfig
+  deprecation warning. Out-of-tree Kconfig, CMake and code using these
+  symbols should be updated:
+
+  * The ``CONFIG_NRF_PLATFORM_HALTIUM`` with
+    :kconfig:option:`CONFIG_SOC_SERIES_NRF54H` or
+    :kconfig:option:`CONFIG_SOC_SERIES_NRF92`.
+  * The ``CONFIG_NRF_PLATFORM_LUMOS`` with
+    :kconfig:option:`CONFIG_SOC_SERIES_NRF54L` or
+    :kconfig:option:`CONFIG_SOC_SERIES_NRF71`.
+
+* The Nordic sysbuild Kconfig option ``SB_CONFIG_NRF_HALTIUM_GENERATE_UICR``
+  has been renamed to :kconfig:option:`SB_CONFIG_NRF_GENERATE_UICR`.
+  Update sysbuild configurations to use the new name.
+
+* The Nordic SoC headers :file:`<haltium_power.h>` and :file:`<haltium_pm_s2ram.h>`
+  have been renamed to :file:`<soc_power.h>` and :file:`<soc_pm_s2ram.h>` respectively.
+  Forwarder headers under the old names remain available and emit a ``#warning``
+  pointing to the new include paths. Out-of-tree code that includes the old paths
+  should be updated:
+
+  * ``#include <haltium_power.h>`` with ``#include <soc_power.h>``.
+  * ``#include <haltium_pm_s2ram.h>`` with ``#include <soc_pm_s2ram.h>``.
+
 Device Drivers and Devicetree
 *****************************
 
@@ -77,6 +109,15 @@ Clock Control
   RT11xx overlays should be updated using the mapping
   ``loop-div = clock-mult * 2`` and ``post-div = clock-div``.
 
+Devicetree
+==========
+
+* ``int`` and ``array`` typed devicetree properties whose DTS source uses a negative literal
+  (e.g. ``<(-1)>``) now expand to a negative value instead of the two's-complement unsigned
+  value used previously. Code that relied on the old unsigned representation, for example
+  unsigned comparisons or ``BUILD_ASSERT(DT_PROP(node, foo) > 0, ...)`` checks, must be updated
+  to use signed types or signed-aware checks (:github:`107271`).
+
 Digital Microphone
 ==================
 
@@ -107,6 +148,12 @@ Ethernet
   ``mac_addr`` and ``use_random_mac_addr`` members of :c:struct:`dsa_port_config` were removed.
   Out-of-tree DSA drivers must update their port configuration code to use the new API and
   structures. (:github:`108952`)
+
+* The Kconfig option ``CONFIG_ETH_NATIVE_TAP_PTP_CLOCK`` has been replaced by
+  :kconfig:option:`CONFIG_PTP_CLOCK_NATIVE`. A new compatible
+  :dtcompatible:`zephyr,native-ptp-clock` has been added for the native_sim PTP clock driver.
+  :kconfig:option:`CONFIG_PTP_CLOCK_NATIVE` is enabled by default when the
+  :dtcompatible:`zephyr,native-ptp-clock` compatible is present.
 
 Flash
 =====
@@ -214,6 +261,12 @@ Sensor
   GIRQ configuration is now handled via the ``microchip,dmec-ecia-girq`` binding include
   (:github:`104808`).
 
+Serial
+======
+
+* The return type of :c:func:`uart_irq_update` is now ``void`` instead of ``int``.
+  (:github:`105231`)
+
 STM32
 =====
 
@@ -232,6 +285,14 @@ Syscon
   ``uint32_t`` for the register offset parameter instead of ``uint16_t``. This allows for
   larger register offsets. Code that explicitly declares ``uint16_t`` variables for the
   register parameter or implements the syscon driver API functions may need to be updated.
+
+USB
+===
+
+* On STM32N6, the ``clocks`` cell which configures the USBPHYC clock mux has been moved
+  from :samp:`usbotg_hs{N}` to :samp:`usbphyc{N}` nodes at SoC DTSI level. Boards which
+  use an STM32N6 SoC with custom clock mux configuration must now set the ``clocks``
+  property on :samp:`usbphyc{N}` instead of :samp:`usbotg_hs{N}`. (:github:`107813`)
 
 WiFi
 ====
@@ -374,6 +435,20 @@ PTP
     :kconfig:option:`CONFIG_PTP_UDP_IPV4_PROTOCOL`
   * :kconfig:option:`CONFIG_PTP_UDP_IPv6_PROTOCOL` to
     :kconfig:option:`CONFIG_PTP_UDP_IPV6_PROTOCOL`
+
+gPTP
+====
+
+* Converted ``int port`` to ``uint16_t gptp_port`` in
+  :c:struct:`ethernet_context` to make it clear that the field used only
+  by the gPTP stack to store the gPTP port number.
+
+* Used ``uint16_t`` for ``nb_ports`` in :c:struct:`gptp_default_ds` per
+  IEEE 1588 standard.
+
+* Removed ``net_eth_get_ptp_port`` and ``net_eth_set_ptp_port``.
+  New :c:func:`gptp_get_port_number` and :c:func:`gptp_set_port_number`
+  can be used instead.
 
 Other subsystems
 ****************

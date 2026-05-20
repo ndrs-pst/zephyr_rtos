@@ -224,7 +224,7 @@ static void uart_sam0_dma_rx_done(const struct device* dma_dev, void* arg,
     ARG_UNUSED(id);
     ARG_UNUSED(error_code);
 
-    struct uart_sam0_dev_data* const dev_data = (struct uart_sam0_dev_data* const )arg;
+    struct uart_sam0_dev_data* const dev_data = arg;
     const struct device* dev = dev_data->dev;
     const struct uart_sam0_dev_cfg* const cfg = dev_data->cfg;
     SercomUsart* const regs = cfg->regs;
@@ -869,7 +869,7 @@ static void uart_sam0_irq_err_disable(const struct device* dev) {
 }
 #endif
 
-static int uart_sam0_irq_update(const struct device* dev) {
+static void uart_sam0_irq_update(const struct device* dev) {
     /* Clear sticky interrupts */
     const struct uart_sam0_dev_cfg* config = dev->config;
     SercomUsart* const regs = config->regs;
@@ -888,8 +888,6 @@ static int uart_sam0_irq_update(const struct device* dev) {
     #else
     regs->INTFLAG.reg = SERCOM_USART_INTENCLR_RXS;
     #endif
-
-    return (1);
 }
 
 static void uart_sam0_irq_callback_set(const struct device* dev,
@@ -1195,7 +1193,7 @@ static DEVICE_API(uart, uart_sam0_driver_api) = {
 
 #if DT_INST_IRQ_HAS_IDX(0, 3)
 #define UART_SAM0_IRQ_HANDLER(n)                    \
-static void uart_sam0_irq_config_##n(const struct device* dev) {    \
+static void uart_sam0_irq_config_##n(const struct device* dev) { \
     SAM0_UART_IRQ_CONNECT(n, 0);                    \
     SAM0_UART_IRQ_CONNECT(n, 1);                    \
     SAM0_UART_IRQ_CONNECT(n, 2);                    \
@@ -1203,7 +1201,7 @@ static void uart_sam0_irq_config_##n(const struct device* dev) {    \
 }
 #else
 #define UART_SAM0_IRQ_HANDLER(n)                    \
-static void uart_sam0_irq_config_##n(const struct device* dev) {    \
+static void uart_sam0_irq_config_##n(const struct device* dev) { \
     SAM0_UART_IRQ_CONNECT(n, 0);                    \
 }
 #endif

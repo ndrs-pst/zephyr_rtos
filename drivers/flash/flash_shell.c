@@ -15,7 +15,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/shell/shell.h>
-#include <zephyr/sys/util.h>
+#include <zephyr/sys/minmax.h>
 
 #ifdef CONFIG_FLASH_SHELL_TEST_COMMANDS
 #include <zephyr/timing/timing.h>

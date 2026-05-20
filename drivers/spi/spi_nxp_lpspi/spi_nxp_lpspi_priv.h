@@ -12,6 +12,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/irq.h>
 
 #include "../spi_rtio.h"

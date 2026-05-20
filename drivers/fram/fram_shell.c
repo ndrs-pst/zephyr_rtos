@@ -13,6 +13,7 @@
 
 #include <zephyr/shell/shell.h>
 #include <zephyr/drivers/fram.h>
+#include <zephyr/sys/minmax.h>
 #include <stdlib.h>
 
 struct args_index {

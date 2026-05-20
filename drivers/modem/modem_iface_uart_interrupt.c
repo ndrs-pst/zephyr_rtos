@@ -46,7 +46,8 @@ static void modem_iface_uart_flush(struct modem_iface* iface) {
  *
  * @retval None.
  */
-static void modem_iface_uart_isr(const struct device* uart_dev, void* user_data) {
+static void modem_iface_uart_isr(const struct device* uart_dev,
+                                 void* user_data) {
     struct modem_context* ctx;
     struct modem_iface_uart_data* data;
     int rx;
@@ -66,8 +67,13 @@ static void modem_iface_uart_isr(const struct device* uart_dev, void* user_data)
 
     data = (struct modem_iface_uart_data*)(ctx->iface.iface_data);
     /* get all of the data off UART as fast as we can */
-    while (uart_irq_update(ctx->iface.dev) &&
-           uart_irq_rx_ready(ctx->iface.dev)) {
+    while (true) {
+        uart_irq_update(ctx->iface.dev);
+
+        if (uart_irq_rx_ready(ctx->iface.dev) <= 0) {
+            break;
+        }
+
         if (partial_size == 0U) {
             partial_size = ring_buf_put_claim(&data->rx_rb,
                                               &dst,
