@@ -30,6 +30,10 @@ LOG_MODULE_REGISTER(fram_cy15x);
 #define FRAM_CY15Q_RDID     0x9FU       /* Read Device ID               */
 #define FRAM_CY15Q_A8_BIT   BIT(3)      /* High-byte address for 4 kbit variant */
 
+/* Max data bytes per single transaction. cmd header ≤ 4 bytes → combined ≤ 256 bytes,
+ * keeping within single-block DMA (SPI_IFX_DMA_BURST_SIZE = 256, condition is strictly >). */
+#define CY15X_SPI_MAX_CHUNK 252U
+
 /* CY15Q status register bits */
 #define FRAM_CY15Q_STATUS_WEL BIT(1) /* Write Enable Latch (RO) */
 #define FRAM_CY15Q_STATUS_BP0 BIT(2) /* Block Protection 0 (RW) */
@@ -337,32 +341,12 @@ static bool fram_cy15xq_bus_is_ready(const struct device* dev) {
 
 static int fram_cy15xq_read(const struct device* dev, off_t offset, void* buf, size_t len) {
     const struct fram_cy15x_config* config = dev->config;
-    size_t   cmd_len = 1U + (config->addr_width / 8U);
-    uint8_t  cmd[4]  = {FRAM_CY15Q_READ, 0, 0, 0};
+    const size_t cmd_len = (1U + (config->addr_width / 8U));
+    uint8_t cmd[4] = {FRAM_CY15Q_READ, 0, 0, 0};
+    uint8_t tx_buf[4U + CY15X_SPI_MAX_CHUNK];
+    uint8_t rx_buf[4U + CY15X_SPI_MAX_CHUNK];
     uint8_t* paddr;
     int ret;
-    struct spi_buf tx_buf = {
-        .buf = cmd,
-        .len = cmd_len
-    };
-    struct spi_buf_set tx = {
-        .buffers = &tx_buf,
-        .count   = 1
-    };
-    struct spi_buf rx_bufs[2] = {
-        {
-            .buf = NULL,
-            .len = cmd_len
-        },
-        {
-            .buf = buf,
-            .len = len
-        },
-    };
-    struct spi_buf_set rx = {
-        .buffers = rx_bufs,
-        .count   = 2
-    };
 
     if (len == 0U) {
         return (0);
@@ -371,6 +355,10 @@ static int fram_cy15xq_read(const struct device* dev, off_t offset, void* buf, s
     if ((offset + len) > config->size) {
         LOG_WRN("attempt to read past device boundary");
         return (-EINVAL);
+    }
+
+    if (len > CY15X_SPI_MAX_CHUNK) {
+        len = CY15X_SPI_MAX_CHUNK;
     }
 
     if ((config->size <= 512U) && (offset >= 256U)) {
@@ -395,10 +383,34 @@ static int fram_cy15xq_read(const struct device* dev, off_t offset, void* buf, s
             __ASSERT(0, "invalid address width");
     }
 
-    ret = spi_transceive_dt(&config->bus.spi, &tx, &rx);
+    /* Single combined TX: cmd[cmd_len] + dummy[len] — keeps SSEL asserted for full transfer.
+     * Two-buffer approach causes spi_context_max_continuous_chunk() to split into two
+     * Cy_SCB_SPI_Transfer() calls, de-asserting SSEL between command and data phases. */
+    memcpy(&tx_buf[0], cmd, cmd_len);
+
+    struct spi_buf tx_buffers = {
+        .buf = tx_buf,
+        .len = (cmd_len + len)
+    };
+    struct spi_buf_set tx_bufs = {
+        .buffers = &tx_buffers,
+        .count   = 1
+    };
+    struct spi_buf rx_buffers  = {
+        .buf = rx_buf,
+        .len = (cmd_len + len)
+    };
+    struct spi_buf_set rx_bufs  = {
+        .buffers = &rx_buffers,
+        .count   = 1
+    };
+
+    ret = spi_transceive_dt(&config->bus.spi, &tx_bufs, &rx_bufs);
     if (ret < 0) {
         return (ret);
     }
+
+    memcpy(buf, &rx_buf[cmd_len], len);
 
     return (len);
 }
@@ -424,23 +436,14 @@ static int fram_cy15xq_wren(const struct device* dev) {
 static int fram_cy15xq_write(const struct device* dev, off_t offset, const void* buf, size_t len) {
     const struct fram_cy15x_config* config = dev->config;
     uint8_t  cmd[4]  = {FRAM_CY15Q_WRITE, 0, 0, 0};
-    size_t   cmd_len = (1U + (config->addr_width / 8U));
+    const size_t cmd_len = (1U + (config->addr_width / 8U));
+    uint8_t tx_buf[4U + CY15X_SPI_MAX_CHUNK];
     uint8_t* paddr;
     int ret;
-    struct spi_buf tx_bufs[2] = {
-        {
-            .buf = cmd,
-            .len = cmd_len
-        },
-        {
-            .buf = (void*)buf,
-            .len = len
-        },
-    };
-    struct spi_buf_set tx = {
-        .buffers = tx_bufs,
-        .count   = 2
-    };
+
+    if (len > CY15X_SPI_MAX_CHUNK) {
+        len = CY15X_SPI_MAX_CHUNK;
+    }
 
     if ((config->size <= 512U) && (offset >= 256U)) {
         cmd[0] |= FRAM_CY15Q_A8_BIT;
@@ -470,7 +473,20 @@ static int fram_cy15xq_write(const struct device* dev, off_t offset, const void*
         return (ret);
     }
 
-    ret = spi_write_dt(&config->bus.spi, &tx);
+    /* Single combined TX: cmd[cmd_len] + data[len] — keeps SSEL asserted for full transfer */
+    memcpy(&tx_buf[0], cmd, cmd_len);
+    memcpy(&tx_buf[cmd_len], buf, len);
+
+    struct spi_buf tx_buffers = {
+        .buf = tx_buf,
+        .len = (cmd_len + len)
+    };
+    struct spi_buf_set tx_bufs = {
+        .buffers = &tx_buffers,
+        .count   = 1
+    };
+
+    ret = spi_write_dt(&config->bus.spi, &tx_bufs);
     if (ret != 0) {
         LOG_ERR("failed to write to FRAM (err %d)", ret);
     }
@@ -482,35 +498,31 @@ static int fram_cy15xq_write(const struct device* dev, off_t offset, const void*
 __maybe_unused
 static int fram_cy15xq_rdid(const struct device* dev) {
     const struct fram_cy15x_config* config = dev->config;
-    uint8_t id[4];
-    uint8_t cmd = FRAM_CY15Q_RDID;
-    struct spi_buf tx_buf = {
-        .buf = &cmd,
-        .len = 1
-    };
-    struct spi_buf_set tx = {
-        .buffers = &tx_buf,
-        .count   = 1
-    };
-    struct spi_buf rx_bufs[2] = {
-        {
-            .buf = NULL,
-            .len = 1
-        },
-        {
-            .buf = id,
-            .len = 4
-        },
-    };
-    struct spi_buf_set rx = {
-        .buffers = rx_bufs,
-        .count   = 2
-    };
+    uint8_t tx_buf[5] = {FRAM_CY15Q_RDID, 0, 0, 0, 0};
+    uint8_t rx_buf[5];
     int ret;
 
-    ret = spi_transceive_dt(&config->bus.spi, &tx, &rx);
+    struct spi_buf tx_buffers = {
+        .buf = tx_buf,
+        .len = sizeof(tx_buf)
+    };
+    struct spi_buf_set tx_bufs = {
+        .buffers = &tx_buffers,
+        .count = 1
+    };
+    struct spi_buf rx_buffers = {
+        .buf = rx_buf,
+        .len = sizeof(rx_buf)
+    };
+    struct spi_buf_set rx_bufs = {
+        .buffers = &rx_buffers,
+        .count = 1
+    };
+
+    ret = spi_transceive_dt(&config->bus.spi, &tx_bufs, &rx_bufs);
     if (ret == 0) {
-        LOG_INF("FRAM ID: %02X %02X %02X %02X", id[0], id[1], id[2], id[3]);
+        LOG_INF("FRAM ID: %02X %02X %02X %02X",
+                rx_buf[1], rx_buf[2], rx_buf[3], rx_buf[4]);
     }
     else {
         LOG_ERR("RDID read failed (err %d)", ret);
