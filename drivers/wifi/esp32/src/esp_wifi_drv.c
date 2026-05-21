@@ -308,7 +308,7 @@ static void esp_wifi_handle_sta_connect_event(void* event_data) {
     ARG_UNUSED(event_data);
     esp32_data.state = ESP32_STA_CONNECTED;
     net_if_dormant_off(esp32_wifi_iface);
-    #if defined(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)
+    #if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
     net_dhcpv4_start(esp32_wifi_iface);
     #else
     wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, WIFI_STATUS_CONN_SUCCESS);
@@ -321,7 +321,7 @@ static void esp_wifi_handle_sta_disconnect_event(void* event_data) {
 
     if (esp32_data.state == ESP32_STA_CONNECTED) {
         net_if_dormant_on(esp32_wifi_iface);
-        #if defined(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)
+        #if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
         net_dhcpv4_stop(esp32_wifi_iface);
         #endif
         switch (event->reason) {
@@ -1363,7 +1363,7 @@ static int esp32_wifi_dev_init(const struct device* dev) {
         return (-EIO);
     }
 
-    if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)) {
+    if (IS_ENABLED(CONFIG_WIFI_STA_AUTO_DHCPV4)) {
         net_mgmt_init_event_callback(&esp32_dhcp_cb, wifi_event_handler, DHCPV4_MASK);
         net_mgmt_add_event_callback(&esp32_dhcp_cb);
     }

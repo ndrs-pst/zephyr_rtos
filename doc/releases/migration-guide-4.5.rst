@@ -128,6 +128,14 @@ Digital Microphone
   have been updated. Application code using :c:func:`dmic_configure`, :c:func:`dmic_trigger`, and
   :c:func:`dmic_read` is not impacted.
 
+Display
+=======
+
+* The Kconfig options ``CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_*`` for SDL display pixel-format
+  selection have been removed in favour of setting the pixel-format property directly in devicetree
+  on the SDL pseudo-device node using the PANEL_PIXEL_FORMAT_* macros from
+  :zephyr_file:`include/zephyr/dt-bindings/display/panel.h`. (:github:`104099`)
+
 Ethernet
 ========
 
@@ -302,6 +310,11 @@ WiFi
   a pointer to :c:struct:`net_if`. This api is not directly exposed to the application, so only
   out-of-tree drivers need to be updated. (:github:`106086`)
 
+* The Espressif Wi-Fi driver Kconfig option ``CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4`` has been
+  removed in favor of the generic :kconfig:option:`CONFIG_WIFI_STA_AUTO_DHCPV4`. Applications
+  that previously disabled the Espressif-specific option must now disable the generic option
+  to retain manual DHCPv4 or static IP behavior after STA connection.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
@@ -413,6 +426,35 @@ Networking
 * Various IP routing related Kconfig options will have now ``IPV6`` prefix added to
   them. This is done so that we can have IPv4 routing symbols that provide same
   functionality as IPv6 ones but can be controlled separately.
+
+* IPv4 and IPv6 unicast route-table support is now exposed through the
+  :kconfig:option:`CONFIG_NET_IPV4_ROUTE` and
+  :kconfig:option:`CONFIG_NET_IPV6_ROUTE` options.
+
+  These options control the per-family unicast route tables that are used by
+  static route management, networking shell route commands, and host-side route
+  selection for locally originated traffic such as VPN-bound packets. They do
+  not, by themselves, enable packet forwarding between interfaces.
+
+* The Kconfig options :kconfig:option:`CONFIG_NET_IPV4_ROUTING` and
+  :kconfig:option:`CONFIG_NET_IPV6_ROUTING` have been renamed to
+  :kconfig:option:`CONFIG_NET_IPV4_FORWARDING` and
+  :kconfig:option:`CONFIG_NET_IPV6_FORWARDING`.
+
+  The renamed options explicitly describe IP forwarding between interfaces.
+  Applications that only need route-table lookups or static routes should
+  enable :kconfig:option:`CONFIG_NET_IPV4_ROUTE` or
+  :kconfig:option:`CONFIG_NET_IPV6_ROUTE` and leave forwarding disabled.
+  Applications acting as routers should enable both the route-table option and
+  the corresponding forwarding option.
+
+* Out-of-tree IPv6 configurations should also migrate away from the deprecated
+  legacy aliases :kconfig:option:`CONFIG_NET_ROUTE`,
+  :kconfig:option:`CONFIG_NET_ROUTING`,
+  :kconfig:option:`CONFIG_NET_MAX_ROUTES`, and
+  :kconfig:option:`CONFIG_NET_MAX_NEXTHOPS` and use the
+  :kconfig:option:`CONFIG_NET_IPV6_*` symbols directly.
+
 
 Ethernet
 ========

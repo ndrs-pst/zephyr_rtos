@@ -38,6 +38,8 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include "net_private.h"
 #include "ipv4.h"
 #include "ipv6.h"
+#include "route_ipv4.h"
+#include "route_ipv6.h"
 #include "tcp_internal.h"
 
 #include "net_stats.h"
@@ -2772,6 +2774,31 @@ static struct net_if_ipv6_prefix* ipv6_prefix_find(struct net_if* iface,
     return (NULL);
 }
 
+static struct net_if_ipv6_prefix* ipv6_prefix_get(struct net_if_ipv6* ipv6,
+                                                  struct net_in6_addr const* addr) {
+    struct net_if_ipv6_prefix* prefix = NULL;
+
+    if (ipv6 == NULL) {
+        return (NULL);
+    }
+
+    ARRAY_FOR_EACH(ipv6->prefix, i) {
+        if (!ipv6->prefix[i].is_used) {
+            continue;
+        }
+
+        if (net_ipv6_is_prefix(ipv6->prefix[i].prefix.s6_addr,
+                               addr->s6_addr,
+                               ipv6->prefix[i].len)) {
+            if ((prefix == NULL) || (prefix->len < ipv6->prefix[i].len)) {
+                prefix = &ipv6->prefix[i];
+            }
+        }
+    }
+
+    return (prefix);
+}
+
 static void net_if_ipv6_prefix_init(struct net_if* iface,
                                     struct net_if_ipv6_prefix* ifprefix,
                                     struct net_in6_addr const* addr, uint8_t len,
@@ -2923,19 +2950,7 @@ struct net_if_ipv6_prefix* net_if_ipv6_prefix_get(struct net_if* iface,
         goto out;
     }
 
-    ARRAY_FOR_EACH(ipv6->prefix, i) {
-        if (!ipv6->prefix[i].is_used) {
-            continue;
-        }
-
-        if (net_ipv6_is_prefix(ipv6->prefix[i].prefix.s6_addr,
-                               addr->s6_addr,
-                               ipv6->prefix[i].len)) {
-            if (!prefix || prefix->len > ipv6->prefix[i].len) {
-                prefix = &ipv6->prefix[i];
-            }
-        }
-    }
+    prefix = ipv6_prefix_get(ipv6, addr);
 
 out :
     if (prefix != NULL) {
@@ -3231,27 +3246,39 @@ static struct net_in6_addr* net_if_ipv6_get_best_match(struct net_if* iface,
             continue;
         }
 
-        /* This is a dirty hack until we have proper IPv6 routing.
-         * Without this the IPv6 packets might go to VPN interface for
-         * subnets that are not on the same subnet as the VPN interface
-         * which typically is not desired.
-         * TODO: Implement IPv6 routing support and remove this hack.
-         */
-        if (IS_ENABLED(CONFIG_NET_VPN)) {
-            /* For the VPN interface, we need to check if
+        if (!IS_ENABLED(CONFIG_NET_IPV6_ROUTE) && IS_ENABLED(CONFIG_NET_VPN)) {
+            /* If the IPv6 routing is disabled, then do some extra checks which
+             * try to route the packet to correct network interface. Preferably
+             * the IP routing should direct the packet to correct interface so this
+             * extra check is not needed. Without this the IPv6 packets might go
+             * to VPN interface for subnets that are not on the same subnet as the
+             * VPN interface which typically is not desired.
+             *
+             * For the VPN interface, we need to check if
              * address matches exactly the address of the interface.
              */
-            if ((net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL)) &&
-                (net_virtual_get_iface_capabilities(iface) == VIRTUAL_INTERFACE_VPN)) {
-                /* FIXME: Do not hard code the prefix length */
+            #if defined(CONFIG_NET_NATIVE_IPV6)
+            if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL) &&
+                (net_virtual_get_iface_capabilities(iface) &
+                 VIRTUAL_INTERFACE_VPN) != 0U) {
+                struct net_if_ipv6_prefix* prefix;
+                uint8_t match_prefix_len = 64U;
+
+                prefix = ipv6_prefix_get(ipv6,
+                                         &ipv6->unicast[i].address.in6_addr);
+                if (prefix != NULL) {
+                    match_prefix_len = prefix->len;
+                }
+
                 if (!net_ipv6_is_prefix(
                         (const uint8_t*)&ipv6->unicast[i].address.in6_addr,
                         (const uint8_t*)dst,
-                        64)) {
+                        match_prefix_len)) {
                     /* Skip this address as it is no match */
                     continue;
                 }
             }
+            #endif /* CONFIG_NET_NATIVE_IPV6 */
         }
 
         len = get_diff_ipv6(dst, &ipv6->unicast[i].address.in6_addr);
@@ -3358,6 +3385,42 @@ out :
     return (src);
 }
 
+static struct net_if* net_if_ipv6_select_route_iface(struct net_in6_addr const* dst) {
+    #if defined(CONFIG_NET_IPV6_ROUTE)
+    struct net_route_entry* route;
+    struct net_in6_addr* nexthop;
+    struct net_if_router* router;
+    struct net_nbr* nbr;
+
+    if ((dst == NULL) || net_ipv6_is_ll_addr(dst) ||
+        net_ipv6_is_addr_mcast_link(dst)) {
+        return (NULL);
+    }
+
+    nbr = net_ipv6_nbr_lookup(NULL, dst);
+    if (nbr != NULL) {
+        return (nbr->iface);
+    }
+
+    if (!net_route_ipv6_get_info(NULL, dst, &route, &nexthop)) {
+        return (NULL);
+    }
+
+    if (route != NULL) {
+        return (route->iface);
+    }
+
+    router = net_if_ipv6_router_find_default(NULL, dst);
+    if (router != NULL) {
+        return (router->iface);
+    }
+    #else
+    ARG_UNUSED(dst);
+    #endif
+
+    return (NULL);
+}
+
 const struct net_in6_addr* net_if_ipv6_select_src_addr_hint(struct net_if* dst_iface,
                                                             const struct net_in6_addr* dst,
                                                             int flags) {
@@ -3366,6 +3429,11 @@ const struct net_in6_addr* net_if_ipv6_select_src_addr_hint(struct net_if* dst_i
 
     if (dst == NULL) {
         return (NULL);
+    }
+
+    if ((dst_iface == NULL) && !net_ipv6_is_ll_addr(dst) &&
+        !net_ipv6_is_addr_mcast_link(dst)) {
+        dst_iface = net_if_ipv6_select_route_iface(dst);
     }
 
     if (!net_ipv6_is_ll_addr(dst) && !net_ipv6_is_addr_mcast_link(dst)) {
@@ -3439,10 +3507,14 @@ const struct net_in6_addr* net_if_ipv6_select_src_addr(struct net_if* dst_iface,
 
 struct net_if* net_if_ipv6_select_src_iface_addr(const struct net_in6_addr* dst,
                                                  const struct net_in6_addr** src_addr) {
-    struct net_if* iface = NULL;
+    struct net_if* iface = net_if_ipv6_select_route_iface(dst);
     const struct net_in6_addr* src;
 
-    src = net_if_ipv6_select_src_addr(NULL, dst);
+    src = net_if_ipv6_select_src_addr(iface, dst);
+    if ((iface != NULL) && (src == net_ipv6_unspecified_address())) {
+        src = net_if_ipv6_select_src_addr(NULL, dst);
+    }
+
     if (src != net_ipv6_unspecified_address()) {
         net_if_ipv6_addr_lookup(src, &iface);
     }
@@ -3703,15 +3775,16 @@ bool net_if_ipv4_addr_onlink(struct net_if** iface, const struct net_in_addr* ad
             uint32_t subnet;
             uint8_t mask_len;
 
-            if (!ipv4->unicast[i].ipv4.is_used ||
-                ipv4->unicast[i].ipv4.address.family != NET_AF_INET) {
+            struct net_if_addr_ipv4* unicast = &ipv4->unicast[i];
+            if (!unicast->ipv4.is_used ||
+                unicast->ipv4.address.family != NET_AF_INET) {
                 continue;
             }
 
-            mask = ipv4->unicast[i].netmask.s_addr_be;
+            mask = unicast->netmask.s_addr_be;
             subnet = UNALIGNED_GET(&addr->s_addr_be) & mask;
 
-            if ((ipv4->unicast[i].ipv4.address.in_addr.s_addr_be & mask) != subnet) {
+            if ((unicast->ipv4.address.in_addr.s_addr_be & mask) != subnet) {
                 continue;
             }
 
@@ -3749,16 +3822,18 @@ bool net_if_ipv4_addr_mask_cmp(struct net_if* iface,
     }
 
     ARRAY_FOR_EACH(ipv4->unicast, i) {
-        if (!ipv4->unicast[i].ipv4.is_used ||
-            ipv4->unicast[i].ipv4.address.family != NET_AF_INET) {
+        struct net_if_addr_ipv4 const* unicast = &ipv4->unicast[i];
+
+        if (!unicast->ipv4.is_used ||
+            (unicast->ipv4.address.family != NET_AF_INET)) {
             continue;
         }
 
         subnet = UNALIGNED_GET(&addr->s_addr_be) &
-                 ipv4->unicast[i].netmask.s_addr_be;
+                 unicast->netmask.s_addr_be;
 
-        if ((ipv4->unicast[i].ipv4.address.in_addr.s_addr_be &
-            ipv4->unicast[i].netmask.s_addr_be) == subnet) {
+        if ((unicast->ipv4.address.in_addr.s_addr_be &
+            unicast->netmask.s_addr_be) == subnet) {
             ret = true;
             goto out;
         }
@@ -3784,13 +3859,15 @@ static bool ipv4_is_broadcast_address(struct net_if* iface,
     }
 
     ARRAY_FOR_EACH(ipv4->unicast, i) {
-        if (!ipv4->unicast[i].ipv4.is_used ||
-            ipv4->unicast[i].ipv4.address.family != NET_AF_INET) {
+        struct net_if_addr_ipv4* unicast = &ipv4->unicast[i];
+
+        if (!unicast->ipv4.is_used ||
+            (unicast->ipv4.address.family != NET_AF_INET)) {
             continue;
         }
 
-        bcast.s_addr_be = ipv4->unicast[i].ipv4.address.in_addr.s_addr_be |
-                          ~ipv4->unicast[i].netmask.s_addr_be;
+        bcast.s_addr_be = unicast->ipv4.address.in_addr.s_addr_be |
+                          ~unicast->netmask.s_addr_be;
 
         if (bcast.s_addr_be == UNALIGNED_GET((uint32_t*)addr)) {
             ret = true;
@@ -3828,12 +3905,45 @@ bool net_if_ipv4_is_addr_bcast(struct net_if* iface,
     return net_if_ipv4_is_addr_bcast_raw(iface, addr->s4_addr);
 }
 
-struct net_if *net_if_ipv4_select_src_iface_addr(struct net_in_addr const* dst,
-                                                 struct net_in_addr const** src_addr) {
-    struct net_if* selected = NULL;
+static struct net_if* net_if_ipv4_select_route_iface(struct net_in_addr const* dst) {
+    #if defined(CONFIG_NET_IPV4_ROUTE)
+    struct net_route_entry* route;
+    struct net_in_addr* nexthop;
+    struct net_if_router* router;
+
+    if ((dst == NULL) || net_ipv4_is_ll_addr(dst)) {
+        return (NULL);
+    }
+
+    if (!net_route_ipv4_get_info(NULL, dst, &route, &nexthop)) {
+        return (NULL);
+    }
+
+    if (route != NULL) {
+        return (route->iface);
+    }
+
+    router = net_if_ipv4_router_find_default(NULL, dst);
+    if (router != NULL) {
+        return (router->iface);
+    }
+    #else
+    ARG_UNUSED(dst);
+    #endif
+
+    return (NULL);
+}
+
+struct net_if* net_if_ipv4_select_src_iface_addr(const struct net_in_addr* dst,
+                                                 const struct net_in_addr** src_addr) {
+    struct net_if* selected = net_if_ipv4_select_route_iface(dst);
     const struct net_in_addr* src;
 
-    src = net_if_ipv4_select_src_addr(NULL, dst);
+    src = net_if_ipv4_select_src_addr(selected, dst);
+    if ((selected != NULL) && (src == net_ipv4_unspecified_address())) {
+        src = net_if_ipv4_select_src_addr(NULL, dst);
+    }
+
     if (src != net_ipv4_unspecified_address()) {
         net_if_ipv4_addr_lookup(src, &selected);
     }
@@ -3882,45 +3992,48 @@ static struct net_in_addr* net_if_ipv4_get_best_match(struct net_if* iface,
     }
 
     ARRAY_FOR_EACH(ipv4->unicast, i) {
+        struct net_if_addr_ipv4* unicast = &ipv4->unicast[i];
         struct net_in_addr subnet;
 
-        if (!is_proper_ipv4_address(&ipv4->unicast[i].ipv4)) {
+        if (!is_proper_ipv4_address(&unicast->ipv4)) {
             continue;
         }
 
-        if (net_ipv4_is_ll_addr(&ipv4->unicast[i].ipv4.address.in_addr) != ll) {
+        if (net_ipv4_is_ll_addr(&unicast->ipv4.address.in_addr) != ll) {
             continue;
         }
 
-        /* This is a dirty hack until we have proper IPv4 routing.
-         * Without this the IPv4 packets might go to VPN interface for
-         * subnets that are not on the same subnet as the VPN interface
-         * which typically is not desired.
-         * TODO: Implement IPv4 routing support and remove this hack.
-         */
-        if (IS_ENABLED(CONFIG_NET_VPN)) {
-            /* For the VPN interface, we need to check if
+        if (!IS_ENABLED(CONFIG_NET_IPV4_ROUTE) && IS_ENABLED(CONFIG_NET_VPN)) {
+            /* If the IPv4 routing is disabled, then do some extra checks which
+             * try to route the packet to correct network interface. Preferably
+             * the IP routing should direct the packet to correct interface so this
+             * extra check is not needed. Without this the IPv4 packets might go
+             * to VPN interface for subnets that are not on the same subnet as the
+             * VPN interface which typically is not desired.
+             *
+             * For the VPN interface, we need to check if the IPv4
              * address matches exactly the address of the interface.
              */
-            if ((net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL)) &&
-                (net_virtual_get_iface_capabilities(iface) == VIRTUAL_INTERFACE_VPN)) {
-                subnet.s_addr_be = ipv4->unicast[i].ipv4.address.in_addr.s_addr_be &
-                    ipv4->unicast[i].netmask.s_addr_be;
+            if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL) &&
+                (net_virtual_get_iface_capabilities(iface) &
+                 VIRTUAL_INTERFACE_VPN) != 0U) {
+                subnet.s_addr_be = unicast->ipv4.address.in_addr.s_addr_be &
+                                   unicast->netmask.s_addr_be;
 
                 if (subnet.s_addr_be !=
-                    (dst->s_addr_be & ipv4->unicast[i].netmask.s_addr_be)) {
+                    (dst->s_addr_be & unicast->netmask.s_addr_be)) {
                     /* Skip this address as it is no match */
                     continue;
                 }
             }
         }
 
-        subnet.s_addr_be = ipv4->unicast[i].ipv4.address.in_addr.s_addr_be &
-                           ipv4->unicast[i].netmask.s_addr_be;
+        subnet.s_addr_be = unicast->ipv4.address.in_addr.s_addr_be &
+                           unicast->netmask.s_addr_be;
         len = get_diff_ipv4(dst, &subnet);
         if (len >= *best_so_far) {
             *best_so_far = len;
-            src = &ipv4->unicast[i].ipv4.address.in_addr;
+            src = &unicast->ipv4.address.in_addr;
         }
     }
 
@@ -3947,14 +4060,16 @@ static struct net_in_addr* if_ipv4_get_addr(struct net_if* iface,
     }
 
     ARRAY_FOR_EACH(ipv4->unicast, i) {
-        if (!ipv4->unicast[i].ipv4.is_used ||
+        struct net_if_addr_ipv4* unicast = &ipv4->unicast[i];
+
+        if (!unicast->ipv4.is_used ||
             ((addr_state != NET_ADDR_ANY_STATE) &&
-             (ipv4->unicast[i].ipv4.addr_state != addr_state)) ||
-            (ipv4->unicast[i].ipv4.address.family != NET_AF_INET)) {
+             (unicast->ipv4.addr_state != addr_state)) ||
+            (unicast->ipv4.address.family != NET_AF_INET)) {
             continue;
         }
 
-        if (net_ipv4_is_ll_addr(&ipv4->unicast[i].ipv4.address.in_addr)) {
+        if (net_ipv4_is_ll_addr(&unicast->ipv4.address.in_addr)) {
             if (ll == false) {
                 continue;
             }
@@ -3965,7 +4080,7 @@ static struct net_in_addr* if_ipv4_get_addr(struct net_if* iface,
             }
         }
 
-        addr = &ipv4->unicast[i].ipv4.address.in_addr;
+        addr = &unicast->ipv4.address.in_addr;
         goto out;
     }
 
@@ -3992,6 +4107,10 @@ const struct net_in_addr* net_if_ipv4_select_src_addr(struct net_if* dst_iface,
 
     if (dst == NULL) {
         return (NULL);
+    }
+
+    if ((dst_iface == NULL) && !net_ipv4_is_ll_addr(dst)) {
+        dst_iface = net_if_ipv4_select_route_iface(dst);
     }
 
     if (!net_ipv4_is_ll_addr(dst)) {
@@ -4078,12 +4197,14 @@ struct net_if_addr *net_if_ipv4_addr_get_first_by_index(int ifindex) {
     }
 
     ARRAY_FOR_EACH(ipv4->unicast, i) {
-        if (!ipv4->unicast[i].ipv4.is_used ||
-            ipv4->unicast[i].ipv4.address.family != NET_AF_INET) {
+        struct net_if_addr_ipv4* unicast = &ipv4->unicast[i];
+
+        if (!unicast->ipv4.is_used ||
+            unicast->ipv4.address.family != NET_AF_INET) {
             continue;
         }
 
-        ifaddr = &ipv4->unicast[i].ipv4;
+        ifaddr = &unicast->ipv4;
         break;
     }
 
@@ -4109,19 +4230,21 @@ struct net_if_addr* net_if_ipv4_addr_lookup_raw(uint8_t const* addr,
         }
 
         ARRAY_FOR_EACH(ipv4->unicast, i) {
-            if (!ipv4->unicast[i].ipv4.is_used ||
-                (ipv4->unicast[i].ipv4.address.family != NET_AF_INET)) {
+            struct net_if_addr_ipv4* unicast = &ipv4->unicast[i];
+
+            if (!unicast->ipv4.is_used ||
+                (unicast->ipv4.address.family != NET_AF_INET)) {
                 continue;
             }
 
             if (UNALIGNED_GET((uint32_t*)addr) ==
-                ipv4->unicast[i].ipv4.address.in_addr.s_addr_be) {
+                unicast->ipv4.address.in_addr.s_addr_be) {
 
                 if (ret != NULL) {
                     *ret = iface;
                 }
 
-                ifaddr = &ipv4->unicast[i].ipv4;
+                ifaddr = &unicast->ipv4;
                 net_if_unlock(iface);
                 goto out;
             }
@@ -4181,17 +4304,19 @@ struct net_in_addr net_if_ipv4_get_netmask_by_addr(struct net_if* iface,
     }
 
     ARRAY_FOR_EACH(ipv4->unicast, i) {
-        if (!ipv4->unicast[i].ipv4.is_used ||
-            ipv4->unicast[i].ipv4.address.family != NET_AF_INET) {
+        struct net_if_addr_ipv4 const* unicast = &ipv4->unicast[i];
+
+        if (!unicast->ipv4.is_used ||
+            (unicast->ipv4.address.family != NET_AF_INET)) {
             continue;
         }
 
         subnet = UNALIGNED_GET(&addr->s_addr_be) &
-                 ipv4->unicast[i].netmask.s_addr_be;
+                 unicast->netmask.s_addr_be;
 
-        if ((ipv4->unicast[i].ipv4.address.in_addr.s_addr_be &
-            ipv4->unicast[i].netmask.s_addr_be) == subnet) {
-            netmask = ipv4->unicast[i].netmask;
+        if ((unicast->ipv4.address.in_addr.s_addr_be &
+            unicast->netmask.s_addr_be) == subnet) {
+            netmask = unicast->netmask;
             goto out;
         }
     }
@@ -4221,17 +4346,19 @@ bool net_if_ipv4_set_netmask_by_addr(struct net_if* iface,
     }
 
     ARRAY_FOR_EACH(ipv4->unicast, i) {
-        if (!ipv4->unicast[i].ipv4.is_used ||
-            (ipv4->unicast[i].ipv4.address.family != NET_AF_INET)) {
+        struct net_if_addr_ipv4* unicast = &ipv4->unicast[i];
+
+        if (!unicast->ipv4.is_used ||
+            (unicast->ipv4.address.family != NET_AF_INET)) {
             continue;
         }
 
         subnet = UNALIGNED_GET(&addr->s_addr_be) &
-                 ipv4->unicast[i].netmask.s_addr_be;
+                 unicast->netmask.s_addr_be;
 
-        if ((ipv4->unicast[i].ipv4.address.in_addr.s_addr_be &
-            ipv4->unicast[i].netmask.s_addr_be) == subnet) {
-            ipv4->unicast[i].netmask = *netmask;
+        if ((unicast->ipv4.address.in_addr.s_addr_be &
+            unicast->netmask.s_addr_be) == subnet) {
+            unicast->netmask = *netmask;
             ret = true;
             goto out;
         }
@@ -4360,13 +4487,15 @@ static struct net_if_addr* ipv4_addr_find(struct net_if* iface,
     struct net_if_ipv4* ipv4 = iface->config.ip.ipv4;
 
     ARRAY_FOR_EACH(ipv4->unicast, i) {
-        if (!ipv4->unicast[i].ipv4.is_used) {
+        struct net_if_addr_ipv4* unicast = &ipv4->unicast[i];
+
+        if (!unicast->ipv4.is_used) {
             continue;
         }
 
         if (net_ipv4_addr_cmp(addr,
-                              &ipv4->unicast[i].ipv4.address.in_addr)) {
-            return &ipv4->unicast[i].ipv4;
+                              &unicast->ipv4.address.in_addr)) {
+            return &unicast->ipv4;
         }
     }
 
@@ -4471,14 +4600,16 @@ void net_if_start_acd(struct net_if* iface) {
      * the interface was down.
      */
     ARRAY_FOR_EACH(ipv4->unicast, i) {
-        if (!ipv4->unicast[i].ipv4.is_used ||
-            ipv4->unicast[i].ipv4.address.family != NET_AF_INET ||
+        struct net_if_addr_ipv4* unicast = &ipv4->unicast[i];
+
+        if (!unicast->ipv4.is_used ||
+            (unicast->ipv4.address.family != NET_AF_INET) ||
             net_ipv4_is_addr_loopback(
-                &ipv4->unicast[i].ipv4.address.in_addr)) {
+                &unicast->ipv4.address.in_addr)) {
             continue;
         }
 
-        sys_slist_prepend(&acd_needed, &ipv4->unicast[i].ipv4.acd_need_node);
+        sys_slist_prepend(&acd_needed, &unicast->ipv4.acd_need_node);
     }
 
     net_if_unlock(iface);
@@ -5317,16 +5448,18 @@ static struct net_if_addr* get_ifaddr(struct net_if* iface,
         }
 
         ARRAY_FOR_EACH(ipv4->unicast, i) {
-            if (!ipv4->unicast[i].ipv4.is_used) {
+            struct net_if_addr_ipv4* unicast = &ipv4->unicast[i];
+
+            if (!unicast->ipv4.is_used) {
                 continue;
             }
 
-            if (!net_ipv4_addr_cmp(&ipv4->unicast[i].ipv4.address.in_addr,
+            if (!net_ipv4_addr_cmp(&unicast->ipv4.address.in_addr,
                                    addr)) {
                 continue;
             }
 
-            ifaddr = &ipv4->unicast[i].ipv4;
+            ifaddr = &unicast->ipv4;
 
             goto out;
         }

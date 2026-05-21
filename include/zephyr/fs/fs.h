@@ -73,6 +73,9 @@ enum {
     /** Identifier for in-tree Virtiofs file system. */
     FS_VIRTIOFS,
 
+    /** Identifier for in-tree Native Simulator mount file system. */
+    FS_NATIVE_MOUNT,
+
     /** Base identifier for external file systems. */
     FS_TYPE_EXTERNAL_BASE,
 };
@@ -236,7 +239,7 @@ struct fs_statvfs {
  * @return The mount-point path.
  */
 #define FSTAB_ENTRY_DT_MOUNT_POINT(node_id) \
-	DT_PROP(node_id, mount_point)
+    DT_PROP(node_id, mount_point)
 
 /**
  * @brief Get the mount-point from an fstab entry.
@@ -245,7 +248,7 @@ struct fs_statvfs {
  * @return The mount-point path.
  */
 #define FSTAB_ENTRY_DT_INST_MOUNT_POINT(inst) \
-	DT_INST_PROP(inst, mount_point)
+    DT_INST_PROP(inst, mount_point)
 
 /**
  * @brief The name under which a zephyr,fstab entry mount structure is

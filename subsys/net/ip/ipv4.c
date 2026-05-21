@@ -267,7 +267,7 @@ static enum net_verdict ipv4_route_packet(struct net_pkt* pkt,
 
     net_ipv4_addr_copy_raw(dst_ip.s4_addr, hdr->dst);
 
-    if (IS_ENABLED(CONFIG_NET_IPV4_ROUTING)) {
+    if (IS_ENABLED(CONFIG_NET_IPV4_FORWARDING)) {
         found = net_route_ipv4_get_info(NULL, &dst_ip, &route, &nexthop);
     }
     else {

@@ -992,6 +992,8 @@ Cache:
   status: maintained
   maintainers:
     - nashif
+  collaborators:
+    - JarmouniA
   files:
     - include/zephyr/drivers/cache.h
     - include/zephyr/cache.h
@@ -1273,6 +1275,7 @@ Display drivers:
     - VynDragon
     - KATE-WANG-NXP
     - avolmat-st
+    - RuoshanShi
   files:
     - drivers/display/
     - dts/bindings/display/
@@ -2139,6 +2142,7 @@ Documentation Infrastructure:
   collaborators:
     - JarmouniA
     - KATE-WANG-NXP
+    - RuoshanShi
   files:
     - drivers/mipi_dsi/
     - include/zephyr/drivers/mipi_dsi.h
@@ -4403,6 +4407,7 @@ Networking:
     - pdgendt
     - kkasperczyk-no
     - edmont
+    - Cristib05
   files:
     - subsys/net/l2/openthread/
     - samples/net/openthread/
@@ -4840,6 +4845,8 @@ Realtek Ameba Platforms:
   maintainers:
     - zjian-zhang
     - Derek-RTK
+  collaborators:
+    - minyuan-xue
   files:
     - boards/realtek/rtl872*/
     - drivers/*/*ameba*
@@ -5744,6 +5751,7 @@ USB:
   collaborators:
     - josuah
     - MarkWangChinese
+    - roma-jam
   files:
     - drivers/usb/
     - dts/bindings/usb/
@@ -6344,6 +6352,7 @@ West:
   collaborators:
     - Derek-RTK
     - YuzhuoLiuRTK
+    - minyuan-xue
   files: []
   labels:
     - "platform: Realtek"
@@ -6721,6 +6730,7 @@ West:
     - pdgendt
     - kkasperczyk-no
     - edmont
+    - Cristib05
   files:
     - modules/openthread/
   labels:
@@ -6915,6 +6925,7 @@ Xilinx Platforms:
     - ibirnbaum
     - kedareswararao
     - neeliajay
+    - venodela
   files:
     - boards/amd/
     - drivers/*/*xilinx*

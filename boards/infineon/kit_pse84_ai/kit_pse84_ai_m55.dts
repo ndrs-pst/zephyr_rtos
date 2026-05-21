@@ -64,6 +64,10 @@
 	status = "okay";
 };
 
+&mcwdt1 {
+	status = "okay";
+};
+
 &peri0_group1_16_5bit_0 {
 	status = "okay";
 	clock-div = <1>;
