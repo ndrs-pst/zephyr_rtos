@@ -273,7 +273,7 @@ static int mcux_lpuart_fifo_fill(struct device const* dev,
 }
 
 static int mcux_lpuart_fifo_read(struct device const* dev, uint8_t* rx_data,
-                                 int const len) {
+                                 int len) {
     LPUART_Type* lpuart = get_base(dev);
     int num_rx = 0;
 
@@ -325,6 +325,7 @@ static void mcux_lpuart_irq_tx_disable(struct device const* dev) {
 
     #ifdef CONFIG_PM
     data->tx_int_stream_on = false;
+
     /*
      * If transmission IRQ is no longer enabled,
      * transmission is complete. Release pm constraint.
@@ -443,19 +444,20 @@ static void async_user_callback(struct device const* dev, struct uart_event* evt
 
 static void async_evt_tx_done(struct device* dev) {
     struct mcux_lpuart_data* data = dev->data;
+    struct mcux_lpuart_tx_dma_params* tx_dma_params = &data->async.tx_dma_params;
 
-    (void) k_work_cancel_delayable(&data->async.tx_dma_params.timeout_work);
+    (void) k_work_cancel_delayable(&tx_dma_params->timeout_work);
 
-    LOG_DBG("TX done: %d", data->async.tx_dma_params.buf_len);
+    LOG_DBG("TX done: %d", tx_dma_params->buf_len);
     struct uart_event event = {
-        .type        = UART_TX_DONE,
-        .data.tx.buf = data->async.tx_dma_params.buf,
-        .data.tx.len = data->async.tx_dma_params.buf_len
+        .type = UART_TX_DONE,
+        .data.tx.buf = tx_dma_params->buf,
+        .data.tx.len = tx_dma_params->buf_len
     };
 
     /* Reset TX Buffer */
-    data->async.tx_dma_params.buf     = NULL;
-    data->async.tx_dma_params.buf_len = 0U;
+    tx_dma_params->buf     = NULL;
+    tx_dma_params->buf_len = 0U;
 
     async_user_callback(dev, &event);
 }
@@ -477,7 +479,7 @@ static void async_evt_rx_rdy(struct device const* dev) {
     key = irq_lock();
     buf = dma_params->buf;
     counter = dma_params->counter;
-    offset = dma_params->offset;
+    offset  = dma_params->offset;
 
     len = counter - offset;
 
@@ -486,7 +488,7 @@ static void async_evt_rx_rdy(struct device const* dev) {
     irq_unlock(key);
 
     struct uart_event event = {
-        .type        = UART_RX_RDY,
+        .type = UART_RX_RDY,
         .data.rx.buf = buf,
         .data.rx.len = len,
         .data.rx.offset = offset
@@ -510,7 +512,7 @@ static void async_evt_rx_buf_request(struct device const* dev) {
 }
 
 static void async_evt_rx_buf_release(struct device const* dev) {
-    struct mcux_lpuart_data* data = (struct mcux_lpuart_data*)dev->data;
+    struct mcux_lpuart_data* data = dev->data;
     struct mcux_lpuart_rx_dma_params* rx_dma = &data->async.rx_dma_params;
     unsigned int key;
     uint8_t* released_buf;
@@ -544,14 +546,13 @@ static void async_evt_rx_buf_release(struct device const* dev) {
 static void mcux_lpuart_async_rx_flush(struct device const* dev) {
     struct dma_status status;
     struct mcux_lpuart_data* data = dev->data;
-    const struct mcux_lpuart_config* config = dev->config;
+    struct mcux_lpuart_config const* config = dev->config;
     struct mcux_lpuart_rx_dma_params* rx_dma = &data->async.rx_dma_params;
 
-    int const get_status_result = dma_get_status(config->rx_dma_config.dma_dev,
-                                                 config->rx_dma_config.dma_channel,
-                                                 &status);
-
-    if (get_status_result == 0) {
+    int sts = dma_get_status(config->rx_dma_config.dma_dev,
+                             config->rx_dma_config.dma_channel,
+                             &status);
+    if (sts == 0) {
         size_t buf_len;
         size_t counter;
         size_t rx_rcv_len;
@@ -591,11 +592,11 @@ static void mcux_lpuart_async_rx_flush(struct device const* dev) {
 
 static int mcux_lpuart_rx_disable(struct device const* dev) {
     LOG_INF("Disabling UART RX DMA");
-    const struct mcux_lpuart_config* config = dev->config;
-    struct mcux_lpuart_data* data = (struct mcux_lpuart_data*)dev->data;
+    struct mcux_lpuart_config const* config = dev->config;
+    struct mcux_lpuart_data* data = dev->data;
     struct mcux_lpuart_async_data* async = &data->async;
     LPUART_Type* lpuart = get_base(dev);
-    unsigned int const key = irq_lock();
+    unsigned int key = irq_lock();
 
     LPUART_EnableRx(lpuart, false);
     (void) k_work_cancel_delayable(&async->rx_dma_params.timeout_work);
@@ -618,6 +619,7 @@ static int mcux_lpuart_rx_disable(struct device const* dev) {
     else {
         mcux_lpuart_async_rx_flush(dev);
         async_evt_rx_buf_release(dev);
+
         if (async->next_rx_buffer != NULL) {
             async->rx_dma_params.buf     = async->next_rx_buffer;
             async->rx_dma_params.buf_len = async->next_rx_buffer_len;
@@ -629,8 +631,8 @@ static int mcux_lpuart_rx_disable(struct device const* dev) {
         async->rx_dma_params.buf = NULL;
     }
 
-    int const ret = dma_stop(config->rx_dma_config.dma_dev,
-                             config->rx_dma_config.dma_channel);
+    int ret = dma_stop(config->rx_dma_config.dma_dev,
+                       config->rx_dma_config.dma_channel);
     if (ret != 0) {
         LOG_ERR("Error stopping rx DMA. Reason: %x", ret);
     }
@@ -646,7 +648,7 @@ static int mcux_lpuart_rx_disable(struct device const* dev) {
 }
 
 static void prepare_rx_dma_block_config(struct device const* dev) {
-    struct mcux_lpuart_data* data = (struct mcux_lpuart_data*)dev->data;
+    struct mcux_lpuart_data* data = dev->data;
     LPUART_Type* lpuart = get_base(dev);
     struct mcux_lpuart_rx_dma_params* rx_dma_params = &data->async.rx_dma_params;
 
@@ -663,10 +665,10 @@ static void prepare_rx_dma_block_config(struct device const* dev) {
     head_block_config->dest_scatter_en = true;
 }
 
-static int configure_and_start_rx_dma(
-    const struct mcux_lpuart_config* config, struct mcux_lpuart_data* data,
-    LPUART_Type* lpuart) {
+static int configure_and_start_rx_dma(struct mcux_lpuart_config const* config,
+                                      LPUART_Type* lpuart) {
     LOG_DBG("Configuring and Starting UART RX DMA");
+
     int ret = dma_config(config->rx_dma_config.dma_dev,
                          config->rx_dma_config.dma_channel,
                          (struct dma_config*)&config->rx_dma_config.dma_cfg);
@@ -688,42 +690,44 @@ static int configure_and_start_rx_dma(
 }
 
 static int uart_mcux_lpuart_dma_replace_rx_buffer(struct device const* dev) {
-    struct mcux_lpuart_data* data = (struct mcux_lpuart_data*)dev->data;
-    const struct mcux_lpuart_config* config = dev->config;
+    struct mcux_lpuart_data* data = dev->data;
+    struct mcux_lpuart_async_data* async = &data->async;
+    struct mcux_lpuart_config const* config = dev->config;
     LPUART_Type* lpuart = get_base(dev);
+    int ret;
 
-    LOG_DBG("Replacing RX buffer, new length: %d", data->async.next_rx_buffer_len);
+    LOG_DBG("Replacing RX buffer, new length: %d", async->next_rx_buffer_len);
     /* There must be a buffer to replace this one with */
-    assert(data->async.next_rx_buffer != NULL);
-    assert(data->async.next_rx_buffer_len != 0U);
+    assert(async->next_rx_buffer != NULL);
+    assert(async->next_rx_buffer_len != 0U);
 
-    const int success =
-        dma_reload(config->rx_dma_config.dma_dev, config->rx_dma_config.dma_channel,
-                   LPUART_GetDataRegisterAddress(lpuart),
-                   (uint32_t)data->async.next_rx_buffer, data->async.next_rx_buffer_len);
-
-    if (success != 0) {
-        LOG_ERR("Error %d reloading DMA with next RX buffer", success);
+    ret = dma_reload(config->rx_dma_config.dma_dev,
+                     config->rx_dma_config.dma_channel,
+                     LPUART_GetDataRegisterAddress(lpuart),
+                     (uint32_t)async->next_rx_buffer, async->next_rx_buffer_len);
+    if (ret != 0) {
+        LOG_ERR("Error %d reloading DMA with next RX buffer", ret);
     }
 
-    return (success);
+    return (ret);
 }
 
 static int mcux_lpuart_tx_abort(struct device const* dev);
 
 static void dma_callback(struct device const* dma_dev, void* callback_arg, uint32_t channel,
                          int dma_status) {
-    struct device* dev = (struct device*)callback_arg;
-    const struct mcux_lpuart_config* config = dev->config;
+    struct device* dev = callback_arg;
+    struct mcux_lpuart_config const* config = dev->config;
     LPUART_Type* lpuart = get_base(dev);
-    struct mcux_lpuart_data* data = (struct mcux_lpuart_data*)dev->data;
+    struct mcux_lpuart_data* data = dev->data;
     int ret;
 
     LOG_DBG("DMA call back on channel %d", channel);
     struct dma_status status;
-    int const get_status_result = dma_get_status(dma_dev, channel, &status);
-    if (get_status_result < 0) {
-        LOG_ERR("error on status get: %d", get_status_result);
+
+    int sts = dma_get_status(dma_dev, channel, &status);
+    if (sts < 0) {
+        LOG_ERR("error on status get: %d", sts);
     }
     else {
         LOG_DBG("DMA Status: b: %d dir: %d len_remain: %d", status.busy, status.dir,
@@ -841,21 +845,22 @@ static int mcux_lpuart_callback_set(struct device const* dev, uart_callback_t ca
 static int mcux_lpuart_tx(struct device const* dev, uint8_t const* buf, size_t len,
                           int32_t timeout_us) {
     struct mcux_lpuart_data* data = dev->data;
-    const struct mcux_lpuart_config* config = dev->config;
+    struct mcux_lpuart_config const* config = dev->config;
     LPUART_Type* lpuart = get_base(dev);
+    int ret;
 
     unsigned int key = irq_lock();
 
     /* If a previous transfer is still in progress, the async UART API requires -EBUSY. */
     struct dma_status status;
-    int const get_status_result = dma_get_status(config->tx_dma_config.dma_dev,
-                                                 config->tx_dma_config.dma_channel,
-                                                 &status);
 
-    if (get_status_result < 0) {
+    int sts = dma_get_status(config->tx_dma_config.dma_dev,
+                             config->tx_dma_config.dma_channel,
+                             &status);
+    if (sts < 0) {
         irq_unlock(key);
-        LOG_ERR("Failed to get DMA(Tx) status (%d)", get_status_result);
-        return (get_status_result);
+        LOG_ERR("Failed to get DMA(Tx) status (%d)", sts);
+        return (sts);
     }
 
     if (status.busy) {
@@ -864,24 +869,22 @@ static int mcux_lpuart_tx(struct device const* dev, uint8_t const* buf, size_t l
         return (-EBUSY);
     }
 
-    int ret;
-
     LPUART_EnableTxDMA(lpuart, false);
 
-    data->async.tx_dma_params.buf     = buf;
-    data->async.tx_dma_params.buf_len = len;
-    data->async.tx_dma_params.active_dma_block.source_address = (uint32_t)buf;
-    data->async.tx_dma_params.active_dma_block.dest_address =
-            LPUART_GetDataRegisterAddress(lpuart);
-    data->async.tx_dma_params.active_dma_block.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
-    data->async.tx_dma_params.active_dma_block.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-    data->async.tx_dma_params.active_dma_block.block_size = len;
-    data->async.tx_dma_params.active_dma_block.next_block = NULL;
+    struct mcux_lpuart_tx_dma_params* tx_dma_params = &data->async.tx_dma_params;
+
+    tx_dma_params->buf     = buf;
+    tx_dma_params->buf_len = len;
+    tx_dma_params->active_dma_block.source_address  = (uint32_t)buf;
+    tx_dma_params->active_dma_block.dest_address    = LPUART_GetDataRegisterAddress(lpuart);
+    tx_dma_params->active_dma_block.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+    tx_dma_params->active_dma_block.dest_addr_adj   = DMA_ADDR_ADJ_NO_CHANGE;
+    tx_dma_params->active_dma_block.block_size      = len;
+    tx_dma_params->active_dma_block.next_block      = NULL;
 
     ret = dma_config(config->tx_dma_config.dma_dev,
                      config->tx_dma_config.dma_channel,
                      (struct dma_config*)&config->tx_dma_config.dma_cfg);
-
     if (ret == 0) {
         LOG_DBG("Starting UART DMA TX Ch %u", config->tx_dma_config.dma_channel);
 
@@ -892,7 +895,7 @@ static int mcux_lpuart_tx(struct device const* dev, uint8_t const* buf, size_t l
             LOG_ERR("Failed to start DMA(Tx) Ch %d",
                     config->tx_dma_config.dma_channel);
         }
-        async_timer_start(&data->async.tx_dma_params.timeout_work, timeout_us);
+        async_timer_start(&tx_dma_params->timeout_work, timeout_us);
     }
     else {
         LOG_ERR("Error configuring UART DMA: %x", ret);
@@ -904,30 +907,31 @@ static int mcux_lpuart_tx(struct device const* dev, uint8_t const* buf, size_t l
 
 static int mcux_lpuart_tx_abort(struct device const* dev) {
     struct mcux_lpuart_data* data = dev->data;
-    const struct mcux_lpuart_config* config = dev->config;
+    struct mcux_lpuart_config const* config = dev->config;
     LPUART_Type* lpuart = get_base(dev);
+    int ret;
 
     LPUART_EnableTxDMA(lpuart, false);
     (void) k_work_cancel_delayable(&data->async.tx_dma_params.timeout_work);
     struct dma_status status;
-    int const get_status_result = dma_get_status(config->tx_dma_config.dma_dev,
-                                                 config->tx_dma_config.dma_channel,
-                                                 &status);
 
-    if (get_status_result < 0) {
+    int sts = dma_get_status(config->tx_dma_config.dma_dev,
+                             config->tx_dma_config.dma_channel,
+                             &status);
+    if (sts < 0) {
         LOG_ERR("Error querying TX DMA Status during abort.");
     }
 
-    const size_t bytes_transmitted = (get_status_result == 0) ?
-                    data->async.tx_dma_params.buf_len - status.pending_length : 0;
+    size_t bytes_xmit = (sts == 0)
+                        ? (data->async.tx_dma_params.buf_len - status.pending_length)
+                        : 0;
 
-    int const ret = dma_stop(config->tx_dma_config.dma_dev, config->tx_dma_config.dma_channel);
-
+    ret = dma_stop(config->tx_dma_config.dma_dev, config->tx_dma_config.dma_channel);
     if (ret == 0) {
         struct uart_event tx_aborted_event = {
             .type = UART_TX_ABORTED,
             .data.tx.buf = data->async.tx_dma_params.buf,
-            .data.tx.len = bytes_transmitted
+            .data.tx.len = bytes_xmit
         };
         async_user_callback(dev, &tx_aborted_event);
     }
@@ -939,21 +943,21 @@ static int mcux_lpuart_rx_enable(struct device const* dev, uint8_t* buf, const s
                                  const int32_t timeout_us) {
     LOG_DBG("Enabling UART RX DMA");
     struct mcux_lpuart_data* data = dev->data;
-    const struct mcux_lpuart_config* config = dev->config;
+    struct mcux_lpuart_config const* config = dev->config;
     LPUART_Type* lpuart = get_base(dev);
-
     struct mcux_lpuart_rx_dma_params* rx_dma_params = &data->async.rx_dma_params;
+    int ret;
 
     unsigned int key = irq_lock();
     struct dma_status status;
-    int const get_status_result = dma_get_status(config->rx_dma_config.dma_dev,
-                                                 config->rx_dma_config.dma_channel,
-                                                 &status);
 
-    if (get_status_result < 0) {
+    int sts = dma_get_status(config->rx_dma_config.dma_dev,
+                             config->rx_dma_config.dma_channel,
+                             &status);
+    if (sts < 0) {
         irq_unlock(key);
-        LOG_ERR("Failed to get DMA(Rx) status (%d)", get_status_result);
-        return (get_status_result);
+        LOG_ERR("Failed to get DMA(Rx) status (%d)", sts);
+        return (sts);
     }
 
     if (status.busy) {
@@ -977,7 +981,7 @@ static int mcux_lpuart_rx_enable(struct device const* dev, uint8_t* buf, const s
                                            kLPUART_FramingErrorInterruptEnable |
                                            kLPUART_ParityErrorInterruptEnable);
     prepare_rx_dma_block_config(dev);
-    int const ret = configure_and_start_rx_dma(config, data, lpuart);
+    ret = configure_and_start_rx_dma(config, lpuart);
 
     /* Request the next buffer for when this buffer is full for continuous reception */
     async_evt_rx_buf_request(dev);
@@ -1020,12 +1024,12 @@ static int mcux_lpuart_rx_buf_rsp(struct device const* dev, uint8_t* buf, size_t
 
 static void mcux_lpuart_async_rx_timeout(struct k_work* work) {
     struct k_work_delayable* dwork = k_work_delayable_from_work(work);
-    struct mcux_lpuart_rx_dma_params* rx_params = CONTAINER_OF(dwork,
-                                                               struct mcux_lpuart_rx_dma_params,
-                                                               timeout_work);
-    struct mcux_lpuart_async_data* async_data = CONTAINER_OF(rx_params,
-                                                             struct mcux_lpuart_async_data,
-                                                             rx_dma_params);
+    struct mcux_lpuart_rx_dma_params* rx_params;
+    struct mcux_lpuart_async_data const* async_data;
+
+    rx_params  = CONTAINER_OF(dwork, struct mcux_lpuart_rx_dma_params, timeout_work);
+    async_data = CONTAINER_OF(rx_params, struct mcux_lpuart_async_data, rx_dma_params);
+
     struct device const* dev = async_data->uart_dev;
 
     LOG_DBG("RX timeout");
@@ -1034,12 +1038,11 @@ static void mcux_lpuart_async_rx_timeout(struct k_work* work) {
 
 static void mcux_lpuart_async_tx_timeout(struct k_work* work) {
     struct k_work_delayable* dwork = k_work_delayable_from_work(work);
-    struct mcux_lpuart_tx_dma_params* tx_params = CONTAINER_OF(dwork,
-                                                               struct mcux_lpuart_tx_dma_params,
-                                                               timeout_work);
-    struct mcux_lpuart_async_data* async_data = CONTAINER_OF(tx_params,
-                                                             struct mcux_lpuart_async_data,
-                                                             tx_dma_params);
+    struct mcux_lpuart_tx_dma_params* tx_params;
+    struct mcux_lpuart_async_data const* async_data;
+
+    tx_params  = CONTAINER_OF(dwork, struct mcux_lpuart_tx_dma_params, timeout_work);
+    async_data = CONTAINER_OF(tx_params, struct mcux_lpuart_async_data, tx_dma_params);
     struct device const* dev = async_data->uart_dev;
 
     LOG_DBG("TX timeout");
@@ -1053,7 +1056,6 @@ static void mcux_lpuart_async_tx_timeout(struct k_work* work) {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static inline void mcux_lpuart_irq_driven_isr(struct device const* dev,
                                               struct mcux_lpuart_data* data,
-                                              const struct mcux_lpuart_config* config,
                                               const uint32_t status) {
     if (data->callback) {
         data->callback(dev, data->cb_data);
@@ -1068,7 +1070,6 @@ static inline void mcux_lpuart_irq_driven_isr(struct device const* dev,
 #if LPUART_ASYNC_ENABLE
 static inline void mcux_lpuart_async_isr(const struct device* dev,
                                          struct mcux_lpuart_data* data,
-                                         const struct mcux_lpuart_config* config,
                                          const uint32_t status) {
     /*
      * Handle RX errors first — they stop reception, making idle-line
@@ -1123,10 +1124,6 @@ static void mcux_lpuart_isr(struct device const* dev) {
     struct mcux_lpuart_data* data = dev->data;
     const uint32_t status = LPUART_GetStatusFlags(get_base(dev));
 
-    #if LPUART_ASYNC_ENABLE || defined(CONFIG_UART_INTERRUPT_DRIVEN)
-    const struct mcux_lpuart_config* config = dev->config;
-    #endif
-
     #if CONFIG_PM
     if (status & kLPUART_TransmissionCompleteFlag) {
         if (data->tx_poll_stream_on) {
@@ -1141,15 +1138,15 @@ static void mcux_lpuart_isr(struct device const* dev) {
 
     #if LPUART_ASYNC_ENABLE && defined(CONFIG_UART_INTERRUPT_DRIVEN)
     if (data->api_type == LPUART_IRQ_DRIVEN) {
-        mcux_lpuart_irq_driven_isr(dev, data, config, status);
+        mcux_lpuart_irq_driven_isr(dev, data, status);
     }
     else if (data->api_type == LPUART_ASYNC) {
-        mcux_lpuart_async_isr(dev, data, config, status);
+        mcux_lpuart_async_isr(dev, data, status);
     }
     #elif defined(CONFIG_UART_INTERRUPT_DRIVEN)
-    mcux_lpuart_irq_driven_isr(dev, data, config, status);
+    mcux_lpuart_irq_driven_isr(dev, data, status);
     #elif LPUART_ASYNC_ENABLE
-    mcux_lpuart_async_isr(dev, data, config, status);
+    mcux_lpuart_async_isr(dev, data, status);
     #endif /* API */
 }
 #endif /* CONFIG_UART_MCUX_LPUART_ISR_SUPPORT */
@@ -1330,7 +1327,7 @@ static int mcux_lpuart_configure_async(struct device const* dev) {
 #endif
 
 static int mcux_lpuart_configure_init(struct device const* dev, const struct uart_config* cfg) {
-    const struct mcux_lpuart_config* config = dev->config;
+    struct mcux_lpuart_config const* config = dev->config;
     struct mcux_lpuart_data* data = dev->data;
     lpuart_config_t uart_config;
     uint32_t clock_freq;
@@ -1343,13 +1340,10 @@ static int mcux_lpuart_configure_init(struct device const* dev, const struct uar
     }
 
     ret = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
-    if (ret != 0) {
-        /* Check if error is due to lack of support */
-        if (ret != -ENOSYS) {
-            /* Real error occurred */
-            LOG_ERR("Failed to configure clock: %d", ret);
-            return (ret);
-        }
+    if ((ret != 0) && (ret != -ENOSYS)) {
+        /* Check if error is due to real erroa (not -ENOSYS) */
+        LOG_ERR("Failed to configure clock: %d", ret);
+        return (ret);
     }
 
     LPUART_GetDefaultConfig(&uart_config);
@@ -1424,7 +1418,7 @@ static int mcux_lpuart_configure_init(struct device const* dev, const struct uar
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 static int mcux_lpuart_config_get(struct device const* dev, struct uart_config* cfg) {
-    struct mcux_lpuart_data* data = dev->data;
+    struct mcux_lpuart_data const* data = dev->data;
     *cfg = data->uart_config;
 
     return (0);
@@ -1539,7 +1533,7 @@ static int mcux_lpuart_line_ctrl_get(struct device const* dev,
 #endif /* CONFIG_UART_LINE_CTRL */
 
 static int mcux_lpuart_init(struct device const* dev) {
-    const struct mcux_lpuart_config* config = dev->config;
+    struct mcux_lpuart_config const* config = dev->config;
     struct mcux_lpuart_data* data = dev->data;
     struct uart_config* uart_api_config = &data->uart_config;
     int err;
@@ -1849,20 +1843,19 @@ void zephyr_gtest_uart_s32k3(void) {
 
 void zephyr_uart_s32k3_isr(const struct device* dev) {
     struct mcux_lpuart_data *data = dev->data;
-    const struct mcux_lpuart_config *config = dev->config;
     const uint32_t status = LPUART_GetStatusFlags(get_base(dev));
 
     #if LPUART_ASYNC_ENABLE && defined(CONFIG_UART_INTERRUPT_DRIVEN)
     if (data->api_type == LPUART_IRQ_DRIVEN) {
-        mcux_lpuart_irq_driven_isr(dev, data, config, status);
+        mcux_lpuart_irq_driven_isr(dev, data, status);
     }
     else if (data->api_type == LPUART_ASYNC) {
-        mcux_lpuart_async_isr(dev, data, config, status);
+        mcux_lpuart_async_isr(dev, data, status);
     }
     #elif defined(CONFIG_UART_INTERRUPT_DRIVEN)
-    mcux_lpuart_irq_driven_isr(dev, data, config, status);
+    mcux_lpuart_irq_driven_isr(dev, data, status);
     #elif LPUART_ASYNC_ENABLE
-    mcux_lpuart_async_isr(dev, data, config, status);
+    mcux_lpuart_async_isr(dev, data, status);
     #endif /* API */
 }
 
