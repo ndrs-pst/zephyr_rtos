@@ -1374,6 +1374,7 @@ Documentation Infrastructure:
 "Drivers: Audio":
   status: odd fixes
   collaborators:
+    - rriveramcrus
     - lyakh
     - lgirdwood
     - kv2019i
@@ -1409,6 +1410,21 @@ Documentation Infrastructure:
     - "area: Aux display"
   tests:
     - sample.drivers.auxdisplay
+
+"Drivers: Buzzer":
+  status: maintained
+  maintainers:
+    - carlocaione
+  files:
+    - doc/hardware/peripherals/buzzer.rst
+    - drivers/buzzer/
+    - dts/bindings/buzzer/
+    - include/zephyr/drivers/buzzer.h
+    - samples/drivers/buzzer/
+  labels:
+    - "area: Buzzer"
+  tests:
+    - sample.drivers.buzzer
 
 "Drivers: CAN":
   status: maintained
@@ -3100,6 +3116,7 @@ Infineon Platforms:
     - Peterson-Brett
     - lauracarlesso
     - merin-infineon
+    - ifx-rmcs
   files:
     - boards/cypress/
     - boards/infineon/
@@ -6236,6 +6253,7 @@ West:
     - Peterson-Brett
     - lauracarlesso
     - merin-infineon
+    - ifx-rmcs
   files:
     - modules/Kconfig.infineon
     - modules/hal_infineon/

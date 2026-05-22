@@ -1473,7 +1473,16 @@ static inline bool device_api_is(void const* api, void const* sec_start, void co
  *
  * @return the pointer to the device API.
  */
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
+#define DEVICE_API_GET(_class, _dev)                                            \
+    ({                                                                          \
+        __ASSERT(_dev != NULL, "device is NULL");                               \
+        __ASSERT(DEVICE_API_IS(_class, _dev), "device API is not %s", STRINGIFY(_class)); \
+        Z_DEVICE_API_GET(_class, _dev);                                         \
+    })
+#else
 #define DEVICE_API_GET(_class, _dev) Z_DEVICE_API_GET(_class, _dev)
+#endif
 
 #ifdef __cplusplus
 }
