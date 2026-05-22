@@ -16,6 +16,7 @@
 
 #include <infineon_kconfig.h>
 #include <cy_gpio.h>
+#include <cy_sysclk.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_ifx, CONFIG_GPIO_LOG_LEVEL);
@@ -177,6 +178,14 @@ static int gpio_ifx_configure(const struct device* dev, gpio_pin_t pin, gpio_fla
             return (-ENOTSUP);
     }
 
+    #if defined(CY_MMIO_SMIF0_PERI_NR)
+    if (base == (GPIO_PRT_Type*)SMIF0_CORE_SMIF_GPIO_SMIF_PRT0) {
+        Cy_SysClk_PeriGroupSlaveInit(CY_MMIO_SMIF0_PERI_NR, CY_MMIO_SMIF0_GROUP_NR,
+                                     CY_MMIO_SMIF0_SLAVE_NR, CY_MMIO_SMIF0_CLK_HF_NR);
+        Cy_GPIO_SetHSIOM(base, pin, HSIOM_SEL_ACT_14);
+    }
+    #endif
+
     #if defined(CY_PDL_TZ_ENABLED)
     Cy_GPIO_Pin_SecFastInit(base, pin, drive_mode, pin_val, HSIOM_SEL_GPIO);
     #else
@@ -239,6 +248,16 @@ static int gpio_ifx_port_toggle_bits(const struct device* dev, uint32_t mask) {
     return (0);
 }
 
+static inline GPIO_PRT_Type* gpio_ifx_int_base(const struct gpio_ifx_config* const cfg) {
+    #if defined(CY_MMIO_SMIF0_PERI_NR)
+    if (cfg->regs == (GPIO_PRT_Type*)SMIF0_CORE_SMIF_GPIO_SMIF_PRT0) {
+        return (GPIO_PRT1);
+    }
+    #endif
+
+    return (cfg->regs);
+}
+
 static uint32_t gpio_ifx_get_pending_int(const struct device* dev) {
     const struct gpio_ifx_config* const cfg = dev->config;
     GPIO_PRT_Type* const base = cfg->regs;
@@ -259,9 +278,9 @@ static uint32_t __maybe_unused gpio_get_pending_pins(const struct gpio_ifx_confi
 
 static void __maybe_unused gpio_ifx_isr(const struct device* dev) {
     const struct gpio_ifx_config* const cfg = dev->config;
-    GPIO_PRT_Type* const base = cfg->regs;
+    GPIO_PRT_Type* int_base = gpio_ifx_int_base(cfg);
     struct gpio_ifx_data* const data = dev->data;
-    uint32_t pending = gpio_get_pending_pins(dev->config, cfg->regs);
+    uint32_t pending = gpio_get_pending_pins(cfg, cfg->regs);
 
     if (pending == 0U) {
         return;
@@ -269,7 +288,7 @@ static void __maybe_unused gpio_ifx_isr(const struct device* dev) {
 
     for (size_t i = 0; i < cfg->ngpios; i++) {
         if (pending & BIT(i)) {
-            Cy_GPIO_ClearInterrupt(base, i);
+            Cy_GPIO_ClearInterrupt(int_base, i);
         }
     }
 
@@ -280,15 +299,17 @@ static int gpio_ifx_pin_interrupt_configure(const struct device* dev, gpio_pin_t
                                             enum gpio_int_mode mode, enum gpio_int_trig trig) {
     uint32_t trig_pdl = CY_GPIO_INTR_DISABLE;
     const struct gpio_ifx_config* const cfg = dev->config;
-    GPIO_PRT_Type* const base = cfg->regs;
+    GPIO_PRT_Type* base = cfg->regs;
+    /* SMIF-shared ports route interrupt control through the standard GPIO peripheral. */
+    GPIO_PRT_Type* int_base = gpio_ifx_int_base(cfg);
 
     if (pin >= cfg->ngpios) {
         return (-EINVAL);
     }
 
     if (mode == GPIO_INT_MODE_DISABLED) {
-        Cy_GPIO_SetInterruptEdge(base, pin, CY_GPIO_INTR_DISABLE);
-        Cy_GPIO_ClearInterrupt(base, pin);
+        Cy_GPIO_SetInterruptEdge(int_base, pin, CY_GPIO_INTR_DISABLE);
+        Cy_GPIO_ClearInterrupt(int_base, pin);
         return (0);
     }
 
@@ -313,14 +334,26 @@ static int gpio_ifx_pin_interrupt_configure(const struct device* dev, gpio_pin_t
             return (-ENOTSUP);
     }
 
-    Cy_GPIO_SetInterruptEdge(base, pin, trig_pdl);
-    Cy_GPIO_ClearInterrupt(base, pin);
+    #if defined(CY_MMIO_SMIF0_PERI_NR)
+    if (int_base != base) {
+        Cy_GPIO_SetHSIOM_SecPin(int_base, pin, CY_GPIO_HSIOM_SECURE_ACCESS);
+    }
+    #endif
+
+    Cy_GPIO_SetInterruptEdge(int_base, pin, trig_pdl);
+    Cy_GPIO_ClearInterrupt(int_base, pin);
 
     #if !defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
     /* Interrupt mask function wants a 0 for disabled, 1 for enabled as the value */
     uint32_t int_en = ((mode == GPIO_INT_MODE_DISABLED) ? 0 : 1);
 
-    Cy_GPIO_SetInterruptMask(base, pin, int_en);
+    Cy_GPIO_SetInterruptMask(int_base, pin, int_en);
+    #endif
+
+    #if defined(CY_MMIO_SMIF0_PERI_NR)
+    if (int_base != base) {
+        Cy_GPIO_SetHSIOM_SecPin(int_base, pin, 1U);
+    }
     #endif
 
     return (0);
