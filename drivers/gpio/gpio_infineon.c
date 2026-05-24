@@ -299,7 +299,7 @@ static int gpio_ifx_pin_interrupt_configure(const struct device* dev, gpio_pin_t
                                             enum gpio_int_mode mode, enum gpio_int_trig trig) {
     uint32_t trig_pdl = CY_GPIO_INTR_DISABLE;
     const struct gpio_ifx_config* const cfg = dev->config;
-    GPIO_PRT_Type* base = cfg->regs;
+    GPIO_PRT_Type const* base = cfg->regs;
     /* SMIF-shared ports route interrupt control through the standard GPIO peripheral. */
     GPIO_PRT_Type* int_base = gpio_ifx_int_base(cfg);
 
@@ -455,7 +455,7 @@ static __maybe_unused void gpio_shared_isr(const struct device* dev) {
 #define GPIO_SHARED_PORT_DEVICES(n) DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(n, DEVICE_DT_GET, (,))
 
 #define GPIO_SHARED_INIT(n)                                     \
-    const static struct gpio_shared_config gpio_shared##n##_cfg = { \
+    static struct gpio_shared_config DT_CONST gpio_shared##n##_cfg = { \
         .port_count = DT_INST_CHILD_NUM_STATUS_OKAY(n),         \
         .ports = {GPIO_SHARED_PORT_DEVICES(n)},                 \
     };                                                          \
@@ -471,3 +471,51 @@ static __maybe_unused void gpio_shared_isr(const struct device* dev) {
                           POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_SHARED_INIT)
+
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+#define IFX_GPIO_CFG_REG_INIT(n) \
+    zephyr_gtest_gpio_ifx_sub(DEVICE_DT_GET(DT_DRV_INST(n)), \
+                              &gpio_ifx_data_##n, \
+                              &gpio_ifx_config_##n);
+
+#define GPIO_ADDR_PRT(x) (GPIO_BASE + ((x) * sizeof(GPIO_PRT_Type)))
+
+void zephyr_gtest_gpio_ifx_sub(struct device const* dev,
+                               struct gpio_ifx_data* data,
+                               struct gpio_ifx_config* cfg) {
+    mm_reg_t base = (mm_reg_t)cfg->regs;
+    size_t indx;
+    size_t ofs;
+    int rc;
+
+    if ((GPIO_ADDR_PRT(21) >= base) && (base >= GPIO_ADDR_PRT(0))) {
+        ofs = (base - GPIO_ADDR_PRT(0));
+        indx = ofs / sizeof(GPIO_PRT_Type);
+
+        cfg->regs = (GPIO_PRT_Type*)ut_mcu_gpio_ptr[indx];
+    }
+
+    if (((mm_reg_t)SMIF0_CORE_SMIF_GPIO_SMIF_PRT2 >= base) &&
+        (base >= (mm_reg_t)SMIF0_CORE_SMIF_GPIO_SMIF_PRT0)) {
+        ofs = (base - (mm_reg_t)SMIF0_CORE_SMIF_GPIO_SMIF_PRT0);
+        indx = ofs / sizeof(GPIO_PRT_Type);
+
+        cfg->regs = (GPIO_PRT_Type*)ut_mcu_gpio_smif_ptr[indx];
+    }
+
+    rc = dev->ops.init(dev);
+    if (rc == 0) {
+        dev->state->initialized = true;
+        dev->state->init_res = 0U;
+    }
+}
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT infineon_gpio
+
+void zephyr_gtest_gpio_ifx(void) {
+    DT_INST_FOREACH_STATUS_OKAY(IFX_GPIO_CFG_REG_INIT)
+}
+#endif

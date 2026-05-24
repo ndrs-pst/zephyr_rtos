@@ -21,6 +21,7 @@
  *
  * Entries will be NULL if the GPIO port is not enabled.
  */
+#if (__GTEST == 0) /* #CUSTOM@NDRS */
 static GPIO_PRT_Type *const gpio_ports[] = {
 	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt0)),  GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt1)),
 	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt2)),  GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt3)),
@@ -33,6 +34,9 @@ static GPIO_PRT_Type *const gpio_ports[] = {
 	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt16)), GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt17)),
 	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt18)), GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt19)),
 	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt20)), GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt21))};
+#else
+static GPIO_PRT_Type* gpio_ports[22];
+#endif
 
 /* @brief This function returns gpio drive mode, according to.
  * bias and drive mode params defined in pinctrl node.
@@ -122,7 +126,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 {
 	ARG_UNUSED(reg);
 
-	for (uint8_t i = 0U; i < pin_cnt; i++) {
+	for (size_t i = 0U; i < pin_cnt; i++) {
 		uint32_t drv_mode = soc_gpio_get_drv_mode(pins[i].pincfg);
 		uint32_t hsiom = CAT1_PINMUX_GET_HSIOM_FUNC(pins[i].pinmux);
 		uint32_t port_num = CAT1_PINMUX_GET_PORT_NUM(pins[i].pinmux);
@@ -156,3 +160,13 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 
 	return 0;
 }
+
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+void zephyr_gtest_pinctrl_ifx(void) {
+	for (size_t i = 0U; i < ARRAY_SIZE(gpio_ports); i++) {
+		gpio_ports[i] = (GPIO_PRT_Type*)ut_mcu_gpio_ptr[i];
+	}
+}
+#endif

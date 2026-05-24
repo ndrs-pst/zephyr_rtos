@@ -208,8 +208,8 @@ cy_rslt_t ifx_cat1_uart_set_baud(const struct device* dev, uint32_t baudrate) {
     struct ifx_cat1_uart_data* data = dev->data;
     const struct ifx_cat1_uart_config* const config = dev->config;
 
-    uint8_t  best_oversample = IFX_UART_OVERSAMPLE_MIN;
-    uint8_t  best_difference = 0xFF;
+    size_t best_oversample = IFX_UART_OVERSAMPLE_MIN;
+    size_t best_difference = 0xFF;
     uint32_t divider;
 
     uint32_t peri_frequency;
@@ -235,7 +235,7 @@ cy_rslt_t ifx_cat1_uart_set_baud(const struct device* dev, uint32_t baudrate) {
         uint32_t tmp_divider = ((peri_frequency + ((baudrate * i) / 2))) / (baudrate * i);
 
         uint32_t actual_baud = (peri_frequency / (tmp_divider * i));
-        uint8_t difference = ifx_uart_baud_diff(actual_baud, baudrate);
+        uint32_t difference = ifx_uart_baud_diff(actual_baud, baudrate);
 
         if (difference < best_difference) {
             best_difference = difference;
@@ -261,7 +261,7 @@ cy_rslt_t ifx_cat1_uart_set_baud(const struct device* dev, uint32_t baudrate) {
                                                            (divider - 1), 0);
     }
 
-    if (status < 0) {
+    if (status != CY_RSLT_SUCCESS) {
         return (status);
     }
 

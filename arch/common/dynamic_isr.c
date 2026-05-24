@@ -32,6 +32,7 @@ void __weak z_isr_install(unsigned int irq, void (*routine)(const void *),
 	_sw_isr_table[table_idx].isr = routine;
 }
 
+#if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 /* Some architectures don't/can't interpret flags or priority and have
  * no more processing to do than this.  Provide a generic fallback.
  */
@@ -47,3 +48,4 @@ int __weak arch_irq_connect_dynamic(unsigned int irq,
 	z_isr_install(irq, routine, parameter);
 	return irq;
 }
+#endif

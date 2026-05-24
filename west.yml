@@ -131,7 +131,7 @@ manifest:
       path: modules/lib/cmsis-nn
     - name: cmsis_6
       repo-path: CMSIS_6
-      revision: aab10ee69ec45f8d0ec6c78bfddda8e33e4bbd59
+      revision: 7dd4765774f630bf717b9d9a36ea1062d98ac9a1
       path: modules/hal/cmsis_6
       groups:
         - hal
@@ -190,7 +190,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 473a1006ff45dcf012e9e0448498a6009fc6c4a9
+      revision: 4cd18cfb511b14703d52fac737e9964495d8db1b
       path: modules/hal/infineon
       groups:
         - hal

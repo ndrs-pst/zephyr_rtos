@@ -705,7 +705,7 @@ static int ifx_autanalog_sar_adc_init(const struct device* dev) {
     static void ifx_autanalog_sar_adc_config_func_##n(void);    \
     static struct ifx_autanalog_sar_adc_config DT_CONST ifx_autanalog_sar_adc_config_##n = { \
         .irq_func    = ifx_autanalog_sar_adc_config_func_##n,   \
-        .mfd = DEVICE_DT_GET(DT_INST_PARENT(n)),                \
+        .mfd         = DEVICE_DT_GET(DT_INST_PARENT(n)),        \
         .vref_source = DT_INST_ENUM_IDX(n, vref_source),        \
         .linear_cal  = DT_INST_PROP(n, linear_cal),             \
         .offset_cal  = DT_INST_PROP(n, offset_cal)};            \
@@ -726,3 +726,32 @@ static int ifx_autanalog_sar_adc_init(const struct device* dev) {
     }
 
 DT_INST_FOREACH_STATUS_OKAY(IFX_AUTANALOG_SAR_ADC_INIT)
+
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+#define IFX_ADC_CFG_REG_INIT(n) \
+    zephyr_gtest_adc_ifx_reg_init(DEVICE_DT_GET(DT_DRV_INST(n)), \
+                                  &ifx_autanalog_sar_adc_data_##n, \
+                                  &ifx_autanalog_sar_adc_config_##n);
+
+static void zephyr_gtest_adc_ifx_reg_init(const struct device* dev,
+                                          struct ifx_autanalog_sar_adc_data* data,
+                                          struct ifx_autanalog_sar_adc_config* cfg) {
+    ARG_UNUSED(data);
+    uintptr_t mfd_addr = (uintptr_t)cfg->mfd;
+    int rc;
+
+    (void) mfd_addr;
+
+    rc = dev->ops.init(dev);
+    if (rc == 0) {
+        dev->state->initialized = true;
+        dev->state->init_res = 0U;
+    }
+}
+
+void zephyr_gtest_adc_ifx(void) {
+    DT_INST_FOREACH_STATUS_OKAY(IFX_ADC_CFG_REG_INIT)
+}
+#endif

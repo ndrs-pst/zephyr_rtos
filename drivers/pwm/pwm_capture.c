@@ -14,7 +14,7 @@ struct z_pwm_capture_cb_data {
     uint32_t period;
     uint32_t pulse;
     struct k_sem sem;
-    int      status;
+    int status;
 };
 
 static void z_pwm_capture_cycles_callback(const struct device* dev,

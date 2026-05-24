@@ -25,7 +25,7 @@ const cy_sau_config_t sau_config[CY_SAU_REGION_CNT] = {
 	{
 		.reg_num = 2U,
 		.base_addr = 0x40000000U,
-		.size = 0xc0000000U,
+		.size = 0xC0000000U,
 		.end_addr = 0xFFFFFFFFU,
 		.nsc = false,
 	},
@@ -34,10 +34,12 @@ const cy_sau_config_t sau_config[CY_SAU_REGION_CNT] = {
 void cy_sau_init(void)
 {
 	SAU->CTRL |= SAU_CTRL_ENABLE_Msk;
-	for (uint8_t i = 0U; i < CY_SAU_REGION_CNT; i++) {
-		SAU->RNR = sau_config[i].reg_num;
-		SAU->RBAR = (sau_config[i].base_addr & SAU_RBAR_BADDR_Msk);
-		SAU->RLAR = ((sau_config[i].end_addr & SAU_RLAR_LADDR_Msk) |
-			     (sau_config[i].nsc ? SAU_RLAR_NSC_Msk : 0U) | SAU_RLAR_ENABLE_Msk);
+	for (size_t i = 0U; i < CY_SAU_REGION_CNT; i++) {
+		cy_sau_config_t const* config = &sau_config[i];
+
+		SAU->RNR  = config->reg_num;
+		SAU->RBAR = (config->base_addr & SAU_RBAR_BADDR_Msk);
+		SAU->RLAR = ((config->end_addr & SAU_RLAR_LADDR_Msk) |
+			     (config->nsc ? SAU_RLAR_NSC_Msk : 0U) | SAU_RLAR_ENABLE_Msk);
 	}
 }

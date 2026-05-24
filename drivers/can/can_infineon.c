@@ -100,8 +100,8 @@ static int can_infineon_get_core_clock(const struct device* dev, uint32_t* rate)
 static int can_infineon_init(const struct device* dev) {
     const struct can_mcan_config* mcan_cfg = dev->config;
     const struct can_infineon_config* ifx_cfg = mcan_cfg->custom;
-    struct can_mcan_data* mcan_data = dev->data;
-    struct can_infineon_data* data = mcan_data->custom;
+    const struct can_mcan_data* mcan_data = dev->data;
+    const struct can_infineon_data* data = mcan_data->custom;
     cy_rslt_t result;
     int ret;
 
@@ -294,7 +294,7 @@ static int canfd_ifx_ctrl_init(const struct device* dev) {
 }
 
 #define CANFD_IFX_CTRL_INIT(n)                                                                     \
-    static const struct canfd_ifx_ctrl_config canfd_ifx_ctrl_cfg_##n = {                           \
+    static struct canfd_ifx_ctrl_config DT_CONST canfd_ifx_ctrl_cfg_##n = {                        \
         .base = (CANFD_Type*)DT_INST_REG_ADDR_BY_NAME(n, wrapper),                                 \
         .ecc_enabled = DT_INST_PROP(n, ecc_enabled),                                               \
         IF_ENABLED(CONFIG_CAN_RX_TIMESTAMP,                                                        \
@@ -304,3 +304,63 @@ static int canfd_ifx_ctrl_init(const struct device* dev) {
                           POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(CANFD_IFX_CTRL_INIT)
+
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
+#include "mcu_reg_stub.h"
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT infineon_can
+
+#define IFX_CAN_CFG_REG_INIT(n) \
+    zephyr_gtest_can_ifx_reg_init(DEVICE_DT_GET(DT_DRV_INST(n)), \
+                                  &can_infineon_data_##n, \
+                                  &can_infineon_cfg_##n);
+
+void zephyr_gtest_can_ifx_reg_init(const struct device* dev,
+                                   struct can_infineon_data* data,
+                                   struct can_infineon_config* cfg) {
+    mem_addr_t base_addr = cfg->base;
+    int rc;
+
+    switch (base_addr) {
+        case CANFD0_BASE : {
+            cfg->base = (mem_addr_t)ut_mcu_canfd0_ch0_ptr;
+            cfg->mrba = (mem_addr_t)ut_mcu_canfd0_ch0_mram_area;
+            cfg->mram = (mem_addr_t)ut_mcu_canfd0_ch0_mram_area;
+            break;
+        }
+
+        case (CANFD0_BASE + 0x200) : {
+            cfg->base = (mem_addr_t)ut_mcu_canfd0_ch1_ptr;
+            cfg->mrba = (mem_addr_t)ut_mcu_canfd0_ch1_mram_area;
+            cfg->mram = (mem_addr_t)ut_mcu_canfd0_ch1_mram_area;
+            break;
+        }
+
+        default: {
+            break;
+        }
+    }
+
+    rc = dev->ops.init(dev);
+    if (rc == 0) {
+        dev->state->initialized = true;
+        dev->state->init_res = 0U;
+    }
+}
+
+void zephyr_gtest_can_ifx(void) {
+    struct device const* dev;
+    int rc;
+
+    canfd_ifx_ctrl_cfg_0.base = (CANFD_Type*)ut_mcu_canfd0_ptr;
+    dev = DEVICE_DT_GET(DT_NODELABEL(canfd0));
+    rc = canfd_ifx_ctrl_init(dev);
+    if (rc == 0) {
+        dev->state->initialized = true;
+        dev->state->init_res = 0U;
+    }
+
+    DT_INST_FOREACH_STATUS_OKAY(IFX_CAN_CFG_REG_INIT);
+}
+#endif
