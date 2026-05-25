@@ -143,7 +143,7 @@ static int cmd_mdio_read(const struct shell *sh, size_t argc, char **argv)
 		return -EIO;
 	}
 
-	shell_print(sh, "%x[%x]: 0x%x", port_addr, reg_addr, data);
+	shell_print(sh, "%x[%x]: 0x%04X", port_addr, reg_addr, data);
 
 	return 0;
 }
@@ -202,7 +202,7 @@ static int cmd_mdio_read_c45(const struct shell *sh, size_t argc, char **argv)
 		return -EIO;
 	}
 
-	shell_print(sh, "%x[%x:%x]: 0x%x", port_addr, dev_addr, reg_addr, data);
+	shell_print(sh, "%x[%x:%x]: 0x%04X", port_addr, dev_addr, reg_addr, data);
 
 	return 0;
 }
