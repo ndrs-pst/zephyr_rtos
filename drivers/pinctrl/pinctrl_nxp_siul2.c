@@ -11,7 +11,7 @@
 #define SIUL2_MSCR(n) (0x240 + (4 * (n)))
 
 /* SIUL2 Input Multiplexed Signal Configuration Register */
-#define SIUL2_IMCR(n) (0xa40 + (4 * (n)))
+#define SIUL2_IMCR(n) (0xA40 + (4 * (n)))
 
 #define SIUL2_MSCR_MAX_IDX 512U
 #define SIUL2_IMCR_MAX_IDX 512U

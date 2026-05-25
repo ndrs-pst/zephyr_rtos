@@ -34,6 +34,7 @@
 #define SIUL2_MSCR_IBE(v)   FIELD_PREP(SIUL2_MSCR_IBE_MASK, (v))
 #define SIUL2_MSCR_OBE_MASK BIT(21)
 #define SIUL2_MSCR_OBE(v)   FIELD_PREP(SIUL2_MSCR_OBE_MASK, (v))
+
 /* SIUL2 Input Multiplexed Signal Configuration */
 #define SIUL2_IMCR_SSS_MASK GENMASK(3, 0)
 #define SIUL2_IMCR_SSS(v)   FIELD_PREP(SIUL2_IMCR_SSS_MASK, (v))
