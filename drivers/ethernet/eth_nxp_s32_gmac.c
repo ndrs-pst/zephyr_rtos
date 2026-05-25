@@ -118,7 +118,8 @@ static void phy_link_state_changed(const struct device* pdev,
         /* Set MAC configuration */
         Gmac_Ip_SetSpeed(cfg->instance, gmac_cfg.Speed);
 
-        cfg->base->MAC_CONFIGURATION |= GMAC_MAC_CONFIGURATION_DM(gmac_cfg.Duplex);
+        /* Set duplex mode */
+        Gmac_Ip_SetDuplex(cfg->instance, gmac_cfg.Duplex);
 
         LOG_DBG("Link up");
         net_eth_carrier_on(ctx->iface);
@@ -312,7 +313,7 @@ static int eth_nxp_s32_tx(const struct device* dev, struct net_pkt* pkt) {
 
     buf.Length = (uint16_t)pkt_len;
     buf.Data   = NULL;
-    status     = Gmac_Ip_GetTxBuff(cfg->instance, cfg->tx_ring_idx, &buf, NULL);
+    status = Gmac_Ip_GetTxBuff(cfg->instance, cfg->tx_ring_idx, &buf, NULL);
     if (status != GMAC_STATUS_SUCCESS) {
         LOG_ERR("Failed to get tx buffer (%d)", status);
         res = -ENOBUFS;
@@ -327,7 +328,7 @@ static int eth_nxp_s32_tx(const struct device* dev, struct net_pkt* pkt) {
     }
 
     buf.Length = (uint16_t)pkt_len;
-    status     = Gmac_Ip_SendFrame(cfg->instance, cfg->tx_ring_idx, &buf, &tx_options);
+    status = Gmac_Ip_SendFrame(cfg->instance, cfg->tx_ring_idx, &buf, &tx_options);
     if (status != GMAC_STATUS_SUCCESS) {
         LOG_ERR("Failed to tx frame (%d)", status);
         res = -EIO;
