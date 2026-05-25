@@ -1861,7 +1861,7 @@ static inline bool net_ipv6_addr_based_on_ll(struct net_in6_addr const* addr,
  *
  * @return Pointer to socket address (struct sockaddr)
  */
-static inline struct net_sockaddr* net_sad(const struct net_sockaddr_storage* addr) {
+static inline struct net_sockaddr* net_sad(struct net_sockaddr_storage* addr) {
     return (struct net_sockaddr*)addr;
 }
 

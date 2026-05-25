@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Marvell 88E1510 Gigabit Ethernet PHY
+
+compatible: "marvell,88e1510"
+
+include:
+  - name: ethernet-phy-common.yaml
+  - name: ethernet-phy-reset-gpios.yaml
+
+on-bus: mdio
+
+properties:
+  default-speeds:
+    default:
+      - "1000BASE Full-Duplex"
+      - "100BASE Full-Duplex"
+      - "10BASE Full-Duplex"

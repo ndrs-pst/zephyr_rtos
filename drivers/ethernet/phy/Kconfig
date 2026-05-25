@@ -133,6 +133,15 @@ config PHY_REALTEK_RTL8211F
 	help
 	  Enable Realtek RTL8211F Ethernet PHY Driver
 
+config PHY_MARVELL_88E1510
+	bool "Marvell 88E1510 Gigabit Ethernet PHY Driver"
+	default y
+	depends on DT_HAS_MARVELL_88E1510_ENABLED
+	select MDIO
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_MARVELL_88E1510),reset-gpios)
+	help
+	  Enable Marvell 88E1510 Gigabit Ethernet PHY Driver.
+
 config PHY_QUALCOMM_AR8031
 	bool "Qualcomm Atheros AR8031 Ethernet PHY Driver"
 	default y
