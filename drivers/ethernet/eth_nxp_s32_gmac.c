@@ -162,6 +162,15 @@ static int select_phy_interface(Gmac_Ip_MiiModeType mode) {
 
     IP_DCM_GPR->DCMRWF1 = (IP_DCM_GPR->DCMRWF1 & ~DCM_GPR_DCMRWF1_EMAC_CONF_SEL_MASK) | regval;
 
+    if (mode == GMAC_RGMII_MODE) {
+        /* Source RGMII_RX_CLK from external Pad */
+        IP_DCM_GPR->DCMRWF3 = (IP_DCM_GPR->DCMRWF3 & ~DCM_GPR_DCMRWF3_MAC_RX_CLK_MUX_BYPASS_MASK) |
+                              FIELD_PREP(DCM_GPR_DCMRWF3_MAC_RX_CLK_MUX_BYPASS_MASK, 1U);
+
+        /* Enable RGMII_TX_CLK on GPIO Pad */
+        IP_DCM_GPR->DCMRWF1 |= BIT(31);
+    }
+
     return (0);
 }
 #else
