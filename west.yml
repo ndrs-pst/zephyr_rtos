@@ -174,7 +174,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 2a5bec22444196328e262561e9dd7b2ea1a21b20
+      revision: 7f2e2f94ac76c7161c94d26b9806020c2de40389
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -205,12 +205,12 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 3c08112f3d92c81b98134479c01d3cfd40f54016
+      revision: 1a6de0af0a0e5f65b88d52df006aa8cdf29fe92f
       path: modules/hal/nordic
       groups:
         - hal
     - name: hal_nuvoton
-      revision: fc037be030993efd998c89309c0f840f31491ca6
+      revision: 3b93ad491b712d22a5216e0f78ecc6de470ed37d
       path: modules/hal/nuvoton
       groups:
         - hal
@@ -391,7 +391,7 @@ manifest:
       groups:
         - debug
     - name: tf-m-tests
-      revision: 42f0fb9250acdd62219a13b8d272072f94446b84
+      revision: 7bb7b7999ee74a0aebb9a91fd8056698c552008b
       path: modules/tee/tf-m/tf-m-tests
       groups:
         - testing

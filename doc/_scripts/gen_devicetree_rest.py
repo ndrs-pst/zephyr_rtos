@@ -881,15 +881,24 @@ def print_property_table(prop_specs, string_io, deprecated=False):
         if prop_spec.required:
             details += '\n\nThis property is **required**.'
 
-        if prop_spec.default:
+        if prop_spec.default is not None:
             details += f'\n\nDefault value: ``{format_value(prop_spec.default)}``'
 
-        if prop_spec.const:
+        if prop_spec.const is not None:
             details += f'\n\nConstant value: ``{format_value(prop_spec.const)}``'
-        elif prop_spec.enum:
+
+        if prop_spec.enum is not None:
             details += ('\n\nLegal values: ' +
                         ', '.join(f'``{format_value(val)}``' for val in
                                   prop_spec.enum))
+
+        if prop_spec.min is not None and prop_spec.max is not None:
+            details += (f'\n\nValue range: ``{format_value(prop_spec.min)}`` to '
+                        f'``{format_value(prop_spec.max)}``')
+        elif prop_spec.min is not None:
+            details += f'\n\nMinimum value: ``{format_value(prop_spec.min)}``'
+        elif prop_spec.max is not None:
+            details += f'\n\nMaximum value: ``{format_value(prop_spec.max)}``'
 
         if prop_spec.name in DETAILS_IN_IMPORTANT_PROPS:
             details += (f'\n\nSee {zref("dt-important-props")} for more '
