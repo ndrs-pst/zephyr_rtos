@@ -23,7 +23,7 @@ extern "C" {
 
 /* Low-level primitives come in several styles: */
 
-#if (defined(CONFIG_ATOMIC_OPERATIONS_C) || (__GTEST == 1U)) /* @CUSTOM@NDRS */
+#if (defined(CONFIG_ATOMIC_OPERATIONS_C) || (__GTEST == 1)) /* @CUSTOM@NDRS */
 /* Generic-but-slow implementation based on kernel locking and syscalls */
 #include <zephyr/sys/atomic_c.h>
 #elif defined(CONFIG_ATOMIC_OPERATIONS_ARCH)

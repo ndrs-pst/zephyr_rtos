@@ -359,7 +359,7 @@ static int stm32_gpioport_init(const struct device* dev) {
 
 FOR_EACH_IDX(DEVICE_INIT_IF_OKAY, (;), STM32_GPIO_PORTS_LIST_LWR);
 
-#if (__GTEST == 1U)                         /* #CUSTOM@NDRS */
+#if (__GTEST == 1) /* #CUSTOM@NDRS */
 #include "mcu_reg_stub.h"
 
 #define STM32_GPIO_CFG_REG_INIT(id) \

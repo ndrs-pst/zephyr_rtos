@@ -3082,4 +3082,4 @@ void zephyr_gtest_spi_stm32(void) {
     DT_INST_FOREACH_STATUS_OKAY(STM32_SPI_CFG_REG_INIT)
 }
 
-#endif /* (__GTEST == 1U) */
+#endif /* (__GTEST == 1) */

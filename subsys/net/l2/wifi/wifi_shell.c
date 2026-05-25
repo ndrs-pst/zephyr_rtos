@@ -5039,7 +5039,7 @@ SHELL_SUBCMD_ADD((wifi), wps_pin, NULL,
 SHELL_SUBCMD_SET_CREATE(wifi_commands, (wifi));
 
 SHELL_CMD_REGISTER(wifi, &wifi_commands, "Wi-Fi commands", NULL);
-#endif /* (__GTEST == 0U) */
+#endif /* (__GTEST == 0) */
 
 static int wifi_shell_init(void)
 {

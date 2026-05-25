@@ -738,4 +738,4 @@ void zephyr_gtest_flash_simulator(void) {
 	DT_INST_FOREACH_STATUS_OKAY(FLASH_SIMULATOR_DEV_INIT)
 }
 
-#endif /* (__GTEST == 1U) */
+#endif /* (__GTEST == 1) */

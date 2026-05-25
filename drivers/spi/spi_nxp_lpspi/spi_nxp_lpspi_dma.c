@@ -521,4 +521,4 @@ void zephyr_gtest_spi_s32k3_dma(void) {
     DT_INST_FOREACH_STATUS_OKAY(NXP_LPSPI_DMA_CFG_REG_INIT)
 }
 
-#endif /* (__GTEST == 1U) */
+#endif /* (__GTEST == 1) */
