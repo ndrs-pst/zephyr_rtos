@@ -24,6 +24,11 @@ LOG_MODULE_REGISTER(phy_marvell_88e1510, CONFIG_PHY_LOG_LEVEL);
 #define MARVELL_88E1510_PHY_ID      0x01410DD0U
 #define MARVELL_88E1510_PHY_ID_MASK 0xFFFFFFF0U
 
+/* Chip specific registers */
+#define MARVELL_PAGE_SELECT_REG     22
+#define MARVELL_LED_FUNC_CTRL_REG   16      /* Page 3, Register 16 */
+#define MARVELL_LED_POLARITY_REG    17      /* Page 3, Register 17 */
+
 #define MII_INVALID_PHY_ID          UINT32_MAX
 #define MII_AUTONEG_POLL_INTERVAL_MS 100
 
@@ -36,6 +41,8 @@ struct phy_88e1510_config {
     const struct device* mdio;
     uint8_t phy_addr;
     enum phy_link_speed default_speeds;
+    uint8_t led0_func_sel;
+    uint8_t led1_func_sel;
 
     #if ANY_RESET_GPIO
     struct gpio_dt_spec reset_gpio;
@@ -58,6 +65,8 @@ struct phy_88e1510_data {
 
 static void phy_88e1510_invoke_link_cb(const struct device* dev);
 static int  phy_88e1510_check_autoneg_completion(const struct device* dev);
+static int  phy_88e1510_select_page(const struct device* dev, uint8_t page_no);
+static int  phy_88e1510_cfg_led(const struct device* dev, uint8_t led1_func, uint8_t led0_func);
 
 static int phy_88e1510_read(const struct device* dev, uint16_t reg_addr, uint32_t* data) {
     const struct phy_88e1510_config* cfg = dev->config;
@@ -498,6 +507,8 @@ static int phy_88e1510_init(const struct device* dev) {
 
     k_work_init_delayable(&data->monitor_work, phy_88e1510_monitor_work_handler);
 
+    (void) phy_88e1510_cfg_led(dev, cfg->led1_func_sel, cfg->led0_func_sel);
+
     ret = phy_88e1510_cfg_link(dev, cfg->default_speeds, 0);
     if (ret == -EALREADY) {
         data->autoneg_in_progress = true;
@@ -508,6 +519,38 @@ static int phy_88e1510_init(const struct device* dev) {
     k_work_schedule(&data->monitor_work, K_NO_WAIT);
 
     return (0);
+}
+
+static int phy_88e1510_select_page(const struct device* dev, uint8_t page_no) {
+    int ret;
+
+    ret = phy_88e1510_write(dev, MARVELL_PAGE_SELECT_REG, page_no);
+
+    return (ret);
+}
+
+static int phy_88e1510_cfg_led(const struct device* dev, uint8_t led1_func, uint8_t led0_func) {
+    const struct phy_88e1510_config* cfg = dev->config;
+    uint32_t data;
+    int ret;
+
+    /* @see Table 112: LED[2:0] Function Control Register */
+    data = BIT(12) | (led1_func << 4) | led0_func;
+
+    (void) phy_88e1510_select_page(dev, 3);
+    /* @see Table 113: LED[2:0] Polarity Control Register
+     * LED[1] Polarity 01 = On - drive LED[1] high, Off - drive LED[1] low
+     * LED[0] Polarity 01 = On - drive LED[0] high, Off - drive LED[0] low
+     * Assume that LED[1] and LED[0] are connect to Anode of LEDs
+     */
+    phy_88e1510_write(dev, MARVELL_LED_POLARITY_REG, 0x4405);
+    ret = phy_88e1510_write(dev, MARVELL_LED_FUNC_CTRL_REG, data);
+    if (ret < 0) {
+        LOG_ERR("PHY (%d) LED config failed: %d", cfg->phy_addr, ret);
+    }
+    (void) phy_88e1510_select_page(dev, 0);
+
+    return (ret);
 }
 
 static DEVICE_API(ethphy, phy_88e1510_driver_api) = {
@@ -534,6 +577,8 @@ static DEVICE_API(ethphy, phy_88e1510_driver_api) = {
         .mdio     = DEVICE_DT_GET(DT_INST_BUS(n)),              \
         .phy_addr = DT_INST_REG_ADDR(n),                        \
         .default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),  \
+        .led0_func_sel  = DT_ENUM_IDX(DT_DRV_INST(n), led0_function_select), \
+        .led1_func_sel  = DT_ENUM_IDX(DT_DRV_INST(n), led1_function_select), \
         RESET_GPIO_FIELDS(n)                                    \
     }
 

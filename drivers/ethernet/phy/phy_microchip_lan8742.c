@@ -455,8 +455,8 @@ static int phy_lan8742_init(const struct device* dev) {
     static const struct phy_lan8742_dev_config phy_lan8742_dev_config_##n = { \
         .phy_addr       = DT_INST_REG_ADDR(n),                  \
         .default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),  \
-        .led1_func_sel  = DT_ENUM_IDX_OR(n, led1_function_select, 0), \
-        .led2_func_sel  = DT_ENUM_IDX_OR(n, led2_function_select, 0), \
+        .led1_func_sel  = DT_ENUM_IDX(DT_DRV_INST(n), led1_function_select), \
+        .led2_func_sel  = DT_ENUM_IDX(DT_DRV_INST(n), led2_function_select), \
         .mdio           = DEVICE_DT_GET(DT_INST_PARENT(n)),     \
         .gpio_reset     = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}) \
     }

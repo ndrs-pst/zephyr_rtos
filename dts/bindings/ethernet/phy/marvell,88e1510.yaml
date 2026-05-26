@@ -11,6 +11,32 @@ include:
 on-bus: mdio
 
 properties:
+  led0-function-select:
+    required: true
+    type: string
+    default: "link-activity"
+    description: LED0 Function Select
+    enum:
+      - "#0"
+      - "#1"
+      - "link-speed"
+      - "#3"
+      - "link-activity"
+
+  led1-function-select:
+    required: true
+    type: string
+    default: "link-speed"
+    description: LED1 Function Select
+    enum:
+      - "#0"
+      - "#1"
+      - "#2"
+      - "#3"
+      - "link-activity"
+      - "#5"
+      - "link-speed"
+
   default-speeds:
     default:
       - "1000BASE Full-Duplex"
