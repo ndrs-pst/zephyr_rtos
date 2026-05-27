@@ -23,6 +23,10 @@ LOG_MODULE_REGISTER(net_wifi_mgmt, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 #include <zephyr/net/wifi_nm.h>
 #endif /* CONFIG_WIFI_NM */
 
+#if !defined(CONFIG_WIFI_MGMT_AP_MAX_NUM_STA) /* #CUSTOM@NDRS */
+#define CONFIG_WIFI_MGMT_AP_MAX_NUM_STA     4
+#endif
+
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
 #define MAX_NEIGHBOR_AP_LIMIT 6U
 #define MAX_EVENT_STR_LEN 32
