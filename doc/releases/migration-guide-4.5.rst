@@ -78,6 +78,11 @@ Boards
   to 300 MHz, which also affects the bus and kernel clocks, resulting in slightly
   higher frequencies.
 
+* :kconfig:option:`CONFIG_GPIO` is no longer enabled by default on most STM32 boards.
+  (boards with GPIO hogs keep it enabled as GPIO is needed for hogs to work).
+  Applications that relied on ``CONFIG_GPIO=y`` being the default will need to enable
+  the option explicitly. (:github:`109468`)
+
 Device Drivers and Devicetree
 *****************************
 
@@ -594,6 +599,10 @@ Mbed TLS
 * ``CONFIG_PSA_CRYPTO_CLIENT`` has been removed as it was a duplicate of
   :kconfig:option:`CONFIG_PSA_CRYPTO`. If you were using it, use
   :kconfig:option:`CONFIG_PSA_CRYPTO` instead. (:github:`108960`)
+
+* Interface CMake library ``mbedTLS`` has been renamed to ``mbedtls_iface``. The former is kept
+  as an alias to the latter for backward compatibility, but it will be removed in future
+  releases.
 
 Architectures
 *************

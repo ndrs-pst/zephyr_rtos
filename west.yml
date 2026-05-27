@@ -330,12 +330,6 @@ manifest:
       path: modules/crypto/mbedtls
       groups:
         - crypto
-    - name: mbedtls-3.6 # Required for TF-M build until we bump it to v2.3
-      repo-path: mbedtls
-      revision: a00e23de17b6b0a0de28e180cb186da6f0008836
-      path: modules/crypto/mbedtls-3.6
-      groups:
-        - crypto
     - name: mcuboot
       revision: cecaa2e1f1ed8ad1a6b3bc632c4d21527b0d7b08
       path: bootloader/mcuboot
@@ -380,7 +374,7 @@ manifest:
       path: modules/lib/picolibc
       revision: 01254932e8e81085817ed61fd858648584ffe37c
     - name: psa-arch-tests
-      revision: 6e8219237435112df33bbcf37b7f5657fcfb9cff
+      revision: 588572c0ebd835c7e0929eaf3007d4fbadb47b5b
       path: modules/tee/tf-m/psa-arch-tests
       groups:
         - testing
@@ -391,7 +385,7 @@ manifest:
       groups:
         - debug
     - name: tf-m-tests
-      revision: 7bb7b7999ee74a0aebb9a91fd8056698c552008b
+      revision: 46b82fabd35eced75d6efbd219ccb26f1818b4d3
       path: modules/tee/tf-m/tf-m-tests
       groups:
         - testing
@@ -407,7 +401,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 9a4cb1a280b63a5e66bd469e82eb75f2b3e05a78
+      revision: 132f674ba028105a097ee8ac7474e31a34d856cc
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
