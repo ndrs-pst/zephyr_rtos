@@ -752,7 +752,7 @@ static int cmd_net_iface(const struct shell *sh, size_t argc, char *argv[])
 	struct net_shell_user_data user_data;
 	int idx;
 
-	if (argv[1]) {
+	if (argc > 1) {
 		idx = get_iface_idx(sh, argv[1]);
 		if (idx < 0) {
 			return -ENOEXEC;
