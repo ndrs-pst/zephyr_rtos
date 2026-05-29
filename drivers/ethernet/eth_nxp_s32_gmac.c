@@ -568,7 +568,7 @@ static void eth_nxp_s32_rx_irq(const struct device* dev) {
     GMAC_RxIRQHandler(cfg->instance, cfg->rx_ring_idx);
 }
 
-static const struct ethernet_api eth_api = {
+static const struct ethernet_api eth_nxp_s32_api = {
     .iface_api.init = eth_nxp_s32_iface_init,
     .get_capabilities = eth_nxp_s32_get_capabilities,
     .get_phy = eth_nxp_s32_get_phy,
@@ -791,7 +791,7 @@ BUILD_ASSERT((CONFIG_ETH_NXP_S32_TX_RING_BUF_SIZE % FEATURE_GMAC_DATA_BUS_WIDTH_
                                   &eth_nxp_s32_data_##n,        \
                                   &eth_nxp_s32_config_##n,      \
                                   CONFIG_ETH_INIT_PRIORITY,     \
-                                  &eth_api,                     \
+                                  &eth_nxp_s32_api,             \
                                   NET_ETH_MTU);
 
 DT_INST_FOREACH_STATUS_OKAY(ETH_NXP_S32_DEVICE)

@@ -1,0 +1,7 @@
+# Copyright 2026 NDR Solution (Thailand) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_INFINEON_PDL
+	bool "Infineon PDL MDIO driver"
+	default y
+	depends on DT_HAS_INFINEON_MDIO_PDL_ENABLED

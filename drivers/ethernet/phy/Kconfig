@@ -84,6 +84,11 @@ config PHY_MICROCHIP_KSZ9131
 	help
 	  Enable Microchip KSZ9131 Ethernet PHY Driver
 
+config PHY_MICROCHIP_LAN8710AI
+	bool "Microchip LAN8710AI PHY Driver"
+	default y
+	depends on DT_HAS_MICROCHIP_LAN8710AI_ENABLED
+
 config PHY_MICROCHIP_LAN8742
 	bool "Microchip LAN8742 PHY Driver"
 	default y

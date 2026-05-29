@@ -1,0 +1,20 @@
+# Copyright (c) 2026
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip LAN8710AI Single Port Ethernet PHY
+
+compatible: "microchip,lan8710ai"
+
+include: [ethernet-phy-common.yaml]
+
+on-bus: mdio
+
+properties:
+  reg:
+    required: true
+    description: |
+      5-bit MDIO PHY address for the attached PHY.
+
+  reset-gpios:
+    type: phandle-array
+    description: GPIO connected to MAC PHY reset signal pin. Reset is active low.

@@ -1,0 +1,18 @@
+# Copyright 2026 Infineon
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon Ethernet controller
+
+compatible: "infineon,eth-pdl"
+
+include: [ethernet-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: false

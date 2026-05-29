@@ -1,0 +1,14 @@
+# Copyright 2026 Infineon
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon PDL MDIO controller.
+
+compatible: "infineon,mdio-pdl"
+
+include: mdio-controller.yaml
+
+properties:
+  reg:
+    required: true
+    description: Base address of the MDIO controller if separated, or identical to MAC.

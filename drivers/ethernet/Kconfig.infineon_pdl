@@ -1,0 +1,11 @@
+# Copyright (c) 2026 NDR Solution (Thailand) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_INFINEON_PDL
+	bool "Infineon PDL Ethernet driver"
+	default y
+	depends on DT_HAS_INFINEON_ETH_PDL_ENABLED
+	select MDIO
+	select GPIO
+	help
+	  Enable Infineon PDL Ethernet driver for PSE84 devices.
