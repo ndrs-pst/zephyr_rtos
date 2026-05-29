@@ -41,6 +41,7 @@
 	input-enable;
 };
 
+/* Configure pin control bias mode for WiFi SDIO (SDHC0) pins */
 &p21_0_sdhc0_card_cmd {
 	drive-push-pull;
 	input-enable;

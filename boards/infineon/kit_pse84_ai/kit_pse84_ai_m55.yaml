@@ -30,5 +30,6 @@ supported:
   - i2s
   - rtc
   - watchdog
+  - wifi
   - comparator
   - dmic

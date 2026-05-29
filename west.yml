@@ -174,7 +174,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: e317fb14bf61a772161b3c2913451b96e751d6dc
+      revision: 1a2f973addcd12a660e84231dbcce1c34f3eaef4
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -190,7 +190,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 4cd18cfb511b14703d52fac737e9964495d8db1b
+      revision: aebae0fcf10af675d75c1fa91e8b910b845e8235
       path: modules/hal/infineon
       groups:
         - hal
@@ -231,12 +231,12 @@ manifest:
         - hal
     - name: hal_realtek
       path: modules/hal/realtek
-      revision: 428e4ddd2a19560cb32ddd56cbb62bf4597edafd
+      revision: 825297ca86d24286dd5c6ebb50a716c93ac29304
       groups:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: b994af098811b0ea02d5388efeefd0ac54f082e3
+      revision: 29d0d3b9c7f9e3929839c74a6cb10c487c24994f
       groups:
         - hal
     - name: hal_rpi_pico
@@ -326,7 +326,7 @@ manifest:
       revision: 85aa60d18b3d5e5588d7b247abf90198f07c8a63
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: 6a08a7eb799853ce2a9053d24ecde31bf3a1322c
+      revision: 554163f6f7b2ec71fed9b423e81f2217a8615d29
       path: modules/crypto/mbedtls
       groups:
         - crypto
@@ -385,7 +385,7 @@ manifest:
       groups:
         - debug
     - name: tf-m-tests
-      revision: 46b82fabd35eced75d6efbd219ccb26f1818b4d3
+      revision: 2f9d323198329cc3df0d6145ec924222cf4ae440
       path: modules/tee/tf-m/tf-m-tests
       groups:
         - testing
@@ -401,7 +401,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 132f674ba028105a097ee8ac7474e31a34d856cc
+      revision: 35210614ac5ab8b3334a385a4f07dbd209390a05
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

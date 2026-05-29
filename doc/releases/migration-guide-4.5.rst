@@ -48,9 +48,9 @@ Boards
   :kconfig:option:`CONFIG_SOC_SERIES_NRF54L` and
   :kconfig:option:`CONFIG_SOC_SERIES_NRF71` checks. Both symbols are kept
   as deprecated stubs that default to ``y`` when the corresponding SoC
-  series is selected, so existing ``CONFIG_NRF_PLATFORM_*=y`` lines and
-  ``depends on NRF_PLATFORM_*`` clauses keep building with a Kconfig
-  deprecation warning. Out-of-tree Kconfig, CMake and code using these
+  series is selected and :kconfig:option:`CONFIG_NRF_PLATFORM_DEPRECATED_SYMBOLS` is enabled,
+  so existing ``CONFIG_NRF_PLATFORM_*=y`` lines and ``depends on NRF_PLATFORM_*`` clauses keep
+  building with a Kconfig deprecation warning. Out-of-tree Kconfig, CMake and code using these
   symbols should be updated:
 
   * The ``CONFIG_NRF_PLATFORM_HALTIUM`` with
@@ -475,6 +475,11 @@ Networking
   :kconfig:option:`CONFIG_NET_MAX_ROUTES`, and
   :kconfig:option:`CONFIG_NET_MAX_NEXTHOPS` and use the
   :kconfig:option:`CONFIG_NET_IPV6_*` symbols directly.
+
+* The ``samples/net/wifi/test_certs/rsa2k`` enterprise test certificates have
+  been removed. TF-PSA-Crypto cannot decrypt their DES-encrypted PKCS#8 private
+  keys. Use ``samples/net/wifi/test_certs/rsa2k_no_des`` instead, or set
+  :envvar:`WIFI_TEST_CERTS_DIR` to another AES-encrypted certificate directory.
 
 
 Ethernet

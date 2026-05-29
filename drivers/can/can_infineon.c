@@ -107,7 +107,7 @@ static int can_infineon_init(const struct device* dev) {
 
     /* Ensure the parent controller (MRAM + channel clocks) is ready */
     if (!device_is_ready(ifx_cfg->ctrl_dev)) {
-        LOG_ERR("CAN FD controller device not ready");
+        LOG_ERR_DEVICE_NOT_READY(ifx_cfg->ctrl_dev);
         return (-ENODEV);
     }
 
