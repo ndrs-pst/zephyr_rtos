@@ -46,6 +46,11 @@ config USE_INFINEON_DMA
 	help
 	  Enable DMA HAL module driver for Infineon devices
 
+config USE_INFINEON_ETHIF
+	bool
+	help
+	  Enable Ethernet HAL module driver for Infineon devices
+
 config USE_INFINEON_I2C
 	bool
 	help
@@ -87,7 +92,6 @@ config USE_INFINEON_SPI
 	bool
 	help
 	  Enable Serial Peripheral Interface (SPI) HAL module driver for Infineon devices
-
 
 config USE_INFINEON_TIMER
 	bool

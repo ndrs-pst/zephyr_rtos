@@ -37,6 +37,10 @@ else()
 endif()
 
 # Peripheral drivers
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_ETHIF ${pdl_drv_dir}/source/cy_ethif.c
+                                                       ${pdl_drv_dir}/third_party/ethernet/src/edd.c
+                                                       ${pdl_drv_dir}/third_party/ethernet/src/edd_rx.c
+                                                       ${pdl_drv_dir}/third_party/ethernet/src/edd_tx.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_I2C ${pdl_drv_dir}/source/cy_scb_i2c.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_I2S ${pdl_drv_dir}/source/cy_tdm.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_I3C ${pdl_drv_dir}/source/cy_i3c.c)

@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(infineon_mdio_pdl, CONFIG_MDIO_LOG_LEVEL);
 
 struct mdio_infineon_pdl_config {
     ETH_Type* base;
+    const struct pinctrl_dev_config* pincfg;
 };
 
 struct mdio_infineon_pdl_data {
@@ -57,16 +58,20 @@ static int mdio_infineon_pdl_write(const struct device* dev, uint8_t prtad,
 }
 
 static int mdio_infineon_pdl_init(const struct device* dev) {
+    const struct mdio_infineon_pdl_config* cfg = dev->config;
     struct mdio_infineon_pdl_data* data = dev->data;
+    int ret;
 
     k_mutex_init(&data->bus_mutex);
 
-    /* Note: Cy_ETHIF_MdioInit() should be called here or by the MAC driver.
-     * In this dual-driver design, the MAC driver usually calls Cy_ETHIF_Init()
-     * which handles standard clocking setups, or we can assume it's orchestrated
-     * via the MAC driver. If MDIO needs separate init without MAC, we would call
-     * Cy_ETHIF_MdioInit() here with basic configs.
-     * We will rely on MAC init to setup the base clocks for this wrapper.
+    ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
+    if (ret < 0) {
+        LOG_ERR("MDIO pinctrl apply failed (%d)", ret);
+        return (ret);
+    }
+
+    /* Cy_ETHIF_MdioInit() is called by the MAC (eth_infineon_pdl) driver,
+     * which owns the ETHIF block and its clocks.
      */
 
     return (0);
@@ -78,9 +83,11 @@ static DEVICE_API(mdio, mdio_infineon_pdl_driver_api) = {
 };
 
 #define INFINEON_MDIO_PDL_DEVICE(n)                                             \
+    PINCTRL_DT_INST_DEFINE(n);                                                  \
     static struct mdio_infineon_pdl_data mdio_infineon_pdl_data_##n;            \
     static const struct mdio_infineon_pdl_config mdio_infineon_pdl_cfg_##n = {  \
-        .base = (ETH_Type*)DT_INST_REG_ADDR(n),                                 \
+        .base   = (ETH_Type*)DT_REG_ADDR(DT_INST_PARENT(n)),                    \
+        .pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                            \
     };                                                                          \
     DEVICE_DT_INST_DEFINE(n,                                                    \
                           mdio_infineon_pdl_init,                               \

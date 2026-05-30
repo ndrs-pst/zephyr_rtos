@@ -16,16 +16,20 @@ LOG_MODULE_REGISTER(phy_lan8710ai, CONFIG_PHY_LOG_LEVEL);
 #include <zephyr/drivers/mdio.h>
 #include <zephyr/drivers/gpio.h>
 
+#include "phy_mii.h"
+
 #define LAN8710_PHY_ID1      0x0007U
 #define LAN8710_PHY_ID2      0xC0F0U
 #define LAN8710_PHY_ID2_MASK 0xFFF0U
 
 /* Maximum retries waiting for BMCR soft-reset self-clear (10 ms each) */
 #define LAN8710_RESET_RETRIES 50
+#define MII_AUTONEG_POLL_INTERVAL_MS 100
 
 struct phy_lan8710ai_config {
     const struct device* mdio_dev;
     struct gpio_dt_spec  reset_gpio;        /* zeroed if not in DT */
+    enum phy_link_speed  default_speeds;
     uint8_t phy_addr;
 };
 
@@ -98,7 +102,7 @@ static void phy_lan8710ai_update_link_state(const struct device* dev) {
     }
 
     if (data->autoneg_in_progress) {
-        if (!(bmsr & MII_BMSR_AN_COMPLETE)) {
+        if (!(bmsr & MII_BMSR_AUTONEG_COMPLETE)) {
             return; /* still negotiating — no state change yet */
         }
 
@@ -153,47 +157,80 @@ static void phy_lan8710ai_monitor_work_fn(struct k_work* work) {
 }
 
 /* -------------------------------------------------------------------
+ * PHY reset: GPIO (if wired) + BMCR soft-reset
+ * ------------------------------------------------------------------- */
+static int phy_lan8710ai_reset(const struct device* dev) {
+    const struct phy_lan8710ai_config* cfg = dev->config;
+    int retries;
+
+    if (cfg->reset_gpio.port != NULL) {
+        if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
+            LOG_ERR("Reset GPIO not ready");
+            return (-ENODEV);
+        }
+
+        gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
+        gpio_pin_set_dt(&cfg->reset_gpio, 1);
+        k_sleep(K_MSEC(10));
+        gpio_pin_set_dt(&cfg->reset_gpio, 0);
+        k_sleep(K_MSEC(10));
+    }
+
+    phy_lan8710ai_write(dev, MII_BMCR, MII_BMCR_RESET);
+
+    for (retries = 0; retries < LAN8710_RESET_RETRIES; retries++) {
+        uint32_t bmcr;
+
+        k_msleep(10);
+        if ((phy_lan8710ai_read(dev, MII_BMCR, &bmcr) == 0) &&
+            ((bmcr & MII_BMCR_RESET) == 0)) {
+            return (0);
+        }
+    }
+
+    LOG_ERR("PHY soft reset timed out");
+    return (-ETIMEDOUT);
+}
+
+/* -------------------------------------------------------------------
  * PHY API implementations
  * ------------------------------------------------------------------- */
 static int phy_lan8710ai_cfg_link(const struct device* dev,
                                   enum phy_link_speed adv_speeds,
                                   enum phy_cfg_link_flag flags) {
-    ARG_UNUSED(flags);
+    const struct phy_lan8710ai_config* cfg = dev->config;
     struct phy_lan8710ai_data* data = dev->data;
-    uint32_t anar = MII_ADVERTISE_CSMA;
-    uint32_t bmcr;
+    int ret;
 
-    /* Build ANAR from requested speeds */
-    if (adv_speeds & LINK_FULL_100BASE) {
-        anar |= MII_ADVERTISE_100_FULL;
-    }
-
-    if (adv_speeds & LINK_HALF_100BASE) {
-        anar |= MII_ADVERTISE_100_HALF;
-    }
-
-    if (adv_speeds & LINK_FULL_10BASE) {
-        anar |= MII_ADVERTISE_10_FULL;
-    }
-
-    if (adv_speeds & LINK_HALF_10BASE) {
-        anar |= MII_ADVERTISE_10_HALF;
+    if (cfg->mdio_dev == NULL) {
+        return (-ENODEV);
     }
 
     k_mutex_lock(&data->lock, K_FOREVER);
 
-    phy_lan8710ai_write(dev, MII_ANAR, anar);
+    if ((flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) != 0U) {
+        ret = phy_mii_set_bmcr_reg_autoneg_disabled(dev, adv_speeds);
+        if (ret >= 0) {
+            data->autoneg_in_progress = false;
+            k_work_reschedule(&data->monitor_work, K_NO_WAIT);
+        }
+    }
+    else {
+        ret = phy_mii_cfg_link_autoneg(dev, adv_speeds, false);
+        if (ret >= 0) {
+            LOG_DBG("PHY (%d) Starting MII PHY auto-negotiate sequence", cfg->phy_addr);
+            data->autoneg_in_progress = true;
+            k_work_reschedule(&data->monitor_work, K_MSEC(MII_AUTONEG_POLL_INTERVAL_MS));
+        }
+    }
 
-    phy_lan8710ai_read(dev, MII_BMCR, &bmcr);
-    bmcr |= MII_BMCR_AUTONEG_ENABLE | MII_BMCR_AUTONEG_RESTART;
-    phy_lan8710ai_write(dev, MII_BMCR, bmcr);
-
-    data->autoneg_in_progress = true;
-    data->state.is_up         = false;
+    if (ret == -EALREADY) {
+        LOG_DBG("PHY (%d) Link already configured", cfg->phy_addr);
+    }
 
     k_mutex_unlock(&data->lock);
 
-    return (0);
+    return (ret);
 }
 
 static int phy_lan8710ai_get_link(const struct device* dev,
@@ -224,66 +261,47 @@ static int phy_lan8710ai_init(const struct device* dev) {
     struct phy_lan8710ai_data* data = dev->data;
     uint32_t id1;
     uint32_t id2;
-    int retries;
+    bool is_ready;
+    int ret;
 
+    data->state.is_up = false;
     k_mutex_init(&data->lock);
-    data->dev = dev; /* self-pointer for work handler — never changes */
+    data->dev = dev;
 
-    if (!device_is_ready(cfg->mdio_dev)) {
-        LOG_ERR("MDIO device not ready");
+    is_ready = device_is_ready(cfg->mdio_dev);
+    if (is_ready == false) {
+        LOG_ERR_DEVICE_NOT_READY(cfg->mdio_dev);
         return (-ENODEV);
     }
 
-    /* Hardware reset via GPIO if wired */
-    if (cfg->reset_gpio.port != NULL) {
-        if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
-            LOG_ERR("Reset GPIO not ready");
-            return (-ENODEV);
-        }
-
-        gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
-        gpio_pin_set_dt(&cfg->reset_gpio, 1);
-        k_sleep(K_MSEC(10));
-        gpio_pin_set_dt(&cfg->reset_gpio, 0);
-        k_sleep(K_MSEC(10));
-    }
-
-    /* Soft reset — poll until BMCR reset bit self-clears (up to 500 ms) */
-    phy_lan8710ai_write(dev, MII_BMCR, MII_BMCR_RESET);
-    for (retries = 0; retries < LAN8710_RESET_RETRIES; retries++) {
-        uint32_t bmcr;
-
-        k_msleep(10);
-        if ((phy_lan8710ai_read(dev, MII_BMCR, &bmcr) == 0) &&
-            ((bmcr & MII_BMCR_RESET) == 0)) {
-            break;
-        }
-    }
-
-    if (retries == LAN8710_RESET_RETRIES) {
-        LOG_ERR("PHY soft reset timed out");
-        return (-ETIMEDOUT);
+    ret = phy_lan8710ai_reset(dev);
+    if (ret < 0) {
+        LOG_ERR("Failed to reset PHY (%d): %d", cfg->phy_addr, ret);
+        return (ret);
     }
 
     /* Verify PHY ID */
-    phy_lan8710ai_read(dev, MII_PHYSID1, &id1);
-    phy_lan8710ai_read(dev, MII_PHYSID2, &id2);
+    phy_lan8710ai_read(dev, MII_PHYID1R, &id1);
+    phy_lan8710ai_read(dev, MII_PHYID2R, &id2);
 
     if ((id1 != LAN8710_PHY_ID1) || ((id2 & LAN8710_PHY_ID2_MASK) != LAN8710_PHY_ID2)) {
-        LOG_ERR("Unsupported PHY ID: 0x%04x:0x%04x", id1, id2);
-        return (-ENODEV);
+        LOG_ERR("No PHY found at address %d (ID 0x%04x:0x%04x)", cfg->phy_addr, id1, id2);
+        return (-EINVAL);
     }
 
-    LOG_DBG("LAN8710AI PHY ID match: 0x%04x:0x%04x", id1, id2);
+    LOG_INF("PHY (%d) ID 0x%04x:0x%04x", cfg->phy_addr, id1, id2);
 
     k_work_init_delayable(&data->monitor_work, phy_lan8710ai_monitor_work_fn);
 
-    /* Start autoneg advertising all supported speeds */
-    phy_lan8710ai_cfg_link(dev,
-                           LINK_FULL_100BASE | LINK_HALF_100BASE |
-                           LINK_FULL_10BASE  | LINK_HALF_10BASE, 0);
+    /* Advertise default speeds */
+    ret = phy_lan8710ai_cfg_link(dev, cfg->default_speeds, 0);
+    if (ret < 0) {
+        LOG_ERR("Failed to configure link (%d)", ret);
+        return (ret);
+    }
 
-    k_work_reschedule(&data->monitor_work, K_MSEC(100));
+    /* Schedule the monitor work, if not already scheduled by phy_lan8710ai_cfg_link(). */
+    k_work_schedule(&data->monitor_work, K_NO_WAIT);
 
     return (0);
 }
@@ -306,8 +324,9 @@ static DEVICE_API(ethphy, phy_lan8710ai_driver_api) = {
 #define LAN8710AI_INIT(n)                                       \
     static struct phy_lan8710ai_data phy_lan8710ai_data_##n;    \
     static const struct phy_lan8710ai_config phy_lan8710ai_cfg_##n = { \
-        .phy_addr = DT_INST_REG_ADDR(n),                        \
-        .mdio_dev = DEVICE_DT_GET(DT_INST_BUS(n)),              \
+        .phy_addr       = DT_INST_REG_ADDR(n),                  \
+        .mdio_dev       = DEVICE_DT_GET(DT_INST_BUS(n)),        \
+        .default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),  \
         IF_ENABLED(DT_INST_NODE_HAS_PROP(n, reset_gpios),       \
                    (.reset_gpio = GPIO_DT_SPEC_INST_GET(n, reset_gpios), )) \
     };                                                          \

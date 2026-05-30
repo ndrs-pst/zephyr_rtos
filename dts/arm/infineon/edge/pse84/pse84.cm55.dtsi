@@ -434,3 +434,9 @@
 	interrupts = <151 4>, /* usbhs_ctrl_irqn */
 		     <152 4>; /* usbhss_irqn */
 };
+
+&eth0 {
+	interrupts = <148 4>, /* ETH#0 Interrupt#0 */
+		     <149 4>, /* ETH#0 Interrupt#1 */
+		     <150 4>; /* ETH#0 Interrupt#2 */
+};

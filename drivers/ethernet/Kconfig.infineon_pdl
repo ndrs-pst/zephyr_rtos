@@ -5,7 +5,7 @@ menuconfig ETH_INFINEON_PDL
 	bool "Infineon PDL Ethernet driver"
 	default y
 	depends on DT_HAS_INFINEON_ETH_PDL_ENABLED
+	select USE_INFINEON_ETHIF
 	select MDIO
-	select GPIO
 	help
 	  Enable Infineon PDL Ethernet driver for PSE84 devices.

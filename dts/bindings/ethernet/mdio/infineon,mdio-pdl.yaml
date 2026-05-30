@@ -6,9 +6,12 @@ description: |
 
 compatible: "infineon,mdio-pdl"
 
-include: mdio-controller.yaml
+include: [mdio-controller.yaml, pinctrl-device.yaml]
 
 properties:
-  reg:
+  pinctrl-0:
     required: true
-    description: Base address of the MDIO controller if separated, or identical to MAC.
+
+  pinctrl-names:
+    required: true
+

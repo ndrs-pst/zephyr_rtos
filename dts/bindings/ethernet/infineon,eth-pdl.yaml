@@ -11,6 +11,17 @@ properties:
   reg:
     required: true
 
+  clocks:
+    required: true
+
+  clk-dst:
+    type: int
+    required: true
+    description: |
+      Peripheral clock destination ID for this ETH instance.
+      Maps to an en_clk_dst_t value used by the Infineon PDL to
+      connect a peripheral clock divider to this ETH block.
+
   interrupts:
     required: true
 

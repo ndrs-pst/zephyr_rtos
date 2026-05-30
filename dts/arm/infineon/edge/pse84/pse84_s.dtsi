@@ -1399,5 +1399,22 @@
 			mmio-peri-hf-src = <1>;
 			mmio-peri-div = <3>;
 		};
+
+		eth0: ethernet@52c10000 {
+			compatible = "infineon,eth-pdl";
+			reg = <0x52c10000 0x1800>;
+			clk-dst = <0x300>; /* PCLK_ETH0_REF_CLK_INT */
+			interrupts = <171 4>, /* ETH#0 Interrupt#0 */
+				     <172 4>, /* ETH#0 Interrupt#1 */
+				     <173 4>; /* ETH#0 Interrupt#2 */
+			status = "disabled";
+
+			mdio: mdio {
+				compatible = "infineon,mdio-pdl";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+		};
 	};
 };
