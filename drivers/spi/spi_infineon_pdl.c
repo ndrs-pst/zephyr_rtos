@@ -732,7 +732,7 @@ static int spi_ifx_init(const struct device* dev) {
                 SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx) \
                     SPI_PERI_CLOCK_INIT(n)                      \
                         .spi_deep_sleep = {                     \
-                            &Cy_SCB_SPI_DeepSleepCallback, CY_SYSPM_DEEPSLEEP, \
+                            Cy_SCB_SPI_DeepSleepCallback, CY_SYSPM_DEEPSLEEP, \
                             CY_SYSPM_SKIP_BEFORE_TRANSITION,    \
                             &spi_ifx_config_##n.spi_deep_sleep_param, NULL, NULL, 1} \
     };                                                          \
@@ -959,7 +959,6 @@ static cy_rslt_t spi_ifx_set_frequency(const struct device* dev, uint32_t hz) {
     const struct spi_ifx_config* const config = dev->config;
 
     cy_rslt_t result;
-    cy_rslt_t scb_init_result = CY_RSLT_SUCCESS;
     uint8_t ovr_sample_val;
 
     Cy_SCB_SPI_Disable(config->reg_addr, &data->context);
@@ -981,41 +980,30 @@ static cy_rslt_t spi_ifx_set_frequency(const struct device* dev, uint32_t hz) {
         config_structure.txDataWidth    = data->data_bits;
         config_structure.oversample     = ovr_sample_val;
         data->oversample_value          = ovr_sample_val;
-        scb_init_result = (cy_rslt_t)Cy_SCB_SPI_Init(config->reg_addr, &config_structure,
-                                                     &data->context);
+        Cy_SCB_SPI_Init(config->reg_addr, &config_structure, &data->context);
     }
 
-    if (CY_RSLT_SUCCESS == scb_init_result) {
-        Cy_SCB_SPI_Enable(config->reg_addr);
-    }
+    Cy_SCB_SPI_Enable(config->reg_addr);
 
     return (result);
 }
 
-static cy_rslt_t spi_init_hw(const struct device* dev, cy_stc_scb_spi_config_t* cfg) {
+static void spi_init_hw(const struct device* dev, cy_stc_scb_spi_config_t* cfg) {
     struct spi_ifx_data* const data = dev->data;
     const struct spi_ifx_config* const config = dev->config;
-    cy_rslt_t result;
 
     data->oversample_value = cfg->oversample;
     data->data_bits = cfg->txDataWidth;
     data->msb_first = cfg->enableMsbFirst;
     data->clk_mode  = cfg->sclkMode;
 
-    result = (cy_rslt_t)Cy_SCB_SPI_Init(config->reg_addr, cfg, &(data->context));
-    if (result == CY_RSLT_SUCCESS) {
-        data->callback_data.callback     = NULL;
-        data->callback_data.callback_arg = NULL;
-        data->irq_cause = 0;
+    Cy_SCB_SPI_Init(config->reg_addr, cfg, &data->context);
+    data->callback_data.callback     = NULL;
+    data->callback_data.callback_arg = NULL;
+    data->irq_cause = 0;
 
-        irq_enable(config->irq_num);
-        Cy_SCB_SPI_Enable(config->reg_addr);
-    }
-    else {
-        spi_ifx_free(dev);
-    }
-
-    return (result);
+    irq_enable(config->irq_num);
+    Cy_SCB_SPI_Enable(config->reg_addr);
 }
 
 static cy_rslt_t spi_ifx_init_cfg(const struct device* dev, cy_stc_scb_spi_config_t* scb_spi_config) {
@@ -1031,11 +1019,7 @@ static cy_rslt_t spi_ifx_init_cfg(const struct device* dev, cy_stc_scb_spi_confi
     result = spi_ifx_int_frequency(dev, IFX_SPI_DEFAULT_SPEED,
                                    &data->oversample_value);
     if (result == CY_RSLT_SUCCESS) {
-        result = spi_init_hw(dev, &cfg_local);
-    }
-
-    if (result != CY_RSLT_SUCCESS) {
-        spi_ifx_free(dev);
+        spi_init_hw(dev, &cfg_local);
     }
 
     return (result);

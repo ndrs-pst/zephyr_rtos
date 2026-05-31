@@ -434,7 +434,6 @@ static int _i2c_set_peri_divider_psoc4(const struct device* dev, uint32_t freq,
 static int ifx_cat1_i2c_configure(const struct device* dev, uint32_t dev_config) {
     struct ifx_cat1_i2c_data* data = dev->data;
     const struct ifx_cat1_i2c_config* config = dev->config;
-    cy_en_scb_i2c_status_t rslt;
     int ret;
     bool is_target_mode = false;
 
@@ -494,12 +493,7 @@ static int ifx_cat1_i2c_configure(const struct device* dev, uint32_t dev_config)
     Cy_SCB_I2C_DeInit(config->base);
 
     /* Configure the I2C resource */
-    rslt = Cy_SCB_I2C_Init(config->base, &_i2c_default_config, &data->context);
-    if (rslt != CY_SCB_I2C_SUCCESS) {
-        LOG_ERR("I2C configure failed with err 0x%x", rslt);
-        k_sem_give(&data->operation_sem);
-        return (-EIO);
-    }
+    Cy_SCB_I2C_Init(config->base, &_i2c_default_config, &data->context);
 
     #ifdef USE_I2C_SET_PERI_DIVIDER
     _i2c_set_peri_divider(dev, CAT1_I2C_SPEED_STANDARD_HZ,
@@ -1022,7 +1016,7 @@ static DEVICE_API(i2c, i2c_cat1_driver_api) = {
                                                                 \
     static struct ifx_cat1_i2c_data ifx_cat1_i2c_data##n = {    \
         .i2c_deep_sleep_param = {(CySCB_Type*)DT_INST_REG_ADDR(n), NULL}, \
-        .i2c_deep_sleep       = {&Cy_SCB_I2C_DeepSleepCallback, CY_SYSPM_DEEPSLEEP, \
+        .i2c_deep_sleep       = {Cy_SCB_I2C_DeepSleepCallback, CY_SYSPM_DEEPSLEEP, \
                                  CY_SYSPM_SKIP_BEFORE_TRANSITION, \
                                  &ifx_cat1_i2c_data##n.i2c_deep_sleep_param, NULL, NULL, 1}, \
         I2C_PERI_CLOCK_INIT(n)                                  \

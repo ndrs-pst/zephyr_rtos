@@ -509,8 +509,7 @@ static int ifx_cat1_uart_irq_rx_ready(const struct device* dev) {
     uint32_t number_available = Cy_SCB_UART_GetNumInRxFifo(config->reg_addr);
 
     if (data->context.rxRingBuf != NULL) {
-        number_available +=
-            Cy_SCB_UART_GetNumInRingBuffer(config->reg_addr, &(data->context));
+        number_available += Cy_SCB_UART_GetNumInRingBufferFast(&data->context);
     }
 
     return (number_available) ? 1 : 0;
@@ -1151,16 +1150,9 @@ static int ifx_cat1_uart_init(const struct device* dev) {
         return (-EIO);
     }
 
-    result = (cy_rslt_t)Cy_SCB_UART_Init(config->reg_addr, &data->scb_config,
-                                         &data->context);
-    if (result == CY_RSLT_SUCCESS) {
-        irq_enable(config->irq_num);
-
-        Cy_SCB_UART_Enable(config->reg_addr);
-    }
-    else {
-        return (-ENOTSUP);
-    }
+    Cy_SCB_UART_Init(config->reg_addr, &data->scb_config, &data->context);
+    irq_enable(config->irq_num);
+    Cy_SCB_UART_Enable(config->reg_addr);
 
     #if (CONFIG_SOC_FAMILY_INFINEON_CAT1C && CONFIG_UART_INTERRUPT_DRIVEN)
     /* Enable the UART interrupt */
