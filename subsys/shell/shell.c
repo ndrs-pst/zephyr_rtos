@@ -1041,8 +1041,11 @@ static bool wildcard_check_report(struct shell const* sh, bool found,
  * decision on further processing is based on currently processed command.
  */
 static int execute(struct shell const* sh) {
-    struct shell_static_entry dloc;                             /* Memory for dynamic commands. */
-    char const* argv[CONFIG_SHELL_ARGC_MAX + 1];                /* +1 reserved for NULL */
+    struct shell_static_entry dloc;         /* Memory for dynamic commands. 
+                                             * Intentionally ignore PR #109658,
+                                             * which initializes it to {0}.
+                                             */
+    char const* argv[CONFIG_SHELL_ARGC_MAX + 1]; /* +1 reserved for NULL */
     const struct shell_static_entry* parent = selected_cmd_get(sh);
     const struct shell_static_entry* entry  = NULL;
     struct shell_static_entry help_entry;
