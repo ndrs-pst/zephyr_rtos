@@ -427,7 +427,7 @@ static void mcux_lpuart_irq_callback_set(struct device const* dev,
 
 #if LPUART_ASYNC_ENABLE
 static inline void async_timer_start(struct k_work_delayable* work, size_t timeout_us) {
-    if ((timeout_us != SYS_FOREVER_US) && (timeout_us != 0)) {
+    if (timeout_us != SYS_FOREVER_US) {
         LOG_DBG("async timer started for %d us", timeout_us);
         k_work_reschedule(work, K_USEC(timeout_us));
     }
@@ -495,7 +495,7 @@ static void async_evt_rx_rdy(struct device const* dev) {
     };
 
     LOG_DBG("RX Ready: (len: %zu off: %zu buf: %p)", event.data.rx.len,
-            event.data.rx.offset, event.data.rx.buf);
+            event.data.rx.offset, (void*)event.data.rx.buf);
 
     /* Only send event for new data */
     if (event.data.rx.len > 0) {
@@ -895,7 +895,10 @@ static int mcux_lpuart_tx(struct device const* dev, uint8_t const* buf, size_t l
             LOG_ERR("Failed to start DMA(Tx) Ch %d",
                     config->tx_dma_config.dma_channel);
         }
-        async_timer_start(&tx_dma_params->timeout_work, timeout_us);
+
+        if (timeout_us > 0) {
+            async_timer_start(&data->async.tx_dma_params.timeout_work, timeout_us);
+        }
     }
     else {
         LOG_ERR("Error configuring UART DMA: %x", ret);
@@ -1113,8 +1116,14 @@ static inline void mcux_lpuart_async_isr(const struct device* dev,
     }
 
     if (status & kLPUART_IdleLineFlag) {
-        async_timer_start(&data->async.rx_dma_params.timeout_work,
-                          data->async.rx_dma_params.timeout_us);
+        if (data->async.rx_dma_params.timeout_us == 0) {
+            mcux_lpuart_async_rx_flush(dev);
+        }
+        else {
+            async_timer_start(&data->async.rx_dma_params.timeout_work,
+                              data->async.rx_dma_params.timeout_us);
+        }
+
         LPUART_ClearStatusFlags(get_base(dev), kLPUART_IdleLineFlag);
     }
 }

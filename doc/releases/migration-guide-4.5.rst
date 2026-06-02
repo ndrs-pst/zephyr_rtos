@@ -240,6 +240,25 @@ Input
   * ``CONFIG_INPUT_CST8XX_PERIOD`` → :kconfig:option:`CONFIG_INPUT_CST8XX_PERIOD_MS`
   * ``CONFIG_INPUT_FT6146_PERIOD`` → :kconfig:option:`CONFIG_INPUT_FT6146_PERIOD_MS`
 
+Interrupt Controllers
+=====================
+
+* All interrupt controller bindings now use ``flags`` as the interrupt cell name
+  instead of ``sense``. The following interrupt controller bindings were updated:
+
+  * :dtcompatible:`intel,ioapic`
+  * :dtcompatible:`intel,loapic`
+  * :dtcompatible:`cdns,xtensa-core-intc`
+  * :dtcompatible:`intel,ace-intc`
+  * :dtcompatible:`intel,cavs-intc`
+  * :dtcompatible:`snps,designware-intc`
+  * :dtcompatible:`mediatek,adsp_intc`
+
+  Drivers using these interrupt controllers are updated to use ``flags`` as the cell name.
+  However, any out-of-tree drivers that directly access interrupt properties using
+  ``DT_INST_IRQ(n, sense)`` or ``DT_IRQ(node, sense)`` should be updated to use ``flags`` instead
+  of ``sense``.
+
 NXP
 ===
 
@@ -318,6 +337,14 @@ STM32
 * SoC DTSI files now consistently use interrupt priority zero for all peripherals.
   Applications must now explicitly configure interrupt priorities using Devicetree
   if they previously relied on the values found in SoC DTSI files. (:github:`106188`)
+
+* :dtcompatible:`st,stm32-sai` binding has been restructured to reflect the SAI hardware
+  topology. The parent node now represents the SAI Block controller, while a new
+  ``child-binding`` represents the SAI Sub-Block instances.
+  The following properties shall be moved from the parent SAI node to a child sub-block node:
+  ``dmas``, ``dma-names`` (now validated against ``enum: [tx, rx]``), ``pinctrl-0``,
+  ``pinctrl-names``, ``mclk-enable``, ``mclk-divider``, ``synchronous``, and
+  ``fifo-threshold``. (:github:`104423`)
 
 Syscon
 ======

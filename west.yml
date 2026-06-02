@@ -185,7 +185,7 @@ manifest:
       groups:
         - hal
     - name: hal_gigadevice
-      revision: ee0e31302c21b2a465dc303b3ced8c606c2167c8
+      revision: 44bc5a6aec1d70c74e58a7369e5152a6b6a1f989
       path: modules/hal/gigadevice
       groups:
         - hal
@@ -210,12 +210,12 @@ manifest:
       groups:
         - hal
     - name: hal_nuvoton
-      revision: 3b93ad491b712d22a5216e0f78ecc6de470ed37d
+      revision: 645b41c34626c5b1e3053358b9b0b130abf38e2f
       path: modules/hal/nuvoton
       groups:
         - hal
     - name: hal_nxp
-      revision: 734b0c2ff66c7b5306644e5a0082b22adb0f86a7
+      revision: 01e9dc3e70832f7967fbadf78594098eac565fb1
       path: modules/hal/nxp
       groups:
         - hal
@@ -391,7 +391,7 @@ manifest:
         - testing
         - tee
     - name: tf-psa-crypto
-      revision: efdf9e209cc3b2c7be93ac81c7c96cd2550bbe27
+      revision: 2d881593696aec687ca2246c53de207c2b9bf782
       path: modules/crypto/tf-psa-crypto
       groups:
         - crypto
@@ -401,7 +401,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 35210614ac5ab8b3334a385a4f07dbd209390a05
+      revision: fc9c70171ae43bfd99c57a7ca6374d7f4fa8e894
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
