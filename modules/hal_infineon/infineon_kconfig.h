@@ -45,7 +45,13 @@
 #endif /* CONFIG_TRUSTED_EXECUTION_SECURE* */
 
 #if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+/* #CUSTOM@NDRS When COMPONENT_NON_SECURE_DEVICE has been added by 
+ * zephyr_library_compile_definitions(COMPONENT_NON_SECURE_DEVICE) in CMakeLists.txt
+ * skip this #define
+ */
+#if !defined(COMPONENT_NON_SECURE_DEVICE)
 #define COMPONENT_NON_SECURE_DEVICE
+#endif
 #endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE* */
 
 #ifndef COMPONENT_CM33
