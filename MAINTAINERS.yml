@@ -638,6 +638,7 @@ Bluetooth Host:
     - Thalley
     - cvinayak
     - HaavardRei
+    - alxelax
   files:
     - doc/services/connectivity/bluetooth/
     - include/zephyr/bluetooth/
@@ -3660,6 +3661,7 @@ Logging:
     - nordic-krch
   collaborators:
     - dcpleung
+    - ldab
   files:
     - include/zephyr/logging/
     - include/zephyr/sys/mpsc_pbuf.h
@@ -4942,12 +4944,13 @@ RISCV arch:
   collaborators:
     - edersondisouza
     - katsuster
-    - masz-nordic
     - mgielda
     - npitre
     - VynDragon
     - ycsin
     - maass-hamburg
+    - lstnl
+    - meijemac
   files:
     - arch/riscv/
     - boards/enjoydigital/litex_vexriscv/
@@ -6543,12 +6546,14 @@ West:
     - mif1-nordic
     - adamkondraciuk
     - lstnl
+    - meijemac
     - rlubos
     - "57300"
     - jonathannilsen
     - karstenkoenig
     - SebastianBoe
     - kyberdin
+    - mstasiaknordic
   files:
     - modules/hal_nordic/
   labels:
@@ -7310,6 +7315,7 @@ nRF Platforms:
     - magp-nordic
     - nika-nordic
     - lstnl
+    - mstasiaknordic
   files:
     - boards/nordic/
     - drivers/*/*nrf*.c

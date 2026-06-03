@@ -1239,7 +1239,19 @@ static int esp32_wifi_set_power_save(const struct device* dev __unused,
                                      struct net_if* iface __unused,
                                      struct wifi_ps_params* params) {
     wifi_config_t config;
+    wifi_mode_t mode;
     esp_err_t rc;
+
+    rc = esp_wifi_get_mode(&mode);
+    if (rc != ESP_OK) {
+        LOG_ERR("Failed to get Wi-Fi mode, error: %d", rc);
+        return (-EIO);
+    }
+
+    if ((mode == ESP32_WIFI_MODE_AP) || (mode == ESP32_WIFI_MODE_NULL)) {
+        LOG_ERR("Power save not supported in current Wi-Fi mode: %d", mode);
+        return (-ENOTSUP);
+    }
 
     if (params->enabled == WIFI_PS_DISABLED) {
         rc = esp_wifi_set_ps(WIFI_PS_NONE);
@@ -1349,7 +1361,6 @@ static int esp32_wifi_dev_init(const struct device* dev) {
 
     wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
     esp_err_t ret = esp_wifi_init(&config);
-    esp_wifi_set_mode(ESP32_WIFI_MODE_NULL);
 
     if (ret == ESP_ERR_NO_MEM) {
         LOG_ERR("Not enough memory to initialize Wi-Fi.");
@@ -1358,6 +1369,12 @@ static int esp32_wifi_dev_init(const struct device* dev) {
     }
     else if (ret != ESP_OK) {
         LOG_ERR("Unable to initialize the Wi-Fi: %d", ret);
+        return (-EIO);
+    }
+
+    ret = esp_wifi_set_mode(ESP32_WIFI_MODE_NULL);
+    if (ret != ESP_OK) {
+        LOG_ERR("Fail to set Wi-Fi mode: %d", ret);
         return (-EIO);
     }
 
