@@ -1,5 +1,5 @@
-# Copyright (c) 2026 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG.
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -27,6 +27,7 @@ CONFIG_CLOCK_CONTROL=y
 
 CONFIG_ARM_TRUSTZONE_M=y
 
+# Build a Non-Secure firmware image
 CONFIG_TRUSTED_EXECUTION_NONSECURE=y
 
 CONFIG_CODE_DATA_RELOCATION=y
