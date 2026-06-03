@@ -424,6 +424,7 @@ int z_impl_net_addr_pton(net_sa_family_t family, char const* src,
          */
         int expected_groups = strchr(src, '.') ? 6 : 8;
         struct net_in6_addr* addr = (struct net_in6_addr*)dst;
+        bool double_colons_found = false;
         int i;
         int len;
 
@@ -467,6 +468,11 @@ int z_impl_net_addr_pton(net_sa_family_t family, char const* src,
             }
 
             /* Two colons in a row */
+            if (double_colons_found) {
+                return (-EINVAL);
+            }
+
+            double_colons_found = true;
 
             for (; i < expected_groups; i++) {
                 UNALIGNED_PUT(0, &addr->s6_addr16[i]);

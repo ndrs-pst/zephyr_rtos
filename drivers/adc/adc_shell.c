@@ -86,6 +86,7 @@ static struct adc_hdl adc_list[] = {
                        ite_it51xxx_adc,
                        ite_it8xxx2_adc,
                        lltc_ltc2451,
+                       m5stack_m5pm1_adc,
                        maxim_max11102,
                        maxim_max11103,
                        maxim_max11105,

@@ -56,7 +56,7 @@ API Changes
 Removed APIs and options
 ========================
 
-* The following deprecated networking options and APIs have been removed:
+* Networking
 
     * ``CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO``
     * ``CONFIG_NET_SOCKETS_POLL_MAX``
@@ -72,6 +72,11 @@ Removed APIs and options
     * ``openthread_api_mutex_unlock()``
     * ``struct openthread_state_changed_cb``
     * ``TLS_CREDENTIAL_SERVER_CERTIFICATE``
+
+* Random
+
+    * ``CONFIG_CTR_DRBG_CSPRNG_GENERATOR``
+    * ``CONFIG_CS_CTR_DRBG_PERSONALIZATION``
 
 * West sign support for imgtool, which was deprecated in Zephyr 4.0, has been removed.
 
@@ -137,6 +142,10 @@ New APIs and options
   * :c:func:`lora_recv_duty_cycle_async`
 
 * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
+
+* Network
+
+  * Add :c:func:`net_eth_set_if_type_wifi` to set the ethernet interface type to Wi-Fi.
 
 .. zephyr-keep-sorted-stop
 

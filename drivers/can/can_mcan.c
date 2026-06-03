@@ -6,7 +6,7 @@
  */
 
 #include <zephyr/drivers/can.h>
-#include <zephyr/drivers/can/can_mcan.h>
+#include "can_mcan.h"
 #include <zephyr/drivers/can/transceiver.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -1113,8 +1113,8 @@ int can_mcan_add_rx_filter_std(const struct device* dev, can_rx_callback_t callb
         goto unlock;
     }
 
-    /* TODO proper fifo balancing */
-    filter_element.sfec = filter_id & 0x01 ? CAN_MCAN_XFEC_FIFO1 : CAN_MCAN_XFEC_FIFO0;
+    /* Always use FIFO0 to ensure frames are delivered to callbacks in the order received */
+    filter_element.sfec = CAN_MCAN_XFEC_FIFO0;
 
     err = can_mcan_write_mram(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_STD_FILTER] +
                               (filter_id * sizeof(struct can_mcan_std_filter)),
@@ -1166,8 +1166,8 @@ static int can_mcan_add_rx_filter_ext(const struct device* dev, can_rx_callback_
         goto unlock;
     }
 
-    /* TODO proper fifo balancing */
-    filter_element.efec = filter_id & 0x01 ? CAN_MCAN_XFEC_FIFO1 : CAN_MCAN_XFEC_FIFO0;
+    /* Always use FIFO0 to ensure frames are delivered to callbacks in the order received */
+    filter_element.efec = CAN_MCAN_XFEC_FIFO0;
 
     err = can_mcan_write_mram(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_EXT_FILTER] +
                               (filter_id * sizeof(struct can_mcan_ext_filter)),
