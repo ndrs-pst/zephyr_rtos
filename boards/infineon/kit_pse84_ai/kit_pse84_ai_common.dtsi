@@ -69,9 +69,9 @@ zephyr_udc0: &usbhs {
 uart2: &scb2 {
 	compatible = "infineon,uart";
 	status = "okay";
-	current-speed = <1000000>;      /* PERI0_GRP1 / current-speed should be within (8 ~ 16) divisible value */
+	current-speed = <2000000>;      /* PERI0_GRP1 / current-speed should be within (8 ~ 16) divisible value */
 
-	clocks = <&peri0_group1_16bit_1>;       /* 10 MHz */
+	clocks = <&peri0_group1_16bit_1>;       /* 16 MHz */
 
 	pinctrl-0 = <&p6_7_scb2_uart_tx &p6_5_scb2_uart_rx>;
 	pinctrl-names = "default";
@@ -79,7 +79,7 @@ uart2: &scb2 {
 
 &peri0_group1_16bit_1 {
 	status = "okay";
-	clock-div = <8>;
+	clock-div = <5>;
 };
 
 i2c0: &scb0 {
