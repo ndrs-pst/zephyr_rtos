@@ -527,6 +527,17 @@ Bluetooth HCI
   on-chip BLE controllers (BL60x/BL70x/BL70XL). Out-of-tree boards and shields
   must update their devicetree nodes accordingly.
 
+* Bluetooth HCI drivers now have to provide a mandatory common struct as the first field of
+  their data (:c:struct:`bt_hci_driver_data`) and config (:c:struct:`bt_hci_driver_config`)
+  structs.
+
+* The HCI driver :c:member:`bt_hci_driver_api.open` callback no longer has a ``recv`` parameter;
+  rather the common HCI driver layer code takes care of managing this as part of the common
+  data struct. There is a new :c:func:`bt_hci_recv` API for drivers to pass data the higher
+  layer (e.g. the Bluetooth Host stack). For drivers that need access to any error from recv()
+  (most don't) there's also a new :c:func:`bt_hci_recv_err` API that leaves the responsibility
+  of unrefing the buffer to the caller in case of error situations.
+
 Networking
 **********
 

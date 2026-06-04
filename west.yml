@@ -174,7 +174,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 22474f2034d4f9c3be20f6162b0e0f1518225827
+      revision: 047d4547aeba0e2280610c6bdfc3058df0c61c80
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -215,7 +215,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 01e9dc3e70832f7967fbadf78594098eac565fb1
+      revision: 372c283638f26648581f056dad2e9b316e5e7329
       path: modules/hal/nxp
       groups:
         - hal
