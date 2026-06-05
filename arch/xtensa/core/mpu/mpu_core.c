@@ -28,9 +28,6 @@ BUILD_ASSERT((CONFIG_PRIVILEGED_STACK_SIZE > 0) &&
 	     (CONFIG_PRIVILEGED_STACK_SIZE % XCHAL_MPU_ALIGN) == 0);
 #endif
 
-extern char _heap_end[];
-extern char _heap_start[];
-
 /** MPU foreground map for kernel mode. */
 static struct xtensa_mpu_map xtensa_mpu_map_fg_kernel;
 
@@ -76,65 +73,26 @@ static struct k_spinlock xtensa_mpu_lock;
  *   defined in the processor configuration.
  */
 
-#ifndef CONFIG_XTENSA_MPU_ONLY_SOC_RANGES
 /**
- * Static definition of all code and data memory regions of the
- * current Zephyr image. This information must be available and
- * need to be processed upon MPU initialization.
+ * Find the memory type of a region according to xtensa_mpu_mem_type_ranges[].
+ *
+ * @param[in] start Start address of the region.
+ * @param[in] end End address of the region.
  */
-static const struct xtensa_mpu_range mpu_zephyr_ranges[] = {
-	/* Region for vector handlers. */
-	{
-		.start = (uintptr_t)XCHAL_VECBASE_RESET_VADDR,
-		/*
-		 * There is nothing from the Xtensa overlay about how big
-		 * the vector handler region is. So we make an assumption
-		 * that vecbase and .text are contiguous.
-		 *
-		 * SoC can override as needed if this is not the case,
-		 * especially if the SoC reset/startup code relocates
-		 * vecbase.
-		 */
-		.end   = (uintptr_t)__text_region_start,
-		.access_rights = XTENSA_MPU_ACCESS_P_RX_U_RX,
-		.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
-	},
-	/*
-	 * Mark the zephyr execution regions (data, bss, noinit, etc.)
-	 * cacheable, read / write and non-executable
-	 */
-	{
-		/* This includes .data, .bss and various kobject sections. */
-		.start = (uintptr_t)_image_ram_start,
-		.end   = (uintptr_t)_image_ram_end,
-		.access_rights = XTENSA_MPU_ACCESS_P_RW_U_NA,
-		.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
-	},
-#if K_HEAP_MEM_POOL_SIZE > 0
-	/* System heap memory */
-	{
-		.start = (uintptr_t)_heap_start,
-		.end   = (uintptr_t)_heap_end,
-		.access_rights = XTENSA_MPU_ACCESS_P_RW_U_NA,
-		.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
-	},
-#endif
-	/* Mark text segment cacheable, read only and executable */
-	{
-		.start = (uintptr_t)__text_region_start,
-		.end   = (uintptr_t)__text_region_end,
-		.access_rights = XTENSA_MPU_ACCESS_P_RX_U_RX,
-		.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
-	},
-	/* Mark rodata segment cacheable, read only and non-executable */
-	{
-		.start = (uintptr_t)__rodata_region_start,
-		.end   = (uintptr_t)__rodata_region_end,
-		.access_rights = XTENSA_MPU_ACCESS_P_RO_U_RO,
-		.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
-	},
-};
-#endif /* !CONFIG_XTENSA_MPU_ONLY_SOC_RANGES */
+static uint32_t find_memory_type(const uintptr_t start, const uintptr_t end)
+{
+	for (unsigned int i = 0; i < xtensa_mpu_mem_type_ranges_num; i++) {
+		const struct xtensa_mpu_mem_type_region *region = &xtensa_mpu_mem_type_ranges[i];
+
+		if (IN_RANGE(start, region->start, region->end) &&
+		    IN_RANGE(end, region->start, region->end)) {
+			return (uint32_t)region->memory_type;
+		}
+	}
+
+	__ASSERT(false, "Cannot find memory type for region 0x%lx - 0x%lx", start, end);
+	return CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE;
+}
 
 /**
  * Return the pointer to the entry encompassing @a addr out of an array of MPU entries.
@@ -266,9 +224,10 @@ static int compare_entries(const void *a, const void *b)
  * This sorts the MPU entries in ascending order of starting address.
  * After sorting, it rewrites the segment numbers of all entries.
  */
-static void sort_entries(struct xtensa_mpu_entry *entries)
+static void sort_entries(struct xtensa_mpu_entry *entries, uint8_t first_enabled_idx)
 {
-	qsort(entries, XTENSA_MPU_NUM_ENTRIES, sizeof(entries[0]), compare_entries);
+	qsort(&entries[first_enabled_idx], (XTENSA_MPU_NUM_ENTRIES - first_enabled_idx),
+	      sizeof(entries[0]), compare_entries);
 
 	for (uint32_t idx = 0; idx < XTENSA_MPU_NUM_ENTRIES; idx++) {
 		/* Segment value must correspond to the index. */
@@ -281,17 +240,18 @@ static void sort_entries(struct xtensa_mpu_entry *entries)
  *
  * This removes consecutive entries where the attributes are the same.
  *
- * @param entries Array of MPU entries with XTENSA_MPU_NUM_ENTRIES elements.
- * @param first_enabled_idx Index of first enabled entry.
+ * @param[in] entries Array of MPU entries with XTENSA_MPU_NUM_ENTRIES elements.
+ * @param[in,out] first_enabled_idx Index of first enabled entry. The new index
+ *                                  is written into this.
  *
- * @return Index of the first enabled entry after consolidation.
+ * @retval true If any consolidation was done.
+ * @retval false If no consolidation was done.
  */
-static uint8_t consolidate_entries(struct xtensa_mpu_entry *entries,
-				   uint8_t first_enabled_idx)
+static bool consolidate_entries(struct xtensa_mpu_entry *entries, uint8_t *first_enabled_idx)
 {
-	uint8_t new_first;
-	uint8_t idx_0 = first_enabled_idx;
-	uint8_t idx_1 = first_enabled_idx + 1;
+	uint8_t new_first = *first_enabled_idx;
+	uint8_t idx_0 = new_first;
+	uint8_t idx_1 = new_first + 1;
 	bool to_consolidate = false;
 
 	/* For each a pair of entries... */
@@ -348,7 +308,7 @@ static uint8_t consolidate_entries(struct xtensa_mpu_entry *entries,
 		uint8_t write_idx = XTENSA_MPU_NUM_ENTRIES;
 
 		/* Go through the map from the end and copy enabled entries in place. */
-		while (read_idx >= first_enabled_idx) {
+		while (read_idx >= new_first) {
 			struct xtensa_mpu_entry *entry_rd = &entries[read_idx];
 
 			if (entry_rd->as.p.mbz != 1U) {
@@ -382,12 +342,11 @@ static uint8_t consolidate_entries(struct xtensa_mpu_entry *entries,
 			/* Use default memory type for disabled entries. */
 			e->at.p.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE;
 		}
-	} else {
-		/* No need to conlidate entries. Map is same as before. */
-		new_first = first_enabled_idx;
+
+		*first_enabled_idx = new_first;
 	}
 
-	return new_first;
+	return to_consolidate;
 }
 
 /**
@@ -401,7 +360,6 @@ static uint8_t consolidate_entries(struct xtensa_mpu_entry *entries,
  * @param[in] start_addr Start address of the region.
  * @param[in] end_addr End address of the region.
  * @param[in] access_rights Access rights of this region.
- * @param[in] memory_type Memory type of this region.
  * @param[out] first_idx Return index of first enabled entry if not NULL.
  *
  * @retval 0 Successful in adding the region.
@@ -409,12 +367,12 @@ static uint8_t consolidate_entries(struct xtensa_mpu_entry *entries,
  */
 static int mpu_map_region_add(struct xtensa_mpu_map *map,
 			      uintptr_t start_addr, uintptr_t end_addr,
-			      uint32_t access_rights, uint32_t memory_type,
-			      uint8_t *first_idx)
+			      uint32_t access_rights, uint8_t *first_idx)
 {
 	int ret;
 	bool exact_s, exact_e;
 	uint8_t idx_s, idx_e, first_enabled_idx;
+	uint32_t memory_type;
 	struct xtensa_mpu_entry *entry_slot_s, *entry_slot_e, prev_entry;
 
 	struct xtensa_mpu_entry *entries = map->entries;
@@ -424,93 +382,99 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 		goto out;
 	}
 
+	memory_type = find_memory_type(start_addr, end_addr);
+
 	first_enabled_idx = find_first_enabled_entry(entries);
 	if (first_enabled_idx >= XTENSA_MPU_NUM_ENTRIES) {
-
 		/*
-		 * If the last entry in the map is not enabled and the start
-		 * address is NULL, we can assume the map has not been populated
-		 * at all. This is because we group all enabled entries at
-		 * the end of map.
+		 * Map is empty and has not been populated. We can simply
+		 * put the entries at the end of map.
 		 */
-		struct xtensa_mpu_entry *last_entry = &entries[XTENSA_MPU_NUM_ENTRIES - 1];
 
-		if (!xtensa_mpu_entry_enable_get(last_entry) &&
-		    (xtensa_mpu_entry_start_address_get(last_entry) == 0U)) {
-			/* Empty table, so populate the entries as-is. */
-			if (end_addr == 0xFFFFFFFFU) {
-				/*
-				 * Region goes to end of memory, so only need to
-				 * program one entry.
-				 */
-				entry_slot_s = &entries[XTENSA_MPU_NUM_ENTRIES - 1];
+		if (end_addr == 0xFFFFFFFFU) {
+			/*
+			 * Region goes to end of memory, so only need to
+			 * program one entry.
+			 */
+			entry_slot_s = &entries[XTENSA_MPU_NUM_ENTRIES - 1];
 
-				xtensa_mpu_entry_set(entry_slot_s, start_addr, true,
-						     access_rights, memory_type);
-				first_enabled_idx = XTENSA_MPU_NUM_ENTRIES - 1;
-				goto end;
-			} else {
-				/*
-				 * Populate the last two entries to indicate
-				 * a memory region. Notice that the second entry
-				 * is not enabled as it is merely marking the end of
-				 * a region and is not the starting of another
-				 * enabled MPU region.
-				 */
-				entry_slot_s = &entries[XTENSA_MPU_NUM_ENTRIES - 2];
-				entry_slot_e = &entries[XTENSA_MPU_NUM_ENTRIES - 1];
+			xtensa_mpu_entry_set(entry_slot_s, start_addr, true,
+					     access_rights, memory_type);
+			first_enabled_idx = XTENSA_MPU_NUM_ENTRIES - 1;
+		} else {
+			/*
+			 * Populate the last two entries to indicate
+			 * a memory region. Notice that the second entry
+			 * is not enabled as it is merely marking the end of
+			 * a region and is not the starting of another
+			 * enabled MPU region.
+			 */
+			entry_slot_s = &entries[XTENSA_MPU_NUM_ENTRIES - 2];
+			entry_slot_e = &entries[XTENSA_MPU_NUM_ENTRIES - 1];
 
-				xtensa_mpu_entry_set(entry_slot_s, start_addr, true,
-						     access_rights, memory_type);
-				xtensa_mpu_entry_set(entry_slot_e, end_addr, false,
-						     XTENSA_MPU_ACCESS_P_NA_U_NA,
-						     CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE);
-				first_enabled_idx = XTENSA_MPU_NUM_ENTRIES - 2;
-				goto end;
-			}
-
-			ret = 0;
-			goto out;
+			xtensa_mpu_entry_set(entry_slot_s, start_addr, true,
+					     access_rights, memory_type);
+			xtensa_mpu_entry_set(entry_slot_e, end_addr, false,
+					     XTENSA_MPU_ACCESS_P_NA_U_NA,
+					     CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE);
+			first_enabled_idx = XTENSA_MPU_NUM_ENTRIES - 2;
 		}
 
-		first_enabled_idx = consolidate_entries(entries, first_enabled_idx);
+		goto end;
+	}
 
-		if (first_enabled_idx >= XTENSA_MPU_NUM_ENTRIES) {
+	do {
+		/*
+		 * Figure out if we need to add new slots for either addresses.
+		 * If the addresses match exactly the addresses current in map,
+		 * we can reuse those entries without adding new one.
+		 * If not, we need to find some free slots to insert new entries.
+		 */
+
+		entry_slot_s = (struct xtensa_mpu_entry *)
+			       check_addr_in_mpu_entries(entries, start_addr, first_enabled_idx,
+							 &exact_s, &idx_s);
+		entry_slot_e = (struct xtensa_mpu_entry *)
+			       check_addr_in_mpu_entries(entries, end_addr, first_enabled_idx,
+							 &exact_e, &idx_e);
+
+		__ASSERT_NO_MSG(entry_slot_s != NULL);
+		__ASSERT_NO_MSG(entry_slot_e != NULL);
+		__ASSERT_NO_MSG(start_addr < end_addr);
+
+		if ((entry_slot_s == NULL) || (entry_slot_e == NULL)) {
 			ret = -EINVAL;
 			goto out;
 		}
-	}
 
-	entry_slot_s = (struct xtensa_mpu_entry *)
-		       check_addr_in_mpu_entries(entries, start_addr, first_enabled_idx,
-						 &exact_s, &idx_s);
-	entry_slot_e = (struct xtensa_mpu_entry *)
-		       check_addr_in_mpu_entries(entries, end_addr, first_enabled_idx,
-						 &exact_e, &idx_e);
+		/* One or both have no exact match. Need to find free slots. */
+		if (!exact_s || !exact_e) {
+			uint8_t needed = (exact_s ? 0 : 1) + (exact_e ? 0 : 1);
 
-	__ASSERT_NO_MSG(entry_slot_s != NULL);
-	__ASSERT_NO_MSG(entry_slot_e != NULL);
-	__ASSERT_NO_MSG(start_addr < end_addr);
+			/* Check if there are enough empty slots. */
+			if (first_enabled_idx < needed) {
+				bool success;
 
-	if ((entry_slot_s == NULL) || (entry_slot_e == NULL)) {
-		ret = -EINVAL;
-		goto out;
-	}
+				/* Try compacting the MPU map to free up some slots. */
+				success = consolidate_entries(entries, &first_enabled_idx);
+				if (success) {
+					/* Map consolidated. So we try to find free slots
+					 * again.
+					 */
+					continue;
+				}
 
-	/*
-	 * Figure out if we need to add new slots for either addresses.
-	 * If the addresses match exactly the addresses current in map,
-	 * we can reuse those entries without adding new one.
-	 */
-	if (!exact_s || !exact_e) {
-		uint8_t needed = (exact_s ? 0 : 1) + (exact_e ? 0 : 1);
-
-		/* Check if there are enough empty slots. */
-		if (first_enabled_idx < needed) {
-			ret = -ENOMEM;
-			goto out;
+				/* If we still do not have enough slots after compacting
+				 * the MPU map. We bail.
+				 */
+				ret = -ENOMEM;
+				goto out;
+			}
 		}
-	}
+
+		/* We have enough information and space to proceed. */
+		break;
+	} while (true);
 
 	/*
 	 * Need to keep track of the attributes of the memory region before
@@ -565,7 +529,7 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 	}
 
 	/* Sort the entries in ascending order of starting address */
-	sort_entries(entries);
+	sort_entries(entries, first_enabled_idx);
 
 	/*
 	 * Need to figure out where the start and end entries are as sorting
@@ -669,7 +633,7 @@ void xtensa_mpu_map_write(struct xtensa_mpu_map *map)
 void xtensa_mpu_init(void)
 {
 	unsigned int entry;
-	uint8_t first_enabled_idx;
+	uint8_t first_enabled_idx = XTENSA_MPU_NUM_ENTRIES;
 
 	/* Disable all foreground segments before we start configuration. */
 	xtensa_mpu_mpuenb_write(0);
@@ -695,36 +659,15 @@ void xtensa_mpu_init(void)
 		xtensa_mpu_map_fg_kernel.entries[entry] = ent;
 	}
 
-#ifndef CONFIG_XTENSA_MPU_ONLY_SOC_RANGES
 	/*
-	 * Add necessary MPU entries for the memory regions of base Zephyr image.
+	 * Add necessary MPU entries for the memory regions of Zephyr image.
 	 */
-	for (entry = 0; entry < ARRAY_SIZE(mpu_zephyr_ranges); entry++) {
-		const struct xtensa_mpu_range *range = &mpu_zephyr_ranges[entry];
+	for (entry = 0; entry < (unsigned int)xtensa_mpu_ranges_num; entry++) {
+		const struct xtensa_mpu_range *range = &xtensa_mpu_ranges[entry];
 
 		int ret = mpu_map_region_add(&xtensa_mpu_map_fg_kernel,
 					     range->start, range->end,
-					     range->access_rights, range->memory_type,
-					     &first_enabled_idx);
-
-		ARG_UNUSED(ret);
-		__ASSERT(ret == 0, "Unable to add region [0x%08x, 0x%08x): %d",
-				   (unsigned int)range->start,
-				   (unsigned int)range->end,
-				   ret);
-	}
-#endif /* !CONFIG_XTENSA_MPU_ONLY_SOC_RANGES */
-
-	/*
-	 * Now for the entries for memory regions needed by SoC.
-	 */
-	for (entry = 0; entry < xtensa_soc_mpu_ranges_num; entry++) {
-		const struct xtensa_mpu_range *range = &xtensa_soc_mpu_ranges[entry];
-
-		int ret = mpu_map_region_add(&xtensa_mpu_map_fg_kernel,
-					     range->start, range->end,
-					     range->access_rights, range->memory_type,
-					     &first_enabled_idx);
+					     range->access_rights, &first_enabled_idx);
 
 		ARG_UNUSED(ret);
 		__ASSERT(ret == 0, "Unable to add region [0x%08x, 0x%08x): %d",
@@ -734,7 +677,7 @@ void xtensa_mpu_init(void)
 	}
 
 	/* Consolidate entries so we have a compact map at boot. */
-	consolidate_entries(xtensa_mpu_map_fg_kernel.entries, first_enabled_idx);
+	(void)consolidate_entries(xtensa_mpu_map_fg_kernel.entries, &first_enabled_idx);
 
 	/* Write the map into hardware. There is no turning back now. */
 #ifdef CONFIG_USERSPACE
@@ -748,6 +691,55 @@ void xtensa_mpu_init(void)
 }
 
 #ifdef CONFIG_USERSPACE
+/**
+ * Find the permission of a region at boot according to xtensa_mpu_ranges[].
+ *
+ * @param[in] start Start address of the region.
+ * @param[in] end End address of the region.
+ */
+static uint32_t find_boot_permission(const uintptr_t start, const uintptr_t end)
+{
+	/* Default is kernel only RW, same as background map. */
+	uint32_t perms = XTENSA_MPU_ACCESS_P_RW_U_NA;
+
+	/* Need to go through the whole list as it is possible that later
+	 * entry in the array overrides previous entries, similar to how
+	 * we process the array at boot.
+	 */
+	for (int i = 0; i < xtensa_mpu_ranges_num; i++) {
+		const struct xtensa_mpu_range *region = &xtensa_mpu_ranges[i];
+
+		if (IN_RANGE(start, region->start, region->end) &&
+		    IN_RANGE(end, region->start, region->end)) {
+			perms = region->access_rights;
+		}
+	}
+
+	return perms;
+}
+
+/**
+ * Restore permissions of a memory region in the MPU map.
+ *
+ * This restores the permissions of a memory region back to what is
+ * programmed at boot.
+ *
+ * @param[in,out] map Pointer to MPU map.
+ * @param[in] start_addr Start address of the region.
+ * @param[in] end_addr End address of the region.
+ * @param[in] access_rights Access rights of this region.
+ *
+ * @retval 0 Successful in adding the region.
+ * @retval -EINVAL Invalid values in function arguments.
+ */
+static int mpu_map_region_restore(struct xtensa_mpu_map *map,
+				  uintptr_t start_addr, uintptr_t end_addr)
+{
+	uint32_t access_rights = find_boot_permission(start_addr, end_addr);
+
+	return mpu_map_region_add(map, start_addr, end_addr, access_rights, NULL);
+}
+
 int arch_mem_domain_init(struct k_mem_domain *domain)
 {
 	domain->arch.mpu_map = xtensa_mpu_map_fg_kernel;
@@ -838,10 +830,7 @@ int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 	 * be updated with the default attributes. Or new entries
 	 * will be added to carve a hole in existing regions.
 	 */
-	ret = mpu_map_region_add(map, partition->start, end_addr,
-				 perm,
-				 CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
-				 NULL);
+	ret = mpu_map_region_add(map, partition->start, end_addr, perm, NULL);
 
 	/*
 	 * Need to update hardware MPU regions if we are removing
@@ -871,9 +860,7 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 	}
 
 	ret = mpu_map_region_add(map, partition->start, end_addr,
-				 (uint8_t)partition->attr,
-				 CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
-				 NULL);
+				 (uint8_t)partition->attr, NULL);
 
 	/*
 	 * Need to update hardware MPU regions if we are removing
@@ -909,48 +896,43 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	bool is_user = (thread->base.user_options & K_USER) != 0;
 	bool is_migration = (old_map != NULL) && is_user;
 
-	uintptr_t stack_end_addr = thread->stack_info.start + thread->stack_info.size;
-
-	if (stack_end_addr < thread->stack_info.start) {
-		/* Account for wrapping around back to 0. */
-		stack_end_addr = 0xFFFFFFFFU;
-	}
+	thread->arch.mpu_map = &domain->arch.mpu_map;
 
 	/*
-	 * Allow USER access to the thread's stack in its new domain if
-	 * we are migrating. If we are not migrating this is done in
+	 * If we are migrating from one memory domain to another, we need to
+	 * allow USER access to the thread's stack in its new domain and remove
+	 * access from the old domain.
+	 *
+	 * If we are not migrating, adding stack access permission is done in
 	 * xtensa_user_stack_perms().
 	 */
 	if (is_migration) {
+		uintptr_t stack_end_addr = thread->stack_info.start + thread->stack_info.size;
+
+		if (stack_end_addr < thread->stack_info.start) {
+			/* Account for wrapping around back to 0. */
+			stack_end_addr = 0xFFFFFFFFU;
+		}
+
 		/* Add stack to new domain's MPU map. */
 		ret = mpu_map_region_add(&domain->arch.mpu_map,
 					 thread->stack_info.start, stack_end_addr,
 					 XTENSA_MPU_ACCESS_P_RW_U_RW,
-					 CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
 					 NULL);
 
 		/* Probably this fails due to no more available slots in MPU map. */
 		__ASSERT_NO_MSG(ret == 0);
-	}
 
-	thread->arch.mpu_map = &domain->arch.mpu_map;
-
-	/*
-	 * Remove thread stack from old memory domain if we are
-	 * migrating away from old memory domain. This is done
-	 * by simply remove USER access from the region.
-	 */
-	if (is_migration) {
 		/*
 		 * Remove stack from old MPU map by...
 		 * "adding" a new memory region to the map
 		 * as this carves a hole in the existing map.
 		 */
-		ret = mpu_map_region_add(old_map,
-					 thread->stack_info.start, stack_end_addr,
-					 XTENSA_MPU_ACCESS_P_RW_U_NA,
-					 CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
-					 NULL);
+		ret = mpu_map_region_restore(old_map,
+					     thread->stack_info.start, stack_end_addr);
+
+		/* Probably this fails due to no more available slots in MPU map. */
+		__ASSERT_NO_MSG(ret == 0);
 	}
 
 	/*
@@ -996,11 +978,8 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 	 * Restore permissions on the thread's stack area since it is no
 	 * longer a member of the domain.
 	 */
-	ret = mpu_map_region_add(&domain->arch.mpu_map,
-				 thread->stack_info.start, stack_end_addr,
-				 XTENSA_MPU_ACCESS_P_RW_U_NA,
-				 CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
-				 NULL);
+	ret = mpu_map_region_restore(&domain->arch.mpu_map,
+				     thread->stack_info.start, stack_end_addr);
 
 	xtensa_mpu_map_write(thread);
 
@@ -1194,7 +1173,6 @@ void xtensa_user_stack_perms(struct k_thread *thread)
 	ret = mpu_map_region_add(thread->arch.mpu_map,
 				 thread->stack_info.start, stack_end_addr,
 				 XTENSA_MPU_ACCESS_P_RW_U_RW,
-				 CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
 				 NULL);
 
 	xtensa_mpu_map_write(thread);

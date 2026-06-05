@@ -295,21 +295,13 @@ if XTENSA_MPU
 
 config XTENSA_MPU_DEFAULT_MEM_TYPE
 	hex "Default Memory Type"
-	default 0x18
+	default 0x6
 	help
-	  Default memory type for memory regions: non-cacheable memory,
-	  non-shareable, non-bufferable and interruptible.
+	  Default memory type for memory regions: device, shareable, not interruptible,
+	  and not cached.
 
 	  If userspace is enabled, it will be used to restore the memory type of
 	  the region being removed from a memory domain.
-
-config XTENSA_MPU_ONLY_SOC_RANGES
-	bool
-	help
-	  Enable this by the SoC to indicate to the architecture code to use
-	  the MPU ranges specified by SoC only, and skip the common ranges
-	  defined in the core architecture code. This gives total control to
-	  the SoC on the MPU ranges.
 
 endif # XTENSA_MPU
 

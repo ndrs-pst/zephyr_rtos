@@ -262,6 +262,9 @@ Input
   * ``CONFIG_INPUT_CST8XX_PERIOD`` → :kconfig:option:`CONFIG_INPUT_CST8XX_PERIOD_MS`
   * ``CONFIG_INPUT_FT6146_PERIOD`` → :kconfig:option:`CONFIG_INPUT_FT6146_PERIOD_MS`
 
+  * Nunchuk driver wronlgy reported ``INPUT_KEY_Z``, respective ``INPUT_KEY_C`` in button events. This
+    has been fixed and ``INPUT_BTN_Z``, respective ``INPUT_BTN_C`` is used now.
+
 Interrupt Controllers
 =====================
 
@@ -721,3 +724,9 @@ Architectures
   It returns the current interrupt-enable state of the calling CPU without
   modifying it, complementing ``arch_irq_unlocked()`` which inspects a saved
   key.  Out-of-tree architecture ports must provide an implementation.
+
+* ``CONFIG_XTENSA_MPU_ONLY_SOC_RANGES`` is removed. For SoC or board to override the default
+  MPU region table, override :c:var:`xtensa_mpu_ranges` in the SoC or board layer instead.
+
+* ``xtensa_soc_mpu_ranges[]`` and ``xtensa_soc_mpu_ranges_num`` are removed. If SoC or board
+  needs its own memory regions at boot, override :c:var:`xtensa_mpu_ranges` instead.

@@ -1476,8 +1476,10 @@ static inline bool device_api_is(void const* api, void const* sec_start, void co
 #if !defined(_MSC_VER) /* #CUSTOM@NDRS */
 #define DEVICE_API_GET(_class, _dev)                                            \
     ({                                                                          \
+        IF_ENABLED(CONFIG_DEVICE_API_ASSERT, (                                  \
         __ASSERT(_dev != NULL, "device is NULL");                               \
         __ASSERT(DEVICE_API_IS(_class, _dev), "device API is not %s", STRINGIFY(_class)); \
+        ));                                                                     \
         Z_DEVICE_API_GET(_class, _dev);                                         \
     })
 #else

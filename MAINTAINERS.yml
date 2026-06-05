@@ -2326,6 +2326,7 @@ Documentation Infrastructure:
     - rerickson1
   collaborators:
     - SeppoTakalo
+    - zafersn
   files:
     - drivers/modem/
     - tests/drivers/build_all/modem/
@@ -4562,6 +4563,7 @@ Networking:
     - rlubos
   collaborators:
     - BeckmaR
+    - M1cha
   files:
     - subsys/net/lib/mqtt_sn/
     - tests/net/lib/mqtt_sn*/
@@ -4961,6 +4963,7 @@ RISCV arch:
     - boards/sifive/
     - boards/sparkfun/red_v_things_plus/
     - boards/starfive/
+    - cmake/compiler/*/target_riscv.cmake
     - doc/hardware/arch/risc-v.rst
     - drivers/interrupt_controller/intc_plic.c
     - drivers/interrupt_controller/intc_riscv_imsic.c
