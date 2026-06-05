@@ -358,7 +358,7 @@ static int ifx_cat1_uart_configure(const struct device* dev, const struct uart_c
     scb_config->enableCts = cfg->flow_ctrl;
     scb_config->rtsRxFifoLevel = cfg->flow_ctrl ? IFX_UART_RTS_RX_FIFO_LEVEL : 0UL;
 
-    Cy_SCB_UART_Init(config->reg_addr, scb_config, NULL);
+    (void) Cy_SCB_UART_Init(config->reg_addr, scb_config, NULL);
     Cy_SCB_UART_Enable(config->reg_addr);
     /* Configure the baud rate */
     result = ifx_cat1_uart_set_baud(dev, cfg->baudrate);

@@ -4755,7 +4755,7 @@ int bt_enable(bt_ready_cb_t cb)
 	k_thread_name_set(&bt_workq.thread, "BT RX WQ");
 #endif
 
-	err = bt_hci_open(bt_dev.hci, bt_recv);
+	err = bt_hci_open(bt_dev.hci, bt_recv);                 // @see h4_open
 	if (err) {
 		LOG_ERR("HCI driver open failed (%d)", err);
 		return err;
