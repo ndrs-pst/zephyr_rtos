@@ -225,7 +225,7 @@
 	status = "okay";
 };
 
-&clk_hf10 {
+&clk_hf10 { /* 320 MHz / 4 = 80 MHz */
 	source-path = <IFX_CLK_HF_IN_CLKPATH0>;
 	clock-div = <IFX_CLK_HF_DIVIDE_BY_4>;
 	status = "okay";
