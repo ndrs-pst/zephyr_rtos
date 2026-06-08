@@ -397,8 +397,7 @@ void bt_conn_reset_rx_state(struct bt_conn *conn)
 		return;
 	}
 
-	net_buf_unref(conn->rx);
-	conn->rx = NULL;
+	net_buf_drop(&conn->rx);
 }
 
 static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
@@ -2519,8 +2518,8 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(conn->handle);
-	memcpy(&cp->rand, rand, sizeof(cp->rand));
-	memcpy(&cp->ediv, ediv, sizeof(cp->ediv));
+	(void)memcpy(cp->rand, rand, sizeof(cp->rand));
+	(void)memcpy(cp->ediv, ediv, sizeof(cp->ediv));
 
 	memcpy(cp->ltk, ltk, len);
 	if (len < sizeof(cp->ltk)) {

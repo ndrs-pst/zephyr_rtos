@@ -2480,6 +2480,8 @@ static void le_ltk_request(struct net_buf *buf)
 	struct bt_conn *conn;
 	uint16_t handle;
 	uint8_t ltk[16];
+	uint64_t rand_value;
+	uint16_t ediv;
 
 	handle = sys_le16_to_cpu(evt->handle);
 
@@ -2491,7 +2493,10 @@ static void le_ltk_request(struct net_buf *buf)
 		return;
 	}
 
-	if (bt_smp_request_ltk(conn, evt->rand, evt->ediv, ltk)) {
+	(void)memcpy(&rand_value, evt->rand, sizeof(rand_value));
+	(void)memcpy(&ediv, evt->ediv, sizeof(ediv));
+
+	if (bt_smp_request_ltk(conn, rand_value, ediv, ltk)) {
 		le_ltk_reply(handle, ltk);
 	} else {
 		le_ltk_neg_reply(handle);
@@ -3260,8 +3265,7 @@ static void hci_core_send_cmd(void)
 	/* Clear out any existing sent command */
 	if (bt_dev.sent_cmd) {
 		LOG_ERR("Uncleared pending sent_cmd");
-		net_buf_unref(bt_dev.sent_cmd);
-		bt_dev.sent_cmd = NULL;
+		net_buf_drop(&bt_dev.sent_cmd);
 	}
 
 	bt_dev.sent_cmd = net_buf_ref(buf);

@@ -1105,7 +1105,6 @@ Continuous Integration:
     - .github/
     - scripts/requirements-*
     - scripts/ci/
-    - scripts/make_bugs_pickle.py
     - .checkpatch.conf
     - scripts/gitlint/
     - scripts/ci/set_assignees.py
@@ -2083,6 +2082,7 @@ Documentation Infrastructure:
     - TomasBarakNXP
     - anangl
     - Peterson-Brett
+    - mariopaja
   files:
     - doc/hardware/peripherals/audio/i2s.rst
     - drivers/i2s/
@@ -2327,6 +2327,7 @@ Documentation Infrastructure:
   collaborators:
     - SeppoTakalo
     - zafersn
+    - wkhadgar
   files:
     - drivers/modem/
     - tests/drivers/build_all/modem/
@@ -3910,6 +3911,7 @@ Modem:
     - bjarki-andreasen
   collaborators:
     - SeppoTakalo
+    - wkhadgar
   files:
     - subsys/modem/
     - include/zephyr/modem/
@@ -4212,6 +4214,7 @@ NXP Platforms (MPU):
     - iuliana-prodan
     - yangbolu1991
     - Zhiqiang-Hou
+    - ZhaoQiang-b45475
   files:
     - drivers/*/*imx*
     - include/zephyr/dt-bindings/rdc/
@@ -5142,7 +5145,6 @@ Release:
     - nashif
   files:
     - VERSION
-    - scripts/dump_bugs_pickle.py
     - SDK_VERSION
     - LICENSE
     - LICENSES/
