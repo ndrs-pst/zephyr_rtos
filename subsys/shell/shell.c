@@ -526,7 +526,7 @@ static void find_root_completion_candidates(struct shell_static_entry const* cmd
                                             char const* incompl_cmd,
                                             char const** first_match,
                                             size_t* cnt,
-                                            uint16_t* longest) {
+                                            size_t* longest) {
     struct shell_static_entry const* candidate;
     struct shell_static_entry dloc;
     size_t incompl_cmd_len = z_shell_strlen(incompl_cmd);
@@ -559,7 +559,7 @@ static void find_root_completion_candidates(struct shell_static_entry const* cmd
             continue;
         }
 
-        *longest = max(strlen(shell_aliases[idx].alias), *longest);
+        *longest = z_max(strlen(shell_aliases[idx].alias), *longest);
         if (*cnt == 0U) {
             *first_match = shell_aliases[idx].alias;
         }
@@ -609,13 +609,13 @@ static void find_completion_candidates(struct shell const* sh,
                                        struct shell_static_entry const* cmd,
                                        char const* incompl_cmd,
                                        size_t* first_idx, size_t* cnt,
-                                       uint16_t* longest) {
+                                       size_t* longest) {
     const struct shell_static_entry* candidate;
     struct shell_static_entry dloc;
     size_t incompl_cmd_len;
     size_t idx = 0;
     size_t cnt_val = 0;
-    uint16_t long_val = 0U;
+    size_t long_val = 0U;
 
     incompl_cmd_len = z_shell_strlen(incompl_cmd);
 
@@ -624,7 +624,7 @@ static void find_completion_candidates(struct shell const* sh,
         is_candidate = is_completion_candidate(candidate->syntax,
                                                incompl_cmd, incompl_cmd_len);
         if (is_candidate) {
-            long_val = (uint16_t)z_max(strlen(candidate->syntax), long_val);
+            long_val = z_max(strlen(candidate->syntax), long_val);
             if (cnt_val == 0) {
                 *first_idx = idx;
             }
@@ -743,7 +743,7 @@ static void tab_options_print(struct shell const* sh,
 static void root_tab_options_print(struct shell const* sh,
                                    struct shell_static_entry const* cmd,
                                    char const* str,
-                                   uint16_t longest) {
+                                   size_t longest) {
     struct shell_static_entry const* match;
     struct shell_static_entry dloc;
     size_t str_len = z_shell_strlen(str);
@@ -1275,7 +1275,7 @@ static void tab_handle(struct shell const* sh) {
     char const* first_match = NULL;
     size_t first = 0;
     size_t arg_idx;
-    uint16_t longest;
+    size_t longest;
     size_t argc;
     size_t cnt;
     bool alias_completion;
@@ -1306,7 +1306,7 @@ static void tab_handle(struct shell const* sh) {
     }
     else {
         find_completion_candidates(sh, cmd, argv[arg_idx], &first, &cnt,
-                       &longest);
+                                   &longest);
 
         if (cnt == 1U) {
             /* Autocompletion.*/
@@ -1700,16 +1700,35 @@ static void transport_evt_handler(enum shell_transport_evt evt_type, void* ctx) 
 static void shell_log_process(struct shell const* sh) {
     struct shell_ctx* ctx = sh->ctx;
     bool processed = false;
+    bool readline_active = (ctx->readline_state == SHELL_READLINE_ACTIVE);
 
     do {
         if (!IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
-            z_shell_cmd_line_erase(sh);
+            if (readline_active) {
+                z_cursor_restore(sh);
+                z_clear_eos(sh);
+            }
+            else {
+                z_shell_cmd_line_erase(sh);
+            }
 
             processed = z_shell_log_backend_process(
                             sh->log_backend);
         }
 
-        z_shell_print_prompt_and_cmd(sh);
+        if (readline_active) {
+            z_cursor_save(sh);
+
+            if (ctx->readline_prompt != NULL) {
+                z_shell_fprintf(sh, SHELL_NORMAL, "%s",
+                                ctx->readline_prompt);
+            }
+            z_shell_print_cmd(sh);
+            z_shell_op_cursor_position_synchronize(sh);
+        }
+        else {
+            z_shell_print_prompt_and_cmd(sh);
+        }
 
         /* Arbitrary delay added to ensure that prompt is
          * readable and can be used to enter further commands.
@@ -2271,6 +2290,10 @@ bool shell_ready(struct shell const* sh) {
     return (state_get(sh) == SHELL_STATE_ACTIVE);
 }
 
+void shell_readline_prompt_set(struct shell const* sh, char const* prompt) {
+    sh->ctx->readline_prompt = prompt;
+}
+
 int shell_readline(struct shell const* sh, uint8_t* buf, size_t len, k_timeout_t timeout) {
     k_timepoint_t end = sys_timepoint_calc(timeout);
     int ret;
@@ -2293,11 +2316,27 @@ int shell_readline(struct shell const* sh, uint8_t* buf, size_t len, k_timeout_t
     /* Clear the buffer for user input */
     cmd_buffer_clear(sh);
 
+    /* Save cursor position so log output can return here, then print
+     * the readline prompt.  After every log message the position is
+     * re-saved so it always points to the line right after the last log.
+     */
+    z_cursor_save(sh);
+    if (ctx->readline_prompt != NULL) {
+        z_shell_fprintf(sh, SHELL_NORMAL, "%s", ctx->readline_prompt);
+    }
+
     while (true) {
         state_collect(sh);
 
+        /* Process deferred logs during readline */
+        if (IS_ENABLED(CONFIG_SHELL_LOG_BACKEND) &&
+            k_event_test(&ctx->signal_event, SHELL_SIGNAL_LOG_MSG)) {
+            k_event_clear(&ctx->signal_event, SHELL_SIGNAL_LOG_MSG);
+            shell_log_process(sh);
+        }
+
         if (ctx->readline_state == SHELL_READLINE_DONE) {
-            if (buf == NULL || ctx->cmd_buff_len >= len) {
+            if ((buf == NULL) || (ctx->cmd_buff_len >= len)) {
                 ret = -ENOBUFS;
                 break;
             }
@@ -2329,7 +2368,8 @@ int shell_readline(struct shell const* sh, uint8_t* buf, size_t len, k_timeout_t
     ctx->cmd_buff_pos = ctx->cmd_tmp_buff_pos;
     memcpy(ctx->cmd_buff, ctx->temp_buff, ctx->cmd_buff_len);
 
-    ctx->readline_state = SHELL_READLINE_INACTIVE;
+    ctx->readline_prompt = NULL;
+    ctx->readline_state  = SHELL_READLINE_INACTIVE;
 
     return (ret);
 }

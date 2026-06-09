@@ -44,19 +44,19 @@ extern "C" {
 static ALWAYS_INLINE unsigned int arch_irq_lock(void) {
     unsigned int key;
 
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-#if ((CONFIG_MP_MAX_NUM_CPUS == 1) || defined(CONFIG_ARMV8_M_BASELINE))
+    #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    #if ((CONFIG_MP_MAX_NUM_CPUS == 1) || defined(CONFIG_ARMV8_M_BASELINE))
     key = __get_PRIMASK();
     __disable_irq();
-#else
-#error "Cortex-M0 and Cortex-M0+ require SoC specific support for cross core synchronisation."
-#endif
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+    #else
+    #error "Cortex-M0 and Cortex-M0+ require SoC specific support for cross core synchronisation."
+    #endif
+    #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     key = __get_BASEPRI();
     __set_BASEPRI_MAX(_EXC_IRQ_DEFAULT_PRIO);
     __ISB();
-#elif (defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) || \
-       defined(CONFIG_ARMV7_A))
+    #elif (defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) || \
+           defined(CONFIG_ARMV7_A) || defined(CONFIG_AARCH32_ARMV8_A))
     __asm__ volatile(
         "mrs %0, cpsr;"
         "and %0, #" STRINGIFY(I_BIT) ";"
@@ -64,9 +64,9 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void) {
         : "=r"(key)
         :
         : "memory", "cc");
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+    #else
+    #error Unknown ARM architecture
+    #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
     return (key);
 }
@@ -76,24 +76,24 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void) {
  */
 
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key) {
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     if (key != 0U) {
         return;
     }
     __enable_irq();
     __ISB();
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+    #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     __set_BASEPRI(key);
     __ISB();
-#elif (defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) || \
-       defined(CONFIG_ARMV7_A))
+    #elif (defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) || \
+           defined(CONFIG_ARMV7_A) || defined(CONFIG_AARCH32_ARMV8_A))
     if (key != 0U) {
         return;
     }
     __enable_irq();
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+    #else
+    #error Unknown ARM architecture
+    #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 }
 
 static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key) {
@@ -102,44 +102,41 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key) {
 }
 
 /** Implementation of @ref arch_cpu_irqs_are_enabled. */
-static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
-{
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-	return __get_PRIMASK() == 0U;
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	return __get_BASEPRI() == 0U;
-#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
-	|| defined(CONFIG_ARMV7_A)
-	unsigned int cpsr;
+static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void) {
+    #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    return (__get_PRIMASK() == 0U);
+    #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+    return (__get_BASEPRI() == 0U);
+    #elif (defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) || \
+           defined(CONFIG_ARMV7_A) || defined(CONFIG_AARCH32_ARMV8_A))
+    unsigned int cpsr;
 
-	__asm__ volatile("mrs %0, cpsr" : "=r" (cpsr));
-	return (cpsr & I_BIT) == 0U;
-#else
-#error Unknown ARM architecture
-#endif
+    __asm__ volatile("mrs %0, cpsr" : "=r" (cpsr));
+    return ((cpsr & I_BIT) == 0U);
+    #else
+    #error Unknown ARM architecture
+    #endif
 }
 
 #ifdef CONFIG_ZERO_LATENCY_IRQS
 
-static ALWAYS_INLINE unsigned int arch_zli_lock(void)
-{
-	unsigned int key;
+static ALWAYS_INLINE unsigned int arch_zli_lock(void) {
+    unsigned int key;
 
-	key = __get_PRIMASK();
+    key = __get_PRIMASK();
 
-	/*
-	 * The cpsid instruction is self synchronizing within the instruction stream, no need for
-	 * an explicit __ISB().
-	 */
-	__disable_irq();
+    /*
+     * The cpsid instruction is self synchronizing within the instruction stream, no need for
+     * an explicit __ISB().
+     */
+    __disable_irq();
 
-	return key;
+    return key;
 }
 
-static ALWAYS_INLINE void arch_zli_unlock(unsigned int key)
-{
-	__set_PRIMASK(key);
-	__ISB();
+static ALWAYS_INLINE void arch_zli_unlock(unsigned int key) {
+    __set_PRIMASK(key);
+    __ISB();
 }
 
 #endif /* CONFIG_ZERO_LATENCY_IRQS */

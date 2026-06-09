@@ -2435,6 +2435,8 @@ int k_queue_append_list(struct k_queue* queue, void* head, void* tail);
  * This routine adds a list of data items to @a queue in one operation.
  * The data items must be in a singly-linked list implemented using a
  * sys_slist_t object. Upon completion, the original list is empty.
+ * The caller is responsible for ensuring that @a list is not concurrently
+ * accessed by other threads or ISRs.
  *
  * @isr_ok
  *
@@ -2471,8 +2473,6 @@ __syscall void* k_queue_get(struct k_queue* queue, k_timeout_t timeout);
  * This routine removes data item from @a queue. The first word of the
  * data item is reserved for the kernel's use. Removing elements from k_queue
  * rely on sys_slist_find_and_remove which is not a constant time operation.
- *
- * @note @a timeout must be set to K_NO_WAIT if called from ISR.
  *
  * @isr_ok
  *

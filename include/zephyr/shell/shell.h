@@ -745,7 +745,7 @@ static inline bool shell_help_is_structured(const char* help) {
 #define Z_SHELL_CMD_DICT_HANDLER_CREATE(_data, _handler)            \
     static int UTIL_CAT(UTIL_CAT(cmd_dict_, UTIL_CAT(_handler, _)), \
                         GET_ARG_N(1, __DEBRACKET _data))(           \
-    struct shell const* sh, size_t argc, char** argv)               \
+        struct shell const* sh, size_t argc, char** argv)           \
     {                                                               \
         return _handler(sh, argc, argv,                             \
                         (void*)GET_ARG_N(2, __DEBRACKET _data));    \
@@ -1038,6 +1038,9 @@ struct shell_ctx {
 
     /** Field tracking the readline state for user input */
     enum shell_readline_state readline_state;
+
+    /** Optional prompt printed before readline input, restored after log output */
+    const char* readline_prompt;
 
     /** Currently executed command.*/
     struct shell_static_entry active_cmd;
@@ -1612,11 +1615,28 @@ int shell_mode_delete_set(struct shell const* sh, bool val);
 int shell_get_return_value(struct shell const* sh);
 
 /**
+ * @brief Set a prompt string for the next @ref shell_readline call.
+ *
+ * The prompt is printed at the start of @ref shell_readline and restored
+ * after log messages to keep the user input line intact. The shell does not
+ * copy the string; the caller must ensure it remains valid until
+ * @ref shell_readline returns (which clears the prompt automatically).
+ *
+ * @param[in] sh     Shell instance.
+ * @param[in] prompt Prompt string to display, or NULL to clear.
+ */
+void shell_readline_prompt_set(struct shell const* sh, char const* prompt);
+
+/**
  * @brief Read a line of input from the shell.
  *
  * This function reads from the shell transport until a newline character is
  * received, storing the data in the provided buffer. The newline character is
  * not included in the buffer. The buffer is null-terminated on success.
+ *
+ * If a prompt was set via @ref shell_readline_prompt_set, it is printed
+ * before waiting for input and restored after any log output that
+ * interrupts the input line.
  *
  * @note This function should be called from the shell thread in a shell command
  *       handler and blocks the thread until a result is returned.

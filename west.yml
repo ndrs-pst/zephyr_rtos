@@ -159,7 +159,7 @@ manifest:
       groups:
         - hal
     - name: hal_ambiq
-      revision: c03d2f9902cfc3ff0d3f78ead538e9726251f7f9
+      revision: 3d7044ea240fc8dcb7b4c843b76f70cae5db736b
       path: modules/hal/ambiq
       groups:
         - hal
@@ -231,7 +231,7 @@ manifest:
         - hal
     - name: hal_realtek
       path: modules/hal/realtek
-      revision: beb44b18cbf3c29c4805dfb3a06f9092d0c1f2ef
+      revision: a00cf493fa200df303f617d609538d33088c2654
       groups:
         - hal
     - name: hal_renesas
@@ -401,7 +401,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: fc9c70171ae43bfd99c57a7ca6374d7f4fa8e894
+      revision: ee0acbb142d27ea3eb829d8da217dfd41af462be
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
