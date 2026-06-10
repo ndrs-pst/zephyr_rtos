@@ -162,7 +162,7 @@ static void dma_stm32_irq_handler(const struct device* dev, uint32_t id) {
 #ifdef CONFIG_DMA_STM32_SHARED_IRQS
 
 #define HANDLE_IRQS(index)                  \
-    static const struct device* const dev_##index = DEVICE_DT_INST_GET(index);  \
+    static const struct device* const dev_##index = DEVICE_DT_INST_GET(index); \
     const struct dma_stm32_config *cfg_##index = dev_##index->config;   \
     DMA_TypeDef *dma_##index = (DMA_TypeDef *)(cfg_##index->base);      \
                                             \
@@ -485,6 +485,18 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device* dev,
     stream->source_periph = (stream->direction == PERIPHERAL_TO_MEMORY);
 
     #if defined(CONFIG_DMA_STM32_V1)
+    if ((config->source_burst_length % config->source_data_size) != 0) {
+        LOG_ERR("Source burst length %d is not aligned to source data size %d",
+                config->source_burst_length, config->source_data_size);
+        return (-EINVAL);
+    }
+
+    if ((config->dest_burst_length % config->dest_data_size) != 0) {
+        LOG_ERR("Destination burst length %d is not aligned to destination data size %d",
+                config->dest_burst_length, config->dest_data_size);
+        return (-EINVAL);
+    }
+
     DMA_InitStruct.MemBurst    = stm32_dma_get_mburst(config,
                                                       stream->source_periph);
     DMA_InitStruct.PeriphBurst = stm32_dma_get_pburst(config,

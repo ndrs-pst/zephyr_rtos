@@ -328,9 +328,9 @@ typedef void (*uart_callback_t)(struct device const* dev,
  *
  * @param dev UART device instance.
  *
- * @retval 0 If no error was detected.
- * @retval err Error flags as defined in @ref uart_rx_stop_reason
- * @retval -ENOSYS If not implemented.
+ * @retval 0 No error was detected.
+ * @retval err Error flags as defined in @ref uart_rx_stop_reason.
+ * @retval -ENOSYS Not implemented.
  */
 __syscall int uart_err_check(struct device const* dev);
 
@@ -351,11 +351,11 @@ __syscall int uart_err_check(struct device const* dev);
  * @param dev UART device instance.
  * @param p_char Pointer to character.
  *
- * @retval 0 If a character arrived.
- * @retval -1 If no character was available to read (i.e. the UART
+ * @retval 0 A character arrived.
+ * @retval -1 No character was available to read (i.e. the UART
  *            input buffer was empty).
- * @retval -ENOSYS If the operation is not implemented.
- * @retval -EBUSY If async reception was enabled using @ref uart_rx_enable
+ * @retval -ENOSYS The operation is not implemented.
+ * @retval -EBUSY Async reception was enabled using @ref uart_rx_enable.
  */
 __syscall int uart_poll_in(struct device const* dev, unsigned char* p_char);
 
@@ -371,12 +371,12 @@ __syscall int uart_poll_in(struct device const* dev, unsigned char* p_char);
  * @param dev UART device instance.
  * @param p_u16 Pointer to 16-bit data.
  *
- * @retval 0  If data arrived.
- * @retval -1 If no data was available to read (i.e., the UART
+ * @retval 0 Data arrived.
+ * @retval -1 No data was available to read (i.e., the UART
  *            input buffer was empty).
- * @retval -ENOTSUP If API is not enabled.
- * @retval -ENOSYS If the function is not implemented.
- * @retval -EBUSY If async reception was enabled using @ref uart_rx_enable
+ * @retval -ENOTSUP API is not enabled.
+ * @retval -ENOSYS The function is not implemented.
+ * @retval -EBUSY Async reception was enabled using @ref uart_rx_enable.
  */
 __syscall int uart_poll_in_u16(struct device const* dev, uint16_t* p_u16);
 
@@ -425,11 +425,10 @@ __syscall void uart_poll_out_u16(struct device const* dev, uint16_t out_u16);
  * @param dev UART device instance.
  * @param cfg UART configuration structure.
  *
- * @retval 0 If successful.
- * @retval -errno Negative errno code in case of failure.
- * @retval -ENOSYS If configuration is not supported by device
- *                  or driver does not support setting configuration in runtime.
- * @retval -ENOTSUP If API is not enabled.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Configuration is not supported by device
+ *                 or driver does not support setting configuration in runtime.
+ * @retval -ENOTSUP API is not enabled.
  */
 __syscall int uart_configure(struct device const* dev, const struct uart_config* cfg);
 
@@ -442,10 +441,9 @@ __syscall int uart_configure(struct device const* dev, const struct uart_config*
  * @param dev UART device instance.
  * @param cfg UART configuration structure.
  *
- * @retval 0 If successful.
- * @retval -errno Negative errno code in case of failure.
- * @retval -ENOSYS If driver does not support getting current configuration.
- * @retval -ENOTSUP If API is not enabled.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Driver does not support getting current configuration.
+ * @retval -ENOTSUP API is not enabled.
  */
 __syscall int uart_config_get(struct device const* dev, struct uart_config* cfg);
 
@@ -471,8 +469,8 @@ __syscall int uart_config_get(struct device const* dev, struct uart_config* cfg)
  * @param size Number of bytes to send.
  *
  * @return Number of bytes sent.
- * @retval -ENOSYS  if this function is not supported
- * @retval -ENOTSUP If API is not enabled.
+ * @retval -ENOSYS This function is not supported.
+ * @retval -ENOTSUP API is not enabled.
  */
 static inline int uart_fifo_fill(struct device const* dev, const uint8_t* tx_data, int size);
 
@@ -493,8 +491,8 @@ static inline int uart_fifo_fill(struct device const* dev, const uint8_t* tx_dat
  * @param size Number of datum to send.
  *
  * @return Number of datum sent.
- * @retval -ENOSYS If this function is not implemented
- * @retval -ENOTSUP If API is not enabled.
+ * @retval -ENOSYS This function is not implemented.
+ * @retval -ENOTSUP API is not enabled.
  */
 static inline int uart_fifo_fill_u16(struct device const* dev, const uint16_t* tx_data, int size);
 
@@ -516,8 +514,8 @@ static inline int uart_fifo_fill_u16(struct device const* dev, const uint16_t* t
  * @param size Container size.
  *
  * @return Number of bytes read.
- * @retval -ENOSYS If this function is not implemented.
- * @retval -ENOTSUP If API is not enabled.
+ * @retval -ENOSYS This function is not implemented.
+ * @retval -ENOTSUP API is not enabled.
  */
 static inline int uart_fifo_read(struct device const* dev, uint8_t* rx_data, const int size);
 
@@ -539,8 +537,8 @@ static inline int uart_fifo_read(struct device const* dev, uint8_t* rx_data, con
  * @param size Container size.
  *
  * @return Number of datum read.
- * @retval -ENOSYS If this function is not implemented.
- * @retval -ENOTSUP If API is not enabled.
+ * @retval -ENOSYS This function is not implemented.
+ * @retval -ENOTSUP API is not enabled.
  */
 static inline int uart_fifo_read_u16(struct device const* dev, uint16_t* rx_data, const int size);
 
@@ -570,13 +568,11 @@ __syscall void uart_irq_tx_disable(struct device const* dev);
  *
  * @param dev UART device instance.
  *
- * @retval 0 If device is not ready to write a new byte.
- * @retval >0 Minimum number of bytes that can be written in a single call to
- *            @ref uart_fifo_fill. It may be possible to write more bytes, but
- *            the actual number written must be checked in the return code from
- *            @ref uart_fifo_fill.
- * @retval -ENOSYS If this function is not implemented.
- * @retval -ENOTSUP If API is not enabled.
+ * @retval 0 Device is not ready to write a new byte.
+ * @return Minimum number of bytes that can be written in a single call to
+ *         @ref uart_fifo_fill if the device is ready, negative errno value on failure.
+ * @retval -ENOSYS Function is not implemented.
+ * @retval -ENOTSUP API is not enabled.
  */
 static inline int uart_irq_tx_ready(struct device const* dev);
 
@@ -608,10 +604,10 @@ __syscall void uart_irq_rx_disable(struct device const* dev);
  *
  * @param dev UART device instance.
  *
- * @retval 1 If nothing remains to be transmitted.
- * @retval 0 If transmission is not completed.
- * @retval -ENOSYS If this function is not implemented.
- * @retval -ENOTSUP If API is not enabled.
+ * @retval 1 Nothing remains to be transmitted.
+ * @retval 0 Transmission is not completed.
+ * @retval -ENOSYS This function is not implemented.
+ * @retval -ENOTSUP API is not enabled.
  */
 static inline int uart_irq_tx_complete(struct device const* dev);
 
@@ -630,10 +626,10 @@ static inline int uart_irq_tx_complete(struct device const* dev);
  *
  * @param dev UART device instance.
  *
- * @retval 1 If a received char is ready.
- * @retval 0 If a received char is not ready.
- * @retval -ENOSYS If this function is not implemented.
- * @retval -ENOTSUP If API is not enabled.
+ * @retval 1 A received char is ready.
+ * @retval 0 A received char is not ready.
+ * @retval -ENOSYS This function is not implemented.
+ * @retval -ENOTSUP API is not enabled.
  */
 static inline int uart_irq_rx_ready(struct device const* dev);
 
@@ -661,10 +657,10 @@ __syscall void uart_irq_err_disable(struct device const* dev);
  *
  * @param dev UART device instance.
  *
- * @retval 1 If an IRQ is pending.
- * @retval 0 If an IRQ is not pending.
- * @retval -ENOSYS If this function is not implemented.
- * @retval -ENOTSUP If API is not enabled.
+ * @retval 1 An IRQ is pending.
+ * @retval 0 An IRQ is not pending.
+ * @retval -ENOSYS This function is not implemented.
+ * @retval -ENOTSUP API is not enabled.
  */
 static inline int uart_irq_is_pending(struct device const* dev);
 
@@ -702,9 +698,9 @@ static inline void uart_irq_update(struct device const* dev);
  * @param cb Pointer to the callback function.
  * @param user_data Data to pass to callback function.
  *
- * @retval 0 On success.
- * @retval -ENOSYS If this function is not implemented.
- * @retval -ENOTSUP If API is not enabled.
+ * @retval 0 on success.
+ * @retval -ENOSYS This function is not implemented.
+ * @retval -ENOTSUP API is not enabled.
  */
 static inline int uart_irq_callback_user_data_set(struct device const* dev,
                                                   uart_irq_callback_user_data_t cb,
@@ -719,9 +715,9 @@ static inline int uart_irq_callback_user_data_set(struct device const* dev,
  * @param dev UART device instance.
  * @param cb Pointer to the callback function.
  *
- * @retval 0 On success.
- * @retval -ENOSYS If this function is not implemented.
- * @retval -ENOTSUP If API is not enabled.
+ * @retval 0 on success.
+ * @retval -ENOSYS This function is not implemented.
+ * @retval -ENOTSUP API is not enabled.
  */
 static inline int uart_irq_callback_set(struct device const* dev,
                                         uart_irq_callback_user_data_t cb);
@@ -746,9 +742,9 @@ static inline int uart_irq_callback_set(struct device const* dev,
  * @param callback  Event handler.
  * @param user_data Data to pass to event handler function.
  *
- * @retval 0 If successful.
- * @retval -ENOSYS If not supported by the device.
- * @retval -ENOTSUP If API not enabled.
+ * @retval 0 on success.
+ * @retval -ENOSYS Not supported by the device.
+ * @retval -ENOTSUP API not enabled.
  */
 static inline int uart_callback_set(struct device const* dev,
                                     uart_callback_t callback,
@@ -766,10 +762,9 @@ static inline int uart_callback_set(struct device const* dev,
  * @param tmout_us Timeout in microseconds. Valid only if flow control is
  *                 enabled. @ref SYS_FOREVER_US disables timeout.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP If API is not enabled.
- * @retval -EBUSY If There is already an ongoing transfer.
- * @retval -errno Other negative errno value in case of failure.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP API is not enabled.
+ * @retval -EBUSY There is already an ongoing transfer.
  */
 __syscall int uart_tx(struct device const* dev, uint8_t const* buf,
                       size_t len,
@@ -787,10 +782,9 @@ __syscall int uart_tx(struct device const* dev, uint8_t const* buf,
  * @param tmout_ms Timeout in milliseconds. Valid only if flow control is
  *                 enabled. @ref SYS_FOREVER_MS disables timeout.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP If API is not enabled.
- * @retval -EBUSY If there is already an ongoing transfer.
- * @retval -errno Other negative errno value in case of failure.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP API is not enabled.
+ * @retval -EBUSY There is already an ongoing transfer.
  */
 __syscall int uart_tx_u16(struct device const* dev, uint16_t const* buf,
                           size_t len, int32_t tmout_ms);
@@ -802,10 +796,9 @@ __syscall int uart_tx_u16(struct device const* dev, uint16_t const* buf,
  *
  * @param dev UART device instance.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP If API is not enabled.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP API is not enabled.
  * @retval -EFAULT There is no active transmission.
- * @retval -errno Other negative errno value in case of failure.
  */
 __syscall int uart_tx_abort(struct device const* dev);
 
@@ -824,11 +817,9 @@ __syscall int uart_tx_abort(struct device const* dev);
  * @ref SYS_FOREVER_US disables timeout. See @ref uart_event_type
  *      for details.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP If API is not enabled.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP API is not enabled.
  * @retval -EBUSY RX already in progress.
- * @retval -errno Other negative errno value in case of failure.
- *
  */
 __syscall int uart_rx_enable(struct device const* dev, uint8_t* buf,
                              size_t len,
@@ -849,11 +840,9 @@ __syscall int uart_rx_enable(struct device const* dev, uint8_t* buf,
  *        @ref SYS_FOREVER_MS disables timeout. See
  *        @ref uart_event_type for details.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP If API is not enabled.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP API is not enabled.
  * @retval -EBUSY RX already in progress.
- * @retval -errno Other negative errno value in case of failure.
- *
  */
 __syscall int uart_rx_enable_u16(struct device const* dev, uint16_t* buf,
                                  size_t len, int32_t tmout_ms);
@@ -872,11 +861,10 @@ __syscall int uart_rx_enable_u16(struct device const* dev, uint16_t* buf,
  * @param buf Pointer to receive buffer.
  * @param len Buffer length.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP If API is not enabled.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP API is not enabled.
  * @retval -EBUSY Next buffer already set.
  * @retval -EACCES Receiver is already disabled (function called too late?).
- * @retval -errno Other negative errno value in case of failure.
  */
 static inline int uart_rx_buf_rsp(struct device const* dev, uint8_t* buf,
                                   size_t len);
@@ -896,11 +884,10 @@ static inline int uart_rx_buf_rsp(struct device const* dev, uint8_t* buf,
  * @param buf Pointer to wide data receive buffer.
  * @param len Buffer length.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP If API is not enabled
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP API is not enabled.
  * @retval -EBUSY Next buffer already set.
  * @retval -EACCES Receiver is already disabled (function called too late?).
- * @retval -errno Other negative errno value in case of failure.
  */
 static inline int uart_rx_buf_rsp_u16(struct device const* dev, uint16_t* buf,
                                       size_t len);
@@ -915,10 +902,9 @@ static inline int uart_rx_buf_rsp_u16(struct device const* dev, uint16_t* buf,
  *
  * @param dev UART device instance.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP If API is not enabled.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP API is not enabled.
  * @retval -EFAULT There is no active reception.
- * @retval -errno Other negative errno value in case of failure.
  */
 __syscall int uart_rx_disable(struct device const* dev);
 
@@ -933,10 +919,9 @@ __syscall int uart_rx_disable(struct device const* dev);
  * @param ctrl The line control to manipulate (see enum uart_line_ctrl).
  * @param val Value to set to the line control.
  *
- * @retval 0 If successful.
- * @retval -ENOSYS If this function is not implemented.
- * @retval -ENOTSUP If API is not enabled.
- * @retval -errno Other negative errno value in case of failure.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Function is not implemented.
+ * @retval -ENOTSUP API is not enabled.
  */
 __syscall int uart_line_ctrl_set(struct device const* dev, uint32_t ctrl, uint32_t val);
 
@@ -947,10 +932,9 @@ __syscall int uart_line_ctrl_set(struct device const* dev, uint32_t ctrl, uint32
  * @param ctrl The line control to retrieve (see enum uart_line_ctrl).
  * @param val Pointer to variable where to store the line control value.
  *
- * @retval 0 If successful.
- * @retval -ENOSYS If this function is not implemented.
- * @retval -ENOTSUP If API is not enabled.
- * @retval -errno Other negative errno value in case of failure.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Function is not implemented.
+ * @retval -ENOTSUP API is not enabled.
  */
 __syscall int uart_line_ctrl_get(struct device const* dev, uint32_t ctrl, uint32_t* val);
 
@@ -964,10 +948,9 @@ __syscall int uart_line_ctrl_get(struct device const* dev, uint32_t ctrl, uint32
  * @param cmd Command to driver.
  * @param p Parameter to the command.
  *
- * @retval 0 If successful.
- * @retval -ENOSYS If this function is not implemented.
- * @retval -ENOTSUP If API is not enabled.
- * @retval -errno Other negative errno value in case of failure.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Function is not implemented.
+ * @retval -ENOTSUP API is not enabled.
  */
 __syscall int uart_drv_cmd(struct device const* dev, uint32_t cmd, uint32_t p);
 

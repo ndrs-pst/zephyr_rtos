@@ -322,16 +322,26 @@ void stm32_dma_disable_fifo_irq(DMA_TypeDef* dma, uint32_t id) {
 }
 
 uint32_t stm32_dma_get_mburst(struct dma_config const* config, bool source_periph) {
-    uint32_t memory_burst;
+    uint32_t mem_data_size;
+    uint32_t mem_burst_size;
 
     if (source_periph) {
-        memory_burst = config->dest_burst_length;
+        mem_data_size  = config->dest_data_size;
+        mem_burst_size = config->dest_burst_length;
     }
     else {
-        memory_burst = config->source_burst_length;
+        mem_data_size  = config->source_data_size;
+        mem_burst_size = config->source_burst_length;
     }
 
-    switch (memory_burst) {
+    /* Should be checked beforehand by caller; assert to be sure */
+    __ASSERT((mem_burst_size % mem_data_size) == 0,
+             "Burst length %u should be multiple of data size %u",
+             mem_burst_size, mem_data_size);
+
+    const uint32_t beats_in_burst = (mem_burst_size / mem_data_size);
+
+    switch (beats_in_burst) {
         case 1 :
             return (LL_DMA_MBURST_SINGLE);
 
@@ -345,23 +355,33 @@ uint32_t stm32_dma_get_mburst(struct dma_config const* config, bool source_perip
             return (LL_DMA_MBURST_INC16);
 
         default :
-            LOG_ERR("Memory burst size error,"
-                    "using single burst as default");
+            LOG_ERR("%u bursts per beat is unsupported; falling back to single-beat burst",
+                    beats_in_burst);
             return (LL_DMA_MBURST_SINGLE);
     }
 }
 
 uint32_t stm32_dma_get_pburst(struct dma_config const* config, bool source_periph) {
-    uint32_t periph_burst;
+    uint32_t per_data_size;
+    uint32_t per_burst_size;
 
     if (source_periph) {
-        periph_burst = config->source_burst_length;
+        per_data_size  = config->source_data_size;
+        per_burst_size = config->source_burst_length;
     }
     else {
-        periph_burst = config->dest_burst_length;
+        per_data_size  = config->dest_data_size;
+        per_burst_size = config->dest_burst_length;
     }
 
-    switch (periph_burst) {
+    /* Should be checked beforehand by caller; assert to be sure */
+    __ASSERT((per_burst_size % per_data_size) == 0,
+             "Burst length %u should be multiple of data size %u",
+             per_burst_size, per_data_size);
+
+    const uint32_t beats_in_burst = (per_burst_size / per_data_size);
+
+    switch (beats_in_burst) {
         case 1 :
             return (LL_DMA_PBURST_SINGLE);
 
@@ -375,8 +395,8 @@ uint32_t stm32_dma_get_pburst(struct dma_config const* config, bool source_perip
             return (LL_DMA_PBURST_INC16);
 
         default :
-            LOG_ERR("Peripheral burst size error,"
-                    "using single burst as default");
+            LOG_ERR("%u bursts per beat is unsupported; falling back to single-beat burst",
+                    beats_in_burst);
             return (LL_DMA_PBURST_SINGLE);
     }
 }

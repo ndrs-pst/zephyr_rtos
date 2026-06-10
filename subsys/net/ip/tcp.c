@@ -901,8 +901,7 @@ static void tcp_conn_release(struct k_work* work) {
 
     if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT) {
         if (conn->queue_recv_data != NULL) {
-            net_buf_unref(conn->queue_recv_data);
-            conn->queue_recv_data = NULL;
+            net_buf_drop(&conn->queue_recv_data);
         }
     }
 
@@ -1306,8 +1305,7 @@ static size_t tcp_check_pending_data(struct tcp* conn, struct net_pkt* pkt,
         else {
             /* Check if the queued data is just a section of the incoming data */
             if (gap_size <= 0) {
-                net_buf_unref(conn->queue_recv_data);
-                conn->queue_recv_data = NULL;
+                net_buf_drop(&conn->queue_recv_data);
 
                 k_work_cancel_delayable(&conn->recv_queue_timer);
             }
@@ -2017,8 +2015,7 @@ static void tcp_cleanup_recv_queue(struct k_work* work) {
             net_buf_frags_len(conn->queue_recv_data),
             tcp_get_seq(conn->queue_recv_data));
 
-    net_buf_unref(conn->queue_recv_data);
-    conn->queue_recv_data = NULL;
+    net_buf_drop(&conn->queue_recv_data);
 
     k_mutex_unlock(&conn->lock);
 }
@@ -2865,8 +2862,7 @@ static void tcp_queue_recv_data(struct tcp* conn, struct net_pkt* pkt,
                 NET_ERR("Incorrect order in out of order sequence for conn %p",
                         conn);
                 /* error in sequence list, drop it */
-                net_buf_unref(conn->queue_recv_data);
-                conn->queue_recv_data = NULL;
+                net_buf_drop(&conn->queue_recv_data);
             }
         }
         else {

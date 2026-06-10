@@ -32,6 +32,18 @@ Kernel
 * ``_k_neg_eagain`` has been renamed to ``_errno_neg_egain`` as ``errno`` has been migrated out of
   kernel into ``lib/libc/common``.
 
+* When :kconfig:option:`CONFIG_SCHED_CPU_MASK_PIN_ONLY` is enabled, calling
+  :c:func:`k_thread_cpu_mask_clear`, :c:func:`k_thread_cpu_mask_enable_all`,
+  or :c:func:`k_thread_cpu_mask_disable` now triggers an assertion instead of
+  silently producing an invalid state.  Applications using these functions
+  in PIN_ONLY mode must be updated to use :c:func:`k_thread_cpu_pin` instead.
+
+* :kconfig:option:`CONFIG_SCHED_CPU_MASK` is no longer restricted to
+  :kconfig:option:`CONFIG_SCHED_SIMPLE`.  Projects that previously selected
+  ``SCHED_SCALABLE`` or ``SCHED_MULTIQ`` and worked around the limitation by
+  keeping ``SCHED_SIMPLE`` for affinity purposes can now use their preferred
+  backend directly.
+
 Boards
 ******
 
@@ -112,6 +124,17 @@ ADC
 * The ``girqs`` and ``pcrs`` properties (array type) of :dtcompatible:`microchip,xec-adc` have been
   replaced by encoded ``girqs`` (using ``MCHP_XEC_ECIA_GIRQ_ENC`` macros) and ``pcr-scr`` (int type)
   for encoded PCR register index and bit position (:github:`105658`).
+
+Audio Codec
+===========
+
+* The audio codec driver backend API now uses :c:struct:`audio_codec_driver_api` instead of
+  ``struct audio_codec_api``.
+
+  Out-of-tree audio codec drivers must rename their backend API struct definitions and switch
+  their API instances to ``DEVICE_API(audio_codec, ...)``. See :github:`110631` for examples of how
+  in-tree drivers have been updated. Application code using the ``audio_codec_...`` APIs is not
+  impacted.
 
 Clock Control
 =============
@@ -222,6 +245,11 @@ Ethernet
   Out-of-tree DSA drivers must update their ``port_phylink_change`` callback to match the new API and
   can remove any calls to :c:func:`net_eth_carrier_on` or :c:func:`net_eth_carrier_off` from it.
   (:github:`109671`)
+
+* The MAC address of ethernet interfaces is now checked for validity, when bringing the interface up
+  with :c:func:`net_if_up`. If the MAC address is invalid, the interface will fail to come up and an
+  error will be logged. This check is done before the ``start`` function of the
+  :c:struct:`ethernet_api` is called. This also applies to native wifi drivers. (:github:`110435`)
 
 Flash
 =====
