@@ -27,46 +27,49 @@
 #define BSWAP_16(x) ((uint16_t)__REV16((uint32_t)(x)))
 #define BSWAP_24(x) ((uint32_t)(__REV(x) >> 8))
 #define BSWAP_32(x) ((uint32_t)__REV(x))
-#define BSWAP_40(x) ((uint64_t)(BSWAP_64(x) >> 24U))
-#define BSWAP_48(x) ((uint64_t)(BSWAP_64(x) >> 16U))
-#define BSWAP_64(x) (((uint64_t)BSWAP_32((x) & 0xFFFFFFFFULL) << 32U) | (uint64_t)BSWAP_32((x) >> 32U))
+#define BSWAP_40(x) ((uint64_t)(BSWAP_64(x) >> 24))
+#define BSWAP_48(x) ((uint64_t)(BSWAP_64(x) >> 16))
+#define BSWAP_64(x) (((uint64_t)BSWAP_32((x) & 0xFFFFFFFFULL) << 32) | (uint64_t)BSWAP_32((x) >> 32))
 #else
 
 #if HAS_BUILTIN(__builtin_bswap16)
 #define BSWAP_16(x) ((uint16_t)__builtin_bswap16(x))
 #else
-#define BSWAP_16(x) ((uint16_t)((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
-#endif
-
-#define BSWAP_24(x) ((uint32_t) ((((x) >> 16) & 0xFF) | \
-                                 (((x)) & 0xFF00)     | \
-                                 (((x)  &   0xFF) << 16)))
+#define BSWAP_16(x) ((uint16_t)((((x) >> 8) & 0xFF) | (((x) & 0xFF) << 8)))
+#endif /* HAS_BUILTIN(__builtin_bswap16) */
 
 #if HAS_BUILTIN(__builtin_bswap32)
+#define BSWAP_24(x) ((uint32_t)__builtin_bswap32(x) >> 8)
 #define BSWAP_32(x) ((uint32_t)__builtin_bswap32(x))
 #else
-#define BSWAP_32(x) ((uint32_t) ((((x) >> 24) &   0xFF) | \
-                                 (((x) >>  8) & 0xFF00) | \
-                                 (((x) & 0xFF00) <<  8) | \
-                                 (((x) &   0xFF) << 24)))
-#endif
+#define BSWAP_24(x) ((uint32_t)((((x) >> 16) & 0xFF) | \
+                                (((x)) & 0xFF00)     | \
+                                (((x)  &   0xFF) << 16)))
 
-#define BSWAP_40(x) ((uint64_t) ((((x) >> 32) &   0xFF) | \
-                                 (((x) >> 16) & 0xFF00) | \
-                                 (((x)) & 0xFF0000)     | \
-                                 (((x)  &   0xFF00) << 16) | \
-                                 (((x)  &     0xFF) << 32)))
-
-#define BSWAP_48(x) ((uint64_t) ((((x) >> 40) &     0xFF) | \
-                                 (((x) >> 24) &   0xFF00) | \
-                                 (((x) >>  8) & 0xFF0000) | \
-                                 (((x) & 0xFF0000) <<  8) | \
-                                 (((x) &   0xFF00) << 24) | \
-                                 (((x) &     0xFF) << 40)))
+#define BSWAP_32(x) ((uint32_t)((((x) >> 24) &   0xFF) | \
+                                (((x) >>  8) & 0xFF00) | \
+                                (((x) & 0xFF00) <<  8) | \
+                                (((x) &   0xFF) << 24)))
+#endif /* HAS_BUILTIN(__builtin_bswap32) */
 
 #if HAS_BUILTIN(__builtin_bswap64)
+#define BSWAP_40(x) ((uint64_t)__builtin_bswap64(x) >> 24)
+#define BSWAP_48(x) ((uint64_t)__builtin_bswap64(x) >> 16)
 #define BSWAP_64(x) ((uint64_t)__builtin_bswap64(x))
 #else
+#define BSWAP_40(x) ((uint64_t)((((x) >> 32) &   0xFF) | \
+                                (((x) >> 16) & 0xFF00) | \
+                                (((x)) & 0xFF0000)     | \
+                                (((x)  &   0xFF00) << 16) | \
+                                (((x)  &     0xFF) << 32)))
+
+#define BSWAP_48(x) ((uint64_t)((((x) >> 40) &     0xFF) | \
+                                (((x) >> 24) &   0xFF00) | \
+                                (((x) >>  8) & 0xFF0000) | \
+                                (((x) & 0xFF0000) <<  8) | \
+                                (((x) &   0xFF00) << 24) | \
+                                (((x) &     0xFF) << 40)))
+
 #define BSWAP_64(x) ((uint64_t) ((((x) >> 56) &       0xFF) | \
                                  (((x) >> 40) &     0xFF00) | \
                                  (((x) >> 24) &   0xFF0000) | \
@@ -75,7 +78,7 @@
                                  (((x) &   0xFF0000) << 24) | \
                                  (((x) &     0xFF00) << 40) | \
                                  (((x) &       0xFF) << 56)))
-#endif
+#endif /* HAS_BUILTIN(__builtin_bswap64) */
 #endif /* (defined(CONFIG_CPU_CORTEX_M) && !defined(_MSC_VER)) */
 
 /** @def sys_le16_to_cpu
