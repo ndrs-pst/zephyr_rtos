@@ -1540,7 +1540,6 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	}
 
 	bt_conn_connected(conn);
-	bt_conn_unref(conn);
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) && conn->role == BT_HCI_ROLE_CENTRAL) {
 		int err;
@@ -1551,6 +1550,8 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 			LOG_WRN("Error while updating the scanner (%d)", err);
 		}
 	}
+
+	bt_conn_unref(conn);
 }
 
 #if defined(CONFIG_BT_PER_ADV_SYNC_RSP)

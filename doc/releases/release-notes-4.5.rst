@@ -136,6 +136,11 @@ New APIs and options
     * :c:func:`bt_ascs_register`
     * :c:func:`bt_ascs_unregister`
 
+  * Host
+
+    * :c:func:`bt_conn_take`
+    * :c:func:`bt_conn_drop`
+
   * Mesh
 
     * :c:struct:`bt_mesh_lpn_timing`
@@ -159,6 +164,10 @@ New APIs and options
   * :c:func:`haptics_select_source`
   * :c:func:`haptics_set_level`
   * :c:func:`haptics_stream_samples`
+
+* Kernel
+
+  * :c:func:`k_thread_runtime_stats_is_enabled`
 
 * LoRa
 

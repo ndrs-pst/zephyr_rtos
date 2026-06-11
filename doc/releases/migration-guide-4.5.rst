@@ -95,6 +95,11 @@ Boards
   Applications that relied on ``CONFIG_GPIO=y`` being the default will need to enable
   the option explicitly. (:github:`109468`)
 
+* Ezurio bl54l15u_dvk has been removed. The bl54l15_dvk remains available and supports
+  both the bl54l15 and bl54l15u variants of the module, with the same features.
+  Boards using the bl54l15u_dvk should migrate to bl54l15_dvk/nrf54l15/cpuapp or
+  bl54l15_dvk/nrf54l15/cpuflpr as appropriate.
+
 Device Drivers and Devicetree
 *****************************
 
@@ -331,11 +336,10 @@ Interrupt Controllers
 NXP
 ===
 
-* :kconfig:option:`CONFIG_MCUX_LPTMR_TIMER` no longer defaults to ``y`` based on the
-  ``/chosen/zephyr,system-timer`` chosen node being compatible with
-  :dtcompatible:`nxp,lptmr`. Out-of-tree SoCs and boards that rely on the LPTMR
-  as the system timer must now explicitly default the symbol in their
-  ``Kconfig.defconfig`` (for example ``default y if PM``).
+* :kconfig:option:`CONFIG_MCUX_LPTMR_TIMER` now defaults to ``y`` when the
+  ``/chosen/zephyr,system-timer`` chosen node is enabled and compatible with
+  :dtcompatible:`nxp,lptmr`. Boards that do not use LPTMR as the system timer
+  must not select an LPTMR node in ``/chosen/zephyr,system-timer``.
 
 * Kinetis KE1xF no longer requires a board overlay to designate the system
   timer when :kconfig:option:`CONFIG_PM` is enabled. The SoC DTSI now sets the
@@ -453,6 +457,11 @@ USB
   from :samp:`usbotg_hs{N}` to :samp:`usbphyc{N}` nodes at SoC DTSI level. Boards which
   use an STM32N6 SoC with custom clock mux configuration must now set the ``clocks``
   property on :samp:`usbphyc{N}` instead of :samp:`usbotg_hs{N}`. (:github:`107813`)
+* When host issues control transfer with data stage from host to device, the USB control transfer
+  callbacks ``control_to_dev`` in :c:struct:`usbd_class_api` and ``to_dev`` in
+  :c:struct:`usbd_vreq_node` are now called with NULL ``buf`` before data stage is received.
+  This allows the stack to return STALL during data stage. Out-of-tree class and vendor handlers
+  need to be updated. (:github:`108840`)
 
 WiFi
 ====
