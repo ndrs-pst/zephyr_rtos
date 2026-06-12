@@ -229,6 +229,8 @@ ARC arch:
     - "area: ARC"
   tests:
     - arch.arc
+    - arch
+    - kernel
 
 ARM Platforms:
   status: maintained
@@ -285,6 +287,8 @@ ARM arch:
     - "area: ARM"
   tests:
     - arch.arm
+    - arch
+    - kernel
 
 ARM64 arch:
   status: maintained
@@ -305,6 +309,8 @@ ARM64 arch:
     - "area: ARM64"
   tests:
     - arch.arm64
+    - arch
+    - kernel
 
 ASPEED Platforms:
   status: odd fixes
@@ -1080,6 +1086,7 @@ Common Architecture Interface:
     - tests/arch/common/acpi/
   tests:
     - arch
+    - kernel
 
 Console:
   status: odd fixes
@@ -3740,6 +3747,8 @@ MIPS arch:
     - boards/qemu/malta/
   labels:
     - "area: MIPS"
+    - arch
+    - kernel
 
 Memory Management:
   status: maintained
@@ -4541,6 +4550,22 @@ Networking:
     - net.lwm2m
     - sample.net.lwm2m_client
 
+"Networking: MCP":
+  status: maintained
+  maintainers:
+    - dpiskula-nxp
+  files:
+    - subsys/net/lib/mcp/
+    - include/zephyr/net/mcp/
+    - tests/net/lib/mcp/
+    - samples/net/mcp/
+    - doc/services/connectivity/networking/api/mcp.rst
+  labels:
+    - "area: Networking"
+    - "area: MCP"
+  tests:
+    - net.mcp
+
 "Networking: MQTT":
   status: maintained
   maintainers:
@@ -4984,6 +5009,8 @@ RISCV arch:
   tests:
     - arch.riscv
     - arch.riscv64
+    - arch
+    - kernel
 
 RTIO:
   status: maintained
@@ -5020,6 +5047,8 @@ RX arch:
     - "area: RX"
   tests:
     - arch.rx
+    - arch
+    - kernel
 
 Random:
   status: maintained
@@ -5293,6 +5322,9 @@ SPARC arch:
     - boards/qemu/leon3/
   labels:
     - "area: SPARC"
+  tests:
+    - arch
+    - kernel
 
 SPDX Tooling:
   status: maintained
@@ -6076,6 +6108,10 @@ Userspace:
     - ceolin
   files:
     - include/zephyr/internal/syscall_handler.h
+    - include/zephyr/arch/x86/*/syscall.h
+    - include/zephyr/arch/syscall.h
+    - include/zephyr/arch/*/syscall.h
+    - include/zephyr/syscall.h
     - doc/kernel/usermode/kernelobjects.rst
     - include/zephyr/app_memory/
     - include/zephyr/linker/app_smem*.ld
@@ -7245,6 +7281,8 @@ Xtensa arch:
     - "area: Xtensa"
   tests:
     - arch.xtensa
+    - arch
+    - kernel
 
 hawkBit:
   status: maintained
@@ -7390,6 +7428,8 @@ x86 arch:
   tests:
     - arch.interrupt
     - arch.x86
+    - arch
+    - kernel
 
 zbus:
   status: maintained

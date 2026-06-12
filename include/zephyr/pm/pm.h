@@ -174,6 +174,13 @@ void pm_system_resume(void);
  * kernel idle path restores the original interrupt state after PM resume
  * housekeeping is complete.
  *
+ * @note When system PM keeps interrupts locked across resume (currently selected
+ *       via CONFIG_PM_STATE_SET_IRQ_LOCKED), the locked-resume ordering
+ *       guarantee covers only interrupts that arch_irq_lock() can mask. A
+ *       zero-latency interrupt (IRQ_ZERO_LATENCY) is outside this ordering and
+ *       must be PM-wake-safe, or its interrupt source must be masked or disabled
+ *       while the system state does not allow the ISR to execute.
+ *
  * @param state Power state.
  * @param substate_id Power substate id.
  */
@@ -190,6 +197,12 @@ void pm_state_set(enum pm_state state, uint8_t substate_id);
  * interrupts or otherwise dispatch pending wake-source ISRs from this hook; the
  * kernel idle path restores the original interrupt state after PM resume
  * housekeeping is complete.
+ *
+ * @note As with @ref pm_state_set, when system PM keeps interrupts locked
+ *       across resume, this ordering covers only interrupts that
+ *       arch_irq_lock() can mask. A zero-latency interrupt (IRQ_ZERO_LATENCY)
+ *       may run during the resume window before this hook completes and must be
+ *       PM-wake-safe (see @ref pm_state_set).
  *
  * @param state Power state.
  * @param substate_id Power substate id.

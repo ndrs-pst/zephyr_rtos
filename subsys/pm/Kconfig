@@ -64,6 +64,9 @@ config PM_STATE_SET_IRQ_LOCKED
 	  PM implementations are migrated, this option will become the default and
 	  be removed.
 
+	  This guarantee covers only interrupts that arch_irq_lock() can mask. See
+	  the zero-latency interrupt documentation for IRQ_ZERO_LATENCY behavior.
+
 rsource "policy/Kconfig"
 
 if PM

@@ -174,7 +174,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 7dcc5bd72140379403743927e868ae00c9d9028e
+      revision: f3be21f2bb27535d4ac58364018cb6491d52f5dd
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -190,7 +190,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 50e3be6d12f0b2e1ea062584b4f284286b73e411
+      revision: 8be70035c001efffaefc778832046916ffa6411c
       path: modules/hal/infineon
       groups:
         - hal
@@ -205,7 +205,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 1a6de0af0a0e5f65b88d52df006aa8cdf29fe92f
+      revision: 19f742b45acb7e660ed3673cab819c103de5e856
       path: modules/hal/nordic
       groups:
         - hal
@@ -215,7 +215,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: f1e06216ffd032bf08391ab82a2e258f160335c7
+      revision: 4be9853bb88ed0d919bb43c3e87b276ba6b755a3
       path: modules/hal/nxp
       groups:
         - hal
@@ -250,7 +250,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 21dcc23ca6eafc741b6a267d78e7fc0ca1c0beb9
+      revision: 030242dfa7e0649ff7fe764899c498f1e2c68f15
       path: modules/hal/silabs
       groups:
         - hal
@@ -323,7 +323,7 @@ manifest:
       revision: 88deb45109317473ac5706e97a6b8bbeb524aab1
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: 85aa60d18b3d5e5588d7b247abf90198f07c8a63
+      revision: bbedf2656086a93a8468a1c98168a6b36631ce9a
       path: modules/lib/gui/lvgl
     - name: mbedtls
       revision: 554163f6f7b2ec71fed9b423e81f2217a8615d29
@@ -401,7 +401,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: ee0acbb142d27ea3eb829d8da217dfd41af462be
+      revision: 2fb1a713ec92222613987e068b00269963de1bef
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

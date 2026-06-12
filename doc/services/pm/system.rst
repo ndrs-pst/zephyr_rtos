@@ -142,6 +142,12 @@ implementations that still call ``irq_unlock(0)``, ``arch_irq_unlock(0)``,
 ``__enable_irq()``, or equivalent operations from those hooks must be migrated
 before they can opt in to the kernel-owned ordering guarantee.
 
+.. note::
+
+    The ordering guarantee above applies only to interrupts that
+    :c:func:`arch_irq_lock` can mask. Zero-latency interrupts are outside this
+    ordering. See :ref:`zlis`.
+
 
 Power States
 ============

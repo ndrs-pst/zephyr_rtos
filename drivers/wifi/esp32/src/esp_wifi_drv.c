@@ -280,6 +280,10 @@ static void scan_done_handler(void) {
                 res.security = WIFI_SECURITY_TYPE_NONE;
                 break;
 
+            case WIFI_AUTH_OWE :
+                res.security = WIFI_SECURITY_TYPE_OWE;
+                break;
+
             case WIFI_AUTH_WPA2_PSK :
                 res.security = WIFI_SECURITY_TYPE_PSK;
                 break;
@@ -979,6 +983,17 @@ static int esp32_wifi_connect(const struct device* dev __unused,
             wifi_config.sta.pmf_cfg.required = false;
             break;
 
+        #if defined(CONFIG_ESP32_WIFI_ENABLE_WPA3_OWE_STA)
+        case WIFI_SECURITY_TYPE_OWE :
+            memset(wifi_config.sta.password, 0, sizeof(wifi_config.sta.password));
+            wifi_config.sta.owe_enabled = 1;
+            wifi_config.sta.threshold.authmode = WIFI_AUTH_OWE;
+            wifi_config.sta.pmf_cfg.capable = (params->mfp != WIFI_MFP_DISABLE);
+            wifi_config.sta.pmf_cfg.required = (params->mfp == WIFI_MFP_REQUIRED);
+            data->status.security = WIFI_AUTH_OWE;
+            break;
+        #endif
+
         case WIFI_SECURITY_TYPE_PSK :
         case WIFI_SECURITY_TYPE_PSK_SHA256 :
             memcpy(wifi_config.sta.password, params->psk, params->psk_length);
@@ -1216,6 +1231,10 @@ static int esp32_wifi_ap_enable(const struct device* dev __unused, struct net_if
             return (-EINVAL);
             #endif
 
+        case WIFI_SECURITY_TYPE_OWE :
+            LOG_ERR("OWE is not supported in AP mode");
+            return (-ENOTSUP);
+
         default :
             LOG_ERR("Authentication method not supported");
             return (-EINVAL);
@@ -1422,6 +1441,10 @@ static int esp32_wifi_status(const struct device* dev __unused,
     switch (data->status.security) {
         case WIFI_AUTH_OPEN :
             status->security = WIFI_SECURITY_TYPE_NONE;
+            break;
+
+        case WIFI_AUTH_OWE :
+            status->security = WIFI_SECURITY_TYPE_OWE;
             break;
 
         case WIFI_AUTH_WPA2_PSK :
