@@ -55,6 +55,12 @@ static uint32_t smif1_crypto_input3;
 #endif /* CONFIG_SOC_SERIES_PSE84 */
 #endif /* CONFIG_PM */
 
+#if defined(CONFIG_BOARD_BCU_MV25) /* #CUSTOM@NDRS */
+#define BOARD_SMIF_CHIP_SELECT          MTB_SERIAL_MEMORY_CHIP_SELECT_0
+#else
+#define BOARD_SMIF_CHIP_SELECT          MTB_SERIAL_MEMORY_CHIP_SELECT_1
+#endif
+
 const mtb_hal_hf_clock_t flash_clock_ref = {
     .inst_num = 3U,
 };
@@ -313,7 +319,7 @@ static int ifx_serial_memory_flash_init(const struct device* dev) {
     #endif
 
     /* Set-up serial memory. */
-    result = mtb_serial_memory_setup(&serial_memory_obj, MTB_SERIAL_MEMORY_CHIP_SELECT_1,
+    result = mtb_serial_memory_setup(&serial_memory_obj, BOARD_SMIF_CHIP_SELECT,
                                      IFX_SERIAL_MEMORY_SMIF,
                                      &CYBSP_SMIF_CORE_0_XSPI_FLASH_hal_clock,
                                      &smif_mem_context, &smif_mem_info, &smif0BlockConfig);
