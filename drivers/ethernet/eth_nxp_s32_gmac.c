@@ -121,11 +121,9 @@ static void phy_link_state_changed(const struct device* pdev,
         /* Set duplex mode */
         Gmac_Ip_SetDuplex(cfg->instance, gmac_cfg.Duplex);
 
-        LOG_DBG("Link up");
         net_eth_carrier_on(ctx->iface);
     }
     else {
-        LOG_DBG("Link down");
         net_eth_carrier_off(ctx->iface);
     }
 }
