@@ -16,6 +16,7 @@
 #include <zephyr/toolchain.h>
 #include <wait_q.h>
 #include <ksched.h>
+#include <scheduler.h>
 #include <zephyr/init.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <kernel_internal.h>
@@ -83,12 +84,6 @@ static inline void z_vrfy_k_queue_init(struct k_queue *queue)
 #include <zephyr/syscalls/k_queue_init_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-static void prepare_thread_to_run(struct k_thread *thread, void *data)
-{
-	z_thread_return_value_set_with_data(thread, 0, data);
-	z_ready_thread(thread);
-}
-
 static inline bool handle_poll_events(struct k_queue *queue, uint32_t state)
 {
 #ifdef CONFIG_POLL
@@ -106,14 +101,10 @@ void z_impl_k_queue_cancel_wait(struct k_queue *queue)
 	SYS_PORT_TRACING_OBJ_FUNC(k_queue, cancel_wait, queue);
 
 	k_spinlock_key_t key = k_spin_lock(&queue->lock);
-	struct k_thread *first_pending_thread;
 	bool resched = false;
 
-	first_pending_thread = z_unpend_first_thread(&queue->wait_q);
-
-	if (first_pending_thread != NULL) {
+	if (z_sched_wake(&queue->wait_q, 0, NULL)) {
 		resched = true;
-		prepare_thread_to_run(first_pending_thread, NULL);
 	}
 
 	resched = handle_poll_events(queue, K_POLL_STATE_CANCELLED) || resched;
@@ -142,7 +133,6 @@ static inline void z_vrfy_k_queue_cancel_wait(struct k_queue *queue)
 static int32_t queue_insert(struct k_queue *queue, void *prev, void *data,
 			    bool alloc, bool is_append, k_spinlock_key_t key)
 {
-	struct k_thread *first_pending_thread;
 	int32_t result = 0;
 	bool resched = false;
 
@@ -151,12 +141,9 @@ static int32_t queue_insert(struct k_queue *queue, void *prev, void *data,
 	if (is_append) {
 		prev = sys_sflist_peek_tail(&queue->data_q);
 	}
-	first_pending_thread = z_unpend_first_thread(&queue->wait_q);
 
-	if (unlikely(first_pending_thread != NULL)) {
+	if (z_sched_wake(&queue->wait_q, 0, data)) {
 		SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_queue, queue_insert, queue, alloc, K_FOREVER);
-
-		prepare_thread_to_run(first_pending_thread, data);
 		resched = true;
 		goto out;
 	}
@@ -279,17 +266,10 @@ int k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&queue->lock);
-	struct k_thread *thread = NULL;
 
-	if (head != NULL) {
-		thread = z_unpend_first_thread(&queue->wait_q);
-	}
-
-	while ((head != NULL) && (thread != NULL)) {
+	while ((head != NULL) && z_sched_wake(&queue->wait_q, 0, head)) {
 		resched = true;
-		prepare_thread_to_run(thread, head);
 		head = *(void **)head;
-		thread = z_unpend_first_thread(&queue->wait_q);
 	}
 
 	if (head != NULL) {

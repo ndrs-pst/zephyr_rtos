@@ -250,7 +250,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 030242dfa7e0649ff7fe764899c498f1e2c68f15
+      revision: d91d60465ca99b0a8e44a429769ee759843267f7
       path: modules/hal/silabs
       groups:
         - hal
@@ -367,7 +367,7 @@ manifest:
       path: modules/lib/openthread
     - name: percepio
       path: modules/debug/percepio
-      revision: f9159fe3c79578e8d90c8593e83f9862d9b8962c
+      revision: 57358a359d95fa7239d0dccd768f587ffc8f71bb
       groups:
         - debug
     - name: picolibc

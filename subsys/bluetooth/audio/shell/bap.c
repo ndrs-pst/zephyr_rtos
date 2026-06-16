@@ -2630,8 +2630,6 @@ static bool decode_frame(struct lc3_data *data, size_t frame_cnt)
 		if ((sh_stream->rx.decoded_cnt % bap_stats_interval) == 0) {
 			bt_shell_print("[%zu]: Performing PLC", sh_stream->rx.decoded_cnt);
 		}
-
-		data->do_plc = false; /* clear flag */
 	} else {
 		iso_data = net_buf_pull_mem(data->buf, octets_per_frame);
 
@@ -2819,6 +2817,7 @@ static void audio_recv(struct bt_bap_stream *stream,
 
 			return;
 		}
+		(void)memset(data, 0, sizeof(*data));
 
 		if ((info->flags & BT_ISO_FLAGS_VALID) == 0) {
 			data->do_plc = true;
@@ -2852,6 +2851,8 @@ static void stream_enabled_cb(struct bt_bap_stream *stream)
 {
 	bt_shell_print("Stream %p enabled", stream);
 
+	print_codec_cfg(0, stream->codec_cfg);
+
 	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER)) {
 		struct bt_bap_ep_info ep_info;
 		struct bt_conn_info conn_info;
@@ -2884,6 +2885,13 @@ static void stream_enabled_cb(struct bt_bap_stream *stream)
 		}
 	}
 }
+
+static void stream_metadata_updated_cb(struct bt_bap_stream *stream)
+{
+	bt_shell_print("Stream %p metadata updated", stream);
+
+	print_codec_cfg(0, stream->codec_cfg);
+}
 #endif /* CONFIG_BT_BAP_UNICAST */
 
 static void stream_started_cb(struct bt_bap_stream *bap_stream)
@@ -2893,6 +2901,8 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 	int ret;
 
 	bt_shell_print("Stream %p started", bap_stream);
+
+	print_codec_cfg(0, bap_stream->codec_cfg);
 
 	ret = bt_bap_ep_get_info(bap_stream->ep, &info);
 	if (ret != 0) {
@@ -3122,13 +3132,14 @@ static void clear_stream_data(struct shell_stream *sh_stream)
 	}
 #endif
 
-	sh_stream->is_rx = sh_stream->is_tx = false;
-
 #if defined(CONFIG_LIBLC3)
 	if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
 		update_usb_streams(sh_stream);
 	}
 #endif /* CONFIG_LIBLC3 */
+
+	/* Shall be done after update_usb_streams */
+	sh_stream->is_rx = sh_stream->is_tx = false;
 }
 
 static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
@@ -3204,6 +3215,7 @@ static struct bt_bap_stream_ops stream_ops = {
 	.configured = stream_configured_cb,
 	.released = stream_released_cb,
 	.enabled = stream_enabled_cb,
+	.metadata_updated = stream_metadata_updated_cb,
 #endif /* CONFIG_BT_BAP_UNICAST */
 	.started = stream_started_cb,
 	.stopped = stream_stopped_cb,
