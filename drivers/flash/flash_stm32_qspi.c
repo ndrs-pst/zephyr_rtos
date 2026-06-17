@@ -436,7 +436,7 @@ static int qspi_read_jedec_id(struct device const* dev, uint8_t* id) {
         .AddressSize     = QSPI_ADDRESS_NONE,
         .DummyCycles     = dummy_cycles,
         .InstructionMode = QSPI_INSTRUCTION_1_LINE,
-        .AddressMode     = QSPI_ADDRESS_1_LINE,
+		.AddressMode = QSPI_ADDRESS_NONE,
         .DataMode        = QSPI_DATA_1_LINE,
         .NbData          = JESD216_READ_ID_LEN,
     };

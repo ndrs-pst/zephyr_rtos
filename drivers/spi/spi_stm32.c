@@ -2481,15 +2481,15 @@ static int spi_stm32_ll_transceive_dma(const struct device *dev,
 
         if (transfer_dir == STM32_SPI_FULL_DUPLEX) {
             data->tx_len = data->rx_len = spi_context_max_continuous_chunk(ctx);
-            ret = spi_dma_move_buffers(dev, data->tx_len);
+            (void) spi_dma_move_buffers(dev, data->tx_len);
         }
         else if (transfer_dir == STM32_SPI_HALF_DUPLEX_TX) {
             data->tx_len = ctx->tx.len;
-            ret = spi_dma_move_tx_buffers(dev, data->tx_len);
+		    (void) spi_dma_move_tx_buffers(dev, data->tx_len);
         }
         else {
             data->rx_len = ctx->rx.len;
-            ret = spi_dma_move_rx_buffers(dev, data->rx_len);
+            (void) spi_dma_move_rx_buffers(dev, data->rx_len);
         }
 
         #ifdef CONFIG_SPI_ASYNC
@@ -2603,7 +2603,7 @@ static int spi_stm32_transceive_async(const struct device* dev,
     int ret;
 
     #ifdef CONFIG_SPI_STM32_DMA
-    struct spi_stm32_data* data = dev->data;
+    struct spi_stm32_data const* data = dev->data;
 
     if ((data->dma_tx.dma_dev != NULL) && (data->dma_rx.dma_dev != NULL)) {
         ret = spi_stm32_ll_transceive_dma(dev, config, tx_bufs, rx_bufs,

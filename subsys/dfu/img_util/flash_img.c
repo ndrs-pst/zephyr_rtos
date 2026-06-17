@@ -122,7 +122,7 @@ int flash_img_buffered_write(struct flash_img_context* ctx, uint8_t const* data,
 
 
     /* if CONFIG_IMG_ERASE_PROGRESSIVELY is enabled the enabled CONFIG_STREAM_FLASH_ERASE
-     * ensures that stream_flash erases flash progresively.
+	 * ensures that stream_flash erases flash progressively.
      */
     rc = stream_flash_buffered_write(&ctx->stream, data, len, flush);
     if (!flush) {

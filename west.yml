@@ -290,7 +290,7 @@ manifest:
       groups:
         - hal
     - name: hal_xtensa
-      revision: 0495a1afd300b644d3ec8dd2c3bd11007e69a892
+      revision: 614d7dd1cdb4dd61b8fda5a504d63297497b05ac
       path: modules/hal/xtensa
       groups:
         - hal
@@ -331,7 +331,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: cecaa2e1f1ed8ad1a6b3bc632c4d21527b0d7b08
+      revision: 2cdb8fbbb5e2811a55b7154a2050b52418e2ff64
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -357,7 +357,7 @@ manifest:
       revision: 309d02c0df8625c52a6abc2fd95dc77fe80c163a
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: 47bd5b4ebd357ba637be0f2b092e1c0d370eea2f
+      revision: 62450039a9a14c3f05ff9452a036713ca1f6915f
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: 01032a8a7bdfdd541686f5dfa3671e602b9fcbff
@@ -396,12 +396,12 @@ manifest:
       groups:
         - crypto
     - name: trusted-firmware-a
-      revision: 4aef38a5bf03edfa615c1f8af5a49e7065f9fb3f
+      revision: b7025fb97b53370ac4a2c216698e0784916fa135
       path: modules/tee/tf-a/trusted-firmware-a
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 2fb1a713ec92222613987e068b00269963de1bef
+      revision: 2b2b177366080dccf68e6ff1780b75e8303bb9a4
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

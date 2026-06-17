@@ -441,7 +441,7 @@ static inline void spi_context_unlock_unconditionally(struct spi_context* ctx __
  * Use spi_context_update_(tx/rx) instead.
  */
 static inline void* spi_context_get_next_buf(struct spi_tx_rx_control_block* cb,
-                                             uint8_t dfs) {
+                                             size_t dfs) {
     /* This loop skips zero-length buffers in the set, if any. */
     while (cb->count) {
         size_t len = (cb->current->len / dfs);
@@ -475,8 +475,8 @@ static inline
 void spi_context_buffers_setup(struct spi_context* ctx,
                                const struct spi_buf_set* tx_bufs,
                                const struct spi_buf_set* rx_bufs,
-                               uint8_t dfs) {
-    LOG_DBG("tx_bufs %p - rx_bufs %p - %u", tx_bufs, rx_bufs, dfs);
+                               size_t dfs) {
+    LOG_DBG("tx_bufs %p - rx_bufs %p - %zu", tx_bufs, rx_bufs, dfs);
 
     struct spi_tx_rx_control_block* tx = &ctx->tx;
     struct spi_tx_rx_control_block* rx = &ctx->rx;
@@ -510,7 +510,7 @@ void spi_context_buffers_setup(struct spi_context* ctx,
  * Parameter "len" is the number of data frames of TX that were sent.
  */
 static ALWAYS_INLINE
-void spi_context_update_tx(struct spi_context* ctx, uint8_t dfs, uint32_t len) {
+void spi_context_update_tx(struct spi_context* ctx, size_t dfs, uint32_t len) {
     struct spi_tx_rx_control_block* tx = &ctx->tx;
 
     if (tx->len > 0U) {
@@ -560,7 +560,7 @@ bool spi_context_tx_buf_on(struct spi_context* ctx) {
  * @param len is the number of data frames of RX that were received.
  */
 static ALWAYS_INLINE
-void spi_context_update_rx(struct spi_context* ctx, uint8_t dfs, uint32_t len) {
+void spi_context_update_rx(struct spi_context* ctx, size_t dfs, uint32_t len) {
     struct spi_tx_rx_control_block* rx = &ctx->rx;
 
     #ifdef CONFIG_SPI_SLAVE
