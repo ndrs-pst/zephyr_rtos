@@ -2170,6 +2170,8 @@ Documentation Infrastructure:
     - "area: IEEE 802.15.4"
   tests:
     - drivers.ieee802154
+    - net.ieee802154
+    - sample.net.openthread
 
 "Drivers: IPM":
   status: odd fixes
@@ -4650,6 +4652,7 @@ Networking:
     - "area: IEEE 802.15.4"
   tests:
     - net.ieee802154
+    - sample.net.openthread
 
 "Networking: OCPP":
   status: maintained
@@ -4965,6 +4968,7 @@ Power management:
     - JordanYates
     - ZhaoxiangJin
     - yongxu-wang15
+    - Holt-Sun
   files:
     - include/zephyr/pm/
     - samples/subsys/pm/
@@ -7266,7 +7270,7 @@ Xen Platform:
     - soc/xen/
     - boards/xen/
     - dts/bindings/xen/
-    - snippets/xen_dom0/
+    - snippets/xen-dom0/
   labels:
     - "area: Xen Platform"
 

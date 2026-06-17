@@ -116,6 +116,7 @@ enum crc_type {
     CRC32_C,     /**< Use @ref crc32_c */
     CRC32_IEEE,  /**< Use @ref crc32_ieee */
     CRC32_K_4_2, /**< Use @ref crc32_k_4_2_update */
+    CRC32_MPEG2, /**< Use @ref crc32_mpeg2 */
 };
 
 /**
@@ -397,7 +398,37 @@ uint32_t crc32_c(uint32_t crc, uint8_t const* data,
  *
  * @return CRC32 value.
  */
-uint32_t crc32_k_4_2_update(uint32_t crc, const uint8_t *data, size_t len);
+uint32_t crc32_k_4_2_update(uint32_t crc, uint8_t const* data, size_t len);
+
+/**
+ * @brief Generate CRC-32/MPEG-2 checksum.
+ *
+ * Uses polynomial 0x04C11DB7 with initial value 0xFFFFFFFF, no input or output
+ * reflection and no final XOR (CRC-32/MPEG-2). Equivalent to calling
+ * @ref crc32_mpeg2_update with @p crc set to 0xFFFFFFFF.
+ *
+ * @param  data         Pointer to data on which the CRC should be calculated.
+ * @param  len          Data length.
+ *
+ * @return CRC-32 value.
+ */
+uint32_t crc32_mpeg2(uint8_t const* data, size_t len);
+
+/**
+ * @brief Update a CRC-32/MPEG-2 checksum.
+ *
+ * Computes a CRC-32 using polynomial 0x04C11DB7 in MSB-first form, with no
+ * input or output reflection and no final XOR. With @p crc set to 0xFFFFFFFF
+ * on the first call this produces the standard CRC-32/MPEG-2 value.
+ *
+ * @param crc   CRC-32 checksum that needs to be updated (use 0xFFFFFFFF for
+ *              the first call to match CRC-32/MPEG-2).
+ * @param data  Pointer to data on which the CRC should be calculated.
+ * @param len   Data length.
+ *
+ * @return CRC-32 value.
+ */
+uint32_t crc32_mpeg2_update(uint32_t crc, uint8_t const* data, size_t len);
 
 /**
  * @brief Compute CCITT variant of CRC 8
@@ -484,7 +515,7 @@ uint8_t crc4(uint8_t const* src, size_t len, uint8_t polynomial, uint8_t initial
  *
  * @return The CRC-24 value.
  */
-uint32_t crc24_pgp(const uint8_t *data, size_t len);
+uint32_t crc24_pgp(uint8_t const* data, size_t len);
 
 /**
  * @brief Update an OpenPGP CRC-24 checksum.
@@ -497,7 +528,7 @@ uint32_t crc24_pgp(const uint8_t *data, size_t len);
  * @return The CRC-24 value. When the last buffer of data has been processed, mask the value
  *         with CRC24_FINAL_VALUE_MASK to keep only the meaningful 24 bits of the CRC result.
  */
-uint32_t crc24_pgp_update(uint32_t crc, const uint8_t *data, size_t len);
+uint32_t crc24_pgp_update(uint32_t crc, uint8_t const* data, size_t len);
 
 /**
  * @brief Calculate an RTCM3 CRC24Q frame checksum
@@ -508,7 +539,7 @@ uint32_t crc24_pgp_update(uint32_t crc, const uint8_t *data, size_t len);
  * @return 0 if the data-frame contains a checksum and it matches.
  * @return Result if data-frame does not contain checksum.
  */
-uint32_t crc24q_rtcm3(const uint8_t *data, size_t len);
+uint32_t crc24q_rtcm3(uint8_t const* data, size_t len);
 
 /**
  * @brief Compute a CRC checksum, in a generic way.
@@ -588,6 +619,9 @@ static inline uint32_t crc_by_type(enum crc_type type, uint8_t const* src, size_
 
         case CRC32_K_4_2 :
             return crc32_k_4_2_update(seed, src, len);
+
+        case CRC32_MPEG2 :
+            return crc32_mpeg2_update(seed, src, len);
 
         default :
             break;

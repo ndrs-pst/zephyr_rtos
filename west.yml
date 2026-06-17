@@ -164,7 +164,7 @@ manifest:
       groups:
         - hal
     - name: hal_atmel
-      revision: fffe030a76520c77da550ef9515d2636516bd68d
+      revision: 8254d22c3d53fc57222a4106e7ba74318208390c
       path: modules/hal/atmel
       groups:
         - hal
@@ -174,7 +174,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: f3be21f2bb27535d4ac58364018cb6491d52f5dd
+      revision: 8b30e4e3d11e467bfdc04658a02f5afc3d15bd2f
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -260,7 +260,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: f967d1a2cc681e4080264a61abbc263646ecae49
+      revision: 0b3582de36b17f977fc66f2da4e862da1e605b79
       path: modules/hal/stm32
       groups:
         - hal

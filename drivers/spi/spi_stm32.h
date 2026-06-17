@@ -26,6 +26,7 @@ struct spi_stm32_config {
     const struct stm32_pclken* pclken;
     size_t pclk_len;
     int datawidth;
+    int fifo_byte_threshold;                /* Threshold value (in bytes) */
 
     #ifdef CONFIG_SPI_STM32_INTERRUPT
     irq_config_func_t irq_config;
@@ -38,7 +39,6 @@ struct spi_stm32_config {
     uint32_t fifo_max_transfer_size;
     uint8_t  fifo_size;
 
-    bool fifo_enabled: 1;
     bool ioswp: 1;
     bool soft_nss: 1;
 
@@ -77,7 +77,7 @@ struct spi_stm32_data {
     struct spi_context ctx;
     uint32_t tx_len;
     uint32_t rx_len;
-    uint8_t fifo_threshold;
+    uint8_t fifo_threshold;                 /* Threshold value (in number of data frames) */
 
     HAL_SPI_StateTypeDef State;
     uint32_t ErrorCode;
@@ -88,8 +88,6 @@ struct spi_stm32_data {
     volatile uint32_t status_flags;
     struct stream dma_rx;
     struct stream dma_tx;
-    bool tx_dma_done;
-    bool rx_dma_done;
     #endif /* CONFIG_SPI_STM32_DMA */
 
     bool pm_policy_state_on;
@@ -269,18 +267,18 @@ static inline void ll_disable_spi(SPI_TypeDef* spi) {
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) /* #CUSTOM@NDRS */
 /* Provide a dummy implementation for the function that is not available on this SoC */
-static inline void LL_SPI_TransmitData32(SPI_TypeDef *SPIx, uint32_t TxData) {
+static inline void LL_SPI_TransmitData32(SPI_TypeDef* SPIx, uint32_t TxData) {
     /* pass */
 }
 
 static inline uint32_t LL_SPI_ReceiveData32(SPI_TypeDef* SPIx) {
-    return 0;
+    return (0);
 }
 
 #endif
 
 #if defined(SPI_CFG2_IOSWP)
-static inline void ll_spi_swap_mosi_miso(SPI_TypeDef *spi) {
+static inline void ll_spi_swap_mosi_miso(SPI_TypeDef* spi) {
     #if defined(CONFIG_STM32_HAL2)
     LL_SPI_EnableMosiMisoSwap(spi);
     #else /* CONFIG_STM32_HAL2 */
