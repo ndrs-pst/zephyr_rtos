@@ -2619,7 +2619,7 @@ static int spi_stm32_transceive_async(const struct device* dev,
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static DEVICE_API(spi, api_funcs) = {
+static DEVICE_API(spi, spi_stm32_api) = {
     .transceive = spi_stm32_transceive_sync,
     #ifdef CONFIG_SPI_ASYNC
     .transceive_async = spi_stm32_transceive_async,
@@ -2909,7 +2909,7 @@ static int spi_stm32_init(const struct device* dev) {
                               &spi_stm32_dev_data_##id,         \
                               &spi_stm32_cfg_##id,              \
                               POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, \
-                              &api_funcs);                      \
+                              &spi_stm32_api);                  \
                                                                 \
     STM32_SPI_IRQ_HANDLER(id)
 

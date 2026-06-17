@@ -457,11 +457,11 @@ static DEVICE_API(spi, lpspi_driver_api) = {
 static int lpspi_init(const struct device* dev) {
     LPSPI_Type* lpspi = (LPSPI_Type*)DEVICE_MMIO_NAMED_GET(dev, reg_base);
     struct lpspi_data* data = dev->data;
-    int err;
+    int ret;
 
-    err = spi_nxp_init_common(dev);
-    if (err) {
-        return err;
+    ret = spi_nxp_init_common(dev);
+    if (ret != 0) {
+        return ret;
     }
 
     /* Starting config should be master with active low CS, to make sure
