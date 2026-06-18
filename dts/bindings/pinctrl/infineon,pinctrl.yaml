@@ -123,12 +123,17 @@ child-binding:
     drive-strength:
       type: string
       enum:
-        - "full"
-        - "half"
-        - "one-fourth"
         - "one-eighth"
+        - "one-fourth"
+        - "three-eighth"
+        - "half"
+        - "five-eighth"
+        - "three-fourth"
+        - "seven-eighth"
+        - "full"
       description: |
-        Pin output drive strength.
+        Pin output drive strength (CY_IP_MXS22IOSS only).
+        Maps linearly to CY_GPIO_DRIVE_SEL_0..SEL_7 (1mA..8mA normal speed).
     infineon,cfgout3-mode:
       type: boolean
       description: |
