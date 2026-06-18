@@ -11,7 +11,6 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
-#include <zephyr/pm/policy.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
@@ -197,14 +196,11 @@ static int i2c_stm32_transfer(const struct device* dev, struct i2c_msg* msg,
     k_sem_take(&data->bus_mutex, K_FOREVER);
 
     /* Prevent driver from being suspended by PM until I2C transaction is complete */
-    ret = pm_device_runtime_get(dev);
+    ret = i2c_stm32_pm_get(dev);
     if (ret < 0) {
         LOG_ERR("i2c: PM runtime failure: %d", ret);
         goto out_sem;
     }
-
-    /* Prevent the clocks to be stopped during the i2c transaction */
-    pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
     current = msg;
 
@@ -225,9 +221,7 @@ static int i2c_stm32_transfer(const struct device* dev, struct i2c_msg* msg,
         num_msgs--;
     }
 
-    pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-
-    (void) pm_device_runtime_put(dev);
+    i2c_stm32_pm_put(dev);
 
 out_sem :
     k_sem_give(&data->bus_mutex);
@@ -400,7 +394,10 @@ static int i2c_stm32_init(const struct device* dev) {
         return (ret);
     }
 
-    (void) pm_device_runtime_enable(dev);
+    ret = pm_device_runtime_enable(dev);
+    if (ret < 0) {
+        return (ret);
+    }
 
     data->is_configured = true;
 
