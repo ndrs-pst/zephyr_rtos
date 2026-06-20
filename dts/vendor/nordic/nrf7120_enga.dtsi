@@ -495,6 +495,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 
@@ -528,6 +529,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 
@@ -561,6 +563,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 
@@ -753,6 +756,7 @@
 				clocks = <&lfxo>, <&pclk>;
 				clock-names = "lfclock", "hfclock";
 				status = "disabled";
+				extended-channels = <0>;
 			};
 
 			tdm: tdm@e8000 {
@@ -787,6 +791,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 
@@ -820,6 +825,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 
@@ -868,6 +874,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 

@@ -27,12 +27,6 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_rtio);
 #include "i2c_stm32.h"
 #include "i2c-priv.h"
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2)
-#define DT_DRV_COMPAT st_stm32_i2c_v2
-#else
-#define DT_DRV_COMPAT st_stm32_i2c_v1
-#endif
-
 /* This symbol takes the value 1 if one of the device instances */
 /* is configured in dts with a domain clock */
 #if STM32_DT_INST_DEV_DOMAIN_CLOCK_SUPPORT
@@ -102,6 +96,7 @@ static bool i2c_stm32_start(const struct device *dev, int *status)
 	struct rtio_sqe *sqe = &ctx->txn_curr->sqe;
 	struct i2c_dt_spec *dt_spec = sqe->iodev->data;
 	uint8_t flags = sqe->iodev_flags;
+	int error;
 
 #ifdef CONFIG_I2C_STM32_V2
 	struct rtio_iodev_sqe *iodev_sqe_next = rtio_txn_next(ctx->txn_curr);
@@ -115,16 +110,16 @@ static bool i2c_stm32_start(const struct device *dev, int *status)
 
 	switch (sqe->op) {
 	case RTIO_OP_RX:
-		i2c_stm32_msg_start(dev, I2C_MSG_READ | flags, sqe->rx.buf, sqe->rx.buf_len,
-				    dt_spec->addr);
+		error = i2c_stm32_msg_start(dev, I2C_MSG_READ | flags, sqe->rx.buf, sqe->rx.buf_len,
+					    dt_spec->addr);
 		break;
 	case RTIO_OP_TINY_TX:
-		i2c_stm32_msg_start(dev, flags, sqe->tiny_tx.buf, sqe->tiny_tx.buf_len,
-				    dt_spec->addr);
+		error = i2c_stm32_msg_start(dev, flags, sqe->tiny_tx.buf, sqe->tiny_tx.buf_len,
+					    dt_spec->addr);
 		break;
 	case RTIO_OP_TX:
-		i2c_stm32_msg_start(dev, flags, (uint8_t *)sqe->tx.buf, sqe->tx.buf_len,
-				    dt_spec->addr);
+		error = i2c_stm32_msg_start(dev, flags, (uint8_t *)sqe->tx.buf, sqe->tx.buf_len,
+					    dt_spec->addr);
 		break;
 	case RTIO_OP_I2C_CONFIGURE:
 		*status = i2c_stm32_runtime_configure(dev, sqe->i2c_config);
@@ -132,6 +127,12 @@ static bool i2c_stm32_start(const struct device *dev, int *status)
 	default:
 		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
 		*status = -EINVAL;
+		return false;
+	}
+
+	/* Reaching this point, no asynchronous sequence is started only if an error was reported */
+	if (error != 0) {
+		*status = error;
 		return false;
 	}
 
@@ -252,7 +253,7 @@ static void i2c_stm32_submit(const struct device *dev, struct rtio_iodev_sqe *io
 	}
 }
 
-static DEVICE_API(i2c, api_funcs) = {
+DEVICE_API(i2c, i2c_stm32_driver_api) = {
 	.configure = i2c_stm32_configure,
 	.transfer = i2c_stm32_transfer,
 	.get_config = i2c_stm32_get_config,
@@ -263,7 +264,7 @@ static DEVICE_API(i2c, api_funcs) = {
 #endif
 };
 
-static int i2c_stm32_init(const struct device *dev)
+int i2c_stm32_init(const struct device *dev)
 {
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct i2c_stm32_config *cfg = dev->config;
@@ -314,48 +315,3 @@ static int i2c_stm32_init(const struct device *dev)
 
 	return 0;
 }
-
-#define I2C_STM32_INIT(index)									\
-	I2C_STM32_IRQ_HANDLER_DECL(index);							\
-												\
-	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2),					\
-		   (static const uint32_t i2c_timings_##index[] =				\
-			DT_INST_PROP_OR(index, timings, {});))					\
-												\
-	PINCTRL_DT_INST_DEFINE(index);								\
-												\
-	static const struct stm32_pclken pclken_##index[] = STM32_DT_INST_CLOCKS(index);	\
-												\
-	static const struct i2c_stm32_config i2c_stm32_cfg_##index = {				\
-		.i2c = (I2C_TypeDef *)DT_INST_REG_ADDR(index),					\
-		.pclken = pclken_##index,							\
-		.pclk_len = DT_INST_NUM_CLOCKS(index),						\
-		I2C_STM32_IRQ_HANDLER_FUNCTION(index)						\
-		.bitrate = DT_INST_PROP(index, clock_frequency),				\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),					\
-		IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2),				\
-			   (.timings = (const struct i2c_config_timing *)i2c_timings_##index,	\
-			    .n_timings =							\
-			sizeof(i2c_timings_##index) / (sizeof(struct i2c_config_timing)),))	\
-	};											\
-												\
-	I2C_RTIO_DEFINE(CONCAT(_i2c, index, _stm32_rtio),					\
-			DT_INST_PROP_OR(index, sq_size, CONFIG_I2C_RTIO_SQ_SIZE),		\
-			DT_INST_PROP_OR(index, cq_size, CONFIG_I2C_RTIO_CQ_SIZE));		\
-												\
-	static struct i2c_stm32_data i2c_stm32_dev_data_##index = {				\
-		.ctx = &CONCAT(_i2c, index, _stm32_rtio),					\
-	};											\
-												\
-	PM_DEVICE_DT_INST_DEFINE(index, i2c_stm32_pm_action);					\
-												\
-	I2C_DEVICE_DT_INST_DEFINE(index, i2c_stm32_init,					\
-				  PM_DEVICE_DT_INST_GET(index),					\
-				  &i2c_stm32_dev_data_##index,					\
-				  &i2c_stm32_cfg_##index,					\
-				  POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,			\
-				  &api_funcs);							\
-												\
-	I2C_STM32_IRQ_HANDLER(index)
-
-DT_INST_FOREACH_STATUS_OKAY(I2C_STM32_INIT)

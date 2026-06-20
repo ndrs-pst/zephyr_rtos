@@ -868,17 +868,22 @@ Bouffalolab Platforms:
     - josuah
     - will-tm
   files:
+    - boards/**/*bflb*
+    - boards/**/*bflb*/
     - boards/aithinker/ai_*/
-    - boards/bflb/
     - boards/doiting/
+    - boards/thirdreality/
     - boards/sipeed/m0sense/
     - boards/sipeed/m1s_dock/
     - boards/sipeed/maix_m0s_dock/
-    - drivers/*/*bflb*
-    - drivers/sensor/bflb/
+    - drivers/**/*bflb*
+    - drivers/**/*bflb*/
     - dts/riscv/bflb/
     - dts/bindings/*/bflb,*
     - soc/bflb/
+    - include/zephyr/**/*bflb*
+    - scripts/west_commands/runners/bflb*
+    - samples/**/*bflb*/
   labels:
     - "platform: Bouffalo Lab"
 
@@ -1984,6 +1989,8 @@ Documentation Infrastructure:
     - aaronemassey
     - DBS06
     - teburd
+  collaborators:
+    - devbhavej
   files:
     - drivers/fuel_gauge/
     - dts/bindings/fuel-gauge/
