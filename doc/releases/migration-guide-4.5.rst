@@ -144,6 +144,11 @@ ADC
   replaced by encoded ``girqs`` (using ``MCHP_XEC_ECIA_GIRQ_ENC`` macros) and ``pcr-scr`` (int type)
   for encoded PCR register index and bit position (:github:`105658`).
 
+* The :kconfig:option:`CONFIG_LPADC_DO_OFFSET_CALIBRATION` option is now only meaningful when
+  :kconfig:option:`CONFIG_ADC_MCUX_LPADC` is enabled, and its ``default y`` is now scoped to that
+  condition. In-tree boards no longer enable it explicitly in their defconfigs since
+  the default already covers them.
+
 Audio Codec
 ===========
 
@@ -208,6 +213,9 @@ Display
   format. Displays whose framebuffer instead expects a red, green, blue byte order must now report
   :c:enumerator:`PIXEL_FORMAT_BGR_888`, for which the LVGL glue performs the red/blue channel swap
   automatically.
+
+* The Kconfig options ``CONFIG_ST730X_POWERMODE_LOW`` for ST7305 and ST7306 displays has been
+  removed in favour of toggling the low-power-mode property on the device node.
 
 DMA
 ===
@@ -481,6 +489,10 @@ STM32
   ``st,dsi-lcd-qsh-030`` is renamed into :dtcompatible:`st,dsi-lcd-qsh-030-connector`
   ``st,stm32-dcmi-camera-fpu-330zh`` is renamed into :dtcompatible:`st,dvp-cam-zif-30-connector`
 
+* :dtcompatible:`st,stm32-xspim` is now also used on STM32H5 and STM32H7RS series
+  to declare and configure XSPI Manager. Boards making use of XSPI must now enable
+  ``&xspim`` node in addition to the desired XSPI controller to use XSPI. (:github:`109903`)
+
 Syscon
 ======
 
@@ -736,6 +748,21 @@ gPTP
 * Removed ``net_eth_get_ptp_port`` and ``net_eth_set_ptp_port``.
   New :c:func:`gptp_get_port_number` and :c:func:`gptp_set_port_number`
   can be used instead.
+
+Modem
+*****
+
+SIMCOM SIM7080
+==============
+
+* The Kconfig option :kconfig:option:`CONFIG_MODEM_SIMCOM_SIM7080_LTE_BANDS` has been split
+  into :kconfig:option:`CONFIG_MODEM_SIMCOM_SIM7080_LTE_BANDS_M1` and
+  :kconfig:option:`CONFIG_MODEM_SIMCOM_SIM7080_LTE_BANDS_NB1` since NB-IoT and CAT-M have
+  slightly different usable bands. The type of the newly introduced configuration values
+  is a hex bitmap of selected bands. By default bands 8, 20 and 28 are selected.
+
+  Applications configuring the :kconfig:option:`CONFIG_MODEM_SIMCOM_SIM7080_LTE_BANDS`
+  must update their configuration.
 
 LoRaWAN
 *******

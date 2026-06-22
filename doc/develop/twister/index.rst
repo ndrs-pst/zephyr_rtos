@@ -32,44 +32,25 @@ There are a few reasons why twister only builds a test and doesn't run it:
 - You or some higher level automation invoked twister with
   ``--build-only``.
 
-To run the script in the local tree, follow the steps below:
+To run Twister in the local tree, follow the steps below:
 
-.. tabs::
+.. code-block:: console
 
-   .. group-tab:: Linux
+   $ west twister
 
-      .. code-block:: bash
+.. note::
 
-         $ source zephyr-env.sh
-         $ ./scripts/twister
+   The examples in this document invoke Twister as ``west twister``, the
+   :ref:`west <west>` extension command, which works the same on all host
+   operating systems. The following invocations are equivalent:
 
-   .. group-tab:: Windows
+   * ``west twister ...`` (recommended).
+   * ``./scripts/twister ...`` (Linux/macOS) or ``python .\scripts\twister ...``
+     (Windows): invoking the script directly. This requires the Zephyr
+     environment to be set up first (``source zephyr-env.sh`` or
+     ``zephyr-env.cmd``).
 
-      .. code-block:: bat
-
-         zephyr-env.cmd
-         python .\scripts\twister
-
-
-If you have a system with a large number of cores and plenty of free storage space,
-you can build and run all possible tests using the following options:
-
-.. tabs::
-
-   .. group-tab:: Linux
-
-      .. code-block:: bash
-
-         $ ./scripts/twister --all --enable-slow
-
-   .. group-tab:: Windows
-
-      .. code-block:: bat
-
-         python .\scripts\twister --all --enable-slow
-
-This will build for all available boards and run all applicable tests in
-a simulated (for example QEMU) environment.
+   All forms accept the same command line options.
 
 If you want to run tests on one or more specific platforms, you can use
 the ``--platform`` option, it is a platform filter for testing, with this
@@ -77,20 +58,19 @@ option, test suites will only be built/run on the platforms specified.
 This option also supports different revisions of one same board,
 you can use ``--platform board@revision`` to test on a specific revision.
 
-The list of command line options supported by twister can be viewed using:
+The list of command line options supported by twister can be viewed with
+``west twister --help``. See :ref:`twister_commandline_options` for the full
+set of options.
 
-.. tabs::
+The following pages cover additional Twister topics:
 
-   .. group-tab:: Linux
+.. toctree::
+   :maxdepth: 1
 
-      .. command-output:: $ZEPHYR_BASE/scripts/twister --help
-         :shell:
-
-   .. group-tab:: Windows
-
-      .. code-block:: bat
-
-         python .\scripts\twister --help
+   commandline
+   pytest
+   twister_statuses
+   twister_blackbox
 
 
 Board Configuration
@@ -146,8 +126,15 @@ identifier:
 
 name:
   The actual name of the board as it appears in marketing material.
+vendor:
+  The board vendor. Used by the ``vendor_allow`` and ``vendor_exclude`` test
+  scenario filters.
+tier:
+  An optional integer indicating the board support tier. Used for reporting and
+  to group platforms by their level of support.
 type:
-  Type of the board or configuration, currently we support 2 types: mcu, qemu
+  Type of the board or configuration. One of ``mcu``, ``qemu``, ``sim``,
+  ``unit`` or ``native``.
 simulation:
   Simulator(s) used to simulate the platform, e.g. qemu.
 
@@ -165,7 +152,7 @@ simulation:
   The ``exec`` attribute is optional. If it is set but the required simulator is not available, the
   tests will be built only.
   If it is not set and the required simulator is not available the tests will fail to run.
-  The simulation name must match one of the element of ``SUPPORTED_EMU_PLATFORMS``.
+  The simulation name must match one of the elements of ``SUPPORTED_EMU_PLATFORMS``.
 arch:
   Architecture of the board
 toolchain:
@@ -177,6 +164,12 @@ ram:
 flash:
   Available FLASH on the board (specified in KB). This is used to match test scenario
   requirements.  If not specified we default to 512KB.
+sysbuild: [True|False] (default False)
+  If true, applications for this platform are built using
+  :ref:`sysbuild <sysbuild>` by default.
+twister: [True|False] (default True)
+  If false, Twister ignores this platform entirely and never builds or runs
+  tests on it.
 supported:
   A list of features this board supports. This can be specified as a single word
   feature or as a variant of a feature class. For example:
@@ -228,11 +221,22 @@ testing:
     This prevents serial port disconnection issues during flashing on some boards (e.g., those
     with USB CDC that reset during flash operations).
 
+  renode:
+    Configuration for the Renode simulator. Supports two keys: ``uart``, the
+    UART peripheral the harness connects to (e.g. ``sysbus.uart0``), and
+    ``resc``, the Renode script (``.resc``) used to set up the simulated machine.
+
 env:
   A list of environment variables. Twister will check if all these environment variables are set,
   and otherwise skip this platform. This allows the user to define a platform which should be
   used, for example, only if some required software or hardware is present, and to signal that
   presence to twister using these environment variables.
+
+variants:
+  A mapping of board variant (qualifier) names to per-variant overrides. Each
+  entry is itself a platform definition and may override any of the keys above
+  for that specific variant, while inheriting the remaining values from the
+  top-level definition.
 
 .. _twister_tests_long_version:
 
@@ -315,15 +319,22 @@ explained in this document.
         tests:
           bluetooth.gatt:
             build_only: true
-            platform_allow: qemu_cortex_m3 qemu_x86
-            tags: bluetooth
+            platform_allow:
+              - qemu_cortex_m3
+              - qemu_x86
+            tags:
+              - bluetooth
           bluetooth.gatt.br:
             build_only: true
-            extra_args: CONF_FILE="prj_br.conf"
+            extra_args:
+              -CONF_FILE="prj_br.conf"
             filter: not CONFIG_DEBUG
-            platform_exclude: up_squared
-            platform_allow: qemu_cortex_m3 qemu_x86
-            tags: bluetooth
+            platform_exclude:
+              -up_squared
+            platform_allow:
+              - qemu_cortex_m3 qemu_x86
+            tags:
+              bluetooth
 
 
 A sample with tests will have the same structure with additional information
@@ -337,13 +348,15 @@ related to the sample and what is being demonstrated:
         tests:
           sample.basic.hello_world:
             build_only: true
-            tags: tests
+            tags:
+              - tests
             min_ram: 16
           sample.basic.hello_world.singlethread:
             build_only: true
             extra_args: CONF_FILE=prj_single.conf
             filter: not CONFIG_BT
-            tags: tests
+            tags:
+              - tests
             min_ram: 16
 
 A Test Scenario entry in the ``tests:`` YAML dictionary has its Test Scenario
@@ -421,6 +434,22 @@ extra_configs: <list of extra configurations>
               - platform:qemu_x86:CONFIG_DEBUG=y
 
 
+extra_conf_files: <list of configuration files>
+    Extra Kconfig fragment files to merge into the build, as an alternative to
+    passing ``CONF_FILE=`` through ``extra_args``. Entries from ``common`` and
+    the test scenario are concatenated. Prefer this field over ``extra_args``
+    for configuration files.
+
+extra_overlay_confs: <list of overlay configuration files>
+    Extra Kconfig overlay fragments to merge into the build, as an alternative
+    to passing ``OVERLAY_CONFIG=`` through ``extra_args``. Entries from
+    ``common`` and the test scenario are concatenated.
+
+extra_dtc_overlay_files: <list of devicetree overlay files>
+    Extra devicetree overlay files to apply to the build, as an alternative to
+    passing ``DTC_OVERLAY_FILE=`` through ``extra_args``. Entries from
+    ``common`` and the test scenario are concatenated.
+
 build_only: <True|False> (default False)
     If true, twister will not try to run the test even if the test is runnable
     on the platform.
@@ -465,6 +494,15 @@ arch_allow: <list of arches, such as x86, arm, arc>
 
 arch_exclude: <list of arches, such as x86, arm, arc>
     Set of architectures that this test scenario should not run on.
+
+toolchain_allow: <list of toolchain variants>
+    Set of toolchain variants that this test scenario should only be run for.
+    The toolchain is the one configured for the run (see
+    :envvar:`ZEPHYR_TOOLCHAIN_VARIANT`). Platforms built with any other
+    toolchain are filtered out.
+
+toolchain_exclude: <list of toolchain variants>
+    Set of toolchain variants that this test scenario should not be run for.
 
 vendor_allow: <list of vendors>
     Set of platform vendors that this test scenario should only be run for.  The
@@ -525,6 +563,17 @@ integration_toolchains: <YML list of toolchain variants>
 
 platform_exclude: <list of platforms>
     Set of platforms that this test scenario should not run on.
+
+platform_type: <list of platform types>
+    Restrict this test scenario to platforms of the given type(s). A platform's
+    type is declared via the ``type:`` key in its board metadata. Supported
+    values are ``mcu``, ``qemu``, ``sim``, ``unit`` and ``native``. Platforms
+    whose type is not in this list are filtered out.
+
+simulation_exclude: <list of simulators>
+    Set of simulators that this test scenario should not run on. Supported
+    values are ``qemu``, ``simics``, ``xt-sim``, ``renode``, ``nsim``,
+    ``mdb-nsim``, ``tsim``, ``armfvp``, ``native`` and ``custom``.
 
 extra_sections: <list of extra binary sections>
     When computing sizes, twister will report errors if it finds
@@ -839,21 +888,56 @@ expect_reboot: <True|False> (default False)
     When enabled, twister will suppress warnings about unexpected multiple runs
     of a testsuite or testcase.
 
-The set of test scenarios that actually run depends on directives in the test scenario
-filed and options passed in on the command line. If there is any confusion,
-running with ``-v`` or examining the discard report
-(:file:`twister_discard.csv`) can help show why particular test scenarios were
-skipped.
+modules: <list of module names>
+    Build and run this test scenario only when all of the listed
+    :ref:`modules <modules>` are present in the workspace. Scenarios that
+    require a module which is not available are filtered out.
 
-Metrics (such as pass/fail state and binary size) for the last code
-release are stored in ``scripts/release/twister_last_release.csv``.
-To update this, pass the ``--all --release`` options.
+type: <string> (default integration)
+    Test type of the scenario. Set to ``unit`` for unit tests that are built
+    for the :ref:`unit_testing board <unit_testing_board>` and run on the host
+    without the full Zephyr build system.
+
+testcases: <list of test case names>
+    Explicitly declare the list of test case names that make up this scenario.
+    This is normally detected automatically (for example from the ztest source)
+    and only needs to be set for harnesses that cannot be introspected.
+
+ignore_faults: <True|False> (default False)
+    Do not mark the test scenario as failed if a fault is detected in the
+    output while the test is running.
+
+ignore_qemu_crash: <True|False> (default False)
+    Do not mark the test scenario as failed if QEMU crashes while the test is
+    running.
+
+The set of test scenarios that actually run depends on directives in the test scenario
+file and options passed in on the command line. If there is any confusion,
+running with ``-v`` or examining the :ref:`test plan <twister_output>`
+(:file:`testplan.json`) can help show why particular test scenarios were
+filtered out.
 
 To load arguments from a file, add ``+`` before the file name, e.g.,
 ``+file_name``. File content must be one or more valid arguments separated by
 line break instead of white spaces.
 
 Most everyday users will run with no arguments.
+
+Managing tests timeouts
+=======================
+
+There are several parameters which control tests timeouts on various levels:
+
+* ``timeout`` option in each test scenario. See :ref:`here <twister_test_case_timeout>` for more
+  details.
+* ``timeout_multiplier`` option in board configuration. See
+  :ref:`here <twister_board_timeout_multiplier>` for more details.
+* ``--timeout-multiplier`` twister option which can be used to adjust timeouts in exact twister run.
+  It can be useful in case of simulation platform as simulation time may depend on the host
+  speed & load or we may select different simulation method (i.e. cycle accurate but slower
+  one), etc...
+
+Overall test scenario timeout is a multiplication of these three parameters.
 
 .. _twister_dt_filter_expressions:
 
@@ -984,6 +1068,21 @@ is enabled.
 Harnesses
 *********
 
+A *harness* is the mechanism Twister uses to run a test and decide whether it
+passed or failed. After a test image is built and started on its target (real
+hardware, an emulator, or the host), the harness drives the interaction with
+the running image -- providing input, capturing output, or handing execution
+over to an external test runner -- and interprets the result to assign a
+:ref:`status <twister_statuses>` to each test case.
+
+A test scenario selects a harness with the ``harness:`` entry in its
+``tests.yaml`` and tunes its behavior through ``harness_config``. When no
+harness is specified, the default ``test`` harness is used. Different harnesses
+serve different needs: some parse the device's console output against expected
+patterns, while others delegate execution to an external framework such as
+pytest, Robot Framework, or ctest. The pages linked below describe each
+supported harness and its ``harness_config`` options.
+
 Harnesses ``ztest``, ``gtest`` and ``console`` are based on parsing of the
 output and matching certain phrases. ``ztest`` and ``gtest`` harnesses look
 for pass/fail/etc. frames defined in those frameworks.
@@ -1015,636 +1114,20 @@ The following is an example yaml file with a few harness_config options.
           tags: sensors
           depends_on: i2c
 
-Ctest
-=====
+.. toctree::
+   :maxdepth: 1
+
+   harness/ctest
+   harness/gtest
+   harness/pytest
+   harness/console
+   harness/robot
+   harness/power
+   harness/display_capture
+   harness/script
+   harness/bsim
+   harness/shell
 
-ctest_args: <list of arguments> (default empty)
-    Specify a list of additional arguments to pass to ``ctest`` e.g.:
-    ``ctest_args: [‘--repeat until-pass:5’]``. Note that
-    ``--ctest-args`` can be passed multiple times to pass several arguments
-    to the ctest.
-
-
-Gtest
-=====
-
-Use ``gtest`` harness if you've already got tests written in the gTest
-framework and do not wish to update them to zTest.
-
-Pytest
-======
-
-The :ref:`pytest harness <integration_with_pytest>` is used to execute pytest
-test suites in the Zephyr test. The following options apply to the pytest harness:
-
-.. _pytest_root:
-
-pytest_root: <list of pytest testpaths> (default pytest)
-    Specify a list of pytest directories, files or subtests that need to be
-    executed when a test scenario begins to run. The default pytest directory is
-    ``pytest``. After the pytest run is finished, Twister will check if
-    the test scenario passed or failed according to the pytest report.
-    As an example, a list of valid pytest roots is presented below:
-
-    .. code-block:: yaml
-
-        harness_config:
-          pytest_root:
-            - "pytest/test_shell_help.py"
-            - "../shell/pytest/test_shell.py"
-            - "/tmp/test_shell.py"
-            - "~/tmp/test_shell.py"
-            - "$ZEPHYR_BASE/samples/subsys/testsuite/pytest/shell/pytest/test_shell.py"
-            - "pytest/test_shell_help.py::test_shell2_sample"  # select pytest subtest
-            - "pytest/test_shell_help.py::test_shell2_sample[param_a]"  # select pytest parametrized subtest
-
-.. _pytest_args:
-
-pytest_args: <list of arguments> (default empty)
-    Specify a list of additional arguments to pass to ``pytest`` e.g.:
-    ``pytest_args: [‘-k=test_method’, ‘--log-level=DEBUG’]``. Note that
-    ``--pytest-args`` can be passed multiple times to pass several arguments
-    to the pytest.
-
-.. _pytest_dut_scope:
-
-pytest_dut_scope: <function|class|module|package|session> (default function)
-    The scope for which ``dut`` and ``shell`` pytest fixtures are shared.
-    If the scope is set to ``function``, DUT is launched for every test case
-    in python script. For ``session`` scope, DUT is launched only once.
-
-
-  The following is an example yaml file with pytest harness_config options,
-  default pytest_root name "pytest" will be used if pytest_root not specified.
-  please refer the examples in samples/subsys/testsuite/pytest/.
-
-  .. code-block:: yaml
-
-      common:
-        harness: pytest
-      tests:
-        pytest.example.directories:
-          harness_config:
-            pytest_root:
-              - pytest_dir1
-              - $ENV_VAR/samples/test/pytest_dir2
-        pytest.example.files_and_subtests:
-          harness_config:
-            pytest_root:
-              - pytest/test_file_1.py
-              - test_file_2.py::test_A
-              - test_file_2.py::test_B[param_a]
-
-.. _required_devices:
-
-required_devices: <list of required device entries> (default empty)
-    Specify additional DUTs required for a multi-DUT test scenario.
-    Each entry configures one extra device to reserve and flash alongside
-    the main DUT. An empty entry ``{}`` reserves a second device with
-    the same platform and application as the main DUT.
-
-    Multi-DUT testing is supported for hardware device testing and
-    ``native_sim`` simulation. QEMU
-    is not supported. For simulation targets, Twister
-    automatically creates the required placeholder DUT entries, no
-    hardware map is needed. For hardware testing, provide a hardware map
-    file (``--hardware-map``) with a matching entry per required device.
-    More details in
-    :ref:`twister_multi_duts_testing` section.
-
-    Each entry supports the following optional fields:
-
-
-    platform: <string> (optional, defaults to current test's platform)
-        Platform to use for this required device. If not specified,
-        the same platform as the main DUT is used.
-
-    application: <string> (optional, defaults to current test application)
-        Test application ID to flash on this required device. When
-        specified, Twister builds the application separately and assigns its build
-        directory to the reserved DUT before flashing.
-        If not specified, the same application as the main DUT is used.
-
-        It uses same mechanism as :ref:`required_applications <required_applications>`.
-
-    path: <string> (optional)
-        Directory path where Twister should search for the application
-        specified in ``application``. Can be an absolute path or a path
-        relative to the directory containing the test's YAML file.
-        Environment variables are expanded. If not specified, Twister
-        searches in the same directory as the referring test's YAML file.
-
-    fixture: <list of fixture names> (optional, defaults to empty)
-        List of fixture names that must be present on the reserved device.
-        See :ref:`Fixtures <twister_fixtures>` for details.
-
-        Fixtures support an optional parameter suffix using the ``name:param``
-        syntax (e.g., ``io_adapter:channel_a``). When the main DUT has a fixture
-        with a parameter, Twister uses that parameter value to match required
-        devices - only devices carrying the **same parameter** for that fixture
-        name are considered. This ensures that physically connected DUT pairs
-        (e.g., two boards wired together and registered with the same fixture
-        parameter in the hardware map) are always reserved together and not
-        mixed with unrelated boards.
-
-        Example hardware map entries for a paired setup:
-
-        .. code-block:: yaml
-
-            - id: 01
-              platform: nrf52840dk/nrf52840
-              serial: /dev/ttyACM0
-              fixtures:
-                - io_adapter:channel_a
-            - id: 02
-              platform: nrf52840dk/nrf52840
-              serial: /dev/ttyACM1
-              fixtures:
-                - io_adapter:channel_a
-
-        With ``fixture: [io_adapter]`` on both the main DUT and the required
-        device, Twister selects only boards sharing the same ``channel_a``
-        parameter, guaranteeing the physically paired boards are picked.
-
-
-    Example configurations with multiple required devices:
-
-    .. code-block:: yaml
-
-        tests:
-          # Two DUTs, same platform and application
-          multidut.basic:
-            harness_config:
-              required_devices:
-                - {}
-          # Second DUT fixed to a specific platform
-          multidut.fixed_platform:
-            harness_config:
-              required_devices:
-                - platform: nrf52840dk/nrf52840
-          # Second DUT flashed with a different application
-          multidut.other_app:
-            harness_config:
-              required_devices:
-                - application: multidut.basic
-
-.. _twister_console_harness:
-
-Console
-=======
-
-The ``console`` harness tells Twister to parse a test's text output for a
-regex defined in the test's YAML file.
-
-The following options are currently supported:
-
-type: <one_line|multi_line> (required)
-    Depends on the regex string to be matched
-
-regex: <list of regular expressions> (required)
-    Strings with regular expressions to match with the test's output
-    to confirm the test runs as expected.
-
-ordered: <True|False> (default False)
-    Check the regular expression strings in orderly or randomly fashion
-
-record: <recording options> (optional)
-  regex: <list of regular expressions> (required)
-    Regular expressions with named subgroups to match data fields found
-    in the test instance's output lines where it provides some custom data
-    for further analysis. These records will be written into the build
-    directory ``recording.csv`` file as well as ``recording`` property
-    of the test suite object in ``twister.json``.
-
-    With several regular expressions given, each of them will be applied
-    to each output line producing either several different records from
-    the same output line, or different records from different lines,
-    or similar records from different lines.
-
-    The .CSV file will have as many columns as there are fields detected
-    in all records; missing values are filled by empty strings.
-
-    For example, to extract three data fields ``metric``, ``cycles``,
-    ``nanoseconds``:
-
-    .. code-block:: yaml
-
-      record:
-        regex:
-          - "(?P<metric>.*):(?P<cycles>.*) cycles, (?P<nanoseconds>.*) ns"
-
-  merge: <True|False> (default False)
-    Allows to keep only one record in a test instance with all the data
-    fields extracted by the regular expressions. Fields with the same name
-    will be put into lists ordered as their appearance in recordings.
-    It is possible for such multi value fields to have different number
-    of values depending on the regex rules and the test's output.
-
-  as_json: <list of regex subgroup names> (optional)
-    Data fields, extracted by the regular expressions into named subgroups,
-    which will be additionally parsed as JSON encoded strings and written
-    into ``twister.json`` as nested ``recording`` object properties.
-    The corresponding ``recording.csv`` columns will contain JSON strings
-    as-is.
-
-    Using this option, a test log can convey layered data structures
-    passed from the test image for further analysis with summary results,
-    traces, statistics, etc.
-
-    For example, this configuration:
-
-    .. code-block:: yaml
-
-      record:
-        regex: "RECORD:(?P<type>.*):DATA:(?P<metrics>.*)"
-        as_json: [metrics]
-
-    when matched to a test log string:
-
-    .. code-block:: none
-
-      RECORD:jitter_drift:DATA:{"rollovers":0, "mean_us":1000.0}
-
-    will be reported in ``twister.json`` as:
-
-    .. code-block:: json
-
-      "recording":[
-          {
-                "type":"jitter_drift",
-                "metrics":{
-                    "rollovers":0,
-                    "mean_us":1000.0
-                }
-          }
-      ]
-
-.. _twister_robot_harness:
-
-Robot
-=====
-
-The ``robot`` harness is used to execute Robot Framework test suites
-in simulation target (Qemu, Native Simulator, Renode).
-
-robot_testsuite: <robot file path> (default empty)
-    Specify one or more paths to a file containing a Robot Framework test suite to be run.
-
-robot_option: <robot option> (default empty)
-    One or more options to be send to robotframework.
-
-.. _twister_power_harness:
-
-Power
-=====
-
-The ``power`` harness is used to measure and validate the current consumption.
-It integrates with 'pytest' to perform automated data collection and analysis using a hardware power monitor.
-
-The harness executes the following steps:
-
-1. Initializes a power monitoring device (e.g., ``stm_powershield``) via the ``PowerMonitor`` abstract interface.
-#. Starts current measurement for a defined ``measurement_duration``.
-#. Collects raw current waveform data.
-#. Uses a peak detection algorithm to segment data into defined execution phases based on power transitions.
-#. Computes RMS current values for each phase using a utility function.
-#. Compares the computed values with user-defined expected RMS values.
-
-.. code-block:: yaml
-
-    harness: power
-    harness_config:
-      fixture: pm_probe
-      power_measurements:
-        element_to_trim: 100
-        min_peak_distance: 40
-        min_peak_height: 0.008
-        peak_padding: 40
-        measurement_duration: 6
-        num_of_transitions: 4
-        expected_rms_values: [56.0, 4.0, 1.2, 0.26, 140]
-        tolerance_percentage: 20
-
-- **elements_to_trim** – Number of samples to discard at the start of measurement to eliminate noise.
-- **min_peak_distance** – Minimum distance between detected current peaks (helps detect distinct transitions).
-- **min_peak_height** – Minimum current threshold to qualify as a peak (in amps).
-- **peak_padding** – Number of samples to extend around each detected peak.
-- **measurement_duration** – Total time (in seconds) to record current data.
-- **num_of_transitions** – Expected number of power state transitions in the DUT during test execution.
-- **expected_rms_values** – Target RMS values for each identified execution phase (in milliamps).
-- **tolerance_percentage** – Allowed deviation percentage from the expected RMS values.
-
-.. _twister_display_capture_harness:
-
-Display capture
-===============
-
-The ``display_capture`` harness is used to verify display driver functionality by capturing and
-analyzing display output using a camera. It integrates with pytest to perform automated visual
-testing using video fingerprints.
-
-.. figure:: figures/twister_display_capture_success.webp
-   :align: center
-   :alt: A window showing a camera preview of a device display with colored blocks in the corners,
-         with a text overlay indicating a successful test match.
-
-   Window being displayed for a "compare" run where fingerprint is a 90% match with the reference.
-
-Hardware setup
---------------
-
-The display capture harness requires:
-
-- UVC compatible camera with at least 2 megapixels (e.g., 1080p resolution)
-- Light-blocking enclosure or black curtain to ensure consistent lighting
-- PC host with camera connection for capturing display output
-- DUT connected to the same PC for flashing and serial console access
-
-Configuration
--------------
-
-The harness uses a YAML configuration file that defines camera settings, test parameters, and video
-signature analysis options. A typical configuration is shown below:
-
-.. code-block:: yaml
-   :caption: display_config.yaml
-
-    case_config:
-      device_id: 0
-      res_x: 1280
-      res_y: 720
-      fps: 30
-      run_time: 20
-    tests:
-      timeout: 30
-      prompt: "screen starts"
-      expect: ["tests.drivers.display.check.shield"]
-    plugins:
-      - name: signature
-        module: plugins.signature_plugin
-        class: VideoSignaturePlugin
-        status: enable
-        config:
-          operations: "compare"  # or "generate"
-          metadata:
-            name: "tests.drivers.display.check.shield"
-            platform: "frdm_mcxn947"
-          directory: "./fingerprints"
-          duration: 100
-          method: "combined"
-          threshold: 0.65
-          phash_weight: 0.35
-          dhash_weight: 0.25
-          histogram_weight: 0.2
-          edge_ratio_weight: 0.1
-          gradient_hist_weight: 0.1
-
-- ``case_config`` - This section defines to the general camera settings and duration of the test.
-
-  - ``device_id`` - The camera device ID (defaults to 0). Any valid OpenCV camera identifier, which
-    can be:
-
-    - An integer for local cameras (use 0 for the first camera, 1 for the second, etc).
-    - A device path string such as ``/dev/video0`` on Linux.
-    - An IP video stream URL such as ``rtsp://192.168.1.100:8554/stream`` for network cameras.
-
-  - ``res_x`` - The horizontal resolution of the camera (integer, defaults to 1280).
-  - ``res_y`` - The vertical resolution of the camera (integer, defaults to 720).
-  - ``fps`` - The frames per second of the camera (integer, defaults to 30).
-  - ``run_time`` - The duration of the test in seconds (integer, defaults to 20).
-
-- ``test`` - This section contains the test configuration for device interaction.
-
-  - ``timeout`` - Maximum time in seconds to wait for the prompt to appear on the device UART
-    output (integer, defaults to 30).
-  - ``prompt`` - The string pattern to wait for in the device UART output before starting the
-    display capture. This can be a regular expression (string, defaults to ``uart:~$``).
-  - ``expect`` - A list of expected test result strings that must match the results returned by
-    the application. The test passes if the captured results match this list (list of strings,
-    defaults to ``['PASS']``).
-
-- ``plugins`` - This section contains the configuration for the plugins processing the camera
-  frames. Only the ``VideoSignaturePlugin`` plugin is currently supported, and it takes the
-  following configuration options:
-
-  - ``operations`` - The operation to perform when running the test (string). Must be set to either
-    ``generate`` to capture fingerprints or ``compare`` to compare the captured fingerprints with
-    the reference fingerprints.
-  - ``metadata`` - Metadata information for fingerprint identification (optional).
-
-    - ``name`` - Test case name identifier (string).
-    - ``platform`` - Target platform identifier (string).
-
-  - ``directory`` - The directory where the fingerprints are stored (string, defaults to
-    ``./fingerprints``).
-  - ``duration`` - The number of frames to analyze (integer). More frames takes longer but generate
-    more accurate fingerprints).
-  - ``method`` - The method used to generate display fingerprints (string, defaults to
-    ``combined``). Must be set to either of the following values: ``phash``, ``dhash``,
-    ``histogram``, or ``combined``.
-
-    ``phash`` (Perceptual Hash)
-      Captures overall visual structure and layout. Best for detecting major rendering issues, e.g.
-      UI elements being positioned incorrectly.
-    ``dhash`` (Difference Hash)
-      Detects brightness patterns and gradients. Sensitive to contrast changes, e.g. brightness or
-      contrast problems.
-    ``histogram`` (Color Histogram)
-      Analyzes color distribution. Fast at detecting obvious color problems, e.g. color swap bugs.
-    ``combined`` (recommended method)
-      Weights all methods together ( see :samp:`{method}_weight` option below ) for robust
-      comparison. Provides balanced detection of both major and subtle visual issues.
-
-  - ``threshold`` - The similarity score above which it is considered that there is a match between
-    the reference and the captured fingerprints (optional float, defaults to 0.65).
-  - ``phash_weight`` - The weight for the phash method (optional float, defaults to 0.35)
-  - ``dhash_weight`` - The weight for the dhash method (optional float, defaults to 0.25)
-  - ``histogram_weight`` - The weight for the histogram method (optional float, defaults to 0.2)
-  - ``gradient_hist_weight`` - The weight for the gradient histogram method (optional float, defaults to 0.1)
-  - ``edge_ratio_weight`` - The weight for the edge ratio method (optional float, defaults to 0.1)
-
-The configuration file path is specified in the test's ``testcase.yaml`` via the
-``display_capture_config`` harness configuration option using the :envvar:`DISPLAY_TEST_DIR`
-environment variable:
-
-.. code-block:: yaml
-
-    harness: display_capture
-    harness_config:
-      pytest_dut_scope: session
-      fixture: fixture_display
-      display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
-
-Workflow
---------
-
-First, generate **reference fingerprints** for a known-good display output:
-
-.. code-block:: bash
-
-    # Build and flash the display test
-    west build -b <board> tests/drivers/display/display_check
-    west flash
-
-    # Configure for fingerprint generation mode by setting the 'operations' field to 'generate'
-    # in the configuration file.
-
-    # Generate fingerprints
-    export DISPLAY_TEST_DIR=<path-to-config-directory>
-    scripts/twister --device-testing --hardware-map map.yml \
-        -T tests/drivers/display/display_check/
-
-Fingerprints are stored in the directory specified in the ``directory`` field of the configuration
-file, and organized by test name and platform as defined in the ``metadata`` field of the
-configuration file.
-
-Once the fingerprints have been generated, you can run the test(s) again, this time in **comparison
-mode**:
-
-.. code-block:: bash
-
-    # Set the 'operations' field to 'compare' in the configuration file.
-
-    export DISPLAY_TEST_DIR=<path-to-fingerprints-parent-directory>
-    scripts/twister --device-testing --hardware-map map.yml \
-        -T tests/drivers/display/display_check/
-
-The harness compares captured video against reference fingerprints using the configured signature
-methods and thresholds. If the similarity score between reference and captured fingerprints exceeds
-the configured ``threshold``, the test passes.
-
-.. note::
-
-   - The test name in the DUT's ``testcase.yaml`` must match the ``name`` field in the fingerprint's
-     metadata configuration.
-   - Multiple fingerprints can be stored in one directory for comprehensive validation, though this
-     increases comparison time.
-   - Fingerprints are specific to both the test scenario and platform.
-
-.. _twister_script_harness:
-
-Script
-======
-
-The ``script`` harness executes shell scripts as test cases. It resolves scripts
-from the ``tests_scripts`` harness configuration option, runs each script as
-a subprocess, and reports individual pass/fail results based on the script
-exit code.
-
-The ``script`` harness also serves as a base class for the ``bsim``, ``pytest``,
-and ``ctest`` harnesses, providing shared subprocess execution, output
-streaming, and log handling.
-
-tests_scripts: <list of script paths> (default tests_scripts)
-    Specify a list of shell script paths, relative to the test source
-    directory, that need to be executed when a test scenario runs.
-    Each entry can be a path to a single file or a directory.
-    When a directory is specified, all ``.sh`` files in that directory
-    are collected (excluding files starting with ``_``). The default
-    is the ``tests_scripts`` directory.
-
-    .. code-block:: yaml
-
-        harness: script
-        harness_config:
-          tests_scripts:
-            - tests_scripts/test_a.sh
-            - ../../test/test_b.sh
-            - $ENV_VAR/tests_scripts
-
-Extra arguments following ``--`` on the twister command line are passed to
-every script as additional positional arguments.
-
-.. _twister_bsim_harness:
-
-Bsim
-====
-
-The ``bsim`` harness extends the ``script`` harness to support BabbleSim tests.
-During the build phase it copies the final executable (``zephyr.exe``) from
-the build directory to BabbleSim's ``bin`` directory
-(``${BSIM_OUT_PATH}/bin``). During the run phase it executes the test scripts
-listed in ``tests_scripts``.
-
-By default, the executable file name is (with dots and slashes
-replaced by underscores): ``bs_<platform_name>_<test_path>_<test_scenario_name>``.
-This name can be overridden with the ``bsim_exe_name`` option in
-``harness_config`` section.
-
-bsim_exe_name: <string>
-    If provided, the executable filename when copying to BabbleSim's bin
-    directory, will be ``bs_<platform_name>_<bsim_exe_name>`` instead of the
-    default based on the test path and scenario name.
-
-Example configuration with a multi-images BabbleSim test where the advertiser
-is build-only and the scanner references it via ``required_applications``:
-
-.. code-block:: yaml
-
-    common:
-      platform_allow:
-        - nrf52_bsim/native
-      harness: bsim
-    tests:
-      bluetooth.host.adv.extended.advertiser:
-        build_only: true
-        harness_config:
-          bsim_exe_name: tests_bsim_bluetooth_host_adv_extended_prj_advertiser_conf
-        extra_args:
-          CONF_FILE=prj_advertiser.conf
-      bluetooth.host.adv.extended.scanner:
-        harness_config:
-          bsim_exe_name: tests_bsim_bluetooth_host_adv_extended_prj_scanner_conf
-          tests_scripts:
-            - tests_scripts/run_adv_extended.sh
-        extra_args:
-          CONF_FILE=prj_scanner.conf
-        required_applications:
-          - application: bluetooth.host.adv.extended.advertiser
-
-.. _twister_shell_harness:
-
-Shell
-=====
-
-The shell harness is used to execute shell commands and parse the output and utilizes the pytest
-framework and the pytest harness of twister.
-
-The following options apply to the shell harness:
-
-shell_commands: <list of pairs of commands and their expected output> (default empty)
-    Specify a list of shell commands to be executed and their expected output.
-    For example:
-
-    .. code-block:: yaml
-
-        harness_config:
-          shell_commands:
-          - command: "kernel cycles"
-            expected: "cycles: .* hw cycles"
-          - command: "kernel version"
-            expected: "Zephyr version .*"
-          - command: "kernel sleep 100"
-
-
-    If expected output is not provided, the command will be executed and the output
-    will be logged.
-
-shell_commands_file: <string> (default empty)
-    Specify a file containing test parameters to be used in the test.
-    The file should contain a list of commands and their expected output. For example:
-
-    .. code-block:: yaml
-
-      - command: "mpu mtest 1"
-        expected: "The value is: 0x.*"
-      - command: "mpu mtest 2"
-        expected: "The value is: 0x.*"
-
-
-    If no file is specified, the shell harness will use the default file
-    ``test_shell.yml`` in the test directory.
-    ``shell_commands`` will take precedence over ``shell_commands_file``.
 
 Selecting platform scope
 ************************
@@ -1676,22 +1159,6 @@ Command line arguments define the initial scope in the following way:
 *"Scope presumption"*: A list of Twister's :ref:`default platforms <twister_default_testing_board>`
 is used as the initial list. If nothing is left after the filtration, the ``platform_allow`` list
 is used as the initial scope.
-
-Managing tests timeouts
-***********************
-
-There are several parameters which control tests timeouts on various levels:
-
-* ``timeout`` option in each test scenario. See :ref:`here <twister_test_case_timeout>` for more
-  details.
-* ``timeout_multiplier`` option in board configuration. See
-  :ref:`here <twister_board_timeout_multiplier>` for more details.
-* ``--timeout-multiplier`` twister option which can be used to adjust timeouts in exact twister run.
-  It can be useful in case of simulation platform as simulation time may depend on the host
-  speed & load or we may select different simulation method (i.e. cycle accurate but slower
-  one), etc...
-
-Overall test scenario timeout is a multiplication of these three parameters.
 
 Running in Integration Mode
 ***************************
@@ -1740,6 +1207,17 @@ It should look something like this:
      USES_TERMINAL
      )
 
+
+Running Tests in Random Order
+*****************************
+Enable ZTEST framework's :kconfig:option:`CONFIG_ZTEST_SHUFFLE` config option to
+run your tests in random order.  This can be beneficial for identifying
+dependencies between test cases. For native_sim platforms, you can provide
+the seed to the random number generator by providing ``--seed=value`` as an
+argument to twister. See :ref:`Shuffling Test Sequence <ztest_shuffle>` for more
+details.
+
+
 Running Tests on Hardware
 *************************
 
@@ -1760,14 +1238,14 @@ the following new options:
 
       .. code-block:: bash
 
-	      scripts/twister --device-testing --device-serial /dev/ttyACM0 \
+	      west twister --device-testing --device-serial /dev/ttyACM0 \
 	      --device-serial-baud 115200 -p frdm_k64f  -T tests/kernel
 
    .. group-tab:: Windows
 
       .. code-block:: bat
 
-	      python .\scripts\twister --device-testing --device-serial COM1 \
+	      west twister --device-testing --device-serial COM1 \
 	      --device-serial-baud 115200 -p frdm_k64f  -T tests/kernel
 
 The ``--device-serial`` option denotes the serial device the board is connected to.
@@ -1790,7 +1268,7 @@ In this case you can run twister with the following options:
 
       .. code-block:: bash
 
-         scripts/twister --device-testing --device-serial-pty "script.py" \
+         west twister --device-testing --device-serial-pty "script.py" \
          -p intel_adsp/cavs25 -T tests/kernel
 
    .. group-tab:: Windows
@@ -1818,19 +1296,9 @@ hardware map needs to be created with all connected devices and their
 details such as the serial device, baud and their IDs if available.
 Run the following command to produce the hardware map:
 
-.. tabs::
+.. code-block:: console
 
-   .. group-tab:: Linux
-
-      .. code-block:: bash
-
-         ./scripts/twister --generate-hardware-map map.yml
-
-   .. group-tab:: Windows
-
-      .. code-block:: bat
-
-         python .\scripts\twister --generate-hardware-map map.yml
+   $ west twister --generate-hardware-map map.yml
 
 The generated hardware map file (map.yml) will have the list of connected
 devices, for example:
@@ -1931,13 +1399,13 @@ With the hardware map ready, you can run any tests by pointing to the map
 
       .. code-block:: bash
 
-         ./scripts/twister --device-testing --hardware-map map.yml -T samples/hello_world/
+         west twister --device-testing --hardware-map map.yml -T samples/hello_world/
 
    .. group-tab:: Windows
 
       .. code-block:: bat
 
-         python .\scripts\twister --device-testing --hardware-map map.yml -T samples\hello_world
+         west twister --device-testing --hardware-map map.yml -T samples\hello_world
 
 The above command will result in twister building tests for the platforms
 defined in the hardware map and subsequently flashing and running the tests
@@ -1981,7 +1449,7 @@ work. It is equivalent to following west and twister commands.
 
          west flash --remote-host remote_host_ip_addr --key /path/to/key.pem
 
-         twister -p intel_adsp/cavs25 --device-testing --device-serial-pty script.py
+         west twister -p intel_adsp/cavs25 --device-testing --device-serial-pty script.py
          --west-flash="--remote-host=remote_host_ip_addr,--key=/path/to/key.pem"
 
    .. group-tab:: Windows
@@ -2009,14 +1477,14 @@ in a hardware map.
 
       .. code-block:: bash
 
-         twister -p npcx9m6f_evb --device-testing --device-serial /dev/ttyACM0
+         west twister -p npcx9m6f_evb --device-testing --device-serial /dev/ttyACM0
          --flash-command './custom_flash_script.py,--flag,"complex, argument"'
 
    .. group-tab:: Windows
 
       .. note::
 
-         python .\scripts\twister -p npcx9m6f_evb --device-testing
+         west twister -p npcx9m6f_evb --device-testing
          --device-serial COM1
          --flash-command 'custom_flash_script.py,--flag,"complex, argument"'
 
@@ -2268,20 +1736,104 @@ An example of entries in a quarantine yaml:
     - simulations:
         - armfvp
 
-Test Configuration
-******************
+.. _twister_output:
 
-A test configuration can be used to customize various aspects of twister
+Test Output and Reports
+***********************
+
+By default, Twister writes all of its output to a :file:`twister-out` directory
+created in the current working directory. Use ``-O``/``--outdir`` to choose a
+different location. On each run this directory is cleaned, unless ``--no-clean``
+is given; ``--clobber-output`` controls what cleaning does.
+
+Top-level reports
+=================
+
+The following files are written at the root of the output directory:
+
+:file:`twister.json`
+    The primary machine-readable report. It contains an entry for every selected
+    test suite and test case with its :ref:`status <twister_statuses>`, target
+    platform, execution time, memory footprint, any
+    :ref:`recorded data <twister_console_harness>`, and the environment and
+    options used for the run.
+
+:file:`testplan.json`
+    The resolved test plan: every test instance (test scenario times platform)
+    that Twister considered, including those that were filtered out together
+    with the reason. This is the file to inspect to understand why a given
+    scenario did or did not run. It can be reused with ``--load-tests`` to
+    replay the same selection.
+
+:file:`twister.xml`
+    JUnit XML summary suitable for CI systems.
+
+:file:`twister_report.xml`
+    JUnit XML report including all test cases (not just the summary).
+
+:file:`twister_suite_report.xml`
+    JUnit XML report grouped by test suite.
+
+:file:`twister.log`
+    Human-readable log of the whole run.
+
+:file:`twister_footprint.json`
+    ROM/RAM footprint report. Only generated when ``--footprint-report`` is used.
+
+The report base name (``twister``) can be changed with ``--report-name``, and
+``--report-suffix`` appends a suffix (for example a version or commit ID) to all
+generated file names. Use ``-o``/``--report-dir`` to write the reports to a
+directory other than the output directory, and ``--platform-reports`` to
+additionally emit a per-platform :file:`<platform>.json` and
+:file:`<platform>.xml`. ``--report-summary`` prints a summary of the failures
+from the latest run without rebuilding.
+
+Per-test artifacts
+==================
+
+Each test instance has its own build directory under the output directory,
+named after the platform and the test:
+:file:`twister-out/<platform>/<test path>/<scenario>/`. In addition to the
+normal Zephyr build artifacts (for example :file:`zephyr/zephyr.elf`), it may
+contain:
+
+:file:`build.log`
+    Output of the build for this instance.
+
+:file:`handler.log`
+    Console output captured from the device or emulator while running the test.
+
+:file:`twister_harness.log`
+    Log produced by pytest-based harnesses (for example ``pytest`` and
+    ``shell``).
+
+:file:`recording.csv`
+    Data fields captured by the ``record`` option of the
+    :ref:`console harness <twister_console_harness>`, when configured.
+
+.. _twister_test_config:
+
+Twister Configuration File
+**************************
+
+The Twister configuration file (``test_config.yaml``, passed with
+``--test-config``) can be used to customize various aspects of twister
 and the default enabled options and features. This allows tweaking the filtering
 capabilities depending on the environment and makes it possible to adapt and
 improve coverage when targeting different sets of platforms.
 
-The test configuration also adds support for test levels and the ability to
-assign a specific test to one or more levels. Using command line options of
+.. note::
+
+   This file (selected with ``--test-config``) configures a whole Twister run.
+   It is distinct from the per-application test configuration in ``tests.yaml``,
+   which describes individual :ref:`test scenarios <twister_tests_long_version>`.
+
+The Twister configuration file also adds support for test levels and the ability
+to assign a specific test to one or more levels. Using command line options of
 twister it is then possible to select a level and just execute the tests
 included in this level.
 
-Additionally, the test configuration allows defining level
+Additionally, the configuration file allows defining level
 dependencies and additional inclusion of tests into a specific level if
 the test itself does not have this information already.
 
@@ -2395,68 +1947,6 @@ An example platforms plus level configuration:
 To run with above test_config.yaml file, only default_platforms with given test level
 test scenarios will run.
 
-.. tabs::
+.. code-block:: console
 
-   .. group-tab:: Linux
-
-      .. code-block:: bash
-
-         scripts/twister --test-config=<path to>/test_config.yaml
-          -T tests --level="smoke"
-
-
-
-Running in Tests in Random Order
-********************************
-Enable ZTEST framework's :kconfig:option:`CONFIG_ZTEST_SHUFFLE` config option to
-run your tests in random order.  This can be beneficial for identifying
-dependencies between test cases. For native_sim platforms, you can provide
-the seed to the random number generator by providing ``-seed=value`` as an
-argument to twister. See :ref:`Shuffling Test Sequence <ztest_shuffle>` for more
-details.
-
-Robot Framework Tests
-*********************
-Zephyr supports `Robot Framework <https://robotframework.org/>`_ as one of solutions for
-automated testing.
-
-Robot files allow you to express interactive test scenarios in human-readable text format
-and execute them in simulation or against hardware.
-At this moment Zephyr integration supports running Robot tests in the
-`Renode <https://renode.io/>`_ simulation framework, QEMU and Native Simulator.
-
-To execute a Robot test suite with twister, run the following command:
-
-.. tabs::
-
-   .. group-tab:: Linux
-
-      .. code-block:: bash
-
-         $ ./scripts/twister --platform hifive1 --test samples/subsys/shell/shell_module/sample.shell.shell_module.robot
-
-   .. group-tab:: Windows
-
-      .. code-block:: bat
-
-         python .\scripts\twister --platform hifive1 --test samples/subsys/shell/shell_module/sample.shell.shell_module.robot
-
-Writing Robot tests
-===================
-
-For the list of keywords provided by the Robot Framework itself, refer to `the official Robot documentation <https://robotframework.org/robotframework/>`_.
-
-Information on writing and running Robot Framework tests in Renode can be found in `the testing section <https://renode.readthedocs.io/en/latest/introduction/testing.html>`_ of Renode documentation.
-It provides a list of the most commonly used keywords together with links to the source code where those are defined.
-
-It's possible to extend the framework by adding new keywords expressed directly in Robot test suite files, as an external Python library or, like Renode does it, dynamically via XML-RPC.
-For details see the `extending Robot Framework <https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#extending-robot-framework>`_ section in the official Robot documentation.
-
-Running a single testsuite
-==========================
-
-To run a single testsuite instead of a whole group of test you can run:
-
-.. code-block:: bash
-
-   $ west twister -p qemu_riscv32 -s arch.shared_interrupt
+   $ west twister --test-config=<path to>/test_config.yaml -T tests --level="smoke"

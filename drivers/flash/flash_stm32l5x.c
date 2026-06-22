@@ -76,8 +76,7 @@ bool flash_stm32_valid_range(struct device const* dev, off_t offset,
 
 static int write_nwords(struct device const* dev, off_t offset, uint32_t const* buff, size_t n) {
     FLASH_TypeDef* regs = FLASH_STM32_REGS(dev);
-    volatile uint32_t* flash = (uint32_t *)(offset
-                                            + FLASH_STM32_BASE_ADDRESS);
+    volatile uint32_t* flash = (uint32_t*)(offset + FLASH_STM32_BASE_ADDRESS);
     bool full_zero = true;
     uint32_t tmp;
     int rc;
@@ -288,9 +287,9 @@ uint8_t flash_stm32_get_rdp_level(const struct device* dev) {
     return (regs->OPTR & FLASH_OPTR_RDP_Msk) >> FLASH_OPTR_RDP_Pos;
 }
 
-void flash_stm32_set_rdp_level(const struct device* dev, uint8_t level) {
-    flash_stm32_option_bytes_write(dev, FLASH_OPTR_RDP_Msk,
-                                   (uint32_t)level << FLASH_OPTR_RDP_Pos);
+int flash_stm32_set_rdp_level(const struct device* dev, uint8_t level) {
+    return flash_stm32_option_bytes_write(dev, FLASH_OPTR_RDP_Msk,
+                                          (uint32_t)level << FLASH_OPTR_RDP_Pos);
 }
 #endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
 
@@ -321,8 +320,7 @@ void flash_stm32_page_layout(struct device const* dev,
 
         /* Dummy page corresponding to space between banks 1 and 2 */
         stm32_flash_layout[1].pages_count = 1;
-        stm32_flash_layout[1].pages_size  = BANK2_OFFSET
-                        - (PAGES_PER_BANK * FLASH_PAGE_SIZE);
+        stm32_flash_layout[1].pages_size  = BANK2_OFFSET - (PAGES_PER_BANK * FLASH_PAGE_SIZE);
 
         /* Bank2 */
         stm32_flash_layout[2].pages_count = PAGES_PER_BANK;
