@@ -168,9 +168,16 @@ static int lpspi_stream_dma_configure(struct spi_dt_spec const* spec) {
     blk_cfg->source_address   = (uintptr_t)&lpspi->RDR;
     blk_cfg->dest_address     = cfg->ring_buf;
     blk_cfg->block_size       = cfg->ring_buf_size;
-    blk_cfg->dest_reload_en   = 1U;
     blk_cfg->source_addr_adj  = DMA_ADDR_ADJ_NO_CHANGE;
     blk_cfg->dest_addr_adj    = DMA_ADDR_ADJ_INCREMENT;
+
+    /*
+     * Circular wrap needs DLAST_SGA = -ring_buf_size.
+     * EDMA_PrepareTransfer() leaves it 0;
+     * dma_mcux_edma_patch_basic_cyclic_tcd() installs it (= -block_size for an INCREMENT dest)
+     * ONLY when dest_reload_en != 0.
+     * So this MUST be 1 — cleared, the buffer never wraps and RX corrupts past the boundary.
+     */
     blk_cfg->dest_reload_en   = 1U;
     blk_cfg->source_reload_en = 0U;
 
