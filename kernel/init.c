@@ -45,24 +45,22 @@
 LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /* the only struct z_kernel instance */
-__pinned_bss
 struct z_kernel _kernel;
 
 #ifdef CONFIG_PM
-__pinned_bss atomic_t _cpus_active;
+atomic_t _cpus_active;
 #endif
 
 /* init/main and idle threads */
-K_THREAD_PINNED_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
+K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 struct k_thread z_main_thread;
 
 #ifdef CONFIG_MULTITHREADING
-__pinned_bss
 struct k_thread z_idle_threads[CONFIG_MP_MAX_NUM_CPUS];
 
-static K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_idle_stacks,
-                                          CONFIG_MP_MAX_NUM_CPUS,
-                                          CONFIG_IDLE_STACK_SIZE);
+static K_KERNEL_STACK_ARRAY_DEFINE(z_idle_stacks,
+                                   CONFIG_MP_MAX_NUM_CPUS,
+                                   CONFIG_IDLE_STACK_SIZE);
 
 static void z_init_static_threads(void) {
     STRUCT_SECTION_FOREACH(_static_thread_data, thread_data) {
@@ -146,9 +144,9 @@ extern const struct init_entry __init_SMP_start[];
  * of this area is safe since interrupts are disabled until the kernel context
  * switches to the init thread.
  */
-K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_interrupt_stacks,
-                                   CONFIG_MP_MAX_NUM_CPUS,
-                                   CONFIG_ISR_STACK_SIZE);
+K_KERNEL_STACK_ARRAY_DEFINE(z_interrupt_stacks,
+                            CONFIG_MP_MAX_NUM_CPUS,
+                            CONFIG_ISR_STACK_SIZE);
 
 extern void idle(void* unused1, void* unused2, void* unused3);
 
@@ -187,7 +185,6 @@ extern volatile uintptr_t __stack_chk_guard;
 #endif /* CONFIG_STACK_CANARIES_TLS */
 #endif /* CONFIG_REQUIRES_STACK_CANARIES */
 
-__pinned_bss
 bool z_sys_post_kernel;
 
 /* defined in device.c */

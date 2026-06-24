@@ -3520,9 +3520,20 @@ Kernel:
     - include/zephyr/sys_clock.h
     - samples/kernel/
     - include/zephyr/kernel/
+    - include/zephyr/cleanup.h
+    - include/zephyr/cleanup/
     - tests/lib/p4workq/
   files-exclude:
     - tests/kernel/mem_protect/
+  file-groups:
+    - name: Cleanup helpers
+      collaborators:
+        - pdgendt
+      files:
+        - include/zephyr/cleanup.h
+        - include/zephyr/cleanup/
+        - doc/kernel/cleanup.rst
+        - tests/kernel/cleanup/
   labels:
     - "area: Kernel"
   tests:
@@ -4137,6 +4148,7 @@ NXP Platforms (MCU):
     - boards/nxp/vmu*/
     - boards/nxp/rddrone_fmuk66/
     - tests/boards/vmu_rt1170/
+    - boards/nxp/mr_navq95b/
   files-exclude:
     - dts/arm/nxp/imx/nxp_imx*
     - boards/nxp/frdm_imx[0-9]*/
@@ -4199,9 +4211,11 @@ NXP Platforms (MCU):
       collaborators:
         - bperseghetti
         - PetervdPerk-NXP
+        - AndreHeinemans-NXP
       files:
         - boards/nxp/vmu*/
         - boards/nxp/rddrone_fmuk66/
+        - boards/nxp/mr_navq95b/
         - tests/boards/vmu_rt1170/
     - name: NXP Camera Shields
       collaborators:
@@ -5451,6 +5465,7 @@ STM32 Platforms (Wireless):
     - asm5878
     - HoZHel
     - mathieuchopstm
+    - vtardy-st
   files:
     - boards/shields/x_nucleo_bnrg2a1/
     - boards/shields/x_nucleo_idb05a1/
@@ -5855,7 +5870,7 @@ TI MSPM0 Platforms:
     - d-philpot
   files:
     - soc/ti/mspm0/
-    - boards/ti/lp_mspm0g3507/
+    - boards/ti/*mspm0*/
     - dts/arm/ti/mspm0/
     - dts/bindings/*/*mspm0*
     - drivers/*/*_mspm0*
@@ -5945,6 +5960,7 @@ Testing:
     - hakehuang
   collaborators:
     - nashif
+    - nordic-piks
   files: []
   description: >-
     This area is for testing activities on hardware and in emulators. It is not
@@ -6813,6 +6829,7 @@ West:
     - djiatsaf-st
     - asm5878
     - HoZHel
+    - vtardy-st
   files:
     - modules/Kconfig.stm32
   labels:
