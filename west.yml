@@ -210,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nuvoton
-      revision: 645b41c34626c5b1e3053358b9b0b130abf38e2f
+      revision: 6e993ab4d923575a69c91fa40897d87c5d779708
       path: modules/hal/nuvoton
       groups:
         - hal
@@ -354,7 +354,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 309d02c0df8625c52a6abc2fd95dc77fe80c163a
+      revision: 253d42e4c124aecd7b51afa4782140270e890a7d
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: 21184a8f89f101538ad54c3b64a1d9c4da23bdb8

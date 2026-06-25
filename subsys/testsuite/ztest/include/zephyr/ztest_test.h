@@ -688,7 +688,7 @@ bool ztest_has_current_param(void);
 
 #define Z_TEST_P(suite, fn, t_options) \
 	struct ztest_unit_test_stats z_ztest_unit_test_stats_##suite##_##fn; \
-	static void _##suite##_##fn##_wrapper(void *data); \
+	static void _##suite##_##fn##_wrapper(void *wrapper_data); \
 	/* data carries the suite fixture from setup(); use             */ \
 	/* ztest_get_current_param() / ZTEST_GET_PARAM() for the value. */ \
 	static void suite##_##fn(void *data); \
@@ -724,7 +724,7 @@ bool ztest_has_current_param(void);
 
 #define Z_TEST(suite, fn, t_options, use_fixture)                                                  \
 	struct ztest_unit_test_stats z_ztest_unit_test_stats_##suite##_##fn;                       \
-	static void _##suite##_##fn##_wrapper(void *data);                                         \
+	static void _##suite##_##fn##_wrapper(void *wrapper_data);                                 \
 	static void suite##_##fn(                                                                  \
 		COND_CODE_1(use_fixture, (struct suite##_fixture *fixture), (void)));              \
 	static STRUCT_SECTION_ITERABLE(ztest_unit_test, z_ztest_unit_test__##suite##__##fn) = {    \
@@ -894,6 +894,63 @@ struct ztest_arch_api {
 	bool (*should_suite_run)(const void *state, struct ztest_suite_node *suite);
 	bool (*should_test_run)(const char *suite, const char *test);
 };
+
+/**
+ * @brief The active ztest backend instance.
+ *
+ * Exactly one ztest backend (the default, shell, or POSIX runner) provides
+ * a definition of this variable. All other backends declare it here so that
+ * each definition has a visible prior declaration.
+ */
+extern ZTEST_DMEM const struct ztest_arch_api ztest_api;
+
+/**
+ * @brief Default implementation of ztest_arch_api::run_all.
+ *
+ * Runs all registered test suites. Called by the active backend unless
+ * overridden via ztest_api.
+ *
+ * @param state     Global test state passed to each suite's predicate.
+ * @param shuffle   If true, randomize the order of suites and tests.
+ * @param suite_iter Number of times to repeat each suite.
+ * @param case_iter  Number of times to repeat each test case.
+ */
+void z_ztest_run_all(const void *state, bool shuffle, int suite_iter, int case_iter);
+
+/**
+ * @brief Default implementation of ztest_arch_api::should_suite_run.
+ *
+ * Evaluates whether the given suite should run by calling its predicate
+ * function (if any) against @p state.
+ *
+ * @param state Global test state.
+ * @param suite Pointer to the suite node to evaluate.
+ * @return true if the suite should run; false to skip it.
+ */
+bool z_ztest_should_suite_run(const void *state, struct ztest_suite_node *suite);
+
+/**
+ * @brief Default implementation of ztest_arch_api::should_test_run.
+ *
+ * Checks whether a specific test case within a suite should run, taking
+ * any active test filter into account.
+ *
+ * @param suite Name of the test suite.
+ * @param test  Name of the test case.
+ * @return true if the test should run; false to skip it.
+ */
+bool z_ztest_should_test_run(const char *suite, const char *test);
+
+/**
+ * @brief Stack used by the ztest runner thread.
+ *
+ * Defined by the active ztest backend. Declared here so the definition has a
+ * visible prior declaration (MISRA C:2012 Rule 8.4) and so that tests which
+ * inspect the runner thread's stack (e.g. the userspace memory-protection
+ * tests) can reference it.
+ */
+K_THREAD_STACK_DECLARE(ztest_thread_stack,
+		       CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);
 
 /**
  * @}
