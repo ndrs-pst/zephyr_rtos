@@ -62,6 +62,10 @@ API Changes
 Removed APIs and options
 ========================
 
+* Counter
+
+    * ``CONFIG_COUNTER_MAXIM_DS3231``
+
 * Networking
 
     * ``CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO``
@@ -125,6 +129,11 @@ Deprecated APIs and options
   * The ring buffer item API (:c:func:`ring_buf_item_init`, :c:func:`ring_buf_item_put`,
     :c:func:`ring_buf_item_get`, :c:func:`ring_buf_item_space_get`) has been deprecated in favor of
     :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`).
+
+* Networking Link layer
+
+  * Deprecated :kconfig:option:`CONFIG_NET_L2_PTP`.
+    Used :kconfig:option:`CONFIG_NET_L2_PTP_TIMESTAMPING` instead.
 
 New APIs and options
 ====================

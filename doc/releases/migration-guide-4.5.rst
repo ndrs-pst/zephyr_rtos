@@ -387,6 +387,18 @@ PWM
 * STM32 PWM DT bindings macro ``PWM_STM32_COMPLEMENTARY`` that is deprecated since
   Zephyr v3.3.0 is no more defined. One shall use ``STM32_PWM_COMPLEMENTARY`` instead.
 
+RTC
+===
+
+* The legacy counter-based DS3231 driver has been removed, completing the deprecation introduced in
+  :github:`95221`. Applications using :dtcompatible:`maxim,ds3231`, ``CONFIG_COUNTER_MAXIM_DS3231``,
+  or :file:`<zephyr/drivers/rtc/maxim_ds3231.h>` must migrate to the RTC subsystem driver.
+
+  Replace the single legacy I2C node with a :dtcompatible:`maxim,ds3231-mfd` parent and a
+  :dtcompatible:`maxim,ds3231-rtc` child. Move ``isw-gpios`` to the RTC child, rename old
+  ``32k-gpios`` usage to ``freq-32khz-gpios``, and replace ``maxim_ds3231_*`` helper API usage with
+  generic RTC subsystem APIs.
+
 SD Host Controller
 ==================
 
@@ -656,6 +668,13 @@ Bluetooth HCI
   (most don't) there's also a new :c:func:`bt_hci_recv_err` API that leaves the responsibility
   of unrefing the buffer to the caller in case of error situations.
 
+Bluetooth Services
+==================
+
+* :kconfig:option:`CONFIG_BT_OTS_MAX_OBJ_CNT` has been changed from ``hex`` to ``int`` for a
+  more intuitive type.
+  Simply modify any hex values like ``0x30`` to their decimal values like ``48``.
+
 Networking
 **********
 
@@ -711,6 +730,12 @@ Networking
   (e.g. HTTP server, CoAP server, LwM2M, PTP, SSH, the socket service and the WPA
   supplicant) no longer require the application to manually bump
   :kconfig:option:`CONFIG_ZVFS_EVENTFD_MAX` to account for them. (:github:`111201`)
+
+* :kconfig:option:`CONFIG_NET_L2_PTP` has been deprecated and replaced by
+  :kconfig:option:`CONFIG_NET_L2_PTP_TIMESTAMPING`. The new option more accurately describes the
+  feature it enables. Applications or board configurations that explicitly enable
+  :kconfig:option:`CONFIG_NET_L2_PTP` should be updated to use
+  :kconfig:option:`CONFIG_NET_L2_PTP_TIMESTAMPING` instead.
 
 
 Ethernet

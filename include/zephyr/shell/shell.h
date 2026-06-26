@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the shell subsystem.
+ * @ingroup shell_api
+ */
+
 #ifndef SHELL_H__
 #define SHELL_H__
 
@@ -33,6 +39,7 @@ extern "C" {
 #define SHELL_DEFAULT_BUFF_SIZE             0
 #endif
 
+/** @cond INTERNAL_HIDDEN */
 #ifndef CONFIG_SHELL_PROMPT_BUFF_SIZE
 #define CONFIG_SHELL_PROMPT_BUFF_SIZE       SHELL_DEFAULT_BUFF_SIZE
 #endif
@@ -52,6 +59,15 @@ extern "C" {
 #define Z_SHELL_CMD_ROOT_LVL                (0U)
 
 #define SHELL_HEXDUMP_BYTES_IN_LINE 16
+/** @endcond */
+
+/**
+ * @defgroup shell_api Shell
+ * @since 1.14
+ * @version 1.0.0
+ * @ingroup os_services
+ * @{
+ */
 
 /**
  * @brief Flag indicates that optional arguments will be treated as one,
@@ -86,15 +102,6 @@ extern "C" {
 #define SHELL_NOCACHE_ATTR
 #endif
 
-/**
- * @brief Shell API
- * @defgroup shell_api Shell API
- * @since 1.14
- * @version 1.0.0
- * @ingroup os_services
- * @{
- */
-
 struct shell_static_entry;
 
 /**
@@ -124,6 +131,7 @@ union shell_cmd_entry {
 
 struct shell;
 
+/** @brief Argument count constraints and remote routing for a shell command. */
 struct shell_static_args {
     uint8_t mandatory;                      /*!< Number of mandatory arguments. */
     uint8_t optional;                       /*!< Number of optional arguments. */
@@ -300,7 +308,7 @@ typedef int (*shell_dict_cmd_handler)(struct shell const* sh, size_t argc,
 #define Z_SHELL_STATIC_ENTRY_PADDING 0
 #endif
 
-/*
+/**
  * @brief Shell static command descriptor.
  */
 struct shell_static_entry {
@@ -309,7 +317,10 @@ struct shell_static_entry {
     const union shell_cmd_entry* subcmd;    /*!< Pointer to subcommand. */
     shell_cmd_handler handler;              /*!< Command handler. */
     struct shell_static_args args;          /*!< Command arguments. */
+
+    /** @cond INTERNAL_HIDDEN */
     uint8_t padding[Z_SHELL_STATIC_ENTRY_PADDING];
+    /** @endcond */
 };
 
 /**
@@ -320,9 +331,9 @@ struct shell_static_entry {
  * consistent and easier to read.
  */
 struct shell_cmd_help {
-    /* @cond INTERNAL_HIDDEN */
+    /** @cond INTERNAL_HIDDEN */
     uint32_t magic;
-    /* @endcond */
+    /** @endcond */
 
     const char* description;                /*!< Command description */
     const char* usage;                      /*!< Command usage string */
@@ -741,6 +752,8 @@ static inline bool shell_help_is_structured(const char* help) {
 #define SHELL_EXPR_CMD(_expr, _syntax, _subcmd, _help, _handler) \
     SHELL_EXPR_CMD_ARG(_expr, _syntax, _subcmd, _help, _handler, 0, 0, 0, 0)
 
+/** @cond INTERNAL_HIDDEN */
+
 /* Internal macro used for creating handlers for dictionary commands. */
 #define Z_SHELL_CMD_DICT_HANDLER_CREATE(_data, _handler)            \
     static int UTIL_CAT(UTIL_CAT(cmd_dict_, UTIL_CAT(_handler, _)), \
@@ -756,6 +769,8 @@ static inline bool shell_help_is_structured(const char* help) {
     SHELL_CMD_ARG(GET_ARG_N(1, __DEBRACKET _data), NULL, GET_ARG_N(3, __DEBRACKET _data),   \
                   UTIL_CAT(UTIL_CAT(cmd_dict_, UTIL_CAT(_handler, _)),  \
                            GET_ARG_N(1, __DEBRACKET _data)), 1, 0)
+
+/** @endcond */
 
 /**
  * @brief Initializes shell dictionary commands.
@@ -798,7 +813,7 @@ static inline bool shell_help_is_structured(const char* help) {
         SHELL_SUBCMD_SET_END                                    \
     )
 
-/* @cond INTERNAL_HIDDEN */
+/** @cond INTERNAL_HIDDEN */
 
 /**
  * @internal @brief Internal shell state in response to data received from the
@@ -835,11 +850,32 @@ enum shell_readline_state {
     SHELL_READLINE_CANCELED,
 };
 
-/* @endcond */
+/** @endcond */
 
+/**
+ * @brief Shell transport event handler callback.
+ *
+ * Invoked by a transport backend to notify the shell core that a transport
+ * event occurred (for example, received data is ready, or a transmission
+ * completed).
+ *
+ * @param evt     Transport event that occurred.
+ * @param context Opaque context pointer provided to the transport at
+ *                initialization time (see shell_transport_api.init).
+ */
 typedef void (*shell_transport_handler_t)(enum shell_transport_evt evt,
                                           void* context);
 
+/**
+ * @brief Shell uninitialization completion callback.
+ *
+ * Invoked from the shell thread context once shell_uninit() has finished, just
+ * before the shell thread is aborted.
+ *
+ * @param sh  Shell instance that was uninitialized.
+ * @param res Result of the operation: 0 on success, negative errno code on
+ *            failure.
+ */
 typedef void (*shell_uninit_cb_t)(struct shell const* sh, int res);
 
 /** @brief Bypass callback.
@@ -894,8 +930,8 @@ struct shell_transport_api {
      * @param blocking_tx If true, the transport TX is enabled in blocking
      *              mode.
      *
-     * @return NRF_SUCCESS on successful enabling, error otherwise (also if
-     * not supported).
+     * @return 0 on success, negative errno code on failure (including when
+     * the operation is not supported).
      */
     int (*enable)(const struct shell_transport* transport,
                   bool blocking_tx);
@@ -936,10 +972,19 @@ struct shell_transport_api {
     void (*update)(const struct shell_transport* transport);
 };
 
+/**
+ * @brief Shell transport instance.
+ *
+ * Binds a transport backend implementation (@ref shell_transport_api) to its
+ * per-instance context. It is instantiated by a backend's `SHELL_*_DEFINE`
+ * macro and referenced by a shell instance through its transport interface.
+ */
 struct shell_transport {
-    const struct shell_transport_api* api;
-    void* ctx;
+    const struct shell_transport_api* api;  /**< Transport backend operations. */
+    void* ctx;                              /**< Transport instance context. */
 };
+
+/** @cond INTERNAL_HIDDEN */
 
 /**
  * @brief Shell statistics structure.
@@ -1023,10 +1068,13 @@ enum shell_signal {
     SHELL_SIGNAL_TXDONE  = BIT(3),
 };
 
+/** @endcond */
+
 /**
  * @brief Shell instance context.
  */
 struct shell_ctx {
+    /** @cond INTERNAL_HIDDEN */
     #if defined(CONFIG_SHELL_PROMPT_CHANGE) && CONFIG_SHELL_PROMPT_CHANGE
     char prompt[CONFIG_SHELL_PROMPT_BUFF_SIZE]; /*!< shell current prompt. */
     #else
@@ -1093,9 +1141,12 @@ struct shell_ctx {
     struct k_sem lock_sem;
     k_tid_t tid;
     int ret_val;
+    /** @endcond */
 };
 
+/** @cond INTERNAL_HIDDEN */
 extern const struct log_backend_api log_backend_shell_api;
+/** @endcond */
 
 /**
  * @brief Flags for setting shell output newline sequence.
@@ -1109,6 +1160,7 @@ enum shell_flag {
  * @brief Shell instance internals.
  */
 struct shell {
+    /** @cond INTERNAL_HIDDEN */
     char const* default_prompt;             /*!< shell default prompt. */
 
     const struct shell_transport* iface;    /*!< Transport interface.*/
@@ -1129,6 +1181,7 @@ struct shell {
     char const* name;
     struct k_thread*  thread;
     k_thread_stack_t* stack;
+    /** @endcond */
 };
 
 extern void z_shell_print_stream(void const* user_ctx, char const* data,
@@ -1261,20 +1314,23 @@ int shell_stop(struct shell const* sh);
 #include <zephyr/shell/shell_remote_cli.h>
 #endif
 
+/** @cond INTERNAL_HIDDEN */
+void __printf_like(3, 4) shell_fprintf_impl(const struct shell *sh, enum shell_vt100_color color,
+                                            const char *fmt, ...);
+/** @endcond */
+
 /**
  * @brief printf-like function which sends formatted data stream to the shell.
  *
  * This function can be used from the command handler or from threads, but not
- * from an interrupt context.
+ * from an interrupt context. When @kconfig{CONFIG_SHELL_REMOTE_CLI} is enabled
+ * the output is transparently routed to the remote shell instead.
  *
  * @param[in] sh    Pointer to the shell instance.
  * @param[in] color Printed text color.
  * @param[in] fmt   Format string.
  * @param[in] ...   List of parameters to print.
  */
-void __printf_like(3, 4) shell_fprintf_impl(struct shell const* sh, enum shell_vt100_color color,
-                                            char const* fmt, ...);
-
 #define shell_fprintf(sh, color, fmt, ...)                          \
     COND_CODE_1(IS_ENABLED(CONFIG_SHELL_REMOTE_CLI),                \
                 (SHELL_REMOTE_CLI_FPRINTF(sh, color, fmt, ##__VA_ARGS__)), \
