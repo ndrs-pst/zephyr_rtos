@@ -2239,10 +2239,6 @@ static int context_setup_udp_packet(struct net_context *context,
 	if (context->options.timestamping & ZSOCK_SOF_TIMESTAMPING_TX_HARDWARE) {
 		net_pkt_set_tx_timestamping(pkt, true);
 	}
-
-	if (context->options.timestamping & ZSOCK_SOF_TIMESTAMPING_RX_HARDWARE) {
-		net_pkt_set_rx_timestamping(pkt, true);
-	}
 #endif
 
 	return 0;
@@ -2856,10 +2852,6 @@ skip_alloc:
 #if defined(CONFIG_NET_CONTEXT_TIMESTAMPING)
 		if (context->options.timestamping & ZSOCK_SOF_TIMESTAMPING_TX_HARDWARE) {
 			net_pkt_set_tx_timestamping(pkt, true);
-		}
-
-		if (context->options.timestamping & ZSOCK_SOF_TIMESTAMPING_RX_HARDWARE) {
-			net_pkt_set_rx_timestamping(pkt, true);
 		}
 #endif
 

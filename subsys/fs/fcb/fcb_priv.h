@@ -74,8 +74,8 @@ int fcb_getnext_nolock(struct fcb* fcbp, struct fcb_entry* loc);
 int fcb_elem_info(struct fcb* fcbp, struct fcb_entry* loc);
 int fcb_elem_endmarker(struct fcb* fcbp, struct fcb_entry* loc, uint8_t* crc8p);
 
-int fcb_sector_hdr_init(struct fcb const* fcbp, struct flash_sector* sector, uint16_t id);
-int fcb_sector_hdr_read(struct fcb const* fcbp, struct flash_sector* sector,
+int fcb_sector_hdr_init(struct fcb const* fcbp, struct flash_sector const* sector, uint16_t id);
+int fcb_sector_hdr_read(struct fcb const* fcbp, struct flash_sector const* sector,
                         struct fcb_disk_area* fdap);
 
 #ifdef __cplusplus

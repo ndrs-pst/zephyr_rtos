@@ -757,8 +757,6 @@ int eth_stm32_hal_set_config(const struct device *dev,
 
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
-		BUILD_ASSERT(sizeof(ctx->mac_addr) == sizeof(config->mac_address.addr),
-			     "MAC address size mismatch");
 		memcpy(ctx->mac_addr, config->mac_address.addr,
 		       sizeof(ctx->mac_addr));
 		heth->Instance->MACA0HR = (ctx->mac_addr[5] << 8) |

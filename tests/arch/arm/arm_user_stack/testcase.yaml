@@ -1,6 +1,9 @@
 common:
   tags:
     - arm
+    - userspace
+  arch_allow:
+    - arm
   timeout: 120
   # TODO: remove the platform_exclude once the MPS2 issue is fixed
   # (this seems to be an issue with QEMU as these tests pass in FVP)

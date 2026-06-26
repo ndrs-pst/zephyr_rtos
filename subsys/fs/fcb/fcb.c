@@ -140,6 +140,9 @@ int fcb_init(int f_area_id, struct fcb* fcbp) {
         }
     }
 
+    /* fcb_sector_hdr_init needs the alignment to be able to write */
+    fcbp->f_align = align;
+
     if (oldest < 0) {
         /* No initialized areas */
         oldest_sector = newest_sector = &fcbp->f_sectors[0];
@@ -150,13 +153,12 @@ int fcb_init(int f_area_id, struct fcb* fcbp) {
         newest = oldest = 0;
     }
 
-    fcbp->f_align  = align;
     fcbp->f_oldest = oldest_sector;
     fcbp->f_active.fe_sector = newest_sector;
     fcbp->f_active.fe_elem_off = fcb_len_in_flash(fcbp, sizeof(struct fcb_disk_area));
     fcbp->f_active_id = newest;
 
-    while (1) {
+    while (true) {
         rc = fcb_getnext_in_sector(fcbp, &fcbp->f_active);
         if (rc == -ENOTSUP) {
             rc = 0;
@@ -171,7 +173,6 @@ int fcb_init(int f_area_id, struct fcb* fcbp) {
     k_mutex_init(&fcbp->f_mtx);
     return (rc);
 }
-
 
 int fcb_free_sector_cnt(struct fcb* fcbp) {
     int i;
@@ -253,20 +254,32 @@ int fcb_get_len(struct fcb const* fcbp, uint8_t const* buf, uint16_t* len) {
     return (rc);
 }
 
-
 /**
  * Initialize erased sector for use.
  */
-int fcb_sector_hdr_init(struct fcb const* fcbp, struct flash_sector* sector, uint16_t id) {
-    struct fcb_disk_area fda;
+int fcb_sector_hdr_init(struct fcb const* fcbp, struct flash_sector const* sector, uint16_t id) {
+    /* Need to align fda size to write block size.
+     * Use a fixed-size array with a compile-time constant to remain
+     * compatible with MSVC, which does not support VLAs (f_align is a
+     * runtime value).  32 bytes covers the maximum flash write-block
+     * alignment on all supported targets (e.g. STM32H7 = 32 B) and is
+     * larger than sizeof(struct fcb_disk_area) = 8 B.
+     */
+    #define FCB_MAX_WRITE_ALIGN 32
+    union {
+        struct fcb_disk_area fda;
+        uint8_t raw[MAX(sizeof(struct fcb_disk_area), FCB_MAX_WRITE_ALIGN)];
+    } buf;
     int rc;
 
-    fda.fd_magic = fcb_flash_magic(fcbp);
-    fda.fd_ver   = fcbp->f_version;
-    fda._pad     = fcbp->f_erase_value;
-    fda.fd_id    = id;
+    memset(&buf, fcbp->f_erase_value, sizeof(buf));
 
-    rc = fcb_flash_write(fcbp, sector, 0, &fda, sizeof(fda));
+    buf.fda.fd_magic = fcb_flash_magic(fcbp);
+    buf.fda.fd_ver   = fcbp->f_version;
+    buf.fda._pad     = fcbp->f_erase_value;
+    buf.fda.fd_id    = id;
+
+    rc = fcb_flash_write(fcbp, sector, 0, &buf, sizeof(buf));
     if (rc != 0) {
         return (-EIO);
     }
@@ -281,7 +294,7 @@ int fcb_sector_hdr_init(struct fcb const* fcbp, struct flash_sector* sector, uin
  * Returns 1 if sector has data.
  */
 int fcb_sector_hdr_read(struct fcb const* fcbp,
-                        struct flash_sector* sector,
+                        struct flash_sector const* sector,
                         struct fcb_disk_area* fdap) {
     struct fcb_disk_area fda;
     int rc;
