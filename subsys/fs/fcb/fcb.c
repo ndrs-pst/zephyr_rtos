@@ -112,6 +112,11 @@ int fcb_init(int f_area_id, struct fcb* fcbp) {
         return (-EINVAL);
     }
 
+    /* Buffer needs adjusting */
+    if (align > WRITE_ALIGNMENT_BUFFER_SIZE) {
+        return (-ENOMEM);
+    }
+
     /* Fill last used, first used */
     for (int i = 0; i < fcbp->f_sector_cnt; i++) {
         sector = &fcbp->f_sectors[i];
@@ -258,17 +263,10 @@ int fcb_get_len(struct fcb const* fcbp, uint8_t const* buf, uint16_t* len) {
  * Initialize erased sector for use.
  */
 int fcb_sector_hdr_init(struct fcb const* fcbp, struct flash_sector const* sector, uint16_t id) {
-    /* Need to align fda size to write block size.
-     * Use a fixed-size array with a compile-time constant to remain
-     * compatible with MSVC, which does not support VLAs (f_align is a
-     * runtime value).  32 bytes covers the maximum flash write-block
-     * alignment on all supported targets (e.g. STM32H7 = 32 B) and is
-     * larger than sizeof(struct fcb_disk_area) = 8 B.
-     */
-    #define FCB_MAX_WRITE_ALIGN 32
+    /* Need to align fda size to write block size */
     union {
         struct fcb_disk_area fda;
-        uint8_t raw[MAX(sizeof(struct fcb_disk_area), FCB_MAX_WRITE_ALIGN)];
+        uint8_t raw[WRITE_ALIGNMENT_BUFFER_SIZE];
     } buf;
     int rc;
 
