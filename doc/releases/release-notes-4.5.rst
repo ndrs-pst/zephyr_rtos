@@ -136,6 +136,10 @@ Deprecated APIs and options
   * Deprecated :kconfig:option:`CONFIG_NET_L2_PTP`.
     Used :kconfig:option:`CONFIG_NET_L2_PTP_TIMESTAMPING` instead.
 
+* Work queue
+
+  * :c:member:`k_work_q.thread` has been deprecated. Use :c:member:`k_work_q.thread_id` instead.
+
 New APIs and options
 ====================
 ..
@@ -156,6 +160,8 @@ New APIs and options
 
     * :c:func:`bt_ascs_register`
     * :c:func:`bt_ascs_unregister`
+    * :c:func:`bt_bap_unicast_client_qos_from_group`
+    * :c:func:`bt_bap_qos_cfg_eq`
 
   * Host
 
@@ -196,11 +202,13 @@ New APIs and options
   * :c:func:`lora_recv_duty_cycle`
   * :c:func:`lora_recv_duty_cycle_async`
 
-* :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
-
 * Network
 
   * Add :c:func:`net_eth_set_if_type_wifi` to set the ethernet interface type to Wi-Fi.
+
+* Ring buffer
+
+  * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
 
 .. zephyr-keep-sorted-stop
 

@@ -196,6 +196,64 @@ ZTEST(fifo_api, test_fifo_is_empty_isr)
 	/**TESTPOINT: check fifo is empty from isr*/
 	irq_offload((irq_offload_routine_t)tfifo_is_empty, &fifo);
 }
+
+/**
+ * @brief Test peeking at the front and back items of a FIFO
+ *
+ * @details Enqueue two data items, then use k_fifo_peek_head() and
+ * k_fifo_peek_tail() to inspect the items at the front and back of the FIFO and
+ * verify the returned pointers match the first and last enqueued items without
+ * removing them (a subsequent get still returns both items in order). Peeking an
+ * empty FIFO returns NULL.
+ *
+ * @ingroup kernel_fifo_tests
+ * @see k_fifo_peek_head(), k_fifo_peek_tail()
+ */
+ZTEST(fifo_api, test_fifo_peek)
+{
+	k_fifo_init(&fifo);
+
+	k_fifo_put(&fifo, (void *)&data[0]);
+	k_fifo_put(&fifo, (void *)&data[1]);
+
+	/**TESTPOINT: peek front and back without removing*/
+	zassert_equal(k_fifo_peek_head(&fifo), (void *)&data[0]);
+	zassert_equal(k_fifo_peek_tail(&fifo), (void *)&data[1]);
+
+	/* Peeking does not dequeue: both items are still retrievable in order. */
+	zassert_equal(k_fifo_get(&fifo, K_NO_WAIT), (void *)&data[0]);
+	zassert_equal(k_fifo_get(&fifo, K_NO_WAIT), (void *)&data[1]);
+
+	/**TESTPOINT: peek of an empty fifo returns NULL*/
+	zassert_is_null(k_fifo_peek_head(&fifo));
+	zassert_is_null(k_fifo_peek_tail(&fifo));
+}
+
+K_HEAP_DEFINE(fifo_alloc_pool, 256);
+
+/**
+ * @brief Test enqueuing a data item to a FIFO with implicit memory allocation
+ *
+ * @details Use k_fifo_alloc_put() to enqueue a data item that does not reserve
+ * space for the bookkeeping word, so the kernel allocates the container from the
+ * calling thread's resource pool. Verify the call succeeds and that the same
+ * data pointer is returned by a subsequent get.
+ *
+ * @ingroup kernel_fifo_tests
+ * @see k_fifo_alloc_put()
+ */
+ZTEST(fifo_api, test_fifo_alloc_put)
+{
+	static uint32_t payload = 0xDEADBEEF;
+
+	k_fifo_init(&fifo);
+	k_thread_heap_assign(k_current_get(), &fifo_alloc_pool);
+
+	/**TESTPOINT: allocate the queue container from the thread resource pool*/
+	zassert_equal(k_fifo_alloc_put(&fifo, &payload), 0);
+
+	zassert_equal(k_fifo_get(&fifo, K_NO_WAIT), (void *)&payload);
+}
 /**
  * @}
  */

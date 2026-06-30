@@ -246,7 +246,7 @@ static inline void mgmt_run_slist_callbacks(const struct mgmt_event_entry* const
     }
 
     #ifdef CONFIG_NET_DEBUG_MGMT_EVENT_STACK
-    log_stack_usage(&mgmt_work_q->thread);
+    log_stack_usage(mgmt_work_q->thread_id);
     #endif
 }
 

@@ -86,9 +86,11 @@ struct dwmac_dma_desc {
 	uint32_t des1;
 	uint32_t des2;
 	uint32_t des3;
-#ifndef CONFIG_ETH_DWC_ETHER_QOS_CORE
-	/* software-only field for tracking the net_buf associated with this desc */
-	struct net_buf *frag;
+#ifdef CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE
+	uint32_t des4;
+	uint32_t des5;
+	uint32_t des6;
+	uint32_t des7;
 #endif
 };
 
@@ -121,10 +123,10 @@ struct dwmac_priv {
 #ifdef CONFIG_MMU
 	uintptr_t tx_descs_phys, rx_descs_phys;
 #endif
-#ifdef CONFIG_ETH_DWC_ETHER_QOS_CORE
+
 	struct net_buf *tx_frags[NB_TX_DESCS]; /* index shared with tx_descs */
 	struct net_buf *rx_frags[NB_RX_DESCS]; /* index shared with rx_descs */
-#endif
+
 	struct net_pkt *rx_pkt;
 	uint16_t rx_bytes;
 
@@ -1291,6 +1293,7 @@ extern const struct ethernet_api dwmac_api;
 /* MAC control bits */
 #define DWMAC_MACCR_RE     BIT(2)
 #define DWMAC_MACCR_TE     BIT(3)
+#define DWMAC_MACCR_IPCO   BIT(10)
 #define DWMAC_MACCR_DM     BIT(11)
 #define DWMAC_MACCR_FES    BIT(14)
 #define DWMAC_MACCR_PS     BIT(15)
@@ -1315,6 +1318,7 @@ extern const struct ethernet_api dwmac_api;
 
 /* DMA bus mode bits */
 #define DWMAC_DMABMR_SR    BIT(0)
+#define DWMAC_DMABMR_EDFE  BIT(7)
 
 /* DMA interrupt enable bits */
 #define DWMAC_DMAIER_TIE   BIT(0)

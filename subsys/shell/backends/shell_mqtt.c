@@ -680,7 +680,7 @@ static int shell_mqtt_init(const struct shell_transport *transport, const void *
 	k_work_queue_init(&sh->workq);
 	k_work_queue_start(&sh->workq, sh_mqtt_workq_stack,
 			   K_KERNEL_STACK_SIZEOF(sh_mqtt_workq_stack), K_PRIO_COOP(7), NULL);
-	(void)k_thread_name_set(&sh->workq.thread, "sh_mqtt_workq");
+	(void)k_thread_name_set(sh->workq.thread_id, "sh_mqtt_workq");
 	k_work_init(&sh->net_disconnected_work, net_disconnect_handler);
 	k_work_init_delayable(&sh->connect_dwork, sh_mqtt_connect_handler);
 	k_work_init_delayable(&sh->subscribe_dwork, sh_mqtt_subscribe_handler);
