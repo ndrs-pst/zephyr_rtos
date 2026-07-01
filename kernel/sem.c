@@ -36,7 +36,7 @@
  * implementation would spin on atomic access to the count variable,
  * and not a spinlock per se.  Useful optimization for the future...
  */
-static struct k_spinlock lock;
+static struct k_spinlock sem_lock;
 
 #ifdef CONFIG_OBJ_CORE_SEM
 static struct k_obj_type obj_type_sem;
@@ -80,7 +80,7 @@ int z_vrfy_k_sem_init(struct k_sem* sem, unsigned int initial_count,
 #include <zephyr/syscalls/k_sem_init_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-static inline bool handle_poll_events(struct k_sem* sem) {
+static inline bool sem_handle_poll_events(struct k_sem* sem) {
     #ifdef CONFIG_POLL
     return z_handle_obj_poll_events(&sem->poll_events, K_POLL_STATE_SEM_AVAILABLE);
     #else
@@ -90,7 +90,7 @@ static inline bool handle_poll_events(struct k_sem* sem) {
 }
 
 void z_impl_k_sem_give(struct k_sem* sem) {
-    k_spinlock_key_t key = k_spin_lock(&lock);
+    k_spinlock_key_t key = k_spin_lock(&sem_lock);
     bool resched;
 
     SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_sem, give, sem);
@@ -100,14 +100,14 @@ void z_impl_k_sem_give(struct k_sem* sem) {
     }
     else {
         sem->count += (sem->count != sem->limit) ? 1U : 0U;
-        resched = handle_poll_events(sem);
+        resched = sem_handle_poll_events(sem);
     }
 
     if (unlikely(resched)) {
-        z_reschedule(&lock, key);
+        z_reschedule(&sem_lock, key);
     }
     else {
-        k_spin_unlock(&lock, key);
+        k_spin_unlock(&sem_lock, key);
     }
 
     SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_sem, give, sem);
@@ -127,26 +127,26 @@ int z_impl_k_sem_take(struct k_sem* sem, k_timeout_t timeout) {
     __ASSERT(((arch_is_in_isr() == false) ||
              K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
 
-    k_spinlock_key_t key = k_spin_lock(&lock);
+    k_spinlock_key_t key = k_spin_lock(&sem_lock);
 
     SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_sem, take, sem, timeout);
 
     if (likely(sem->count > 0U)) {
         sem->count--;
-        k_spin_unlock(&lock, key);
+        k_spin_unlock(&sem_lock, key);
         ret = 0;
         goto out;
     }
 
     if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-        k_spin_unlock(&lock, key);
+        k_spin_unlock(&sem_lock, key);
         ret = -EBUSY;
         goto out;
     }
 
     SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_sem, take, sem, timeout);
 
-    ret = z_pend_curr(&lock, key, &sem->wait_q, timeout);
+    ret = z_pend_curr(&sem_lock, key, &sem->wait_q, timeout);
 
 out:
     SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_sem, take, sem, timeout, ret);
@@ -155,7 +155,7 @@ out:
 }
 
 void z_impl_k_sem_reset(struct k_sem* sem) {
-    k_spinlock_key_t key = k_spin_lock(&lock);
+    k_spinlock_key_t key = k_spin_lock(&sem_lock);
     bool resched = false;
 
     while (z_sched_wake(&sem->wait_q, -EAGAIN, NULL)) {
@@ -165,13 +165,13 @@ void z_impl_k_sem_reset(struct k_sem* sem) {
 
     SYS_PORT_TRACING_OBJ_FUNC(k_sem, reset, sem);
 
-    resched = (handle_poll_events(sem) || resched);
+    resched = sem_handle_poll_events(sem) || resched;
 
     if (resched) {
-        z_reschedule(&lock, key);
+        z_reschedule(&sem_lock, key);
     }
     else {
-        k_spin_unlock(&lock, key);
+        k_spin_unlock(&sem_lock, key);
     }
 }
 

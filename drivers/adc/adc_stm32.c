@@ -385,8 +385,8 @@ static int adc_stm32_dma_start(const struct device* dev,
 }
 #endif /* CONFIG_ADC_STM32_DMA */
 
-static int check_buffer(const struct adc_sequence* sequence,
-                        uint8_t active_channels) {
+static int __maybe_unused check_buffer(const struct adc_sequence* sequence,
+                                       uint8_t active_channels) {
     size_t needed_buffer_size;
 
     needed_buffer_size = active_channels * sizeof(adc_data_size_t);
@@ -1241,11 +1241,18 @@ static int start_read(const struct device* dev,
         return (err);
     }
 
+    #ifndef CONFIG_ADC_STREAM
+    /*
+     * In streaming mode the application does not provide a buffer in the
+     * sequence: sample data is written to a buffer allocated from the RTIO
+     * mempool inside the ISR. Skip the sequence buffer validation here.
+     */
     err = check_buffer(sequence, data->channel_count);
     if (err) {
         LOG_ERR("ADC buffer error");
         return (err);
     }
+    #endif /* !CONFIG_ADC_STREAM */
 
     #ifdef HAS_OVERSAMPLING
     err = adc_stm32_oversampling(dev, sequence->oversampling);

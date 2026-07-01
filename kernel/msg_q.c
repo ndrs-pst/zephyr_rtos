@@ -28,7 +28,7 @@
 static struct k_obj_type obj_type_msgq;
 #endif /* CONFIG_OBJ_CORE_MSGQ */
 
-static inline bool handle_poll_events(struct k_msgq* msgq) {
+static inline bool msgq_handle_poll_events(struct k_msgq* msgq) {
     #ifdef CONFIG_POLL
     return z_handle_obj_poll_events(&msgq->poll_events,
                                     K_POLL_STATE_MSGQ_DATA_AVAILABLE);
@@ -53,12 +53,7 @@ void k_msgq_init(struct k_msgq* msgq, char* buffer, size_t msg_size,
     msgq->used_msgs    = 0;
     msgq->flags        = 0;
     z_waitq_init(&msgq->wait_q);
-
-    #if defined(_MSC_VER)
     msgq->lock = (struct k_spinlock){0};    /* #CUSTOM@NDRS */
-    #else
-    msgq->lock = (struct k_spinlock){};
-    #endif
 
     #ifdef CONFIG_POLL
     sys_dlist_init(&msgq->poll_events);
@@ -200,7 +195,7 @@ static inline int put_msg_in_queue(struct k_msgq* msgq, const void* data,
             }
 
             msgq->used_msgs++;
-            resched = handle_poll_events(msgq);
+            resched = msgq_handle_poll_events(msgq);
         }
         result = 0;
     }
@@ -441,7 +436,7 @@ int z_impl_k_msgq_peek_at(struct k_msgq* msgq, void* data, uint32_t idx) {
         result = 0;
     }
     else {
-        /* don't wait for a message to become available */
+        /* Don't wait for a message to become available */
         result = -ENOMSG;
     }
 

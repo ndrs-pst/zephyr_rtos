@@ -717,7 +717,7 @@ void *sys_heap_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 		 */
 		IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS,
 			   (heap_sanitizer_on_alloc(heap, ptr, prev_size)));
-		memcpy(ptr2, ptr, MIN(prev_size, bytes));
+		memcpy(ptr2, ptr, z_min(prev_size, bytes));
 		sys_heap_free(heap, ptr);
 	}
 	return ptr2;
@@ -767,7 +767,7 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 		 */
 		IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS,
 			   (heap_sanitizer_on_alloc(heap, ptr, prev_size)));
-		memcpy(ptr2, ptr, MIN(prev_size, bytes));
+		memcpy(ptr2, ptr, z_min(prev_size, bytes));
 		sys_heap_free(heap, ptr);
 	}
 	return ptr2;
