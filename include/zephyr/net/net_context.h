@@ -31,6 +31,7 @@
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_stats.h>
+#include <zephyr/net/dplpmtud.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -436,6 +437,71 @@ __net_socket struct net_context {
          */
         struct net_linger linger;
         #endif /* CONFIG_NET_CONTEXT_LINGER */
+
+        #if defined(CONFIG_NET_UDP_OPTIONS)
+        struct {
+            /** Bitmask of enabled UDP option features (NET_UDP_OPT_F_*) */
+            uint32_t enabled;
+
+            /** Bitmask of required incoming UDP option features (NET_UDP_OPT_F_*) */
+            uint32_t required;
+
+            /** true = drop all packets with UDP options on this socket */
+            bool drop_all_opts;
+
+            /** MDS (Maximum Datagram Size) value to advertise, 0 = not set */
+            uint16_t mds;
+
+            /** MRDS (Maximum Reassembled Datagram Size), 0 = not set */
+            struct net_udp_opt_mrds mrds;
+
+            #if defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
+            /** DPLPMTUD (RFC 9869) per-socket state. */
+            struct {
+                /** Generic engine path handle (per destination). */
+                struct net_dplpmtud_path path;
+
+                /** Probe retransmit / raise timer. */
+                struct k_work_delayable timer;
+
+                /** Token of the outstanding probe, 0 = none. */
+                uint32_t token;
+
+                /** Size of the outstanding probe. */
+                uint16_t probe_size;
+
+                /** DPLPMTUD enabled on this socket. */
+                bool enabled;
+
+                /** Application echoes RES itself (no auto-echo). */
+                bool app_respond;
+
+                /** BASE_PLPMTU connectivity has been confirmed. */
+                bool base_confirmed;
+
+                /** Deferred RES-echo work (runs off the RX path). */
+                struct k_work echo_work;
+
+                /** Peer to send the pending RES to. */
+                struct net_sockaddr_storage echo_peer;
+
+                /** Length of @ref echo_peer. */
+                net_socklen_t echo_peerlen;
+
+                /** Token to echo in the pending RES. */
+                uint32_t echo_token;
+
+                /** A RES echo is queued in @ref echo_work. */
+                bool echo_pending;
+
+                /** Uptime (ms) of the last auto RES echo; used to
+                 * rate-limit echoes (0 = none sent yet).
+                 */
+                uint32_t echo_last_ms;
+            } dplpmtud;
+        #endif /* CONFIG_NET_UDP_OPTIONS_DPLPMTUD */
+        } udp_opt;
+        #endif
     } options;
 
     /** Protocol (UDP, TCP or IEEE 802.3 protocol value) */
@@ -1355,6 +1421,22 @@ enum net_context_option {
     NET_OPT_RECV_HOPLIMIT     = 24, /**< Receive hop limit information */
     NET_OPT_DONT_FRAGMENT     = 25, /**< Disable local IP fragmentation */
     NET_OPT_LINGER            = 26, /**< Socket linger (SO_LINGER) */
+    NET_OPT_UDP_OPT           = 27, /**< UDP options master enable (RFC 9868) */
+    NET_OPT_UDP_OPT_OCS       = 28, /**< UDP options: Option Checksum */
+    NET_OPT_UDP_OPT_APC       = 29, /**< UDP options: Additional Payload Checksum */
+    NET_OPT_UDP_OPT_FRAG      = 30, /**< UDP options: Fragmentation */
+    NET_OPT_UDP_OPT_MDS       = 31, /**< UDP options: Maximum Datagram Size */
+    NET_OPT_UDP_OPT_MRDS      = 32, /**< UDP options: Maximum Reassembled Datagram Size */
+    NET_OPT_UDP_OPT_REQ       = 33, /**< UDP options: Echo Request */
+    NET_OPT_UDP_OPT_RES       = 34, /**< UDP options: Echo Response */
+    NET_OPT_UDP_OPT_TIME      = 35, /**< UDP options: Timestamp */
+    NET_OPT_UDP_OPT_AUTH      = 36, /**< UDP options: Authentication */
+    NET_OPT_UDP_OPT_EXP       = 37, /**< UDP options: Experimental */
+    NET_OPT_UDP_OPT_UCMP      = 38, /**< UDP options: UNSAFE Compression */
+    NET_OPT_UDP_OPT_UENC      = 39, /**< UDP options: UNSAFE Encryption */
+    NET_OPT_UDP_OPT_UEXP      = 40, /**< UDP options: UNSAFE Experimental */
+    NET_OPT_UDP_OPT_DPLPMTUD  = 41, /**< UDP options: DPLPMTUD enable (RFC 9869) */
+    NET_OPT_UDP_OPT_DPLPMTUD_APP_RESPOND = 42, /**< UDP options: app echoes RES itself */
 };
 
 /**
@@ -1384,6 +1466,29 @@ int net_context_set_option(struct net_context* context,
 int net_context_get_option(struct net_context* context,
                            enum net_context_option option,
                            void* value, uint32_t* len);
+
+/**
+ * @brief Enable or disable DPLPMTUD (RFC 9869) on a UDP context.
+ *
+ * When enabled, the stack probes the path MTU using UDP options and answers
+ * incoming probes. Must be a UDP context.
+ *
+ * @param context Network context (proto must be UDP)
+ * @param enable  true to enable DPLPMTUD, false to disable
+ *
+ * @return 0 on success, negative errno otherwise.
+ */
+#if defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD) || defined(__DOXYGEN__)
+int net_context_set_udp_dplpmtud(struct net_context* context, bool enable);
+#else
+static inline int net_context_set_udp_dplpmtud(struct net_context* context,
+                                               bool enable) {
+    ARG_UNUSED(context);
+    ARG_UNUSED(enable);
+
+    return (-ENOTSUP);
+}
+#endif /* CONFIG_NET_UDP_OPTIONS_DPLPMTUD */
 
 /**
  * @typedef net_context_cb_t
@@ -1433,7 +1538,7 @@ static inline void net_context_setup_pools(struct net_context* context,
     context->data_pool = data_pool;
 }
 #else
-#define net_context_setup_pools(context, tx_pool, data_pool)
+#define net_context_setup_pools(context, tx_slab, data_pool)
 #endif
 
 /**

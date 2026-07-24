@@ -2,6 +2,7 @@
  * Copyright (c) 2017 Google LLC.
  * Copyright (c) 2022 Kamil Serwus
  * Copyright (c) 2024-2025 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -83,6 +84,7 @@
 				compatible = "soc-nv-flash";
 				reg = <0 0x40000>;
 				write-block-size = <4>;
+				ranges;
 			};
 		};
 

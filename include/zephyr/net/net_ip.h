@@ -326,8 +326,8 @@ struct net_cmsghdr {
 
 /** Linger option struct for the SO_LINGER socket option */
 struct net_linger {
-	int l_onoff;  /**< Whether the linger behaviour is enabled */
-	int l_linger; /**< Linger time in seconds */
+    int l_onoff;  /**< Whether the linger behaviour is enabled */
+    int l_linger; /**< Linger time in seconds */
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -667,6 +667,31 @@ struct net_udp_hdr {
     uint16_t len;
     uint16_t chksum;
 } __packed;
+
+/** @brief UDP Options Maximum Reassembled Datagram Size (MRDS), RFC 9868.
+ *
+ * Value type for the @c ZSOCK_UDP_OPT_MRDS socket option and the
+ * @c ZSOCK_UDP_OPT_CMSG_MRDS ancillary control message.
+ */
+struct net_udp_opt_mrds {
+    /** Maximum reassembled datagram size in bytes. */
+    uint16_t size;
+
+    /** Maximum number of fragments, or 0 if unspecified. */
+    uint8_t segs;
+};
+
+/** @brief UDP Options Timestamp (TIME), RFC 9868.
+ *
+ * Value type for the @c ZSOCK_UDP_OPT_CMSG_TIME ancillary control message.
+ */
+struct net_udp_opt_time {
+    /** Timestamp value of the sender. */
+    uint32_t tsval;
+
+    /** Timestamp echo reply (last @c tsval received from the peer). */
+    uint32_t tsecr;
+};
 
 struct net_tcp_hdr {
     uint16_t src_port;
@@ -1867,7 +1892,7 @@ static inline bool net_ipv6_addr_based_on_ll(struct net_in6_addr const* addr,
  *
  * @return Pointer to socket address (struct sockaddr)
  */
-static inline struct net_sockaddr* net_sad(struct net_sockaddr_storage* addr) {
+static ALWAYS_INLINE struct net_sockaddr* net_sad(const struct net_sockaddr_storage* addr) {
     return (struct net_sockaddr*)addr;
 }
 
@@ -1879,9 +1904,8 @@ static inline struct net_sockaddr* net_sad(struct net_sockaddr_storage* addr) {
  *
  * @return Pointer to socket storage address (struct net_sockaddr_storage)
  */
-static inline struct net_sockaddr_storage *net_sas(const struct net_sockaddr *addr)
-{
-	return (struct net_sockaddr_storage *)addr;
+static ALWAYS_INLINE struct net_sockaddr_storage* net_sas(const struct net_sockaddr* addr) {
+    return (struct net_sockaddr_storage*)addr;
 }
 
 /**
@@ -1892,7 +1916,7 @@ static inline struct net_sockaddr_storage *net_sas(const struct net_sockaddr *ad
  *
  * @return Pointer to IPv6 socket address
  */
-static inline struct net_sockaddr_in6* net_sin6(const struct net_sockaddr* addr) {
+static ALWAYS_INLINE struct net_sockaddr_in6* net_sin6(const struct net_sockaddr* addr) {
     return (struct net_sockaddr_in6*)addr;
 }
 
@@ -1904,7 +1928,7 @@ static inline struct net_sockaddr_in6* net_sin6(const struct net_sockaddr* addr)
  *
  * @return Pointer to IPv4 socket address
  */
-static inline struct net_sockaddr_in* net_sin(const struct net_sockaddr* addr) {
+static ALWAYS_INLINE struct net_sockaddr_in* net_sin(const struct net_sockaddr* addr) {
     return (struct net_sockaddr_in*)addr;
 }
 
@@ -1916,7 +1940,7 @@ static inline struct net_sockaddr_in* net_sin(const struct net_sockaddr* addr) {
  *
  * @return Pointer to IPv6 socket address
  */
-static inline
+static ALWAYS_INLINE
 struct net_sockaddr_in6_ptr* net_sin6_ptr(const struct net_sockaddr_ptr* addr) {
     return (struct net_sockaddr_in6_ptr*)addr;
 }
@@ -1929,7 +1953,7 @@ struct net_sockaddr_in6_ptr* net_sin6_ptr(const struct net_sockaddr_ptr* addr) {
  *
  * @return Pointer to IPv4 socket address
  */
-static inline
+static ALWAYS_INLINE
 struct net_sockaddr_in_ptr* net_sin_ptr(const struct net_sockaddr_ptr* addr) {
     return (struct net_sockaddr_in_ptr*)addr;
 }
@@ -1942,7 +1966,7 @@ struct net_sockaddr_in_ptr* net_sin_ptr(const struct net_sockaddr_ptr* addr) {
  *
  * @return Pointer to linklayer socket address
  */
-static inline
+static ALWAYS_INLINE
 struct net_sockaddr_ll_ptr* net_sll_ptr(const struct net_sockaddr_ptr* addr) {
     return (struct net_sockaddr_ll_ptr*)addr;
 }
@@ -1955,7 +1979,7 @@ struct net_sockaddr_ll_ptr* net_sll_ptr(const struct net_sockaddr_ptr* addr) {
  *
  * @return Pointer to CAN socket address
  */
-static inline
+static ALWAYS_INLINE
 struct net_sockaddr_can_ptr* net_can_ptr(const struct net_sockaddr_ptr* addr) {
     return (struct net_sockaddr_can_ptr*)addr;
 }
