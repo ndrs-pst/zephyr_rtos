@@ -145,7 +145,7 @@ struct net_pkt {
 
 	/* TCP or UDP are mutually exclusive so they can share the same memory */
 	union {
-#if defined(CONFIG_NET_TCP)
+#if defined(CONFIG_NET_TCP) || defined(_MSC_VER) /* #CUSTOM@NDRS */
 		/** Allow placing the packet into sys_slist_t */
 		sys_snode_t next;
 #endif

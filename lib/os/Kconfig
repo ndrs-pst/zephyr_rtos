@@ -132,6 +132,21 @@ config REBOOT
 	  needed to perform a "safe" reboot (e.g. to stop the system clock before
 	  issuing a reset).
 
+if REBOOT
+
+config SYS_REBOOT_ARCH_DEFAULT
+	int "Default system reboot type (SYS_REBOOT_WARM=0 / SYS_REBOOT_COLD=1)"
+	default 1 if SOC_SERIES_S32K3
+	default 0
+	help
+	  Default sys_reboot() type callers should request when no specific
+	  type is otherwise required. Some SoCs' warm/functional reset path
+	  is insufficient (e.g. NXP S32K3 requires a destructive reset via
+	  MC_ME_DEST_RESET_MODE), so this lets the platform override the
+	  default without every caller hardcoding a type.
+
+endif # REBOOT
+
 config RESET_ON_FATAL_ERROR
 	bool "Reset the system when a fatal error occurs after printing relevant debug output"
 	select REBOOT

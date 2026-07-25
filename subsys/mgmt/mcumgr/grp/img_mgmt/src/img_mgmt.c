@@ -969,7 +969,7 @@ img_mgmt_upload(struct smp_streamer* ctxt) {
             /* Done */
             reset = true;
 
-            #ifdef CONFIG_IMG_ENABLE_IMAGE_CHECK
+            #if defined(CONFIG_IMG_ENABLE_IMAGE_CHECK)
             static struct flash_img_context ctx;
 
             if (flash_img_init_id(&ctx, g_img_mgmt_state.area_id) == 0) {
