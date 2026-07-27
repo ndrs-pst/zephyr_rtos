@@ -171,7 +171,7 @@ void img_mgmt_release_lock(void) {
 static bool img_mgmt_slot_max_size(size_t* area_sizes, zcbor_state_t* zse) {
     bool ok = true;
 
-    if (area_sizes[0] > 0 && area_sizes[1] > 0) {
+    if ((area_sizes[0] > 0) && (area_sizes[1] > 0)) {
         /* Calculate maximum image size */
         size_t area_size_difference = (size_t)abs((ssize_t)area_sizes[1] -
                                                   (ssize_t)area_sizes[0]);
@@ -412,6 +412,7 @@ int img_mgmt_find_by_hash(uint8_t* find, struct image_version* ver) {
         if (img_mgmt_read_info(i, ver, hash, NULL) != 0) {
             continue;
         }
+
         if (!memcmp(hash, find, IMAGE_SHA_LEN)) {
             return (i);
         }
@@ -552,7 +553,6 @@ static int img_mgmt_slot_info(struct smp_streamer* ctxt) {
         }
 
         rc = flash_area_open(area_id, &fa);
-
         if (rc) {
             /* Failed opening slot, mark as error */
             ok = zcbor_tstr_put_lit(zse, "rc") &&
@@ -659,7 +659,6 @@ static int img_mgmt_slot_info(struct smp_streamer* ctxt) {
             status = mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_SLOT_INFO_IMAGE,
                                           &image_info_data, sizeof(image_info_data),
                                           &err_rc, &err_group);
-
             if (status != MGMT_CB_OK) {
                 if (status == MGMT_CB_ERROR_RC) {
                     img_mgmt_release_lock();
@@ -674,7 +673,6 @@ static int img_mgmt_slot_info(struct smp_streamer* ctxt) {
             #endif
 
             ok = zcbor_map_end_encode(zse, 4);
-
             if (!ok) {
                 goto finish;
             }
@@ -723,7 +721,7 @@ img_mgmt_upload_log(bool is_first, bool is_last, int status) {
     uint8_t const* hashp;
     int rc;
 
-    if (is_last || status != 0) {
+    if (is_last || (status != 0)) {
         /* Log the image hash if we know it. */
         rc = img_mgmt_read_info(1, NULL, hash, NULL);
         if (rc != 0) {
@@ -837,7 +835,6 @@ img_mgmt_upload(struct smp_streamer* ctxt) {
      */
     status = mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_CHUNK, &upload_check_data,
                                   sizeof(upload_check_data), &err_rc, &err_group);
-
     if (status != MGMT_CB_OK) {
         IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action, img_mgmt_err_str_app_reject);
 
@@ -888,7 +885,7 @@ img_mgmt_upload(struct smp_streamer* ctxt) {
         (void) memset(&g_img_mgmt_state.data_sha[req.data_sha.len], 0,
                       IMG_MGMT_DATA_SHA_LEN - req.data_sha.len);
 
-        #ifdef CONFIG_IMG_ENABLE_IMAGE_CHECK
+        #if defined(CONFIG_IMG_ENABLE_IMAGE_CHECK)
         /* Check if the existing image hash matches the hash of the underlying data,
          * this check can only be performed if the provided hash is a full SHA256 hash
          * of the file that is being uploaded, do not attempt the check if the length
@@ -898,7 +895,8 @@ img_mgmt_upload(struct smp_streamer* ctxt) {
             fic.match = g_img_mgmt_state.data_sha;
             fic.clen  = g_img_mgmt_state.size;
 
-            if (flash_img_check(&ctx, &fic, g_img_mgmt_state.area_id) == 0) {
+            int ret = flash_img_check(&ctx, &fic, g_img_mgmt_state.area_id);
+            if (ret == 0) {
                 /* Underlying data already matches, no need to upload any more,
                  * set offset to image size so client knows upload has finished.
                  */
@@ -972,13 +970,15 @@ img_mgmt_upload(struct smp_streamer* ctxt) {
             #if defined(CONFIG_IMG_ENABLE_IMAGE_CHECK)
             static struct flash_img_context ctx;
 
-            if (flash_img_init_id(&ctx, g_img_mgmt_state.area_id) == 0) {
+            int ret = flash_img_init_id(&ctx, g_img_mgmt_state.area_id);
+            if (ret == 0) {
                 struct flash_img_check fic = {
                     .match = g_img_mgmt_state.data_sha,
                     .clen  = g_img_mgmt_state.size,
                 };
 
-                if (flash_img_check(&ctx, &fic, g_img_mgmt_state.area_id) == 0) {
+                ret = flash_img_check(&ctx, &fic, g_img_mgmt_state.area_id);
+                if (ret == 0) {
                     data_match = true;
                 }
                 else {

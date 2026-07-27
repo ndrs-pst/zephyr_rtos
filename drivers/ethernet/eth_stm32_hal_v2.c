@@ -537,13 +537,11 @@ static void eth_stm32_update_dma_error(struct eth_stm32_hal_dev_data *ctx, uint3
 		eth_stats_update_errors_tx(ctx->iface);
 	}
 #else
-	if ((dma_error & ETH_DMASR_RWTS) || (dma_error & ETH_DMASR_RPSS) ||
-	    (dma_error & ETH_DMASR_RBUS)) {
+	if (dma_error & (ETH_DMASR_RWTS | ETH_DMASR_RPSS | ETH_DMASR_RBUS)) {
 		eth_stats_update_errors_rx(ctx->iface);
 	}
 
-	if ((dma_error & ETH_DMASR_ETS) || (dma_error & ETH_DMASR_TPSS) ||
-	    (dma_error & ETH_DMASR_TJTS)) {
+	if (dma_error & (ETH_DMASR_ETS | ETH_DMASR_TPSS | ETH_DMASR_TJTS)) {
 		eth_stats_update_errors_tx(ctx->iface);
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
@@ -639,7 +637,7 @@ int eth_stm32_hal_init(const struct device *dev)
 	heth->Init.RxBuffLen = ETH_STM32_RX_BUF_SIZE;
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32mp13_ethernet)
-	__maybe_unused uint8_t *desc_uncached_addr;
+	uint8_t *desc_uncached_addr;
 
 	/* Map memory region for DMA descriptor and buffer as non cacheable */
 	k_mem_map_phys_bare(&desc_uncached_addr,

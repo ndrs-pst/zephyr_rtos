@@ -500,7 +500,7 @@ static bool img_mgmt_state_encode_slot(struct smp_streamer* ctxt, uint32_t slot,
         .hash = hash,
         .flags = flags,
     };
-#endif
+    #endif
 
     if (rc != 0) {
         /* zcbor encoding did not fail */
