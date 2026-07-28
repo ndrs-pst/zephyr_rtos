@@ -2324,7 +2324,8 @@ int net_pkt_pull(struct net_pkt *pkt, size_t length)
 	struct net_pkt_cursor *c_op = &pkt->cursor;
 
 	while (length) {
-		size_t left, rem;
+		size_t left;
+		size_t rem;
 
 		pkt_cursor_advance(pkt, false);
 
@@ -2342,10 +2343,21 @@ int net_pkt_pull(struct net_pkt *pkt, size_t length)
 			rem = length;
 		}
 
+		if (rem < left && c_op->pos == c_op->buf->data) {
+			/* Pulling from the front of the fragment: advance
+			 * the data pointer instead of moving the remaining
+			 * payload down.
+			 */
+			(void)net_buf_pull(c_op->buf, rem);
+			c_op->pos = c_op->buf->data;
+			length -= rem;
+			continue;
+		}
+
 		c_op->buf->len -= (uint16_t)rem;
 		left -= rem;
 		if (left) {
-			memmove(c_op->pos, c_op->pos+rem, left);
+			memmove(c_op->pos, (c_op->pos + rem), left);
 		} else {
 			struct net_buf *buf = pkt->buffer;
 

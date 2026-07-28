@@ -1255,6 +1255,10 @@
 				#size-cells = <0>;
 				status = "disabled";
 			};
+
+			ptp_clock: ptp-clock {
+				compatible = "snps,dwmac-ptp-clock";
+			};
 		};
 
 		fmc: memory-controller@52004000 {
