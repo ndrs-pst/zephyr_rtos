@@ -181,7 +181,7 @@ int i2c_stm32_target_unregister(const struct device* dev, struct i2c_target_conf
 #endif /* CONFIG_I2C_TARGET */
 
 int i2c_stm32_activate(const struct device* dev);
-int i2c_stm32_configure_timing(const struct device* dev, uint32_t clk);
+int i2c_stm32_configure_timing(const struct device* dev, uint32_t clock);
 
 #ifdef CONFIG_PM_DEVICE
 int i2c_stm32_pm_action(const struct device* dev, enum pm_device_action action);

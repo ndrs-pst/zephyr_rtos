@@ -4988,9 +4988,9 @@ int bt_set_appearance(uint16_t appearance)
 }
 #endif
 
-int bt_le_get_local_features(struct bt_le_local_features *remote_info)
+int bt_le_get_local_features(struct bt_le_local_features *local_features)
 {
-	if (remote_info == NULL) {
+	if (local_features == NULL) {
 		return -EINVAL;
 	}
 
@@ -4998,14 +4998,14 @@ int bt_le_get_local_features(struct bt_le_local_features *remote_info)
 		return -EAGAIN;
 	}
 
-	memcpy(remote_info->features, bt_dev.le.features, sizeof(remote_info->features));
-	remote_info->states = bt_dev.le.states;
-	remote_info->acl_mtu = COND_CODE_1(CONFIG_BT_CONN, (bt_dev.le.acl_mtu), (0));
-	remote_info->acl_pkts = COND_CODE_1(CONFIG_BT_CONN, (bt_dev.le.acl_pkts.limit), (0));
-	remote_info->iso_mtu = COND_CODE_1(CONFIG_BT_ISO, (bt_dev.le.iso_mtu), (0));
-	remote_info->iso_pkts = COND_CODE_1(CONFIG_BT_ISO, (bt_dev.le.iso_limit), (0));
-	remote_info->rl_size = COND_CODE_1(CONFIG_BT_SMP, (bt_dev.le.rl_size), (0));
-	remote_info->max_adv_data_len =
+	memcpy(local_features->features, bt_dev.le.features, sizeof(local_features->features));
+	local_features->states = bt_dev.le.states;
+	local_features->acl_mtu = COND_CODE_1(CONFIG_BT_CONN, (bt_dev.le.acl_mtu), (0));
+	local_features->acl_pkts = COND_CODE_1(CONFIG_BT_CONN, (bt_dev.le.acl_pkts.limit), (0));
+	local_features->iso_mtu = COND_CODE_1(CONFIG_BT_ISO, (bt_dev.le.iso_mtu), (0));
+	local_features->iso_pkts = COND_CODE_1(CONFIG_BT_ISO, (bt_dev.le.iso_limit), (0));
+	local_features->rl_size = COND_CODE_1(CONFIG_BT_SMP, (bt_dev.le.rl_size), (0));
+	local_features->max_adv_data_len =
 		COND_CODE_1(CONFIG_BT_BROADCASTER, (bt_dev.le.max_adv_data_len), (0));
 
 	return 0;

@@ -1253,7 +1253,7 @@ static int64_t obj_parse(struct json_obj *obj, const struct json_obj_descr *desc
 	return -EINVAL;
 }
 
-int64_t json_obj_parse(char *payload, size_t len,
+int64_t json_obj_parse(char *json, size_t len,
 		       const struct json_obj_descr *descr, size_t descr_len,
 		       void *val)
 {
@@ -1262,7 +1262,7 @@ int64_t json_obj_parse(char *payload, size_t len,
 
 	__ASSERT_NO_MSG(descr_len < (sizeof(ret) * CHAR_BIT - 1));
 
-	ret = obj_init(&obj, payload, len);
+	ret = obj_init(&obj, json, len);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1271,13 +1271,13 @@ int64_t json_obj_parse(char *payload, size_t len,
 	return ret;
 }
 
-int json_arr_parse(char *payload, size_t len,
+int json_arr_parse(char *json, size_t len,
 		   const struct json_obj_descr *descr, void *val)
 {
 	struct json_obj arr;
 	int ret;
 
-	ret = arr_init(&arr, payload, len);
+	ret = arr_init(&arr, json, len);
 	if (ret < 0) {
 		return ret;
 	}

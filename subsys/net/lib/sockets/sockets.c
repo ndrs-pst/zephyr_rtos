@@ -1422,7 +1422,7 @@ int zsock_send_all(int sock, const void *buf, size_t len, int flags, k_timeout_t
 	return 0;
 }
 
-int zsock_sendmsg_all(int sock, const struct net_msghdr *message, int flags,
+int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
 		      k_timeout_t timeout, size_t *sent_len)
 {
 	size_t total_len = 0;
@@ -1445,14 +1445,14 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *message, int flags,
 		return -EOPNOTSUPP;
 	}
 
-	for (size_t i = 0; i < message->msg_iovlen; i++) {
-		total_len += message->msg_iov[i].iov_len;
+	for (size_t i = 0; i < msg->msg_iovlen; i++) {
+		total_len += msg->msg_iov[i].iov_len;
 	}
 
 	end = sys_timepoint_calc(timeout);
 
 	while (offset < total_len) {
-		ret = zsock_sendmsg(sock, message, ZSOCK_MSG_DONTWAIT | flags);
+		ret = zsock_sendmsg(sock, msg, ZSOCK_MSG_DONTWAIT | flags);
 		if ((ret == 0) || (ret < 0 && errno == EAGAIN)) {
 			k_ticks_t req_timeout_ticks = sys_timepoint_timeout(end).ticks;
 			int req_timeout_ms = k_ticks_to_ms_floor32(req_timeout_ticks);
@@ -1484,16 +1484,16 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *message, int flags,
 		}
 
 		/* Update msghdr for the next iteration. */
-		for (size_t i = 0; i < message->msg_iovlen; i++) {
-			if (ret < (int)message->msg_iov[i].iov_len) {
-				message->msg_iov[i].iov_len -= ret;
-				message->msg_iov[i].iov_base =
-					(uint8_t *)message->msg_iov[i].iov_base + ret;
+		for (size_t i = 0; i < msg->msg_iovlen; i++) {
+			if (ret < (int)msg->msg_iov[i].iov_len) {
+				msg->msg_iov[i].iov_len -= ret;
+				msg->msg_iov[i].iov_base =
+					(uint8_t *)msg->msg_iov[i].iov_base + ret;
 				break;
 			}
 
-			ret -= message->msg_iov[i].iov_len;
-			message->msg_iov[i].iov_len = 0;
+			ret -= msg->msg_iov[i].iov_len;
+			msg->msg_iov[i].iov_len = 0;
 		}
 	}
 

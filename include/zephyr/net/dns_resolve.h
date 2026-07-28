@@ -682,15 +682,15 @@ struct mdns_responder_context {
  *    IPv4 + port : 10.0.9.1:5353
  *    IPv6        : 2001:db8::22:42
  *    IPv6 + port : [2001:db8::22:42]:5353
- * @param dns_servers_sa DNS server addresses as struct net_sockaddr. The array
+ * @param servers_sa DNS server addresses as struct net_sockaddr. The array
  * is NULL terminated. Port numbers are optional in struct net_sockaddr, the
  * default will be used if set to 0.
  *
  * @return 0 if ok, <0 if error.
  */
 int dns_resolve_init(struct dns_resolve_context *ctx,
-		     const char *dns_servers_str[],
-		     const struct net_sockaddr *dns_servers_sa[]);
+		     const char *servers[],
+		     const struct net_sockaddr *servers_sa[]);
 
 /**
  * @brief Init DNS resolving context with default Kconfig options.

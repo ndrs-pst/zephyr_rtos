@@ -8,6 +8,6 @@
 #define ZEPHYR_INCLUDE_KERNEL_TIMESLICING_H
 
 void z_time_slice(void);
-void z_time_slice_reset(struct k_thread *curr);
+void z_time_slice_reset(struct k_thread *thread);
 
 #endif /* ZEPHYR_INCLUDE_KERNEL_TIMESLICING_H */

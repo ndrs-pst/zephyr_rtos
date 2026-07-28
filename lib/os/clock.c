@@ -66,7 +66,7 @@ int sys_clock_from_clockid(int clock_id)
 	}
 }
 
-int sys_clock_gettime(int clock_id, struct timespec *ts)
+int sys_clock_gettime(int clock_id, struct timespec *tp)
 {
 	if (!is_valid_clock_id(clock_id)) {
 		return -EINVAL;
@@ -76,11 +76,11 @@ int sys_clock_gettime(int clock_id, struct timespec *ts)
 	case SYS_CLOCK_REALTIME: {
 		struct timespec offset;
 
-		timespec_from_ticks(k_uptime_ticks(), ts);
+		timespec_from_ticks(k_uptime_ticks(), tp);
 		sys_clock_getrtoffset(&offset);
-		if (unlikely(!timespec_add(ts, &offset))) {
+		if (unlikely(!timespec_add(tp, &offset))) {
 			/* Saturate rather than reporting an overflow in 292 billion years */
-			*ts = (struct timespec){
+			*tp = (struct timespec){
 				.tv_sec = (time_t)INT64_MAX,
 				.tv_nsec = NSEC_PER_SEC - 1,
 			};
@@ -88,7 +88,7 @@ int sys_clock_gettime(int clock_id, struct timespec *ts)
 	} break;
 
 	case SYS_CLOCK_MONOTONIC:
-		timespec_from_ticks(k_uptime_ticks(), ts);
+		timespec_from_ticks(k_uptime_ticks(), tp);
 		break;
 
 	default:
@@ -96,7 +96,7 @@ int sys_clock_gettime(int clock_id, struct timespec *ts)
 		return -EINVAL; /* Should never reach here */
 	}
 
-	__ASSERT_NO_MSG(timespec_is_valid(ts));
+	__ASSERT_NO_MSG(timespec_is_valid(tp));
 
 	return 0;
 }

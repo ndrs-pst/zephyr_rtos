@@ -294,7 +294,7 @@ static void post_drop_action(struct mpsc_pbuf_buffer *buffer,
 }
 
 void mpsc_pbuf_put_word(struct mpsc_pbuf_buffer *buffer,
-			const union mpsc_pbuf_generic item)
+			const union mpsc_pbuf_generic word)
 {
 	bool cont;
 	uint32_t free_wlen;
@@ -316,7 +316,7 @@ void mpsc_pbuf_put_word(struct mpsc_pbuf_buffer *buffer,
 		MPSC_PBUF_DBG(buffer, "put_word (%d free space)", (int)free_wlen);
 
 		if (free_wlen) {
-			buffer->buf[buffer->tmp_wr_idx] = item.raw;
+			buffer->buf[buffer->tmp_wr_idx] = word.raw;
 			tmp_wr_idx_inc(buffer, 1);
 			cont = false;
 			buffer->wr_idx = idx_inc(buffer, buffer->wr_idx, 1);
@@ -414,25 +414,25 @@ union mpsc_pbuf_generic *mpsc_pbuf_alloc(struct mpsc_pbuf_buffer *buffer,
 }
 
 void mpsc_pbuf_commit(struct mpsc_pbuf_buffer *buffer,
-		       union mpsc_pbuf_generic *item)
+		       union mpsc_pbuf_generic *packet)
 {
-	uint32_t wlen = buffer->get_wlen(item);
+	uint32_t wlen = buffer->get_wlen(packet);
 
 	k_spinlock_key_t key = k_spin_lock(&buffer->lock);
 
-	item->hdr.valid = 1;
+	packet->hdr.valid = 1;
 	buffer->wr_idx = idx_inc(buffer, buffer->wr_idx, wlen);
 	max_utilization_update(buffer);
 	k_spin_unlock(&buffer->lock, key);
-	MPSC_PBUF_DBG(buffer, "committed %p", item);
+	MPSC_PBUF_DBG(buffer, "committed %p", packet);
 }
 
 void mpsc_pbuf_put_word_ext(struct mpsc_pbuf_buffer *buffer,
-			    const union mpsc_pbuf_generic item,
+			    const union mpsc_pbuf_generic word,
 			    const void *data)
 {
 	static const size_t l =
-		(sizeof(item) + sizeof(data)) / sizeof(uint32_t);
+		(sizeof(word) + sizeof(data)) / sizeof(uint32_t);
 	union mpsc_pbuf_generic *dropped_item = NULL;
 	bool cont;
 	uint32_t tmp_wr_idx_shift = 0;
@@ -453,7 +453,7 @@ void mpsc_pbuf_put_word_ext(struct mpsc_pbuf_buffer *buffer,
 		wrap = free_space(buffer, &free_wlen);
 
 		if (free_wlen >= l) {
-			buffer->buf[buffer->tmp_wr_idx] = item.raw;
+			buffer->buf[buffer->tmp_wr_idx] = word.raw;
 			void **p =
 				(void **)&buffer->buf[buffer->tmp_wr_idx + 1];
 
@@ -587,15 +587,15 @@ const union mpsc_pbuf_generic *mpsc_pbuf_claim(struct mpsc_pbuf_buffer *buffer)
 }
 
 void mpsc_pbuf_free(struct mpsc_pbuf_buffer *buffer,
-		     const union mpsc_pbuf_generic *item)
+		     const union mpsc_pbuf_generic *packet)
 {
-	uint32_t wlen = buffer->get_wlen(item);
+	uint32_t wlen = buffer->get_wlen(packet);
 	k_spinlock_key_t key = k_spin_lock(&buffer->lock);
-	union mpsc_pbuf_generic *witem = (union mpsc_pbuf_generic *)item;
+	union mpsc_pbuf_generic *witem = (union mpsc_pbuf_generic *)packet;
 
 	witem->hdr.valid = 0;
 	if (!(buffer->flags & MPSC_PBUF_MODE_OVERWRITE) ||
-		 ((uint32_t *)item == &buffer->buf[buffer->rd_idx])) {
+		 ((uint32_t *)packet == &buffer->buf[buffer->rd_idx])) {
 		witem->hdr.busy = 0;
 		if (buffer->rd_idx == buffer->tmp_rd_idx) {
 			/* There is a chance that there are so many new packets
@@ -612,7 +612,7 @@ void mpsc_pbuf_free(struct mpsc_pbuf_buffer *buffer,
 		MPSC_PBUF_DBG(buffer, "Allocation occurred during claim");
 		witem->skip.len = wlen;
 	}
-	MPSC_PBUF_DBG(buffer, "<<freed: %p", item);
+	MPSC_PBUF_DBG(buffer, "<<freed: %p", packet);
 
 	k_spin_unlock(&buffer->lock, key);
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {

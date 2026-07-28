@@ -76,31 +76,31 @@ static bool get_sectors_cb(const struct flash_pages_info* info, void* datav) {
     return (true);
 }
 
-int flash_area_get_sectors(int idx, uint32_t* cnt, struct flash_sector* ret) {
+int flash_area_get_sectors(int fa_id, uint32_t* count, struct flash_sector* sectors) {
     const struct flash_area* fa;
     int rc;
 
-    rc = flash_area_open(idx, &fa);
+    rc = flash_area_open(fa_id, &fa);
     if ((rc < 0) || (fa == NULL)) {
         return (-EINVAL);
     }
 
-    rc = flash_area_sectors(fa, cnt, ret);
+    rc = flash_area_sectors(fa, count, sectors);
     flash_area_close(fa);
 
     return (rc);
 }
 
-int flash_area_sectors(const struct flash_area* fa, uint32_t* cnt, struct flash_sector* ret) {
+int flash_area_sectors(const struct flash_area* fa, uint32_t* count, struct flash_sector* sectors) {
     struct layout_data data;
     const struct device* flash_dev;
 
     data.area_off = fa->fa_off;
     data.area_len = fa->fa_size;
 
-    data.ret     = ret;
+    data.ret     = sectors;
     data.ret_idx = 0U;
-    data.ret_len = *cnt;
+    data.ret_len = *count;
     data.status  = 0;
 
     flash_dev = fa->fa_dev;
@@ -108,7 +108,7 @@ int flash_area_sectors(const struct flash_area* fa, uint32_t* cnt, struct flash_
     flash_page_foreach(flash_dev, get_sectors_cb, &data);
 
     if (data.status == 0) {
-        *cnt = data.ret_idx;
+        *count = data.ret_idx;
     }
 
     return (data.status);
