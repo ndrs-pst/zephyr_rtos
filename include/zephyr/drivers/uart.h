@@ -779,15 +779,15 @@ __syscall int uart_tx(struct device const* dev, uint8_t const* buf,
  * @param dev     UART device instance.
  * @param buf     Pointer to wide data transmit buffer.
  * @param len     Length of wide data transmit buffer.
- * @param tmout_ms Timeout in milliseconds. Valid only if flow control is
- *                 enabled. @ref SYS_FOREVER_MS disables timeout.
+ * @param tmout_us Timeout in microseconds. Valid only if flow control is
+ *                 enabled. @ref SYS_FOREVER_US disables timeout.
  *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP API is not enabled.
  * @retval -EBUSY There is already an ongoing transfer.
  */
 __syscall int uart_tx_u16(struct device const* dev, uint16_t const* buf,
-                          size_t len, int32_t tmout_ms);
+                          size_t len, int32_t tmout_us);
 
 /**
  * @brief Abort current TX transmission.
@@ -814,8 +814,8 @@ __syscall int uart_tx_abort(struct device const* dev);
  * @param len     Buffer length.
  * @param tmout_us Inactivity period after receiving at least a byte which
  *        triggers  #UART_RX_RDY event. Given in microseconds.
- * @ref SYS_FOREVER_US disables timeout. See @ref uart_event_type
- *      for details.
+ *        @ref SYS_FOREVER_US disables timeout. See
+ *        @ref uart_event_type for details.
  *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP API is not enabled.
@@ -835,9 +835,9 @@ __syscall int uart_rx_enable(struct device const* dev, uint8_t* buf,
  * @param dev     UART device instance.
  * @param buf     Pointer to wide data receive buffer.
  * @param len     Buffer length.
- * @param timeout_ms Inactivity period after receiving at least a byte which
- *        triggers  #UART_RX_RDY event. Given in milliseconds.
- *        @ref SYS_FOREVER_MS disables timeout. See
+ * @param tmout_us Inactivity period after receiving at least a byte which
+ *        triggers  #UART_RX_RDY event. Given in microseconds.
+ *        @ref SYS_FOREVER_US disables timeout. See
  *        @ref uart_event_type for details.
  *
  * @return 0 on success, negative errno value on failure.
@@ -845,7 +845,7 @@ __syscall int uart_rx_enable(struct device const* dev, uint8_t* buf,
  * @retval -EBUSY RX already in progress.
  */
 __syscall int uart_rx_enable_u16(struct device const* dev, uint16_t* buf,
-                                 size_t len, int32_t tmout_ms);
+                                 size_t len, int32_t tmout_us);
 
 /**
  * @brief Provide receive buffer in response to #UART_RX_BUF_REQUEST event.

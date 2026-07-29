@@ -42,16 +42,16 @@ __subsystem struct uart_driver_api {
 
 	int (*callback_set)(const struct device *dev, uart_callback_t callback, void *user_data);
 
-	int (*tx)(const struct device *dev, const uint8_t *buf, size_t len, int32_t timeout);
+	int (*tx)(const struct device *dev, const uint8_t *buf, size_t len, int32_t tmout_us);
 	int (*tx_abort)(const struct device *dev);
 
-	int (*rx_enable)(const struct device *dev, uint8_t *buf, size_t len, int32_t timeout);
+	int (*rx_enable)(const struct device *dev, uint8_t *buf, size_t len, int32_t tmout_us);
 	int (*rx_buf_rsp)(const struct device *dev, uint8_t *buf, size_t len);
 	int (*rx_disable)(const struct device *dev);
 
 #ifdef CONFIG_UART_WIDE_DATA
-	int (*tx_u16)(const struct device *dev, const uint16_t *buf, size_t len, int32_t timeout);
-	int (*rx_enable_u16)(const struct device *dev, uint16_t *buf, size_t len, int32_t timeout);
+	int (*tx_u16)(const struct device *dev, const uint16_t *buf, size_t len, int32_t tmout_us);
+	int (*rx_enable_u16)(const struct device *dev, uint16_t *buf, size_t len, int32_t tmout_us);
 	int (*rx_buf_rsp_u16)(const struct device *dev, uint16_t *buf, size_t len);
 #endif
 
@@ -494,31 +494,31 @@ static inline int uart_callback_set(const struct device *dev, uart_callback_t ca
 }
 
 static inline int z_impl_uart_tx(const struct device *dev, const uint8_t *buf, size_t len,
-				 int32_t timeout)
+				 int32_t tmout_us)
 
 {
 #ifdef CONFIG_UART_ASYNC_API
-	return DEVICE_API_GET(uart, dev)->tx(dev, buf, len, timeout);
+	return DEVICE_API_GET(uart, dev)->tx(dev, buf, len, tmout_us);
 #else
 	ARG_UNUSED(dev);
 	ARG_UNUSED(buf);
 	ARG_UNUSED(len);
-	ARG_UNUSED(timeout);
+	ARG_UNUSED(tmout_us);
 	return -ENOTSUP;
 #endif
 }
 
 static inline int z_impl_uart_tx_u16(const struct device *dev, const uint16_t *buf, size_t len,
-				     int32_t timeout)
+				     int32_t tmout_us)
 
 {
 #if defined(CONFIG_UART_ASYNC_API) && defined(CONFIG_UART_WIDE_DATA)
-	return DEVICE_API_GET(uart, dev)->tx_u16(dev, buf, len, timeout);
+	return DEVICE_API_GET(uart, dev)->tx_u16(dev, buf, len, tmout_us);
 #else
 	ARG_UNUSED(dev);
 	ARG_UNUSED(buf);
 	ARG_UNUSED(len);
-	ARG_UNUSED(timeout);
+	ARG_UNUSED(tmout_us);
 	return -ENOTSUP;
 #endif
 }
@@ -534,29 +534,29 @@ static inline int z_impl_uart_tx_abort(const struct device *dev)
 }
 
 static inline int z_impl_uart_rx_enable(const struct device *dev, uint8_t *buf, size_t len,
-					int32_t timeout)
+					int32_t tmout_us)
 {
 #ifdef CONFIG_UART_ASYNC_API
-	return DEVICE_API_GET(uart, dev)->rx_enable(dev, buf, len, timeout);
+	return DEVICE_API_GET(uart, dev)->rx_enable(dev, buf, len, tmout_us);
 #else
 	ARG_UNUSED(dev);
 	ARG_UNUSED(buf);
 	ARG_UNUSED(len);
-	ARG_UNUSED(timeout);
+	ARG_UNUSED(tmout_us);
 	return -ENOTSUP;
 #endif
 }
 
 static inline int z_impl_uart_rx_enable_u16(const struct device *dev, uint16_t *buf, size_t len,
-					    int32_t timeout)
+					    int32_t tmout_us)
 {
 #if defined(CONFIG_UART_ASYNC_API) && defined(CONFIG_UART_WIDE_DATA)
-	return DEVICE_API_GET(uart, dev)->rx_enable_u16(dev, buf, len, timeout);
+	return DEVICE_API_GET(uart, dev)->rx_enable_u16(dev, buf, len, tmout_us);
 #else
 	ARG_UNUSED(dev);
 	ARG_UNUSED(buf);
 	ARG_UNUSED(len);
-	ARG_UNUSED(timeout);
+	ARG_UNUSED(tmout_us);
 	return -ENOTSUP;
 #endif
 }
