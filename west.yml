@@ -170,7 +170,7 @@ manifest:
         - hal
     - name: hal_bouffalolab
       path: modules/hal/bouffalolab
-      revision: 5d80bd5e43936dc0a8530dbfff94abe3a8e10e0d
+      revision: 6de5c882b3ea55c3a57cff5ab6debfc8ef2fff7f
       groups:
         - hal
     - name: hal_espressif
@@ -231,7 +231,7 @@ manifest:
         - hal
     - name: hal_realtek
       path: modules/hal/realtek
-      revision: 9a4caf9846d6f0ceb6b38f971a771b1325c1e4b9
+      revision: ba5032a9e47b6ad9e9488665c1e990ed0f434734
       groups:
         - hal
     - name: hal_renesas

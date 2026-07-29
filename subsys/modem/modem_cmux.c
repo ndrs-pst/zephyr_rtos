@@ -1976,8 +1976,8 @@ static int modem_cmux_dlci_pipe_api_transmit_chain(void* data,
         .type     = MODEM_CMUX_FRAME_TYPE_UIH,
         .data     = frags[0].data,
         .tx_extra = (num_frags > 1) ? frags[1].data : NULL,
-        .data_len = frags[0].size,
-        .tx_extra_len = (num_frags > 1) ? frags[1].size : 0,
+        .data_len = (uint16_t)(frags[0].size),
+        .tx_extra_len = (num_frags > 1) ? (uint16_t)(frags[1].size) : 0,
     };
 
     ret = modem_cmux_transmit_data_frame(cmux, &frame);

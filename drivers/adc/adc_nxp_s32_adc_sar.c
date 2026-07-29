@@ -174,7 +174,7 @@ static int adc_nxp_s32_validate_buffer_size(const struct device* dev,
     }
 
     if (sequence->buffer_size < needed_size) {
-        return (-ENOSPC);
+        return (-ENOMEM);
     }
 
     return (0);
@@ -518,43 +518,43 @@ DT_INST_FOREACH_STATUS_OKAY(ADC_NXP_S32_INIT_DEVICE)
 #include "mcu_reg_stub.h"
 
 #define S32_ADC_CFG_REG_INIT(n)                                                 \
-	zephyr_gtest_adc_s32k3_reg_init(DEVICE_DT_GET(DT_DRV_INST(n)), &adc_nxp_s32_data_##n,\
-					                &adc_nxp_s32_config_##n);
+    zephyr_gtest_adc_s32k3_reg_init(DEVICE_DT_GET(DT_DRV_INST(n)), &adc_nxp_s32_data_##n,\
+                                    &adc_nxp_s32_config_##n);
 
 static void zephyr_gtest_adc_s32k3_reg_init(const struct device* dev, struct adc_nxp_s32_data* data,
                                             struct adc_nxp_s32_config* cfg) {
-	ARG_UNUSED(data);
-	uintptr_t base_addr = (uintptr_t)cfg->base;
-	int rc;
+    ARG_UNUSED(data);
+    uintptr_t base_addr = (uintptr_t)cfg->base;
+    int rc;
 
-	switch (base_addr) {
-	    case 0x400A0000UL : /* IP_ADC_0_BASE */ {
-		    cfg->base = (ADC_Type*)ut_mcu_adc_0_area;
-		    cfg->instance = 0U;
-		    break;
-	    }
+    switch (base_addr) {
+        case 0x400A0000UL : /* IP_ADC_0_BASE */ {
+            cfg->base = (ADC_Type*)ut_mcu_adc_0_area;
+            cfg->instance = 0U;
+            break;
+        }
 
-	    case 0x400A4000UL : /* IP_ADC_1_BASE */ {
-		    cfg->base = (ADC_Type*)ut_mcu_adc_1_area;
-		    cfg->instance = 1U;
-		    break;
-	    }
+        case 0x400A4000UL : /* IP_ADC_1_BASE */ {
+            cfg->base = (ADC_Type*)ut_mcu_adc_1_area;
+            cfg->instance = 1U;
+            break;
+        }
 
-	    default: { /* IP_ADC_2_BASE */
-		    cfg->base = (ADC_Type *)ut_mcu_adc_2_area;
-		    cfg->instance = 2U;
-		    break;
-	    }
-	}
+        default: { /* IP_ADC_2_BASE */
+            cfg->base = (ADC_Type *)ut_mcu_adc_2_area;
+            cfg->instance = 2U;
+            break;
+        }
+    }
 
-	rc = dev->ops.init(dev);
-	if (rc == 0) {
-		dev->state->initialized = true;
-		dev->state->init_res = 0U;
-	}
+    rc = dev->ops.init(dev);
+    if (rc == 0) {
+        dev->state->initialized = true;
+        dev->state->init_res = 0U;
+    }
 }
 
 void zephyr_gtest_adc_s32k3(void) {
-	DT_INST_FOREACH_STATUS_OKAY(S32_ADC_CFG_REG_INIT)
+    DT_INST_FOREACH_STATUS_OKAY(S32_ADC_CFG_REG_INIT)
 }
 #endif
