@@ -99,19 +99,19 @@ static struct flash_parameters ifx_serial_memory_flash_parameters = {
     .erase_value      = 0xFF,
 };
 
-static inline void ifx_serial_memory_sem_take(const struct device* dev) {
+static inline void ifx_serial_memory_sem_take(struct device const* dev) {
     struct ifx_serial_memory_flash_data* data = dev->data;
 
     k_sem_take(&data->sem, K_FOREVER);
 }
 
-static inline void ifx_serial_memory_sem_give(const struct device* dev) {
+static inline void ifx_serial_memory_sem_give(struct device const* dev) {
     struct ifx_serial_memory_flash_data* data = dev->data;
 
     k_sem_give(&data->sem);
 }
 
-static int ifx_serial_memory_flash_read(const struct device* dev, off_t offset, void* data,
+static int ifx_serial_memory_flash_read(struct device const* dev, off_t offset, void* data,
                                         size_t data_len) {
     cy_rslt_t rslt;
     int ret = 0;
@@ -133,7 +133,7 @@ static int ifx_serial_memory_flash_read(const struct device* dev, off_t offset, 
     return (ret);
 }
 
-static int ifx_serial_memory_flash_write(const struct device* dev, off_t offset, void const* data,
+static int ifx_serial_memory_flash_write(struct device const* dev, off_t offset, void const* data,
                                          size_t data_len) {
     cy_rslt_t rslt;
     int ret = 0;
@@ -159,7 +159,7 @@ static int ifx_serial_memory_flash_write(const struct device* dev, off_t offset,
     return (ret);
 }
 
-static int ifx_serial_memory_flash_erase(const struct device* dev, off_t offset, size_t size) {
+static int ifx_serial_memory_flash_erase(struct device const* dev, off_t offset, size_t size) {
     cy_rslt_t rslt;
     int ret = 0;
 
@@ -186,7 +186,7 @@ static const struct flash_pages_layout ifx_serial_memory_flash_pages_layout = {
     .pages_size  = PAGE_LEN,
 };
 
-static void ifx_serial_memory_flash_page_layout(const struct device* dev,
+static void ifx_serial_memory_flash_page_layout(struct device const* dev,
                                                 const struct flash_pages_layout** layout,
                                                 size_t* layout_size) {
     *layout = &ifx_serial_memory_flash_pages_layout;
@@ -201,10 +201,18 @@ static void ifx_serial_memory_flash_page_layout(const struct device* dev,
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
 static const struct flash_parameters*
-ifx_serial_memory_flash_get_parameters(const struct device* dev) {
+ifx_serial_memory_flash_get_parameters(struct device const* dev) {
     ARG_UNUSED(dev);
 
     return &ifx_serial_memory_flash_parameters;
+}
+
+static int ifx_serial_memory_flash_get_size(struct device const* dev, uint64_t* size) {
+    ARG_UNUSED(dev);
+
+    *size = DT_REG_SIZE(SOC_NV_FLASH_NODE);
+
+    return (0);
 }
 
 #ifdef CONFIG_PM
@@ -316,7 +324,7 @@ static int ifx_serial_memory_hw_init(void) {
 }
 #endif /* CONFIG_FLASH_INFINEON_SMIF_HW_INIT */
 
-static int ifx_serial_memory_flash_init(const struct device* dev) {
+static int ifx_serial_memory_flash_init(struct device const* dev) {
     struct ifx_serial_memory_flash_data* data = dev->data;
 
     #ifdef CONFIG_FLASH_INFINEON_SMIF_HW_INIT
@@ -358,7 +366,7 @@ static DEVICE_API(flash, ifx_serial_memory_flash_driver_api) = {
     .write = ifx_serial_memory_flash_write,
     .erase = ifx_serial_memory_flash_erase,
     .get_parameters = ifx_serial_memory_flash_get_parameters,
-
+    .get_size = ifx_serial_memory_flash_get_size,
     #ifdef CONFIG_FLASH_PAGE_LAYOUT
     .page_layout = ifx_serial_memory_flash_page_layout,
     #endif /* CONFIG_FLASH_PAGE_LAYOUT */

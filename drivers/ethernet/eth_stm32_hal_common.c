@@ -267,8 +267,6 @@ static void eth_stm32_iface_init(struct net_if *iface)
 
 	net_if_carrier_off(iface);
 
-	net_lldp_set_lldpdu(iface);
-
 	if (device_is_ready(cfg->phy_dev)) {
 		ret = eth_stm32_phy_reset_and_configure(cfg->phy_dev);
 		if (ret != 0) {
