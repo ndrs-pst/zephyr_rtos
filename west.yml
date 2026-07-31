@@ -205,7 +205,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 39a63673760940e58ee4241238a0642f3c9d39a8
+      revision: 12e1c277b98ef765732e2b2a476076e5bb6c16f4
       path: modules/hal/nordic
       groups:
         - hal
@@ -231,7 +231,7 @@ manifest:
         - hal
     - name: hal_realtek
       path: modules/hal/realtek
-      revision: ba5032a9e47b6ad9e9488665c1e990ed0f434734
+      revision: c20e7ee9744a1b9b5f05b99260930a7f196b9b12
       groups:
         - hal
     - name: hal_renesas

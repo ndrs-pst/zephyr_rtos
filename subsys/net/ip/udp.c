@@ -57,12 +57,12 @@ int net_udp_finalize(struct net_pkt *pkt, bool force_chksum)
 	}
 
 	udp_hdr->len = net_htons(length);
+	udp_hdr->chksum = 0U;
 
 	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt), type) || force_chksum) {
 		uint16_t chksum = 0;
 		int ret;
 
-		udp_hdr->chksum = 0;
 		ret = net_calc_chksum_udp(pkt, &chksum);
 		if (ret < 0) {
 			return ret;

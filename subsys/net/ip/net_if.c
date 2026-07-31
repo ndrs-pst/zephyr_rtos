@@ -1962,8 +1962,16 @@ struct net_if_addr* net_if_ipv6_addr_lookup_raw(const uint8_t* addr,
                 }
 
                 ifaddr = &ipv6->unicast[i];
-                net_if_unlock(iface);
-                goto out;
+
+                /* If the interface is up, return the result immediately.
+                 * Otherwise, keep searching and return the result only after
+                 * checking there's no other interface that is up with given
+                 * address.
+                 */
+                if (net_if_is_up(iface)) {
+                    net_if_unlock(iface);
+                    goto out;
+                }
             }
         }
 
@@ -3297,6 +3305,10 @@ static struct net_in6_addr* net_if_ipv6_get_best_match(struct net_if* iface,
     uint8_t temp_addr_len = 0;
     bool ret;
 
+    if (!net_if_is_up(iface)) {
+        return (src);
+    }
+
     net_if_lock(iface);
 
     ipv6 = iface->config.ip.ipv6;
@@ -4083,6 +4095,10 @@ static struct net_in_addr* net_if_ipv4_get_best_match(struct net_if* iface,
     struct net_in_addr* src = NULL;
     uint8_t len;
 
+    if (!net_if_is_up(iface)) {
+        return (src);
+    }
+
     net_if_lock(iface);
 
     ipv4 = iface->config.ip.ipv4;
@@ -4344,8 +4360,16 @@ struct net_if_addr* net_if_ipv4_addr_lookup_raw(uint8_t const* addr,
                 }
 
                 ifaddr = &unicast->ipv4;
-                net_if_unlock(iface);
-                goto out;
+
+                /* If the interface is up, return the result immediately.
+                 * Otherwise, keep searching and return the result only after
+                 * checking there's no other interface that is up with given
+                 * address.
+                 */
+                if (net_if_is_up(iface)) {
+                    net_if_unlock(iface);
+                    goto out;
+                }
             }
         }
 

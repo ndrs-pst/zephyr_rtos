@@ -270,6 +270,21 @@ New APIs and options
     (:kconfig:option:`CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL`) to enable or
     disable the mDNS responder on a network interface at runtime.
 
+* Power Management
+
+  * :c:macro:`LOG_DBG_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_WRN_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_ERR_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_DBG_PM_DEVICE_RUNTIME_PUT`
+  * :c:macro:`LOG_WRN_PM_DEVICE_RUNTIME_PUT`
+  * :c:macro:`LOG_ERR_PM_DEVICE_RUNTIME_PUT`
+  * :c:macro:`LOG_INST_DBG_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_INST_WRN_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_INST_ERR_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_INST_DBG_PM_DEVICE_RUNTIME_PUT`
+  * :c:macro:`LOG_INST_WRN_PM_DEVICE_RUNTIME_PUT`
+  * :c:macro:`LOG_INST_ERR_PM_DEVICE_RUNTIME_PUT`
+
 * Ring buffer
 
   * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
@@ -442,6 +457,16 @@ Other notable changes
     production-signed images, while production bootloaders embed only the production
     key. The first entry is the key the application is signed with and the rest are
     verification-only public keys. See :ref:`build-signing`.
+
+* Arm
+
+  * The non-secure variant of
+      :zephyr:board:`Arm Musca-S1 <v2m_musca_s1>` (``v2m_musca_s1/musca_s1/ns``)
+      has been removed due to TF-M removing platform support for this board.
+
+  * As a consequence of the above, the secure variant of
+    :zephyr:board:`Arm Musca-S1 <v2m_musca_s1>` (``v2m_musca_s1``) has been deprecated.
+    This is to avoid a confusing state of partial support.
 
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write

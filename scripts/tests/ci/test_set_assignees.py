@@ -496,6 +496,30 @@ class TestSetupLogging:
 # ---------------------------------------------------------------------------
 
 
+def _suggested_payload(suggestions):
+    """Wrap *suggestions* in the GraphQL envelope suggestedReviewers returns.
+
+    Each entry is (login, is_author); the reviewer sub-object mirrors the real
+    schema so the SUT's unwrapping is exercised for real.
+    """
+    return {
+        "data": {
+            "repository": {
+                "pullRequest": {
+                    "suggestedReviewers": [
+                        {
+                            "isAuthor": is_author,
+                            "isCommenter": not is_author,
+                            "reviewer": {"login": login},
+                        }
+                        for login, is_author in suggestions
+                    ]
+                }
+            }
+        }
+    }
+
+
 def _make_process_pr_harness(areas_per_file, pr_user="someone"):
     """Return (gh, args, maintainer_file, pr) ready for sut.process_pr().
 
@@ -517,6 +541,7 @@ def _make_process_pr_harness(areas_per_file, pr_user="someone"):
     pr.get_reviews.return_value = []
     pr.get_review_requests.return_value = ([], [])
     pr.get_issue_events.return_value = []
+    pr.get_issue_comments.return_value = []
 
     mf = MagicMock()
     mf.path2areas.side_effect = lambda p: areas_per_file.get(p, [])
@@ -541,8 +566,12 @@ def _make_process_pr_harness(areas_per_file, pr_user="someone"):
     gh_repo = MagicMock()
     gh.get_repo.return_value = gh_repo
     gh.get_user.side_effect = _get_user
+    # No GitHub-suggested reviewers by default; tests override as needed.
+    gh.requester.graphql_query.return_value = ({}, _suggested_payload([]))
     gh_repo.get_pull.return_value = pr
     gh_repo.has_in_collaborators.return_value = True
+    # No Git history by default; individual tests override per path as needed.
+    gh_repo.get_commits.return_value = []
 
     args = SimpleNamespace(
         org="testorg",
@@ -631,3 +660,733 @@ class TestDeferredFileGroups:
         sut.process_pr(gh, args, mf, 99)
 
         assert "net_m" in _assignees_set(pr)
+
+
+# ---------------------------------------------------------------------------
+# _build_reviewer_candidates
+# ---------------------------------------------------------------------------
+
+
+class TestBuildReviewerCandidates:
+    """Reviewer candidates must list every area's maintainers before any
+    collaborator, so that truncation to the reviewer cap never drops a
+    maintainer in favour of a higher-weight area's collaborator."""
+
+    @staticmethod
+    def _mf(*areas):
+        mf = SimpleNamespace(areas={area.name: area for area in areas})
+        return mf
+
+    def test_all_maintainers_precede_all_collaborators(self):
+        net = _make_area("Networking", maintainers=["net_m"], collaborators=["net_c"])
+        usb = _make_area("USB", maintainers=["usb_m"], collaborators=["usb_c"])
+        mf = self._mf(net, usb)
+
+        result = sut._build_reviewer_candidates(mf, {net: 5, usb: 2}, set(), set(), set())
+
+        assert result == ["net_m", "usb_m", "net_c", "usb_c"]
+
+    def test_maintainer_order_follows_area_weight(self):
+        net = _make_area("Networking", maintainers=["net_m"])
+        usb = _make_area("USB", maintainers=["usb_m"])
+        mf = self._mf(net, usb)
+
+        # area_counter is pre-sorted by descending weight by the caller.
+        result = sut._build_reviewer_candidates(mf, {usb: 9, net: 1}, set(), set(), set())
+
+        assert result == ["usb_m", "net_m"]
+
+    def test_extra_and_deferred_reviewers_join_maintainer_tier(self):
+        net = _make_area("Networking", maintainers=["net_m"], collaborators=["net_c"])
+        mf = self._mf(net)
+
+        result = sut._build_reviewer_candidates(
+            mf, {net: 1}, {"path_c"}, {"extra_m"}, {"deferred_m"}
+        )
+
+        assert result == ["net_m", "extra_m", "deferred_m", "net_c", "path_c"]
+
+    def test_duplicates_are_removed_keeping_first_occurrence(self):
+        net = _make_area("Networking", maintainers=["alice"], collaborators=["bob"])
+        usb = _make_area("USB", maintainers=["bob"], collaborators=["alice"])
+        mf = self._mf(net, usb)
+
+        result = sut._build_reviewer_candidates(mf, {net: 3, usb: 1}, set(), set(), set())
+
+        # 'bob' is a maintainer of USB, so he keeps his maintainer-tier slot
+        # rather than the collaborator slot he also holds in Networking.
+        assert result == ["alice", "bob"]
+
+    def test_no_areas_returns_only_extra_reviewers(self):
+        mf = self._mf()
+
+        result = sut._build_reviewer_candidates(mf, {}, set(), {"extra_m"}, set())
+
+        assert result == ["extra_m"]
+
+    def test_broad_pr_requests_every_maintainer_then_collaborators(self):
+        """A broad PR requests everyone eligible -- no cap -- with all area
+        maintainers ranked ahead of any collaborator."""
+        areas_per_file = {}
+        for i in range(8):
+            area = _make_area(
+                f"Area{i}",
+                maintainers=[f"m{i}"],
+                collaborators=[f"c{i}a", f"c{i}b", f"c{i}c", f"c{i}d"],
+            )
+            areas_per_file[f"subsys/area{i}/foo.c"] = [area]
+
+        gh, args, mf, pr = _make_process_pr_harness(areas_per_file)
+        sut.process_pr(gh, args, mf, 99)
+
+        requested = _reviewers_requested(pr)
+        # 8 maintainers + 8*4 collaborators, none dropped.
+        assert len(requested) == 40
+        assert requested[:8] == [f"m{i}" for i in range(8)]
+
+
+# ---------------------------------------------------------------------------
+# _thin_areas
+# ---------------------------------------------------------------------------
+
+
+class TestThinAreas:
+    @staticmethod
+    def _mf(*areas):
+        return SimpleNamespace(areas={area.name: area for area in areas})
+
+    def test_area_without_maintainers_is_thin(self):
+        area = _make_area("Orphan", maintainers=[], collaborators=["a", "b", "c", "d"])
+        mf = self._mf(area)
+        assert sut._thin_areas(mf, {area: 1}) == {"Orphan"}
+
+    def test_area_with_few_collaborators_is_thin(self):
+        area = _make_area("Small", maintainers=["m"], collaborators=["a", "b"])
+        mf = self._mf(area)
+        assert sut._thin_areas(mf, {area: 1}) == {"Small"}
+
+    def test_well_covered_area_is_not_thin(self):
+        area = _make_area("Big", maintainers=["m"], collaborators=["a", "b", "c"])
+        mf = self._mf(area)
+        assert sut._thin_areas(mf, {area: 1}) == set()
+
+    def test_threshold_is_inclusive(self):
+        area = _make_area(
+            "AtLimit",
+            maintainers=["m"],
+            collaborators=["a"] * sut.THIN_AREA_COLLABORATORS,
+        )
+        mf = self._mf(area)
+        assert sut._thin_areas(mf, {area: 1}) == {"AtLimit"}
+
+    def test_mixed_areas_reports_only_thin_ones(self):
+        thin = _make_area("Thin", maintainers=[], collaborators=[])
+        full = _make_area("Full", maintainers=["m"], collaborators=["a", "b", "c"])
+        mf = self._mf(thin, full)
+        assert sut._thin_areas(mf, {thin: 2, full: 1}) == {"Thin"}
+
+
+# ---------------------------------------------------------------------------
+# _history_reviewers
+# ---------------------------------------------------------------------------
+
+
+def _commit(login):
+    """A stub commit whose GitHub-resolved author has *login* (None => unmatched)."""
+    author = SimpleNamespace(login=login) if login is not None else None
+    return SimpleNamespace(author=author)
+
+
+def _repo_with_history(history):
+    """gh_repo stub whose get_commits(path=...) returns history[path] (or [])."""
+    repo = MagicMock()
+    repo.get_commits.side_effect = lambda path: list(history.get(path, []))
+    return repo
+
+
+class TestHistoryReviewers:
+    def test_ranks_contributors_by_commit_count(self):
+        history = {
+            "f.c": [_commit("alice"), _commit("bob"), _commit("alice")],
+        }
+        repo = _repo_with_history(history)
+        result = sut._history_reviewers(repo, {"f.c"}, exclude=set())
+        assert result == ["alice", "bob"]
+
+    def test_excluded_logins_are_dropped(self):
+        history = {"f.c": [_commit("author"), _commit("alice")]}
+        repo = _repo_with_history(history)
+        result = sut._history_reviewers(repo, {"f.c"}, exclude={"author"})
+        assert result == ["alice"]
+
+    def test_unmatched_authors_are_ignored(self):
+        history = {"f.c": [_commit(None), _commit("alice"), _commit(None)]}
+        repo = _repo_with_history(history)
+        result = sut._history_reviewers(repo, {"f.c"}, exclude=set())
+        assert result == ["alice"]
+
+    def test_result_is_capped(self):
+        history = {
+            "f.c": [_commit(name) for name in ["a", "a", "b", "b", "c", "c", "d", "d"]],
+        }
+        repo = _repo_with_history(history)
+        result = sut._history_reviewers(repo, {"f.c"}, exclude=set())
+        assert len(result) == sut.MAX_HISTORY_REVIEWERS
+
+    def test_commits_sampled_per_file_are_bounded(self):
+        # More commits than the per-file sample budget; only the first
+        # HISTORY_COMMITS_PER_FILE are counted.
+        commits = [_commit("early")] * sut.HISTORY_COMMITS_PER_FILE + [_commit("late")]
+        repo = _repo_with_history({"f.c": commits})
+        result = sut._history_reviewers(repo, {"f.c"}, exclude=set())
+        assert result == ["early"]
+
+    def test_github_exception_on_a_file_is_skipped(self):
+        def _raise_or_return(path):
+            if path == "bad.c":
+                raise sut.GithubException("no history")
+            return [_commit("alice")]
+
+        repo = MagicMock()
+        repo.get_commits.side_effect = _raise_or_return
+        result = sut._history_reviewers(repo, {"bad.c", "good.c"}, exclude=set())
+        assert result == ["alice"]
+
+    def test_contributions_aggregate_across_files(self):
+        history = {
+            "a.c": [_commit("alice")],
+            "b.c": [_commit("alice"), _commit("bob")],
+        }
+        repo = _repo_with_history(history)
+        result = sut._history_reviewers(repo, {"a.c", "b.c"}, exclude=set())
+        assert result == ["alice", "bob"]
+
+
+# ---------------------------------------------------------------------------
+# _suggested_reviewers
+# ---------------------------------------------------------------------------
+
+
+def _gh_with_suggestions(payload):
+    """Github stub whose requester.graphql_query returns *payload*."""
+    gh = MagicMock()
+    gh.requester.graphql_query.return_value = ({}, payload)
+    return gh
+
+
+def _suggest_args():
+    return SimpleNamespace(org="zephyrproject-rtos", repo="zephyr")
+
+
+def _suggest_pr(number=99):
+    return SimpleNamespace(number=number)
+
+
+class TestSuggestedReviewers:
+    def test_returns_suggested_logins(self):
+        gh = _gh_with_suggestions(_suggested_payload([("alice", True), ("bob", True)]))
+        result = sut._suggested_reviewers(gh, _suggest_args(), _suggest_pr(), exclude=set())
+        assert result == ["alice", "bob"]
+
+    def test_authors_rank_ahead_of_commenters(self):
+        gh = _gh_with_suggestions(_suggested_payload([("commenter", False), ("author", True)]))
+        result = sut._suggested_reviewers(gh, _suggest_args(), _suggest_pr(), exclude=set())
+        assert result == ["author", "commenter"]
+
+    def test_excluded_logins_are_dropped(self):
+        gh = _gh_with_suggestions(_suggested_payload([("alice", True), ("known", True)]))
+        result = sut._suggested_reviewers(gh, _suggest_args(), _suggest_pr(), exclude={"known"})
+        assert result == ["alice"]
+
+    def test_empty_suggestion_list(self):
+        gh = _gh_with_suggestions(_suggested_payload([]))
+        assert sut._suggested_reviewers(gh, _suggest_args(), _suggest_pr(), set()) == []
+
+    def test_null_suggestion_list_is_tolerated(self):
+        payload = {"data": {"repository": {"pullRequest": {"suggestedReviewers": None}}}}
+        gh = _gh_with_suggestions(payload)
+        assert sut._suggested_reviewers(gh, _suggest_args(), _suggest_pr(), set()) == []
+
+    def test_malformed_response_returns_empty(self):
+        gh = _gh_with_suggestions({"data": {"repository": None}})
+        assert sut._suggested_reviewers(gh, _suggest_args(), _suggest_pr(), set()) == []
+
+    def test_graphql_exception_returns_empty(self):
+        gh = MagicMock()
+        gh.requester.graphql_query.side_effect = sut.GithubException("boom")
+        assert sut._suggested_reviewers(gh, _suggest_args(), _suggest_pr(), set()) == []
+
+    def test_query_is_parameterised_with_pr_coordinates(self):
+        gh = _gh_with_suggestions(_suggested_payload([]))
+        sut._suggested_reviewers(gh, _suggest_args(), _suggest_pr(1234), set())
+        _query, variables = gh.requester.graphql_query.call_args.args
+        assert variables == {
+            "owner": "zephyrproject-rtos",
+            "name": "zephyr",
+            "number": 1234,
+        }
+
+
+# ---------------------------------------------------------------------------
+# Heuristic reviewers  (process_pr integration)
+# ---------------------------------------------------------------------------
+
+
+class TestHistoryReviewersIntegration:
+    def test_orphan_area_gets_history_reviewer(self):
+        """An area with no maintainers pulls a recent contributor as reviewer."""
+        area = _make_area("Orphan", maintainers=[], collaborators=[])
+        areas = {"subsys/orphan/foo.c": [area]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas)
+        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+            SimpleNamespace(author=SimpleNamespace(login="frequent_contributor"))
+        ]
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "frequent_contributor" in _reviewers_requested(pr)
+
+    def test_history_reviewer_excludes_pr_author(self):
+        area = _make_area("Orphan", maintainers=[], collaborators=[])
+        areas = {"subsys/orphan/foo.c": [area]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas, pr_user="self")
+        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+            SimpleNamespace(author=SimpleNamespace(login="self"))
+        ]
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "self" not in _reviewers_requested(pr)
+
+    def test_well_covered_area_skips_history_lookup(self):
+        """A fully-staffed area must not trigger any commit-history query."""
+        area = _make_area("Full", maintainers=["m"], collaborators=["c1", "c2", "c3"])
+        areas = {"subsys/full/foo.c": [area]}
+
+        gh, args, mf, _ = _make_process_pr_harness(areas)
+        sut.process_pr(gh, args, mf, 99)
+
+        gh.get_repo.return_value.get_commits.assert_not_called()
+
+    def test_well_covered_area_skips_suggestion_query(self):
+        """A fully-staffed area must not trigger the GraphQL query either."""
+        area = _make_area("Full", maintainers=["m"], collaborators=["c1", "c2", "c3"])
+        areas = {"subsys/full/foo.c": [area]}
+
+        gh, args, mf, _ = _make_process_pr_harness(areas)
+        sut.process_pr(gh, args, mf, 99)
+
+        gh.requester.graphql_query.assert_not_called()
+
+    def test_github_suggestion_is_preferred_over_history(self):
+        """When GitHub suggests reviewers, the commit walk is skipped."""
+        area = _make_area("Orphan", maintainers=[], collaborators=[])
+        areas = {"subsys/orphan/foo.c": [area]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas)
+        gh.requester.graphql_query.return_value = (
+            {},
+            _suggested_payload([("suggested_by_github", True)]),
+        )
+        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+            SimpleNamespace(author=SimpleNamespace(login="from_history"))
+        ]
+        sut.process_pr(gh, args, mf, 99)
+
+        requested = _reviewers_requested(pr)
+        assert "suggested_by_github" in requested
+        assert "from_history" not in requested
+        gh.get_repo.return_value.get_commits.assert_not_called()
+
+    def test_falls_back_to_history_when_github_suggests_nobody(self):
+        """GitHub's suggestions are empty for most PRs; the walk must cover that."""
+        area = _make_area("Orphan", maintainers=[], collaborators=[])
+        areas = {"subsys/orphan/foo.c": [area]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas)
+        gh.requester.graphql_query.return_value = ({}, _suggested_payload([]))
+        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+            SimpleNamespace(author=SimpleNamespace(login="from_history"))
+        ]
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "from_history" in _reviewers_requested(pr)
+
+    def test_github_suggestions_are_capped(self):
+        area = _make_area("Orphan", maintainers=[], collaborators=[])
+        areas = {"subsys/orphan/foo.c": [area]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas)
+        gh.requester.graphql_query.return_value = (
+            {},
+            _suggested_payload([(f"s{i}", True) for i in range(10)]),
+        )
+        sut.process_pr(gh, args, mf, 99)
+
+        requested = _reviewers_requested(pr)
+        assert len([r for r in requested if r.startswith("s")]) == sut.MAX_HISTORY_REVIEWERS
+
+    def test_github_suggestion_excludes_pr_author(self):
+        area = _make_area("Orphan", maintainers=[], collaborators=[])
+        areas = {"subsys/orphan/foo.c": [area]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas, pr_user="self")
+        gh.requester.graphql_query.return_value = (
+            {},
+            _suggested_payload([("self", True)]),
+        )
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "self" not in _reviewers_requested(pr)
+
+
+class TestUnmatchedFiles:
+    """A file matching no area at all yields no reviewer from MAINTAINERS.yml,
+    so it must still reach the heuristics (see PR #112563, a lone doc change
+    to an orphaned path)."""
+
+    def test_pr_with_no_matching_area_uses_github_suggestion(self):
+        gh, args, mf, pr = _make_process_pr_harness({"doc/orphaned.rst": []})
+        gh.requester.graphql_query.return_value = (
+            {},
+            _suggested_payload([("foouser", False)]),
+        )
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "foouser" in _reviewers_requested(pr)
+
+    def test_pr_with_no_matching_area_falls_back_to_history(self):
+        gh, args, mf, pr = _make_process_pr_harness({"doc/orphaned.rst": []})
+        gh.requester.graphql_query.return_value = ({}, _suggested_payload([]))
+        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+            SimpleNamespace(author=SimpleNamespace(login="baruser"))
+        ]
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "baruser" in _reviewers_requested(pr)
+
+    def test_history_is_scoped_to_the_orphaned_files(self):
+        """Only the unmatched file is walked, not the well-covered one."""
+        covered = _make_area("Full", maintainers=["m"], collaborators=["c1", "c2", "c3"])
+        areas = {"doc/orphaned.rst": [], "subsys/full/foo.c": [covered]}
+
+        gh, args, mf, _ = _make_process_pr_harness(areas)
+        gh.requester.graphql_query.return_value = ({}, _suggested_payload([]))
+        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+            SimpleNamespace(author=SimpleNamespace(login="doc_author"))
+        ]
+        sut.process_pr(gh, args, mf, 99)
+
+        walked = [
+            call.kwargs.get("path") for call in gh.get_repo.return_value.get_commits.call_args_list
+        ]
+        assert walked == ["doc/orphaned.rst"]
+
+    def test_maintainers_still_rank_ahead_of_heuristics(self):
+        """A mixed PR keeps real maintainers first; heuristics only top up."""
+        covered = _make_area("Full", maintainers=["real_m"], collaborators=["c1", "c2", "c3"])
+        areas = {"doc/orphaned.rst": [], "subsys/full/foo.c": [covered]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas)
+        gh.requester.graphql_query.return_value = (
+            {},
+            _suggested_payload([("heuristic_r", True)]),
+        )
+        sut.process_pr(gh, args, mf, 99)
+
+        requested = _reviewers_requested(pr)
+        assert requested.index("real_m") < requested.index("heuristic_r")
+
+    def test_fully_matched_pr_triggers_no_heuristic(self):
+        covered = _make_area("Full", maintainers=["m"], collaborators=["c1", "c2", "c3"])
+        gh, args, mf, _ = _make_process_pr_harness({"subsys/full/foo.c": [covered]})
+        sut.process_pr(gh, args, mf, 99)
+
+        gh.requester.graphql_query.assert_not_called()
+        gh.get_repo.return_value.get_commits.assert_not_called()
+
+    def test_no_reviewer_found_at_all_does_not_crash(self):
+        """Orphaned file with no suggestions and no history: nothing requested."""
+        gh, args, mf, pr = _make_process_pr_harness({"doc/orphaned.rst": []})
+        gh.requester.graphql_query.return_value = ({}, _suggested_payload([]))
+        gh.get_repo.return_value.get_commits.side_effect = lambda path: []
+        sut.process_pr(gh, args, mf, 99)
+
+        assert _reviewers_requested(pr) == []
+
+
+# ---------------------------------------------------------------------------
+# Reviewer cap removal  (_add_reviewers)
+# ---------------------------------------------------------------------------
+
+
+def _make_add_reviewers_stubs(author="author"):
+    """Return (gh, gh_repo, pr, args) for a direct _add_reviewers() call."""
+    pr = MagicMock()
+    pr.number = 7
+    pr.get_reviews.return_value = []
+    pr.get_review_requests.return_value = ([], [])
+    pr.get_issue_events.return_value = []
+    pr.get_issue_comments.return_value = []
+
+    cache = {}
+
+    def _get_user(login):
+        if login not in cache:
+            user = MagicMock()
+            user.login = login
+            cache[login] = user
+        return cache[login]
+
+    gh = MagicMock()
+    gh.get_user.side_effect = _get_user
+    pr.user = _get_user(author)
+
+    gh_repo = MagicMock()
+    gh_repo.has_in_collaborators.return_value = True
+
+    return gh, gh_repo, pr, SimpleNamespace(dry_run=False)
+
+
+class TestNoReviewerCap:
+    """The old MAX_REVIEWERS cap is gone: every eligible candidate is
+    requested, and GitHub decides what it will accept."""
+
+    def test_all_candidates_are_requested(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        candidates = [f"u{i}" for i in range(40)]
+
+        sut._add_reviewers(gh, gh_repo, pr, args, candidates)
+
+        assert _reviewers_requested(pr) == candidates
+
+    def test_many_existing_reviewers_no_longer_restricts_candidates(self):
+        """Previously, a PR at or over the cap discarded the candidate list and
+        fell back to primary-area maintainers only."""
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        pr.get_reviews.return_value = [
+            SimpleNamespace(user=gh.get_user(f"old{i}")) for i in range(20)
+        ]
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["m1", "m2", "c1"])
+
+        assert _reviewers_requested(pr) == ["m1", "m2", "c1"]
+
+    def test_existing_reviewers_are_still_skipped(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        pr.get_review_requests.return_value = ([gh.get_user("already")], [])
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["already", "fresh"])
+
+        assert _reviewers_requested(pr) == ["fresh"]
+
+    def test_author_is_still_skipped(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs(author="me")
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["me", "someone"])
+
+        assert _reviewers_requested(pr) == ["someone"]
+
+    def test_dry_run_requests_nobody(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        args.dry_run = True
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["a", "b"])
+
+        pr.create_review_request.assert_not_called()
+
+
+class TestReviewRequestRetry:
+    """A rejected bulk request must not cost the PR all of its reviewers."""
+
+    def test_rejection_retries_with_highest_ranked_candidates(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        candidates = [f"u{i}" for i in range(25)]
+        pr.create_review_request.side_effect = [sut.GithubException("too many"), None]
+
+        sut._add_reviewers(gh, gh_repo, pr, args, candidates)
+
+        assert pr.create_review_request.call_count == 2
+        retried = pr.create_review_request.call_args_list[1].kwargs["reviewers"]
+        assert retried == candidates[: sut.REVIEWER_RETRY_BATCH]
+
+    def test_small_request_is_not_retried(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        pr.create_review_request.side_effect = sut.GithubException("nope")
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["a", "b"])
+
+        # Nothing to trim, so a retry would just repeat the failing call.
+        assert pr.create_review_request.call_count == 1
+
+    def test_failing_retry_does_not_raise(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        pr.create_review_request.side_effect = sut.GithubException("nope")
+
+        sut._add_reviewers(gh, gh_repo, pr, args, [f"u{i}" for i in range(25)])
+
+        assert pr.create_review_request.call_count == 2
+
+
+# ---------------------------------------------------------------------------
+# Mention fallback
+# ---------------------------------------------------------------------------
+
+
+def _posted_comments(pr):
+    """Bodies of every comment created on *pr*."""
+    return [call.args[0] for call in pr.create_issue_comment.call_args_list]
+
+
+def _mentioned(pr):
+    """Logins @mentioned in the single comment posted on *pr*."""
+    bodies = _posted_comments(pr)
+    assert len(bodies) == 1, f"expected exactly one comment, got {len(bodies)}"
+    return [word[1:] for word in bodies[0].split() if word.startswith("@")]
+
+
+def _existing_comment(body):
+    comment = MagicMock()
+    comment.body = body
+    return comment
+
+
+class TestMentionFallback:
+    """People who cannot receive a formal review request are asked by name in
+    a comment instead of being dropped."""
+
+    def test_non_collaborator_is_mentioned_not_requested(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        gh_repo.has_in_collaborators.side_effect = lambda user: user.login != "outsider"
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["insider", "outsider"])
+
+        assert _reviewers_requested(pr) == ["insider"]
+        assert _mentioned(pr) == ["outsider"]
+
+    def test_candidates_dropped_by_retry_are_mentioned(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        candidates = [f"u{i}" for i in range(25)]
+        pr.create_review_request.side_effect = [sut.GithubException("too many"), None]
+
+        sut._add_reviewers(gh, gh_repo, pr, args, candidates)
+
+        assert _mentioned(pr) == candidates[sut.REVIEWER_RETRY_BATCH :]
+
+    def test_everyone_is_mentioned_when_the_request_fails_outright(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        pr.create_review_request.side_effect = sut.GithubException("nope")
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["a", "b"])
+
+        assert _mentioned(pr) == ["a", "b"]
+
+    def test_self_removed_user_is_never_mentioned(self):
+        """Opting out must not be routed around by a mention."""
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        quitter = gh.get_user("quitter")
+        pr.get_issue_events.return_value = [
+            SimpleNamespace(
+                event="review_request_removed", actor=quitter, requested_reviewer=quitter
+            )
+        ]
+        # Also a non-collaborator, so only the opt-out can keep them out.
+        gh_repo.has_in_collaborators.side_effect = lambda user: user.login != "quitter"
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["quitter", "keeper"])
+
+        assert _reviewers_requested(pr) == ["keeper"]
+        pr.create_issue_comment.assert_not_called()
+
+    def test_author_and_existing_reviewers_are_not_mentioned(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs(author="me")
+        pr.get_review_requests.return_value = ([gh.get_user("already")], [])
+        gh_repo.has_in_collaborators.return_value = False
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["me", "already", "outsider"])
+
+        assert _mentioned(pr) == ["outsider"]
+
+    def test_nobody_to_mention_posts_no_comment(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["a", "b"])
+
+        pr.create_issue_comment.assert_not_called()
+
+    def test_comment_carries_the_marker(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        gh_repo.has_in_collaborators.return_value = False
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["outsider"])
+
+        assert sut.MENTION_MARKER in _posted_comments(pr)[0]
+
+    def test_dry_run_posts_no_comment(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        args.dry_run = True
+        gh_repo.has_in_collaborators.return_value = False
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["outsider"])
+
+        pr.create_issue_comment.assert_not_called()
+
+    def test_comment_creation_failure_does_not_raise(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        gh_repo.has_in_collaborators.return_value = False
+        pr.create_issue_comment.side_effect = sut.GithubException("no write access")
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["outsider"])
+
+
+class TestMentionCommentIsIdempotent:
+    """Re-running over the same PR must update the existing comment rather
+    than posting another one."""
+
+    def _run(self, existing_body, candidates=("outsider",)):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        gh_repo.has_in_collaborators.return_value = False
+        existing = _existing_comment(existing_body)
+        pr.get_issue_comments.return_value = [existing]
+        sut._add_reviewers(gh, gh_repo, pr, args, list(candidates))
+        return pr, existing
+
+    def test_existing_comment_is_edited_when_the_set_changes(self):
+        stale = f"{sut.MENTION_MARKER}\n@someone_else\n\nold text"
+        pr, existing = self._run(stale)
+
+        pr.create_issue_comment.assert_not_called()
+        existing.edit.assert_called_once()
+        assert "@outsider" in existing.edit.call_args.args[0]
+
+    def test_unchanged_comment_is_left_alone(self):
+        """A second identical run must not edit, to avoid timeline noise."""
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        gh_repo.has_in_collaborators.return_value = False
+        sut._add_reviewers(gh, gh_repo, pr, args, ["outsider"])
+        first_body = _posted_comments(pr)[0]
+
+        pr2, existing = self._run(first_body)
+
+        pr2.create_issue_comment.assert_not_called()
+        existing.edit.assert_not_called()
+
+    def test_unrelated_comments_are_ignored(self):
+        pr, _ = self._run("just a normal review comment, no marker")
+
+        assert len(_posted_comments(pr)) == 1
+
+    def test_maintainer_outside_the_org_reaches_the_comment(self):
+        """End-to-end: an area maintainer without push access is still asked."""
+        area = _make_area("Net", maintainers=["outside_m"], collaborators=["inside_c"])
+        gh, args, mf, pr = _make_process_pr_harness({"subsys/net/foo.c": [area]})
+        gh.requester.graphql_query.return_value = ({}, _suggested_payload([]))
+        gh.get_repo.return_value.get_commits.side_effect = lambda path: []
+        gh.get_repo.return_value.has_in_collaborators.side_effect = (
+            lambda user: user.login != "outside_m"
+        )
+
+        sut.process_pr(gh, args, mf, 99)
+
+        assert _reviewers_requested(pr) == ["inside_c"]
+        assert _mentioned(pr) == ["outside_m"]
