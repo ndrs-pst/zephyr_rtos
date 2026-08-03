@@ -190,7 +190,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: b55e593ba98e34acf4de3ec86254d7bc2718d508
+      revision: 7d202825b07fee320e0f9e0a71284b42190e8ed8
       path: modules/hal/infineon
       groups:
         - hal
@@ -241,7 +241,7 @@ manifest:
         - hal
     - name: hal_rpi_pico
       path: modules/hal/rpi_pico
-      revision: 562b41e10a1d8b1a761b253b107c5c6a84cf4535
+      revision: 266394b0f23dff8f77c54f67f89d62cee246f21d
       groups:
         - hal
     - name: hal_sifli

@@ -245,7 +245,7 @@ static int mcux_lpuart_err_check(struct device const* dev) {
     }
 
     if (flags & kLPUART_NoiseErrorFlag) {
-        err |= UART_ERROR_PARITY;
+        err |= UART_ERROR_NOISE;
     }
 
     LPUART_ClearStatusFlags(lpuart, kLPUART_RxOverrunFlag    |
@@ -1437,9 +1437,9 @@ static int mcux_lpuart_configure(struct device const* dev,
                                  struct uart_config const* cfg) {
     /* Wait for Transmission Complete Flag */
     while (!(get_base(dev)->STAT & LPUART_STAT_TC_MASK)) {
-	    if (__GTEST == 1) {
-		    break;
-	    }
+        if (__GTEST == 1) {
+            break;
+        }
     }
 
     /* Disable Transmitter and Receiver */

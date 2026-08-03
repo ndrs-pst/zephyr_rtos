@@ -486,6 +486,15 @@ Authentication:
   tests:
     - sample.authentication.fido2
 
+BLIIoT Platforms:
+  status: maintained
+  maintainers:
+    - tinegachris
+  files:
+    - boards/bliiot/
+  labels:
+    - "platform: BLIIoT"
+
 Base OS:
   status: maintained
   maintainers:
@@ -591,7 +600,6 @@ Bluetooth Audio:
     - asbjornsabo
     - fredrikdanebjer
     - larsgk
-    - pin-zephyr
     - niym-ot
     - jthm-ot
     - alexsven
@@ -2770,6 +2778,13 @@ Documentation Infrastructure:
     - doc/hardware/peripherals/sensor/
     - tests/drivers/build_all/sensor/
     - include/zephyr/drivers/sensor_*
+  file-groups:
+    - name: Vendor-owned sensor drivers
+      defer-to-other-areas: true
+      files:
+        - drivers/sensor/st/
+        - drivers/sensor/tdk/
+        - drivers/sensor/wsen/
   labels:
     - "area: Sensors"
   tests:
@@ -5520,6 +5535,15 @@ SPDX Tooling:
     - "area: SPDX Tooling"
   tests:
     - buildsystem.sbom.spdx
+
+ST Sensors:
+  status: maintained
+  maintainers:
+    - avisconti
+  files:
+    - drivers/sensor/st/
+  tests:
+    - drivers.sensor
 
 STM32 Platforms:
   status: maintained
