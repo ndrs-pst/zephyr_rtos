@@ -3958,7 +3958,7 @@ out :
 
 static bool ipv4_is_broadcast_address(struct net_if* iface,
                                       uint8_t const* addr) {
-    struct net_if_ipv4* ipv4;
+    struct net_if_ipv4 const* ipv4;
     bool ret = false;
     struct net_in_addr bcast;
 
@@ -3970,7 +3970,7 @@ static bool ipv4_is_broadcast_address(struct net_if* iface,
     }
 
     ARRAY_FOR_EACH(ipv4->unicast, i) {
-        struct net_if_addr_ipv4* unicast = &ipv4->unicast[i];
+        struct net_if_addr_ipv4 const* unicast = &ipv4->unicast[i];
 
         if (!unicast->ipv4.is_used ||
             (unicast->ipv4.address.family != NET_AF_INET)) {
@@ -4383,6 +4383,42 @@ out :
 struct net_if_addr* net_if_ipv4_addr_lookup(struct net_in_addr const* addr,
                                             struct net_if** ret) {
     return net_if_ipv4_addr_lookup_raw(addr->s4_addr, ret);
+}
+
+struct net_if_addr* net_if_ipv4_addr_lookup_by_iface_raw(struct net_if* iface,
+                                                         const uint8_t* addr) {
+    struct net_if_addr* ifaddr = NULL;
+    struct net_if_ipv4* ipv4;
+
+    net_if_lock(iface);
+
+    ipv4 = iface->config.ip.ipv4;
+    if (ipv4 == NULL) {
+        goto out;
+    }
+
+    ARRAY_FOR_EACH(ipv4->unicast, i) {
+        if (!ipv4->unicast[i].ipv4.is_used ||
+            ipv4->unicast[i].ipv4.address.family != NET_AF_INET) {
+            continue;
+        }
+
+        if (UNALIGNED_GET((uint32_t *)addr) ==
+            ipv4->unicast[i].ipv4.address.in_addr.s_addr_be) {
+            ifaddr = &ipv4->unicast[i].ipv4;
+            goto out;
+        }
+    }
+
+out :
+    net_if_unlock(iface);
+
+    return (ifaddr);
+}
+
+struct net_if_addr* net_if_ipv4_addr_lookup_by_iface(struct net_if* iface,
+                                                     const struct net_in_addr* addr) {
+    return net_if_ipv4_addr_lookup_by_iface_raw(iface, addr->s4_addr);
 }
 
 int z_impl_net_if_ipv4_addr_lookup_by_index(const struct net_in_addr* addr) {

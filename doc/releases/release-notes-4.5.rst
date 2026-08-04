@@ -112,6 +112,11 @@ Deprecated APIs and options
   * The :c:struct:`audio_codec_api` struct has been deprecated. Audio codec drivers are now
     expected to use the :c:macro:`DEVICE_API` macro to declare their driver API.
 
+* Build system
+
+  * The ``zephyr_file_copy()`` CMake function has been deprecated. Use the native
+    ``file(COPY_FILE ...)`` CMake command instead.
+
 * CPU Load
 
   * :kconfig:option:`CONFIG_CPU_LOAD_METRIC` and :c:func:`cpu_load_metric_get` are deprecated. The
@@ -241,6 +246,13 @@ New APIs and options
   * :c:func:`haptics_set_level`
   * :c:func:`haptics_stream_samples`
 
+* HWSPINLOCK
+
+  * :c:macro:`HWSPINLOCK_SPINLOCK_ARRAY_DT_DEFINE`
+  * :c:macro:`HWSPINLOCK_SPINLOCK_ARRAY_DT_INST_DEFINE`
+  * :c:macro:`HWSPINLOCK_COMMON_CONFIG_FROM_DT_NODE`
+  * :c:macro:`HWSPINLOCK_COMMON_CONFIG_FROM_DT_INST`
+
 * Kconfig
 
   * Add ``dt_partition_mtd`` preprocessor function (:github:`111599`)
@@ -342,6 +354,10 @@ New Drivers
 
   * VIRTIO input device (:dtcompatible:`virtio,input`).
 
+* Sensors
+
+  * Analog Devices ADXL313 3-axis accelerometer (:dtcompatible:`adi,adxl313`).
+
 * Clock Monitor
 
   * :dtcompatible:`nxp,cmu-fc` — NXP Clock Monitoring Unit (Frequency Check)
@@ -426,6 +442,12 @@ Devicetree
 Other notable changes
 *********************
 
+* Build system
+
+  * The minimum required CMake version has been raised to 3.28.0, a version satisfied by the CMake package in the
+    Ubuntu 24.04 LTS package repositories. See the :ref:`migration guide <migration_4.5>` for
+    options if your distribution ships an older version.
+
 * Kernel
 
   * :kconfig:option:`CONFIG_SCHED_CPU_MASK` no longer depends on
@@ -471,3 +493,10 @@ Other notable changes
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
+
+Trusted Firmware-A
+******************
+
+* ``CONFIG_TFA_BUILD_FIP`` is introduced to configure FIP (Firmware Image Package) generation.
+  FIP generation is by default disabled, but can be enabled by setting ``CONFIG_TFA_BUILD_FIP=y``
+  in ``prj.conf`` or for custom boards, in the board's ``<board>_defconfig`` file.

@@ -174,7 +174,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 150e0c1bd24fd568864ae50fa690e9ec526022a4
+      revision: aff3c2c094b32bd2d87fe9211a1b0d0a1d7aa198
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -215,7 +215,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 5f926fa3a597da54f36306dc0be9366404e51c38
+      revision: 0321b611579e92781798b376cf7b55569a8c31ad
       path: modules/hal/nxp
       groups:
         - hal
@@ -412,7 +412,7 @@ manifest:
       revision: 0d1452440356637a0a727f7f10b442b60977e930
       path: modules/lib/zcbor
     - name: zephyr-xenlib
-      revision: fa1fcd1d925f0ba82afaee81b323a9035e0c1269
+      revision: 7f0884563f865a2a223f26dd0d847fb0faad397d
       path: modules/lib/zephyr-xenlib
   # zephyr-keep-sorted-stop
     - name: thingset

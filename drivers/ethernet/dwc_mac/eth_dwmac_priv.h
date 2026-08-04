@@ -15,6 +15,7 @@
 #define ZEPHYR_DRIVERS_ETHERNET_ETH_DWMAC_PRIV_H_
 
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/net/ethernet.h>
 #include <zephyr/sys/device_mmio.h>
 
 /*
@@ -100,6 +101,10 @@ struct dwmac_config {
 	const struct device *phy_dev;
 	const struct device *clock;
 	const clock_control_subsys_t mac_clk;
+#if defined(CONFIG_PTP_CLOCK_DWC_MAC)
+	const struct device *ptp_clock;
+	const clock_control_subsys_t ptp_clk;
+#endif
 };
 
 struct dwmac_priv {
@@ -149,6 +154,57 @@ struct dwmac_priv {
 #define DWMAC_REG_WRITE(r, v) sys_write32((v), DEVICE_MMIO_GET(dev) + (r))
 
 /*
+ * PTP register definitions shared between the DWMAC core drivers and the
+ * dedicated PTP clock child device.
+ */
+#if defined(CONFIG_ETH_DWC_ETHER_QOS_CORE)
+#define DWMAC_PTP_MACTSCR  0x0b00
+#define DWMAC_PTP_MACSSIR  0x0b04
+#define DWMAC_PTP_MACSTSR  0x0b08
+#define DWMAC_PTP_MACSTNR  0x0b0c
+#define DWMAC_PTP_MACSTSUR 0x0b10
+#define DWMAC_PTP_MACSTNUR 0x0b14
+#define DWMAC_PTP_MACTSAR  0x0b18
+
+#define DWMAC_PTP_CTRL_REG        DWMAC_PTP_MACTSCR
+#define DWMAC_PTP_SSINC_REG       DWMAC_PTP_MACSSIR
+#define DWMAC_PTP_SEC_UPDATE_REG  DWMAC_PTP_MACSTSUR
+#define DWMAC_PTP_NSEC_UPDATE_REG DWMAC_PTP_MACSTNUR
+#define DWMAC_PTP_SEC_REG         DWMAC_PTP_MACSTSR
+#define DWMAC_PTP_NSEC_REG        DWMAC_PTP_MACSTNR
+#define DWMAC_PTP_ADDEND_REG      DWMAC_PTP_MACTSAR
+
+#define DWMAC_PTP_SSINC_SHIFT 16
+#else
+#define DWMAC_PTP_PTPTSCR  0x0700
+#define DWMAC_PTP_PTPSSIR  0x0704
+#define DWMAC_PTP_PTPTSHR  0x0708
+#define DWMAC_PTP_PTPTSLR  0x070c
+#define DWMAC_PTP_PTPTSHUR 0x0710
+#define DWMAC_PTP_PTPTSLUR 0x0714
+#define DWMAC_PTP_PTPTSAR  0x0718
+
+#define DWMAC_PTP_CTRL_REG        DWMAC_PTP_PTPTSCR
+#define DWMAC_PTP_SSINC_REG       DWMAC_PTP_PTPSSIR
+#define DWMAC_PTP_SEC_UPDATE_REG  DWMAC_PTP_PTPTSHUR
+#define DWMAC_PTP_NSEC_UPDATE_REG DWMAC_PTP_PTPTSLUR
+#define DWMAC_PTP_SEC_REG         DWMAC_PTP_PTPTSHR
+#define DWMAC_PTP_NSEC_REG        DWMAC_PTP_PTPTSLR
+#define DWMAC_PTP_ADDEND_REG      DWMAC_PTP_PTPTSAR
+
+#define DWMAC_PTP_SSINC_SHIFT 0
+#endif
+
+#define DWMAC_PTP_CTRL_ENABLE			BIT(0)
+#define DWMAC_PTP_CTRL_FINE_UPDATE		BIT(1)
+#define DWMAC_PTP_CTRL_TIME_INIT		BIT(2)
+#define DWMAC_PTP_CTRL_TIME_UPDATE		BIT(3)
+#define DWMAC_PTP_CTRL_ADDEND_UPDATE		BIT(5)
+#define DWMAC_PTP_CTRL_ALL_RX			BIT(8)
+#define DWMAC_PTP_CTRL_ROLLOVER			BIT(9)
+#define DWMAC_PTP_NSEC_UPDATE_ADDSUB		BIT(31)
+
+/*
  * Shared declarations between core and platform glue code
  */
 
@@ -156,6 +212,9 @@ int dwmac_probe(const struct device *dev);
 int dwmac_bus_init(const struct device *dev);
 int dwmac_platform_init(const struct device *dev);
 void dwmac_isr(const struct device *ddev);
+#if defined(CONFIG_PTP_CLOCK_DWC_MAC)
+const struct device *dwmac_get_ptp_clock(const struct device *dev, struct net_if *iface);
+#endif
 extern const struct ethernet_api dwmac_api;
 
 /*
@@ -1305,11 +1364,30 @@ extern const struct ethernet_api dwmac_api;
 
 #elif defined(CONFIG_ETH_DWC_ETHER_1000_CORE)
 
-#ifdef CONFIG_SOC_SERIES_ESP32
-#define DWMAC_MAC_OFFSET		0x1000
-#define DWMAC_DMA_OFFSET		0x0000
-#else
+/*
+ * In some SoCs, the order of the MAC and DMA register blocks is different from the default order.
+ * The following offsets are used to adjust the register addresses accordingly. We assume here that
+ * the order is the same for all instances of the DWMAC driver, so we only check the first instance.
+ */
+#if DT_REG_HAS_NAME(DT_INST(0, snps_dwmac), base)
+#if DT_REG_HAS_NAME(DT_INST(0, snps_dwmac), mac)
+#define DWMAC_MAC_OFFSET                                                                           \
+	(DT_REG_ADDR_BY_NAME(DT_INST(0, snps_dwmac), mac) -                                        \
+	 DT_REG_ADDR_BY_NAME(DT_INST(0, snps_dwmac), base))
+#endif
+
+#if DT_REG_HAS_NAME(DT_INST(0, snps_dwmac), dma)
+#define DWMAC_DMA_OFFSET                                                                           \
+	(DT_REG_ADDR_BY_NAME(DT_INST(0, snps_dwmac), dma) -                                        \
+	 DT_REG_ADDR_BY_NAME(DT_INST(0, snps_dwmac), base))
+#endif
+#endif /* DT_REG_HAS_NAME(DT_INST(0, snps_dwmac), base) */
+
+#ifndef DWMAC_MAC_OFFSET
 #define DWMAC_MAC_OFFSET		0x0000
+#endif
+
+#ifndef DWMAC_DMA_OFFSET
 #define DWMAC_DMA_OFFSET		0x1000
 #endif
 

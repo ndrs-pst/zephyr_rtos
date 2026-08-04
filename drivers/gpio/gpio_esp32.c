@@ -38,27 +38,27 @@
 LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 
 #ifdef CONFIG_SOC_SERIES_ESP32C2
-#define out         out.val
-#define in          in.val
-#define out_w1ts    out_w1ts.val
-#define out_w1tc    out_w1tc.val
+#define out            out.val
+#define in             in.val
+#define out_w1ts       out_w1ts.val
+#define out_w1tc       out_w1tc.val
 /* arch_curr_cpu() is not available for riscv based chips */
 #define ESP32_CPU_ID()  0
 #elif CONFIG_SOC_SERIES_ESP32C3
 /* gpio structs in esp32c3 series are different from xtensa ones */
-#define out         out.data
-#define in          in.data
-#define out_w1ts    out_w1ts.val
-#define out_w1tc    out_w1tc.val
+#define out            out.data
+#define in             in.data
+#define out_w1ts       out_w1ts.val
+#define out_w1tc       out_w1tc.val
 /* arch_curr_cpu() is not available for riscv based chips */
 #define ESP32_CPU_ID()  0
 #elif defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C6) || \
       defined(CONFIG_SOC_SERIES_ESP32H2) || defined(CONFIG_SOC_SERIES_ESP32P4)
 /* gpio structs in esp32c6/h2 are also different */
-#define out         out.out_data_orig
-#define in          in.in_data_next
-#define out_w1ts    out_w1ts.val
-#define out_w1tc    out_w1tc.val
+#define out            out.out_data_orig
+#define in             in.in_data_next
+#define out_w1ts       out_w1ts.val
+#define out_w1tc       out_w1tc.val
 /* arch_curr_cpu() is not available for riscv based chips */
 #define ESP32_CPU_ID()  0
 #else
@@ -633,13 +633,32 @@ static int gpio_esp32_init(const struct device* dev) {
     int ret;
 
     if (!isr_connected) {
-        ret = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, irq),
-                             ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, priority)) |
-                             ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, flags))  |
-                             ESP_INTR_FLAG_IRAM,
-                             (intr_handler_t)gpio_esp32_isr,
-                             (void*)dev,
-                             NULL);
+        int ret;
+
+        #if defined(CONFIG_SOC_SERIES_ESP32H2) && defined(CONFIG_COMPARATOR_ESP32_ANA_CMPR)
+        /*
+         * On ESP32-H2, the analog comparator (ana_cmpr) unit shares this
+         * exact interrupt source (GPIO_INTR_SOURCE) with the GPIO
+         * peripheral, but uses its own, separate status/enable/clear
+         * registers (GPIO_EXT.*). Register as a shared interrupt, limited
+         * to this driver's own status bits, so both drivers can coexist on
+         * the line independently -- see shared_intr_isr() in intc_esp32.c.
+         */
+        ret = esp_intr_alloc_intrstatus(
+            DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, irq),
+                          ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, priority)) |
+                          ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, flags))  |
+                          ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM,
+                          (uint32_t)(uintptr_t)&GPIO.pcpu_int, 0xFFFFFFFF,
+                          (intr_handler_t)gpio_esp32_isr, (void*)dev, NULL);
+        #else
+        ret = esp_intr_alloc(
+            DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, irq),
+                          ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, priority)) |
+                          ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, flags)) |
+                          ESP_INTR_FLAG_IRAM,
+                          (intr_handler_t)gpio_esp32_isr, (void*)dev, NULL);
+        #endif
 
         if (ret != 0) {
             LOG_ERR("could not allocate interrupt (err %d)", ret);
