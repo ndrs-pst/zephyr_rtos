@@ -108,7 +108,8 @@ uint8_t sys_in8(io_port_t port);
 #define REG_USR 0x7C  /* UART status reg. (DW8250)      */
 #define REG_DLF 0xC0  /* Divisor Latch Fraction         */
 #define REG_PCP 0x200 /* PRV_CLOCK_PARAMS (Apollo Lake) */
-#define REG_MDR1 0x08 /* Mode control reg. (TI_K3) */
+#define REG_MDR1 0x08 /* Mode control reg. (TI_K3)      */
+#define REG_BRD1 0x10 /* Baud rate divisor. (BCM283x)   */
 
 #if defined(CONFIG_UART_NS16550_INTEL_LPSS_DMA)
 #define REG_LPSS_SRC_TRAN 0xAF8 /* SRC Transfer LPSS DMA */
@@ -154,14 +155,18 @@ uint8_t sys_in8(io_port_t port);
 
 /* Modes available for TI K3 UART module */
 
-#define MDR1_STD_MODE					(0)
-#define MDR1_SIR_MODE					(1)
-#define MDR1_UART_16X					(2)
-#define MDR1_UART_13X					(3)
-#define MDR1_MIR_MODE					(4)
-#define MDR1_FIR_MODE					(5)
-#define MDR1_CIR_MODE					(6)
-#define MDR1_DISABLE					(7)
+#define MDR1_STD_MODE				(0)
+#define MDR1_SIR_MODE				(1)
+#define MDR1_UART_16X				(2)
+#define MDR1_UART_13X				(3)
+#define MDR1_MIR_MODE				(4)
+#define MDR1_FIR_MODE				(5)
+#define MDR1_CIR_MODE				(6)
+#define MDR1_DISABLE				(7)
+
+/* Modes available for BCM283x Auxiliary UART module */
+#define MDR1_RX_EN				BIT(0)
+#define MDR1_TX_EN				BIT(1)
 
 /*
  * Per PC16550D (Literature Number: SNLS378B):
@@ -509,7 +514,11 @@ static uint32_t get_uart_baudrate_divisor(const struct device *dev,
 	 * calculate baud rate divisor. a variant of
 	 * (uint32_t)(pclk / (16.0 * baud_rate) + 0.5)
 	 */
+#ifdef CONFIG_UART_NS16550_BCM283X_AUX
+	return ((pclk / (baud_rate * 8)) - 1);
+#else
 	return ((pclk + (baud_rate << 3)) / baud_rate) >> 4;
+#endif
 }
 
 #ifdef CONFIG_UART_NS16550_ITE_HIGH_SPEED_BAUDRATE
@@ -569,8 +578,13 @@ static void set_baud_rate(const struct device *dev, uint32_t baud_rate, uint32_t
 		/* set the DLAB to access the baud rate divisor registers */
 		lcr_cache = ns16550_inbyte(dev, REG_LCR);
 		ns16550_outbyte(dev, REG_LCR, LCR_DLAB | lcr_cache);
+
+#ifdef CONFIG_UART_NS16550_BCM283X_AUX
+		ns16550_outbyte(dev, REG_BRD1, (uint8_t)(divisor & 0xff));
+#else
 		ns16550_outbyte(dev, REG_BRDL, (uint8_t)(divisor & 0xff));
 		ns16550_outbyte(dev, REG_BRDH, (uint8_t)((divisor >> 8) & 0xff));
+#endif
 
 		/* restore the DLAB to access the baud rate divisor registers */
 		ns16550_outbyte(dev, REG_LCR, lcr_cache);
@@ -916,6 +930,10 @@ static int uart_ns16550_init(const struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	dev_cfg->irq_config_func(dev);
+#endif
+
+#ifdef CONFIG_UART_NS16550_BCM283X_AUX
+	ns16550_outbyte(dev_cfg, REG_MDR1, (MDR1_RX_EN | MDR1_TX_EN));
 #endif
 
 	/* clear the port */

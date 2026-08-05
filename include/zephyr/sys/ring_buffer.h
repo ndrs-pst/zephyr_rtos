@@ -97,8 +97,8 @@ static inline void ring_buf_internal_reset(struct ring_buf* buf, ring_buf_idx_t 
 /** @endcond */
 
 #define RING_BUF_INIT(buf, size8) { \
-        .buffer = buf,              \
-        .size   = size8,            \
+        .buffer = (buf),            \
+        .size   = (size8),          \
     }
 
 /**
@@ -116,10 +116,10 @@ static inline void ring_buf_internal_reset(struct ring_buf* buf, ring_buf_idx_t 
  * @param size8 Size of ring buffer (in bytes).
  */
 #define RING_BUF_DECLARE(name, size8) \
-    BUILD_ASSERT(size8 <= RING_BUFFER_MAX_SIZE,\
+    BUILD_ASSERT((size8) <= RING_BUFFER_MAX_SIZE,\
         RING_BUFFER_SIZE_ASSERT_MSG); \
     static uint8_t __noinit _ring_buffer_data_##name[size8]; \
-    struct ring_buf name = RING_BUF_INIT(_ring_buffer_data_##name, size8)
+    struct ring_buf name = RING_BUF_INIT(_ring_buffer_data_##name, (size8))
 
 /**
  * @brief Define and initialize an "item based" ring buffer.
@@ -137,12 +137,12 @@ static inline void ring_buf_internal_reset(struct ring_buf* buf, ring_buf_idx_t 
  * @param size32 Size of ring buffer (in 32-bit words).
  */
 #define RING_BUF_ITEM_DECLARE(name, size32) \
-    BUILD_ASSERT((size32) <= RING_BUFFER_MAX_SIZE / 4, \
-        RING_BUFFER_SIZE_ASSERT_MSG); \
+    BUILD_ASSERT((size32) <= (RING_BUFFER_MAX_SIZE / 4), \
+        RING_BUFFER_SIZE_ASSERT_MSG);       \
     static uint32_t __noinit _ring_buffer_data_##name[size32]; \
-    struct ring_buf name = { \
+    struct ring_buf name = {                \
         .buffer = (uint8_t*)_ring_buffer_data_##name, \
-        .size   = (4UL * (size32)) \
+        .size   = (4UL * (size32))          \
     }
 
 /**
@@ -155,7 +155,7 @@ static inline void ring_buf_internal_reset(struct ring_buf* buf, ring_buf_idx_t 
  * @param size32 Size of ring buffer (in 32-bit words).
  */
 #define RING_BUF_ITEM_DECLARE_SIZE(name, size32) \
-    RING_BUF_ITEM_DECLARE(name, size32)
+    RING_BUF_ITEM_DECLARE(name, (size32))
 
 /**
  * @brief Define and initialize a power-of-2 sized "item based" ring buffer.

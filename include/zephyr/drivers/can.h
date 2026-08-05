@@ -359,10 +359,11 @@ struct can_driver_config {
     /** Initial CAN classic/CAN FD arbitration phase sample point in permille. */
     uint16_t sample_point;
 
-    #ifdef CONFIG_CAN_FD_MODE
-    /** Initial CAN FD data phase sample point in permille. */
+    #if defined(CONFIG_CAN_FD_MODE) || defined(__DOXYGEN__)
+    /** Initial CAN FD data phase sample point in permille. @kconfig_dep{CONFIG_CAN_FD_MODE} */
     uint16_t sample_point_data;
-    /** Initial CAN FD data phase bitrate. */
+
+    /** Initial CAN FD data phase bitrate. @kconfig_dep{CONFIG_CAN_FD_MODE} */
     uint32_t bitrate_data;
     #endif /* CONFIG_CAN_FD_MODE */
 };
@@ -650,6 +651,8 @@ STATS_NAME_END(can);
 /**
  * @brief CAN specific device state which allows for CAN device class specific
  * additions
+ *
+ * @kconfig_dep{CONFIG_CAN_STATS}
  */
 struct can_device_state {
     /** Common device state. */
@@ -674,6 +677,8 @@ struct can_device_state {
  * The bit error counter is incremented when the CAN controller is unable to
  * transmit either a dominant or a recessive bit.
  *
+ * @kconfig_dep{CONFIG_CAN_STATS}
+ *
  * @note This error counter should only be incremented if the CAN controller is unable to
  * distinguish between failure to transmit a dominant versus failure to transmit a recessive bit. If
  * the CAN controller supports distinguishing between the two, the `bit0` or `bit1` error counter
@@ -696,6 +701,8 @@ struct can_device_state {
  * Incrementing this counter will automatically increment the bit error counter.
  * @see CAN_STATS_BIT_ERROR_INC()
  *
+ * @kconfig_dep{CONFIG_CAN_STATS}
+ *
  * @param dev_ Pointer to the device structure for the driver instance.
  */
 #define CAN_STATS_BIT0_ERROR_INC(dev_)      \
@@ -713,6 +720,8 @@ struct can_device_state {
  * Incrementing this counter will automatically increment the bit error counter.
  * @see CAN_STATS_BIT_ERROR_INC()
  *
+ * @kconfig_dep{CONFIG_CAN_STATS}
+ *
  * @param dev_ Pointer to the device structure for the driver instance.
  */
 #define CAN_STATS_BIT1_ERROR_INC(dev_)      \
@@ -727,6 +736,8 @@ struct can_device_state {
  * The stuffing error counter is incremented when the CAN controller detects a
  * bit stuffing error.
  *
+ * @kconfig_dep{CONFIG_CAN_STATS}
+ *
  * @param dev_ Pointer to the device structure for the driver instance.
  */
 #define CAN_STATS_STUFF_ERROR_INC(dev_)     \
@@ -737,6 +748,8 @@ struct can_device_state {
  *
  * The CRC error counter is incremented when the CAN controller detects a frame
  * with an invalid CRC.
+ *
+ * @kconfig_dep{CONFIG_CAN_STATS}
  *
  * @param dev_ Pointer to the device structure for the driver instance.
  */
@@ -749,6 +762,8 @@ struct can_device_state {
  * The form error counter is incremented when the CAN controller detects a
  * fixed-form bit field containing illegal bits.
  *
+ * @kconfig_dep{CONFIG_CAN_STATS}
+ *
  * @param dev_ Pointer to the device structure for the driver instance.
  */
 #define CAN_STATS_FORM_ERROR_INC(dev_)      \
@@ -759,6 +774,8 @@ struct can_device_state {
  *
  * The acknowledge error counter is incremented when the CAN controller does not
  * monitor a dominant bit in the ACK slot.
+ *
+ * @kconfig_dep{CONFIG_CAN_STATS}
  *
  * @param dev_ Pointer to the device structure for the driver instance.
  */
@@ -772,6 +789,8 @@ struct can_device_state {
  * frame matching an installed filter but lacks the capacity to store it (either
  * due to an already full RX mailbox or a full RX FIFO).
  *
+ * @kconfig_dep{CONFIG_CAN_STATS}
+ *
  * @param dev_ Pointer to the device structure for the driver instance.
  */
 #define CAN_STATS_RX_OVERRUN_INC(dev_)      \
@@ -783,6 +802,8 @@ struct can_device_state {
  * The driver is responsible for resetting the statistics before starting the CAN
  * controller.
  *
+ * @kconfig_dep{CONFIG_CAN_STATS}
+ *
  * @param dev_ Pointer to the device structure for the driver instance.
  */
 #define CAN_STATS_RESET(dev_)               \
@@ -792,6 +813,8 @@ struct can_device_state {
 
 /**
  * @brief Define a statically allocated and section assigned CAN device state
+ *
+ * @kconfig_dep{CONFIG_CAN_STATS}
  */
 #define Z_CAN_DEVICE_STATE_DEFINE(dev_id)   \
     static struct can_device_state Z_DEVICE_STATE_NAME(dev_id)  \
@@ -802,6 +825,8 @@ struct can_device_state {
  *
  * This does device instance specific initialization of common data (such as stats)
  * and calls the given init_fn
+ *
+ * @kconfig_dep{CONFIG_CAN_STATS}
  */
 #define Z_CAN_INIT_FN(dev_id, init_fn)      \
     static inline int UTIL_CAT(dev_id, _init)(const struct device* dev) {       \
@@ -1379,7 +1404,7 @@ int can_add_rx_filter(const struct device* dev, can_rx_callback_t callback,
  * @param max_frames Maximum number of CAN frames that can be queued.
  */
 #define CAN_MSGQ_DEFINE(name, max_frames) \
-    K_MSGQ_DEFINE(name, sizeof(struct can_frame), max_frames, 4)
+    K_MSGQ_DEFINE_TYPE(name, struct can_frame, max_frames)
 
 /**
  * @brief Simple wrapper function for adding a message queue for a given filter

@@ -58,6 +58,14 @@ Kernel
 Boards
 ******
 
+* On RP2040 and RP2350, the ``vreg`` node (:dtcompatible:`raspberrypi,core-supply-regulator`) is
+  now ``disabled`` by default instead of ``okay``. Out-of-tree boards that need this regulator
+  must set ``status = "okay"`` on the ``&vreg`` node.
+
+  On RP2040, the ``regulator-always-on`` and ``regulator-allowed-modes =
+  <REGULATOR_RPI_PICO_MODE_NORMAL>`` properties are now set by default in the SoC dtsi. Boards
+  that previously set them explicitly can remove those lines. (:github:`114751`)
+
 * The Kconfig options :kconfig:option:`CONFIG_SRAM_SIZE` and
   :kconfig:option:`CONFIG_SRAM_BASE_ADDRESS` have been deprecated, boards should instead use the
   devicetree ``zephyr.sram`` chosen node to specify the RAM node which will be used (whose values
@@ -648,6 +656,11 @@ SD Host Controller
   consolidated into the existing ``pwr-gpios`` property. Replace
   ``sdhi-on-gpios`` with ``pwr-gpios`` in out-of-tree devicetree nodes.
 
+* :kconfig:option:`CONFIG_SDMMC_STM32_HWFC` is now enabled by default for the legacy SDMMC_STM32
+  disk driver to prevent FIFO underrun and overrun errors during disk access. Applications that
+  previously set ``CONFIG_SDMMC_STM32_HWFC=y`` should remove this configuration from their board
+  configuration files since it is now the default.
+
 * :dtcompatible:`litex,mmc` now uses the ``dma-coherent`` devicetree property to indicate that the
   controller's DMA accesses are coherent with the CPU.
   :kconfig:option:`CONFIG_SDHC_LITEX_LITESDCARD_NO_COHERENT_DMA` is automatically set based on that
@@ -684,6 +697,13 @@ Serial
 
 * The return type of :c:func:`uart_irq_update` is now ``void`` instead of ``int``.
   (:github:`105231`)
+
+* The :dtcompatible:`brcm,bcm2711-aux-uart` devicetree binding has been removed in favour of
+  :dtcompatible:`brcm,bcm283x-aux-uart`. Nodes must add :dtcompatible:`ns16550` as a compatible,
+  replace the ``clocks`` property with ``clock-frequency``, and specify ``reg-shift = <2>``.
+  The dedicated BCM2711 auxiliary UART driver has been removed in favour of the generic NS16550
+  driver, which now provides support for the Broadcom BCM283x auxiliary UART through vendor-specific
+  extensions. (:github:`115112`)
 
 SPI
 ===

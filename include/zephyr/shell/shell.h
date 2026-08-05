@@ -1282,7 +1282,10 @@ int shell_start(struct shell const* sh);
  *
  * @param sh Pointer to shell instance.
  *
- * @return Standard error code.
+ * @retval 0 On success.
+ * @retval -ENOTSUP If the shell is already stopped or not yet started.
+ * @retval -EBUSY If the shell thread is currently processing received data
+ *  (e.g. executing a command). Retry once processing completes.
  */
 int shell_stop(struct shell const* sh);
 
