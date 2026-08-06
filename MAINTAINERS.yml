@@ -121,6 +121,25 @@
 #         are the ones used in test case definitions, and in test suite definitions in
 #         testcase.yaml.
 #
+#     meta:
+#         Boolean (default false). Set to true for areas that cut across the
+#         whole tree (documentation, samples, tests, benchmarks, the release
+#         process, ...) rather than owning one subsystem, and whose file
+#         patterns therefore match large parts of it.
+#
+#         Tooling treats such areas differently:
+#
+#         * scripts/ci/set_assignees.py does not weight them when picking a
+#           pull request assignee, so a meta-area maintainer is only assigned
+#           when the meta-area is the sole area a pull request touches.
+#
+#         * scripts/ci/sync_maintainer_tests.py does not auto-generate 'tests'
+#           entries for them, as the identifiers derived from their broad file
+#           patterns would be too generic to be useful.
+#
+#         This is the single place where meta-areas are declared; add the key
+#         to an area to classify it as one.
+#
 #
 # All areas must have a 'files' and/or 'files-regex' key. The other keys are
 # optional.
@@ -543,6 +562,7 @@ BeagleBoard Platforms:
 
 Benchmarks:
   status: maintained
+  meta: true
   maintainers:
     - peter-mitsis
   collaborators:
@@ -662,6 +682,7 @@ Bluetooth Controller:
     - wopu-ot
     - erbr-ot
     - Tronil
+    - Thalley
   files:
     - doc/services/connectivity/bluetooth/bluetooth-ctlr-arch.rst
     - doc/services/connectivity/bluetooth/img/ctlr*
@@ -1432,6 +1453,7 @@ Display drivers:
 
 Documentation:
   status: maintained
+  meta: true
   maintainers:
     - kartben
   collaborators:
@@ -5280,6 +5302,7 @@ Raspberry Pi Pico Platforms:
     - boards/sparkfun/rp2040_mikrobus/
     - boards/waveshare/rp2040_zero/
     - boards/wiznet/w5500_evb_pico*/
+    - boards/wiznet/w55rp20_evb_pico*/
     - boards/wiznet/w6100_evb_pico*/
     - boards/wiznet/w6300_evb_pico*/
     - dts/arm/raspberrypi/rpi_pico/
@@ -5361,6 +5384,7 @@ Realtek Fingerprint Platforms:
 
 Release:
   status: maintained
+  meta: true
   maintainers:
     - henrikbrixandersen
     - teburd
@@ -5650,6 +5674,7 @@ Safety:
 
 Samples:
   status: maintained
+  meta: true
   maintainers:
     - kartben
   collaborators:
@@ -6165,6 +6190,7 @@ Testing with Renode:
 
 Tests:
   status: maintained
+  meta: true
   maintainers:
     - nashif
   files:

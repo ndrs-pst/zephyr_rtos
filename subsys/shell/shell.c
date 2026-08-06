@@ -1734,7 +1734,7 @@ static void shell_log_process(struct shell const* sh) {
          * readable and can be used to enter further commands.
          */
         if (ctx->cmd_buff_len) {
-            k_sleep(K_MSEC(15));
+            k_msleep(15);
         }
 
     } while (processed && !k_event_test(&ctx->signal_event, SHELL_SIGNAL_RXRDY));

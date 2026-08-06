@@ -260,7 +260,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 61e526c7c3678cc4a71f4c1ddb632f97aaff2ef2
+      revision: beaf806e0b1e7023d1ddb6f940bbaeab43826f5b
       path: modules/hal/stm32
       groups:
         - hal
@@ -354,10 +354,10 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 253d42e4c124aecd7b51afa4782140270e890a7d
+      revision: 581cc8c8d922b062101ab2cc252c4b4699b0dae9
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: 21184a8f89f101538ad54c3b64a1d9c4da23bdb8
+      revision: 0aaa9aa812877cb6bc020df8260d0607a3f0ec1a
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: 01032a8a7bdfdd541686f5dfa3671e602b9fcbff
@@ -401,7 +401,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 79823893d870345e944f9acb59f08b5e3a3c55a8
+      revision: 163bdeb4681ebadf5781a8b8714a709ed77aaf27
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
