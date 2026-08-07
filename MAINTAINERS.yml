@@ -4067,6 +4067,7 @@ Microchip SmartFusion2 platform:
   collaborators:
     - AntonVynohradov
   files:
+    - boards/microchip/m2s_hello_fpga_kit/
     - boards/microchip/m2s010_mkr_kit/
     - drivers/clock_control/*smartfusion2*
     - dts/arm/microchip/smartfusion2*/
@@ -4171,12 +4172,12 @@ NXP Platform Drivers:
   status: maintained
   maintainers:
     - zejiang0jason
-    - mmahadevan108
+    - butok
   collaborators:
-    - manuargue
+    - iuliana-prodan
     - dbaluta
     - Holt-Sun
-    - butok
+    - mmahadevan108
   files-regex:
     - ^drivers/.*nxp.*
     - ^drivers/.*mcux.*
@@ -4272,9 +4273,10 @@ NXP Platforms (MCU):
   status: maintained
   maintainers:
     - iuliana-prodan
-    - mmahadevan108
-  collaborators:
     - butok
+    - zejiang0jason
+  collaborators:
+    - mmahadevan108
   files:
     - boards/nxp/mimxrt*/
     - boards/nxp/frdm*/
@@ -4526,6 +4528,7 @@ Networking:
   files-exclude:
     - doc/services/connectivity/networking/api/gptp.rst
     - doc/services/connectivity/networking/api/ieee802154.rst
+    - doc/services/connectivity/networking/api/mcp.rst
     - doc/services/connectivity/networking/api/ocpp.rst
     - doc/services/connectivity/networking/api/ptp.rst
     - doc/services/connectivity/networking/api/wifi.rst
@@ -4537,6 +4540,7 @@ Networking:
     - doc/services/connectivity/networking/eth_*.rst
     - include/zephyr/net/gptp.h
     - include/zephyr/net/ieee802154*.h
+    - include/zephyr/net/mcp/
     - include/zephyr/net/ptp.h
     - include/zephyr/net/wifi*.h
     - include/zephyr/net/dhcpv4*.h
@@ -4548,6 +4552,7 @@ Networking:
     - samples/net/sockets/coap_*/
     - samples/net/sockets/*http*/
     - samples/net/lwm2m_client/
+    - samples/net/mcp/
     - samples/net/ocpp/
     - samples/net/wifi/
     - samples/net/dhcpv4_client/
@@ -4558,12 +4563,14 @@ Networking:
     - subsys/net/lib/config/ieee802154*
     - subsys/net/lib/http/
     - subsys/net/lib/lwm2m/
+    - subsys/net/lib/mcp/
     - subsys/net/lib/ocpp/
     - subsys/net/lib/ptp/
     - subsys/net/lib/tls_credentials/
     - subsys/net/lib/dhcpv4/
     - tests/net/dhcpv4/
     - tests/net/ieee802154/
+    - tests/net/lib/mcp/
     - tests/net/lib/ocpp/
     - tests/net/lib/http*/
     - tests/net/wifi/
@@ -6932,13 +6939,13 @@ West:
   maintainers:
     - mmahadevan108
     - zejiang0jason
+    - axelnxp
   collaborators:
     - manuargue
     - PetervdPerk-NXP
     - bperseghetti
     - JiafeiPan
     - MaochenWang1
-    - axelnxp
     - Holt-Sun
     - lucien-nxp
   files:

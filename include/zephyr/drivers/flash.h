@@ -32,9 +32,12 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Describes a sequence of flash pages of the same size.
+ */
 struct flash_pages_layout {
-    size_t pages_count; /* count of pages sequence of the same size */
-    size_t pages_size;
+    size_t pages_count;                     /**< Number of pages of the same size in the sequence */
+    size_t pages_size;                      /**< Size of each page in the sequence, in bytes */
 };
 
 /**
@@ -84,13 +87,20 @@ struct flash_parameters {
 
 /** Set for ordinary Flash where erase is needed before write of random data */
 #define FLASH_ERASE_C_EXPLICIT      0x01
+
 /** Reserved for users as initializer for variables that will later store
  * capabilities.
  */
 #define FLASH_ERASE_CAPS_UNSET      (int)-1
+
 /* The values below are now reserved but not used */
+/** Reserved, not used */
 #define FLASH_ERASE_C_SUPPORTED     0x02
+
+/** Reserved, not used */
 #define FLASH_ERASE_C_VAL_BIT       0x04
+
+/** Reserved, not used */
 #define FLASH_ERASE_UNIFORM_PAGE    0x08
 
 /**
@@ -244,9 +254,23 @@ typedef void (*flash_api_pages_layout)(struct device const* dev,
                                        const struct flash_pages_layout** layout,
                                        size_t* layout_size);
 
+/**
+ * @brief Read data from Serial Flash Discoverable Parameters.
+ * See flash_sfdp_read() for argument descriptions.
+ */
 typedef int (*flash_api_sfdp_read)(struct device const* dev, off_t offset,
                                    void* data, size_t len);
-typedef int (*flash_api_read_jedec_id)(struct device const* dev, uint8_t* id);
+
+/**
+ * @brief Read the JEDEC ID of the device.
+ * See flash_read_jedec_id() for argument descriptions.
+ */
+typedef int (*flash_api_read_jedec_id)(struct device const* dev, uint8_t *id);
+
+/**
+ * @brief Perform an extended operation.
+ * See flash_ex_op() for argument descriptions.
+ */
 typedef int (*flash_api_ex_op)(struct device const* dev, uint16_t code,
                                const uintptr_t in, void* out);
 
@@ -262,10 +286,12 @@ __subsystem struct flash_driver_api {
 
     /** @driver_ops_optional @copybrief flash_erase */
     flash_api_erase erase;
-#if defined(CONFIG_FLASH_HAS_DRIVER_FILL)
+
+    #if defined(CONFIG_FLASH_HAS_DRIVER_FILL)
     /** @driver_ops_optional @copybrief flash_fill */
     flash_api_fill fill;
-#endif /* CONFIG_FLASH_HAS_DRIVER_FILL */
+    #endif /* CONFIG_FLASH_HAS_DRIVER_FILL */
+
     /** @driver_ops_mandatory @copybrief flash_get_parameters */
     flash_api_get_parameters get_parameters;
 
@@ -485,10 +511,13 @@ __syscall int flash_fill(struct device const* dev, uint8_t val, off_t offset, si
  */
 __syscall int flash_flatten(struct device const* dev, off_t offset, size_t size);
 
+/**
+ * @brief Information about a flash page.
+ */
 struct flash_pages_info {
-    off_t    start_offset; /* offset from the base of flash address */
-    size_t   size;
-    uint32_t index;
+    off_t start_offset; /**< Offset of the page from the base of the flash address space */
+    size_t size;        /**< Size of the page in bytes */
+    uint32_t index;     /**< Index of the page, counted from 0 */
 };
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT) || defined(__DOXYGEN__)
@@ -734,14 +763,22 @@ __syscall int flash_copy(const struct device *src_dev, off_t src_offset,
  * the same functionality. In this case, vendor operation could provide more
  * specific access when abstraction in Zephyr counterpart is insufficient.
  */
+/** Base of the range of vendor-specific extended operation codes */
 #define FLASH_EX_OP_VENDOR_BASE  0x8000
+
+/**
+ * @brief Check if an extended operation code is vendor-specific
+ *
+ * @param c Extended operation code
+ * @return Non-zero if the code is in the vendor-specific range, 0 otherwise
+ */
 #define FLASH_EX_OP_IS_VENDOR(c) ((c)&FLASH_EX_OP_VENDOR_BASE)
 
 /**
  *  @brief Enumeration for extra flash operations
  */
 enum flash_ex_op_types {
-    /*
+    /**
      * Reset flash device.
      */
     FLASH_EX_OP_RESET = 0,
